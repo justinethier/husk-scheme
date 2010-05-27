@@ -35,7 +35,10 @@ parseAtom = do
 		_    -> Atom atom
 
 parseNumber :: Parser LispVal
-parseNumber = liftM (Number . read) $ many1 digit
+parseNumber = do
+	num <- many (digit)
+	return $ (Number . read) $ num
+{- Orig version from the wiki - parseNumber = liftM (Number . read) $ many1 digit -}
 
 parseString :: Parser LispVal
 parseString = do
@@ -43,6 +46,8 @@ parseString = do
 	x <- many (noneOf "\"")
 	char '"'
 	return $ String x
+
+{- TODO: replacement for noneOf, accept char or \" -}
 
 parseExpr :: Parser LispVal
 parseExpr = parseAtom <|> parseString <|> parseNumber
