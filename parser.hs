@@ -53,8 +53,14 @@ parseNumber = do
 
 
 parseStringSingleChar = do
-	fc <- noneOf "\"" 
-	return fc
+	b <- char '\\' <|> anyChar
+{-	if b == '\\'
+		then 
+let c = case b of
+		'\\' -> anyChar
+		_    -> anyChar
+		-}
+	return b
 
 {- TODO: replacement for noneOf, accept char or \"
  -
