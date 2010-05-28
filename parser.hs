@@ -17,6 +17,17 @@ data LispVal = Atom String
  	| String String
 	| Bool Bool
 
+showVal :: LispVal -> String
+showVal (String contents) = "\"" ++ contents ++ "\""
+showVal (Atom name) = name
+showVal (Number contents) = show contents
+showVal (Bool True) = "#t"
+showVal (Bool False) = "#f"
+{-showVal (List contents) = "(" ++ unwordsList contents ++ ")"
+showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"-}
+
+{- Allow to convert lispval instances into strings  -}
+instance Show LispVal where show = showVal
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
@@ -40,12 +51,10 @@ parseNumber = do
 	return $ (Number . read) $ num
 {- Orig version from the wiki - parseNumber = liftM (Number . read) $ many1 digit -}
 
-parseString :: Parser LispVal
-parseString = do
-	char '"'
-	x <- many ("\"" <|> noneOf "\"")
-	char '"'
-	return $ String x
+
+parseStringSingleChar = do
+	fc <- noneOf "\"" 
+	return fc
 
 {- TODO: replacement for noneOf, accept char or \"
  -
@@ -58,11 +67,18 @@ parseString = do
  -
  - -}
 
+parseString :: Parser LispVal
+parseString = do
+	char '"'
+	x <- many (parseStringSingleChar)
+	char '"'
+	return $ String x
+
 parseExpr :: Parser LispVal
 parseExpr = parseAtom <|> parseString <|> parseNumber
 
 readExpr :: String -> String
 readExpr input = case parse parseExpr "lisp" input of
 	Left err -> "No match: " ++ show err
-	Right val -> "Found value"
+	Right val -> "Found " ++ show val
 
