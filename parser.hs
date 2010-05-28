@@ -43,11 +43,20 @@ parseNumber = do
 parseString :: Parser LispVal
 parseString = do
 	char '"'
-	x <- many (noneOf "\"")
+	x <- many ("\"" <|> noneOf "\"")
 	char '"'
 	return $ String x
 
-{- TODO: replacement for noneOf, accept char or \" -}
+{- TODO: replacement for noneOf, accept char or \"
+ -
+ - could read anychar, and if it is a backspace, then
+ - read next char and if it is ", t, etc then convert both.
+ - then return char.
+ -
+ - TODO: how to then parse the next char in seq? just call anychar
+ - again??
+ -
+ - -}
 
 parseExpr :: Parser LispVal
 parseExpr = parseAtom <|> parseString <|> parseNumber
