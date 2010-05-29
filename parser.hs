@@ -52,31 +52,19 @@ parseNumber = do
 {- Orig version from the wiki - parseNumber = liftM (Number . read) $ many1 digit -}
 
 
-parseStringSingleChar = do
-	b <- char '\\' <|> anyChar
-{-	if b == '\\'
-		then 
-let c = case b of
-		'\\' -> anyChar
-		_    -> anyChar
-		-}
-	return b
-
-{- TODO: replacement for noneOf, accept char or \"
- -
- - could read anychar, and if it is a backspace, then
- - read next char and if it is ", t, etc then convert both.
- - then return char.
- -
- - TODO: how to then parse the next char in seq? just call anychar
- - again??
- -
- - -}
+parseEscapedChar = do 
+  char '\\'
+  c <- anyChar
+  return $ case c of
+    'n' -> '\n'
+    't' -> '\t'
+    'r' -> '\r'
+    _   -> c
 
 parseString :: Parser LispVal
 parseString = do
 	char '"'
-	x <- many (parseStringSingleChar)
+	x <- many (parseEscapedChar <|> noneOf("\""))
 	char '"'
 	return $ String x
 
