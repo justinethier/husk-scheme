@@ -1,6 +1,7 @@
 {- TODO: finish "lesson" 2, start again at Return Values -}
 module Main where
 import Control.Monad
+import Numeric
 import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
 
@@ -26,7 +27,7 @@ showVal (Bool False) = "#f"
 {-showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"-}
 
-{- Allow to convert lispval instances into strings  -}
+{- Allow conversion of lispval instances to strings -}
 instance Show LispVal where show = showVal
 
 symbol :: Parser Char
@@ -47,8 +48,14 @@ parseAtom = do
 
 parseNumber :: Parser LispVal
 parseNumber = do
-	num <- many (digit)
-	return $ (Number . read) $ num
+{- TODO: perhaps too much going on here, break out into sep bool, hex, dec, oct parsers -}
+  pre <- try ( string "#b" <|> string "#o" <|> string "#x" <|> string "" )
+  num <- many (digit)
+  return $ case pre of
+    "#x" -> Number $ fst $ readHex num !! 0
+    _    -> (Number . read) $ num
+{-	num <- many (digit)
+	return $ (Number . read) $ num -}
 {- Orig version from the wiki - parseNumber = liftM (Number . read) $ many1 digit -}
 
 
@@ -69,7 +76,7 @@ parseString = do
 	return $ String x
 
 parseExpr :: Parser LispVal
-parseExpr = parseAtom <|> parseString <|> parseNumber
+parseExpr = parseNumber <|> parseAtom <|> parseString {-<|> parseNumber-}
 
 readExpr :: String -> String
 readExpr input = case parse parseExpr "lisp" input of
