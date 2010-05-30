@@ -16,10 +16,12 @@ data LispVal = Atom String
 	| DottedList [LispVal] LispVal
 	| Number Integer
  	| String String
+	| Char Char
 	| Bool Bool
 
 showVal :: LispVal -> String
 showVal (String contents) = "\"" ++ contents ++ "\""
+showVal (Char chr) = [chr]
 showVal (Atom name) = name
 showVal (Number contents) = show contents
 showVal (Bool True) = "#t"
@@ -46,18 +48,36 @@ parseAtom = do
 		"#f" -> Bool False
 		_    -> Atom atom
 
-parseNumber :: Parser LispVal
-parseNumber = do
-{- TODO: perhaps too much going on here, break out into sep bool, hex, dec, oct parsers -}
-  pre <- try ( string "#b" <|> string "#o" <|> string "#x" <|> string "" )
-  num <- many (digit)
-  return $ case pre of
-    "#x" -> Number $ fst $ readHex num !! 0
-    _    -> (Number . read) $ num
-{-	num <- many (digit)
-	return $ (Number . read) $ num -}
-{- Orig version from the wiki - parseNumber = liftM (Number . read) $ many1 digit -}
+{- TODO: integrate into main parser, extend -}
+parseChar :: Parser LispVal
+parseChar = do
+  string "#\\"
+  c <- {-string "space" <|> string "newline" <|>-} anyChar
+  return $ Char c
+{-  return $ case c of
+    "space"   -> ' '
+    "newline" -> '\n'
+    _         -> c
+-}
 
+{- TODO: #d, #x broken right now, since atom matches them
+ - TODO: add #o, #b support
+ - -}
+
+parseHexNumber :: Parser LispVal
+parseHexNumber = do
+  string "#x"
+  num <- many(digit <|> oneOf "abcdefABCDEF")
+  return $ Number $ fst $ readHex num !! 0
+
+parseDecimalNumber :: Parser LispVal
+parseDecimalNumber = do
+  string "#d" <|> string ""
+  num <- many (digit)
+  return $ (Number . read) $ num
+
+parseNumber :: Parser LispVal
+parseNumber = {-parseHexNumber <|>-} parseDecimalNumber <?> "Unable to parse number"
 
 parseEscapedChar = do 
   char '\\'
@@ -76,7 +96,7 @@ parseString = do
 	return $ String x
 
 parseExpr :: Parser LispVal
-parseExpr = parseNumber <|> parseAtom <|> parseString {-<|> parseNumber-}
+parseExpr = parseAtom <|> parseString <|> parseNumber <?> "Expression" {-<|> parseNumber-}
 
 readExpr :: String -> String
 readExpr input = case parse parseExpr "lisp" input of
