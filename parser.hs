@@ -24,12 +24,12 @@ data LispVal = Atom String
 	| Bool Bool
 
 showVal :: LispVal -> String
-showVal (String contents) = "\"" ++ contents ++ "\""
+showVal (String contents) = "str - \"" ++ contents ++ "\""
 showVal (Char chr) = "chr: " ++ [chr] {- TODO: this is only temporary, for testing-}
 showVal (Atom name) = name
 showVal (Number contents) = show contents
-showVal (Bool True) = "#t"
-showVal (Bool False) = "#f"
+showVal (Bool True) = "TODO: #t"
+showVal (Bool False) = "TODO: #f"
 {-showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"-}
 
@@ -54,7 +54,7 @@ parseAtom = do
 
 parseChar :: Parser LispVal
 parseChar = do
-  string "#\\"
+  try (string "#\\")
   c <- anyChar 
   r <- many(letter)
   let chr = c:r
@@ -69,18 +69,26 @@ parseChar = do
 
 parseHexNumber :: Parser LispVal
 parseHexNumber = do
-  string "#x"
-  num <- many(digit <|> oneOf "abcdefABCDEF")
+  try (string "#x")
+  num <- many1(digit <|> oneOf "abcdefABCDEF")
   return $ Number $ fst $ readHex num !! 0
 
+{- Parser for Integer, base 10-}
 parseDecimalNumber :: Parser LispVal
 parseDecimalNumber = do
-  string "#d" <|> string ""
-  num <- many (digit)
+  {- TODO: figure out how to get an optional #d to work here: try (string "#d")-}
+  num <- many1 (digit)
   return $ (Number . read) $ num
 
 parseNumber :: Parser LispVal
-parseNumber = {-parseHexNumber <|>-} parseDecimalNumber <?> "Unable to parse number"
+parseNumber = parseHexNumber <|> parseDecimalNumber <?> "Unable to parse number"
+
+{- Parser for floating points - }
+parseDecimal :: Parser LispVal
+parseDecimal = do 
+
+
+-}
 
 parseEscapedChar = do 
   char '\\'
@@ -99,11 +107,11 @@ parseString = do
 	return $ String x
 
 parseExpr :: Parser LispVal
-parseExpr = try  
+parseExpr =   
+  parseNumber  <|>
   parseChar <|> 
-  parseAtom <|> 
-  parseString <|> 
-  parseNumber  <?> 
+  parseAtom <|>
+  parseString <?> 
   "Expression"
 
 readExpr :: String -> String
