@@ -1,4 +1,8 @@
-{- TODO: finish "lesson" 2, start again at Return Values -}
+{-
+ - Scheme Parser
+ -
+ - @author Justin Ethier
+ - -}
 module Main where
 import Control.Monad
 import Numeric
@@ -48,17 +52,16 @@ parseAtom = do
 		"#f" -> Bool False
 		_    -> Atom atom
 
-{- TODO: integrate into main parser, extend -}
 parseChar :: Parser LispVal
 parseChar = do
   string "#\\"
-  c <- {-string "space" <|> string "newline" <|>-} anyChar
-  return $ Char c
-{-  return $ case c of
-    "space"   -> ' '
-    "newline" -> '\n'
-    _         -> c
--}
+  c <- anyChar 
+  r <- many(letter)
+  let chr = c:r
+  return $ case chr of
+    "space"   -> Char ' '
+    "newline" -> Char '\n'
+    _         -> Char c {- TODO: err if invalid char -}
 
 {- TODO: #d, #x broken right now, since atom matches them
  - TODO: add #o, #b support
@@ -96,11 +99,11 @@ parseString = do
 	return $ String x
 
 parseExpr :: Parser LispVal
-parseExpr = 
+parseExpr = try  
   parseChar <|> 
   parseAtom <|> 
   parseString <|> 
-  parseNumber <?> 
+  parseNumber  <?> 
   "Expression"
 
 readExpr :: String -> String
