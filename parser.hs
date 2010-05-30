@@ -21,7 +21,7 @@ data LispVal = Atom String
 
 showVal :: LispVal -> String
 showVal (String contents) = "\"" ++ contents ++ "\""
-showVal (Char chr) = [chr]
+showVal (Char chr) = "chr: " ++ [chr] {- TODO: this is only temporary, for testing-}
 showVal (Atom name) = name
 showVal (Number contents) = show contents
 showVal (Bool True) = "#t"
@@ -96,7 +96,12 @@ parseString = do
 	return $ String x
 
 parseExpr :: Parser LispVal
-parseExpr = parseAtom <|> parseString <|> parseNumber <?> "Expression" {-<|> parseNumber-}
+parseExpr = 
+  parseChar <|> 
+  parseAtom <|> 
+  parseString <|> 
+  parseNumber <?> 
+  "Expression"
 
 readExpr :: String -> String
 readExpr input = case parse parseExpr "lisp" input of
