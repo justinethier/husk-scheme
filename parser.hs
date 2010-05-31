@@ -33,8 +33,11 @@ showVal (Number contents) = show contents
 showVal (Float contents) = show contents
 showVal (Bool True) = "TODO: #t"
 showVal (Bool False) = "TODO: #f"
-{-showVal (List contents) = "(" ++ unwordsList contents ++ ")"
-showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"-}
+showVal (List contents) = "(" ++ unwordsList contents ++ ")"
+showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
+
+unwordsList :: [LispVal] -> String
+unwordsList = unwords . map showVal
 
 {- Allow conversion of lispval instances to strings -}
 instance Show LispVal where show = showVal
@@ -111,6 +114,9 @@ parseDecimal = do
   let dec = num ++ "." ++ frac
   return $ Float $ fst $ Numeric.readFloat dec !! 0
 
+{- TODO: implement full numeric stack, see Parsing, exercise #7 -}
+
+
 parseEscapedChar = do 
   char '\\'
   c <- anyChar
@@ -127,14 +133,33 @@ parseString = do
 	char '"'
 	return $ String x
 
+parseList :: Parser LispVal
+parseList = liftM List $ sepBy parseExpr spaces
+
+parseDottedList :: Parser LispVal
+parseDottedList = do
+  head <- endBy parseExpr spaces
+  tail <- char '.' >> spaces >> parseExpr
+  return $ DottedList head tail
+
+parseQuoted :: Parser LispVal
+parseQuoted = do
+  char '\''
+  x <- parseExpr
+  return $ List [Atom "quote", x]
+
 parseExpr :: Parser LispVal
-parseExpr =   
-  try(parseDecimal) <|>
-  parseNumber  <|>
-  parseChar <|> 
-  parseAtom <|>
-  parseString <?> 
-  "Expression"
+parseExpr = try(parseDecimal) 
+  <|> parseNumber
+  <|> parseChar
+  <|> parseAtom
+  <|> parseString 
+  <|> parseQuoted
+  <|> do char '('
+         x <- try parseList <|> parseDottedList
+         char ')'
+         return x
+  <?> "Expression"
 
 readExpr :: String -> String
 readExpr input = case parse parseExpr "lisp" input of
