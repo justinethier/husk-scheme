@@ -5,6 +5,7 @@
  - -}
 module Main where
 import Control.Monad
+import Char
 import Numeric
 import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
@@ -73,13 +74,19 @@ parseOctalNumber :: Parser LispVal
 parseOctalNumber = do
   try (string "#o")
   num <- many1(oneOf "01234567")
-  return $ Number $ fst $ readOct num !! 0
+  return $ Number $ fst $ Numeric.readOct num !! 0
+
+parseBinaryNumber :: Parser LispVal
+parseBinaryNumber = do
+  try (string "#b")
+  num <- many1(oneOf "01")
+  return $ Number $ fst $ Numeric.readInt 2 (`elem` "01") Char.digitToInt num !! 0
 
 parseHexNumber :: Parser LispVal
 parseHexNumber = do
   try (string "#x")
   num <- many1(digit <|> oneOf "abcdefABCDEF")
-  return $ Number $ fst $ readHex num !! 0
+  return $ Number $ fst $ Numeric.readHex num !! 0
 
 {- Parser for Integer, base 10-}
 parseDecimalNumber :: Parser LispVal
@@ -89,7 +96,11 @@ parseDecimalNumber = do
   return $ (Number . read) $ num
 
 parseNumber :: Parser LispVal
-parseNumber = parseDecimalNumber <|> parseHexNumber <|> parseOctalNumber <?> "Unable to parse number"
+parseNumber = parseDecimalNumber <|> 
+              parseHexNumber     <|> 
+              parseBinaryNumber  <|> 
+              parseOctalNumber   <?> 
+              "Unable to parse number"
 
 {- Parser for floating points -}
 parseDecimal :: Parser LispVal
@@ -98,7 +109,7 @@ parseDecimal = do
   char '.'
   frac <- many1(digit)
   let dec = num ++ "." ++ frac
-  return $ Float $ fst $ readFloat dec !! 0
+  return $ Float $ fst $ Numeric.readFloat dec !! 0
 
 parseEscapedChar = do 
   char '\\'
