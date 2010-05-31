@@ -19,6 +19,7 @@ data LispVal = Atom String
 	| List [LispVal]
 	| DottedList [LispVal] LispVal
 	| Number Integer
+	| Float Float
  	| String String
 	| Char Char
 	| Bool Bool
@@ -28,6 +29,7 @@ showVal (String contents) = "str - \"" ++ contents ++ "\""
 showVal (Char chr) = "chr: " ++ [chr] {- TODO: this is only temporary, for testing-}
 showVal (Atom name) = name
 showVal (Number contents) = show contents
+showVal (Float contents) = show contents
 showVal (Bool True) = "TODO: #t"
 showVal (Bool False) = "TODO: #f"
 {-showVal (List contents) = "(" ++ unwordsList contents ++ ")"
@@ -83,12 +85,14 @@ parseDecimalNumber = do
 parseNumber :: Parser LispVal
 parseNumber = parseHexNumber <|> parseDecimalNumber <?> "Unable to parse number"
 
-{- Parser for floating points - }
+{- Parser for floating points -}
 parseDecimal :: Parser LispVal
 parseDecimal = do 
-
-
--}
+  num <- many1(digit)
+  char '.'
+  frac <- many1(digit)
+  let dec = num ++ "." ++ frac
+  return $ Float $ fst $ readFloat dec !! 0
 
 parseEscapedChar = do 
   char '\\'
@@ -108,6 +112,7 @@ parseString = do
 
 parseExpr :: Parser LispVal
 parseExpr =   
+  try(parseDecimal) <|>
   parseNumber  <|>
   parseChar <|> 
   parseAtom <|>
