@@ -78,7 +78,7 @@ parseHexNumber = do
 {- Parser for Integer, base 10-}
 parseDecimalNumber :: Parser LispVal
 parseDecimalNumber = do
-  {- TODO: figure out how to get an optional #d to work here: try (string "#d")-}
+  try (many(string "#d"))
   num <- many1 (digit)
   return $ (Number . read) $ num
 
