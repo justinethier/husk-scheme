@@ -69,6 +69,12 @@ parseChar = do
  - TODO: add #o, #b support
  - -}
 
+parseOctalNumber :: Parser LispVal
+parseOctalNumber = do
+  try (string "#o")
+  num <- many1(oneOf "01234567")
+  return $ Number $ fst $ readOct num !! 0
+
 parseHexNumber :: Parser LispVal
 parseHexNumber = do
   try (string "#x")
@@ -83,7 +89,7 @@ parseDecimalNumber = do
   return $ (Number . read) $ num
 
 parseNumber :: Parser LispVal
-parseNumber = parseHexNumber <|> parseDecimalNumber <?> "Unable to parse number"
+parseNumber = parseDecimalNumber <|> parseHexNumber <|> parseOctalNumber <?> "Unable to parse number"
 
 {- Parser for floating points -}
 parseDecimal :: Parser LispVal
