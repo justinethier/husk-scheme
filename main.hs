@@ -1,5 +1,5 @@
-{- Hello, world from Haskell 
- -
+{- For now, a simple demonstration of a Hello, world from Haskell 
+ - This file will be remove or repurposed in the future...
  - -}
 module Main where
 import System.Environment
