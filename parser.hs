@@ -12,9 +12,11 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 
 
 main :: IO ()
-main = do
+main = getArgs >>= print . eval . readExpr . head
+{-
+do
 	args <- getArgs
-	putStrLn (readExpr (args !! 0))
+	putStrLn (readExpr (args !! 0))-}
 
 data LispVal = Atom String
 	| List [LispVal]
@@ -26,13 +28,13 @@ data LispVal = Atom String
 	| Bool Bool
 
 showVal :: LispVal -> String
-showVal (String contents) = "str - \"" ++ contents ++ "\""
-showVal (Char chr) = "chr: " ++ [chr] {- TODO: this is only temporary, for testing-}
+showVal (String contents) = "\"" ++ contents ++ "\""
+showVal (Char chr) = [chr] {- TODO: this is only temporary, for testing-}
 showVal (Atom name) = name
 showVal (Number contents) = show contents
 showVal (Float contents) = show contents
-showVal (Bool True) = "TODO: #t"
-showVal (Bool False) = "TODO: #f"
+showVal (Bool True) = "#t"
+showVal (Bool False) = "#f"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
 
@@ -68,10 +70,6 @@ parseChar = do
     "space"   -> Char ' '
     "newline" -> Char '\n'
     _         -> Char c {- TODO: err if invalid char -}
-
-{- TODO: #d, #x broken right now, since atom matches them
- - TODO: add #o, #b support
- - -}
 
 parseOctalNumber :: Parser LispVal
 parseOctalNumber = do
@@ -148,6 +146,10 @@ parseQuoted = do
   x <- parseExpr
   return $ List [Atom "quote", x]
 
+{- TODO: do exercises from parsing, bottom of page to add
+ -       backquote, vector support
+ - -}
+
 parseExpr :: Parser LispVal
 parseExpr = try(parseDecimal) 
   <|> parseNumber
@@ -161,8 +163,24 @@ parseExpr = try(parseDecimal)
          return x
   <?> "Expression"
 
-readExpr :: String -> String
+{- Eval section -}
+eval :: LispVal -> LispVal
+eval val@(String _) = val
+eval val@(Char _) = val
+eval val@(Number _) = val
+eval val@(Float _) = val
+eval val@(Bool _) = val
+eval (List [Atom "quote", val]) = val
+
+{- TODO: pick up this section "next time"
+eval (List (Atom func : args)) = apply func $ map eval args
+
+apply :: String -> [LispVal] -> LispVal
+apply func args = maybe (Bool False) ($ args) $ lookup func primitives-}
+{- end Eval section-}
+
+readExpr :: String -> LispVal
 readExpr input = case parse parseExpr "lisp" input of
-	Left err -> "No match: " ++ show err
-	Right val -> "Found " ++ show val
+	Left err -> String $ "No match: " ++ show err
+	Right val -> val {-"Found " ++ show val-}
 
