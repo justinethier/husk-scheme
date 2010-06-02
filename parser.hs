@@ -184,7 +184,8 @@ primitives = [("+", numericBinop (+)),
               ("/", numericBinop div),
               ("mod", numericBinop mod),
               ("quotient", numericBinop quot),
-              ("remainder", numericBinop rem)]
+              ("remainder", numericBinop rem),
+              ("boolean?", isBoolean)] {- TODO: move this into another list?-}
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
 numericBinop op params = Number $ foldl1 op $ map unpackNum params
@@ -197,6 +198,10 @@ unpackNum (String n) = let parsed = reads n in
                              else fst $ parsed !! 0
 unpackNum (List [n]) = unpackNum n
 unpackNum _ = 0
+
+isBoolean :: LispVal -> LispVal
+isBoolean (Bool n) = Bool True
+isBoolean _ = Bool False
 {- end Eval section-}
 
 readExpr :: String -> LispVal
