@@ -1,5 +1,5 @@
 simple_parser: parser.hs
-	ghc -package parsec -o simple_parser parser.hs
+	ghc --make -package parsec -o simple_parser parser.hs
 
 clean:
 	rm -f *.o
