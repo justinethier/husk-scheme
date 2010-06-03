@@ -199,8 +199,8 @@ unpackNum (String n) = let parsed = reads n in
 unpackNum (List [n]) = unpackNum n
 unpackNum _ = 0
 
-isBoolean :: LispVal -> LispVal
-isBoolean (Bool n) = Bool True
+isBoolean :: [LispVal] -> LispVal
+isBoolean ([Bool n]) = Bool True
 isBoolean _ = Bool False
 {- end Eval section-}
 
