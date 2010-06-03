@@ -19,6 +19,7 @@ do
 	args <- getArgs
 	putStrLn (readExpr (args !! 0))-}
 
+{- Error handling code -}
 data LispError = NumArgs Integer [LispVal]
   | TypeMismatch String LispVal
   | Parser ParseError
@@ -38,6 +39,17 @@ showError (NotFunction message func) = message ++ ": " ++ show func
 showError (UnboundVar message varname) = message ++ ": " ++ varname
 
 instance Show LispError where show = showError
+instance Error LispError where
+  noMsg = Default "An error has occurred"
+  strMsg = Default
+
+type ThrowsError = Either LispError
+
+trapError action = catchError action (return . show)
+
+extractValue :: ThrowsError a -> a
+extractValue (Right val) = val
+{- TODO: could error handling code above be moved to its own file? -}
 
 data LispVal = Atom String
 	| List [LispVal]
