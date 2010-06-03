@@ -188,8 +188,11 @@ primitives = [("+", numericBinop (+)),
               ("pair?", isDottedList),
 {- TODO:              ("procedure?", isProcedure),
               ("vector?", isVector),
-			  number?, complex?, real?, rational?, and integer?.
+			  TODO: full numeric tower: number?, complex?, real?, rational?, and integer?.
 			  --}
+              ("number?", isNumber),
+              ("integer?", isInteger),
+              ("real?", isReal),
               ("list?", isList),
               ("symbol?", isSymbol),
 			  ("symbol->string", symbol2String),
@@ -209,6 +212,21 @@ unpackNum (Number n) = n
                              else fst $ parsed !! 0
 unpackNum (List [n]) = unpackNum n-}
 unpackNum _ = 0
+
+{- TODO: must be a better way to implement some of these... -}
+isNumber :: [LispVal] -> LispVal
+isNumber ([Number n]) = Bool True
+isNumber ([Float f]) = Bool True
+isNumber _ = Bool False
+
+isReal :: [LispVal] -> LispVal
+isReal ([Number n]) = Bool True
+isReal ([Float f]) = Bool True
+isReal _ = Bool False
+
+isInteger :: [LispVal] -> LispVal
+isInteger ([Number n]) = Bool True
+isInteger _ = Bool False
 
 isDottedList :: [LispVal] -> LispVal
 isDottedList ([DottedList l d]) = Bool True {- TODO: review code to convince myself why this works -}
