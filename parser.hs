@@ -185,6 +185,15 @@ primitives = [("+", numericBinop (+)),
               ("mod", numericBinop mod),
               ("quotient", numericBinop quot),
               ("remainder", numericBinop rem),
+              ("pair?", isDottedList),
+{- TODO:              ("procedure?", isProcedure),
+              ("vector?", isVector),
+			  number?, complex?, real?, rational?, and integer?.
+			  --}
+              ("list?", isList),
+              ("symbol?", isSymbol),
+              ("char?", isChar),
+              ("string?", isString),
               ("boolean?", isBoolean)] {- TODO: move this into another list?-}
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
@@ -198,6 +207,26 @@ unpackNum (String n) = let parsed = reads n in
                              else fst $ parsed !! 0
 unpackNum (List [n]) = unpackNum n
 unpackNum _ = 0
+
+isDottedList :: [LispVal] -> LispVal
+isDottedList ([DottedList l d]) = Bool True {- TODO: review code to convince myself why this works -}
+isDottedList _ = Bool False
+
+isList :: [LispVal] -> LispVal
+isList ([List a]) = Bool True
+isList _ = Bool False
+
+isSymbol :: [LispVal] -> LispVal
+isSymbol ([Atom a]) = Bool True
+isSymbol _ = Bool False
+
+isChar :: [LispVal] -> LispVal
+isChar ([Char a]) = Bool True
+isChar _ = Bool False
+
+isString :: [LispVal] -> LispVal
+isString ([String s]) = Bool True
+isString _ = Bool False
 
 isBoolean :: [LispVal] -> LispVal
 isBoolean ([Bool n]) = Bool True
