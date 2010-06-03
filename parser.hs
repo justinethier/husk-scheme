@@ -192,20 +192,22 @@ primitives = [("+", numericBinop (+)),
 			  --}
               ("list?", isList),
               ("symbol?", isSymbol),
+			  ("symbol->string", symbol2String),
+			  ("string->symbol", string2Symbol),
               ("char?", isChar),
               ("string?", isString),
-              ("boolean?", isBoolean)] {- TODO: move this into another list?-}
+              ("boolean?", isBoolean)]
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
 numericBinop op params = Number $ foldl1 op $ map unpackNum params
 
 unpackNum :: LispVal -> Integer
 unpackNum (Number n) = n
-unpackNum (String n) = let parsed = reads n in
+{- Obsolete code: unpackNum (String n) = let parsed = reads n in
                            if null parsed
                              then 0
                              else fst $ parsed !! 0
-unpackNum (List [n]) = unpackNum n
+unpackNum (List [n]) = unpackNum n-}
 unpackNum _ = 0
 
 isDottedList :: [LispVal] -> LispVal
@@ -219,6 +221,12 @@ isList _ = Bool False
 isSymbol :: [LispVal] -> LispVal
 isSymbol ([Atom a]) = Bool True
 isSymbol _ = Bool False
+
+symbol2String :: [LispVal] -> LispVal
+symbol2String ([Atom a]) = String a
+
+string2Symbol :: [LispVal] -> LispVal
+string2Symbol ([String s]) = Atom s
 
 isChar :: [LispVal] -> LispVal
 isChar ([Char a]) = Bool True
