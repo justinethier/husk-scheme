@@ -279,11 +279,11 @@ isSymbol _ = return $ Bool False
 
 symbol2String :: [LispVal] -> ThrowsError LispVal
 symbol2String ([Atom a]) = return $ String a
-{-TODO: type error? -}
+symbol2String [notAtom] = throwError $ TypeMismatch "symbol" notAtom
 
 string2Symbol :: [LispVal] -> ThrowsError LispVal
 string2Symbol ([String s]) = return $ Atom s
-{-TODO: type error? -}
+string2Symbol [notString] = throwError $ TypeMismatch "string" notString
 
 isChar :: [LispVal] -> ThrowsError LispVal
 isChar ([Char a]) = return $ Bool True
