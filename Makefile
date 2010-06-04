@@ -1,7 +1,7 @@
-simple_parser: parser.hs
-	ghc --make -package parsec -o simple_parser parser.hs
+hs2scm: parser.hs
+	ghc --make -package parsec -o hs2scm parser.hs
 
 clean:
 	rm -f *.o
 	rm -f *.hi
-	rm -f simple_parser
+	rm -f hs2scm
