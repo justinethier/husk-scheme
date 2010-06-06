@@ -246,7 +246,7 @@ primitives = [("+", numericBinop (+)),
               ("cons", cons),
               ("eq?", eqv),
               ("eqv?", eqv),
-              {- TODO: ("equal?", equal),-}
+              ("equal?", equal),
 
               ("pair?", isDottedList),
 {- TODO:              ("procedure?", isProcedure),
@@ -263,6 +263,15 @@ primitives = [("+", numericBinop (+)),
               ("char?", isChar),
               ("string?", isString),
               ("boolean?", isBoolean)]
+
+data Unpacker = forall a. Eq a => AnyUnpacker (LispVal -> ThrowsError a)
+
+unpackEquals :: LispVal -> LispVal -> Unpacker -> ThrowsError Bool
+unpackEquals arg1 arg2 (AnyUnpacker unpacker) = 
+  do unpacked1 <- unpacker arg1
+     unpacked2 <- unpacker arg2
+     return $ unpacked1 == unpacked2
+  `catchError` (const $ return False)
 
 boolBinop :: (LispVal -> ThrowsError a) -> (a -> a -> Bool) -> [LispVal] -> ThrowsError LispVal
 boolBinop unpacker op args = if length args /= 2
@@ -331,7 +340,13 @@ eqv [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) &&
                                Left err -> False
                                Right (Bool val) -> val
 
-{- TODO: equal? -}
+equal :: [LispVal] -> ThrowsError LispVal
+equal [arg1, arg2] = do
+  primitiveEquals <- liftM or $ mapM (unpackEquals arg1 arg2)
+                     [AnyUnpacker unpackNum, AnyUnpacker unpackStr, AnyUnpacker unpackBool]
+  eqvEquals <- eqv [arg1, arg2]
+  return $ Bool $ (primitiveEquals || let (Bool x) = eqvEquals in x)
+equal badArgList = throwError $ NumArgs 2 badArgList
 
 {- TODO: must be a better way to implement some of these... -}
 isNumber :: [LispVal] -> ThrowsError LispVal
