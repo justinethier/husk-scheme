@@ -346,6 +346,10 @@ eqv [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) &&
 eqv [_, _] = return $ Bool False
 eqv badArgList = throwError $ NumArgs 2 badArgList
 
+{- TODO: fix bug from exercise #2:
+ -       equal? has a bug in that a list of values is compared using eqv? instead of equal?.
+ -       For example, (equal? '(1 "2") '(1 2)) = #f, while you'd expect it to be true. 
+ - -}
 equal :: [LispVal] -> ThrowsError LispVal
 equal [arg1, arg2] = do
   primitiveEquals <- liftM or $ mapM (unpackEquals arg1 arg2)
