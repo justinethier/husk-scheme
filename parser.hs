@@ -223,14 +223,16 @@ eval (List (Atom "cond" : args)) = mapM eval args >>= findCond
 eval (List (Atom func : args)) = mapM eval args >>= apply func
 eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
+-- At least this compiles, but still need to break out (test, expr) from 1st conditional
 findCond :: [LispVal] -> ThrowsError LispVal
-findCond [List (cond1 : rest)]  = --return $ Bool True 
-  do test <- cond1 !! 0 {- TODO: need to find a better (working) way to do this... -}
+findCond [List (cond1 : rest)] = return cond1 --return $ Bool True 
+{-  do test <- unpacker $ cond1 !! 0 {- TODO: need to find a better (working) way to do this... -}
      expr <- cond1 !! 1
      etest <- eval test
      case etest of
        Bool True -> eval expr
        _ -> findCond rest
+-}
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func)
