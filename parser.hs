@@ -225,9 +225,8 @@ eval (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional-}
 
 eval (List (Atom "cond" : clauses)) = --mapM eval clauses >>= findCond
     do let clause = clauses !! 0
-       --test <- eval $ clause !! 0
        case clause of -- test of
-         Bool True -> eval $ Bool True
+         List c -> eval $ c !! 0
          otherwise -> eval $ Bool False
 
 eval (List (Atom func : args)) = mapM eval args >>= apply func
