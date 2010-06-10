@@ -218,14 +218,30 @@ eval (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional-}
          Bool True -> eval conseq
          otherwise -> eval ""-}
 
-eval (List (Atom "cond" : args)) = mapM eval args >>= findCond
+-- how the hell do I extract a clause from this? badForm output offers clues.
+--eval (List (Atom "cond" : clauses)) = --mapM eval clauses >>= findCond
+--  do c <- eval $ clauses !! 0
+--     return c
+
+eval (List (Atom "cond" : clauses)) = --mapM eval clauses >>= findCond
+    do let clause = clauses !! 0
+       --test <- eval $ clause !! 0
+       case clause of -- test of
+         Bool True -> eval $ Bool True
+         otherwise -> eval $ Bool False
 
 eval (List (Atom func : args)) = mapM eval args >>= apply func
 eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
+--testCond :: [LispVal] -> LispVal
+--testCond [Bool test, _] = return test
+--testCond notCond = throwError $ TypeMismatch "List(Bool, List)" notCond
+{-
 -- At least this compiles, but still need to break out (test, expr) from 1st conditional
 findCond :: [LispVal] -> ThrowsError LispVal
-findCond [List (cond1 : rest)] = return cond1 --return $ Bool True 
+findCond [List(clause : clauses)] = findCond(clauses) --return $ Bool True 
+findCond [clause] = return clause --return $ Bool True 
+-}
 {-  do test <- unpacker $ cond1 !! 0 {- TODO: need to find a better (working) way to do this... -}
      expr <- cond1 !! 1
      etest <- eval test
