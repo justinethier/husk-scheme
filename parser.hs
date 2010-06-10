@@ -224,10 +224,17 @@ eval (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional-}
 --     return c
 
 eval (List (Atom "cond" : clauses)) = --mapM eval clauses >>= findCond
-    do let clause = clauses !! 0
-       case clause of -- test of
-         List c -> eval $ c !! 0
-         otherwise -> eval $ Bool False
+    do let c = clauses !! 0  -- First clause
+       let cs = clauses !! 1 -- other clauses
+       test <- case c of -- test of
+         List cond -> eval $ cond !! 0
+         -- TODO: some kind of error?  otherwise -> eval $ Bool False
+       --expr <- case c of -- test of
+       --  List cond -> cond !! 0 !! 0
+         -- TODO: some kind of error?  otherwise -> eval $ Bool False
+       case test of
+         Bool True -> eval $ String "TODO: eval expr"
+         otherwise -> eval $ String "TODO: recursively eval clauses"
 
 eval (List (Atom func : args)) = mapM eval args >>= apply func
 eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
