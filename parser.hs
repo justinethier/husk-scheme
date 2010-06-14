@@ -213,13 +213,15 @@ eval (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional-}
          otherwise -> eval conseq
          {- ex #1: only allow boolean conditions: otherwise -> throwError $ TypeMismatch "bool" otherwise-}
 
-{-eval (List [Atom "if", pred, conseq]) = 
+-- TODO: implement this 'if' form, such that it returns nothing if the pred evaluates to false
+eval (List [Atom "if", pred, conseq]) = 
     do result <- eval pred
        case result of
          Bool True -> eval conseq
-         otherwise -> eval ""-}
+         otherwise -> eval $ List []
 
-eval (List (Atom "cond" : clauses)) = --mapM eval clauses >>= findCond
+-- TODO: return nothing if all cond cases are false
+eval (List (Atom "cond" : clauses)) = 
     do let c =  clauses !! 0 -- First clause
        let cs = clauses !! 1 -- other clauses
        test <- case c of
@@ -233,6 +235,7 @@ eval (List (Atom "cond" : clauses)) = --mapM eval clauses >>= findCond
 eval (List (Atom func : args)) = mapM eval args >>= apply func
 eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
+-- Helper function for evaluating 'cond'
 evalCond :: LispVal -> ThrowsError LispVal
 evalCond (List [test, expr]) = eval expr
 evalCond badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
