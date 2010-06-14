@@ -232,6 +232,16 @@ eval (List (Atom "cond" : clauses)) =
          Bool True -> evalCond c
          otherwise -> eval $ List [Atom "cond", cs]
 
+eval (List [Atom "case", key, clauses]) = 
+    do let ekey = eval key
+       --test <- case c of
+       --  List (Atom "else" : exprs) -> eval $ Bool True
+       --  List (List(cond) : exprs) -> any (ekey==) cond -- TODO: search for key in cond
+       --case test of
+       --  Bool True -> evalCond c -- might just work...
+       --  otherwise -> eval $ List [Atom "case", key, cs] -- TODO: this is an *extremely* inefficient implementation!!
+	   evalCase(key, clauses)
+
 eval (List (Atom func : args)) = mapM eval args >>= apply func
 eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
@@ -240,6 +250,9 @@ evalCond :: LispVal -> ThrowsError LispVal
 evalCond (List [test, expr]) = eval expr
 evalCond (List (test : expr)) = last $ map eval expr -- TODO: all expr's need to be evaluated, not sure happening right now
 evalCond badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
+
+evalCase key List(c:cs) = 
+    do let found = 
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func)
