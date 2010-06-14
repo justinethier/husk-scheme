@@ -225,8 +225,8 @@ eval (List (Atom "cond" : clauses)) =
     do let c =  clauses !! 0 -- First clause
        let cs = clauses !! 1 -- other clauses
        test <- case c of
-         List [Atom "else", expr] -> eval $ Bool True
-         List [cond, expr] -> eval cond
+         List (Atom "else" : expr) -> eval $ Bool True
+         List (cond : expr) -> eval cond
          -- TODO: some kind of error?  otherwise -> eval $ Bool False
        case test of
          Bool True -> evalCond c
@@ -238,7 +238,8 @@ eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 -- Helper function for evaluating 'cond'
 evalCond :: LispVal -> ThrowsError LispVal
 evalCond (List [test, expr]) = eval expr
-evalCond badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
+evalCond (List (test : expr)) = last $ map eval expr -- TODO: all expr's need to be evaluated, not sure happening right now
+evalCond badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func)
@@ -280,6 +281,7 @@ primitives = [("+", numericBinop (+)),
               ("vector?", isVector),
 			  TODO: full numeric tower: number?, complex?, real?, rational?, and integer?.
 			  --}
+              ("print", printLispVal),
               ("number?", isNumber),
               ("integer?", isInteger),
               ("real?", isReal),
@@ -384,6 +386,11 @@ equal [arg1, arg2] = do
 equal badArgList = throwError $ NumArgs 2 badArgList
 
 {- TODO: must be a better way to implement some of these... -}
+printLispVal :: [LispVal] -> ThrowsError LispVal
+printLispVal [lv] = 
+  do let tmp = show lv
+     return lv
+
 isNumber :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number n]) = return $ Bool True
 isNumber ([Float f]) = return $ Bool True
