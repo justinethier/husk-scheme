@@ -7,6 +7,7 @@ module Main where
 import Control.Monad
 import Control.Monad.Error
 import Char
+--import List
 import Numeric
 import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
@@ -218,43 +219,24 @@ eval (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional-}
          Bool True -> eval conseq
          otherwise -> eval ""-}
 
--- how the hell do I extract a clause from this? badForm output offers clues.
---eval (List (Atom "cond" : clauses)) = --mapM eval clauses >>= findCond
---  do c <- eval $ clauses !! 0
---     return c
-
 eval (List (Atom "cond" : clauses)) = --mapM eval clauses >>= findCond
-    do let c = clauses !! 0  -- First clause
+    do let c =  clauses !! 0 -- First clause
        let cs = clauses !! 1 -- other clauses
-       test <- case c of -- test of
-         List cond -> eval $ cond !! 0
-         -- TODO: some kind of error?  otherwise -> eval $ Bool False
-       --expr <- case c of -- test of
-       --  List cond -> cond !! 0 !! 0
+       test <- case c of
+         List [cond, expr] -> eval cond
          -- TODO: some kind of error?  otherwise -> eval $ Bool False
        case test of
-         Bool True -> eval $ String "TODO: eval expr"
-         otherwise -> eval $ String "TODO: recursively eval clauses"
+         Bool True -> evalCond c
+         Atom "else" -> evalCond c
+         String "else" -> evalCond c
+         otherwise -> eval $ List [Atom "cond", cs]
 
 eval (List (Atom func : args)) = mapM eval args >>= apply func
 eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
---testCond :: [LispVal] -> LispVal
---testCond [Bool test, _] = return test
---testCond notCond = throwError $ TypeMismatch "List(Bool, List)" notCond
-{-
--- At least this compiles, but still need to break out (test, expr) from 1st conditional
-findCond :: [LispVal] -> ThrowsError LispVal
-findCond [List(clause : clauses)] = findCond(clauses) --return $ Bool True 
-findCond [clause] = return clause --return $ Bool True 
--}
-{-  do test <- unpacker $ cond1 !! 0 {- TODO: need to find a better (working) way to do this... -}
-     expr <- cond1 !! 1
-     etest <- eval test
-     case etest of
-       Bool True -> eval expr
-       _ -> findCond rest
--}
+evalCond :: LispVal -> ThrowsError LispVal
+evalCond (List [test, expr]) = eval expr
+evalCond badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func)
