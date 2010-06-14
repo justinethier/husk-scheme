@@ -223,12 +223,11 @@ eval (List (Atom "cond" : clauses)) = --mapM eval clauses >>= findCond
     do let c =  clauses !! 0 -- First clause
        let cs = clauses !! 1 -- other clauses
        test <- case c of
+         List [Atom "else", expr] -> eval $ Bool True
          List [cond, expr] -> eval cond
          -- TODO: some kind of error?  otherwise -> eval $ Bool False
        case test of
          Bool True -> evalCond c
-         Atom "else" -> evalCond c
-         String "else" -> evalCond c
          otherwise -> eval $ List [Atom "cond", cs]
 
 eval (List (Atom func : args)) = mapM eval args >>= apply func
