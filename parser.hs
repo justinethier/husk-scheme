@@ -232,9 +232,10 @@ eval (List (Atom "cond" : clauses)) =
          Bool True -> evalCond c
          otherwise -> eval $ List [Atom "cond", cs]
 
-eval (List [Atom "case", key, clauses]) = 
+{- TODO: case 
+ - eval (List [Atom "case", key, clauses]) = 
     do let ekey = eval key
-       evalCase(ekey, clauses)
+       evalCase ekey clauses -}
 
 eval (List (Atom func : args)) = mapM eval args >>= apply func
 eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
@@ -245,15 +246,20 @@ evalCond (List [test, expr]) = eval expr
 evalCond (List (test : expr)) = last $ map eval expr -- TODO: all expr's need to be evaluated, not sure happening right now
 evalCond badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
+{- TODO: support function for 'case'
 --evalCase :: LispVal -> LispVal -> ThrowsError LispVal
-evalCase key (List (c:cs)) = 
-    do test <- case c of
-         List (Atom "else" : exprs) -> eval $ Bool True
-         List (List(cond) : exprs) -> eval $ Bool $ any (key==) cond -- TODO: search for key in cond
-       case test of
-         Bool True -> evalCond c -- might just work...
-         otherwise -> eval $ List [Atom "case", key, cs]
+evalCase key (List cases) = 
+    do   let c = cases !! 0
+         let cs = cases !! 1
+         test <- case c of
+           List (Atom "else" : exprs) -> eval $ Bool True
+           List (List(cond) : exprs) -> eval $ Bool False -- $ any (key equal) cond -- TODO: search for key in cond
+           badForm -> throwError $ BadSpecialForm "evalCase" badForm
+         case test of
+           Bool True -> evalCond c -- might just work...
+           otherwise -> evalCase key cs
 evalCase key badForm = throwError $ BadSpecialForm "evalCase: Unrecognized special form" badForm
+-}
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func)
