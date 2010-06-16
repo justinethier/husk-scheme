@@ -311,6 +311,7 @@ primitives = [("+", numericBinop (+)),
 			  ("string->symbol", string2Symbol),
               ("char?", isChar),
               ("string?", isString),
+              ("make-string", makeString),
               ("boolean?", isBoolean)]
 
 data Unpacker = forall a. Eq a => AnyUnpacker (LispVal -> ThrowsError a)
@@ -410,6 +411,17 @@ printLispVal :: [LispVal] -> ThrowsError LispVal
 printLispVal [lv] = 
   do let tmp = show lv
      return lv
+
+makeString :: [LispVal] -> ThrowsError LispVal
+makeString [(Number n)] = return $ String " "
+makeString [(Number n), (Char c)] = return $ String [c]
+makeString badArgList = throwError $ NumArgs 1 badArgList
+
+--expandString [(Number n), (Char chr)] = expandString [n, chr, String ""]
+expandString [(Number n), (Char chr), (String s)] = do
+  case n of
+    0 -> s
+    _ -> expandString [(n - 1), chr, (s ++ [chr])]
 
 isNumber :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number n]) = return $ Bool True
