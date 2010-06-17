@@ -311,6 +311,7 @@ primitives = [("+", numericBinop (+)),
 			  ("string->symbol", string2Symbol),
               ("char?", isChar),
               ("string?", isString),
+              ("string", buildString),
               ("make-string", makeString),
               ("boolean?", isBoolean)]
 
@@ -412,12 +413,16 @@ printLispVal [lv] =
   do let tmp = show lv
      return lv
 
+-- TODO: (string) does not work yet
+buildString :: [LispVal] -> ThrowsError LispVal
+buildString [List (Char c : cs)] = return $ String [c] -- TODO: ++ String $ buildString List cs
+buildString [badType] = throwError $ TypeMismatch "[Char]" badType
+
 makeString :: [LispVal] -> ThrowsError LispVal
 makeString [(Number n)] = return $ doMakeString n ' ' ""
 makeString [(Number n), (Char c)] = return $ doMakeString n c ""
 makeString badArgList = throwError $ NumArgs 1 badArgList
 
-doMakeString :: Number -> Char -> String -> LispVal -- = expandString [n, chr, String ""]
 doMakeString n chr s = 
     if n == 0 
        then String s
