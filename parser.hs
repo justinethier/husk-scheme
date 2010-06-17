@@ -313,6 +313,7 @@ primitives = [("+", numericBinop (+)),
               ("string?", isString),
               ("string", buildString),
               ("make-string", makeString),
+              ("string-length", stringLength),
               ("boolean?", isBoolean)]
 
 data Unpacker = forall a. Eq a => AnyUnpacker (LispVal -> ThrowsError a)
@@ -427,6 +428,11 @@ doMakeString n chr s =
     if n == 0 
        then String s
        else doMakeString (n - 1) chr (s ++ [chr])
+
+stringLength :: [LispVal] -> ThrowsError LispVal
+stringLength [String s] = return $ Number $ foldr (const (+1)) 0 s
+-- TODO: read what foldr means, understand why above works
+-- TODO: type error? arg error?
 
 isNumber :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number n]) = return $ Bool True
