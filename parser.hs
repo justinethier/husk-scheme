@@ -314,6 +314,7 @@ primitives = [("+", numericBinop (+)),
               ("string", buildString),
               ("make-string", makeString),
               ("string-length", stringLength),
+              ("string-ref", stringRef),
               ("boolean?", isBoolean)]
 
 data Unpacker = forall a. Eq a => AnyUnpacker (LispVal -> ThrowsError a)
@@ -433,6 +434,10 @@ stringLength :: [LispVal] -> ThrowsError LispVal
 stringLength [String s] = return $ Number $ foldr (const (+1)) 0 s
 -- TODO: read what foldr means, understand why above works
 -- TODO: type error? arg error?
+
+stringRef :: [LispVal] -> ThrowsError LispVal
+stringRef [(String s), (Number k)] = return Char $ s !! k 
+-- TODO: error?
 
 isNumber :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number n]) = return $ Bool True
