@@ -310,11 +310,17 @@ primitives = [("+", numericBinop (+)),
 			  ("symbol->string", symbol2String),
 			  ("string->symbol", string2Symbol),
               ("char?", isChar),
+
               ("string?", isString),
               ("string", buildString),
               ("make-string", makeString),
               ("string-length", stringLength),
               ("string-ref", stringRef),
+-- TODO:              ("string-set!", stringSet),
+-- TODO: string comparison functions
+              ("substring", substring),
+-- TODO:              ("string-append", stringAppend),
+
               ("boolean?", isBoolean)]
 
 data Unpacker = forall a. Eq a => AnyUnpacker (LispVal -> ThrowsError a)
@@ -415,6 +421,8 @@ printLispVal [lv] =
   do let tmp = show lv
      return lv
 
+-------------- String Functions --------------
+--
 -- TODO: (string) does not work yet
 buildString :: [LispVal] -> ThrowsError LispVal
 buildString [List (Char c : cs)] = return $ String [c] -- TODO: ++ String $ buildString List cs
@@ -441,6 +449,14 @@ stringRef [(String s), (Number k)] = return $ Char $ s !! fromInteger k
 stringRef [badArgList] = throwError $ TypeMismatch "string number" badArgList
 stringRef badArgList = throwError $ NumArgs 2 badArgList
 -- TODO: error?
+
+substring :: [LispVal] -> ThrowsError LispVal
+substring [(String s), (Number start), (Number end)] = 
+  do let length = end - start
+     return $ (take length . drop start) s -- TODO: fix syntax errors on this line
+
+--stringAppend :: [LispVal] -> ThrowsError LispVal
+--stringAppend = throwError $ Default "Not yet implemented"
 
 isNumber :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number n]) = return $ Bool True
