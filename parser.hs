@@ -432,11 +432,14 @@ doMakeString n chr s =
 
 stringLength :: [LispVal] -> ThrowsError LispVal
 stringLength [String s] = return $ Number $ foldr (const (+1)) 0 s
--- TODO: read what foldr means, understand why above works
+stringLength [badType] = throwError $ TypeMismatch "string" badType
+stringLength badArgList = throwError $ NumArgs 1 badArgList
 -- TODO: type error? arg error?
 
 stringRef :: [LispVal] -> ThrowsError LispVal
-stringRef [(String s), (Number k)] = return Char $ s !! k 
+stringRef [(String s), (Number k)] = return $ Char $ s !! fromInteger k
+stringRef [badArgList] = throwError $ TypeMismatch "string number" badArgList
+stringRef badArgList = throwError $ NumArgs 2 badArgList
 -- TODO: error?
 
 isNumber :: [LispVal] -> ThrowsError LispVal
