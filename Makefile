@@ -1,7 +1,7 @@
-hs2scm: parser.hs
-	ghc --make -package parsec -fglasgow-exts -o hs2scm parser.hs
+skim: parser.hs
+	ghc --make -package parsec -fglasgow-exts -o skim parser.hs
 
 clean:
 	rm -f *.o
 	rm -f *.hi
-	rm -f hs2scm
+	rm -f skim
