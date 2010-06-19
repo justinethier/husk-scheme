@@ -425,8 +425,15 @@ printLispVal [lv] =
 --
 -- TODO: (string) does not work yet
 buildString :: [LispVal] -> ThrowsError LispVal
-buildString [List (Char c : cs)] = return $ String [c] -- TODO: ++ String $ buildString List cs
-buildString [badType] = throwError $ TypeMismatch "[Char]" badType
+buildString list = do
+  let lv = list !! 0
+  let lvs = list !! 1
+  let rest = buildString [lvs]
+  cs <- case rest of
+    String s -> s
+  case lv of
+    Char c -> return $ String $ [c] ++ cs --"test"
+    badType -> throwError $ TypeMismatch "character" badType
 
 makeString :: [LispVal] -> ThrowsError LispVal
 makeString [(Number n)] = return $ doMakeString n ' ' ""
