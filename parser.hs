@@ -452,8 +452,10 @@ stringRef badArgList = throwError $ NumArgs 2 badArgList
 
 substring :: [LispVal] -> ThrowsError LispVal
 substring [(String s), (Number start), (Number end)] = 
-  do let length = end - start
-     return $ (take length . drop start) s -- TODO: fix syntax errors on this line
+  do let length = fromInteger $ end - start
+     let begin = fromInteger start 
+     return $ String $ (take length . drop begin) s
+-- TODO: error handling
 
 --stringAppend :: [LispVal] -> ThrowsError LispVal
 --stringAppend = throwError $ Default "Not yet implemented"
