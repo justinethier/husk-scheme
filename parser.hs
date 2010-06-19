@@ -320,6 +320,10 @@ primitives = [("+", numericBinop (+)),
 -- TODO: string comparison functions
               ("substring", substring),
 -- TODO:              ("string-append", stringAppend),
+-- TODO:              ("string->list", TBD),
+-- TODO:              ("list->string", TBD),
+-- TODO:              ("string-copy", TBD),
+-- TODO:              ("string-fill!", TBD),
 
               ("boolean?", isBoolean)]
 
@@ -425,14 +429,14 @@ printLispVal [lv] =
 --
 -- TODO: (string) does not work yet
 buildString :: [LispVal] -> ThrowsError LispVal
-buildString list = do
-  let lv = list !! 0
-  let lvs = list !! 1
-  let rest = buildString [lvs]
-  cs <- case rest of
-    String s -> s
+buildString (lv:lvs) = do --list = do
+--  let lv = list !! 0
+--  let lvs = list !! 1
+  let cs = String "" --buildString lvs
+--  cs <- case rest of
+--    [Char] s -> String s
   case lv of
-    Char c -> return $ String $ [c] ++ cs --"test"
+    Char c -> return $ String $ [c] ++ "TODO"
     badType -> throwError $ TypeMismatch "character" badType
 
 makeString :: [LispVal] -> ThrowsError LispVal
