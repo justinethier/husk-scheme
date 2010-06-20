@@ -322,7 +322,7 @@ primitives = [("+", numericBinop (+)),
 -- TODO:              ("string-append", stringAppend),
 -- TODO:              ("string->list", TBD),
 -- TODO:              ("list->string", TBD),
--- TODO:              ("string-copy", TBD),
+              ("string-copy", stringCopy),
 -- TODO:              ("string-fill!", TBD),
 
               ("boolean?", isBoolean)]
@@ -457,7 +457,7 @@ stringLength badArgList = throwError $ NumArgs 1 badArgList
 
 stringRef :: [LispVal] -> ThrowsError LispVal
 stringRef [(String s), (Number k)] = return $ Char $ s !! fromInteger k
-stringRef [badArgList] = throwError $ TypeMismatch "string number" badArgList
+stringRef [badType] = throwError $ TypeMismatch "string number" badType
 stringRef badArgList = throwError $ NumArgs 2 badArgList
 -- TODO: error?
 
@@ -470,6 +470,11 @@ substring [(String s), (Number start), (Number end)] =
 
 --stringAppend :: [LispVal] -> ThrowsError LispVal
 --stringAppend = throwError $ Default "Not yet implemented"
+
+stringCopy :: [LispVal] -> ThrowsError LispVal
+stringCopy [String s] = return $ String s
+stringCopy [badType] = throwError $ TypeMismatch "string" badType
+stringCopy badArgList = throwError $ NumArgs 2 badArgList
 
 isNumber :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number n]) = return $ Bool True
