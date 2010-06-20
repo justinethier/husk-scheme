@@ -319,7 +319,7 @@ primitives = [("+", numericBinop (+)),
 -- TODO:              ("string-set!", stringSet),
 -- TODO: string comparison functions
               ("substring", substring),
--- TODO:              ("string-append", stringAppend),
+              ("string-append", stringAppend),
 -- TODO:              ("string->list", TBD),
 -- TODO:              ("list->string", TBD),
               ("string-copy", stringCopy),
@@ -468,8 +468,17 @@ substring [(String s), (Number start), (Number end)] =
      return $ String $ (take length . drop begin) s
 -- TODO: error handling
 
---stringAppend :: [LispVal] -> ThrowsError LispVal
---stringAppend = throwError $ Default "Not yet implemented"
+stringAppend :: [LispVal] -> ThrowsError LispVal
+stringAppend [(String s)] = return $ String s -- Needed for "last" string value
+stringAppend (String st:sts) = do
+  rest <- stringAppend sts
+-- TODO: need to use <- instead of "let = " here, for type problems. Why???
+-- TBD: this probably will solve type problems when processing other lists of objects in the other string functions
+  case rest of
+    String s -> return $ String $ st ++ s
+    otherwise -> throwError $ TypeMismatch "string" otherwise
+stringAppend [badType] = throwError $ TypeMismatch "string" badType
+stringAppend badArgList = throwError $ NumArgs 1 badArgList
 
 stringCopy :: [LispVal] -> ThrowsError LispVal
 stringCopy [String s] = return $ String s
