@@ -485,8 +485,7 @@ stringToList [(String s)] = do
   case len of
     0 -> return $ List [] 
     1 -> return $ List [Char $ s !! 0]
-    _ -> return $ List [Char $ s !! 1]
---    _ -> return $ List [Char $ s !! 0]
+    _ -> return $ concat [List [Char $ s !! 0], stringToList $ String $ tail s]
 -- TODO: bad type error
 -- TODO: bad num args error
 {-
