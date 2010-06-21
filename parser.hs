@@ -320,7 +320,7 @@ primitives = [("+", numericBinop (+)),
 -- TODO: string comparison functions
               ("substring", substring),
               ("string-append", stringAppend),
--- TODO:              ("string->list", TBD),
+              ("string->list", stringToList),
 -- TODO:              ("list->string", TBD),
               ("string-copy", stringCopy),
 -- TODO:              ("string-fill!", TBD),
@@ -477,6 +477,15 @@ stringAppend (String st:sts) = do
     otherwise -> throwError $ TypeMismatch "string" otherwise
 stringAppend [badType] = throwError $ TypeMismatch "string" badType
 stringAppend badArgList = throwError $ NumArgs 1 badArgList
+
+stringToList :: [LispVal] -> ThrowsError LispVal
+stringToList [(String s)] = return $ doStringToList [s] 
+-- TODO: bad type error
+-- TODO: bad num args error
+
+doStringToList :: [LispVal] -> LispVal
+doStringToList [(String s)] = do
+  return s
 
 stringCopy :: [LispVal] -> ThrowsError LispVal
 stringCopy [String s] = return $ String s
