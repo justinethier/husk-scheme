@@ -448,7 +448,7 @@ doMakeString n chr s =
        else doMakeString (n - 1) chr (s ++ [chr])
 
 stringLength :: [LispVal] -> ThrowsError LispVal
-stringLength [String s] = return $ Number $ foldr (const (+1)) 0 s
+stringLength [String s] = return $ Number $ foldr (const (+1)) 0 s -- TODO: length s
 stringLength [badType] = throwError $ TypeMismatch "string" badType
 stringLength badArgList = throwError $ NumArgs 1 badArgList
 -- TODO: type error? arg error?
@@ -478,15 +478,22 @@ stringAppend (String st:sts) = do
 stringAppend [badType] = throwError $ TypeMismatch "string" badType
 stringAppend badArgList = throwError $ NumArgs 1 badArgList
 
+-- TODO: this still does not work...
 stringToList :: [LispVal] -> ThrowsError LispVal
-stringToList [(String s)] = return $ doStringToList [s] 
+stringToList [(String s)] = do
+  let len = length s
+  case len of
+    0 -> return $ List [] 
+    1 -> return $ List [Char $ s !! 0]
+    _ -> return $ List [Char $ s !! 1]
+--    _ -> return $ List [Char $ s !! 0]
 -- TODO: bad type error
 -- TODO: bad num args error
-
+{-
 doStringToList :: [LispVal] -> LispVal
 doStringToList [(String s)] = do
   return s
-
+-}
 stringCopy :: [LispVal] -> ThrowsError LispVal
 stringCopy [String s] = return $ String s
 stringCopy [badType] = throwError $ TypeMismatch "string" badType
