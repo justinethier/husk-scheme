@@ -426,18 +426,16 @@ printLispVal [lv] =
      return lv
 
 -------------- String Functions --------------
---
--- TODO: (string) does not work yet
+
 buildString :: [LispVal] -> ThrowsError LispVal
-buildString (lv:lvs) = do --list = do
---  let lv = list !! 0
---  let lvs = list !! 1
-  let cs = String "" --buildString lvs
---  cs <- case rest of
---    [Char] s -> String s
-  case lv of
-    Char c -> return $ String $ [c] ++ "TODO"
+buildString [(Char c)] = return $ String [c]
+buildString (Char c:rest) = do
+  cs <- buildString rest
+  case cs of
+    String s -> return $ String $ [c] ++ s
     badType -> throwError $ TypeMismatch "character" badType
+buildString [badType] = throwError $ TypeMismatch "character" badType
+buildString badArgList = throwError $ NumArgs 1 badArgList -- TODO: wrong error for this
 
 makeString :: [LispVal] -> ThrowsError LispVal
 makeString [(Number n)] = return $ doMakeString n ' ' ""
@@ -472,7 +470,7 @@ stringAppend :: [LispVal] -> ThrowsError LispVal
 stringAppend [(String s)] = return $ String s -- Needed for "last" string value
 stringAppend (String st:sts) = do
   rest <- stringAppend sts
--- TODO: need to use <- instead of "let = " here, for type problems. Why???
+-- TODO: I needed to use <- instead of "let = " here, for type problems. Why???
 -- TBD: this probably will solve type problems when processing other lists of objects in the other string functions
   case rest of
     String s -> return $ String $ st ++ s
