@@ -7,7 +7,7 @@ module Main where
 import Control.Monad
 import Control.Monad.Error
 import Char
---import List
+import List
 import IO hiding (try)
 import Numeric
 import System.Environment
@@ -267,13 +267,26 @@ eval (List (Atom "cond" : clauses)) =
          Bool True -> evalCond c
          otherwise -> eval $ List [Atom "cond", cs]
 
-{- TODO: case 
- - eval (List [Atom "case", key, clauses]) = 
-    do let ekey = eval key
-       evalCase ekey clauses -}
+eval (List [Atom "case", key, clauses]) = 
+    do ekey <- eval key
+       evalCase $ List [ekey, clauses]
 
 eval (List (Atom func : args)) = mapM eval args >>= apply func
 eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
+
+evalCase :: LispVal -> ThrowsError LispVal
+evalCase (List (key : cases)) = 
+    do   let c = cases !! 0
+         let cs = cases !! 1
+         ekey <- eval key
+         case c of
+           List (Atom "else" : exprs) -> last $ map eval exprs
+           List (List(cond) : exprs) -> if True == True --(List.find (== key) exprs) == key 
+                                           then last $ map eval exprs
+                                           else eval $ evalCase [ekey, cs]
+           --badForm -> throwError $ BadSpecialForm "evalCase" badForm
+
+--TODO: evalCase key badForm = throwError $ BadSpecialForm "evalCase: Unrecognized special form" badForm
 
 -- Helper function for evaluating 'cond'
 evalCond :: LispVal -> ThrowsError LispVal
@@ -281,20 +294,6 @@ evalCond (List [test, expr]) = eval expr
 evalCond (List (test : expr)) = last $ map eval expr -- TODO: all expr's need to be evaluated, not sure happening right now
 evalCond badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
-{- TODO: support function for 'case'
---evalCase :: LispVal -> LispVal -> ThrowsError LispVal
-evalCase key (List cases) = 
-    do   let c = cases !! 0
-         let cs = cases !! 1
-         test <- case c of
-           List (Atom "else" : exprs) -> eval $ Bool True
-           List (List(cond) : exprs) -> eval $ Bool False -- $ any (key equal) cond -- TODO: search for key in cond
-           badForm -> throwError $ BadSpecialForm "evalCase" badForm
-         case test of
-           Bool True -> evalCond c -- might just work...
-           otherwise -> evalCase key cs
-evalCase key badForm = throwError $ BadSpecialForm "evalCase: Unrecognized special form" badForm
--}
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func)
