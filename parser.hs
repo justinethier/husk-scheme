@@ -353,6 +353,8 @@ primitives = [("+", numericBinop (+)),
               ("string-ref", stringRef),
 -- TODO:              ("string-set!", stringSet),
 -- TODO: string comparison functions
+              ("string=?", stringEquals),
+              ("string-ci=?", stringCIEquals),
               ("substring", substring),
               ("string-append", stringAppend),
               ("string->list", stringToList),
@@ -500,6 +502,11 @@ substring [(String s), (Number start), (Number end)] =
      let begin = fromInteger start 
      return $ String $ (take length . drop begin) s
 -- TODO: error handling
+
+stringEquals :: [LispVal] -> ThrowsError LispVal
+stringEquals [(String s1), (String s2)] = return $ Bool $ s1 == s2
+stringCIEquals :: [LispVal] -> ThrowsError LispVal
+stringCIEquals [(String s1), (String s2)] = return $ Bool $ s1 == s2 -- TODO: needs to ignore case
 
 stringAppend :: [LispVal] -> ThrowsError LispVal
 stringAppend [(String s)] = return $ String s -- Needed for "last" string value
