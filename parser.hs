@@ -478,21 +478,11 @@ stringAppend (String st:sts) = do
 stringAppend [badType] = throwError $ TypeMismatch "string" badType
 stringAppend badArgList = throwError $ NumArgs 1 badArgList
 
--- TODO: this still does not work...
 stringToList :: [LispVal] -> ThrowsError LispVal
-stringToList [(String s)] = do
-  let len = length s
-  case len of
-    0 -> return $ List [] 
-    1 -> return $ List [Char $ s !! 0]
-    _ -> return $ concat [List [Char $ s !! 0], stringToList $ String $ tail s]
--- TODO: bad type error
--- TODO: bad num args error
-{-
-doStringToList :: [LispVal] -> LispVal
-doStringToList [(String s)] = do
-  return s
--}
+stringToList [(String s)] = return $ List $ map (Char) s
+stringToList [badType] = throwError $ TypeMismatch "string" badType
+stringToList badArgList = throwError $ NumArgs 1 badArgList
+
 stringCopy :: [LispVal] -> ThrowsError LispVal
 stringCopy [String s] = return $ String s
 stringCopy [badType] = throwError $ TypeMismatch "string" badType
