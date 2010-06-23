@@ -7,6 +7,7 @@ module Main where
 import Control.Monad
 import Control.Monad.Error
 import Char
+import Maybe
 import List
 import IO hiding (try)
 import Numeric
@@ -267,23 +268,25 @@ eval (List (Atom "cond" : clauses)) =
          Bool True -> evalCond c
          otherwise -> eval $ List [Atom "cond", cs]
 
-eval (List [Atom "case", key, clauses]) = 
-    do ekey <- eval key
-       evalCase $ List [ekey, clauses]
+eval (List (Atom "case" : keyAndClauses)) = 
+    do let key = keyAndClauses !! 0
+       let cls = keyAndClauses !! 1
+       ekey <- eval key
+       evalCase $ List [ekey, cls]
 
 eval (List (Atom func : args)) = mapM eval args >>= apply func
 eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 evalCase :: LispVal -> ThrowsError LispVal
-evalCase (List (key : cases)) = 
-    do   let c = cases !! 0
-         let cs = cases !! 1
+evalCase (List (key : cases)) = do
+         let c = cases !! 0
+--         let cs = cases !! 1
          ekey <- eval key
          case c of
            List (Atom "else" : exprs) -> last $ map eval exprs
-           List (List cond : exprs) -> if True == True --(List.find (== key) exprs) == key 
-                                           then last $ map eval exprs
-                                           else evalCase $ List [ekey, cs]
+           List (List cond : exprs) -> if True == True -- TODO: Maybe.isNothing (List.find (\x -> eqv x key) exprs)
+                                           then evalCase $ List [ekey, cases !! 1]
+                                           else last $ map eval exprs
            --badForm -> throwError $ BadSpecialForm "evalCase" badForm
 
 --TODO: evalCase key badForm = throwError $ BadSpecialForm "evalCase: Unrecognized special form" badForm
