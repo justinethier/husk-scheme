@@ -281,9 +281,9 @@ evalCase (List (key : cases)) =
          ekey <- eval key
          case c of
            List (Atom "else" : exprs) -> last $ map eval exprs
-           List (List(cond) : exprs) -> if True == True --(List.find (== key) exprs) == key 
+           List (List cond : exprs) -> if True == True --(List.find (== key) exprs) == key 
                                            then last $ map eval exprs
-                                           else eval $ evalCase [ekey, cs]
+                                           else evalCase $ List [ekey, cs]
            --badForm -> throwError $ BadSpecialForm "evalCase" badForm
 
 --TODO: evalCase key badForm = throwError $ BadSpecialForm "evalCase: Unrecognized special form" badForm
