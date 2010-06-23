@@ -7,6 +7,7 @@ module Main where
 import Control.Monad
 import Control.Monad.Error
 import Char
+import Data.IORef
 import Maybe
 import List
 import IO hiding (try)
@@ -54,6 +55,19 @@ readExpr :: String -> ThrowsError LispVal
 readExpr input = case parse parseExpr "lisp" input of
 	Left err -> throwError $ Parser err
 	Right val -> return val
+
+{- Variables Section -}
+type Env = IORef [(String, IORef LispVal)]
+type IOThrowsError = ErrorT LispError IO
+
+nullEnv :: IO Env
+nullEnv = newIORef []
+
+liftThrows :: ThrowsError a -> IOThrowsError a
+liftThrows (Left err) = throwError err
+liftThrows (Right val) = return val
+
+-- TODO: pick up "variables" chapter from here
 
 {- Error handling code -}
 data LispError = NumArgs Integer [LispVal]
