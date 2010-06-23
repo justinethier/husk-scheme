@@ -1,6 +1,6 @@
 skim-scheme
 Created by Justin Ethier, May-June 2010.
 
-Implementation of a "simple" scheme, which implements a subset of the R5RS standard.
+skim-scheme is a "simple" dialect of scheme which implements a subset of the R5RS standard.
 
 This project is written in Haskell and based on the code from this tutorial: http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours
