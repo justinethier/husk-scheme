@@ -332,8 +332,22 @@ eval env (List (Atom "case" : keyAndClauses)) =
 
 eval env (List [Atom "set!", Atom var, form]) = 
   eval env form >>= setVar env var
+
 eval env (List [Atom "define", Atom var, form]) = 
   eval env form >>= defineVar env var
+
+eval env (List [Atom "string-set!", Atom var, index, character]) = do 
+  idx <- eval env index
+  chr <- eval env character
+  str <- getVar env var
+  eval env (String "TODO") >>= setVar env var
+{-
+  case idx of
+  	Number n -> case chr of
+                  Char c -> setVar env "TODO" >>= return
+				  -}
+    -- TODO: error handler
+
 
 eval env (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
@@ -420,7 +434,6 @@ primitives = [("+", numericBinop (+)),
               ("make-string", makeString),
               ("string-length", stringLength),
               ("string-ref", stringRef),
--- TODO:              ("string-set!", stringSet),
               ("substring", substring),
               ("string-append", stringAppend),
               ("string->list", stringToList),
