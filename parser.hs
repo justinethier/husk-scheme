@@ -20,7 +20,7 @@ main :: IO ()
 main = do args <- getArgs
           case length args of
                0 -> runRepl
-               1 -> evalAndPrint $ args !! 0
+               1 -> runOne $ args !! 0
                otherwise -> putStrLn "Program takes only 0 or 1 arguments"
 
 --  args <- getArgs
@@ -34,11 +34,12 @@ flushStr str = putStr str >> hFlush stdout
 readPrompt :: String -> IO String
 readPrompt prompt = flushStr prompt >> getLine
 
-evalString :: String -> IO String
-evalString expr = return $ extractValue $ trapError (liftM show $ readExpr expr >>= eval)
+evalString :: Env -> String -> IO String
+evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= eval env
+--return $ extractValue $ trapError (liftM show $ readExpr expr >>= eval)
 
-evalAndPrint :: String -> IO ()
-evalAndPrint expr = evalString expr >>= putStrLn
+evalAndPrint :: Env -> String -> IO ()
+evalAndPrint env expr = evalString env expr >>= putStrLn
 
 until_ :: Monad m => (a -> Bool) -> m a -> (a -> m ()) -> m ()
 until_ pred prompt action = do
@@ -47,8 +48,11 @@ until_ pred prompt action = do
      then return ()
      else action result >> until_ pred prompt action
 
+runOne :: String -> IO ()
+runOne expr = nullEnv >>= flip evalAndPrint expr
+
 runRepl :: IO ()
-runRepl = until_ (== "quit") (readPrompt "skim> ") evalAndPrint
+runRepl = nullEnv >>= until_ (== "quit") (readPrompt "skim> ") . evalAndPrint
 
 -- End REPL Section
 readExpr :: String -> ThrowsError LispVal
@@ -66,6 +70,43 @@ nullEnv = newIORef []
 liftThrows :: ThrowsError a -> IOThrowsError a
 liftThrows (Left err) = throwError err
 liftThrows (Right val) = return val
+
+runIOThrows :: IOThrowsError String -> IO String
+runIOThrows action = runErrorT (trapError action) >>= return . extractValue
+
+isBound :: Env -> String -> IO Bool
+isBound envRef var = readIORef envRef >>= return . maybe False (const True) . lookup var
+
+getVar :: Env -> String -> IOThrowsError LispVal
+getVar envRef var = do env <- liftIO $ readIORef envRef
+                       maybe (throwError $ UnboundVar "Getting an unbound variable: " var)
+                             (liftIO . readIORef)
+                             (lookup var env)
+
+setVar :: Env -> String -> LispVal -> IOThrowsError LispVal
+setVar envRef var value = do env <- liftIO $ readIORef envRef
+                             maybe (throwError $ UnboundVar "Setting an unbound variable: " var)
+                                   (liftIO . (flip writeIORef value))
+                                   (lookup var env)
+                             return value
+
+defineVar :: Env -> String -> LispVal -> IOThrowsError LispVal
+defineVar envRef var value = do
+  alreadyDefined <- liftIO $ isBound envRef var
+  if alreadyDefined
+    then setVar envRef var value >> return value
+    else liftIO $ do
+       valueRef <- newIORef value
+       env <- readIORef envRef
+       writeIORef envRef ((var, valueRef) : env)
+       return value
+
+bindVars :: Env -> [(String, LispVal)] -> IO Env
+bindVars envRef bindings = readIORef envRef >>= extendEnv bindings >>= newIORef
+  where extendEnv bindings env = liftM  (++ env) (mapM addBinding bindings)
+        addBinding (var, value) = do ref <- newIORef value
+                                     return (var, ref)
+
 
 -- TODO: pick up "variables" chapter from here
 
@@ -249,67 +290,73 @@ parseExpr = try(parseDecimal)
   <?> "Expression"
 
 {- Eval section -}
-eval :: LispVal -> ThrowsError LispVal
-eval val@(String _) = return val
-eval val@(Char _) = return val
-eval val@(Number _) = return val
-eval val@(Float _) = return val
-eval val@(Bool _) = return val
-eval (List [Atom "quote", val]) = return val
-eval (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional-} 
-    do result <- eval pred
+eval :: Env -> LispVal -> IOThrowsError LispVal
+eval env val@(String _) = return val
+eval env val@(Char _) = return val
+eval env val@(Number _) = return val
+eval env val@(Float _) = return val
+eval env val@(Bool _) = return val
+eval env (Atom id) = getVar env id
+eval env (List [Atom "quote", val]) = return val
+eval env (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional-} 
+    do result <- eval env pred
        case result of
-         Bool False -> eval alt
-         otherwise -> eval conseq
+         Bool False -> eval env alt
+         otherwise -> eval env conseq
          {- ex #1: only allow boolean conditions: otherwise -> throwError $ TypeMismatch "bool" otherwise-}
 
 -- TODO: implement this 'if' form, such that it returns nothing if the pred evaluates to false
-eval (List [Atom "if", pred, conseq]) = 
-    do result <- eval pred
+eval env (List [Atom "if", pred, conseq]) = 
+    do result <- eval env pred
        case result of
-         Bool True -> eval conseq
-         otherwise -> eval $ List []
+         Bool True -> eval env conseq
+         otherwise -> eval env $ List []
 
 -- TODO: return nothing if all cond cases are false
-eval (List (Atom "cond" : clauses)) = 
+eval env (List (Atom "cond" : clauses)) = 
     do let c =  clauses !! 0 -- First clause
        let cs = clauses !! 1 -- other clauses
        test <- case c of
-         List (Atom "else" : expr) -> eval $ Bool True
-         List (cond : expr) -> eval cond
+         List (Atom "else" : expr) -> eval env $ Bool True
+         List (cond : expr) -> eval env cond
          -- TODO: some kind of error?  otherwise -> eval $ Bool False
        case test of
-         Bool True -> evalCond c
-         otherwise -> eval $ List [Atom "cond", cs]
+         Bool True -> evalCond env c
+         otherwise -> eval env $ List [Atom "cond", cs]
 
-eval (List (Atom "case" : keyAndClauses)) = 
+eval env (List (Atom "case" : keyAndClauses)) = 
     do let key = keyAndClauses !! 0
        let cls = keyAndClauses !! 1
-       ekey <- eval key
-       evalCase $ List [ekey, cls]
+       ekey <- eval env key
+       evalCase env $ List [ekey, cls]
 
-eval (List (Atom func : args)) = mapM eval args >>= apply func
-eval badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
+eval env (List [Atom "set!", Atom var, form]) = 
+  eval env form >>= setVar env var
+eval env (List [Atom "define", Atom var, form]) = 
+  eval env form >>= defineVar env var
 
-evalCase :: LispVal -> ThrowsError LispVal
-evalCase (List (key : cases)) = do
+eval env (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
+eval env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
+
+evalCase :: Env -> LispVal -> IOThrowsError LispVal
+evalCase env (List (key : cases)) = do
          let c = cases !! 0
 --         let cs = cases !! 1
-         ekey <- eval key
+         ekey <- eval env key
          case c of
-           List (Atom "else" : exprs) -> last $ map eval exprs
+           List (Atom "else" : exprs) -> last $ map (eval env) exprs
            List (List cond : exprs) -> if True == True -- TODO: Maybe.isNothing (List.find (\x -> eqv x key) exprs)
-                                           then evalCase $ List [ekey, cases !! 1]
-                                           else last $ map eval exprs
+                                           then evalCase env $ List [ekey, cases !! 1]
+                                           else last $ map (eval env) exprs
            --badForm -> throwError $ BadSpecialForm "evalCase" badForm
 
 --TODO: evalCase key badForm = throwError $ BadSpecialForm "evalCase: Unrecognized special form" badForm
 
 -- Helper function for evaluating 'cond'
-evalCond :: LispVal -> ThrowsError LispVal
-evalCond (List [test, expr]) = eval expr
-evalCond (List (test : expr)) = last $ map eval expr -- TODO: all expr's need to be evaluated, not sure happening right now
-evalCond badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
+evalCond :: Env -> LispVal -> IOThrowsError LispVal
+evalCond env (List [test, expr]) = eval env expr
+evalCond env (List (test : expr)) = last $ map (eval env) expr -- TODO: all expr's need to be evaluated, not sure happening right now
+evalCond env badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
@@ -368,7 +415,7 @@ primitives = [("+", numericBinop (+)),
               ("string-length", stringLength),
               ("string-ref", stringRef),
 -- TODO:              ("string-set!", stringSet),
--- TODO: string comparison functions
+-- TODO: string comparison functions (check above section for what is already implemented)
               ("string=?", stringEquals),
               ("string-ci=?", stringCIEquals),
               ("substring", substring),
