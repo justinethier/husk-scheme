@@ -386,7 +386,13 @@ primitives = [("+", numericBinop (+)),
               ("string>?", strBoolBinop (>)),
               ("string<=?", strBoolBinop (<=)),
               ("string>=?", strBoolBinop (>=)),
-
+              ("string-ci=?", stringCIEquals),
+{- TODO:
+              ("string-ci<?", strBoolBinop (<)),
+              ("string-ci>?", strBoolBinop (>)),
+              ("string-ci<=?", strBoolBinop (<=)),
+              ("string-ci>=?", strBoolBinop (>=)),
+-}
               ("car", car),
               ("cdr", cdr),
               ("cons", cons),
@@ -415,9 +421,6 @@ primitives = [("+", numericBinop (+)),
               ("string-length", stringLength),
               ("string-ref", stringRef),
 -- TODO:              ("string-set!", stringSet),
--- TODO: string comparison functions (check above section for what is already implemented)
-              ("string=?", stringEquals),
-              ("string-ci=?", stringCIEquals),
               ("substring", substring),
               ("string-append", stringAppend),
               ("string->list", stringToList),
@@ -566,8 +569,6 @@ substring [(String s), (Number start), (Number end)] =
      return $ String $ (take length . drop begin) s
 -- TODO: error handling
 
-stringEquals :: [LispVal] -> ThrowsError LispVal
-stringEquals [(String s1), (String s2)] = return $ Bool $ s1 == s2
 stringCIEquals :: [LispVal] -> ThrowsError LispVal
 stringCIEquals [(String s1), (String s2)] = return $ Bool $ s1 == s2 -- TODO: needs to ignore case
 
