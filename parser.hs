@@ -336,18 +336,19 @@ eval env (List [Atom "set!", Atom var, form]) =
 eval env (List [Atom "define", Atom var, form]) = 
   eval env form >>= defineVar env var
 
+{- TODO:
 eval env (List [Atom "string-set!", Atom var, index, character]) = do 
   idx <- eval env index
   chr <- eval env character
-  str <- getVar env var
+  str <- eval env $ liftIO $ getVar env var
+  newstr <- substr(str, Number 0, idx)
   eval env (String "TODO") >>= setVar env var
-{-
-  case idx of
-  	Number n -> case chr of
-                  Char c -> setVar env "TODO" >>= return
-				  -}
+  where substr (String str, Number start, Number end) = do
+                              let length = fromInteger $ end - start
+                              let begin = fromInteger start 
+                              String $ (take length . drop begin) str
     -- TODO: error handler
-
+-}
 
 eval env (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
@@ -359,7 +360,8 @@ evalCase env (List (key : cases)) = do
          ekey <- eval env key
          case c of
            List (Atom "else" : exprs) -> last $ map (eval env) exprs
-           List (List cond : exprs) -> if True == True -- TODO: Maybe.isNothing (List.find (\x -> eqv x key) exprs)
+                                       -- TODO: need to work this out, along with Eq below
+           List (List cond : exprs) -> if elem ekey exprs --Maybe.isNothing (List.find (\x -> eqv x key) exprs)
                                            then evalCase env $ List [ekey, cases !! 1]
                                            else last $ map (eval env) exprs
            --badForm -> throwError $ BadSpecialForm "evalCase" badForm
@@ -372,6 +374,11 @@ evalCond env (List [test, expr]) = eval env expr
 evalCond env (List (test : expr)) = last $ map (eval env) expr -- TODO: all expr's need to be evaluated, not sure happening right now
 evalCond env badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
+-- TODO: expand this definition
+-- see: http://www.haskell.org/tutorial/classes.html
+instance Eq LispVal where
+  Number a == Number b = a == b
+  _ == _ = False
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func)
