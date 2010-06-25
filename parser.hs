@@ -356,17 +356,35 @@ eval env badForm = throwError $ BadSpecialForm "Unrecognized special form" badFo
 evalCase :: Env -> LispVal -> IOThrowsError LispVal
 evalCase env (List (key : cases)) = do
          let c = cases !! 0
---         let cs = cases !! 1
          ekey <- eval env key
          case c of
            List (Atom "else" : exprs) -> last $ map (eval env) exprs
-                                       -- TODO: need to work this out, along with Eq below
-           List (List cond : exprs) -> if elem ekey exprs --Maybe.isNothing (List.find (\x -> eqv x key) exprs)
-                                           then evalCase env $ List [ekey, cases !! 1]
-                                           else last $ map (eval env) exprs
+           List (List cond : exprs) -> do test <- checkEq env ekey (List cond)
+                                          case test of
+                                            Bool True -> last $ map (eval env) exprs
+                                            otherwise -> evalCase env $ List [ekey, cases !! 1]
            --badForm -> throwError $ BadSpecialForm "evalCase" badForm
-
 --TODO: evalCase key badForm = throwError $ BadSpecialForm "evalCase: Unrecognized special form" badForm
+
+--checkEq :: Env -> IOThrowsError LispVal -> LispVal -> LispVal
+checkEq env key (List (x : xs)) = 
+  do ekey <- eval env key
+     test <- eval env $ List [Atom "eqv?", ekey, x]
+     case test of
+       Bool True -> eval env $ Bool True
+       otherwise -> eval env $ Bool False --TODO: checkEq env key (List xs)
+
+checkEq env key val = do
+{-    if (length val) == 0
+       then eval env $ Bool False
+       else do-}
+          ekey <- eval env key
+          test <- eval env $ List [Atom "eqv?", ekey, val]
+          case test of
+            Bool True -> eval env $ Bool True
+            otherwise -> eval env $ Bool False
+
+--checkEq env key _ = eval env $ Bool False
 
 -- Helper function for evaluating 'cond'
 evalCond :: Env -> LispVal -> IOThrowsError LispVal
@@ -374,11 +392,17 @@ evalCond env (List [test, expr]) = eval env expr
 evalCond env (List (test : expr)) = last $ map (eval env) expr -- TODO: all expr's need to be evaluated, not sure happening right now
 evalCond env badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
+{- Was trying to use this for equality check in evalCase...
 -- TODO: expand this definition
 -- see: http://www.haskell.org/tutorial/classes.html
 instance Eq LispVal where
   Number a == Number b = a == b
   _ == _ = False
+{-    do test <- liftIO $ liftThrows $ eqv [a, b]
+       case test of
+         Bool True -> True
+         otherwise -> False -}
+-}
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func)
