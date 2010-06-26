@@ -315,14 +315,14 @@ eval env (List [Atom "if", pred, conseq]) =
 -- TODO: return nothing if all cond cases are false
 eval env (List (Atom "cond" : clauses)) = 
     do let c =  clauses !! 0 -- First clause
-       let cs = clauses !! 1 -- other clauses
+       let cs = tail clauses -- other clauses
        test <- case c of
          List (Atom "else" : expr) -> eval env $ Bool True
          List (cond : expr) -> eval env cond
          -- TODO: some kind of error?  otherwise -> eval $ Bool False
        case test of
          Bool True -> evalCond env c
-         otherwise -> eval env $ List [Atom "cond", cs]
+         otherwise -> eval env $ List $ (Atom "cond" : cs)
 
 eval env (List (Atom "case" : keyAndClauses)) = 
     do let key = keyAndClauses !! 0
@@ -362,7 +362,7 @@ evalCase env (List (key : cases)) = do
            List (List cond : exprs) -> do test <- checkEq env ekey (List cond)
                                           case test of
                                             Bool True -> last $ map (eval env) exprs
-                                            otherwise -> evalCase env $ List [ekey, cases !! 1]
+                                            otherwise -> evalCase env $ List $ ekey : tail cases --List [ekey, cases !! 1]
            --badForm -> throwError $ BadSpecialForm "evalCase" badForm
 --TODO: evalCase key badForm = throwError $ BadSpecialForm "evalCase: Unrecognized special form" badForm
 
