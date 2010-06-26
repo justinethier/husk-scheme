@@ -336,6 +336,17 @@ eval env (List [Atom "set!", Atom var, form]) =
 eval env (List [Atom "define", Atom var, form]) = 
   eval env form >>= defineVar env var
 
+eval env (List [Atom "string-fill!", Atom var, character]) = do 
+  str <- eval env =<< getVar env var
+  chr <- eval env character
+  (eval env $ fillStr(str, chr)) >>= setVar env var
+  where fillStr (String str, Char chr) = doFillStr (String "", Char chr, length str)
+  
+        doFillStr (String str, Char chr, left) = do
+        if left == 0
+           then String str
+           else doFillStr(String $ chr : str, Char chr, (left - 1))
+
 eval env (List [Atom "string-set!", Atom var, index, character]) = do 
   idx <- eval env index
   chr <- eval env character
@@ -374,7 +385,7 @@ evalCase env (List (key : cases)) = do
 
     checkEq env ekey val =
      case val of
-       List [] -> eval env $ Bool False
+       List [] -> eval env $ Bool False -- If nothing else is left, then nothing matched key
        otherwise -> do
           test <- eval env $ List [Atom "eqv?", ekey, val]
           case test of
