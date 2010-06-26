@@ -142,7 +142,7 @@ extractValue (Right val) = val
 data LispVal = Atom String
 	| List [LispVal]
 	| DottedList [LispVal] LispVal
---	| Vector Array --LispVal
+--	| Vector Array
 	| Number Integer
 	| Float Float
  	| String String
@@ -281,9 +281,19 @@ parseQuoted = do
   x <- parseExpr
   return $ List [Atom "quote", x]
 
-{- TODO: do exercises from parsing, bottom of page to add
- -       backquote, vector support
- - -}
+parseQuasiQuoted :: Parser LispVal
+parseQuasiQuoted = do
+  char '`'
+  x <- parseExpr
+  return $ List [Atom "quasiquote", x]
+
+parseUnquoted :: Parser LispVal
+parseUnquoted = do
+-- TODO: support ,@ syntax
+-- see: http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.2.6
+  char ','
+  x <- parseExpr
+  return $ List [Atom "unquote", x]
 
 parseExpr :: Parser LispVal
 parseExpr = try(parseDecimal) 
@@ -292,11 +302,19 @@ parseExpr = try(parseDecimal)
   <|> parseAtom
   <|> parseString 
   <|> parseQuoted
+  <|> parseQuasiQuoted
+  <|> parseUnquoted
   <|> do char '('
          x <- try parseList <|> parseDottedList
          char ')'
          return x
   <?> "Expression"
+
+{- TODO: relocate below eval section once this works-}
+doQuasiQuote :: Env -> LispVal -> IOThrowsError LispVal
+doQuasiQuote env val = return val -- TODO
+-- TODO: analyze all elements at this nesting level, if any are unquoted then eval them
+--eval env (List [Atom "unquote", val]) = eval env val -- TODO: only if back-quoted, eval as part of that logic
 
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
@@ -307,6 +325,7 @@ eval env val@(Float _) = return val
 eval env val@(Bool _) = return val
 eval env (Atom id) = getVar env id
 eval env (List [Atom "quote", val]) = return val
+eval env (List [Atom "quasiquote", val]) = doQuasiQuote env val
 eval env (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional-} 
     do result <- eval env pred
        case result of
