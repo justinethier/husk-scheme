@@ -336,19 +336,19 @@ eval env (List [Atom "set!", Atom var, form]) =
 eval env (List [Atom "define", Atom var, form]) = 
   eval env form >>= defineVar env var
 
-{- TODO:
 eval env (List [Atom "string-set!", Atom var, index, character]) = do 
   idx <- eval env index
   chr <- eval env character
-  str <- eval env $ liftIO $ getVar env var
-  newstr <- substr(str, Number 0, idx)
-  eval env (String "TODO") >>= setVar env var
-  where substr (String str, Number start, Number end) = do
-                              let length = fromInteger $ end - start
-                              let begin = fromInteger start 
-                              String $ (take length . drop begin) str
+  str <- eval env $ String "mytest" --liftThrows $ getVar env var
+--  newstr <- substr(str, Number 0, idx)
+  (eval env $ substr(str, character, idx)) >>= setVar env var
+  where substr (String str, Char chr, Number index) = do
+                              let slength = fromInteger index
+--                              let begin = fromInteger start 
+                              String $ (take (fromInteger index) . drop 0) str ++ 
+                                       [chr] ++
+                                       (take (length str) . drop (fromInteger index + 1)) str
     -- TODO: error handler
--}
 
 eval env (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
