@@ -345,7 +345,7 @@ eval env (List [Atom "string-fill!", Atom var, character]) = do
         doFillStr (String str, Char chr, left) = do
         if left == 0
            then String str
-           else doFillStr(String $ chr : str, Char chr, (left - 1))
+           else doFillStr(String $ chr : str, Char chr, left - 1)
 
 eval env (List [Atom "string-set!", Atom var, index, character]) = do 
   idx <- eval env index
@@ -478,7 +478,6 @@ primitives = [("+", numericBinop (+)),
               ("string->list", stringToList),
               ("list->string", listToString),
               ("string-copy", stringCopy),
--- TODO:              ("string-fill!", TBD),
 
               ("boolean?", isBoolean)]
 
