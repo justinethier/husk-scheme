@@ -326,9 +326,9 @@ eval env (List (Atom "cond" : clauses)) =
 
 eval env (List (Atom "case" : keyAndClauses)) = 
     do let key = keyAndClauses !! 0
-       let cls = keyAndClauses !! 1
+       let cls = tail keyAndClauses
        ekey <- eval env key
-       evalCase env $ List [ekey, cls]
+       evalCase env $ List $ (ekey : cls)
 
 eval env (List [Atom "set!", Atom var, form]) = 
   eval env form >>= setVar env var
@@ -353,6 +353,9 @@ eval env (List [Atom "string-set!", Atom var, index, character]) = do
 eval env (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
+-- Helper function for evaluating 'case'
+-- TODO: still need to handle case where nothing matches key
+--       (same problem exists with cond, if)
 evalCase :: Env -> LispVal -> IOThrowsError LispVal
 evalCase env (List (key : cases)) = do
          let c = cases !! 0
@@ -362,29 +365,25 @@ evalCase env (List (key : cases)) = do
            List (List cond : exprs) -> do test <- checkEq env ekey (List cond)
                                           case test of
                                             Bool True -> last $ map (eval env) exprs
-                                            otherwise -> evalCase env $ List $ ekey : tail cases --List [ekey, cases !! 1]
-           --badForm -> throwError $ BadSpecialForm "evalCase" badForm
---TODO: evalCase key badForm = throwError $ BadSpecialForm "evalCase: Unrecognized special form" badForm
-
---checkEq :: Env -> IOThrowsError LispVal -> LispVal -> LispVal
-checkEq env key (List (x : xs)) = 
-  do ekey <- eval env key
+                                            otherwise -> evalCase env $ List $ ekey : tail cases
+           badForm -> throwError $ BadSpecialForm "Unrecognized special form in case" badForm
+  where
+    checkEq env ekey (List (x : xs)) = do 
      test <- eval env $ List [Atom "eqv?", ekey, x]
      case test of
        Bool True -> eval env $ Bool True
-       otherwise -> eval env $ Bool False --TODO: checkEq env key (List xs)
+       otherwise -> checkEq env ekey (List xs)
 
-checkEq env key val = do
-{-    if (length val) == 0
-       then eval env $ Bool False
-       else do-}
-          ekey <- eval env key
+    checkEq env ekey val =
+     case val of
+       List [] -> eval env $ Bool False
+       otherwise -> do
           test <- eval env $ List [Atom "eqv?", ekey, val]
           case test of
             Bool True -> eval env $ Bool True
             otherwise -> eval env $ Bool False
 
---checkEq env key _ = eval env $ Bool False
+evalCase key badForm = throwError $ BadSpecialForm "case: Unrecognized special form" badForm
 
 -- Helper function for evaluating 'cond'
 evalCond :: Env -> LispVal -> IOThrowsError LispVal
