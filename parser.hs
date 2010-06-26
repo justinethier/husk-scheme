@@ -339,12 +339,10 @@ eval env (List [Atom "define", Atom var, form]) =
 eval env (List [Atom "string-set!", Atom var, index, character]) = do 
   idx <- eval env index
   chr <- eval env character
-  str <- eval env $ String "mytest" --liftThrows $ getVar env var
---  newstr <- substr(str, Number 0, idx)
+  str <- eval env =<< getVar env var
   (eval env $ substr(str, character, idx)) >>= setVar env var
   where substr (String str, Char chr, Number index) = do
                               let slength = fromInteger index
---                              let begin = fromInteger start 
                               String $ (take (fromInteger index) . drop 0) str ++ 
                                        [chr] ++
                                        (take (length str) . drop (fromInteger index + 1)) str
