@@ -504,6 +504,7 @@ primitives = [("+", numericBinop (+)),
               ("integer?", isInteger),
               ("real?", isReal),
               ("list?", isList),
+              ("null?", isNull),
               ("symbol?", isSymbol),
 			  ("symbol->string", symbol2String),
 			  ("string->symbol", string2Symbol),
@@ -713,6 +714,10 @@ isDottedList _ = return $  Bool False
 isList :: [LispVal] -> ThrowsError LispVal
 isList ([List a]) = return $ Bool True
 isList _ = return $ Bool False
+
+isNull :: [LispVal] -> ThrowsError LispVal
+isNull ([List []]) = return $ Bool True
+isNull _ = return $ Bool False
 
 isSymbol :: [LispVal] -> ThrowsError LispVal
 isSymbol ([Atom a]) = return $ Bool True
