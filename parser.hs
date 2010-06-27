@@ -326,15 +326,11 @@ doQuasiQuote env val result = do
 -- TODO: analyze all elements at this nesting level, if any are unquoted then eval them
 --eval env (List [Atom "unquote", val]) = eval env val -- TODO: only if back-quoted, eval as part of that logic
 -}
---doQuasiQuote :: Env -> LispVal -> IOThrowsError LispVal
-doQuasiQuote env val = do
+--doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
+doUnQuote env val = do
   case val of
     List [Atom "unquote", val] -> eval env val
-    otherwise -> return val
-{-  	[xs] -> mapM (evalDoQQ env) xs
-	otherwise -> evalDoQQ env val
-  where evalDoQQ env val = val -- TODO: unquote if necessary
--}
+    otherwise -> val --eval env (List [Atom "quote", val])
 
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
@@ -345,7 +341,9 @@ eval env val@(Float _) = return val
 eval env val@(Bool _) = return val
 eval env (Atom id) = getVar env id
 eval env (List [Atom "quote", val]) = return val
-eval env (List [Atom "quasiquote", val]) = doQuasiQuote env val
+eval env (List [Atom "quasiquote", val]) = doUnQuote env val 
+eval env (List (Atom "quasiquote" : vals)) = List $ map (doUnQuote env) vals
+
 eval env (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional-} 
     do result <- eval env pred
        case result of
