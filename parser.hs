@@ -108,9 +108,6 @@ bindVars envRef bindings = readIORef envRef >>= extendEnv bindings >>= newIORef
         addBinding (var, value) = do ref <- newIORef value
                                      return (var, ref)
 
-
--- TODO: pick up "variables" chapter from here
-
 {- Error handling code -}
 data LispError = NumArgs Integer [LispVal]
   | TypeMismatch String LispVal
@@ -141,9 +138,6 @@ trapError action = catchError action (return . show)
 
 extractValue :: ThrowsError a -> a
 extractValue (Right val) = val
-
-
-{- TODO: could error handling code above be moved to its own file? -}
 
 data LispVal = Atom String
 	| List [LispVal]
@@ -649,7 +643,7 @@ doMakeString n chr s =
        else doMakeString (n - 1) chr (s ++ [chr])
 
 stringLength :: [LispVal] -> ThrowsError LispVal
-stringLength [String s] = return $ Number $ foldr (const (+1)) 0 s -- TODO: length s
+stringLength [String s] = return $ Number $ foldr (const (+1)) 0 s -- Could probably do 'length s' instead...
 stringLength [badType] = throwError $ TypeMismatch "string" badType
 stringLength badArgList = throwError $ NumArgs 1 badArgList
 -- TODO: type error? arg error?
