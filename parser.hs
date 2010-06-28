@@ -4,6 +4,7 @@
  - @author Justin Ethier
  - -}
 module Main where
+import Array
 import Control.Monad
 import Control.Monad.Error
 import Char
@@ -49,10 +50,10 @@ until_ pred prompt action = do
      else action result >> until_ pred prompt action
 
 runOne :: String -> IO ()
-runOne expr = nullEnv >>= flip evalAndPrint expr
+runOne expr = primitiveBindings >>= flip evalAndPrint expr
 
 runRepl :: IO ()
-runRepl = nullEnv >>= until_ (== "quit") (readPrompt "skim> ") . evalAndPrint
+runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "skim> ") . evalAndPrint
 
 -- End REPL Section
 readExpr :: String -> ThrowsError LispVal
@@ -147,22 +148,33 @@ extractValue (Right val) = val
 data LispVal = Atom String
 	| List [LispVal]
 	| DottedList [LispVal] LispVal
+--	| Vector Array --LispVal
 	| Number Integer
 	| Float Float
  	| String String
 	| Char Char
 	| Bool Bool
+	| PrimitiveFunc ([LispVal] -> ThrowsError LispVal)
+        | Func {params :: [String], vararg :: (Maybe String),
+                body :: [LispVal], closure :: Env}
 
 showVal :: LispVal -> String
 showVal (String contents) = "\"" ++ contents ++ "\""
-showVal (Char chr) = [chr] {- TODO: this is only temporary, for testing-}
+showVal (Char chr) = [chr]
 showVal (Atom name) = name
 showVal (Number contents) = show contents
 showVal (Float contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
+--showVal (Vector contents) = "#(" ++ unwordsList contents ++ ")"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
+showVal (PrimitiveFunc _) = "<primitive>"
+showVal (Func {params = args, vararg = varargs, body = body, closure = env}) = 
+  "(lambda (" ++ unwords (map show args) ++
+    (case varargs of
+      Nothing -> ""
+      Just arg -> " . " ++ arg) ++ ") ...)"
 
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map showVal
@@ -257,6 +269,9 @@ parseString = do
 	char '"'
 	return $ String x
 
+--parseVector :: Parser LispVal
+--parseVector = liftM Vector $ sepBy parseExpr spaces
+
 parseList :: Parser LispVal
 parseList = liftM List $ sepBy parseExpr spaces
 
@@ -336,6 +351,17 @@ eval env (List [Atom "set!", Atom var, form]) =
 eval env (List [Atom "define", Atom var, form]) = 
   eval env form >>= defineVar env var
 
+eval env (List (Atom "define" : List (Atom var : params) : body )) = 
+  makeNormalFunc env params body >>= defineVar env var
+eval env (List (Atom "define" : DottedList (Atom var : params) varargs : body)) = 
+  makeVarargs varargs env params body >>= defineVar env var
+eval env (List (Atom "lambda" : List params : body)) = 
+  makeNormalFunc env params body
+eval env (List (Atom "lambda" : DottedList params varargs : body)) = 
+  makeVarargs varargs env params body
+eval env (List (Atom "lambda" : varargs@(Atom _) : body)) = 
+  makeVarargs varargs env [] body
+
 eval env (List [Atom "string-fill!", Atom var, character]) = do 
   str <- eval env =<< getVar env var
   chr <- eval env character
@@ -359,7 +385,12 @@ eval env (List [Atom "string-set!", Atom var, index, character]) = do
                                        (take (length str) . drop (fromInteger index + 1)) str
     -- TODO: error handler
 
-eval env (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
+eval env (List (function : args)) = do
+  func <- eval env function
+  argVals <- mapM (eval env) args
+  apply func argVals
+
+--Obsolete (?) - eval env (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 -- Helper function for evaluating 'case'
@@ -412,10 +443,26 @@ instance Eq LispVal where
          otherwise -> False -}
 -}
 
-apply :: String -> [LispVal] -> ThrowsError LispVal
-apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func)
-                        ($ args)
-                        (lookup func primitives)
+makeFunc varargs env params body = return $ Func (map showVal params) varargs body env
+makeNormalFunc = makeFunc Nothing
+makeVarargs = makeFunc . Just . showVal
+
+apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
+apply (PrimitiveFunc func) args = liftThrows $ func args
+apply (Func params varargs body closure) args =
+  if num params /= num args && varargs == Nothing
+     then throwError $ NumArgs (num params) args
+     else (liftIO $ bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
+  where remainingArgs = drop (length params) args
+        num = toInteger . length
+        evalBody env = liftM last $ mapM (eval env) body
+        bindVarArgs arg env = case arg of
+          Just argName -> liftIO $ bindVars env [(argName, List $ remainingArgs)]
+          Nothing -> return env
+
+primitiveBindings :: IO Env
+primitiveBindings = nullEnv >>= (flip bindVars $ map makePrimitiveFunc primitives)
+  where makePrimitiveFunc (var, func) = (var, PrimitiveFunc func)
 
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
 primitives = [("+", numericBinop (+)),
