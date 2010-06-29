@@ -316,8 +316,8 @@ doQuasiQuote env val result = do
   case val of
     List [] -> return result
     List (x:xs) -> do
---      r <- List $ result ++ [x]
-      doQuasiQuote env (List xs) result
+      let r = List [result, x] -- TODO: need something like this - (result : x)
+      doQuasiQuote env (List xs) r
     --List ( List [Atom "unquote", unquoteVal]:xs) -> return val
     otherwise -> case result of
                       List [] -> return val
