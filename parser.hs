@@ -309,29 +309,13 @@ parseExpr = try(parseDecimal)
          char ')'
          return x
   <?> "Expression"
-
-{- TODO: relocate below eval section once this works-}
-{-doQuasiQuote :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-doQuasiQuote env val result = do
-  case val of
-    List [] -> return result
-    List (x:xs) -> do
---      let r = List [result, x] -- TODO: need something like this - (result : x)
-      let r = (List ([x : result])) -- TODO: need something like this - (result : x)
-      doQuasiQuote env (List xs) r
-    --List ( List [Atom "unquote", unquoteVal]:xs) -> return val
-    otherwise -> case result of
-                      List [] -> return val
-                      otherwise -> return result
--- TODO: analyze all elements at this nesting level, if any are unquoted then eval them
---eval env (List [Atom "unquote", val]) = eval env val -- TODO: only if back-quoted, eval as part of that logic
--}
+{-
 doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
 doUnQuote env val = do
   case val of
     List [Atom "unquote", val] -> eval env val
     otherwise -> eval env (List [Atom "quote", val])
-
+-}
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
 eval env val@(String _) = return val
@@ -343,10 +327,18 @@ eval env (Atom id) = getVar env id
 eval env (List [Atom "quote", val]) = return val
 eval env (List [Atom "quasiquote", val]) = do
   case val of
-    List (x : xs) -> last $ map (doUnQuote env) (x:xs)
+    List (x : xs) -> mapM (doUnQuote env) (x:xs) >>= return . List -- TODO: understand *why* this works 
     otherwise -> doUnQuote env val 
+  where doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
+        doUnQuote env val = do
+          case val of
+            List [Atom "unquote", val] -> eval env val
+-- TODO: this form does not unquote - `,(+ 1 2)
+--       and following code only prints 'unquote'. Something is still broken, either here or in parsing...
+-- badForm -> throwError $ BadSpecialForm "Unrecognized special form" badForm
+            otherwise -> eval env (List [Atom "quote", val]) -- TODO: could be simplified
 
-eval env (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional-} 
+eval env (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional (though not per spec)-} 
     do result <- eval env pred
        case result of
          Bool False -> eval env alt
@@ -463,18 +455,6 @@ evalCond :: Env -> LispVal -> IOThrowsError LispVal
 evalCond env (List [test, expr]) = eval env expr
 evalCond env (List (test : expr)) = last $ map (eval env) expr -- TODO: all expr's need to be evaluated, not sure happening right now
 evalCond env badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
-
-{- Was trying to use this for equality check in evalCase...
--- TODO: expand this definition
--- see: http://www.haskell.org/tutorial/classes.html
-instance Eq LispVal where
-  Number a == Number b = a == b
-  _ == _ = False
-{-    do test <- liftIO $ liftThrows $ eqv [a, b]
-       case test of
-         Bool True -> True
-         otherwise -> False -}
--}
 
 makeFunc varargs env params body = return $ Func (map showVal params) varargs body env
 makeNormalFunc = makeFunc Nothing
