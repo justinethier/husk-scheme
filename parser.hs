@@ -289,16 +289,21 @@ parseQuasiQuoted = do
 
 parseUnquoted :: Parser LispVal
 parseUnquoted = do
--- TODO: support ,@ syntax
--- see: http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.2.6
-  char ','
+  try (char ',')
   x <- parseExpr
   return $ List [Atom "unquote", x]
+
+parseUnquoteSpliced :: Parser LispVal
+parseUnquoteSpliced = do
+  try (string ",@")
+  x <- parseExpr
+  return $ List [Atom "unquote-splicing", x]
 
 parseExpr :: Parser LispVal
 parseExpr = try(parseDecimal) 
   <|> parseNumber
   <|> parseChar
+  <|> parseUnquoteSpliced
   <|> parseAtom
   <|> parseString 
   <|> parseQuoted
@@ -322,12 +327,14 @@ eval env (List [Atom "quote", val]) = return val
 eval env (List [Atom "quasiquote", val]) = do
   case val of
     List [Atom "unquote", val] -> eval env val -- Handle cases like `,(+ 1 2) 
+    List [Atom "unquote-splicing", val] -> eval env val -- TODO: not quite right behavior 
     List (x : xs) -> mapM (doUnQuote env) (x:xs) >>= return . List -- TODO: understand *why* this works 
     otherwise -> doUnQuote env val 
   where doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
         doUnQuote env val = do
           case val of
             List [Atom "unquote", val] -> eval env val
+            List [Atom "unquote-splicing", val] -> eval env val -- TODO: not quite right behavior
             otherwise -> eval env (List [Atom "quote", val]) -- TODO: could this be simplified?
 
 eval env (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional (though not per spec)-} 
