@@ -515,7 +515,7 @@ primitives = [("+", numericBinop (+)),
               ("pair?", isDottedList),
 {- TODO:              ("procedure?", isProcedure),
               ("vector?", isVector),
-			  TODO: full numeric tower: number?, complex?, real?, rational?, and integer?.
+			  TODO: full numeric tower: number?, complex?, rational?
 			  --}
               ("print", printLispVal),
               ("number?", isNumber),
@@ -682,8 +682,18 @@ substring [(String s), (Number start), (Number end)] =
 
 stringCIEquals :: [LispVal] -> ThrowsError LispVal
 stringCIEquals [(String s1), (String s2)] = do
-  return $ Bool $ s1 == s2 -- TODO: needs to ignore case
--- TODO: ci "heavy lifting"  where ciCmp s1 s2 
+  if (length s1) /= (length s2)
+     then return $ Bool False
+     else return $ Bool $ ciCmp s1 s2 0
+  where ciCmp s1 s2 idx = if idx == (length s1)
+                             then True
+                             else if (toLower $ s1 !! idx) == (toLower $ s2 !! idx)
+                                     then ciCmp s1 s2 (idx + 1)
+                                     else False
+-- TODO: error handling
+stringCIEquals [badType] = throwError $ TypeMismatch "string string" badType
+--stringCIEquals [_, badType] = throwError $ TypeMismatch "string" badType
+stringCIEquals badArgList = throwError $ NumArgs 2 badArgList
 
 stringAppend :: [LispVal] -> ThrowsError LispVal
 stringAppend [(String s)] = return $ String s -- Needed for "last" string value
