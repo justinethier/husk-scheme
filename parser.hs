@@ -674,7 +674,9 @@ substring [(String s), (Number start), (Number end)] =
 -- TODO: error handling
 
 stringCIEquals :: [LispVal] -> ThrowsError LispVal
-stringCIEquals [(String s1), (String s2)] = return $ Bool $ s1 == s2 -- TODO: needs to ignore case
+stringCIEquals [(String s1), (String s2)] = do
+  return $ Bool $ s1 == s2 -- TODO: needs to ignore case
+-- TODO: ci "heavy lifting"  where ciCmp s1 s2 
 
 stringAppend :: [LispVal] -> ThrowsError LispVal
 stringAppend [(String s)] = return $ String s -- Needed for "last" string value
