@@ -309,13 +309,7 @@ parseExpr = try(parseDecimal)
          char ')'
          return x
   <?> "Expression"
-{-
-doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
-doUnQuote env val = do
-  case val of
-    List [Atom "unquote", val] -> eval env val
-    otherwise -> eval env (List [Atom "quote", val])
--}
+
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
 eval env val@(String _) = return val
@@ -327,16 +321,14 @@ eval env (Atom id) = getVar env id
 eval env (List [Atom "quote", val]) = return val
 eval env (List [Atom "quasiquote", val]) = do
   case val of
+    List [Atom "unquote", val] -> eval env val -- Handle cases like `,(+ 1 2) 
     List (x : xs) -> mapM (doUnQuote env) (x:xs) >>= return . List -- TODO: understand *why* this works 
     otherwise -> doUnQuote env val 
   where doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
         doUnQuote env val = do
           case val of
             List [Atom "unquote", val] -> eval env val
--- TODO: this form does not unquote - `,(+ 1 2)
---       and following code only prints 'unquote'. Something is still broken, either here or in parsing...
--- badForm -> throwError $ BadSpecialForm "Unrecognized special form" badForm
-            otherwise -> eval env (List [Atom "quote", val]) -- TODO: could be simplified
+            otherwise -> eval env (List [Atom "quote", val]) -- TODO: could this be simplified?
 
 eval env (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional (though not per spec)-} 
     do result <- eval env pred
