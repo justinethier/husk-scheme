@@ -3,8 +3,8 @@ skim: parser.hs
 
 # Run all unit tests
 test: skim
-	cd test-scripts ; ../skim t-case.scm
-	cd test-scripts ; ../skim t-cond.scm
+	cd scm-unit-tests ; ../skim t-case.scm
+	cd scm-unit-tests ; ../skim t-cond.scm
 
 clean:
 	rm -f *.o
