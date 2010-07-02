@@ -563,7 +563,6 @@ primitives = [("+", numericBinop (+)),
               ("vector?", isVector),
 			  TODO: full numeric tower: number?, complex?, rational?
 			  --}
-              ("print", printLispVal),
               ("number?", isNumber),
               ("integer?", isInteger),
               ("real?", isReal),
@@ -678,12 +677,6 @@ equal [arg1, arg2] = do
   eqvEquals <- eqv [arg1, arg2]
   return $ Bool $ (primitiveEquals || let (Bool x) = eqvEquals in x)
 equal badArgList = throwError $ NumArgs 2 badArgList
-
-{- TODO: must be a better way to implement some of these... -}
-printLispVal :: [LispVal] -> ThrowsError LispVal
-printLispVal [lv] = 
-  do let tmp = show lv
-     return lv
 
 -------------- String Functions --------------
 
