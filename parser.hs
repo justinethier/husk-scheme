@@ -371,6 +371,8 @@ eval env (List (Atom "case" : keyAndClauses)) =
        ekey <- eval env key
        evalCase env $ List $ (ekey : cls)
 
+-- TODO: need to scan for comments, this may be a good place,
+--       rather than in the parser itself
 eval env (List [Atom "load", String filename]) =
      load filename >>= liftM last . mapM (eval env)
 
