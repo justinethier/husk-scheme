@@ -1,7 +1,0 @@
-./skim "(case (* 2 3) ((6) '(#t)) (else #f))"
-./skim "(case (* 2 3) ((6) #t) (else #f))"
-./skim "(case (* 2 3) ((8 9 10 2 3 4 5 1 3 6) #t) (else #f))"
-./skim "(case (* 2 3) ((4) #f) (else '(#t)))"
-./skim "(case (* 2 3) ((4 5 7 9 4 2 10) #f) (else '(#t)))"
-#./skim "(case (* 2 3) ((1 2 "test") #f) (else '(#t)))"
-./skim "(case (* 2 3) (else #t))"
