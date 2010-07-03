@@ -43,4 +43,6 @@
  ))
 
 (define sums (build-pdiv 10000 (make-hash-table)))
-(sum (reduce-sums sums 10000 '()))
+
+(print "Solution: ")
+(print (sum (reduce-sums sums 10000 '())))
