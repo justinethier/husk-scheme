@@ -84,3 +84,9 @@
 (define (map func lst)        (foldr (lambda (x y) (cons (func x) y)) '() lst))
 (define (filter pred lst)     (foldr (lambda (x y) (if (pred x) (cons x y) y)) '() lst))
 
+
+(define (list-tail) '())
+(define (list-ref)  '())
+(define (append inlist alist) (foldr (lambda (ap in) (cons ap in)) alist inlist))
+
+
