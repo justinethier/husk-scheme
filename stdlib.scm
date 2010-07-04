@@ -85,8 +85,12 @@
 (define (filter pred lst)     (foldr (lambda (x y) (if (pred x) (cons x y) y)) '() lst))
 
 
-(define (list-tail) '())
-(define (list-ref)  '())
+(define (list-tail lst k) 
+        (if (zero? k)
+          lst
+          (list-tail (cdr lst) (- k 1))))
+(define (list-ref lst k)  (car (list-tail lst k)))
+
 (define (append inlist alist) (foldr (lambda (ap in) (cons ap in)) alist inlist))
 
 
