@@ -1,5 +1,5 @@
-skim: parser.hs
-	ghc --make -package parsec -fglasgow-exts -o skim parser.hs
+skim: core.hs
+	ghc --make -package parsec -fglasgow-exts -o skim core.hs
 
 # Run all unit tests
 test: skim
