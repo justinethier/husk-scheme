@@ -1,3 +1,6 @@
+;
+; Unit tests for the skim standard library
+;
 (load "skim-unit.scm")
 
 (assert-equal (lambda () (map (curry + 2) '(1 2 3 4))) 

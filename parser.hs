@@ -301,8 +301,19 @@ parseUnquoteSpliced = do
   x <- parseExpr
   return $ List [Atom "unquote-splicing", x]
 
+
+-- Comment parser
+-- TODO: this is a hack, it should really not return anything...
+parseComment :: Parser LispVal
+parseComment = do
+  char ';'
+  many (noneOf ("\n"))
+  return $ List [Atom "quote", List []]
+
+
 parseExpr :: Parser LispVal
 parseExpr = try(parseDecimal) 
+  <|> parseComment
   <|> parseNumber
   <|> parseChar
   <|> parseUnquoteSpliced
