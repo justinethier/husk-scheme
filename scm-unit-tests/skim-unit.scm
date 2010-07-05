@@ -1,6 +1,11 @@
-(define (unit-test-handler result) (write result))
+(load "../stdlib.scm")
 
-(define (assert proc) (unit-test-handler (eqv? #t (proc))))
+(define (unit-test-handler expected result) 
+  (if (not (eqv? expected result))
+    (write (list "Test failed. Expected: " expected " Observed: " result))
+    #t))
 
-(define (assert-equal proc value) (unit-test-handler (eqv? (proc) value)))
+(define (assert proc) (unit-test-handler #t (proc)))
+
+(define (assert-equal proc value) (unit-test-handler value (proc)))
 
