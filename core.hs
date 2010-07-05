@@ -718,20 +718,19 @@ stringLength :: [LispVal] -> ThrowsError LispVal
 stringLength [String s] = return $ Number $ foldr (const (+1)) 0 s -- Could probably do 'length s' instead...
 stringLength [badType] = throwError $ TypeMismatch "string" badType
 stringLength badArgList = throwError $ NumArgs 1 badArgList
--- TODO: type error? arg error?
 
 stringRef :: [LispVal] -> ThrowsError LispVal
 stringRef [(String s), (Number k)] = return $ Char $ s !! fromInteger k
 stringRef [badType] = throwError $ TypeMismatch "string number" badType
 stringRef badArgList = throwError $ NumArgs 2 badArgList
--- TODO: error?
 
 substring :: [LispVal] -> ThrowsError LispVal
 substring [(String s), (Number start), (Number end)] = 
   do let length = fromInteger $ end - start
      let begin = fromInteger start 
      return $ String $ (take length . drop begin) s
--- TODO: error handling
+substring [badType] = throwError $ TypeMismatch "string number number" badType
+substring badArgList = throwError $ NumArgs 3 badArgList
 
 stringCIEquals :: [LispVal] -> ThrowsError LispVal
 stringCIEquals [(String s1), (String s2)] = do
