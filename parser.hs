@@ -572,8 +572,9 @@ primitives = [("+", numericBinop (+)),
               ("equal?", equal),
 
               ("pair?", isDottedList),
-{- TODO:              ("procedure?", isProcedure),
-              ("vector?", isVector),
+              ("procedure?", isProcedure),
+{-
+ - ("vector?", isVector),
 			  TODO: full numeric tower: number?, complex?, rational?
 			  --}
               ("number?", isNumber),
@@ -792,6 +793,12 @@ isInteger _ = return $ Bool False
 isDottedList :: [LispVal] -> ThrowsError LispVal
 isDottedList ([DottedList l d]) = return $ Bool True {- TODO: review code to convince myself why this works -}
 isDottedList _ = return $  Bool False
+
+isProcedure :: [LispVal] -> ThrowsError LispVal
+isProcedure ([PrimitiveFunc f]) = return $ Bool True
+isProcedure ([Func params vararg body closure]) = return $ Bool True
+isProcedure ([IOFunc f]) = return $ Bool True
+isProcedure _ = return $ Bool False
 
 isList :: [LispVal] -> ThrowsError LispVal
 isList ([List a]) = return $ Bool True
