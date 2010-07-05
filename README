@@ -1,6 +1,16 @@
 skim-scheme
-Created by Justin Ethier, May-June 2010.
+Created by Justin Ethier, May-July 2010.
 
-skim-scheme is a "simple" dialect of scheme which implements a subset of the R5RS standard.
+skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS standard.
 
-This project is written in Haskell and based on the code from this tutorial: http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours
+The skim interpreter is written in Haskell and based on the code from this tutorial: http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours
+
+Examples
+--------
+
+The examples directory contains example scheme programs.
+
+Unit Tests
+----------
+
+The 'scm-unit-tests' directory contains unit tests for much of the scheme code. Tests may be executed via 'make test'
