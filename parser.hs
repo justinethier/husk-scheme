@@ -702,7 +702,7 @@ buildString (Char c:rest) = do
     String s -> return $ String $ [c] ++ s
     badType -> throwError $ TypeMismatch "character" badType
 buildString [badType] = throwError $ TypeMismatch "character" badType
-buildString badArgList = throwError $ NumArgs 1 badArgList -- TODO: wrong error for this
+buildString badArgList = throwError $ NumArgs 1 badArgList
 
 makeString :: [LispVal] -> ThrowsError LispVal
 makeString [(Number n)] = return $ doMakeString n ' ' ""
@@ -765,11 +765,10 @@ stringToList [(String s)] = return $ List $ map (Char) s
 stringToList [badType] = throwError $ TypeMismatch "string" badType
 stringToList badArgList = throwError $ NumArgs 1 badArgList
 
--- TODO: this is not working yet
 listToString :: [LispVal] -> ThrowsError LispVal
-listToString [(List l)] = return $ String "TODO" 
-listToString [badType] = throwError $ TypeMismatch "string" badType
-listTostring badArgList = throwError $ NumArgs 1 badArgList
+listToString [(List [])] = return $ String ""
+listToString [(List l)] = buildString l
+listToString [badType] = throwError $ TypeMismatch "list" badType
 
 stringCopy :: [LispVal] -> ThrowsError LispVal
 stringCopy [String s] = return $ String s
