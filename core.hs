@@ -750,9 +750,7 @@ stringCIEquals [(String s1), (String s2)] = do
                              else if (toLower $ s1 !! idx) == (toLower $ s2 !! idx)
                                      then ciCmp s1 s2 (idx + 1)
                                      else False
--- TODO: error handling
 stringCIEquals [badType] = throwError $ TypeMismatch "string string" badType
---stringCIEquals [_, badType] = throwError $ TypeMismatch "string" badType
 stringCIEquals badArgList = throwError $ NumArgs 2 badArgList
 
 stringAppend :: [LispVal] -> ThrowsError LispVal
