@@ -52,7 +52,7 @@ runOne args = do
   let argv = List $ map String $ args
   if alreadyDefined
      then (runIOThrows $ liftM show $ eval env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
-     else (runIOThrows $ liftM show $ eval env $ Bool False) >>= hPutStrLn stderr
+     else (runIOThrows $ liftM show $ eval env $ Bool True) >>= hPutStrLn stderr
 
 runRepl :: IO ()
 runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "skim> ") . evalAndPrint
