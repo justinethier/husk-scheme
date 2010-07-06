@@ -4,7 +4,7 @@
  - @author Justin Ethier
  - -}
 module Main where
---import Array
+import Array
 import Control.Monad
 import Control.Monad.Error
 import Char
@@ -147,7 +147,7 @@ extractValue (Right val) = val
 data LispVal = Atom String
 	| List [LispVal]
 	| DottedList [LispVal] LispVal
---	| Vector Array
+	| Vector ((Integer, Integer) -> [(Integer, LispVal)] -> Array Integer LispVal)
 	| Number Integer
 	| Float Float
  	| String String
@@ -167,7 +167,7 @@ showVal (Number contents) = show contents
 showVal (Float contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
---showVal (Vector contents) = "#(" ++ unwordsList contents ++ ")"
+showVal (Vector contents) = "#(" ++ (unwordsList $ elems (contents)) ++ ")"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
