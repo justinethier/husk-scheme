@@ -371,14 +371,16 @@ eval env (List [Atom "if", pred, conseq]) =
          Bool True -> eval env conseq
          otherwise -> eval env $ List []
 
--- TODO: return nothing if all cond cases are false
 eval env (List (Atom "cond" : clauses)) = 
-    do let c =  clauses !! 0 -- First clause
+  if length clauses == 0
+   then throwError $ BadSpecialForm "No matching clause" $ String "cond"
+   else do
+       let c =  clauses !! 0 -- First clause
        let cs = tail clauses -- other clauses
        test <- case c of
          List (Atom "else" : expr) -> eval env $ Bool True
          List (cond : expr) -> eval env cond
-         -- TODO: some kind of error?  otherwise -> eval $ Bool False
+         badType -> throwError $ TypeMismatch "clause" badType 
        case test of
          Bool True -> evalCond env c
          otherwise -> eval env $ List $ (Atom "cond" : cs)
