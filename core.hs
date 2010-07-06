@@ -46,7 +46,14 @@ runOne args = do
   env <-primitiveBindings >>= flip bindVars [("args", List $ map String $ drop 1 args)]
   (runIOThrows $ liftM show $ eval env (List [Atom "load", String (args !! 0)]))
      >>= hPutStrLn stderr
-
+{-
+  -- Call into (main) if it exists...
+  alreadyDefined <- liftIO $ isBound env "main"
+  let argv = List $ map String $ args
+  if alreadyDefined
+     then (runIOThrows $ liftM show $ eval env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
+     else (runIOThrows $ liftM show $ eval env $ Bool True) >>= hPutStrLn stderr
+-}
 runRepl :: IO ()
 runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "skim> ") . evalAndPrint
 
@@ -594,6 +601,7 @@ primitives = [("+", numericBinop (+)),
               ("string-ref", stringRef),
               ("substring", substring),
               ("string-append", stringAppend),
+              ("string->number", stringToNumber),
               ("string->list", stringToList),
               ("list->string", listToString),
               ("string-copy", stringCopy),
@@ -758,6 +766,12 @@ stringAppend (String st:sts) = do
     otherwise -> throwError $ TypeMismatch "string" otherwise
 stringAppend [badType] = throwError $ TypeMismatch "string" badType
 stringAppend badArgList = throwError $ NumArgs 1 badArgList
+
+-- This could be expanded, for now just converts integers
+stringToNumber :: [LispVal] -> ThrowsError LispVal
+stringToNumber [(String s)] = return $ Number $ read s
+stringToNumber [badType] = throwError $ TypeMismatch "string" badType
+stringToNumber badArgList = throwError $ NumArgs 1 badArgList
 
 stringToList :: [LispVal] -> ThrowsError LispVal
 stringToList [(String s)] = return $ List $ map (Char) s
