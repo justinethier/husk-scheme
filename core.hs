@@ -45,15 +45,15 @@ runOne :: [String] -> IO ()
 runOne args = do
   env <-primitiveBindings >>= flip bindVars [("args", List $ map String $ drop 1 args)]
   (runIOThrows $ liftM show $ eval env (List [Atom "load", String (args !! 0)]))
-     >>= hPutStrLn stderr
-{-
+--     >>= hPutStrLn stderr
+
   -- Call into (main) if it exists...
   alreadyDefined <- liftIO $ isBound env "main"
   let argv = List $ map String $ args
   if alreadyDefined
      then (runIOThrows $ liftM show $ eval env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
-     else (runIOThrows $ liftM show $ eval env $ Bool True) >>= hPutStrLn stderr
--}
+     else (runIOThrows $ liftM show $ eval env $ Bool False) >>= hPutStrLn stderr
+
 runRepl :: IO ()
 runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "skim> ") . evalAndPrint
 
