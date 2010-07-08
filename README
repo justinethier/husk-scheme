@@ -5,6 +5,12 @@ skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS s
 
 The skim interpreter is written in Haskell and based on the code from this tutorial: http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours
 
+Building
+--------
+
+TODO: document all dependencies here, including how to install them, versions, etc...
+
+
 Examples
 --------
 
