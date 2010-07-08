@@ -4,7 +4,7 @@
  - @author Justin Ethier
  - -}
 module Main where
-import Array
+import qualified Data.Vector
 import Control.Monad
 import Control.Monad.Error
 import Char
@@ -147,7 +147,8 @@ extractValue (Right val) = val
 data LispVal = Atom String
 	| List [LispVal]
 	| DottedList [LispVal] LispVal
-	| Vector ((Integer, Integer) -> [(Integer, LispVal)] -> Array Integer LispVal)
+--	| Vector ((Integer, Integer) -> [(Integer, LispVal)] -> Array Integer LispVal)
+	| Vector (Data.Vector.Vector LispVal)
 	| Number Integer
 	| Float Float
  	| String String
@@ -167,7 +168,7 @@ showVal (Number contents) = show contents
 showVal (Float contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
-showVal (Vector contents) = "#(" ++ (unwordsList $ elems (contents)) ++ ")"
+showVal (Vector contents) = "TODO: vector" --"#(" ++ (unwordsList $ elems (contents)) ++ ")"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
@@ -272,8 +273,10 @@ parseString = do
 	char '"'
 	return $ String x
 
---parseVector :: Parser LispVal
---parseVector = liftM Vector $ sepBy parseExpr spaces
+parseVector :: Parser LispVal
+parseVector = do
+  -- TODO: this does not work
+  return $ Vector $ sepBy parseExpr spaces
 
 parseList :: Parser LispVal
 parseList = liftM List $ sepBy parseExpr spaces
@@ -324,6 +327,10 @@ parseExpr = try(parseDecimal)
   <|> parseNumber
   <|> parseChar
   <|> parseUnquoteSpliced
+  <|> do string "#("
+         x <- try parseVector
+         char ')'
+         return x
   <|> parseAtom
   <|> parseString 
   <|> parseQuoted
