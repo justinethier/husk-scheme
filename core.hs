@@ -736,11 +736,12 @@ equal badArgList = throwError $ NumArgs 2 badArgList
 -------------- Vector Primitives --------------
 
 makeVector :: [LispVal] -> ThrowsError LispVal
-makeVector [(Number n)] = do
-  l <- List $ take (fromInteger n) (iterate (\x -> x) (List []))
-  return $ Vector (listArray (0, length l - 1)) l
---makeVector [(Number n), obj] = take n (iterate (\x -> x) obj)
-makeVector badArgList = throwError $ NumArgs 1 badArgList -- TODO: need more err handling, this one likely wrong
+makeVector [(Number n)] = makeVector [Number n, List []]
+makeVector [(Number n), a] = do
+  let l = replicate (fromInteger n) a 
+  return $ Vector $ (listArray (0, length l - 1)) l
+makeVector [badType] = throwError $ TypeMismatch "integer" badType 
+makeVector badArgList = throwError $ NumArgs 1 badArgList
 
 
 -------------- String Primitives --------------
