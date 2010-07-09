@@ -599,7 +599,6 @@ primitives = [("+", numericBinop (+)),
 
               ("pair?", isDottedList),
               ("procedure?", isProcedure),
-              ("vector?", unaryOp isVector),
 {-
 			  TODO: full numeric tower: number?, complex?, rational?
 			  --}
@@ -612,6 +611,18 @@ primitives = [("+", numericBinop (+)),
               ("symbol->string", symbol2String),
               ("string->symbol", string2Symbol),
               ("char?", isChar),
+
+              ("vector?", unaryOp isVector),
+              ("make-vector", makeVector),
+{- TODO:
+              ("vector", Vector),
+              ("vector-length", vectorLength),
+              ("vector-ref", vectorRef),
+              ("vector-set!", vectorSet),
+              ("vector-fill!", vectorFill),
+              ("vector-list", vectorToList),
+              ("list-vector", listToVector),
+			  -}
 
               ("string?", isString),
               ("string", buildString),
@@ -722,7 +733,17 @@ equal [arg1, arg2] = do
   return $ Bool $ (primitiveEquals || let (Bool x) = eqvEquals in x)
 equal badArgList = throwError $ NumArgs 2 badArgList
 
--------------- String Functions --------------
+-------------- Vector Primitives --------------
+
+makeVector :: [LispVal] -> ThrowsError LispVal
+makeVector [(Number n)] = do
+  l <- List $ take (fromInteger n) (iterate (\x -> x) (List []))
+  return $ Vector (listArray (0, length l - 1)) l
+--makeVector [(Number n), obj] = take n (iterate (\x -> x) obj)
+makeVector badArgList = throwError $ NumArgs 1 badArgList -- TODO: need more err handling, this one likely wrong
+
+
+-------------- String Primitives --------------
 
 buildString :: [LispVal] -> ThrowsError LispVal
 buildString [(Char c)] = return $ String [c]
