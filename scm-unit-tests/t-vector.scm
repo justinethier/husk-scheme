@@ -5,6 +5,7 @@
 (assert-equal (lambda () (make-vector 4 "test")) '#("test" "test" "test" "test"))
 (assert-equal (lambda () (vector-length (make-vector 4 "test"))) 4)
 (assert-equal (lambda () (vector-length '#())) 0)
+(assert-equal (lambda () (vector-ref '#(1) 0)) 1)
 
 ; TODO:
 ;              ("make-vector", makeVector),
