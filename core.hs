@@ -148,6 +148,7 @@ data LispVal = Atom String
 	| List [LispVal]
 	| DottedList [LispVal] LispVal
 --	| Vector ((Integer, Integer) -> [(Integer, LispVal)] -> Array Integer LispVal)
+--	| Vector Integer (Data.Vector.Vector LispVal)
 	| Vector (Data.Vector.Vector LispVal)
 	| Number Integer
 	| Float Float
@@ -168,7 +169,7 @@ showVal (Number contents) = show contents
 showVal (Float contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
-showVal (Vector contents) = "TODO: vector" --"#(" ++ (unwordsList $ elems (contents)) ++ ")"
+showVal (Vector contents) = "#(" ++ (unwordsList $ Data.Vector.toList contents) ++ ")"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
@@ -275,8 +276,8 @@ parseString = do
 
 parseVector :: Parser LispVal
 parseVector = do
-  -- TODO: this does not work
-  return $ Vector $ sepBy parseExpr spaces
+  vals <- sepBy parseExpr spaces
+  return $ Vector $ Data.Vector.fromList vals
 
 parseList :: Parser LispVal
 parseList = liftM List $ sepBy parseExpr spaces
@@ -328,7 +329,7 @@ parseExpr = try(parseDecimal)
   <|> parseChar
   <|> parseUnquoteSpliced
   <|> do string "#("
-         x <- try parseVector
+         x <- parseVector
          char ')'
          return x
   <|> parseAtom
