@@ -615,9 +615,9 @@ primitives = [("+", numericBinop (+)),
               ("vector?", unaryOp isVector),
               ("make-vector", makeVector),
               ("vector-length", vectorLength),
+              ("vector-ref", vectorRef),
 {- TODO:
               ("vector", Vector),
-              ("vector-ref", vectorRef),
               ("vector-set!", vectorSet),
               ("vector-fill!", vectorFill),
               ("vector-list", vectorToList),
@@ -737,7 +737,7 @@ equal badArgList = throwError $ NumArgs 2 badArgList
 
 -------------- Vector Primitives --------------
 
-makeVector, vectorLength :: [LispVal] -> ThrowsError LispVal
+makeVector, vectorLength, vectorRef :: [LispVal] -> ThrowsError LispVal
 makeVector [(Number n)] = makeVector [Number n, List []]
 makeVector [(Number n), a] = do
   let l = replicate (fromInteger n) a 
@@ -749,6 +749,9 @@ vectorLength [(Vector v)] = return $ Number $ toInteger $ length (elems v)
 vectorLength [badType] = throwError $ TypeMismatch "vector" badType 
 vectorLength badArgList = throwError $ NumArgs 1 badArgList
 
+vectorRef [(Vector v), (Number n)] = return $ v ! (fromInteger n)
+vectorRef [badType] = throwError $ TypeMismatch "vector integer" badType 
+vectorRef badArgList = throwError $ NumArgs 2 badArgList
 -------------- String Primitives --------------
 
 buildString :: [LispVal] -> ThrowsError LispVal
