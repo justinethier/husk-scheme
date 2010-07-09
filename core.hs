@@ -453,6 +453,17 @@ eval env (List [Atom "string-set!", Atom var, index, character]) = do
                                        (take (length str) . drop (fromInteger index + 1)) str
     -- TODO: error handler
 
+eval env val@(Vector _) = return val
+
+eval env (List [Atom "vector-set!", Atom var, index, object]) = do 
+  idx <- eval env index
+  obj <- eval env object
+  vec <- eval env =<< getVar env var
+  (eval env $ (updateVector vec idx obj)) >>= setVar env var
+  where updateVector (Vector vec) (Number idx) obj = Vector $ vec//[(fromInteger idx, obj)]
+        -- TODO: error handler?
+-- TODO: error handler? - eval env (List [Atom "vector-set!", args]) = throwError $ NumArgs 2 args
+
 eval env (List (function : args)) = do
   func <- eval env function
   argVals <- mapM (eval env) args
@@ -618,7 +629,6 @@ primitives = [("+", numericBinop (+)),
               ("vector-length", vectorLength),
               ("vector-ref", vectorRef),
 {- TODO:
-              ("vector-set!", vectorSet),
               ("vector-fill!", vectorFill),
               ("vector-list", vectorToList),
               ("list-vector", listToVector),
@@ -757,6 +767,11 @@ vectorLength badArgList = throwError $ NumArgs 1 badArgList
 vectorRef [(Vector v), (Number n)] = return $ v ! (fromInteger n)
 vectorRef [badType] = throwError $ TypeMismatch "vector integer" badType 
 vectorRef badArgList = throwError $ NumArgs 2 badArgList
+
+--vectorSet [(Vector v), (Number k), obj] = 
+--vectorSet [badType] = throwError $ TypeMismatch "vector integer obj" badType 
+--vectorSet badArgList = throwError $ NumArgs 3 badArgList
+
 -------------- String Primitives --------------
 
 buildString :: [LispVal] -> ThrowsError LispVal
