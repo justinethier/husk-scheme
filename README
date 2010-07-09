@@ -5,18 +5,25 @@ skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS s
 
 The skim interpreter is written in Haskell and based on the code from this tutorial: http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours
 
-Building
---------
 
-TODO: document all dependencies here, including how to install them, versions, etc...
-TODO: add build, version, install info for Data.Vector, if it ends up being used
+------------
+Dependencies
+------------
 
-Examples
---------
+The following packages are required to build skim-scheme:
 
-The examples directory contains example scheme programs.
+GHC - http://www.haskell.org/ghc/
 
+
+----------
 Unit Tests
 ----------
 
 The 'scm-unit-tests' directory contains unit tests for much of the scheme code. Tests may be executed via 'make test'
+
+
+--------
+Examples
+--------
+
+The examples directory contains example scheme programs.
