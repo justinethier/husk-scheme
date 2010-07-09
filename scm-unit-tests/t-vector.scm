@@ -2,6 +2,7 @@
 
 (assert-equal (lambda () (vector? '#(1 2 3 4 5))) #t)
 (assert-equal (lambda () (vector? '(1 2 3 4 5))) #f)
+(assert-equal (lambda () (make-vector 4 "test")) '#("test" "test" "test" "test"))
 
 ; TODO:
 ;              ("make-vector", makeVector),
