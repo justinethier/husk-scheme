@@ -614,10 +614,10 @@ primitives = [("+", numericBinop (+)),
 
               ("vector?", unaryOp isVector),
               ("make-vector", makeVector),
+              ("vector", buildVector),
               ("vector-length", vectorLength),
               ("vector-ref", vectorRef),
 {- TODO:
-              ("vector", Vector),
               ("vector-set!", vectorSet),
               ("vector-fill!", vectorFill),
               ("vector-list", vectorToList),
@@ -737,13 +737,18 @@ equal badArgList = throwError $ NumArgs 2 badArgList
 
 -------------- Vector Primitives --------------
 
-makeVector, vectorLength, vectorRef :: [LispVal] -> ThrowsError LispVal
+makeVector, buildVector, vectorLength, vectorRef :: [LispVal] -> ThrowsError LispVal
 makeVector [(Number n)] = makeVector [Number n, List []]
 makeVector [(Number n), a] = do
   let l = replicate (fromInteger n) a 
   return $ Vector $ (listArray (0, length l - 1)) l
 makeVector [badType] = throwError $ TypeMismatch "integer" badType 
 makeVector badArgList = throwError $ NumArgs 1 badArgList
+
+buildVector (o:os) = do
+  let lst = o:os
+  return $ Vector $ (listArray (0, length lst - 1)) lst
+buildVector badArgList = throwError $ NumArgs 1 badArgList
 
 vectorLength [(Vector v)] = return $ Number $ toInteger $ length (elems v)
 vectorLength [badType] = throwError $ TypeMismatch "vector" badType 
