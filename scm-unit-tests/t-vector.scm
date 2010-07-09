@@ -7,12 +7,10 @@
 (assert-equal (lambda () (vector-length '#())) 0)
 (assert-equal (lambda () (vector-ref '#(1) 0)) 1)
 
-; TODO:
-;              ("make-vector", makeVector),
-;{- TODO:
+;
+; TODO: test cases for the following forms:
+;
 ;              ("vector", Vector),
-;              ("vector-length", vectorLength),
-;              ("vector-ref", vectorRef),
 ;              ("vector-set!", vectorSet),
 ;              ("vector-fill!", vectorFill),
 ;              ("vector-list", vectorToList),
