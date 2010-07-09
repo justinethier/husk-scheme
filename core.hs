@@ -1,13 +1,17 @@
 {-
- - Scheme Parser
+ - skim-scheme interpreter
+ -
+ - A lightweight dialect of R5RS scheme.
  -
  - @author Justin Ethier
+ -
  - -}
 module Main where
-import qualified Data.Vector
+-- TODO: old code, remove in next rev: import qualified Data.Vector
 import Control.Monad
 import Control.Monad.Error
 import Char
+import Data.Array
 import Data.IORef
 import Maybe
 import List
@@ -29,7 +33,6 @@ readPrompt prompt = flushStr prompt >> getLine
 
 evalString :: Env -> String -> IO String
 evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= eval env
---return $ extractValue $ trapError (liftM show $ readExpr expr >>= eval)
 
 evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn
@@ -147,9 +150,8 @@ extractValue (Right val) = val
 data LispVal = Atom String
 	| List [LispVal]
 	| DottedList [LispVal] LispVal
---	| Vector ((Integer, Integer) -> [(Integer, LispVal)] -> Array Integer LispVal)
---	| Vector Integer (Data.Vector.Vector LispVal)
-	| Vector (Data.Vector.Vector LispVal)
+--	TODO: old code from Data.Vector implementation: | Vector (Data.Vector.Vector LispVal)
+	| Vector (Array Int LispVal)
 	| Number Integer
 	| Float Float
  	| String String
@@ -169,7 +171,8 @@ showVal (Number contents) = show contents
 showVal (Float contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
-showVal (Vector contents) = "#(" ++ (unwordsList $ Data.Vector.toList contents) ++ ")"
+-- TODO: old code, remove in next rev:  showVal (Vector contents) = "#(" ++ (unwordsList $ Data.Vector.toList contents) ++ ")"
+showVal (Vector contents) = "#(" ++ (unwordsList $ Data.Array.elems contents) ++ ")"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
@@ -188,7 +191,7 @@ unwordsList = unwords . map showVal
 instance Show LispVal where show = showVal
 
 symbol :: Parser Char
-symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
+symbol = oneOf "!$%&|*+-/:<=>?@^_~" -- TODO: I removed #, make sure this is OK w/spec, and test cases
 
 spaces :: Parser ()
 spaces = skipMany1 space
@@ -198,10 +201,14 @@ parseAtom = do
 	first <- letter <|> symbol
 	rest <- many (letter <|> digit <|> symbol)
 	let atom = first:rest
-	return $ case atom of
-		"#t" -> Bool True
-		"#f" -> Bool False
-		_    -> Atom atom
+	return $ Atom atom
+
+parseBool :: Parser LispVal
+parseBool = do string "#"
+               x <- oneOf "tf"
+               return $ case x of
+                          't' -> Bool True
+                          'f' -> Bool False
 
 parseChar :: Parser LispVal
 parseChar = do
@@ -277,7 +284,8 @@ parseString = do
 parseVector :: Parser LispVal
 parseVector = do
   vals <- sepBy parseExpr spaces
-  return $ Vector $ Data.Vector.fromList vals
+  return $ Vector (listArray (0, (length vals - 1)) vals)
+-- TODO: old code from Data.Vector implementation:  return $ Vector $ Data.Vector.fromList vals
 
 parseList :: Parser LispVal
 parseList = liftM List $ sepBy parseExpr spaces
@@ -328,12 +336,13 @@ parseExpr = try(parseDecimal)
   <|> parseNumber
   <|> parseChar
   <|> parseUnquoteSpliced
-  <|> do string "#("
+  <|> do try (string "#(")
          x <- parseVector
          char ')'
          return x
   <|> parseAtom
   <|> parseString 
+  <|> parseBool
   <|> parseQuoted
   <|> parseQuasiQuoted
   <|> parseUnquoted
@@ -590,14 +599,14 @@ primitives = [("+", numericBinop (+)),
 
               ("pair?", isDottedList),
               ("procedure?", isProcedure),
+              ("vector?", unaryOp isVector),
 {-
- - ("vector?", isVector),
 			  TODO: full numeric tower: number?, complex?, rational?
 			  --}
               ("number?", isNumber),
               ("integer?", isInteger),
               ("real?", isReal),
-              ("list?", isList),
+              ("list?", unaryOp isList),
               ("null?", isNull),
               ("symbol?", isSymbol),
               ("symbol->string", symbol2String),
@@ -633,6 +642,9 @@ boolBinop unpacker op args = if length args /= 2
                              else do left <- unpacker $ args !! 0
                                      right <- unpacker $ args !! 1
                                      return $ Bool $ left `op` right
+
+unaryOp :: (LispVal -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
+unaryOp f [v] = f v
 
 numBoolBinop = boolBinop unpackNum
 strBoolBinop = boolBinop unpackStr
@@ -820,9 +832,11 @@ isProcedure ([Func params vararg body closure]) = return $ Bool True
 isProcedure ([IOFunc f]) = return $ Bool True
 isProcedure _ = return $ Bool False
 
-isList :: [LispVal] -> ThrowsError LispVal
-isList ([List a]) = return $ Bool True
-isList _ = return $ Bool False
+isVector, isList :: LispVal -> ThrowsError LispVal
+isVector (Vector _) = return $ Bool True
+isVector _          = return $ Bool False
+isList (List _) = return $ Bool True
+isList _        = return $ Bool False
 
 isNull :: [LispVal] -> ThrowsError LispVal
 isNull ([List []]) = return $ Bool True
