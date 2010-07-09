@@ -614,9 +614,9 @@ primitives = [("+", numericBinop (+)),
 
               ("vector?", unaryOp isVector),
               ("make-vector", makeVector),
+              ("vector-length", vectorLength),
 {- TODO:
               ("vector", Vector),
-              ("vector-length", vectorLength),
               ("vector-ref", vectorRef),
               ("vector-set!", vectorSet),
               ("vector-fill!", vectorFill),
@@ -713,6 +713,8 @@ eqv [(String arg1), (String arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
+eqv [(Vector arg1), (Vector arg2)] = return $ Bool False -- TODO$ (length arg1 == length arg2) -- && 
+                                                    -- TODO: (all eqvPair $ zip arg1 arg2)
 eqv [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) && 
                                                     (all eqvPair $ zip arg1 arg2)
     where eqvPair (x1, x2) = case eqv [x1, x2] of
@@ -735,7 +737,7 @@ equal badArgList = throwError $ NumArgs 2 badArgList
 
 -------------- Vector Primitives --------------
 
-makeVector :: [LispVal] -> ThrowsError LispVal
+makeVector, vectorLength :: [LispVal] -> ThrowsError LispVal
 makeVector [(Number n)] = makeVector [Number n, List []]
 makeVector [(Number n), a] = do
   let l = replicate (fromInteger n) a 
@@ -743,6 +745,9 @@ makeVector [(Number n), a] = do
 makeVector [badType] = throwError $ TypeMismatch "integer" badType 
 makeVector badArgList = throwError $ NumArgs 1 badArgList
 
+vectorLength [(Vector v)] = return $ Number $ toInteger $ length (elems v)
+vectorLength [badType] = throwError $ TypeMismatch "vector" badType 
+vectorLength badArgList = throwError $ NumArgs 1 badArgList
 
 -------------- String Primitives --------------
 
