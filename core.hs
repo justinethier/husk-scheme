@@ -461,6 +461,17 @@ eval env (List [Atom "vector-set!", Atom var, index, object]) = do
         -- TODO: error handler?
 -- TODO: error handler? - eval env (List [Atom "vector-set!", args]) = throwError $ NumArgs 2 args
 
+eval env (List [Atom "vector-fill!", Atom var, object]) = do 
+  obj <- eval env object
+  vec <- eval env =<< getVar env var
+  (eval env $ (fillVector vec obj)) >>= setVar env var
+  where fillVector (Vector vec) obj = do
+          let l = replicate (lenVector vec) obj
+          Vector $ (listArray (0, length l - 1)) l
+        lenVector v = length (elems v)
+        -- TODO: error handler?
+-- TODO: error handler? - eval env (List [Atom "vector-fill!", args]) = throwError $ NumArgs 2 args
+
 eval env (List (function : args)) = do
   func <- eval env function
   argVals <- mapM (eval env) args
@@ -627,9 +638,6 @@ primitives = [("+", numericBinop (+)),
               ("vector-ref", vectorRef),
               ("vector->list", vectorToList),
               ("list->vector", listToVector),
-{- TODO:
-              ("vector-fill!", vectorFill),
-			  -}
 
               ("string?", isString),
               ("string", buildString),
