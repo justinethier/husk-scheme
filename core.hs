@@ -7,7 +7,6 @@
  -
  - -}
 module Main where
--- TODO: old code, remove in next rev: import qualified Data.Vector
 import Control.Monad
 import Control.Monad.Error
 import Char
@@ -150,7 +149,6 @@ extractValue (Right val) = val
 data LispVal = Atom String
 	| List [LispVal]
 	| DottedList [LispVal] LispVal
---	TODO: old code from Data.Vector implementation: | Vector (Data.Vector.Vector LispVal)
 	| Vector (Array Int LispVal)
 	| Number Integer
 	| Float Float
@@ -171,7 +169,6 @@ showVal (Number contents) = show contents
 showVal (Float contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
--- TODO: old code, remove in next rev:  showVal (Vector contents) = "#(" ++ (unwordsList $ Data.Vector.toList contents) ++ ")"
 showVal (Vector contents) = "#(" ++ (unwordsList $ Data.Array.elems contents) ++ ")"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
@@ -628,10 +625,10 @@ primitives = [("+", numericBinop (+)),
               ("vector", buildVector),
               ("vector-length", vectorLength),
               ("vector-ref", vectorRef),
+              ("vector->list", vectorToList),
+              ("list->vector", listToVector),
 {- TODO:
               ("vector-fill!", vectorFill),
-              ("vector-list", vectorToList),
-              ("list-vector", listToVector),
 			  -}
 
               ("string?", isString),
@@ -747,7 +744,7 @@ equal badArgList = throwError $ NumArgs 2 badArgList
 
 -------------- Vector Primitives --------------
 
-makeVector, buildVector, vectorLength, vectorRef :: [LispVal] -> ThrowsError LispVal
+makeVector, buildVector, vectorLength, vectorRef, vectorToList, listToVector :: [LispVal] -> ThrowsError LispVal
 makeVector [(Number n)] = makeVector [Number n, List []]
 makeVector [(Number n), a] = do
   let l = replicate (fromInteger n) a 
@@ -768,10 +765,13 @@ vectorRef [(Vector v), (Number n)] = return $ v ! (fromInteger n)
 vectorRef [badType] = throwError $ TypeMismatch "vector integer" badType 
 vectorRef badArgList = throwError $ NumArgs 2 badArgList
 
---vectorSet [(Vector v), (Number k), obj] = 
---vectorSet [badType] = throwError $ TypeMismatch "vector integer obj" badType 
---vectorSet badArgList = throwError $ NumArgs 3 badArgList
+vectorToList [(Vector v)] = return $ List $ elems v 
+vectorToList [badType] = throwError $ TypeMismatch "vector" badType 
+vectorToList badArgList = throwError $ NumArgs 1 badArgList
 
+listToVector [(List l)] = return $ Vector $ (listArray (0, length l - 1)) l
+listToVector [badType] = throwError $ TypeMismatch "list" badType 
+listToVector badArgList = throwError $ NumArgs 1 badArgList
 -------------- String Primitives --------------
 
 buildString :: [LispVal] -> ThrowsError LispVal
