@@ -7,6 +7,10 @@
 (assert-equal (lambda () (vector-length '#())) 0)
 (assert-equal (lambda () (vector-ref '#(1) 0)) 1)
 
+(define vec '#(1 2 3 4))
+(vector-fill! vec "Num")
+(assert-equal (lambda () (id vec)) '#("Num" "Num" "Num" "Num"))
+
 ;
 ; TODO: test cases for the following forms:
 ;
