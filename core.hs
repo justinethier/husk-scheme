@@ -6,6 +6,46 @@
  - @author Justin Ethier
  -
  - -}
+
+
+{-
+ - TODO: add macro support.
+ -
+ - From the book:
+ - Hygienic macros let you perform transformations on the source code before it's executed. They're a very convenient feature for adding new language features, and several standard parts of Scheme (such as let-bindings and additional control flow features) are defined in terms of them. Section 4.3 of R5RS defines the macro system's syntax and semantics, and there is a whole collection of papers on implementation. Basically, you'd want to intersperse a function between readExpr and eval that takes a form and a macro environment, looks for transformer keywords, and then transforms them according to the rules of the pattern language, rewriting variables as necessarily.
+ - 
+ - The relevant sections of R5RS are:
+ -  => 4.3 - shows syntax, let forms
+ -  => 5.3 - syntax definitions - specifically, (define-syntax)
+ -     http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-8.html#%_sec_5.3
+ -
+ - This example from R5RS illustrates several points:
+ -
+ - (let ((x 'outer))
+ -   (let-syntax ((m (syntax-rules () ((m) x))))
+ -       (let ((x 'inner))
+ -             (m))))                               ===>  outer
+ -
+ - Key Implementation Points:
+ -  1) Need to capture (store) the Env when a macro is define (spec basically says this as well)
+ -  2) eval needs to define the forms for let-syntax, etc, because they can be nested inside
+ -     other forms (in this case, let).
+ -  3) this means a macro Env will need to be passed around all calls to eval
+ -  4) as the book says, macro forms that are defined may be expanded by a new function
+ -     which executes after parsing is completed but before eval is called.
+ -
+ -  5) BUT, after reading 5.3, define-syntax is only allowed at the top level of a program.
+ -     this seems to indicate that (1), (2), and (3) are only applicable for the let forms,
+ -     and could be excluded from an initial implementation!
+ -
+ -     Need to re-read spec and verify this is true before detailed implementation.
+ -
+ - Questions:
+ -  => I do not see define-syntax in the R5RS spec. Did I miss it? How is it specified?
+ -
+ - -}
+
+
 module Main where
 import Control.Monad
 import Control.Monad.Error
