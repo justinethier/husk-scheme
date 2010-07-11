@@ -728,12 +728,7 @@ eqv [(String arg1), (String arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
-eqv [(Vector arg1), (Vector arg2)] = return $ Bool $ (vlength arg1 == vlength arg2) && 
-                                                     (all eqvPair $ zip (elems arg1) (elems arg2))
-  where eqvPair (x1, x2) = case eqv [x1, x2] of
-                               Left err -> False
-                               Right (Bool val) -> val
-        vlength vec = length (elems vec)
+eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
 eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
 eqv [_, _] = return $ Bool False
 eqv badArgList = throwError $ NumArgs 2 badArgList
@@ -746,6 +741,7 @@ eqvList eqvFunc [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == len
                                Right (Bool val) -> val
 
 equal :: [LispVal] -> ThrowsError LispVal
+equal [(Vector arg1), (Vector arg2)] = eqvList equal [List $ (elems arg1), List $ (elems arg2)] 
 equal [l1@(List arg1), l2@(List arg2)] = eqvList equal [l1, l2]
 equal [(DottedList xs x), (DottedList ys y)] = equal [List $ xs ++ [x], List $ ys ++ [y]]
 equal [arg1, arg2] = do
