@@ -734,19 +734,20 @@ eqv [(Vector arg1), (Vector arg2)] = return $ Bool $ (vlength arg1 == vlength ar
                                Left err -> False
                                Right (Bool val) -> val
         vlength vec = length (elems vec)
-eqv [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) && 
-                                                    (all eqvPair $ zip arg1 arg2)
-    where eqvPair (x1, x2) = case eqv [x1, x2] of
-                               Left err -> False
-                               Right (Bool val) -> val
+eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
 eqv [_, _] = return $ Bool False
 eqv badArgList = throwError $ NumArgs 2 badArgList
 
-{- TODO: fix bug from exercise #2:
- -       equal? has a bug in that a list of values is compared using eqv? instead of equal?.
- -       For example, (equal? '(1 "2") '(1 2)) = #f, while you'd expect it to be true. 
- - -}
+eqvList :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
+eqvList eqvFunc [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) && 
+                                                    (all eqvPair $ zip arg1 arg2)
+    where eqvPair (x1, x2) = case eqvFunc [x1, x2] of
+                               Left err -> False
+                               Right (Bool val) -> val
+
 equal :: [LispVal] -> ThrowsError LispVal
+equal [l1@(List arg1), l2@(List arg2)] = eqvList equal [l1, l2]
+equal [(DottedList xs x), (DottedList ys y)] = equal [List $ xs ++ [x], List $ ys ++ [y]]
 equal [arg1, arg2] = do
   primitiveEquals <- liftM or $ mapM (unpackEquals arg1 arg2)
                      [AnyUnpacker unpackNum, AnyUnpacker unpackStr, AnyUnpacker unpackBool]
