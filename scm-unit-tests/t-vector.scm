@@ -14,6 +14,8 @@
 (assert-equal (lambda () (eqv? '#("Num" "Num" "Num") '#("Num" "Num" "Num"))) #t)
 (assert-equal (lambda () (eqv? '#("Num" "Num" "Num") '#("Num" "Num" "Num2"))) #f)
 (assert-equal (lambda () (eqv? '#("Num" "Num" "Num") '#("Num" "Num" 2))) #f)
+(assert-equal (lambda () (eqv? '#("1" "2" "3") '#(1 2 3))) #f)
+(assert-equal (lambda () (equal? '#("1" "2" "3") '#(1 2 3))) #t)
 
 ;
 ; TODO: test cases for the following forms:
