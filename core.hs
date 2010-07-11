@@ -728,8 +728,12 @@ eqv [(String arg1), (String arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
-eqv [(Vector arg1), (Vector arg2)] = return $ Bool False -- TODO$ (length arg1 == length arg2) -- && 
-                                                    -- TODO: (all eqvPair $ zip arg1 arg2)
+eqv [(Vector arg1), (Vector arg2)] = return $ Bool $ (vlength arg1 == vlength arg2) && 
+                                                     (all eqvPair $ zip (elems arg1) (elems arg2))
+  where eqvPair (x1, x2) = case eqv [x1, x2] of
+                               Left err -> False
+                               Right (Bool val) -> val
+        vlength vec = length (elems vec)
 eqv [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) && 
                                                     (all eqvPair $ zip arg1 arg2)
     where eqvPair (x1, x2) = case eqv [x1, x2] of
