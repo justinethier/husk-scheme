@@ -11,6 +11,10 @@
 (vector-fill! vec "Num")
 (assert-equal (lambda () (id vec)) '#("Num" "Num" "Num" "Num"))
 
+(assert-equal (lambda () (eqv? '#("Num" "Num" "Num") '#("Num" "Num" "Num"))) #t)
+(assert-equal (lambda () (eqv? '#("Num" "Num" "Num") '#("Num" "Num" "Num2"))) #f)
+(assert-equal (lambda () (eqv? '#("Num" "Num" "Num") '#("Num" "Num" 2))) #f)
+
 ;
 ; TODO: test cases for the following forms:
 ;
