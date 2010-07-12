@@ -71,7 +71,11 @@ readPrompt :: String -> IO String
 readPrompt prompt = flushStr prompt >> getLine
 
 evalString :: Env -> String -> IO String
-evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= eval env
+
+-- TODO: how to pass macroENV around?
+-- TODO: what to initialize macroENV to? probably should be initialized to similar thing to
+--       primitiveBindings, so it can report errors if certain keywords are overwritten (???)
+evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= eval env
 
 evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn
@@ -85,6 +89,7 @@ until_ pred prompt action = do
 
 runOne :: [String] -> IO ()
 runOne args = do
+-- TODO: hook into macroEval once it works in runRepl
   env <-primitiveBindings >>= flip bindVars [("args", List $ map String $ drop 1 args)]
   (runIOThrows $ liftM show $ eval env (List [Atom "load", String (args !! 0)]))
 --     >>= hPutStrLn stderr
@@ -388,6 +393,11 @@ parseExpr = try(parseDecimal)
          char ')'
          return x
   <?> "Expression"
+
+{- Macro eval section -}
+macroEval :: Env -> LispVal -> IOThrowsError LispVal -- TODO: accept macroENV as well
+macroEval _ lisp@(List (Atom "define-syntax" : syntaxRules)) = throwError $ BadSpecialForm "TODO: define-syntax has not been implemented yet" $ String "define-syntax"
+macroEval _ lisp@(_) = return lisp
 
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
