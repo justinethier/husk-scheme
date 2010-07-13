@@ -7,6 +7,16 @@
  -
  - -}
 
+{-
+ - TODO: 
+ -
+ - => compare my functions against those listed on 
+ -    http://en.wikipedia.org/wiki/Scheme_(programming_language)
+ -
+ - => think about how to implement hashtable in scheme 
+ -    (http://www.math.grin.edu/~stone/events/scheme-workshop/hash-tables.html)
+ -
+ - -}
 
 {-
  - TODO: add macro support.
