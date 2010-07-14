@@ -663,12 +663,11 @@ primitives = [("+", numericBinop (+)),
               ("string<=?", strBoolBinop (<=)),
               ("string>=?", strBoolBinop (>=)),
               ("string-ci=?", stringCIEquals),
-{- TODO:
-              ("string-ci<?", strBoolBinop (<)),
-              ("string-ci>?", strBoolBinop (>)),
-              ("string-ci<=?", strBoolBinop (<=)),
-              ("string-ci>=?", strBoolBinop (>=)),
--}
+              ("string-ci<?", stringCIBoolBinop (<)),
+              ("string-ci>?", stringCIBoolBinop (>)),
+              ("string-ci<=?", stringCIBoolBinop (<=)),
+              ("string-ci>=?", stringCIBoolBinop (>=)),
+
               ("car", car),
               ("cdr", cdr),
               ("cons", cons),
@@ -893,6 +892,10 @@ stringCIEquals [(String s1), (String s2)] = do
                                      else False
 stringCIEquals [badType] = throwError $ TypeMismatch "string string" badType
 stringCIEquals badArgList = throwError $ NumArgs 2 badArgList
+
+-- TODO: stringCIBoolBinop :: (a -> a -> Bool) -> [LispVal] -> ThrowsError LispVal
+stringCIBoolBinop op [(String s1), (String s2)] = boolBinop unpackStr op [(String $ strToLower s1), (String $ strToLower s2)]
+  where strToLower str = map (toLower) str 
 
 stringAppend :: [LispVal] -> ThrowsError LispVal
 stringAppend [(String s)] = return $ String s -- Needed for "last" string value
