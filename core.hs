@@ -893,9 +893,11 @@ stringCIEquals [(String s1), (String s2)] = do
 stringCIEquals [badType] = throwError $ TypeMismatch "string string" badType
 stringCIEquals badArgList = throwError $ NumArgs 2 badArgList
 
--- TODO: stringCIBoolBinop :: (a -> a -> Bool) -> [LispVal] -> ThrowsError LispVal
+stringCIBoolBinop :: ([Char] -> [Char] -> Bool) -> [LispVal] -> ThrowsError LispVal
 stringCIBoolBinop op [(String s1), (String s2)] = boolBinop unpackStr op [(String $ strToLower s1), (String $ strToLower s2)]
   where strToLower str = map (toLower) str 
+stringCIBoolBinop op [badType] = throwError $ TypeMismatch "string string" badType
+stringCIBoolBinop op badArgList = throwError $ NumArgs 2 badArgList
 
 stringAppend :: [LispVal] -> ThrowsError LispVal
 stringAppend [(String s)] = return $ String s -- Needed for "last" string value
