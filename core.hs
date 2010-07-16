@@ -53,6 +53,9 @@
  - Questions:
  -  => I do not see define-syntax in the R5RS spec. Did I miss it? How is it specified?
  -
+ -  => How to implement the macro environment? Is it possible to have a separate Env, or
+ -     will the single Env need to hold 2 "namespaces" for macro's and normal vars? Also need
+ -     to think about local defines with (let)
  - -}
 
 
