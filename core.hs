@@ -94,7 +94,7 @@ until_ pred prompt action = do
 runOne :: [String] -> IO ()
 runOne args = do
 -- TODO: hook into macroEval (probably at a lower level, though)
-  env <-primitiveBindings >>= flip bindVars [(("vars", "args"), List $ map String $ drop 1 args)]
+  env <-primitiveBindings >>= flip bindVars [((varNamespace, "args"), List $ map String $ drop 1 args)]
   (runIOThrows $ liftM show $ eval env (List [Atom "load", String (args !! 0)]))
 --     >>= hPutStrLn stderr
 
@@ -136,31 +136,50 @@ runIOThrows action = runErrorT (trapError action) >>= return . extractValue
 -- TODO: create generic versions of these functions below, to support storing macro's in their own "namespace"
 -- 
 
+macroNamespace = "m"
+varNamespace = "v"
+
 isBound :: Env -> String -> IO Bool
-isBound envRef var = readIORef envRef >>= return . maybe False (const True) . lookup ("vars", var)
+isBound envRef var = isNamespacedBound envRef varNamespace var
+
+isNamespacedBound :: Env -> String -> String -> IO Bool
+isNamespacedBound envRef namespace var = readIORef envRef >>= return . maybe False (const True) . lookup (namespace, var)
 
 getVar :: Env -> String -> IOThrowsError LispVal
-getVar envRef var = do env <- liftIO $ readIORef envRef
-                       maybe (throwError $ UnboundVar "Getting an unbound variable: " var)
-                             (liftIO . readIORef)
-                             (lookup ("vars", var) env)
+getVar envRef var = getNamespacedVar envRef varNamespace var
 
-setVar :: Env -> String -> LispVal -> IOThrowsError LispVal
-setVar envRef var value = do env <- liftIO $ readIORef envRef
-                             maybe (throwError $ UnboundVar "Setting an unbound variable: " var)
-                                   (liftIO . (flip writeIORef value))
-                                   (lookup ("vars", var) env)
-                             return value
+getNamespacedVar :: Env -> String -> String -> IOThrowsError LispVal
+getNamespacedVar envRef
+                 namespace
+                 var = do env <- liftIO $ readIORef envRef
+                          maybe (throwError $ UnboundVar "Getting an unbound variable: " var)
+                                (liftIO . readIORef)
+                                (lookup (namespace, var) env)
 
-defineVar :: Env -> String -> LispVal -> IOThrowsError LispVal
-defineVar envRef var value = do
-  alreadyDefined <- liftIO $ isBound envRef var
+setVar, defineVar :: Env -> String -> LispVal -> IOThrowsError LispVal
+setVar envRef var value = setNamespacedVar envRef varNamespace var value
+defineVar envRef var value = defineNamespacedVar envRef varNamespace var value
+
+setNamespacedVar :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
+setNamespacedVar envRef 
+                 namespace
+                 var value = do env <- liftIO $ readIORef envRef
+                                maybe (throwError $ UnboundVar "Setting an unbound variable: " var)
+                                      (liftIO . (flip writeIORef value))
+                                      (lookup (namespace, var) env)
+                                return value
+
+defineNamespacedVar :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
+defineNamespacedVar envRef 
+                    namespace 
+                    var value = do
+  alreadyDefined <- liftIO $ isNamespacedBound envRef namespace var
   if alreadyDefined
-    then setVar envRef var value >> return value
+    then setNamespacedVar envRef namespace var value >> return value
     else liftIO $ do
        valueRef <- newIORef value
        env <- readIORef envRef
-       writeIORef envRef ((("vars", var), valueRef) : env)
+       writeIORef envRef (((namespace, var), valueRef) : env)
        return value
 
 bindVars :: Env -> [((String, String), LispVal)] -> IO Env
@@ -587,18 +606,18 @@ apply (PrimitiveFunc func) args = liftThrows $ func args
 apply (Func params varargs body closure) args =
   if num params /= num args && varargs == Nothing
      then throwError $ NumArgs (num params) args
-     else (liftIO $ bindVars closure $ zip (map ((,) "vars") params) args) >>= bindVarArgs varargs >>= evalBody
+     else (liftIO $ bindVars closure $ zip (map ((,) varNamespace) params) args) >>= bindVarArgs varargs >>= evalBody
   where remainingArgs = drop (length params) args
         num = toInteger . length
         evalBody env = liftM last $ mapM (eval env) body
         bindVarArgs arg env = case arg of
-          Just argName -> liftIO $ bindVars env [(("vars", argName), List $ remainingArgs)]
+          Just argName -> liftIO $ bindVars env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
 
 primitiveBindings :: IO Env
 primitiveBindings = nullEnv >>= (flip bindVars $ map (makeFunc IOFunc) ioPrimitives
                                               ++ map (makeFunc PrimitiveFunc) primitives)
-  where makeFunc constructor (var, func) = (("vars", var), constructor func)
+  where makeFunc constructor (var, func) = ((varNamespace, var), constructor func)
 
 ioPrimitives :: [(String, [LispVal] -> IOThrowsError LispVal)]
 ioPrimitives = [("apply", applyProc),
