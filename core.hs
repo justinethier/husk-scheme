@@ -132,16 +132,14 @@ runIOThrows :: IOThrowsError String -> IO String
 runIOThrows action = runErrorT (trapError action) >>= return . extractValue
 
 
---
--- TODO: create generic versions of these functions below, to support storing macro's in their own "namespace"
--- 
-
 macroNamespace = "m"
 varNamespace = "v"
 
+-- Determine if a variable is bound in the "variable" namespace
 isBound :: Env -> String -> IO Bool
 isBound envRef var = isNamespacedBound envRef varNamespace var
 
+-- Determine if a variable is bound in the given namespace
 isNamespacedBound :: Env -> String -> String -> IO Bool
 isNamespacedBound envRef namespace var = readIORef envRef >>= return . maybe False (const True) . lookup (namespace, var)
 
@@ -486,7 +484,7 @@ eval env (List (Atom "case" : keyAndClauses)) =
 -- TODO: need to scan for comments, this may be a good place,
 --       rather than in the parser itself
 eval env (List [Atom "load", String filename]) =
-     load filename >>= liftM last . mapM (eval env) -- TODO: integrate macroEval
+     load filename >>= liftM last . mapM (macroEval env >> eval env) -- TODO: test use of macroEval
 
 eval env (List [Atom "set!", Atom var, form]) = 
   eval env form >>= setVar env var
