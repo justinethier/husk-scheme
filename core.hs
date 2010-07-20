@@ -231,6 +231,7 @@ data LispVal = Atom String
 	        body :: [LispVal], closure :: Env}
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)
 	| Port Handle
+-- TODO: ellipsis (for macros)
 
 showVal :: LispVal -> String
 showVal (String contents) = "\"" ++ contents ++ "\""
@@ -400,6 +401,7 @@ parseComment = do
 
 parseExpr :: Parser LispVal
 parseExpr = try(parseDecimal) 
+-- TODO: parseEllipse (for macro's)
   <|> parseComment
   <|> parseNumber
   <|> parseChar
