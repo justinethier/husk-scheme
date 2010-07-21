@@ -424,7 +424,12 @@ parseExpr = try(parseDecimal)
 
 {- Macro eval section -}
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
-macroEval _ lisp@(List (Atom "define-syntax" : syntaxRules)) = throwError $ BadSpecialForm "TODO: define-syntax has not been implemented yet" $ String "define-syntax"
+macroEval env (List [Atom "define-syntax", keyword, transformerSpec]) = case transformerSpec of
+  List (Atom "syntax-rules" : identifiersAndRules) -> case identifiersAndRules of
+    List (List identifiers : rules) -> addRules env keyword identifiers rules 
+    otherwise -> throwError $ BadSpecialForm "TODO: define-syntax has not been implemented yet" $ String "define-syntax"
+  otherwise -> throwError $ BadSpecialForm "TODO: define-syntax has not been implemented yet" $ String "define-syntax"
+  where addRules env keyword identifiers rules = throwError $ BadSpecialForm "TODO: define-syntax has not been implemented yet" $ String "define-syntax"
 macroEval _ lisp@(_) = return lisp
 
 {- Eval section -}
