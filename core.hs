@@ -103,7 +103,7 @@ runOne args = do
   let argv = List $ map String $ args
   if alreadyDefined
      then (runIOThrows $ liftM show $ eval env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
-     else (runIOThrows $ liftM show $ eval env $ Bool True) >>= hPutStrLn stderr
+     else (runIOThrows $ liftM show $ eval env $ Nil "") >>= hPutStrLn stderr
 
 runRepl :: IO ()
 runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "skim> ") . evalAndPrint
@@ -232,8 +232,10 @@ data LispVal = Atom String
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)
 	| Port Handle
 -- TODO: ellipsis (for macros)
+    | Nil String -- String is probably wrong type here, but OK for now (do not expect to use this much, just internally)
 
 showVal :: LispVal -> String
+showVal (Nil _) = ""
 showVal (String contents) = "\"" ++ contents ++ "\""
 showVal (Char chr) = [chr]
 showVal (Atom name) = name
@@ -396,7 +398,7 @@ parseComment :: Parser LispVal
 parseComment = do
   char ';'
   many (noneOf ("\n"))
-  return $ List [Atom "quote", List []]
+  return $ Nil ""
 
 
 parseExpr :: Parser LispVal
@@ -424,16 +426,15 @@ parseExpr = try(parseDecimal)
 
 {- Macro eval section -}
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
-macroEval env (List [Atom "define-syntax", keyword, transformerSpec]) = case transformerSpec of
-  List (Atom "syntax-rules" : identifiersAndRules) -> case identifiersAndRules of
-    List (List identifiers : rules) -> addRules env keyword identifiers rules 
-    otherwise -> throwError $ BadSpecialForm "TODO: define-syntax has not been implemented yet" $ String "define-syntax"
-  otherwise -> throwError $ BadSpecialForm "TODO: define-syntax has not been implemented yet" $ String "define-syntax"
-  where addRules env keyword identifiers rules = throwError $ BadSpecialForm "TODO: define-syntax has not been implemented yet" $ String "define-syntax"
+macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
+  -- TODO: pattern match on id's, rules to ensure they are valid
+  defineNamespacedVar env macroNamespace (show keyword) syntaxRules
+  return $ Nil "" -- Sentinal value
 macroEval _ lisp@(_) = return lisp
 
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
+eval env val@(Nil _) = return val
 eval env val@(String _) = return val
 eval env val@(Char _) = return val
 eval env val@(Number _) = return val
