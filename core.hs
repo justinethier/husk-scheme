@@ -262,7 +262,7 @@ unwordsList = unwords . map showVal
 instance Show LispVal where show = showVal
 
 symbol :: Parser Char
-symbol = oneOf ".!$%&|*+-/:<=>?@^_~" -- TODO: I removed #, make sure this is OK w/spec, and test cases
+symbol = oneOf "!$%&|*+-/:<=>?@^_~" -- TODO: I removed #, make sure this is OK w/spec, and test cases
 
 spaces :: Parser ()
 spaces = skipMany1 space
@@ -430,11 +430,10 @@ macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom
   defineNamespacedVar env macroNamespace (show keyword) syntaxRules
   return $ Nil "" -- Sentinal value
 macroEval env lisp@(List (Atom x : xs)) = do
-  isDefined <- liftIO $ isNamespacedBound env macroNamespace x
+  isDefined <- liftIO $ isNamespacedBound env macroNamespace "let" --x
   if isDefined
      then throwError $ BadSpecialForm "TODO: try to transform" lisp
-     else throwError $ BadSpecialForm "TODO: atom is not defined" lisp
-     --else return lisp
+     else return lisp
 macroEval _ lisp@(_) = return lisp
 
 {- Eval section -}
@@ -494,10 +493,11 @@ eval env (List (Atom "case" : keyAndClauses)) =
        ekey <- eval env key
        evalCase env $ List $ (ekey : cls)
 
--- TODO: need to scan for comments, this may be a good place,
---       rather than in the parser itself
+-- TODO: macroEval does not appear to be working below, because I can type out
+--       define-syntax just fine from the cmd line, but when using (load) on t-macro.scm,
+--       an error is reported that (define-syntax) is unbound...
 eval env (List [Atom "load", String filename]) =
-     load filename >>= liftM last . mapM (macroEval env >> eval env) -- TODO: test use of macroEval
+     load filename >>= liftM last . mapM (macroEval env >> eval env)
 
 eval env (List [Atom "set!", Atom var, form]) = 
   eval env form >>= setVar env var
