@@ -150,7 +150,7 @@ getNamespacedVar :: Env -> String -> String -> IOThrowsError LispVal
 getNamespacedVar envRef
                  namespace
                  var = do env <- liftIO $ readIORef envRef
-                          maybe (throwError $ UnboundVar "Getting an unbound variable: " var)
+                          maybe (throwError $ UnboundVar "Getting an unbound variable" var)
                                 (liftIO . readIORef)
                                 (lookup (namespace, var) env)
 
@@ -424,17 +424,23 @@ parseExpr = try(parseDecimal)
   <?> "Expression"
 
 {- Macro eval section -}
+
+-- TODO: hacked this function up to try and test whether macros are saved to their environment.
+--       looks like they are not being found by subsequent calls to isNamespacedBound
+--
+-- TODO: try moving define-syntax code to eval to see if it is then picked up here...
+--       
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
 macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
   -- TODO: pattern match on id's, rules to ensure they are valid
   defineNamespacedVar env macroNamespace (show keyword) syntaxRules
   return $ Nil "" -- Sentinal value
-macroEval env lisp@(List (Atom x : xs)) = do
+macroEval env lisp@(_) = do --List (Atom x : xs)) = do
   isDefined <- liftIO $ isNamespacedBound env macroNamespace "let" --x
   if isDefined
-     then throwError $ BadSpecialForm "TODO: try to transform" lisp
+     then throwError $ BadSpecialForm "TODO: try to transform" lisp -- TODO: thowing error as a temporary test
      else return lisp
-macroEval _ lisp@(_) = return lisp
+--macroEval _ lisp@(_) = return lisp
 
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
@@ -624,6 +630,7 @@ apply (Func params varargs body closure) args =
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ bindVars env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
+-- TODO: just typing (1 2) results in non-exhaustive pattern error in apply
 
 primitiveBindings :: IO Env
 primitiveBindings = nullEnv >>= (flip bindVars $ map (makeFunc IOFunc) ioPrimitives
