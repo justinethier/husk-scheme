@@ -493,11 +493,11 @@ eval env (List (Atom "case" : keyAndClauses)) =
        ekey <- eval env key
        evalCase env $ List $ (ekey : cls)
 
--- TODO: macroEval does not appear to be working below, because I can type out
---       define-syntax just fine from the cmd line, but when using (load) on t-macro.scm,
---       an error is reported that (define-syntax) is unbound...
+-- TODO: still seem to be issues with macroEval, because macro's defined in env do not seem to be found...
+--       eg: (load) t-macro.scm and then try to use let.
 eval env (List [Atom "load", String filename]) =
-     load filename >>= liftM last . mapM (macroEval env >> eval env)
+     load filename >>= liftM last . mapM (evaluate env)
+	 where evaluate env val = macroEval env val >>= eval env
 
 eval env (List [Atom "set!", Atom var, form]) = 
   eval env form >>= setVar env var
