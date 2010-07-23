@@ -262,7 +262,7 @@ unwordsList = unwords . map showVal
 instance Show LispVal where show = showVal
 
 symbol :: Parser Char
-symbol = oneOf "!$%&|*+-/:<=>?@^_~" -- TODO: I removed #, make sure this is OK w/spec, and test cases
+symbol = oneOf ".!$%&|*+-/:<=>?@^_~" -- TODO: I removed #, make sure this is OK w/spec, and test cases
 
 spaces :: Parser ()
 spaces = skipMany1 space
@@ -403,7 +403,6 @@ parseComment = do
 
 parseExpr :: Parser LispVal
 parseExpr = try(parseDecimal) 
--- TODO: parseEllipse (for macro's)
   <|> parseComment
   <|> parseNumber
   <|> parseChar
@@ -430,6 +429,12 @@ macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom
   -- TODO: pattern match on id's, rules to ensure they are valid
   defineNamespacedVar env macroNamespace (show keyword) syntaxRules
   return $ Nil "" -- Sentinal value
+macroEval env lisp@(List (Atom x : xs)) = do
+  isDefined <- liftIO $ isNamespacedBound env macroNamespace x
+  if isDefined
+     then throwError $ BadSpecialForm "TODO: try to transform" lisp
+     else throwError $ BadSpecialForm "TODO: atom is not defined" lisp
+     --else return lisp
 macroEval _ lisp@(_) = return lisp
 
 {- Eval section -}
@@ -653,7 +658,7 @@ readProc [Port port] = (liftIO $ hGetLine port) >>= liftThrows . readExpr
 
 writeProc :: [LispVal] -> IOThrowsError LispVal
 writeProc [obj] = writeProc [obj, Port stdout]
-writeProc [obj, Port port] = liftIO $ hPrint port obj >> (return $ Bool True)
+writeProc [obj, Port port] = liftIO $ hPrint port obj >> (return $ Nil "")
 
 readContents :: [LispVal] -> IOThrowsError LispVal
 readContents [String filename] = liftM String $ liftIO $ readFile filename
