@@ -425,22 +425,25 @@ parseExpr = try(parseDecimal)
 
 {- Macro eval section -}
 
--- TODO: hacked this function up to try and test whether macros are saved to their environment.
---       looks like they are not being found by subsequent calls to isNamespacedBound
---
--- TODO: try moving define-syntax code to eval to see if it is then picked up here...
---       
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
 macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
-  -- TODO: pattern match on id's, rules to ensure they are valid
-  defineNamespacedVar env macroNamespace (show keyword) syntaxRules
+  defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
-macroEval env lisp@(_) = do --List (Atom x : xs)) = do
-  isDefined <- liftIO $ isNamespacedBound env macroNamespace "let" --x
+macroEval env lisp@(Atom x) = do
+  isDefined <- liftIO $ isNamespacedBound env macroNamespace x
   if isDefined
      then throwError $ BadSpecialForm "TODO: try to transform" lisp -- TODO: thowing error as a temporary test
-     else return lisp
---macroEval _ lisp@(_) = return lisp
+     else return $ Atom x
+
+macroEval env lisp@(List (Atom x : xs)) = do
+  isDefined <- liftIO $ isNamespacedBound env macroNamespace x
+  if isDefined
+     then throwError $ BadSpecialForm "TODO: try to transform" lisp -- TODO: thowing error as a temporary test
+-- TODO: need to get the syntax right here, idea is to recurse on rest of list
+     else return $ List $ (Atom x) : [(macroEval env (List xs))]
+-- other patterns?
+-- TODO: equivalent transforms for vectors
+macroEval _ lisp@(_) = return lisp
 
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
