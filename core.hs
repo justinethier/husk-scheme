@@ -425,25 +425,39 @@ parseExpr = try(parseDecimal)
 
 {- Macro eval section -}
 
+-- Search for macro's in the AST, and transform any that are found.
+-- There is also a special case (define-syntax) that loads new rules.
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
 macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
   defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
-macroEval env lisp@(Atom x) = do
+{-
+ -- TODO: is this even applicable??? 
+ -- probably not since w/out a list there are no args
+ --
+ - macroEval env lisp@(Atom x) = do 
   isDefined <- liftIO $ isNamespacedBound env macroNamespace x
   if isDefined
      then throwError $ BadSpecialForm "TODO: try to transform" lisp -- TODO: thowing error as a temporary test
      else return $ Atom x
-
+-}
 macroEval env lisp@(List (Atom x : xs)) = do
   isDefined <- liftIO $ isNamespacedBound env macroNamespace x
   if isDefined
-     then throwError $ BadSpecialForm "TODO: try to transform" lisp -- TODO: thowing error as a temporary test
--- TODO: need to get the syntax right here, idea is to recurse on rest of list
-     else return $ List $ (Atom x) : [(macroEval env (List xs))]
--- other patterns?
+     then throwError $ BadSpecialForm "TODO: try to transform" lisp
+     -- TODO: thowing error as a temporary test
+     --       real action is to call findMatch, then if there is match, tranform that match
+     else do
+       rest <- mapM (macroEval env) xs
+       return $ List $ (Atom x) : rest
 -- TODO: equivalent transforms for vectors
 macroEval _ lisp@(_) = return lisp
+
+-- TODO: given input and syntax-rules, determine if any rule is a match
+-- findMatch :: Env -> LispVal -> LispVal -> Bool
+-- findMatch env patternVar inputValue = ...
+
+-- TODO: transform (take an input pattern and macro rule, and transform into output)
 
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
