@@ -431,22 +431,10 @@ macroEval :: Env -> LispVal -> IOThrowsError LispVal
 macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
   defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
-{-
- -- TODO: is this even applicable??? 
- -- probably not since w/out a list there are no args
- --
- - macroEval env lisp@(Atom x) = do 
-  isDefined <- liftIO $ isNamespacedBound env macroNamespace x
-  if isDefined
-     then throwError $ BadSpecialForm "TODO: try to transform" lisp -- TODO: thowing error as a temporary test
-     else return $ Atom x
--}
 macroEval env lisp@(List (Atom x : xs)) = do
   isDefined <- liftIO $ isNamespacedBound env macroNamespace x
   if isDefined
-     then throwError $ BadSpecialForm "TODO: try to transform" lisp
-     -- TODO: thowing error as a temporary test
-     --       real action is to call findMatch, then if there is match, tranform that match
+     then findMatch env identifiers rules lisp --throwError $ BadSpecialForm "TODO: try to transform" lisp
      else do
        rest <- mapM (macroEval env) xs
        return $ List $ (Atom x) : rest
@@ -454,10 +442,24 @@ macroEval env lisp@(List (Atom x : xs)) = do
 macroEval _ lisp@(_) = return lisp
 
 -- TODO: given input and syntax-rules, determine if any rule is a match
--- findMatch :: Env -> LispVal -> LispVal -> Bool
--- findMatch env patternVar inputValue = ...
+--       and transform it (the name of this function needs to change)
+-- TODO (later): validate that the pattern's template and pattern are consistent (IE: no vars in transform that do not appear in matching pattern - csi "stmt1" case)
+findMatch :: Env -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
+findMatch env identifiers rules input = -- TODO: take the next rule and try to match it
+
+-- TODO: localEnv is an env just used for this invocation (kind of like the Env in lambda)
+-- TODO: we are ignoring ... for the moment
+matchRule :: Env -> Env (?) -> LispVal -> LispVal -> LispVal
+matchRule env localEnv patternVar inputVar =
+-- literal - 1, "2", etc - just make sure it matches in rule and form
+-- identifier in pattern - load form's "current" var into the identifier (in localEnv)
+-- other cases?
+-- if no match, return Nil to indicate as such, and findMatch will pick up at the next rule
 
 -- TODO: transform (take an input pattern and macro rule, and transform into output)
+--  with a localEnv already bound, this should be as simple as just walking the tranform
+--  structure and creating a new structure with the same form, replacing identifiers
+--  in the tranform with those bound in localEnv
 
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
