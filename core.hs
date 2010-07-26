@@ -457,6 +457,17 @@ findMatch _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules" (St
 -- TODO: we are ignoring ... for the moment
 --matchRule :: Env -> Env -> LispVal -> LispVal -> LispVal
 matchRule env localEnv patternVar inputVar = return $ String "TODO"
+
+-- TODO - high-level approach:
+-- input is List(Atom : xs)
+-- want to compare each element of input to pattern:
+--  - if both are consts (int, string, etc) and they match, then OK
+--  - if pattern is a var, then load input into that var in the localEnv
+--
+--  - if at any point there is no match, need to return Nil back up to findMatch
+--  - otherwise, if everything matches, then can proceed to do the tranformation using localEnv
+
+-- Some more notes:
 -- literal - 1, "2", etc - just make sure it matches in rule and form
 -- identifier in pattern - load form's "current" var into the identifier (in localEnv)
 -- other cases?
