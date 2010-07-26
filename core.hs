@@ -434,7 +434,9 @@ macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom
 macroEval env lisp@(List (Atom x : xs)) = do
   isDefined <- liftIO $ isNamespacedBound env macroNamespace x
   if isDefined
-     then findMatch env identifiers rules lisp --throwError $ BadSpecialForm "TODO: try to transform" lisp
+     then do
+       syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules))) <- getNamespacedVar env macroNamespace x 
+       findMatch env identifiers rules lisp
      else do
        rest <- mapM (macroEval env) xs
        return $ List $ (Atom x) : rest
@@ -444,13 +446,17 @@ macroEval _ lisp@(_) = return lisp
 -- TODO: given input and syntax-rules, determine if any rule is a match
 --       and transform it (the name of this function needs to change)
 -- TODO (later): validate that the pattern's template and pattern are consistent (IE: no vars in transform that do not appear in matching pattern - csi "stmt1" case)
-findMatch :: Env -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
-findMatch env identifiers rules input = -- TODO: take the next rule and try to match it
+--findMatch :: Env -> [LispVal] -> LispVal -> LispVal -> IOThrowsError LispVal
+findMatch env identifiers rules@(rule@(List r) : rs) input = do
+-- what will hold local vars? is it really another env? see def of lambda for example
+  let localVars = nullEnv
+  matchRule env localVars rule input -- TODO: ignoring identifiers, rs for now...
+findMatch _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules" (String "") -- TODO (?): rules
 
 -- TODO: localEnv is an env just used for this invocation (kind of like the Env in lambda)
 -- TODO: we are ignoring ... for the moment
-matchRule :: Env -> Env (?) -> LispVal -> LispVal -> LispVal
-matchRule env localEnv patternVar inputVar =
+--matchRule :: Env -> Env -> LispVal -> LispVal -> LispVal
+matchRule env localEnv patternVar inputVar = return $ String "TODO"
 -- literal - 1, "2", etc - just make sure it matches in rule and form
 -- identifier in pattern - load form's "current" var into the identifier (in localEnv)
 -- other cases?
