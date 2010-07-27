@@ -456,24 +456,31 @@ findMatch _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules" (St
 -- TODO: localEnv is an env just used for this invocation (kind of like the Env in lambda)
 -- TODO: we are ignoring ... for the moment
 --matchRule :: Env -> Env -> LispVal -> LispVal -> LispVal
-matchRule env localEnv patternVar inputVar@(List (Atom _ : is)) =
+matchRule env localEnv (List patternVar) (List inputVar@(Atom _ : is)) =
   if (length patternVar) == (length inputVar) -- temporary clause 
     then case patternVar of 
       List (Atom _ : ps) -> do
         match <- loadLocal localEnv ps is [] --mapM (loadLocal localEnv)
-        return $ String "TODO"
+        return $ Bool match -- TODO: use this result
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" patternVar
     else return $ Nil ""
-  where loadLocal localEnv pattern input result = 
-          if (length input) == 1
-            then -- check input against pattern (both should be single var)
-            else -- chect first input against first pattern, recurse...
+  where loadLocal :: Env -> LispVal -> LispVal -> Bool
+        loadLocal localEnv pattern input = 
+          case input of
+            List _ -> do -- check first input against first pattern, recurse...
+              status <- checkLocal localEnv (head pattern) (head input)
+              if status
+                then loadLocal localEnv (tail pattern) (tail input) 
+                else False
+            _ -> checkLocal localEnv pattern input -- check input against pattern (both should be single var)
         checkLocal localEnv (Bool pattern) (Bool input) = True
         checkLocal localEnv (Number pattern) (Number input) = True
         checkLocal localEnv (Float pattern) (Float input) = True
         checkLocal localEnv (String pattern) (String input) = True
         checkLocal localEnv (Char pattern) (Char input) = True
-
+        checkLocal localEnv (Atom pattern) input = do
+          -- TODO: defineVar localEnv pattern input
+          True
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
