@@ -96,7 +96,7 @@ runOne args = do
 -- TODO: hook into macroEval (probably at a lower level, though)
   env <-primitiveBindings >>= flip bindVars [((varNamespace, "args"), List $ map String $ drop 1 args)]
   (runIOThrows $ liftM show $ eval env (List [Atom "load", String (args !! 0)]))
---     >>= hPutStrLn stderr
+     >>= hPutStrLn stderr  -- TODO: echo this or not??
 
   -- Call into (main) if it exists...
   alreadyDefined <- liftIO $ isBound env "main"
@@ -436,43 +436,41 @@ macroEval env lisp@(List (Atom x : xs)) = do
   if isDefined
      then do
        syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules))) <- getNamespacedVar env macroNamespace x 
-       findMatch env identifiers rules lisp
+       macroTransform env identifiers rules lisp
      else do
        rest <- mapM (macroEval env) xs
        return $ List $ (Atom x) : rest
 -- TODO: equivalent transforms for vectors
 macroEval _ lisp@(_) = return lisp
 
--- TODO: given input and syntax-rules, determine if any rule is a match
---       and transform it (the name of this function needs to change)
+-- Given input and syntax-rules, determine if any rule is a match
+-- and transform it. 
 -- TODO (later): validate that the pattern's template and pattern are consistent (IE: no vars in transform that do not appear in matching pattern - csi "stmt1" case)
---findMatch :: Env -> [LispVal] -> LispVal -> LispVal -> IOThrowsError LispVal
-findMatch env identifiers rules@(rule@(List r) : rs) input = do
--- what will hold local vars? is it really another env? see def of lambda for example
-  let localVars = nullEnv
-  matchRule env localVars rule input -- TODO: ignoring identifiers, rs for now...
-findMatch _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules" (String "") -- TODO (?): rules
+--macroTransform :: Env -> [LispVal] -> LispVal -> LispVal -> IOThrowsError LispVal
+macroTransform env identifiers rules@(rule@(List r) : rs) input = do
+--  let localEnv = nullEnv
+  matchRule env nullEnv rule input -- TODO: ignoring identifiers, rs for now...
+macroTransform _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules" (String "") -- TODO (?): rules
 
 -- TODO: localEnv is an env just used for this invocation (kind of like the Env in lambda)
 -- TODO: we are ignoring ... for the moment
 --matchRule :: Env -> Env -> LispVal -> LispVal -> LispVal
-matchRule env localEnv (List patternVar) (List inputVar@(Atom _ : is)) =
+matchRule env localEnv p@(List patternVar) (List inputVar@(Atom _ : is)) =
   if (length patternVar) == (length inputVar) -- temporary clause 
-    then case patternVar of 
+    then case p of 
       List (Atom _ : ps) -> do
-        match <- loadLocal localEnv ps is [] --mapM (loadLocal localEnv)
-        return $ Bool match -- TODO: use this result
-      otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" patternVar
+        return $ Bool $ loadLocal localEnv (List ps) (List is) --mapM (loadLocal localEnv)
+      otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
     else return $ Nil ""
   where loadLocal :: Env -> LispVal -> LispVal -> Bool
         loadLocal localEnv pattern input = 
-          case input of
-            List _ -> do -- check first input against first pattern, recurse...
-              status <- checkLocal localEnv (head pattern) (head input)
+          case (pattern, input) of
+            (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
+              let status = checkLocal localEnv p i 
               if status
                 then loadLocal localEnv (tail pattern) (tail input) 
                 else False
-            _ -> checkLocal localEnv pattern input -- check input against pattern (both should be single var)
+            (_, _) -> checkLocal localEnv pattern input -- check input against pattern (both should be single var)
         checkLocal localEnv (Bool pattern) (Bool input) = True
         checkLocal localEnv (Number pattern) (Number input) = True
         checkLocal localEnv (Float pattern) (Float input) = True
