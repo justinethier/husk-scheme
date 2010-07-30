@@ -448,8 +448,8 @@ macroEval _ lisp@(_) = return lisp
 -- TODO (later): validate that the pattern's template and pattern are consistent (IE: no vars in transform that do not appear in matching pattern - csi "stmt1" case)
 --macroTransform :: Env -> [LispVal] -> LispVal -> LispVal -> IOThrowsError LispVal
 macroTransform env identifiers rules@(rule@(List r) : rs) input = do
---  let localEnv = nullEnv
-  matchRule env nullEnv rule input -- TODO: ignoring identifiers, rs for now...
+  localEnv <- liftIO $ nullEnv
+  matchRule env localEnv rule input -- TODO: ignoring identifiers, rs for now...
 macroTransform _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules" (String "") -- TODO (?): rules
 
 -- TODO: localEnv is an env just used for this invocation (kind of like the Env in lambda)
@@ -468,7 +468,7 @@ matchRule env localEnv p@(List patternVar) (List inputVar@(Atom _ : is)) =
             (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
               let status = checkLocal localEnv p i 
               if status
-                then loadLocal localEnv (tail pattern) (tail input) 
+                then loadLocal localEnv (List ps) (List is)
                 else False
             (_, _) -> checkLocal localEnv pattern input -- check input against pattern (both should be single var)
         checkLocal localEnv (Bool pattern) (Bool input) = True
@@ -477,7 +477,7 @@ matchRule env localEnv p@(List patternVar) (List inputVar@(Atom _ : is)) =
         checkLocal localEnv (String pattern) (String input) = True
         checkLocal localEnv (Char pattern) (Char input) = True
         checkLocal localEnv (Atom pattern) input = do
-          -- TODO: defineVar localEnv pattern input
+          let temp = defineVar localEnv pattern input -- TODO: does this even work, or will lazy eval skip it?
           True
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
