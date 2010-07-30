@@ -9,5 +9,6 @@
 ; TODO: "let" tests
 ;
 ;(define-syntax let (syntax-rules ()    ((_ x)    (x))))
-(define-syntax let (syntax-rules ()    ((let x)    (x))))
-(write 2)
+(define-syntax let (syntax-rules ()    ((let x)    (write x))))
+;(let 1)
+(let 2)
