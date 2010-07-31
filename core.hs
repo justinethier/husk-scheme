@@ -455,7 +455,7 @@ macroTransform _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules
 -- TODO: localEnv is an env just used for this invocation (kind of like the Env in lambda)
 -- TODO: we are ignoring ... for the moment
 --matchRule :: Env -> Env -> LispVal -> LispVal -> LispVal
-matchRule env localEnv p@(List patternVar) (List inputVar@(Atom _ : is)) =
+matchRule env localEnv (List [p@(List patternVar), (List template)]) (List inputVar@(Atom _ : is)) =
   if (length patternVar) == (length inputVar) -- temporary clause 
     then case p of 
       List (Atom _ : ps) -> do
@@ -470,7 +470,10 @@ matchRule env localEnv p@(List patternVar) (List inputVar@(Atom _ : is)) =
               if status
                 then loadLocal localEnv (List ps) (List is)
                 else False
+            (List (p), List (i)) -> do
+              checkLocal localEnv p i
             (_, _) -> checkLocal localEnv pattern input -- check input against pattern (both should be single var)
+        checkLocal :: Env -> LispVal -> LispVal -> Bool
         checkLocal localEnv (Bool pattern) (Bool input) = True
         checkLocal localEnv (Number pattern) (Number input) = True
         checkLocal localEnv (Float pattern) (Float input) = True
