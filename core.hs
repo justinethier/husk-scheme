@@ -455,13 +455,13 @@ macroTransform _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules
 -- TODO: localEnv is an env just used for this invocation (kind of like the Env in lambda)
 -- TODO: we are ignoring ... for the moment
 --matchRule :: Env -> Env -> LispVal -> LispVal -> LispVal
-matchRule env localEnv (List [p@(List patternVar), (List template)]) (List inputVar@(Atom _ : is)) =
+matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inputVar@(Atom _ : is)) =
   if (length patternVar) == (length inputVar) -- temporary clause 
     then case p of 
       List (Atom _ : ps) -> do
         let match = loadLocal localEnv (List ps) (List is) --mapM (loadLocal localEnv)
-        if match
-           then return $ String "TODO: transform"
+        if match 
+           then transformRule localEnv template 
            else throwError $ BadSpecialForm "Input does not match macro pattern" (String "")
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
     else return $ Nil "" -- Temporary result, means input does not match pattern
@@ -485,7 +485,8 @@ matchRule env localEnv (List [p@(List patternVar), (List template)]) (List input
         checkLocal localEnv (String pattern) (String input) = True
         checkLocal localEnv (Char pattern) (Char input) = True
         checkLocal localEnv (Atom pattern) input = do
-          let temp = defineVar localEnv pattern input -- TODO: does this even work, or will lazy eval skip it?
+--          let temp = defineVar localEnv pattern input -- TODO: does this even work, or will lazy eval skip it?
+          defineVar localEnv pattern input -- TODO: does this even work, or will lazy eval skip it?
           True
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
@@ -512,6 +513,15 @@ matchRule env localEnv (List [p@(List patternVar), (List template)]) (List input
 --  with a localEnv already bound, this should be as simple as just walking the tranform
 --  structure and creating a new structure with the same form, replacing identifiers
 --  in the tranform with those bound in localEnv
+transformRule localEnv transform = do
+  case transform of
+    Atom a -> do
+      isDefined <- liftIO $ isBound localEnv a
+      if isDefined
+        then getVar localEnv a  
+        else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
+    List (l) -> mapM (transformRule localEnv) l >>= return . List
+    otherwise -> throwError $ BadSpecialForm "Error during macro transformation" $ String ""
 
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
