@@ -459,9 +459,15 @@ matchRule env localEnv (List [p@(List patternVar), (List template)]) (List input
   if (length patternVar) == (length inputVar) -- temporary clause 
     then case p of 
       List (Atom _ : ps) -> do
-        return $ Bool $ loadLocal localEnv (List ps) (List is) --mapM (loadLocal localEnv)
+        let match = loadLocal localEnv (List ps) (List is) --mapM (loadLocal localEnv)
+        if match
+           then return $ String "TODO: transform"
+           else throwError $ BadSpecialForm "Input does not match macro pattern" (String "")
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
-    else return $ Nil ""
+    else return $ Nil "" -- Temporary result, means input does not match pattern
+        --
+        -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
+        --             in preparation for macro transformation.
   where loadLocal :: Env -> LispVal -> LispVal -> Bool
         loadLocal localEnv pattern input = 
           case (pattern, input) of
@@ -470,8 +476,7 @@ matchRule env localEnv (List [p@(List patternVar), (List template)]) (List input
               if status
                 then loadLocal localEnv (List ps) (List is)
                 else False
-            (List (p), List (i)) -> do
-              checkLocal localEnv p i
+            (List [], List []) -> True -- Base case - All data processed
             (_, _) -> checkLocal localEnv pattern input -- check input against pattern (both should be single var)
         checkLocal :: Env -> LispVal -> LispVal -> Bool
         checkLocal localEnv (Bool pattern) (Bool input) = True
