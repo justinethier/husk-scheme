@@ -484,7 +484,10 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         checkLocal localEnv (Float pattern) (Float input) = Bool True
         checkLocal localEnv (String pattern) (String input) = Bool True
         checkLocal localEnv (Char pattern) (Char input) = Bool True
-        checkLocal localEnv (Atom pattern) input = defineVar localEnv pattern input
+        checkLocal localEnv (Atom pattern) input = do
+          let output = (defineVar localEnv pattern input) -- TODO: why is var not bound in env during transformation??
+          let test = null [output]
+          Bool $ not test
  
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
