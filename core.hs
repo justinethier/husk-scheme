@@ -460,39 +460,37 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
     then case p of 
       List (Atom _ : ps) -> do
         let match = loadLocal localEnv (List ps) (List is) --mapM (loadLocal localEnv)
-        if match 
-           then transformRule localEnv template 
-           else throwError $ BadSpecialForm "Input does not match macro pattern" (String "")
+        case match of
+           Nil _ -> throwError $ BadSpecialForm "Input does not match macro pattern" (String "")
+           otherwise -> transformRule localEnv template 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
     else return $ Nil "" -- Temporary result, means input does not match pattern
         --
         -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
         --             in preparation for macro transformation.
-  where loadLocal :: Env -> LispVal -> LispVal -> Bool
-        loadLocal localEnv pattern input = 
+  where loadLocal :: Env -> LispVal -> LispVal -> LispVal
+        loadLocal localEnv pattern input = do 
           case (pattern, input) of
-            (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
-              let status = checkLocal localEnv p i 
-              if status
-                then loadLocal localEnv (List ps) (List is)
-                else False
-            (List [], List []) -> True -- Base case - All data processed
-            (_, _) -> checkLocal localEnv pattern input -- check input against pattern (both should be single var)
-        checkLocal :: Env -> LispVal -> LispVal -> Bool
-        checkLocal localEnv (Bool pattern) (Bool input) = True
-        checkLocal localEnv (Number pattern) (Number input) = True
-        checkLocal localEnv (Float pattern) (Float input) = True
-        checkLocal localEnv (String pattern) (String input) = True
-        checkLocal localEnv (Char pattern) (Char input) = True
-        checkLocal localEnv (Atom pattern) input = do
---          let temp = defineVar localEnv pattern input -- TODO: does this even work, or will lazy eval skip it?
-          defineVar localEnv pattern input -- TODO: does this even work, or will lazy eval skip it?
-          True
+               (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
+                 let status = checkLocal localEnv p i 
+                 case status of
+                      nil@(Nil _) -> nil
+                      otherwise -> loadLocal localEnv (List ps) (List is)
+               (List [], List []) -> Bool True -- Base case - All data processed
+               (_, _) -> checkLocal localEnv pattern input -- check input against pattern (both should be single var)
+        checkLocal :: Env -> LispVal -> LispVal -> LispVal
+        checkLocal localEnv (Bool pattern) (Bool input) = Bool True
+        checkLocal localEnv (Number pattern) (Number input) = Bool True
+        checkLocal localEnv (Float pattern) (Float input) = Bool True
+        checkLocal localEnv (String pattern) (String input) = Bool True
+        checkLocal localEnv (Char pattern) (Char input) = Bool True
+        checkLocal localEnv (Atom pattern) input = defineVar localEnv pattern input
+ 
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
 -- TODO: eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
-        checkLocal localEnv _ _ = False
+        checkLocal localEnv _ _ = Nil ""
 
 -- TODO - high-level approach:
 -- input is List(Atom : xs)
