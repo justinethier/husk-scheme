@@ -462,7 +462,9 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         let match = loadLocal localEnv (List ps) (List is) --mapM (loadLocal localEnv)
         case match of
            Nil _ -> throwError $ BadSpecialForm "Input does not match macro pattern" (String "")
-           otherwise -> transformRule localEnv template 
+           otherwise -> do --TODO: old value of transformRule localEnv template 
+                 isDefined <- liftIO $ isBound localEnv "x"
+                 throwError $ BadSpecialForm "test" (Bool isDefined)
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
     else return $ Nil "" -- Temporary result, means input does not match pattern
         --
@@ -484,11 +486,9 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         checkLocal localEnv (Float pattern) (Float input) = Bool True
         checkLocal localEnv (String pattern) (String input) = Bool True
         checkLocal localEnv (Char pattern) (Char input) = Bool True
-        checkLocal localEnv (Atom pattern) input = do
-          let output = (defineVar localEnv pattern input) -- TODO: why is var not bound in env during transformation??
-          let test = null [output]
-          Bool $ not test
- 
+        checkLocal localEnv (Atom pattern) input =  
+          Bool $ not $ null [(defineVar localEnv pattern input)] -- TODO: am I doing this wrong??
+
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
@@ -519,7 +519,7 @@ transformRule localEnv transform = do
     Atom a -> do
       isDefined <- liftIO $ isBound localEnv a
       if isDefined
-        then getVar localEnv a  
+        then getVar localEnv a
         else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
     List (l) -> mapM (transformRule localEnv) l >>= return . List
     otherwise -> throwError $ BadSpecialForm "Error during macro transformation" $ String ""
