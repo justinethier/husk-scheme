@@ -10,5 +10,7 @@
 ;
 ;(define-syntax let (syntax-rules ()    ((_ x)    (x))))
 (define-syntax let (syntax-rules ()    ((let x)    (write x))))
-;(let 1)
+(define x "hello, world")
 (let 2)
+(let x)
+(let (+ 1 2 3 4 5))
