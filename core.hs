@@ -459,41 +459,42 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
   if (length patternVar) == (length inputVar) -- temporary clause 
     then case p of 
       List (Atom _ : ps) -> do
-        let match = loadLocal localEnv (List ps) (List is) --mapM (loadLocal localEnv)
+        match <- loadLocal localEnv (List ps) (List is) --mapM (loadLocal localEnv)
         case match of
            Nil _ -> throwError $ BadSpecialForm "Input does not match macro pattern" (String "")
-           otherwise -> do --TODO: old value of transformRule localEnv template 
-                 isDefined <- liftIO $ isBound localEnv "x"
-                 throwError $ BadSpecialForm "test" (Bool isDefined)
+           otherwise -> do --TODO: old value of 
+		     transformRule localEnv template 
+                 --isDefined <- liftIO $ isBound localEnv "x"
+                 --throwError $ BadSpecialForm "test" (Bool isDefined)
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
     else return $ Nil "" -- Temporary result, means input does not match pattern
         --
         -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
         --             in preparation for macro transformation.
-  where loadLocal :: Env -> LispVal -> LispVal -> LispVal
-        loadLocal localEnv pattern input = do 
+  where loadLocal :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+        loadLocal localEnv pattern input = do
           case (pattern, input) of
                (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
-                 let status = checkLocal localEnv p i 
+                 status <- checkLocal localEnv p i 
                  case status of
-                      nil@(Nil _) -> nil
+                      nil@(Nil _) -> return $ nil
                       otherwise -> loadLocal localEnv (List ps) (List is)
-               (List [], List []) -> Bool True -- Base case - All data processed
+               (List [], List []) -> return $ Bool True -- Base case - All data processed
                (_, _) -> checkLocal localEnv pattern input -- check input against pattern (both should be single var)
-        checkLocal :: Env -> LispVal -> LispVal -> LispVal
-        checkLocal localEnv (Bool pattern) (Bool input) = Bool True
-        checkLocal localEnv (Number pattern) (Number input) = Bool True
-        checkLocal localEnv (Float pattern) (Float input) = Bool True
-        checkLocal localEnv (String pattern) (String input) = Bool True
-        checkLocal localEnv (Char pattern) (Char input) = Bool True
-        checkLocal localEnv (Atom pattern) input =  
-          Bool $ not $ null [(defineVar localEnv pattern input)] -- TODO: am I doing this wrong??
+        checkLocal :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+        checkLocal localEnv (Bool pattern) (Bool input) = return $ Bool True
+        checkLocal localEnv (Number pattern) (Number input) = return $ Bool True
+        checkLocal localEnv (Float pattern) (Float input) = return $ Bool True
+        checkLocal localEnv (String pattern) (String input) = return $ Bool True
+        checkLocal localEnv (Char pattern) (Char input) = return $ Bool True
+        checkLocal localEnv (Atom pattern) input = do 
+          defineVar localEnv pattern input
 
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
 -- TODO: eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
-        checkLocal localEnv _ _ = Nil ""
+        checkLocal localEnv _ _ = return $ Nil ""
 
 -- TODO - high-level approach:
 -- input is List(Atom : xs)
