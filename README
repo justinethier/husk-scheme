@@ -7,9 +7,9 @@ The skim interpreter is written in Haskell and based on the code from this tutor
 
 TODO: list of features here, format better, maybe as HTML??
 
-------------
+<b>
 Dependencies
-------------
+</b>
 
 The following packages are required to build skim-scheme:
 
