@@ -1,8 +1,18 @@
 skim-scheme
 ===========
-skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS standard, including:
+skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS standard. skim includes the following features:
 
-- TBD
+- Primitive data types
+- Standard forms including: if, case, cond, lambda
+- Backtick
+- Basic IO functions
+- A REPL
+- Standard library of Scheme functions
+
+Features under development:
+
+- Full numeric tower
+- Hygenic Macros
 
 Credits
 -------
