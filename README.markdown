@@ -16,11 +16,11 @@ Usage
 
 The interpreter may be invoked by running it directly from the command line:
 
-  ./skim
+    ./skim
 
 Alternatively, you may run an individual scheme program:
 
- ./skim my-scheme-file.scm
+    ./skim my-scheme-file.scm
 
 
 Information
@@ -28,7 +28,7 @@ Information
 
 The following packages are required to build skim-scheme:
 
- GHC - http://www.haskell.org/ghc/
+- GHC - http://www.haskell.org/ghc/
 
 The 'scm-unit-tests' directory contains unit tests for much of the scheme code. Tests may be executed via 'make test'
 
