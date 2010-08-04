@@ -578,8 +578,16 @@ eval env (List (Atom "case" : keyAndClauses)) =
        ekey <- eval env key
        evalCase env $ List $ (ekey : cls)
 
--- TODO: still seem to be issues with macroEval, because macro's defined in env do not seem to be found...
---       eg: (load) t-macro.scm and then try to use let.
+eval env (List (Atom "begin" : funcs)) = 
+  if length funcs == 0
+     then eval env $ Nil ""
+     else if length funcs == 1
+             then eval env (head funcs)
+             else do
+                 let fs = tail funcs
+                 eval env (head funcs)
+                 eval env (List (Atom "begin" : fs))
+
 eval env (List [Atom "load", String filename]) =
      load filename >>= liftM last . mapM (evaluate env)
 	 where evaluate env val = macroEval env val >>= eval env
