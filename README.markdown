@@ -5,6 +5,7 @@ skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS s
 - Most primitive data types and their standard forms
 - Conditionals if, case, cond
 - Assignment operations
+- Sequencing
 - Quasi-quotation
 - Basic IO functions
 - Read-Eval-Print-Loop (REPL) interpreter
