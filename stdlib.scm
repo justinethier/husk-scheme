@@ -81,12 +81,14 @@
 (define (assv obj alist)      (fold (mem-helper (curry eqv? obj) car) #f alist))
 (define (assoc obj alist)     (fold (mem-helper (curry equal? obj) car) #f alist))
 
-; Support variable number of args, per spec:
+; TODO once prototyped - Support variable number of args, per spec:
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4
 ;(define (for-each func . lsts) )
 
+; TODO:
 (define (for-each func lst) 
-  (if (not (eq? '() lst))
+  (if (eq? 1 (length lst))
+	(func (car lst))
     (begin (func (car lst)
            (for-each func (cdr lst))))))
 
