@@ -462,10 +462,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         match <- loadLocal localEnv (List ps) (List is) --mapM (loadLocal localEnv)
         case match of
            Nil _ -> throwError $ BadSpecialForm "Input does not match macro pattern" (String "")
-           otherwise -> do --TODO: old value of 
-		     transformRule localEnv template 
-                 --isDefined <- liftIO $ isBound localEnv "x"
-                 --throwError $ BadSpecialForm "test" (Bool isDefined)
+           otherwise -> transformRule localEnv template 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
     else return $ Nil "" -- Temporary result, means input does not match pattern
         --
@@ -511,10 +508,9 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 -- other cases?
 -- if no match, return Nil to indicate as such, and findMatch will pick up at the next rule
 
--- TODO: transform (take an input pattern and macro rule, and transform into output)
---  with a localEnv already bound, this should be as simple as just walking the tranform
---  structure and creating a new structure with the same form, replacing identifiers
---  in the tranform with those bound in localEnv
+-- Transform input by walking the tranform structure and creating a new structure
+-- with the same form, replacing identifiers in the tranform with those bound in localEnv
+transformRule :: Env -> LispVal -> IOThrowsError LispVal
 transformRule localEnv transform = do
   case transform of
     Atom a -> do
