@@ -50,12 +50,7 @@
  -
  -     Need to re-read spec and verify this is true before detailed implementation.
  -
- - Questions:
- -  => I do not see define-syntax in the R5RS spec. Did I miss it? How is it specified?
- -
- -  => How to implement the macro environment? Is it possible to have a separate Env, or
- -     will the single Env need to hold 2 "namespaces" for macro's and normal vars? Also need
- -     to think about local defines with (let)
+ - Questions: (none at the moment)
  - -}
 
 
@@ -84,10 +79,6 @@ readPrompt :: String -> IO String
 readPrompt prompt = flushStr prompt >> getLine
 
 evalString :: Env -> String -> IO String
-
--- TODO: how to pass macroENV around?
--- TODO: what to initialize macroENV to? probably should be initialized to similar thing to
---       primitiveBindings, so it can report errors if certain keywords are overwritten (???)
 evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= eval env
 
 evalAndPrint :: Env -> String -> IO ()
@@ -102,17 +93,17 @@ until_ pred prompt action = do
 
 runOne :: [String] -> IO ()
 runOne args = do
--- TODO: hook into macroEval once it works in runRepl
-  env <-primitiveBindings >>= flip bindVars [("args", List $ map String $ drop 1 args)]
+-- TODO: hook into macroEval (probably at a lower level, though)
+  env <-primitiveBindings >>= flip bindVars [((varNamespace, "args"), List $ map String $ drop 1 args)]
   (runIOThrows $ liftM show $ eval env (List [Atom "load", String (args !! 0)]))
---     >>= hPutStrLn stderr
+     >>= hPutStrLn stderr  -- TODO: echo this or not??
 
   -- Call into (main) if it exists...
   alreadyDefined <- liftIO $ isBound env "main"
   let argv = List $ map String $ args
   if alreadyDefined
      then (runIOThrows $ liftM show $ eval env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
-     else (runIOThrows $ liftM show $ eval env $ Bool True) >>= hPutStrLn stderr
+     else (runIOThrows $ liftM show $ eval env $ Nil "") >>= hPutStrLn stderr
 
 runRepl :: IO ()
 runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "skim> ") . evalAndPrint
@@ -127,7 +118,7 @@ readExpr = readOrThrow parseExpr
 readExprList = readOrThrow (endBy parseExpr spaces)
 
 {- Variables Section -}
-type Env = IORef [(String, IORef LispVal)]
+type Env = IORef [((String, String), IORef LispVal)] -- lookup via: (namespace, variable)
 type IOThrowsError = ErrorT LispError IO
 
 nullEnv :: IO Env
@@ -140,34 +131,56 @@ liftThrows (Right val) = return val
 runIOThrows :: IOThrowsError String -> IO String
 runIOThrows action = runErrorT (trapError action) >>= return . extractValue
 
+
+macroNamespace = "m"
+varNamespace = "v"
+
+-- Determine if a variable is bound in the "variable" namespace
 isBound :: Env -> String -> IO Bool
-isBound envRef var = readIORef envRef >>= return . maybe False (const True) . lookup var
+isBound envRef var = isNamespacedBound envRef varNamespace var
+
+-- Determine if a variable is bound in the given namespace
+isNamespacedBound :: Env -> String -> String -> IO Bool
+isNamespacedBound envRef namespace var = readIORef envRef >>= return . maybe False (const True) . lookup (namespace, var)
 
 getVar :: Env -> String -> IOThrowsError LispVal
-getVar envRef var = do env <- liftIO $ readIORef envRef
-                       maybe (throwError $ UnboundVar "Getting an unbound variable: " var)
-                             (liftIO . readIORef)
-                             (lookup var env)
+getVar envRef var = getNamespacedVar envRef varNamespace var
 
-setVar :: Env -> String -> LispVal -> IOThrowsError LispVal
-setVar envRef var value = do env <- liftIO $ readIORef envRef
-                             maybe (throwError $ UnboundVar "Setting an unbound variable: " var)
-                                   (liftIO . (flip writeIORef value))
-                                   (lookup var env)
-                             return value
+getNamespacedVar :: Env -> String -> String -> IOThrowsError LispVal
+getNamespacedVar envRef
+                 namespace
+                 var = do env <- liftIO $ readIORef envRef
+                          maybe (throwError $ UnboundVar "Getting an unbound variable" var)
+                                (liftIO . readIORef)
+                                (lookup (namespace, var) env)
 
-defineVar :: Env -> String -> LispVal -> IOThrowsError LispVal
-defineVar envRef var value = do
-  alreadyDefined <- liftIO $ isBound envRef var
+setVar, defineVar :: Env -> String -> LispVal -> IOThrowsError LispVal
+setVar envRef var value = setNamespacedVar envRef varNamespace var value
+defineVar envRef var value = defineNamespacedVar envRef varNamespace var value
+
+setNamespacedVar :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
+setNamespacedVar envRef 
+                 namespace
+                 var value = do env <- liftIO $ readIORef envRef
+                                maybe (throwError $ UnboundVar "Setting an unbound variable: " var)
+                                      (liftIO . (flip writeIORef value))
+                                      (lookup (namespace, var) env)
+                                return value
+
+defineNamespacedVar :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
+defineNamespacedVar envRef 
+                    namespace 
+                    var value = do
+  alreadyDefined <- liftIO $ isNamespacedBound envRef namespace var
   if alreadyDefined
-    then setVar envRef var value >> return value
+    then setNamespacedVar envRef namespace var value >> return value
     else liftIO $ do
        valueRef <- newIORef value
        env <- readIORef envRef
-       writeIORef envRef ((var, valueRef) : env)
+       writeIORef envRef (((namespace, var), valueRef) : env)
        return value
 
-bindVars :: Env -> [(String, LispVal)] -> IO Env
+bindVars :: Env -> [((String, String), LispVal)] -> IO Env
 bindVars envRef bindings = readIORef envRef >>= extendEnv bindings >>= newIORef
   where extendEnv bindings env = liftM  (++ env) (mapM addBinding bindings)
         addBinding (var, value) = do ref <- newIORef value
@@ -218,8 +231,11 @@ data LispVal = Atom String
 	        body :: [LispVal], closure :: Env}
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)
 	| Port Handle
+-- TODO: ellipsis (for macros)
+    | Nil String -- String is probably wrong type here, but OK for now (do not expect to use this much, just internally)
 
 showVal :: LispVal -> String
+showVal (Nil _) = ""
 showVal (String contents) = "\"" ++ contents ++ "\""
 showVal (Char chr) = [chr]
 showVal (Atom name) = name
@@ -382,7 +398,7 @@ parseComment :: Parser LispVal
 parseComment = do
   char ';'
   many (noneOf ("\n"))
-  return $ List [Atom "quote", List []]
+  return $ Nil ""
 
 
 parseExpr :: Parser LispVal
@@ -408,12 +424,106 @@ parseExpr = try(parseDecimal)
   <?> "Expression"
 
 {- Macro eval section -}
-macroEval :: Env -> LispVal -> IOThrowsError LispVal -- TODO: accept macroENV as well
-macroEval _ lisp@(List (Atom "define-syntax" : syntaxRules)) = throwError $ BadSpecialForm "TODO: define-syntax has not been implemented yet" $ String "define-syntax"
+
+-- Search for macro's in the AST, and transform any that are found.
+-- There is also a special case (define-syntax) that loads new rules.
+macroEval :: Env -> LispVal -> IOThrowsError LispVal
+macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
+  defineNamespacedVar env macroNamespace keyword syntaxRules
+  return $ Nil "" -- Sentinal value
+macroEval env lisp@(List (Atom x : xs)) = do
+  isDefined <- liftIO $ isNamespacedBound env macroNamespace x
+  if isDefined
+     then do
+       syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules))) <- getNamespacedVar env macroNamespace x 
+       macroTransform env identifiers rules lisp
+     else do
+       rest <- mapM (macroEval env) xs
+       return $ List $ (Atom x) : rest
+-- TODO: equivalent transforms for vectors
 macroEval _ lisp@(_) = return lisp
+
+-- Given input and syntax-rules, determine if any rule is a match
+-- and transform it. 
+-- TODO (later): validate that the pattern's template and pattern are consistent (IE: no vars in transform that do not appear in matching pattern - csi "stmt1" case)
+--macroTransform :: Env -> [LispVal] -> LispVal -> LispVal -> IOThrowsError LispVal
+macroTransform env identifiers rules@(rule@(List r) : rs) input = do
+  localEnv <- liftIO $ nullEnv
+  matchRule env localEnv rule input -- TODO: ignoring identifiers, rs for now...
+macroTransform _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules" (String "") -- TODO (?): rules
+
+-- TODO: localEnv is an env just used for this invocation (kind of like the Env in lambda)
+-- TODO: we are ignoring ... for the moment
+--matchRule :: Env -> Env -> LispVal -> LispVal -> LispVal
+matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inputVar@(Atom _ : is)) =
+  if (length patternVar) == (length inputVar) -- temporary clause 
+    then case p of 
+      List (Atom _ : ps) -> do
+        match <- loadLocal localEnv (List ps) (List is) --mapM (loadLocal localEnv)
+        case match of
+           Nil _ -> throwError $ BadSpecialForm "Input does not match macro pattern" (String "")
+           otherwise -> transformRule localEnv template 
+      otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
+    else return $ Nil "" -- Temporary result, means input does not match pattern
+        --
+        -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
+        --             in preparation for macro transformation.
+  where loadLocal :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+        loadLocal localEnv pattern input = do
+          case (pattern, input) of
+               (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
+                 status <- checkLocal localEnv p i 
+                 case status of
+                      nil@(Nil _) -> return $ nil
+                      otherwise -> loadLocal localEnv (List ps) (List is)
+               (List [], List []) -> return $ Bool True -- Base case - All data processed
+               (_, _) -> checkLocal localEnv pattern input -- check input against pattern (both should be single var)
+        checkLocal :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+        checkLocal localEnv (Bool pattern) (Bool input) = return $ Bool True
+        checkLocal localEnv (Number pattern) (Number input) = return $ Bool True
+        checkLocal localEnv (Float pattern) (Float input) = return $ Bool True
+        checkLocal localEnv (String pattern) (String input) = return $ Bool True
+        checkLocal localEnv (Char pattern) (Char input) = return $ Bool True
+        checkLocal localEnv (Atom pattern) input = do 
+          defineVar localEnv pattern input
+
+-- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
+-- TODO: eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
+-- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
+-- TODO: eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
+        checkLocal localEnv _ _ = return $ Nil ""
+
+-- TODO - high-level approach:
+-- input is List(Atom : xs)
+-- want to compare each element of input to pattern:
+--  - if both are consts (int, string, etc) and they match, then OK
+--  - if pattern is a var, then load input into that var in the localEnv
+--
+--  - if at any point there is no match, need to return Nil back up to findMatch
+--  - otherwise, if everything matches, then can proceed to do the tranformation using localEnv
+
+-- Some more notes:
+-- literal - 1, "2", etc - just make sure it matches in rule and form
+-- identifier in pattern - load form's "current" var into the identifier (in localEnv)
+-- other cases?
+-- if no match, return Nil to indicate as such, and findMatch will pick up at the next rule
+
+-- Transform input by walking the tranform structure and creating a new structure
+-- with the same form, replacing identifiers in the tranform with those bound in localEnv
+transformRule :: Env -> LispVal -> IOThrowsError LispVal
+transformRule localEnv transform = do
+  case transform of
+    Atom a -> do
+      isDefined <- liftIO $ isBound localEnv a
+      if isDefined
+        then getVar localEnv a
+        else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
+    List (l) -> mapM (transformRule localEnv) l >>= return . List
+    otherwise -> throwError $ BadSpecialForm "Error during macro transformation" $ String ""
 
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
+eval env val@(Nil _) = return val
 eval env val@(String _) = return val
 eval env val@(Char _) = return val
 eval env val@(Number _) = return val
@@ -468,10 +578,19 @@ eval env (List (Atom "case" : keyAndClauses)) =
        ekey <- eval env key
        evalCase env $ List $ (ekey : cls)
 
--- TODO: need to scan for comments, this may be a good place,
---       rather than in the parser itself
+eval env (List (Atom "begin" : funcs)) = 
+  if length funcs == 0
+     then eval env $ Nil ""
+     else if length funcs == 1
+             then eval env (head funcs)
+             else do
+                 let fs = tail funcs
+                 eval env (head funcs)
+                 eval env (List (Atom "begin" : fs))
+
 eval env (List [Atom "load", String filename]) =
-     load filename >>= liftM last . mapM (eval env)
+     load filename >>= liftM last . mapM (evaluate env)
+	 where evaluate env val = macroEval env val >>= eval env
 
 eval env (List [Atom "set!", Atom var, form]) = 
   eval env form >>= setVar env var
@@ -591,18 +710,19 @@ apply (PrimitiveFunc func) args = liftThrows $ func args
 apply (Func params varargs body closure) args =
   if num params /= num args && varargs == Nothing
      then throwError $ NumArgs (num params) args
-     else (liftIO $ bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
+     else (liftIO $ bindVars closure $ zip (map ((,) varNamespace) params) args) >>= bindVarArgs varargs >>= evalBody
   where remainingArgs = drop (length params) args
         num = toInteger . length
         evalBody env = liftM last $ mapM (eval env) body
         bindVarArgs arg env = case arg of
-          Just argName -> liftIO $ bindVars env [(argName, List $ remainingArgs)]
+          Just argName -> liftIO $ bindVars env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
+-- TODO: just typing (1 2) results in non-exhaustive pattern error in apply
 
 primitiveBindings :: IO Env
 primitiveBindings = nullEnv >>= (flip bindVars $ map (makeFunc IOFunc) ioPrimitives
                                               ++ map (makeFunc PrimitiveFunc) primitives)
-  where makeFunc constructor (var, func) = (var, constructor func)
+  where makeFunc constructor (var, func) = ((varNamespace, var), constructor func)
 
 ioPrimitives :: [(String, [LispVal] -> IOThrowsError LispVal)]
 ioPrimitives = [("apply", applyProc),
@@ -632,7 +752,7 @@ readProc [Port port] = (liftIO $ hGetLine port) >>= liftThrows . readExpr
 
 writeProc :: [LispVal] -> IOThrowsError LispVal
 writeProc [obj] = writeProc [obj, Port stdout]
-writeProc [obj, Port port] = liftIO $ hPrint port obj >> (return $ Bool True)
+writeProc [obj, Port port] = liftIO $ hPrint port obj >> (return $ Nil "")
 
 readContents :: [LispVal] -> IOThrowsError LispVal
 readContents [String filename] = liftM String $ liftIO $ readFile filename
