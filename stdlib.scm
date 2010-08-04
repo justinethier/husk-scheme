@@ -81,7 +81,14 @@
 (define (assv obj alist)      (fold (mem-helper (curry eqv? obj) car) #f alist))
 (define (assoc obj alist)     (fold (mem-helper (curry equal? obj) car) #f alist))
 
-;; TODO: for-each
+; Support variable number of args, per spec:
+; http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4
+;(define (for-each func . lsts) )
+
+(define (for-each func lst) 
+  (if (not (eq? '() lst))
+    (begin (func (car lst)
+           (for-each func (cdr lst))))))
 
 (define (map func lst)        (foldr (lambda (x y) (cons (func x) y)) '() lst))
 (define (filter pred lst)     (foldr (lambda (x y) (if (pred x) (cons x y) y)) '() lst))
