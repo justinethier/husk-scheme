@@ -12,6 +12,7 @@ skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS s
 
 Features under development:
 
+- for-each, review (map) function
 - Hygenic Macros
 - Full numeric tower
 - Delayed Execution (R5RS section 4.2.5), other missing sections from 4.2.*
