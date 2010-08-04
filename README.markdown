@@ -18,6 +18,7 @@ Features under development:
 - Any missing stdlib functions
 - Continuations
 - More example programs
+- Compare skim features to <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
 
 Credits
 -------
