@@ -26,4 +26,11 @@
 
 (assert-equal (lambda () (append '(1 2 3 4 5) '(6 7 "eight" "nine"))) 
               '(1 2 3 4 5 6 7 "eight" "nine"))
+
+(define v (make-vector 6))
+(assert-equal (lambda () (for-each (lambda (i)
+                                       (vector-set! v i (* i i)))
+                              '(0 1 2 3 4 5)))
+               #(0 1 4 9 16 25))
+
 (unit-test-handler-results)
