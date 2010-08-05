@@ -9,3 +9,4 @@
 ;(cond ((assv 'b '((a 1) (b 2))) => cadr)
 ;                        (else #f))                 ===>  2
 
+(unit-test-handler-results)

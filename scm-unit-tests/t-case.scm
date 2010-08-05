@@ -20,3 +20,5 @@
 
 (assert-equal (lambda () (case (* 2 3) (else #t)))
 			  #t)
+
+(unit-test-handler-results)

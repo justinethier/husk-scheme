@@ -26,3 +26,4 @@
 ;              ("vector-list", vectorToList),
 ;              ("list-vector", listToVector),
 
+(unit-test-handler-results)

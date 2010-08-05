@@ -9,3 +9,4 @@
 (assert-equal (lambda () (list->string '(#\s #\k #\i #\m))) "skim")
 (assert-equal (lambda () (list->string '())) "")
 
+(unit-test-handler-results)

@@ -21,4 +21,5 @@
 
 ; TODO: more test cases from:
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.2.6
+(unit-test-handler-results)
 
