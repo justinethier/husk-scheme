@@ -425,6 +425,10 @@ parseExpr = try(parseDecimal)
 
 {- Macro eval section -}
 
+
+-- TODO: in order to handle the ellipsis (...), when variable(s) are followed by it, create a list with the name of the list as the variable name. then just keep adding each instance of the var (in the input) to the list.
+-- of course, the other half is the update to the match logic to match 0 or more instances of the preceding expression.
+
 -- Search for macro's in the AST, and transform any that are found.
 -- There is also a special case (define-syntax) that loads new rules.
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
