@@ -478,6 +478,15 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         loadLocal localEnv pattern input = do
           case (pattern, input) of
                (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
+
+-- TODO: check to see if the next element of p is ... - if so:
+--  - need to account for "0" match case
+--  - otherwise, match just fine for (1) case, but next iteration (2 and above) matches on p:ps instead of ps
+
+-- TODO: how does checkLocal handle lists? Does it recursively call loadLocal on them?
+
+-- TODO: do all these names make sense, or do they need to be changed to be more meaningful?
+
                  status <- checkLocal localEnv p i 
                  case status of
                       nil@(Nil _) -> return $ nil
