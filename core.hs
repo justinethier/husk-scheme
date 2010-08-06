@@ -269,10 +269,12 @@ spaces = skipMany1 space
 
 parseAtom :: Parser LispVal
 parseAtom = do
-	first <- letter <|> symbol
-	rest <- many (letter <|> digit <|> symbol)
+	first <- letter <|> symbol <|> (oneOf ".")
+	rest <- many (letter <|> digit <|> symbol <|> (oneOf "."))
 	let atom = first:rest
-	return $ Atom atom
+	if atom == "."
+           then pzero -- Do not match this form
+           else return $ Atom atom
 
 parseBool :: Parser LispVal
 parseBool = do string "#"
@@ -411,7 +413,7 @@ parseExpr = try(parseDecimal)
          x <- parseVector
          char ')'
          return x
-  <|> parseAtom
+  <|> try (parseAtom)
   <|> parseString 
   <|> parseBool
   <|> parseQuoted
