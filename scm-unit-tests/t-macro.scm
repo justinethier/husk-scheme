@@ -23,9 +23,10 @@
 
 (define-syntax test (syntax-rules () ((test 1 ...) (list 1))))
 
-;(assert-equal (lambda () (test)) '(1))
+;TODO: form of atom by itself does not work yet - (assert-equal (lambda () (test)) '(1))
 (assert-equal (lambda () (test 1)) '(1))
-;(assert-equal (lambda () (test 1 1 1 1 1 1 1 1 1 1)) '(1))
+(assert-equal (lambda () (test 1 1 1 1 1 1 1 1 1 1)) '(1))
+; TODO: this should not pass, since 2 is not in the pattern - (test 1 2)
 
 ; TODO:
 ;(define-syntax test (syntax-rules () ((test 1 ... 2) (list 1 2))))
