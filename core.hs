@@ -431,6 +431,11 @@ parseExpr = try(parseDecimal)
 -- TODO: in order to handle the ellipsis (...), when variable(s) are followed by it, create a list with the name of the list as the variable name. then just keep adding each instance of the var (in the input) to the list.
 -- of course, the other half is the update to the match logic to match 0 or more instances of the preceding expression.
 
+-- IMPORTANT: I believe this is true but need to verify - 
+-- when macroEval is complete, it must be run again if the macro made any transformations. Otherwise
+-- a macro keyword such as let could never be used inside of a macro, because only a single transformation
+-- would take place, where a full transformation is intended (and in fact, required).
+
 -- Search for macro's in the AST, and transform any that are found.
 -- There is also a special case (define-syntax) that loads new rules.
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
@@ -478,6 +483,13 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         loadLocal localEnv pattern input = do
           case (pattern, input) of
                (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
+
+                -- TODO: let hasEllipsis = (length ps > 0) && ((head ps) == (Atom "..."))
+                {- TODO: case p of
+                  Atom varName ->
+                  else
+                isDefined <- liftIO $ isBound localEnv a
+                if isDefined -}
 
 -- TODO: check to see if the next element of p is ... - if so:
 --  - need to account for "0" match case
