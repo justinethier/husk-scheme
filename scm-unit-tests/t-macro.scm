@@ -27,5 +27,8 @@
 (assert-equal (lambda () (test 1)) '(1))
 (assert-equal (lambda () (test 1 1 1 1 1 1 1 1 1 1)) '(1))
 
+; TODO:
+;(define-syntax test (syntax-rules () ((test 1 ... 2) (list 1 2))))
+;(define-syntax test (syntax-rules () ((test 1 ... 2 ... 3) (list 1 2 3))))
 
 (unit-test-handler-results)
