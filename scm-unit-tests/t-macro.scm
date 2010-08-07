@@ -23,9 +23,9 @@
 
 (define-syntax test (syntax-rules () ((test 1 ...) (list 1))))
 
-(assert-equal (lambda () (test)) '(1))
+;(assert-equal (lambda () (test)) '(1))
 (assert-equal (lambda () (test 1)) '(1))
-(assert-equal (lambda () (test 1 1 1 1 1 1 1 1 1 1)) '(1))
+;(assert-equal (lambda () (test 1 1 1 1 1 1 1 1 1 1)) '(1))
 
 ; TODO:
 ;(define-syntax test (syntax-rules () ((test 1 ... 2) (list 1 2))))

@@ -467,20 +467,20 @@ macroTransform _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules
 -- TODO: we are ignoring ... for the moment
 --matchRule :: Env -> Env -> LispVal -> LispVal -> LispVal
 matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inputVar@(Atom _ : is)) =
-  if (length patternVar) == (length inputVar) -- temporary clause 
-    then case p of 
+-- obsolete:  if (length patternVar) == (length inputVar) -- temporary clause 
+   case p of 
       List (Atom _ : ps) -> do
-        match <- loadLocal localEnv (List ps) (List is) --mapM (loadLocal localEnv)
+        match <- loadLocal localEnv (List ps) (List is) False --mapM (loadLocal localEnv)
         case match of
            Nil _ -> throwError $ BadSpecialForm "Input does not match macro pattern" match
            otherwise -> transformRule localEnv template 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
-    else return $ Nil "" -- Temporary result, means input does not match pattern
+    --else return $ Nil "" -- Temporary result, means input does not match pattern
         --
         -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
         --             in preparation for macro transformation.
-  where loadLocal :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-        loadLocal localEnv pattern input = do
+  where loadLocal :: Env -> LispVal -> LispVal -> Bool -> IOThrowsError LispVal
+        loadLocal localEnv pattern input hasEllipsis = do
           case (pattern, input) of
                (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
 
@@ -489,6 +489,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
                                                 Atom "..." -> True
                                                 otherwise -> False
                                       else False
+
                  {- TODO: stubs for when variables are in the ellipsis
                  case p of
                    Atom varName ->
@@ -506,11 +507,27 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 
                  status <- checkLocal localEnv p i 
                  case status of
-                      nil@(Nil _) -> return $ nil
+                      -- No match
+                      nil@(Nil _) -> if hasEllipsis
+                                        then loadLocal localEnv (List $ tail ps) (List is) False -- no match, must be finished with ...
+                                        else return $ nil
+                      -- There was a match
                       otherwise -> if hasEllipsis -- TODO: Bit repetitive, is there a cleaner way?
-                                      then loadLocal localEnv pattern (List is)
-                                      else loadLocal localEnv (List ps) (List is)
-               (List [], List []) -> return $ Bool True -- Base case - All data processed
+                                      then loadLocal localEnv pattern (List is) True
+                                      else loadLocal localEnv (List ps) (List is) False
+
+               -- Base case - All data processed
+               (List [], List []) -> return $ Bool True
+
+               -- Ran out of input to process
+               (_, List []) -> if hasEllipsis 
+                                  then return $ Bool True -- TODO: not 100% correct still nil if there are more patterns after the current ...
+                                  else return $ Nil ""
+
+               -- Pattern ran out...
+               (List [], _) -> return $ Nil ""
+
+               -- Keep going...
                (_, _) -> checkLocal localEnv pattern input -- check input against pattern (both should be single var)
         checkLocal :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
         checkLocal localEnv (Bool pattern) (Bool input) = return $ Bool True
@@ -553,7 +570,8 @@ transformRule localEnv transform = do
         then getVar localEnv a
         else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
     List (l) -> mapM (transformRule localEnv) l >>= return . List
-    otherwise -> throwError $ BadSpecialForm "Error during macro transformation" $ String ""
+    _ -> return transform
+    --otherwise -> throwError $ BadSpecialForm "Error during macro transformation, unable to transform" transform
 
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
