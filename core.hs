@@ -472,7 +472,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
       List (Atom _ : ps) -> do
         match <- loadLocal localEnv (List ps) (List is) --mapM (loadLocal localEnv)
         case match of
-           Nil _ -> throwError $ BadSpecialForm "Input does not match macro pattern" (String "")
+           Nil _ -> throwError $ BadSpecialForm "Input does not match macro pattern" match
            otherwise -> transformRule localEnv template 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
     else return $ Nil "" -- Temporary result, means input does not match pattern
@@ -484,12 +484,17 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
           case (pattern, input) of
                (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
 
-                -- TODO: let hasEllipsis = (length ps > 0) && ((head ps) == (Atom "..."))
-                {- TODO: case p of
-                  Atom varName ->
-                  else
-                isDefined <- liftIO $ isBound localEnv a
-                if isDefined -}
+                 let hasEllipsis = if length ps > 0 --((length ps > 0) && ((head ps) == (Atom "...")))
+                                      then case (head ps) of
+                                                Atom "..." -> True
+                                                otherwise -> False
+                                      else False
+                 {- TODO: stubs for when variables are in the ellipsis
+                 case p of
+                   Atom varName ->
+                   else
+                 isDefined <- liftIO $ isBound localEnv a
+                 if isDefined -}
 
 -- TODO: check to see if the next element of p is ... - if so:
 --  - need to account for "0" match case
@@ -502,7 +507,9 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
                  status <- checkLocal localEnv p i 
                  case status of
                       nil@(Nil _) -> return $ nil
-                      otherwise -> loadLocal localEnv (List ps) (List is)
+                      otherwise -> if hasEllipsis -- TODO: Bit repetitive, is there a cleaner way?
+                                      then loadLocal localEnv pattern (List is)
+                                      else loadLocal localEnv (List ps) (List is)
                (List [], List []) -> return $ Bool True -- Base case - All data processed
                (_, _) -> checkLocal localEnv pattern input -- check input against pattern (both should be single var)
         checkLocal :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
