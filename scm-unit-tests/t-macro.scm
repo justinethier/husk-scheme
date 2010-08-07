@@ -12,23 +12,20 @@
 ;
 ;(define-syntax let (syntax-rules ()    ((_ x)    (x))))
 
+
 (define-syntax let (syntax-rules ()    ((let x)    (begin x))))
 (define x "hello, world")
 
-(assert-equal (lambda () (let 2))
-              2)
-
-(assert-equal (lambda () (let x))
-              "hello, world")
-
-(assert-equal (lambda () (let (+ 1 2 3 4 5)))
-              15)
+(assert-equal (lambda () (let 2)) 2)
+(assert-equal (lambda () (let x)) "hello, world")
+(assert-equal (lambda () (let (+ 1 2 3 4 5))) 15)
 
 
-;(define-syntax test (syntax-rules () ((test 1 ...) (list 1))))
-;all equal to 1:
-;(test)
-;(test 1)
-; (test 1 1 1 1 1 1 1 1 1 1)
+(define-syntax test (syntax-rules () ((test 1 ...) (list 1))))
+
+(assert-equal (lambda () (test)) '(1))
+(assert-equal (lambda () (test 1)) '(1))
+(assert-equal (lambda () (test 1 1 1 1 1 1 1 1 1 1)) '(1))
+
 
 (unit-test-handler-results)
