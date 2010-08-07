@@ -459,15 +459,13 @@ macroEval _ lisp@(_) = return lisp
 -- TODO (later): validate that the pattern's template and pattern are consistent (IE: no vars in transform that do not appear in matching pattern - csi "stmt1" case)
 --macroTransform :: Env -> [LispVal] -> LispVal -> LispVal -> IOThrowsError LispVal
 macroTransform env identifiers rules@(rule@(List r) : rs) input = do
-  localEnv <- liftIO $ nullEnv
+  localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
   matchRule env localEnv rule input -- TODO: ignoring identifiers, rs for now...
 macroTransform _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules" (String "") -- TODO (?): rules
 
--- TODO: localEnv is an env just used for this invocation (kind of like the Env in lambda)
--- TODO: we are ignoring ... for the moment
 --matchRule :: Env -> Env -> LispVal -> LispVal -> LispVal
-matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inputVar@(Atom _ : is)) =
--- obsolete:  if (length patternVar) == (length inputVar) -- temporary clause 
+matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inputVar) = do
+   let is = tail inputVar
    case p of 
       List (Atom _ : ps) -> do
         match <- loadLocal localEnv (List ps) (List is) False --mapM (loadLocal localEnv)
@@ -475,7 +473,6 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
            Nil _ -> throwError $ BadSpecialForm "Input does not match macro pattern" match
            otherwise -> transformRule localEnv template 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
-    --else return $ Nil "" -- Temporary result, means input does not match pattern
         --
         -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
         --             in preparation for macro transformation.
