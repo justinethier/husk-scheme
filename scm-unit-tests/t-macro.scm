@@ -43,6 +43,9 @@
 (assert-equal (lambda () (test 1 1 1 2 2 2 3)) '(1 2 3))
 
 ; TODO - get each of these working next, then maybe try the real (let):
-;(define-syntax test (syntax-rules () ((test x ...) (list x ...)
-;above, but what happens when transform is just (list x) - assume an error?
+(define-syntax test (syntax-rules () ((test x ...) (list x ...))))
+(assert-equal (lambda () (test "hello, world!")) x)
+(assert-equal (lambda () (test 3 2 1)) '(3 2 1))
+(assert-equal (lambda () (test 'a 'b "c" #\d)) '(a b "c" #\d))
+;TODO: with above macro, what happens when transform is just (list x) - assume an error?
 (unit-test-handler-results)
