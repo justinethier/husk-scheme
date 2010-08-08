@@ -787,7 +787,7 @@ apply (Func params varargs body closure) args =
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ bindVars env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
--- TODO: just typing (1 2) results in non-exhaustive pattern error in apply
+apply func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List (func : args)
 
 primitiveBindings :: IO Env
 primitiveBindings = nullEnv >>= (flip bindVars $ map (makeFunc IOFunc) ioPrimitives
