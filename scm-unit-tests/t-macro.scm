@@ -23,13 +23,26 @@
 
 (define-syntax test (syntax-rules () ((test 1 ...) (list 1))))
 
-;TODO: form of atom by itself does not work yet - (assert-equal (lambda () (test)) '(1))
+;TODO: form of atom by itself does not work yet, should pass this test - (assert-equal (lambda () (test)) '(1))
+
 (assert-equal (lambda () (test 1)) '(1))
 (assert-equal (lambda () (test 1 1 1 1 1 1 1 1 1 1)) '(1))
 ; TODO: this should not pass, since 2 is not in the pattern - (test 1 2)
+; this test case works, but can't put it here since it halts the program.
+; would be nice if there was a way to test this...
 
-; TODO:
-;(define-syntax test (syntax-rules () ((test 1 ... 2) (list 1 2))))
-;(define-syntax test (syntax-rules () ((test 1 ... 2 ... 3) (list 1 2 3))))
+(define-syntax test (syntax-rules () ((test 1 ... 2) (list 1 2))))
+(assert-equal (lambda () (test 2)) '(1 2))
+(assert-equal (lambda () (test 1 2)) '(1 2))
+(assert-equal (lambda () (test 1 1 1 1 2)) '(1 2))
 
+(define-syntax test (syntax-rules () ((test 1 ... 2 ... 3) (list 1 2 3))))
+(assert-equal (lambda () (test 3)) '(1 2 3))
+(assert-equal (lambda () (test 2 3)) '(1 2 3))
+(assert-equal (lambda () (test 1 2 3)) '(1 2 3))
+(assert-equal (lambda () (test 1 1 1 2 2 2 3)) '(1 2 3))
+
+; TODO - get each of these working next, then maybe try the real (let):
+;(define-syntax test (syntax-rules () ((test x ...) (list x ...)
+;above, but what happens when transform is just (list x) - assume an error?
 (unit-test-handler-results)
