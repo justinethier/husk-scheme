@@ -502,7 +502,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 
 -- TODO: do all these names make sense, or do they need to be changed to be more meaningful?
 
-                 status <- checkLocal localEnv p i 
+                 status <- checkLocal localEnv hasEllipsis p i 
                  case status of
                       -- No match
                       Bool False -> if hasEllipsis
@@ -521,31 +521,46 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
                -- Ran out of input to process
                (List (p:ps), List []) -> do
                                          if hasEllipsis && ((length ps) == 1) 
-                                                   then return $ Bool True -- TODO: not 100% correct still nil if there are more patterns after the current ...
+                                                   then return $ Bool True -- TODO: not 100% correct if there are more patterns after the current ... but good enough for the moment
                                                    else return $ Bool False
 
                -- Pattern ran out, but there is still input. No match.
                (List [], _) -> return $ Bool False
 
                -- Check input against pattern (both should be single var)
-               (_, _) -> checkLocal localEnv pattern input 
+               (_, _) -> checkLocal localEnv hasEllipsis pattern input 
 
-        -- Check pattern against input for a match
-        checkLocal :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-        checkLocal localEnv (Bool pattern) (Bool input) = return $ Bool $ pattern == input
-        checkLocal localEnv (Number pattern) (Number input) = return $ Bool $ pattern == input
-        checkLocal localEnv (Float pattern) (Float input) = return $ Bool $ pattern == input
-        checkLocal localEnv (String pattern) (String input) = return $ Bool $ pattern == input
-        checkLocal localEnv (Char pattern) (Char input) = return $ Bool $ pattern == input
-        checkLocal localEnv (Atom pattern) input = do 
-          defineVar localEnv pattern input
+        -- Check pattern against input to determine if there is a match
+        --
+        --  @param localEnv - Local variables for the macro, used during transform
+        --  @param hasEllipsis - Determine whether we are in a zero-or-many match.
+        --                       Used for loading local vars and NOT for purposes of matching.
+        --  @param pattern - Pattern to match
+        --  @param input - Input to be matched
+        checkLocal :: Env -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
+        checkLocal localEnv hasEllipsis (Bool pattern) (Bool input) = return $ Bool $ pattern == input
+        checkLocal localEnv hasEllipsis (Number pattern) (Number input) = return $ Bool $ pattern == input
+        checkLocal localEnv hasEllipsis (Float pattern) (Float input) = return $ Bool $ pattern == input
+        checkLocal localEnv hasEllipsis (String pattern) (String input) = return $ Bool $ pattern == input
+        checkLocal localEnv hasEllipsis (Char pattern) (Char input) = return $ Bool $ pattern == input
+        checkLocal localEnv hasEllipsis (Atom pattern) input = do 
+          if hasEllipsis
+             -- Var is part of a 0-to-many match, store up in a list...
+             then do isDefined <- liftIO $ isBound localEnv pattern
+                     if isDefined
+                        then do v <- getVar localEnv pattern
+                                case v of
+                                  (List vs) -> setVar localEnv pattern (List $ vs ++ [input])
+                        else defineVar localEnv pattern (List [input])
+             -- Simple var, load up into macro env
+             else defineVar localEnv pattern input
           return $ Bool True
 
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
 -- TODO: eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
-        checkLocal localEnv _ _ = return $ Bool False
+        checkLocal localEnv hasEllipsis _ _ = return $ Bool False
 
 -- TODO - high-level approach:
 -- input is List(Atom : xs)
