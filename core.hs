@@ -470,7 +470,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
       List (Atom _ : ps) -> do
         match <- loadLocal localEnv (List ps) (List is) False --mapM (loadLocal localEnv)
         case match of
-           Nil _ -> throwError $ BadSpecialForm "Input does not match macro pattern" match
+           Bool False -> throwError $ BadSpecialForm "Input does not match macro pattern" match
            otherwise -> transformRule localEnv template 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
         --
@@ -481,7 +481,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
           case (pattern, input) of
                (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
 
-                 let hasEllipsis = if length ps > 0 --((length ps > 0) && ((head ps) == (Atom "...")))
+                 let hasEllipsis = if length ps > 0
                                       then case (head ps) of
                                                 Atom "..." -> True
                                                 otherwise -> False
@@ -505,9 +505,11 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
                  status <- checkLocal localEnv p i 
                  case status of
                       -- No match
-                      nil@(Nil _) -> if hasEllipsis
-                                        then loadLocal localEnv (List $ tail ps) (List is) False -- no match, must be finished with ...
-                                        else return $ nil
+                      Bool False -> if hasEllipsis
+                                        -- No match, must be finished with ...
+                                        -- Move past it, but keep the same input.
+                                        then loadLocal localEnv (List $ tail ps) (List (i:is)) False
+                                        else return $ Bool False
                       -- There was a match
                       otherwise -> if hasEllipsis -- TODO: Bit repetitive, is there a cleaner way?
                                       then loadLocal localEnv pattern (List is) True
@@ -517,29 +519,33 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
                (List [], List []) -> return $ Bool True
 
                -- Ran out of input to process
-               (_, List []) -> if hasEllipsis 
-                                  then return $ Bool True -- TODO: not 100% correct still nil if there are more patterns after the current ...
-                                  else return $ Nil ""
+               (List (p:ps), List []) -> do
+                                         if hasEllipsis && ((length ps) == 1) 
+                                                   then return $ Bool True -- TODO: not 100% correct still nil if there are more patterns after the current ...
+                                                   else return $ Bool False
 
-               -- Pattern ran out...
-               (List [], _) -> return $ Nil ""
+               -- Pattern ran out, but there is still input. No match.
+               (List [], _) -> return $ Bool False
 
-               -- Keep going...
-               (_, _) -> checkLocal localEnv pattern input -- check input against pattern (both should be single var)
+               -- Check input against pattern (both should be single var)
+               (_, _) -> checkLocal localEnv pattern input 
+
+        -- Check pattern against input for a match
         checkLocal :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-        checkLocal localEnv (Bool pattern) (Bool input) = return $ Bool True
-        checkLocal localEnv (Number pattern) (Number input) = return $ Bool True
-        checkLocal localEnv (Float pattern) (Float input) = return $ Bool True
-        checkLocal localEnv (String pattern) (String input) = return $ Bool True
-        checkLocal localEnv (Char pattern) (Char input) = return $ Bool True
+        checkLocal localEnv (Bool pattern) (Bool input) = return $ Bool $ pattern == input
+        checkLocal localEnv (Number pattern) (Number input) = return $ Bool $ pattern == input
+        checkLocal localEnv (Float pattern) (Float input) = return $ Bool $ pattern == input
+        checkLocal localEnv (String pattern) (String input) = return $ Bool $ pattern == input
+        checkLocal localEnv (Char pattern) (Char input) = return $ Bool $ pattern == input
         checkLocal localEnv (Atom pattern) input = do 
           defineVar localEnv pattern input
+          return $ Bool True
 
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
 -- TODO: eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
-        checkLocal localEnv _ _ = return $ Nil ""
+        checkLocal localEnv _ _ = return $ Bool False
 
 -- TODO - high-level approach:
 -- input is List(Atom : xs)
