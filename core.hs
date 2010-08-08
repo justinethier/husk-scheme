@@ -463,6 +463,16 @@ macroTransform env identifiers rules@(rule@(List r) : rs) input = do
   matchRule env localEnv rule input -- TODO: ignoring identifiers, rs for now...
 macroTransform _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules" (String "") -- TODO (?): rules
 
+-- Determine if the next element matches 0-to-n times due to an ellipsis
+macroElementMatchesMany :: LispVal -> Bool
+macroElementMatchesMany (List (p:ps)) = do
+  if length ps > 0
+     then case (head ps) of
+                Atom "..." -> True
+                otherwise -> False
+     else False
+macroElementMatchesMany _ = False
+
 --matchRule :: Env -> Env -> LispVal -> LispVal -> LispVal
 matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inputVar) = do
    let is = tail inputVar
@@ -481,11 +491,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
           case (pattern, input) of
                (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
 
-                 let hasEllipsis = if length ps > 0
-                                      then case (head ps) of
-                                                Atom "..." -> True
-                                                otherwise -> False
-                                      else False
+                 let hasEllipsis = macroElementMatchesMany pattern
 
                  {- TODO: stubs for when variables are in the ellipsis
                  case p of
@@ -581,6 +587,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 -- with the same form, replacing identifiers in the tranform with those bound in localEnv
 transformRule :: Env -> LispVal -> IOThrowsError LispVal
 transformRule localEnv transform = do
+--  let hasEllipsis = macroElementMatchesMany transform
   case transform of
     Atom a -> do
       isDefined <- liftIO $ isBound localEnv a
