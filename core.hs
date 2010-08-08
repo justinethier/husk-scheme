@@ -481,7 +481,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         match <- loadLocal localEnv (List ps) (List is) False --mapM (loadLocal localEnv)
         case match of
            Bool False -> throwError $ BadSpecialForm "Input does not match macro pattern" match
-           otherwise -> transformRule localEnv template 
+           otherwise -> transformRule localEnv (List []) template 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
         --
         -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
@@ -585,18 +585,43 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 
 -- Transform input by walking the tranform structure and creating a new structure
 -- with the same form, replacing identifiers in the tranform with those bound in localEnv
-transformRule :: Env -> LispVal -> IOThrowsError LispVal
-transformRule localEnv transform = do
+transformRule :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+
+
+{-transformRule localEnv (List result) transform@List(t:ts) = do
 --  let hasEllipsis = macroElementMatchesMany transform
-  case transform of
-    Atom a -> do
-      isDefined <- liftIO $ isBound localEnv a
-      if isDefined
-        then getVar localEnv a
-        else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
-    List (l) -> mapM (transformRule localEnv) l >>= return . List
-    _ -> return transform
-    --otherwise -> throwError $ BadSpecialForm "Error during macro transformation, unable to transform" transform
+         -    List (l) -> mapM (transformRule localEnv) l >>= return . List
+            List (l) ->
+            _ -> t
+  return transformRule localEnv (List (v : result) (List ts)
+       --otherwise -> throwError $ BadSpecialForm "Error during macro transformation, unable to transform" transform
+-}
+
+transformRule localEnv (List result) transform@(List (Atom a : ts)) = do
+  hasEllipsis <- macroElementMatchesMany transform
+  isDefined <- liftIO $ isBound localEnv a
+  if hasEllipsis
+     then if isDefined
+             then do
+                  -- get var
+                  var <- getVar localEnv a
+                  -- ensure it is a list
+                  case var of 
+                    -- add all elements of the list into result
+                    List v -> transformRule localEnv (List $ result ++ v) (List $ tail ts)
+             else -- Matched 0 times, skip it
+                  transformRule localEnv result (List $ tail ts)
+
+     else t <- if isDefined
+                  then getVar localEnv a
+                  else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
+          transformRule localEnv (List $ result ++ [t]) (List ts)
+
+transformRule localEnv result@(List r) transform@(List (t : ts)) = do
+  transformRule localEnv (List $ r ++ [t]) (List ts)
+
+-- Base case - empty transform
+transformRule localEnv result@(List _) transform@(List []) = return result
 
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
@@ -1147,7 +1172,7 @@ isInteger ([Number n]) = return $ Bool True
 isInteger _ = return $ Bool False
 
 isDottedList :: [LispVal] -> ThrowsError LispVal
-isDottedList ([DottedList l d]) = return $ Bool True {- TODO: review code to convince myself why this works -}
+isDottedList ([DottedList l d]) = return $ Bool True
 isDottedList _ = return $  Bool False
 
 isProcedure :: [LispVal] -> ThrowsError LispVal
