@@ -587,8 +587,8 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 -- with the same form, replacing identifiers in the tranform with those bound in localEnv
 transformRule :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 
-
-{-transformRule localEnv (List result) transform@List(t:ts) = do
+{-
+transformRule localEnv (List result) transform@List(t:ts) = do
 --  let hasEllipsis = macroElementMatchesMany transform
          -    List (l) -> mapM (transformRule localEnv) l >>= return . List
             List (l) ->
@@ -598,7 +598,7 @@ transformRule :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 -}
 
 transformRule localEnv (List result) transform@(List (Atom a : ts)) = do
-  hasEllipsis <- macroElementMatchesMany transform
+  let hasEllipsis = macroElementMatchesMany transform
   isDefined <- liftIO $ isBound localEnv a
   if hasEllipsis
      then if isDefined
@@ -610,12 +610,11 @@ transformRule localEnv (List result) transform@(List (Atom a : ts)) = do
                     -- add all elements of the list into result
                     List v -> transformRule localEnv (List $ result ++ v) (List $ tail ts)
              else -- Matched 0 times, skip it
-                  transformRule localEnv result (List $ tail ts)
-
-     else t <- if isDefined
-                  then getVar localEnv a
-                  else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
-          transformRule localEnv (List $ result ++ [t]) (List ts)
+                  transformRule localEnv (List result) (List $ tail ts)
+     else do t <- if isDefined
+                     then getVar localEnv a
+                     else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
+             transformRule localEnv (List $ result ++ [t]) (List ts)
 
 transformRule localEnv result@(List r) transform@(List (t : ts)) = do
   transformRule localEnv (List $ r ++ [t]) (List ts)

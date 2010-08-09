@@ -47,9 +47,10 @@
 (assert-equal (lambda () (test "hello, world!" (+ 1 2 3) x)) '(1))
 (assert-equal (lambda () (test "hello, world!" 1 2 3)) '(1))
 
-;(define-syntax test (syntax-rules () ((test x ...) (list x ...))))
-;(assert-equal (lambda () (test "hello, world!")) x)
-;(assert-equal (lambda () (test 3 2 1)) '(3 2 1))
-;(assert-equal (lambda () (test 'a 'b "c" #\d)) '(a b "c" #\d))
+(define-syntax test (syntax-rules () ((test x ...) (list x ...))))
+(assert-equal (lambda () (test "hello, world!")) '("hello, world!"))
+(assert-equal (lambda () (test 3 2 1)) '(3 2 1))
+(assert-equal (lambda () (test 'a 'b "c" #\d)) '(a b "c" #\d))
+
 ;TODO: with above macro, what happens when transform is just (list x) - assume an error?
 (unit-test-handler-results)
