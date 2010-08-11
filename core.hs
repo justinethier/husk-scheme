@@ -566,6 +566,11 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 -- TODO: eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
 -- TODO: eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
+        checkLocal localEnv hasEllipsis (DottedList ps p) (DottedList is i) = 
+          loadLocal localEnv (List $ ps ++ [p]) (List $ is ++ [i]) hasEllipsis
+        checkLocal localEnv hasEllipsis pattern@(List _) input@(List _) = 
+          loadLocal localEnv pattern input hasEllipsis
+
         checkLocal localEnv hasEllipsis _ _ = return $ Bool False
 
 -- TODO - high-level approach:
