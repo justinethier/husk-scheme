@@ -550,6 +550,21 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         checkLocal localEnv hasEllipsis (String pattern) (String input) = return $ Bool $ pattern == input
         checkLocal localEnv hasEllipsis (Char pattern) (Char input) = return $ Bool $ pattern == input
         checkLocal localEnv hasEllipsis (Atom pattern) input = do 
+          -- If same variable is found more than once, simply add it to a list
+		  -- This is a nice clean solution for case where ... is used on a list, however it
+		  -- requires more rigorous validation to verify the same variable is not accidentally used 
+		  -- more than once in the macro.
+-- TODO: research above problem discussed in comments, add validation if necessary
+{-- TODO: was planning to use this approach to store vars in a pattern, but it breaks simpler macro's
+          isDefined <- liftIO $ isBound localEnv pattern
+          if isDefined
+             then do v <- getVar localEnv pattern
+                     case v of
+                       (List vs) -> setVar localEnv pattern (List $ vs ++ [input])
+                       v@(_) -> setVar localEnv pattern (List $ [v] ++ [input])
+             else case input of
+                    (List _) -> defineVar localEnv pattern (List [input])
+                    _ -> defineVar localEnv pattern input-}
           if hasEllipsis
              -- Var is part of a 0-to-many match, store up in a list...
              then do isDefined <- liftIO $ isBound localEnv pattern
@@ -567,9 +582,9 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
 -- TODO: eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
         checkLocal localEnv hasEllipsis (DottedList ps p) (DottedList is i) = 
-          loadLocal localEnv (List $ ps ++ [p]) (List $ is ++ [i]) hasEllipsis
+          loadLocal localEnv (List $ ps ++ [p]) (List $ is ++ [i]) False -- TODO: needed? hasEllipsis
         checkLocal localEnv hasEllipsis pattern@(List _) input@(List _) = 
-          loadLocal localEnv pattern input hasEllipsis
+          loadLocal localEnv pattern input False -- TODO: needed? hasEllipsis
 
         checkLocal localEnv hasEllipsis _ _ = return $ Bool False
 
@@ -614,6 +629,7 @@ transformRule localEnv (List result) transform@(List (Atom a : ts)) = do
                   case var of 
                     -- add all elements of the list into result
                     List v -> transformRule localEnv (List $ result ++ v) (List $ tail ts)
+                    v@(_) -> transformRule localEnv (List $ result ++ [v]) (List $ tail ts)
              else -- Matched 0 times, skip it
                   transformRule localEnv (List result) (List $ tail ts)
      else do t <- if isDefined

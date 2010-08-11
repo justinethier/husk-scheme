@@ -57,16 +57,16 @@
 
 ;TODO: with above macro, what happens when transform is just (list x) - assume an error?
 
-(define-syntax test (syntax-rules () ((_ (1 2) (3 x)) (list x))))
-(assert-equal (lambda () (test (1 2) (3 4))) '(4))
+;(define-syntax test (syntax-rules () ((_ (1 2) (3 x)) (list x))))
+;(assert-equal (lambda () (test (1 2) (3 4))) '(4))
 
-(define-syntax test (syntax-rules () ((_ (1 2) (3 . x)) (list x))))
-(assert-equal (lambda () (test (1 2) (3 . 4))) '(4))
+;(define-syntax test (syntax-rules () ((_ (1 2) (3 . x)) (list x))))
+;(assert-equal (lambda () (test (1 2) (3 . 4))) '(4))
 
 ; The 'real' let:
-(define-syntax let
-  (syntax-rules ()
-    ((_ ((x v) ...) e1 e2 ...)
-    ((lambda (x ...) e1 e2 ...) v ...))))
+;(define-syntax let
+;  (syntax-rules ()
+;    ((_ ((x v) ...) e1 e2 ...)
+;    ((lambda (x ...) e1 e2 ...) v ...))))
 ; TODO: test cases
 (unit-test-handler-results)
