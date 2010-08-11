@@ -13,7 +13,10 @@
 ;(define-syntax let (syntax-rules ()    ((_ x)    (x))))
 
 
-(define-syntax let (syntax-rules ()    ((let x)    (begin x))))
+(define-syntax let 
+  (syntax-rules ()
+    ((let x)
+	(begin x))))
 (define x "hello, world")
 
 (assert-equal (lambda () (let 2)) 2)
@@ -53,4 +56,17 @@
 (assert-equal (lambda () (test 'a 'b "c" #\d)) '(a b "c" #\d))
 
 ;TODO: with above macro, what happens when transform is just (list x) - assume an error?
+
+(define-syntax test (syntax-rules () ((_ (1 2) (3 x)) (list x))))
+(assert-equal (lambda () (test (1 2) (3 4))) '(4))
+
+(define-syntax test (syntax-rules () ((_ (1 2) (3 . x)) (list x))))
+(assert-equal (lambda () (test (1 2) (3 . 4))) '(4))
+
+; The 'real' let:
+(define-syntax let
+  (syntax-rules ()
+    ((_ ((x v) ...) e1 e2 ...)
+    ((lambda (x ...) e1 e2 ...) v ...))))
+; TODO: test cases
 (unit-test-handler-results)
