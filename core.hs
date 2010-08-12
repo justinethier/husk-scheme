@@ -555,8 +555,15 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 		  -- requires more rigorous validation to verify the same variable is not accidentally used 
 		  -- more than once in the macro.
 -- TODO: research above problem discussed in comments, add validation if necessary
-{-- TODO: was planning to use this approach to store vars in a pattern, but it breaks simpler macro's
-          isDefined <- liftIO $ isBound localEnv pattern
+-- TODO: was planning to use this approach to store vars in a pattern, but it breaks simpler macro's
+{-
+ - LATEST UPDATE: this method does not seem to work because var should only be added to lists if there is
+ - an ellipsis in play. Otherwise not all cases are handled properly, as witnessed by the (15) issue in t-macro.scm
+ -
+ - Need to think more about how to handle vars in cases like ((x v) ...), in the general case.
+ -
+ -
+ - isDefined <- liftIO $ isBound localEnv pattern
           if isDefined
              then do v <- getVar localEnv pattern
                      case v of
