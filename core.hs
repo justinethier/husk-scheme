@@ -483,6 +483,15 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
            Bool False -> throwError $ BadSpecialForm "Input does not match macro pattern" match
            otherwise -> transformRule localEnv (List []) template 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
+{-
+ - TODO: consider following excerpts from the R5RS spec, which state that ... must follow the last element of a sequence of subpatterns. 
+ - Need to test this on csi and with skim because it looks like skim is too liberal, allowing ... within the middle of a list of elements
+ -
+ -(<pattern> ... <pattern> <ellipsis>)
+
+ A subpattern followed by ... can match zero or more elements of the input. It is an error for ... to appear in <literals>. Within a pattern the identifier ... must follow the last element of a nonempty sequence of subpatterns.
+ - -}
+
         --
         -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
         --             in preparation for macro transformation.
