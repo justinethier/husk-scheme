@@ -502,21 +502,6 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 
                  let hasEllipsis = macroElementMatchesMany pattern
 
-                 {- TODO: stubs for when variables are in the ellipsis
-                 case p of
-                   Atom varName ->
-                   else
-                 isDefined <- liftIO $ isBound localEnv a
-                 if isDefined -}
-
--- TODO: check to see if the next element of p is ... - if so:
---  - need to account for "0" match case
---  - otherwise, match just fine for (1) case, but next iteration (2 and above) matches on p:ps instead of ps
-
--- TODO: how does checkLocal handle lists? Does it recursively call loadLocal on them?
-
--- TODO: do all these names make sense, or do they need to be changed to be more meaningful?
-
                  status <- checkLocal localEnv hasEllipsis p i 
                  case status of
                       -- No match
@@ -526,7 +511,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
                                         then loadLocal localEnv (List $ tail ps) (List (i:is)) False
                                         else return $ Bool False
                       -- There was a match
-                      otherwise -> if hasEllipsis -- TODO: Bit repetitive, is there a cleaner way?
+                      otherwise -> if hasEllipsis
                                       then loadLocal localEnv pattern (List is) True
                                       else loadLocal localEnv (List ps) (List is) False
 
@@ -559,28 +544,6 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         checkLocal localEnv hasEllipsis (String pattern) (String input) = return $ Bool $ pattern == input
         checkLocal localEnv hasEllipsis (Char pattern) (Char input) = return $ Bool $ pattern == input
         checkLocal localEnv hasEllipsis (Atom pattern) input = do 
-          -- If same variable is found more than once, simply add it to a list
-		  -- This is a nice clean solution for case where ... is used on a list, however it
-		  -- requires more rigorous validation to verify the same variable is not accidentally used 
-		  -- more than once in the macro.
--- TODO: research above problem discussed in comments, add validation if necessary
--- TODO: was planning to use this approach to store vars in a pattern, but it breaks simpler macro's
-{-
- - LATEST UPDATE: this method does not seem to work because var should only be added to lists if there is
- - an ellipsis in play. Otherwise not all cases are handled properly, as witnessed by the (15) issue in t-macro.scm
- -
- - Need to think more about how to handle vars in cases like ((x v) ...), in the general case.
- -
- -
- - isDefined <- liftIO $ isBound localEnv pattern
-          if isDefined
-             then do v <- getVar localEnv pattern
-                     case v of
-                       (List vs) -> setVar localEnv pattern (List $ vs ++ [input])
-                       v@(_) -> setVar localEnv pattern (List $ [v] ++ [input])
-             else case input of
-                    (List _) -> defineVar localEnv pattern (List [input])
-                    _ -> defineVar localEnv pattern input-}
           if hasEllipsis
              -- Var is part of a 0-to-many match, store up in a list...
              then do isDefined <- liftIO $ isBound localEnv pattern
