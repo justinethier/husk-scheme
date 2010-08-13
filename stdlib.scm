@@ -110,3 +110,18 @@
     ((_ ((x v) ...) e1 e2 ...)
     ((lambda (x ...) e1 e2 ...) v ...))))
 
+; Delayed evaluation functions
+(define force
+    (lambda (object)
+	      (object)))
+
+(define-syntax delay 
+  (syntax-rules () 
+    ((delay expression)
+     (make-promise (lambda () expression)))))
+
+(define make-promise (lambda (proc)
+; TODO: try to write contents of this by myself, then reference R5RS spec
+))
+; End delayed evaluation section
+
