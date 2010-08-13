@@ -63,6 +63,15 @@
 (define-syntax test (syntax-rules () ((_ (1 2) (3 . x)) (list x))))
 (assert-equal (lambda () (test (1 2) (3 . 4))) '(4))
 
+; "Fake" let test
+(define-syntax let
+  (syntax-rules ()
+    ((_ e1 ...)
+    ((lambda () e1 ...)))))
+
+(let (+ 1 2))
+
+
 ; The 'real' let:
 ;(define-syntax let
 ;  (syntax-rules ()

@@ -478,9 +478,15 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
    let is = tail inputVar
    case p of 
       List (Atom _ : ps) -> do
-        match <- loadLocal localEnv (List ps) (List is) False
+        match <- loadLocal localEnv (List ps) (List is) False False
         case match of
-           Bool False -> throwError $ BadSpecialForm "Input does not match macro pattern" match
+           Bool False -> do
+             throwError $ BadSpecialForm "Input does not match macro pattern" (List is)
+{-             testx <- getVar localEnv "x"
+             testy <- getVar localEnv "v"
+--             teste1 <- getVar localEnv "e1"
+--             teste2 <- getVar localEnv "e2"
+             throwError $ BadSpecialForm "Input does not match macro pattern" (List [testx, testy])-}
            otherwise -> transformRule localEnv (List []) template 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
 {-
@@ -499,40 +505,43 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         --
         -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
         --             in preparation for macro transformation.
-  where loadLocal :: Env -> LispVal -> LispVal -> Bool -> IOThrowsError LispVal
-        loadLocal localEnv pattern input hasEllipsis = do
+  where loadLocal :: Env -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
+        loadLocal localEnv pattern input hasEllipsis outerHasEllipsis = do -- TODO: kind of a hack to have both ellipsis vars. Is only outer req'd?
           case (pattern, input) of
                (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
 
                  let hasEllipsis = macroElementMatchesMany pattern
 
-                 status <- checkLocal localEnv hasEllipsis p i 
+                 -- TODO: error if ... detected when there is an outer ... ????
+				 
+                 status <- checkLocal localEnv (hasEllipsis || outerHasEllipsis) p i 
                  case status of
                       -- No match
                       Bool False -> if hasEllipsis
                                         -- No match, must be finished with ...
                                         -- Move past it, but keep the same input.
-                                        then loadLocal localEnv (List $ tail ps) (List (i:is)) False
+                                        then loadLocal localEnv (List $ tail ps) (List (i:is)) False outerHasEllipsis
                                         else return $ Bool False
                       -- There was a match
                       otherwise -> if hasEllipsis
-                                      then loadLocal localEnv pattern (List is) True
-                                      else loadLocal localEnv (List ps) (List is) False
+                                      then loadLocal localEnv pattern (List is) True outerHasEllipsis
+                                      else loadLocal localEnv (List ps) (List is) False outerHasEllipsis
 
                -- Base case - All data processed
                (List [], List []) -> return $ Bool True
 
                -- Ran out of input to process
                (List (p:ps), List []) -> do
+                                         let hasEllipsis = macroElementMatchesMany pattern
                                          if hasEllipsis && ((length ps) == 1) 
-                                                   then return $ Bool True -- TODO: not 100% correct if there are more patterns after the current ... but good enough for the moment
+                                                   then return $ Bool True
                                                    else return $ Bool False
 
                -- Pattern ran out, but there is still input. No match.
                (List [], _) -> return $ Bool False
 
                -- Check input against pattern (both should be single var)
-               (_, _) -> checkLocal localEnv hasEllipsis pattern input 
+               (_, _) -> checkLocal localEnv (hasEllipsis || outerHasEllipsis) pattern input 
 
         -- Check pattern against input to determine if there is a match
         --
@@ -547,7 +556,8 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         checkLocal localEnv hasEllipsis (Float pattern) (Float input) = return $ Bool $ pattern == input
         checkLocal localEnv hasEllipsis (String pattern) (String input) = return $ Bool $ pattern == input
         checkLocal localEnv hasEllipsis (Char pattern) (Char input) = return $ Bool $ pattern == input
-        checkLocal localEnv hasEllipsis (Atom pattern) input = do 
+        checkLocal localEnv hasEllipsis (Atom pattern) input = do
+--          throwError $ BadSpecialForm "testing" (List [(Atom pattern), input, (Bool hasEllipsis)])
           if hasEllipsis
              -- Var is part of a 0-to-many match, store up in a list...
              then do isDefined <- liftIO $ isBound localEnv pattern
@@ -563,9 +573,9 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
         checkLocal localEnv hasEllipsis (DottedList ps p) (DottedList is i) = 
-          loadLocal localEnv (List $ ps ++ [p]) (List $ is ++ [i]) False -- TODO: needed? hasEllipsis
+          loadLocal localEnv (List $ ps ++ [p]) (List $ is ++ [i]) False hasEllipsis -- TODO: needed? hasEllipsis
         checkLocal localEnv hasEllipsis pattern@(List _) input@(List _) = 
-          loadLocal localEnv pattern input False -- TODO: needed? hasEllipsis
+          loadLocal localEnv pattern input False hasEllipsis -- TODO: needed? hasEllipsis
 
         checkLocal localEnv hasEllipsis _ _ = return $ Bool False
 
