@@ -105,3 +105,8 @@
 (define (append inlist alist) (foldr (lambda (ap in) (cons ap in)) alist inlist))
 
 
+(define-syntax let
+  (syntax-rules ()
+    ((_ ((x v) ...) e1 e2 ...)
+    ((lambda (x ...) e1 e2 ...) v ...))))
+
