@@ -478,7 +478,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
    let is = tail inputVar
    case p of 
       List (Atom _ : ps) -> do
-        match <- loadLocal localEnv (List ps) (List is) False --mapM (loadLocal localEnv)
+        match <- loadLocal localEnv (List ps) (List is) False
         case match of
            Bool False -> throwError $ BadSpecialForm "Input does not match macro pattern" match
            otherwise -> transformRule localEnv (List []) template 
@@ -491,6 +491,10 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 
  A subpattern followed by ... can match zero or more elements of the input. It is an error for ... to appear in <literals>. Within a pattern the identifier ... must follow the last element of a nonempty sequence of subpatterns.
  - -}
+
+
+-- TODO: how to fit "let" case into this? maybe read up on it a bit before hacking something together?
+--       at a minimum need to think through impl here...
 
         --
         -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
@@ -557,9 +561,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
           return $ Bool True
 
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
--- TODO: eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
--- TODO: eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
         checkLocal localEnv hasEllipsis (DottedList ps p) (DottedList is i) = 
           loadLocal localEnv (List $ ps ++ [p]) (List $ is ++ [i]) False -- TODO: needed? hasEllipsis
         checkLocal localEnv hasEllipsis pattern@(List _) input@(List _) = 
