@@ -68,14 +68,17 @@
   (syntax-rules ()
     ((_ e1 ...)
     ((lambda () e1 ...)))))
-
-(let (+ 1 2))
-
+(assert-equal (lambda () (let (+ 1 2))) 3)
 
 ; The 'real' let:
-;(define-syntax let
-;  (syntax-rules ()
-;    ((_ ((x v) ...) e1 e2 ...)
-;    ((lambda (x ...) e1 e2 ...) v ...))))
-; TODO: test cases
+(define-syntax let
+  (syntax-rules ()
+    ((_ ((x v) ...) e1 e2 ...)
+    ((lambda (x ...) e1 e2 ...) v ...))))
+
+(assert-equal (lambda () (let ((x 1) (y 2) (z 3)) (+ x y z))) 6)
+(assert-equal (lambda () (let ((x 11) (y 22) (z 34)) (+ x y z))) 67)
+(assert-equal (lambda () (let ((x (* 1 2 3 4)) (y 22) (z 34)) (+ x y z))) (+ 24 22 34))
+
+
 (unit-test-handler-results)
