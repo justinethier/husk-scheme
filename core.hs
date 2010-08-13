@@ -557,7 +557,6 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         checkLocal localEnv hasEllipsis (String pattern) (String input) = return $ Bool $ pattern == input
         checkLocal localEnv hasEllipsis (Char pattern) (Char input) = return $ Bool $ pattern == input
         checkLocal localEnv hasEllipsis (Atom pattern) input = do
---          throwError $ BadSpecialForm "testing" (List [(Atom pattern), input, (Bool hasEllipsis)])
           if hasEllipsis
              -- Var is part of a 0-to-many match, store up in a list...
              then do isDefined <- liftIO $ isBound localEnv pattern
@@ -598,15 +597,11 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 -- with the same form, replacing identifiers in the tranform with those bound in localEnv
 transformRule :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 
-{-
-transformRule localEnv (List result) transform@List(t:ts) = do
---  let hasEllipsis = macroElementMatchesMany transform
-         -    List (l) -> mapM (transformRule localEnv) l >>= return . List
-            List (l) ->
-            _ -> t
-  return transformRule localEnv (List (v : result) (List ts)
-       --otherwise -> throwError $ BadSpecialForm "Error during macro transformation, unable to transform" transform
--}
+-- Recursively transform a list
+transformRule localEnv (List result) transform@(List(List l : ts)) = do
+  lst <- transformRule localEnv (List []) (List l) 
+  case lst of
+    List _ -> transformRule localEnv (List $ result ++ [lst]) (List ts)
 
 transformRule localEnv (List result) transform@(List (Atom a : ts)) = do
   let hasEllipsis = macroElementMatchesMany transform
@@ -632,7 +627,8 @@ transformRule localEnv result@(List r) transform@(List (t : ts)) = do
   transformRule localEnv (List $ r ++ [t]) (List ts)
 
 -- Base case - empty transform
-transformRule localEnv result@(List _) transform@(List []) = return result
+transformRule localEnv result@(List _) transform@(List []) = do
+  return result
 
 {- Eval section -}
 eval :: Env -> LispVal -> IOThrowsError LispVal
