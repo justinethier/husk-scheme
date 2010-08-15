@@ -120,8 +120,15 @@
     ((delay expression)
      (make-promise (lambda () expression)))))
 
-(define make-promise (lambda (proc)
-; TODO: try to write contents of this by myself, then reference R5RS spec
-))
+(define make-promise
+  (lambda (proc)
+    (let ((result-ready? #f)
+          (result #f))
+      (lambda ()
+        (if result-ready? 
+            result
+            (begin (set! result (proc))
+                   (set! result-ready? #t)
+                   result))))))
 ; End delayed evaluation section
 
