@@ -2,6 +2,7 @@
  - skim-scheme interpreter
  -
  - A lightweight dialect of R5RS scheme.
+ - Core functionality
  -
  - @author Justin Ethier
  -
@@ -17,42 +18,6 @@
  -    (http://www.math.grin.edu/~stone/events/scheme-workshop/hash-tables.html)
  -
  - -}
-
-{-
- - TODO: add macro support.
- -
- - From the book:
- - Hygienic macros let you perform transformations on the source code before it's executed. They're a very convenient feature for adding new language features, and several standard parts of Scheme (such as let-bindings and additional control flow features) are defined in terms of them. Section 4.3 of R5RS defines the macro system's syntax and semantics, and there is a whole collection of papers on implementation. Basically, you'd want to intersperse a function between readExpr and eval that takes a form and a macro environment, looks for transformer keywords, and then transforms them according to the rules of the pattern language, rewriting variables as necessarily.
- - 
- - The relevant sections of R5RS are:
- -  => 4.3 - shows syntax, let forms
- -  => 5.3 - syntax definitions - specifically, (define-syntax)
- -     http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-8.html#%_sec_5.3
- -
- - This example from R5RS illustrates several points:
- -
- - (let ((x 'outer))
- -   (let-syntax ((m (syntax-rules () ((m) x))))
- -       (let ((x 'inner))
- -             (m))))                               ===>  outer
- -
- - Key Implementation Points:
- -  1) Need to capture (store) the Env when a macro is define (spec basically says this as well)
- -  2) eval needs to define the forms for let-syntax, etc, because they can be nested inside
- -     other forms (in this case, let).
- -  3) this means a macro Env will need to be passed around all calls to eval
- -  4) as the book says, macro forms that are defined may be expanded by a new function
- -     which executes after parsing is completed but before eval is called.
- -
- -  5) BUT, after reading 5.3, define-syntax is only allowed at the top level of a program.
- -     this seems to indicate that (1), (2), and (3) are only applicable for the let forms,
- -     and could be excluded from an initial implementation!
- -
- -     Need to re-read spec and verify this is true before detailed implementation.
- -
- - Questions: (none at the moment)
- - -}
-
 
 module Main where
 import Control.Monad
@@ -442,26 +407,36 @@ macroEval :: Env -> LispVal -> IOThrowsError LispVal
 macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
   defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
+
 macroEval env lisp@(List (Atom x : xs)) = do
   isDefined <- liftIO $ isNamespacedBound env macroNamespace x
   if isDefined
      then do
        syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules))) <- getNamespacedVar env macroNamespace x 
        macroTransform env identifiers rules lisp
+       -- TODO:
+       --
+       -- Transform the input and then call macroEval again on the transformed code, since
+       -- a macro may be contained within...
+       -- some possible starting points:
+       --
+       -- macroEval env $ macroTransform env identifiers rules lisp
+       --macroEval env =<< macroTransform env identifiers rules lisp
+       -- result <-  macroTransform env identifiers rules lisp
+       -- macroEval env result
      else do
        rest <- mapM (macroEval env) xs
        return $ List $ (Atom x) : rest
 -- TODO: equivalent transforms for vectors
 macroEval _ lisp@(_) = return lisp
 
--- Given input and syntax-rules, determine if any rule is a match
--- and transform it. 
+-- Given input and syntax-rules, determine if any rule is a match and transform it. 
 -- TODO (later): validate that the pattern's template and pattern are consistent (IE: no vars in transform that do not appear in matching pattern - csi "stmt1" case)
 --macroTransform :: Env -> [LispVal] -> LispVal -> LispVal -> IOThrowsError LispVal
 macroTransform env identifiers rules@(rule@(List r) : rs) input = do
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
   matchRule env localEnv rule input -- TODO: ignoring identifiers, rs for now...
-macroTransform _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules" (String "") -- TODO (?): rules
+macroTransform _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules" (List rules)
 
 -- Determine if the next element matches 0-to-n times due to an ellipsis
 macroElementMatchesMany :: LispVal -> Bool
@@ -482,11 +457,6 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         case match of
            Bool False -> do
              throwError $ BadSpecialForm "Input does not match macro pattern" (List is)
-{-             testx <- getVar localEnv "x"
-             testy <- getVar localEnv "v"
---             teste1 <- getVar localEnv "e1"
---             teste2 <- getVar localEnv "e2"
-             throwError $ BadSpecialForm "Input does not match macro pattern" (List [testx, testy])-}
            otherwise -> transformRule localEnv (List []) template 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
 {-
@@ -497,11 +467,6 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 
  A subpattern followed by ... can match zero or more elements of the input. It is an error for ... to appear in <literals>. Within a pattern the identifier ... must follow the last element of a nonempty sequence of subpatterns.
  - -}
-
-
--- TODO: how to fit "let" case into this? maybe read up on it a bit before hacking something together?
---       at a minimum need to think through impl here...
-
         --
         -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
         --             in preparation for macro transformation.
