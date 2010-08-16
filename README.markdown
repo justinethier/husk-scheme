@@ -15,11 +15,13 @@ skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS s
 
 Features under development:
 
+- do, let*, letrec, others?
 - Full numeric tower
 - Other missing sections from 4.2.*
 - Continuations
 - Improved REPL features
 - More example programs
+- Refactoring of haskell code into multiple modules/files
 - Compare skim features to <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
 
 Credits
