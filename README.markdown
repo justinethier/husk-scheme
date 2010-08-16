@@ -24,10 +24,32 @@ Features under development:
 - Refactoring of haskell code into multiple modules/files
 - Compare skim features to <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
 
+License
+-------
+Copyright (c) 2010 Justin Ethier
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
 Credits
 -------
 
-The skim interpreter is written in Haskell and based on the code from this tutorial: <http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours>
+The skim interpreter is based on the code from the book "Write Yourself a Scheme in 48 Hours" written by Jonathan Tang and hosted / maintained by Wikibooks: <http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours>
 
 If you would like to request changes, report bug fixes, or contact the developer of skim-scheme, visit the project web site at <http://github.com/justinethier/skim-scheme>
 
