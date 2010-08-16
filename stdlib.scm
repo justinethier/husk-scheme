@@ -130,8 +130,8 @@
             (let ((x (proc)))
               (if result-ready?
                   result
-                  (begin (set! result (proc))
-                    (set! result-ready? #t)
-                    result))))))))
+                  (begin (set! result x)
+                         (set! result-ready? #t)
+                         result))))))))
 ; End delayed evaluation section
 
