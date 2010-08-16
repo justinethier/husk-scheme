@@ -392,15 +392,6 @@ parseExpr = try(parseDecimal)
 
 {- Macro eval section -}
 
-
--- TODO: in order to handle the ellipsis (...), when variable(s) are followed by it, create a list with the name of the list as the variable name. then just keep adding each instance of the var (in the input) to the list.
--- of course, the other half is the update to the match logic to match 0 or more instances of the preceding expression.
-
--- IMPORTANT: I believe this is true but need to verify - 
--- when macroEval is complete, it must be run again if the macro made any transformations. Otherwise
--- a macro keyword such as let could never be used inside of a macro, because only a single transformation
--- would take place, where a full transformation is intended (and in fact, required).
-
 -- Search for macro's in the AST, and transform any that are found.
 -- There is also a special case (define-syntax) that loads new rules.
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
@@ -432,8 +423,11 @@ macroEval _ lisp@(_) = return lisp
 --macroTransform :: Env -> [LispVal] -> LispVal -> LispVal -> IOThrowsError LispVal
 macroTransform env identifiers rules@(rule@(List r) : rs) input = do
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
-  matchRule env localEnv rule input -- TODO: ignoring identifiers, rs for now...
-macroTransform _ _ rules _ = throwError $ BadSpecialForm "Malformed syntax-rules" (List rules)
+  result <- matchRule env localEnv rule input -- TODO: ignoring identifiers for now...
+  case result of 
+    Nil _ -> macroTransform env identifiers rs input
+    otherwise -> return result
+macroTransform _ _ rules input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
 
 -- Determine if the next element matches 0-to-n times due to an ellipsis
 macroElementMatchesMany :: LispVal -> Bool
@@ -453,7 +447,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         match <- loadLocal localEnv (List ps) (List is) False False
         case match of
            Bool False -> do
-             throwError $ BadSpecialForm "Input does not match macro pattern" (List is)
+             return $ Nil "" --throwError $ BadSpecialForm "Input does not match macro pattern" (List is)
            otherwise -> do
 		     transformRule localEnv (List []) template 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
@@ -541,21 +535,9 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 
         checkLocal localEnv hasEllipsis _ _ = return $ Bool False
 
--- TODO - high-level approach:
--- input is List(Atom : xs)
--- want to compare each element of input to pattern:
---  - if both are consts (int, string, etc) and they match, then OK
---  - if pattern is a var, then load input into that var in the localEnv
 --
---  - if at any point there is no match, need to return Nil back up to findMatch
---  - otherwise, if everything matches, then can proceed to do the tranformation using localEnv
-
--- Some more notes:
--- literal - 1, "2", etc - just make sure it matches in rule and form
--- identifier in pattern - load form's "current" var into the identifier (in localEnv)
--- other cases?
--- if no match, return Nil to indicate as such, and findMatch will pick up at the next rule
-
+-- TODO: transforming into form (a b) ... does not work at the moment. Causes problems for (let*)
+--
 -- Transform input by walking the tranform structure and creating a new structure
 -- with the same form, replacing identifiers in the tranform with those bound in localEnv
 transformRule :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
