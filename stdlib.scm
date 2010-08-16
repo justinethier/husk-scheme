@@ -85,7 +85,6 @@
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4
 ;(define (for-each func . lsts) )
 
-; TODO:
 (define (for-each func lst) 
   (if (eq? 1 (length lst))
 	(func (car lst))
@@ -104,11 +103,23 @@
 
 (define (append inlist alist) (foldr (lambda (ap in) (cons ap in)) alist inlist))
 
-
+; Let forms
 (define-syntax let
   (syntax-rules ()
     ((_ ((x v) ...) e1 e2 ...)
     ((lambda (x ...) e1 e2 ...) v ...))))
+
+; TODO: change first rule back to:
+;    ((_ () body) body)
+(define-syntax let*
+  (syntax-rules ()
+    ((_ () body) ((lambda () body)))
+    ((_ ((var val)
+		 (vars vals) ...)
+		 body)
+	 (let ((var val))
+       (let* ((vars vals) ...)
+		     body)))))
 
 ; Delayed evaluation functions
 (define force
