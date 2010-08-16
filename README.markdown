@@ -7,11 +7,11 @@ skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS s
 - Assignment operations
 - Sequencing
 - Quasi-quotation
+- Delayed Execution
 - Basic IO functions
 - Read-Eval-Print-Loop (REPL) interpreter
-- Standard library of Scheme functions, including many common functions
+- Standard library of Scheme functions
 - Hygenic Macros (work in progress)
-- Delayed Execution (work in progress)
 
 Features under development:
 
@@ -19,10 +19,10 @@ Features under development:
 - Full numeric tower
 - Other missing sections from 4.2.*
 - Continuations
-- Improved REPL features
+- Improved REPL features (EG: proper keyboard arrow support)
 - More example programs
 - Refactoring of haskell code into multiple modules/files
-- Compare skim features to <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
+- Compare skim features to R5RS spec: <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
 
 License
 -------
