@@ -421,7 +421,8 @@ macroEval env lisp@(List (Atom x : xs)) = do
        -- some possible starting points:
        --
        -- macroEval env $ macroTransform env identifiers rules lisp
-       --macroEval env =<< macroTransform env identifiers rules lisp
+       --tmp <- macroEval env =<< macroTransform env identifiers rules lisp
+       --throwError $ BadSpecialForm "TEST" tmp
        -- result <-  macroTransform env identifiers rules lisp
        -- macroEval env result
      else do
