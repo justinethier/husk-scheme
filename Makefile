@@ -6,6 +6,7 @@ test: skim
 #	cd scm-unit-tests ; ../skim t-backquote.scm
 	cd scm-unit-tests ; ../skim t-case.scm
 	cd scm-unit-tests ; ../skim t-cond.scm
+	cd scm-unit-tests ; ../skim t-delay.scm
 	cd scm-unit-tests ; ../skim t-macro.scm
 	cd scm-unit-tests ; ../skim t-special-forms.scm
 	cd scm-unit-tests ; ../skim t-stdlib.scm
