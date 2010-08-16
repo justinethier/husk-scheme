@@ -80,8 +80,11 @@
 (assert-equal (lambda () (let ((x 11) (y 22) (z 34)) (+ x y z))) 67)
 (assert-equal (lambda () (let ((x (* 1 2 3 4)) (y 22) (z 34)) (+ x y z))) (+ 24 22 34))
 
+(assert-equal (lambda () (let () (let ((x 1)) x))) 1)
+(assert-equal (lambda () ((lambda () (let ((x 1)) x)))) 1)
+
 ; TODO:
-((lambda () (let ((x 1)) x)))
+
 
 ; TODO:
 ;(assert-equal (lambda () 

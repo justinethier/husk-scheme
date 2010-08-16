@@ -408,27 +408,23 @@ macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom
   defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
 
+macroEval env lisp@(List (x@(List _) : xs)) = do
+  first <- macroEval env x
+  rest <- mapM (macroEval env) xs
+  return $ List $ first : rest
+
+-- TODO: equivalent matches/transforms for vectors
+
 macroEval env lisp@(List (Atom x : xs)) = do
   isDefined <- liftIO $ isNamespacedBound env macroNamespace x
   if isDefined
      then do
        syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules))) <- getNamespacedVar env macroNamespace x 
-       macroTransform env identifiers rules lisp
-       -- TODO:
-       --
-       -- Transform the input and then call macroEval again on the transformed code, since
-       -- a macro may be contained within...
-       -- some possible starting points:
-       --
-       -- macroEval env $ macroTransform env identifiers rules lisp
-       --tmp <- macroEval env =<< macroTransform env identifiers rules lisp
-       --throwError $ BadSpecialForm "TEST" tmp
-       -- result <-  macroTransform env identifiers rules lisp
-       -- macroEval env result
+       -- Transform the input and then call macroEval again, since a macro may be contained within...
+       macroEval env =<< macroTransform env identifiers rules lisp
      else do
        rest <- mapM (macroEval env) xs
        return $ List $ (Atom x) : rest
--- TODO: equivalent transforms for vectors
 macroEval _ lisp@(_) = return lisp
 
 -- Given input and syntax-rules, determine if any rule is a match and transform it. 
@@ -458,7 +454,8 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         case match of
            Bool False -> do
              throwError $ BadSpecialForm "Input does not match macro pattern" (List is)
-           otherwise -> transformRule localEnv (List []) template 
+           otherwise -> do
+		     transformRule localEnv (List []) template 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
 {-
  - TODO: consider following excerpts from the R5RS spec, which state that ... must follow the last element of a sequence of subpatterns. 
