@@ -83,7 +83,19 @@
 (assert-equal (lambda () (let () (let ((x 1)) x))) 1)
 (assert-equal (lambda () ((lambda () (let ((x 1)) x)))) 1)
 
-; TODO:
+; TODO: named let
+(let loop ((numbers '(3 -2 1 6 -5))
+           (nonneg '())
+           (neg '()))
+    (cond ((null? numbers) (list nonneg neg))
+          ((>= (car numbers) 0)
+           (loop (cdr numbers)
+                 (cons (car numbers) nonneg)
+                  neg))
+          ((< (car numbers) 0)
+           (loop (cdr numbers)
+                 nonneg
+                 (cons (car numbers) neg)))))
 
 
 ; TODO:
