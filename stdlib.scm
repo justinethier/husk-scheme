@@ -104,13 +104,21 @@
 (define (append inlist alist) (foldr (lambda (ap in) (cons ap in)) alist inlist))
 
 ; Let forms
+; TODO: letrec
+
+(define-syntax letrec
+  (syntax-rules ()
+   ((_ ((x v) ...) e1 e2 ...)
+	("TODO"))))
+
+; TODO: write letrec first, then named let (second rule in let)
 (define-syntax let
   (syntax-rules ()
     ((_ ((x v) ...) e1 e2 ...)
     ((lambda (x ...) e1 e2 ...) v ...))
 
     ((_ name ((x v) ...) e1 e2 ...)
-     (let ((name (lambda (name x ...) e1 e2 ...)))
+     (let ((name (lambda (x ...) e1 e2 ...)))
        (name name v ...)))))
 
 ; TODO: change first rule back to:
