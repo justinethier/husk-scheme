@@ -569,6 +569,18 @@ transformRule localEnv (List result) transform@(List (Atom a : ts)) = do
              transformRule localEnv (List $ result ++ [t]) (List ts)
 
 transformRule localEnv result@(List r) transform@(List (t : ts)) = do
+  {-let hasEllipsis = macroElementMatchesMany transform
+  if hasEllipsis
+     then 
+     
+      - call recursively on list with a 'hasOuterEllipse' flag set (per pattern matching)
+      - if a var isDefined in the list, then:
+      -  - strip head off of the list
+      -  - SET the var
+      - else, if var is not defined then it must be the zero match case (??)
+
+      Think through this a bit more before implementation.
+     -}
   transformRule localEnv (List $ r ++ [t]) (List ts)
 
 -- Base case - empty transform
