@@ -104,10 +104,15 @@
 (define (append inlist alist) (foldr (lambda (ap in) (cons ap in)) alist inlist))
 
 ; Let forms
+; TODO: get second rule (named let) to work...
 (define-syntax let
   (syntax-rules ()
     ((_ ((x v) ...) e1 e2 ...)
-    ((lambda (x ...) e1 e2 ...) v ...))))
+    ((lambda (x ...) e1 e2 ...) v ...))
+
+    ((_ name ((x v) ...) e1 e2 ...)
+    ((let ((name (lambda (x ...) e1 e2 ...)))
+       (name v ...))))))
 
 ; TODO: change first rule back to:
 ;    ((_ () body) body)
