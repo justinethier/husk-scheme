@@ -544,10 +544,33 @@ transformRule :: Env -> Int -> LispVal -> LispVal -> IOThrowsError LispVal
 
 -- Recursively transform a list
 transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts)) = do
-  lst <- transformRule localEnv ellipsisIndex (List []) (List l) 
-  case lst of
-    List _ -> transformRule localEnv ellipsisIndex (List $ result ++ [lst]) (List ts)
+  let hasEllipsis = macroElementMatchesMany transform
+  if hasEllipsis
 
+-- TODO: need to add curT to a list that is appended to for each iteration, and then (at the end) appended to result
+--       Perhaps we should consider passing that list around instead of ellipsisIndex??? Or does it need to be another param??
+     then do curT <- transformRule localEnv (ellipsisIndex + 1) (List []) (List [l])
+             case curT of
+               List t -> if lastElementIsNil t
+			                     -- Base case, there is no more data to transform for this ellipsis
+                            -- 0 (and above nesting) means we cannot allow more than one ... active at a time (OK per spec???)
+                            then transformRule localEnv 0 (List $ result ++ [curT]) (List ts) 
+			                     -- Next iteration of the zero-to-many match
+-- TODO: not correct as coded below because need to maintain a list of this result and append to *it*, not the overall result
+                            else transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform
+
+     else do lst <- transformRule localEnv ellipsisIndex (List []) (List l) 
+             case lst of
+                  List _ -> transformRule localEnv ellipsisIndex (List $ result ++ [lst]) (List ts)
+
+  where lastElementIsNil l = case (last l) of
+                               Nil _ -> True
+                               otherwise -> False
+
+-- TODO: vector transform (and taking vectors into account in other cases as well???)
+
+
+-- Transform an atom by attempting to look it up as a var...
 transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
   let hasEllipsis = macroElementMatchesMany transform
   isDefined <- liftIO $ isBound localEnv a
@@ -565,21 +588,20 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
              else -- Matched 0 times, skip it
                   transformRule localEnv ellipsisIndex (List result) (List $ tail ts)
      else do t <- if isDefined
-                     then getVar localEnv a
+                     then do var <- getVar localEnv a
+                             if ellipsisIndex > 0 
+                                then do case var of
+                                          List v -> if (length v) < ellipsisIndex
+                                                       then return $ v !! ellipsisIndex
+                                                       else return $ Nil ""
+					            else return var
                      else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
-             transformRule localEnv ellipsisIndex (List $ result ++ [t]) (List ts)
+             case t of
+               Nil _ -> return t
+               otherwise -> transformRule localEnv ellipsisIndex (List $ result ++ [t]) (List ts)
 
+-- Transform anything else as itself...
 transformRule localEnv ellipsisIndex result@(List r) transform@(List (t : ts)) = do
-  {-let hasEllipsis = macroElementMatchesMany transform
-  if hasEllipsis
-     then
-
-     TODO: set ellipsisIndex and pass down to rec
-           - is it an error if hasEllipsis and ellIndex is already > 0??
-           - presumably, match is zero or more so...
-             need to recurse, but then detect the 0 match case and handle it properly.
-             also for > 0 match cases, need to come back here and repeat the process again
-     -}
   transformRule localEnv ellipsisIndex (List $ r ++ [t]) (List ts)
 
 -- Base case - empty transform
