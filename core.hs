@@ -576,6 +576,9 @@ transformRule localEnv ellipsisIndex result@(List r) transform@(List (t : ts)) =
 
      TODO: set ellipsisIndex and pass down to rec
            - is it an error if hasEllipsis and ellIndex is already > 0??
+           - presumably, match is zero or more so...
+             need to recurse, but then detect the 0 match case and handle it properly.
+             also for > 0 match cases, need to come back here and repeat the process again
      -}
   transformRule localEnv ellipsisIndex (List $ r ++ [t]) (List ts)
 
