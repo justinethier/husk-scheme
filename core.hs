@@ -547,17 +547,24 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
   let hasEllipsis = macroElementMatchesMany transform
   if hasEllipsis
 
--- TODO: need to add curT to a list that is appended to for each iteration, and then (at the end) appended to result
---       Perhaps we should consider passing that list around instead of ellipsisIndex??? Or does it need to be another param??
-     then do curT <- transformRule localEnv (ellipsisIndex + 1) (List []) (List [l])
+--
+-- LATEST - adding an ellipsisList which will temporarily hold the value of the "outer" result while we process the 
+--          zero-or-more match. Once that is complete we will swap this value back into it's rightful place
+--
+
+     then do curT <- transformRule localEnv (ellipsisIndex + 1) (List []) (List l) (List result)
              case curT of
                List t -> if lastElementIsNil t
 			                     -- Base case, there is no more data to transform for this ellipsis
                             -- 0 (and above nesting) means we cannot allow more than one ... active at a time (OK per spec???)
-                            then transformRule localEnv 0 (List $ result ++ [curT]) (List ts) 
+							-- TODO: what if we matched 0 elements? Does not account for that case
+                            then transformRule localEnv 0 (List $ ellipsisList ++ [result]]) (List ts) (List [])
 			                     -- Next iteration of the zero-to-many match
--- TODO: not correct as coded below because need to maintain a list of this result and append to *it*, not the overall result
-                            else transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform
+                            else if ellipsisIndex == 0
+                                    -- First time through, swap out result
+                                    then transformRule localEnv (ellipsisIndex + 1) (List [curT]) transform (List result)
+                                    -- Keep going...
+                                    else transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform (List ellipsisList)
 
      else do lst <- transformRule localEnv ellipsisIndex (List []) (List l) 
              case lst of
@@ -566,6 +573,8 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
   where lastElementIsNil l = case (last l) of
                                Nil _ -> True
                                otherwise -> False
+        getListAtTail l = case (last l) of
+                               List lst -> lst
 
 -- TODO: vector transform (and taking vectors into account in other cases as well???)
 
