@@ -449,7 +449,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
            Bool False -> do
              return $ Nil "" --throwError $ BadSpecialForm "Input does not match macro pattern" (List is)
            otherwise -> do
-		     transformRule localEnv (List []) template 
+		     transformRule localEnv 0 (List []) template 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
 {-
  - TODO: consider following excerpts from the R5RS spec, which state that ... must follow the last element of a sequence of subpatterns. 
@@ -540,18 +540,19 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 --
 -- Transform input by walking the tranform structure and creating a new structure
 -- with the same form, replacing identifiers in the tranform with those bound in localEnv
-transformRule :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+transformRule :: Env -> Int -> LispVal -> LispVal -> IOThrowsError LispVal
 
 -- Recursively transform a list
-transformRule localEnv (List result) transform@(List(List l : ts)) = do
-  lst <- transformRule localEnv (List []) (List l) 
+transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts)) = do
+  lst <- transformRule localEnv ellipsisIndex (List []) (List l) 
   case lst of
-    List _ -> transformRule localEnv (List $ result ++ [lst]) (List ts)
+    List _ -> transformRule localEnv ellipsisIndex (List $ result ++ [lst]) (List ts)
 
-transformRule localEnv (List result) transform@(List (Atom a : ts)) = do
+transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
   let hasEllipsis = macroElementMatchesMany transform
   isDefined <- liftIO $ isBound localEnv a
   if hasEllipsis
+    -- TODO: take hasEllipsis and ellipsisIndex into account
      then if isDefined
              then do
                   -- get var
@@ -559,32 +560,27 @@ transformRule localEnv (List result) transform@(List (Atom a : ts)) = do
                   -- ensure it is a list
                   case var of 
                     -- add all elements of the list into result
-                    List v -> transformRule localEnv (List $ result ++ v) (List $ tail ts)
-                    v@(_) -> transformRule localEnv (List $ result ++ [v]) (List $ tail ts)
+                    List v -> transformRule localEnv ellipsisIndex (List $ result ++ v) (List $ tail ts)
+                    v@(_) -> transformRule localEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts)
              else -- Matched 0 times, skip it
-                  transformRule localEnv (List result) (List $ tail ts)
+                  transformRule localEnv ellipsisIndex (List result) (List $ tail ts)
      else do t <- if isDefined
                      then getVar localEnv a
                      else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
-             transformRule localEnv (List $ result ++ [t]) (List ts)
+             transformRule localEnv ellipsisIndex (List $ result ++ [t]) (List ts)
 
-transformRule localEnv result@(List r) transform@(List (t : ts)) = do
+transformRule localEnv ellipsisIndex result@(List r) transform@(List (t : ts)) = do
   {-let hasEllipsis = macroElementMatchesMany transform
   if hasEllipsis
-     then 
-     
-      - call recursively on list with a 'hasOuterEllipse' flag set (per pattern matching)
-      - if a var isDefined in the list, then:
-      -  - strip head off of the list
-      -  - SET the var
-      - else, if var is not defined then it must be the zero match case (??)
+     then
 
-      Think through this a bit more before implementation.
+     TODO: set ellipsisIndex and pass down to rec
+           - is it an error if hasEllipsis and ellIndex is already > 0??
      -}
-  transformRule localEnv (List $ r ++ [t]) (List ts)
+  transformRule localEnv ellipsisIndex (List $ r ++ [t]) (List ts)
 
 -- Base case - empty transform
-transformRule localEnv result@(List _) transform@(List []) = do
+transformRule localEnv ellipsisIndex result@(List _) transform@(List []) = do
   return result
 
 {- Eval section -}
