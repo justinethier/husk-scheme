@@ -557,7 +557,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                List t -> if lastElementIsNil t
 			                     -- Base case, there is no more data to transform for this ellipsis
                             -- 0 (and above nesting) means we cannot allow more than one ... active at a time (OK per spec???)
-							-- TODO: what if we matched 0 elements? Does not account for that case
+    -- TODO: what if we matched 0 elements? Does not account for that case
                             then transformRule localEnv 0 (List $ ellipsisList ++ result) (List ts) (List [])
 			                     -- Next iteration of the zero-to-many match
                             else if ellipsisIndex == 0
