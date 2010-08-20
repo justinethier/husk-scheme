@@ -557,14 +557,19 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                List t -> if lastElementIsNil t
 			                     -- Base case, there is no more data to transform for this ellipsis
                             -- 0 (and above nesting) means we cannot allow more than one ... active at a time (OK per spec???)
-    -- TODO: what if we matched 0 elements? Does not account for that case
-                            then transformRule localEnv 0 (List $ ellipsisList ++ result) (List ts) (List [])
+                            then if ellipsisIndex == 0
+                                         -- First time through and no match ("zero" case)....
+                                    then transformRule localEnv 0 (List $ result) (List ts) (List [])
+                                    else transformRule localEnv 0 (List $ ellipsisList ++ result) (List ts) (List [])
 			                     -- Next iteration of the zero-to-many match
-                            else if ellipsisIndex == 0
+                            else do -- TODO: test code below proves that vars is not being loaded... why???
+                                    tmp <- getVar localEnv "vars" --curT
+                                    throwError $ BadSpecialForm "Test" tmp --curT
+                                    if ellipsisIndex == 0
                                     -- First time through, swap out result
-                                    then transformRule localEnv (ellipsisIndex + 1) (List [curT]) transform (List result)
+                                      then transformRule localEnv (ellipsisIndex + 1) (List [curT]) transform (List result)
                                     -- Keep going...
-                                    else transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform (List ellipsisList)
+                                      else transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform (List ellipsisList)
 
      else do lst <- transformRule localEnv ellipsisIndex (List []) (List l) (List ellipsisList)
              case lst of
@@ -584,7 +589,6 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
   let hasEllipsis = macroElementMatchesMany transform
   isDefined <- liftIO $ isBound localEnv a
   if hasEllipsis
-    -- TODO: take hasEllipsis and ellipsisIndex into account
      then if isDefined
              then do
                   -- get var
@@ -600,8 +604,8 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                      then do var <- getVar localEnv a
                              if ellipsisIndex > 0 
                                 then do case var of
-                                          List v -> if (length v) < ellipsisIndex
-                                                       then return $ v !! ellipsisIndex
+                                          List v -> if (length v) <= ellipsisIndex
+                                                       then return $ v !! (ellipsisIndex - 1)
                                                        else return $ Nil ""
 					            else return var
                      else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
