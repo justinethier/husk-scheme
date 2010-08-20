@@ -554,6 +554,11 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
 
      then do curT <- transformRule localEnv (ellipsisIndex + 1) (List []) (List l) (List result)
              case curT of
+                        -- TODO: this is the same code as below! Once it works, roll both into a common function
+               Nil _ -> if ellipsisIndex == 0
+                                -- First time through and no match ("zero" case)....
+                           then transformRule localEnv 0 (List $ result) (List ts) (List [])
+                           else transformRule localEnv 0 (List $ ellipsisList ++ result) (List ts) (List [])
                List t -> if lastElementIsNil t
 			                     -- Base case, there is no more data to transform for this ellipsis
                             -- 0 (and above nesting) means we cannot allow more than one ... active at a time (OK per spec???)
@@ -608,7 +613,9 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                                                        then return $ v !! (ellipsisIndex - 1)
                                                        else return $ Nil ""
 					            else return var
-                     else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
+                     else if ellipsisIndex > 0
+                             then return $ Nil "" -- Zero-match case
+                             else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
              case t of
                Nil _ -> return t
                otherwise -> transformRule localEnv ellipsisIndex (List $ result ++ [t]) (List ts) unused
