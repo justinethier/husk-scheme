@@ -449,7 +449,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
            Bool False -> do
              return $ Nil "" --throwError $ BadSpecialForm "Input does not match macro pattern" (List is)
            otherwise -> do
-		     transformRule localEnv 0 (List []) template 
+		     transformRule localEnv 0 (List []) template (List []) 
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
 {-
  - TODO: consider following excerpts from the R5RS spec, which state that ... must follow the last element of a sequence of subpatterns. 
@@ -540,10 +540,10 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
 --
 -- Transform input by walking the tranform structure and creating a new structure
 -- with the same form, replacing identifiers in the tranform with those bound in localEnv
-transformRule :: Env -> Int -> LispVal -> LispVal -> IOThrowsError LispVal
+transformRule :: Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
 
 -- Recursively transform a list
-transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts)) = do
+transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts)) (List ellipsisList) = do
   let hasEllipsis = macroElementMatchesMany transform
   if hasEllipsis
 
@@ -558,7 +558,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
 			                     -- Base case, there is no more data to transform for this ellipsis
                             -- 0 (and above nesting) means we cannot allow more than one ... active at a time (OK per spec???)
 							-- TODO: what if we matched 0 elements? Does not account for that case
-                            then transformRule localEnv 0 (List $ ellipsisList ++ [result]]) (List ts) (List [])
+                            then transformRule localEnv 0 (List $ ellipsisList ++ result) (List ts) (List [])
 			                     -- Next iteration of the zero-to-many match
                             else if ellipsisIndex == 0
                                     -- First time through, swap out result
@@ -566,9 +566,9 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                                     -- Keep going...
                                     else transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform (List ellipsisList)
 
-     else do lst <- transformRule localEnv ellipsisIndex (List []) (List l) 
+     else do lst <- transformRule localEnv ellipsisIndex (List []) (List l) (List ellipsisList)
              case lst of
-                  List _ -> transformRule localEnv ellipsisIndex (List $ result ++ [lst]) (List ts)
+                  List _ -> transformRule localEnv ellipsisIndex (List $ result ++ [lst]) (List ts) (List ellipsisList)
 
   where lastElementIsNil l = case (last l) of
                                Nil _ -> True
@@ -580,7 +580,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
 
 
 -- Transform an atom by attempting to look it up as a var...
-transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
+transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)) unused = do
   let hasEllipsis = macroElementMatchesMany transform
   isDefined <- liftIO $ isBound localEnv a
   if hasEllipsis
@@ -592,10 +592,10 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                   -- ensure it is a list
                   case var of 
                     -- add all elements of the list into result
-                    List v -> transformRule localEnv ellipsisIndex (List $ result ++ v) (List $ tail ts)
-                    v@(_) -> transformRule localEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts)
+                    List v -> transformRule localEnv ellipsisIndex (List $ result ++ v) (List $ tail ts) unused
+                    v@(_) -> transformRule localEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused
              else -- Matched 0 times, skip it
-                  transformRule localEnv ellipsisIndex (List result) (List $ tail ts)
+                  transformRule localEnv ellipsisIndex (List result) (List $ tail ts) unused
      else do t <- if isDefined
                      then do var <- getVar localEnv a
                              if ellipsisIndex > 0 
@@ -607,14 +607,14 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                      else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
              case t of
                Nil _ -> return t
-               otherwise -> transformRule localEnv ellipsisIndex (List $ result ++ [t]) (List ts)
+               otherwise -> transformRule localEnv ellipsisIndex (List $ result ++ [t]) (List ts) unused
 
 -- Transform anything else as itself...
-transformRule localEnv ellipsisIndex result@(List r) transform@(List (t : ts)) = do
-  transformRule localEnv ellipsisIndex (List $ r ++ [t]) (List ts)
+transformRule localEnv ellipsisIndex result@(List r) transform@(List (t : ts)) unused = do
+  transformRule localEnv ellipsisIndex (List $ r ++ [t]) (List ts) unused
 
 -- Base case - empty transform
-transformRule localEnv ellipsisIndex result@(List _) transform@(List []) = do
+transformRule localEnv ellipsisIndex result@(List _) transform@(List []) unused = do
   return result
 
 {- Eval section -}
