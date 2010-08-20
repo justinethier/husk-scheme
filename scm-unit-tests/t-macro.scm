@@ -66,6 +66,8 @@
 (assert-equal (lambda () (let () (let ((x 1)) x))) 1)
 (assert-equal (lambda () ((lambda () (let ((x 1)) x)))) 1)
 
+;let*
+(let* ((x 1)) x)
 ; TODO: named let, letrec
 ;;(let loop ((numbers '(3 -2 1 6 -5))
 ;(let loop ((numbers '(3 2 1 6 5))
