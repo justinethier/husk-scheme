@@ -109,7 +109,9 @@
 (define-syntax letrec
   (syntax-rules ()
    ((_ ((x v) ...) e1 e2 ...)
-	("TODO"))))
+    (let ((x 0) ...)
+     (let () (set! x v) ...)
+      e1 e2 ...))))
 
 ; TODO: write letrec first, then named let (second rule in let)
 (define-syntax let

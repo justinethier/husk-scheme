@@ -74,6 +74,17 @@
                                 (y x)
                                 (z (+ x y))) (* x y z))) (* 1 1 2))
 
+(letrec ((even?
+          (lambda (n)
+            (if (zero? n)
+                #t
+                (odd? (- n 1)))))
+         (odd?
+          (lambda (n)
+            (if (zero? n)
+                #f
+                (even? (- n 1))))))
+ (even? 88))
 
 ; TODO: named let, letrec
 ;;(let loop ((numbers '(3 -2 1 6 -5))
