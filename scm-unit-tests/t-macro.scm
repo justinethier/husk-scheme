@@ -69,7 +69,10 @@
 ; let*
 (assert-equal (lambda () (let* () 1)) 1)
 (assert-equal (lambda () (let* ((x 1)) x)) 1)
-(let* ((x 1) (y x)) (+ x y))
+(assert-equal (lambda () (let* ((x 1) (y x)) (+ x y))) 2)
+(assert-equal (lambda () (let* ((x 1)
+                                (y x)
+                                (z (+ x y))) (* x y z))) (* 1 1 2))
 
 
 ; TODO: named let, letrec
