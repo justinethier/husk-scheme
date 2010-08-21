@@ -449,7 +449,15 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
            Bool False -> do
              return $ Nil "" --throwError $ BadSpecialForm "Input does not match macro pattern" (List is)
            otherwise -> do
-		     transformRule localEnv 0 (List []) template (List []) 
+		     transformRule localEnv 0 (List []) template (List [])
+		     {- DEBUGGING: remove once macro's are working...
+                      - trans <- transformRule localEnv 0 (List []) template (List [])
+                     --flushStr $ show $ trans
+
+                     temp <- getVar localEnv "vars"
+                     temp2 <- getVar localEnv "vals"
+                     throwError $ BadSpecialForm "DEBUG" $ List [temp, temp2]
+                     throwError $ BadSpecialForm "DEBUG" trans-}
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
 {-
  - TODO: consider following excerpts from the R5RS spec, which state that ... must follow the last element of a sequence of subpatterns. 
@@ -553,6 +561,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
 --
 
      then do curT <- transformRule localEnv (ellipsisIndex + 1) (List []) (List l) (List result)
+--             throwError $ BadSpecialForm "test" $ List [curT, Number $ toInteger ellipsisIndex, List l] -- TODO: debugging
              case curT of
                         -- TODO: this is the same code as below! Once it works, roll both into a common function
                Nil _ -> if ellipsisIndex == 0
@@ -569,9 +578,11 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
 			                     -- Next iteration of the zero-to-many match
                             else do if ellipsisIndex == 0
                                     -- First time through, swap out result
-                                      then transformRule localEnv (ellipsisIndex + 1) (List [curT]) transform (List result)
+                                      then do 
+                                              transformRule localEnv (ellipsisIndex + 1) (List [curT]) transform (List result)
                                     -- Keep going...
-                                      else transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform (List ellipsisList)
+                                      else do 
+                                              transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform (List ellipsisList)
 
      else do lst <- transformRule localEnv ellipsisIndex (List []) (List l) (List ellipsisList)
              case lst of
@@ -606,7 +617,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                      then do var <- getVar localEnv a
                              if ellipsisIndex > 0 
                                 then do case var of
-                                          List v -> if (length v) <= ellipsisIndex
+                                          List v -> if (length v) > (ellipsisIndex - 1)
                                                        then return $ v !! (ellipsisIndex - 1)
                                                        else return $ Nil ""
 					            else return var
