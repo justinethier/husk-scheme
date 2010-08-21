@@ -557,20 +557,17 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                         -- TODO: this is the same code as below! Once it works, roll both into a common function
                Nil _ -> if ellipsisIndex == 0
                                 -- First time through and no match ("zero" case)....
-                           then transformRule localEnv 0 (List $ result) (List ts) (List [])
-                           else transformRule localEnv 0 (List $ ellipsisList ++ result) (List ts) (List [])
+                           then transformRule localEnv 0 (List $ result) (List $ tail ts) (List []) -- tail => Move past the ...
+                           else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
                List t -> if lastElementIsNil t
 			                     -- Base case, there is no more data to transform for this ellipsis
                             -- 0 (and above nesting) means we cannot allow more than one ... active at a time (OK per spec???)
                             then if ellipsisIndex == 0
                                          -- First time through and no match ("zero" case)....
-                                    then transformRule localEnv 0 (List $ result) (List ts) (List [])
-                                    else transformRule localEnv 0 (List $ ellipsisList ++ result) (List ts) (List [])
+                                    then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])
+                                    else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
 			                     -- Next iteration of the zero-to-many match
-                            else do -- TODO: test code below proves that vars is not being loaded... why???
-                                    tmp <- getVar localEnv "vars" --curT
-                                    throwError $ BadSpecialForm "Test" tmp --curT
-                                    if ellipsisIndex == 0
+                            else do if ellipsisIndex == 0
                                     -- First time through, swap out result
                                       then transformRule localEnv (ellipsisIndex + 1) (List [curT]) transform (List result)
                                     -- Keep going...
