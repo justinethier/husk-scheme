@@ -58,7 +58,7 @@
     ((lambda () e1 ...)))))
 (assert-equal (lambda () (my-let (+ 1 2))) 3)
 
-; The 'real' let:
+; let
 (assert-equal (lambda () (let ((x 1) (y 2) (z 3)) (+ x y z))) 6)
 (assert-equal (lambda () (let ((x 11) (y 22) (z 34)) (+ x y z))) 67)
 (assert-equal (lambda () (let ((x (* 1 2 3 4)) (y 22) (z 34)) (+ x y z))) (+ 24 22 34))
@@ -66,8 +66,12 @@
 (assert-equal (lambda () (let () (let ((x 1)) x))) 1)
 (assert-equal (lambda () ((lambda () (let ((x 1)) x)))) 1)
 
-;let*
-(let* ((x 1)) x)
+; let*
+(assert-equal (lambda () (let* () 1)) 1)
+(assert-equal (lambda () (let* ((x 1)) x)) 1)
+(let* ((x 1) (y x)) (+ x y))
+
+
 ; TODO: named let, letrec
 ;;(let loop ((numbers '(3 -2 1 6 -5))
 ;(let loop ((numbers '(3 2 1 6 5))
