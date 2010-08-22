@@ -104,10 +104,8 @@
 (define (append inlist alist) (foldr (lambda (ap in) (cons ap in)) alist inlist))
 
 ; Let forms
-; TODO: letrec
-
 (define-syntax letrec
-  (syntax-rules ()
+  (syntax-rules (set!)
    ((_ ((x v) ...) e1 e2 ...)
     (let ((x 0) ...)
      (let () (set! x v) ...)
@@ -122,6 +120,19 @@
     ((_ name ((x v) ...) e1 e2 ...)
      (let ((name (lambda (x ...) e1 e2 ...)))
        (name name v ...)))))
+
+; TODO: (named let)
+;(define-syntax let
+;    (syntax-rules ()
+;                      ((let ((name val) ...) body1 body2 ...)
+;                            ((lambda (name ...) body1 body2 ...)
+;                                   val ...))
+;                          ((let tag ((name val) ...) body1 body2 ...)
+;                                ((letrec ((tag (lambda (name ...)
+;                                                                       body1 body2 ...)))
+;                                           tag)
+;                                       val ...))))
+
 
 ; TODO: change first rule back to:
 ;    ((_ () body) body)

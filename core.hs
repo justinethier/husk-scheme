@@ -412,7 +412,7 @@ macroEval env lisp@(List (Atom x : xs)) = do
      then do
        syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules))) <- getNamespacedVar env macroNamespace x 
        -- Transform the input and then call macroEval again, since a macro may be contained within...
-       macroEval env =<< macroTransform env identifiers rules lisp
+       macroEval env =<< macroTransform env (List identifiers) rules lisp
      else do
        rest <- mapM (macroEval env) xs
        return $ List $ (Atom x) : rest
@@ -423,7 +423,7 @@ macroEval _ lisp@(_) = return lisp
 --macroTransform :: Env -> [LispVal] -> LispVal -> LispVal -> IOThrowsError LispVal
 macroTransform env identifiers rules@(rule@(List r) : rs) input = do
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
-  result <- matchRule env localEnv rule input -- TODO: ignoring identifiers for now...
+  result <- matchRule env identifiers localEnv rule input
   case result of 
     Nil _ -> macroTransform env identifiers rs input
     otherwise -> return result
@@ -440,11 +440,11 @@ macroElementMatchesMany (List (p:ps)) = do
 macroElementMatchesMany _ = False
 
 --matchRule :: Env -> Env -> LispVal -> LispVal -> LispVal
-matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inputVar) = do
+matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)]) (List inputVar) = do
    let is = tail inputVar
    case p of 
       List (Atom _ : ps) -> do
-        match <- loadLocal localEnv (List ps) (List is) False False
+        match <- loadLocal localEnv identifiers (List ps) (List is) False False
         case match of
            Bool False -> do
              return $ Nil "" --throwError $ BadSpecialForm "Input does not match macro pattern" (List is)
@@ -470,27 +470,27 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         --
         -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
         --             in preparation for macro transformation.
-  where loadLocal :: Env -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
-        loadLocal localEnv pattern input hasEllipsis outerHasEllipsis = do -- TODO: kind of a hack to have both ellipsis vars. Is only outer req'd?
+  where loadLocal :: Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
+        loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do -- TODO: kind of a hack to have both ellipsis vars. Is only outer req'd?
           case (pattern, input) of
                (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
 
                  let hasEllipsis = macroElementMatchesMany pattern
 
                  -- TODO: error if ... detected when there is an outer ... ????
-				 
-                 status <- checkLocal localEnv (hasEllipsis || outerHasEllipsis) p i 
+			 
+                 status <- checkLocal localEnv identifiers (hasEllipsis || outerHasEllipsis) p i 
                  case status of
                       -- No match
                       Bool False -> if hasEllipsis
                                         -- No match, must be finished with ...
                                         -- Move past it, but keep the same input.
-                                        then loadLocal localEnv (List $ tail ps) (List (i:is)) False outerHasEllipsis
+                                        then loadLocal localEnv identifiers (List $ tail ps) (List (i:is)) False outerHasEllipsis
                                         else return $ Bool False
                       -- There was a match
                       otherwise -> if hasEllipsis
-                                      then loadLocal localEnv pattern (List is) True outerHasEllipsis
-                                      else loadLocal localEnv (List ps) (List is) False outerHasEllipsis
+                                      then loadLocal localEnv identifiers pattern (List is) True outerHasEllipsis
+                                      else loadLocal localEnv identifiers (List ps) (List is) False outerHasEllipsis
 
                -- Base case - All data processed
                (List [], List []) -> return $ Bool True
@@ -506,7 +506,7 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
                (List [], _) -> return $ Bool False
 
                -- Check input against pattern (both should be single var)
-               (_, _) -> checkLocal localEnv (hasEllipsis || outerHasEllipsis) pattern input 
+               (_, _) -> checkLocal localEnv identifiers (hasEllipsis || outerHasEllipsis) pattern input 
 
         -- Check pattern against input to determine if there is a match
         --
@@ -515,33 +515,42 @@ matchRule env localEnv (List [p@(List patternVar), template@(List _)]) (List inp
         --                       Used for loading local vars and NOT for purposes of matching.
         --  @param pattern - Pattern to match
         --  @param input - Input to be matched
-        checkLocal :: Env -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
-        checkLocal localEnv hasEllipsis (Bool pattern) (Bool input) = return $ Bool $ pattern == input
-        checkLocal localEnv hasEllipsis (Number pattern) (Number input) = return $ Bool $ pattern == input
-        checkLocal localEnv hasEllipsis (Float pattern) (Float input) = return $ Bool $ pattern == input
-        checkLocal localEnv hasEllipsis (String pattern) (String input) = return $ Bool $ pattern == input
-        checkLocal localEnv hasEllipsis (Char pattern) (Char input) = return $ Bool $ pattern == input
-        checkLocal localEnv hasEllipsis (Atom pattern) input = do
+        checkLocal :: Env -> LispVal -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
+        checkLocal localEnv identifiers hasEllipsis (Bool pattern) (Bool input) = return $ Bool $ pattern == input
+        checkLocal localEnv identifiers hasEllipsis (Number pattern) (Number input) = return $ Bool $ pattern == input
+        checkLocal localEnv identifiers hasEllipsis (Float pattern) (Float input) = return $ Bool $ pattern == input
+        checkLocal localEnv identifiers hasEllipsis (String pattern) (String input) = return $ Bool $ pattern == input
+        checkLocal localEnv identifiers hasEllipsis (Char pattern) (Char input) = return $ Bool $ pattern == input
+        checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
           if hasEllipsis
              -- Var is part of a 0-to-many match, store up in a list...
              then do isDefined <- liftIO $ isBound localEnv pattern
+                     -- If pattern is a literal identifier, then just pass it along as-is
+                     -- TODO: need to figure out if any identifier is equal to pattern, kind of stumbling through this right now....
+                     val <- if any (\i -> do result <- eqv [Atom pattern, i]
+                                             case result of
+                                               Bool True -> True
+                                               otherwise -> False) identifiers
+                               then pattern
+                               else input
+                     -- Set variable in the local environment
                      if isDefined
                         then do v <- getVar localEnv pattern
                                 case v of
-                                  (List vs) -> setVar localEnv pattern (List $ vs ++ [input])
-                        else defineVar localEnv pattern (List [input])
+                                  (List vs) -> setVar localEnv pattern (List $ vs ++ [val])
+                        else defineVar localEnv pattern (List [val])
              -- Simple var, load up into macro env
              else defineVar localEnv pattern input
           return $ Bool True
 
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
-        checkLocal localEnv hasEllipsis (DottedList ps p) (DottedList is i) = 
-          loadLocal localEnv (List $ ps ++ [p]) (List $ is ++ [i]) False hasEllipsis -- TODO: needed? hasEllipsis
-        checkLocal localEnv hasEllipsis pattern@(List _) input@(List _) = 
-          loadLocal localEnv pattern input False hasEllipsis -- TODO: needed? hasEllipsis
+        checkLocal localEnv identifiers hasEllipsis (DottedList ps p) (DottedList is i) = 
+          loadLocal localEnv identifiers (List $ ps ++ [p]) (List $ is ++ [i]) False hasEllipsis -- TODO: needed? hasEllipsis
+        checkLocal localEnv identifiers hasEllipsis pattern@(List _) input@(List _) = 
+          loadLocal localEnv identifiers pattern input False hasEllipsis -- TODO: needed? hasEllipsis
 
-        checkLocal localEnv hasEllipsis _ _ = return $ Bool False
+        checkLocal localEnv identifiers hasEllipsis _ _ = return $ Bool False
 
 --
 -- TODO: transforming into form (a b) ... does not work at the moment. Causes problems for (let*)
