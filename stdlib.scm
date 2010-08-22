@@ -104,11 +104,12 @@
 (define (append inlist alist) (foldr (lambda (ap in) (cons ap in)) alist inlist))
 
 ; Let forms
+; TODO: letrec
 (define-syntax letrec
   (syntax-rules (set!)
    ((_ ((x v) ...) e1 e2 ...)
     (let ((x 0) ...)
-     (let () (set! x v) ...)
+     (let () 1 (set! x v) ...)
       e1 e2 ...))))
 
 ; TODO: write letrec first, then named let (second rule in let)

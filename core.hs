@@ -470,13 +470,13 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
         --
         -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
         --             in preparation for macro transformation.
-  where findAtom :: LispVal -> LispVal -> Bool
-        findAtom target (List (l:ls)) = do
-          let result = liftThrows $ eqv [target, l]
-          case result of
-            Bool True -> True
-            otherwise -> findAtom target (List ls)
-        findAtom target _ = False
+  where findAtom :: LispVal -> LispVal -> IOThrowsError LispVal
+        findAtom (Atom target) (List (Atom a:as)) = do
+          if target == a
+             then return $ Bool True
+             else findAtom (Atom target) (List as)
+-- TODO:        findAtom target (List (_ : _)) = bad type error
+        findAtom target _ = return $ Bool False
   
         loadLocal :: Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
         loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do -- TODO: kind of a hack to have both ellipsis vars. Is only outer req'd?
@@ -534,10 +534,10 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
              -- Var is part of a 0-to-many match, store up in a list...
              then do isDefined <- liftIO $ isBound localEnv pattern
                      -- If pattern is a literal identifier, then just pass it along as-is
-                     -- TODO: need to figure out if any identifier is equal to pattern, kind of stumbling through this right now....
-                     let val = if findAtom (Atom pattern) identifiers 
-                                  then Atom pattern
-                                  else input
+                     found <- findAtom (Atom pattern) identifiers
+                     let val = case found of
+                                 (Bool True) -> Atom pattern
+                                 otherwise -> input
                      -- Set variable in the local environment
                      if isDefined
                         then do v <- getVar localEnv pattern
@@ -601,6 +601,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
      else do lst <- transformRule localEnv ellipsisIndex (List []) (List l) (List ellipsisList)
              case lst of
                   List _ -> transformRule localEnv ellipsisIndex (List $ result ++ [lst]) (List ts) (List ellipsisList)
+                  otherwise -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisIndex]
 
   where lastElementIsNil l = case (last l) of
                                Nil _ -> True
