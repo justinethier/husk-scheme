@@ -470,7 +470,15 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
         --
         -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
         --             in preparation for macro transformation.
-  where loadLocal :: Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
+  where findAtom :: LispVal -> LispVal -> Bool
+        findAtom target (List (l:ls)) = do
+          let result = liftThrows $ eqv [target, l]
+          case result of
+            Bool True -> True
+            otherwise -> findAtom target (List ls)
+        findAtom target _ = False
+  
+        loadLocal :: Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
         loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do -- TODO: kind of a hack to have both ellipsis vars. Is only outer req'd?
           case (pattern, input) of
                (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
@@ -527,12 +535,9 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
              then do isDefined <- liftIO $ isBound localEnv pattern
                      -- If pattern is a literal identifier, then just pass it along as-is
                      -- TODO: need to figure out if any identifier is equal to pattern, kind of stumbling through this right now....
-                     val <- if any (\i -> do result <- eqv [Atom pattern, i]
-                                             case result of
-                                               Bool True -> True
-                                               otherwise -> False) identifiers
-                               then pattern
-                               else input
+                     let val = if findAtom (Atom pattern) identifiers 
+                                  then Atom pattern
+                                  else input
                      -- Set variable in the local environment
                      if isDefined
                         then do v <- getVar localEnv pattern
