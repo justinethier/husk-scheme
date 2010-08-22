@@ -73,20 +73,20 @@
 (assert-equal (lambda () (let* ((x 1)
                                 (y x)
                                 (z (+ x y))) (* x y z))) (* 1 1 2))
+; TODO: letrec
+;(letrec ((even?
+;          (lambda (n)
+;            (if (zero? n)
+;                #t
+;                (odd? (- n 1)))))
+;         (odd?
+;          (lambda (n)
+;            (if (zero? n)
+;                #f
+;                (even? (- n 1))))))
+; (even? 88))
 
-(letrec ((even?
-          (lambda (n)
-            (if (zero? n)
-                #t
-                (odd? (- n 1)))))
-         (odd?
-          (lambda (n)
-            (if (zero? n)
-                #f
-                (even? (- n 1))))))
- (even? 88))
-
-; TODO: named let, letrec
+; TODO: named let
 ;;(let loop ((numbers '(3 -2 1 6 -5))
 ;(let loop ((numbers '(3 2 1 6 5))
 ;           (nonneg '())
@@ -101,10 +101,5 @@
 ;                 nonneg
 ;                 (cons (car numbers) neg)))))
 ;
-
-; TODO:
-;(assert-equal (lambda () 
-;  (let () (let ((x 1)) x)))
-;   1)
 
 (unit-test-handler-results)
