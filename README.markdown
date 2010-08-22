@@ -8,6 +8,7 @@ skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS s
 - Sequencing
 - Quasi-quotation
 - Delayed Execution
+- Simple binding constructs (let, let*)
 - Basic IO functions
 - Read-Eval-Print-Loop (REPL) interpreter
 - Standard library of Scheme functions
@@ -15,7 +16,7 @@ skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS s
 
 Features under development:
 
-- do, let*, letrec, others?
+- do, named let, letrec, others?
 - Full numeric tower
 - Other missing sections from 4.2.*
 - Continuations
