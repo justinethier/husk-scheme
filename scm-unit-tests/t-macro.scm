@@ -73,18 +73,34 @@
 (assert-equal (lambda () (let* ((x 1)
                                 (y x)
                                 (z (+ x y))) (* x y z))) (* 1 1 2))
-; TODO: letrec
-;(letrec ((even?
-;          (lambda (n)
-;            (if (zero? n)
-;                #t
-;                (odd? (- n 1)))))
-;         (odd?
-;          (lambda (n)
-;            (if (zero? n)
-;                #f
-;                (even? (- n 1))))))
-; (even? 88))
+; letrec
+(assert-equal (lambda () 
+  (letrec ((even?
+          (lambda (n)
+            (if (zero? n)
+                #t
+                (odd? (- n 1)))))
+         (odd?
+          (lambda (n)
+            (if (zero? n)
+                #f
+                (even? (- n 1))))))
+   (even? 88)))
+  #t)
+
+(assert-equal (lambda () 
+  (letrec ((even?
+          (lambda (n)
+            (if (zero? n)
+                #t
+                (odd? (- n 1)))))
+         (odd?
+          (lambda (n)
+            (if (zero? n)
+                #f
+                (even? (- n 1))))))
+   (odd? 88)))
+  #f)
 
 ; TODO: named let
 ;;(let loop ((numbers '(3 -2 1 6 -5))
