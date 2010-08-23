@@ -196,7 +196,6 @@ data LispVal = Atom String
 	        body :: [LispVal], closure :: Env}
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)
 	| Port Handle
--- TODO: ellipsis (for macros)
     | Nil String -- String is probably wrong type here, but OK for now (do not expect to use this much, just internally)
 
 showVal :: LispVal -> String
@@ -274,15 +273,21 @@ parseBinaryNumber = do
 parseHexNumber :: Parser LispVal
 parseHexNumber = do
   try (string "#x")
+  sign <- many (oneOf "-")
   num <- many1(digit <|> oneOf "abcdefABCDEF")
-  return $ Number $ fst $ Numeric.readHex num !! 0
+  if (length sign) > 1
+     then pzero
+     else return $ Number $ fst $ Numeric.readHex num !! 0 -- TODO: apply sign, if one was read
 
 {- Parser for Integer, base 10-}
 parseDecimalNumber :: Parser LispVal
 parseDecimalNumber = do
   try (many(string "#d"))
+  sign <- many (oneOf "-")
   num <- many1 (digit)
-  return $ (Number . read) $ num
+  if (length sign) > 1
+     then pzero
+     else return $ (Number . read) $ sign ++ num
 
 parseNumber :: Parser LispVal
 parseNumber = parseDecimalNumber <|> 
@@ -294,7 +299,7 @@ parseNumber = parseDecimalNumber <|>
 {- Parser for floating points -}
 parseDecimal :: Parser LispVal
 parseDecimal = do 
-  num <- many1(digit)
+  num <- many1(digit) -- TODO: support for negative numbers
   char '.'
   frac <- many1(digit)
   let dec = num ++ "." ++ frac
@@ -371,7 +376,7 @@ parseComment = do
 parseExpr :: Parser LispVal
 parseExpr = try(parseDecimal) 
   <|> parseComment
-  <|> parseNumber
+  <|> try(parseNumber)
   <|> parseChar
   <|> parseUnquoteSpliced
   <|> do try (string "#(")
