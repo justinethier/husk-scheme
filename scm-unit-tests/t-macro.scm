@@ -18,9 +18,9 @@
 
 (assert-equal (lambda () (test 1)) '(1))
 (assert-equal (lambda () (test 1 1 1 1 1 1 1 1 1 1)) '(1))
-; TODO: this should not pass, since 2 is not in the pattern - (test 1 2)
-; this test case works, but can't put it here since it halts the program.
-; would be nice if there was a way to test this...
+; FUTURE (unit test framework): this should not pass, since 2 is not in the pattern - (test 1 2)
+;                               this test case works, but can't put it here since it halts the program.
+;                               would be nice if there was a way to test this...
 
 (define-syntax test (syntax-rules () ((test 1 ... 2) (list 1 2))))
 (assert-equal (lambda () (test 2)) '(1 2))
@@ -33,7 +33,6 @@
 (assert-equal (lambda () (test 1 2 3)) '(1 2 3))
 (assert-equal (lambda () (test 1 1 1 2 2 2 3)) '(1 2 3))
 
-; TODO - get each of these working next, then maybe try the real (my-let):
 (define-syntax test (syntax-rules () ((test x ...) (list 1))))
 (assert-equal (lambda () (test "hello, world!" (+ 1 2 3) x)) '(1))
 (assert-equal (lambda () (test "hello, world!" 1 2 3)) '(1))
@@ -51,7 +50,6 @@
 (define-syntax test (syntax-rules () ((_ (1 2) (3 . x)) (list x))))
 (assert-equal (lambda () (test (1 2) (3 . 4))) '(4))
 
-; "Fake" my-let test
 (define-syntax my-let
   (syntax-rules ()
     ((_ e1 ...)
@@ -104,18 +102,19 @@
 
 ; TODO: named let
 ;;(let loop ((numbers '(3 -2 1 6 -5))
-;(let loop ((numbers '(3 2 1 6 5))
-;           (nonneg '())
-;           (neg '()))
-;    (cond ((null? numbers) (list nonneg neg))
-;          ((>= (car numbers) 0)
-;           (loop (cdr numbers)
-;                 (cons (car numbers) nonneg)
-;                  neg))
-;          ((< (car numbers) 0)
-;           (loop (cdr numbers)
-;                 nonneg
-;                 (cons (car numbers) neg)))))
-;
+;(write
+(let loop ((numbers '(3 2 1 6 5))
+           (nonneg '())
+           (neg '()))
+    (cond ((null? numbers) (list nonneg neg))
+          ((>= (car numbers) 0)
+           (loop (cdr numbers)
+                 (cons (car numbers) nonneg)
+                  neg))
+          ((< (car numbers) 0)
+           (loop (cdr numbers)
+                 nonneg
+                 (cons (car numbers) neg)))))
+
 
 (unit-test-handler-results)
