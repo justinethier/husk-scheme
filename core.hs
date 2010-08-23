@@ -405,6 +405,7 @@ macroEval env lisp@(List (x@(List _) : xs)) = do
   return $ List $ first : rest
 
 -- TODO: equivalent matches/transforms for vectors
+--       what about dotted lists?
 
 macroEval env lisp@(List (Atom x : xs)) = do
   isDefined <- liftIO $ isNamespacedBound env macroNamespace x
@@ -459,14 +460,6 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
                      throwError $ BadSpecialForm "DEBUG" $ List [temp, temp2]
                      throwError $ BadSpecialForm "DEBUG" trans-}
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
-{-
- - TODO: consider following excerpts from the R5RS spec, which state that ... must follow the last element of a sequence of subpatterns. 
- - Need to test this on csi and with skim because it looks like skim is too liberal, allowing ... within the middle of a list of elements
- -
- -(<pattern> ... <pattern> <ellipsis>)
-
- A subpattern followed by ... can match zero or more elements of the input. It is an error for ... to appear in <literals>. Within a pattern the identifier ... must follow the last element of a nonempty sequence of subpatterns.
- - -}
         --
         -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
         --             in preparation for macro transformation.
@@ -475,7 +468,7 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
           if target == a
              then return $ Bool True
              else findAtom (Atom target) (List as)
--- TODO:        findAtom target (List (_ : _)) = bad type error
+        findAtom target (List (badtype : _)) = throwError $ TypeMismatch "symbol" badtype -- TODO: test this, non-atoms should throw err
         findAtom target _ = return $ Bool False
   
         loadLocal :: Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
@@ -486,6 +479,7 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
                  let hasEllipsis = macroElementMatchesMany pattern
 
                  -- TODO: error if ... detected when there is an outer ... ????
+                 --       no, this should (eventually) be allowed. See scheme-faq-macros
 			 
                  status <- checkLocal localEnv identifiers (hasEllipsis || outerHasEllipsis) p i 
                  case status of
@@ -551,9 +545,9 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
         checkLocal localEnv identifiers hasEllipsis (DottedList ps p) (DottedList is i) = 
-          loadLocal localEnv identifiers (List $ ps ++ [p]) (List $ is ++ [i]) False hasEllipsis -- TODO: needed? hasEllipsis
+          loadLocal localEnv identifiers (List $ ps ++ [p]) (List $ is ++ [i]) False hasEllipsis
         checkLocal localEnv identifiers hasEllipsis pattern@(List _) input@(List _) = 
-          loadLocal localEnv identifiers pattern input False hasEllipsis -- TODO: needed? hasEllipsis
+          loadLocal localEnv identifiers pattern input False hasEllipsis
 
         checkLocal localEnv identifiers hasEllipsis _ _ = return $ Bool False
 
@@ -610,7 +604,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                                List lst -> lst
 
 -- TODO: vector transform (and taking vectors into account in other cases as well???)
-
+-- TODO: what about dotted lists?
 
 -- Transform an atom by attempting to look it up as a var...
 transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)) unused = do

@@ -104,29 +104,29 @@
 (define (append inlist alist) (foldr (lambda (ap in) (cons ap in)) alist inlist))
 
 ; Let forms
-;(define-syntax letrec
-;  (syntax-rules ()
-;    ((_ ((x v) ...) e1 e2 ...)
-;     (let () 
-;       (define x v) ...
-;       (let () e1 e2 ...)))))
 (define-syntax letrec
   (syntax-rules ()
-    ((_ ((x v) ...) . body)
+    ((_ ((x v) ...) e1 e2 ...)
      (let () 
        (define x v) ...
-       (let () . body)))))
+       (let () e1 e2 ...)))))
+; TODO: should be able to use dotted lists, as below:
+;(define-syntax letrec
+;  (syntax-rules ()
+;    ((_ ((x v) ...) . body)
+;     (let () 
+;       (define x v) ...
+;       (let () . body)))))
 
-
-; TODO: write letrec first, then named let (second rule in let)
 (define-syntax let
   (syntax-rules ()
     ((_ ((x v) ...) e1 e2 ...)
     ((lambda (x ...) e1 e2 ...) v ...))
 
     ((_ name ((x v) ...) e1 e2 ...)
-     (let ((name (lambda (x ...) e1 e2 ...)))
-       (name name v ...)))))
+     ((letrec ((name (lambda (x ...) e1 e2 ...)))
+              name)
+       v ...))))
 
 ; TODO: (named let)
 ;(define-syntax let
@@ -140,9 +140,10 @@
 ;                                           tag)
 ;                                       val ...))))
 
-
-; TODO: change first rule back to:
+;
+; It would be nice to change first rule back to:
 ;    ((_ () body) body)
+;
 (define-syntax let*
   (syntax-rules ()
     ((_ () body) ((lambda () body)))
