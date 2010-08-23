@@ -132,21 +132,6 @@
              (lambda (proc) (f (lambda (x ...) ((proc proc)
                x ...)))))))
         (ff v ...)))))
-;     ((letrec ((name (lambda (x ...) e1 e2 ...)))
-;              name)
-;       v ...))))
-
-; TODO: (named let)
-;(define-syntax let
-;    (syntax-rules ()
-;                      ((let ((name val) ...) body1 body2 ...)
-;                            ((lambda (name ...) body1 body2 ...)
-;                                   val ...))
-;                          ((let tag ((name val) ...) body1 body2 ...)
-;                                ((letrec ((tag (lambda (name ...)
-;                                                                       body1 body2 ...)))
-;                                           tag)
-;                                       val ...))))
 
 ;
 ; It would be nice to change first rule back to:
