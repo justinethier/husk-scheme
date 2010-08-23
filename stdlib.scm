@@ -118,15 +118,23 @@
 ;       (define x v) ...
 ;       (let () . body)))))
 
+; let and named let (using the Y-combinator):
 (define-syntax let
   (syntax-rules ()
     ((_ ((x v) ...) e1 e2 ...)
-    ((lambda (x ...) e1 e2 ...) v ...))
-
+     ((lambda (x ...) e1 e2 ...) v ...))
     ((_ name ((x v) ...) e1 e2 ...)
-     ((letrec ((name (lambda (x ...) e1 e2 ...)))
-              name)
-       v ...))))
+     (let*
+       ((f  (lambda (name)
+              (lambda (x ...) e1 e2 ...)))
+        (ff ((lambda (proc) (f (lambda (x ...) ((proc proc)
+               x ...))))
+             (lambda (proc) (f (lambda (x ...) ((proc proc)
+               x ...)))))))
+        (ff v ...)))))
+;     ((letrec ((name (lambda (x ...) e1 e2 ...)))
+;              name)
+;       v ...))))
 
 ; TODO: (named let)
 ;(define-syntax let
