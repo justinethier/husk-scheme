@@ -17,7 +17,7 @@ skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS s
 Features under development:
 
 - Iteration (do)
-- Full numeric tower
+- Full numeric tower, including support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types, other constraints from spec.
 - Other missing sections from 4.2.*
 - Continuations
 - Improved REPL features (EG: proper keyboard arrow support, etc)
