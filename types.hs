@@ -1,3 +1,14 @@
+{-
+ - skim-scheme
+ - Types
+ -
+ - This file contains top-level data type definitions and their associated functions, including:
+ -  - Scheme data types
+ -  - Scheme errors
+ -
+ - @author Justin Ethier
+ -
+ - -}
 module Skim.Types where
 import Control.Monad
 import Control.Monad.Error
