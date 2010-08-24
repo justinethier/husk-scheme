@@ -3,24 +3,24 @@ skim-scheme
 skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS standard. skim includes the following features:
 
 - Most primitive data types and their standard forms
-- Conditionals if, case, cond
+- Conditionals: if, case, cond
 - Assignment operations
-- Sequencing
+- Sequencing: begin
 - Quasi-quotation
-- Delayed Execution
-- Simple binding constructs (let, let*)
+- Delayed Execution: delay, force
+- Binding constructs: let, named let, let*, letrec
 - Basic IO functions
 - Read-Eval-Print-Loop (REPL) interpreter
 - Standard library of Scheme functions
-- Hygenic Macros (work in progress)
+- Hygenic Macros: High-level macros via define-syntax - work in progress
 
 Features under development:
 
-- do, named let, letrec, others?
+- Iteration (do)
 - Full numeric tower
 - Other missing sections from 4.2.*
 - Continuations
-- Improved REPL features (EG: proper keyboard arrow support)
+- Improved REPL features (EG: proper keyboard arrow support, etc)
 - More example programs
 - Refactoring of haskell code into multiple modules/files
 - Compare skim features to R5RS spec: <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
