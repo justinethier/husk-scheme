@@ -22,7 +22,7 @@ Features under development:
 - Continuations
 - Improved REPL features (EG: proper keyboard arrow support, etc)
 - More example programs
-- Refactoring of haskell code into multiple modules/files
+- General refactoring of haskell code including into multiple modules/files, addressing TODO items, etc...
 - Compare skim features to R5RS spec: <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
 
 License
