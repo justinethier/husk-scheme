@@ -270,6 +270,9 @@ parseExpr = try(parseDecimal)
 
 {- Macro eval section -}
 
+-- Nice FAQ regarding macro's, points out some of the limitations of current implementation
+-- http://community.schemewiki.org/?scheme-faq-macros
+
 -- Search for macro's in the AST, and transform any that are found.
 -- There is also a special case (define-syntax) that loads new rules.
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
