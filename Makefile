@@ -1,4 +1,4 @@
-skim: core.hs
+skim: core.hs macro.hs parser.hs types.hs variables.hs
 	ghc --make -package parsec -fglasgow-exts -o skim core.hs macro.hs parser.hs types.hs variables.hs
 
 # Run all unit tests

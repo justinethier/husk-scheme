@@ -8,19 +8,10 @@
  -
  - -}
 module Skim.Macro where
---import Skim.Parser
 import Skim.Types
 import Skim.Variables
 import Control.Monad
 import Control.Monad.Error
---import Char
-import Data.Array
-import Data.IORef
-import Maybe
-import List
-import IO hiding (try)
-import Numeric
-import System.Environment
 
 -- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 -- http://community.schemewiki.org/?scheme-faq-macros
