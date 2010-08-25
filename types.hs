@@ -12,13 +12,9 @@
 module Skim.Types where
 import Control.Monad
 import Control.Monad.Error
-import Char
 import Data.Array
 import Data.IORef
-import Maybe
-import List
 import IO hiding (try)
-import Numeric
 import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
 

@@ -9,18 +9,11 @@
  - -}
 module Skim.Parser where
 import Skim.Types
-import Control.Monad
 import Control.Monad.Error
 import Char
 import Data.Array
-import Data.IORef
-import Maybe
-import List
-import IO hiding (try)
 import Numeric
-import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
-
 
 symbol :: Parser Char
 symbol = oneOf "!$%&|*+-/:<=>?@^_~" -- TODO: I removed #, make sure this is OK w/spec, and test cases
