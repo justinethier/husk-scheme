@@ -11,15 +11,7 @@ module Skim.Variables where
 import Skim.Types
 import Control.Monad
 import Control.Monad.Error
-import Char
-import Data.Array
 import Data.IORef
-import Maybe
-import List
-import IO hiding (try)
-import Numeric
-import System.Environment
-
 
 -- Determine if a variable is bound in the "variable" namespace
 isBound :: Env -> String -> IO Bool
