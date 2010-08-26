@@ -213,6 +213,12 @@ eval env (List [Atom "vector-fill!", Atom var, object]) = do
         -- TODO: error handler?
 -- TODO: error handler? - eval env (List [Atom "vector-fill!", args]) = throwError $ NumArgs 2 args
 
+{- TODO: hash-table-set!
+hashTblSet [(HashTable ht), key@(_), value@(_)] = return $ 
+buildString [badType] = throwError $ TypeMismatch "hash-table" badType
+buildString badArgList = throwError $ NumArgs 3 badArgList
+-}
+
 eval env (List (function : args)) = do
   func <- eval env function
   argVals <- mapM (eval env) args
@@ -381,6 +387,7 @@ primitives = [("+", numericBinop (+)),
               ("list->vector", listToVector),
 
               ("make-hash-table", hashTblMake),
+              ("hash-table-ref", hashTblRef),
 
               ("string?", isString),
               ("string", buildString),
@@ -463,27 +470,6 @@ cons [x, DottedList xs xlast] = return $ DottedList (x : xs) xlast
 cons [x1, x2] = return $ DottedList [x1] x2
 cons badArgList = throwError $ NumArgs 2 badArgList
 
-eqv :: [LispVal] -> ThrowsError LispVal
-eqv [(Bool arg1), (Bool arg2)] = return $ Bool $ arg1 == arg2
-eqv [(Number arg1), (Number arg2)] = return $ Bool $ arg1 == arg2
-eqv [(Float arg1), (Float arg2)] = return $ Bool $ arg1 == arg2
-eqv [(String arg1), (String arg2)] = return $ Bool $ arg1 == arg2
-eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
-eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
-eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
-eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
--- TODO: hash table?
-eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
-eqv [_, _] = return $ Bool False
-eqv badArgList = throwError $ NumArgs 2 badArgList
-
-eqvList :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
-eqvList eqvFunc [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) && 
-                                                    (all eqvPair $ zip arg1 arg2)
-    where eqvPair (x1, x2) = case eqvFunc [x1, x2] of
-                               Left err -> False
-                               Right (Bool val) -> val
-
 equal :: [LispVal] -> ThrowsError LispVal
 equal [(Vector arg1), (Vector arg2)] = eqvList equal [List $ (elems arg1), List $ (elems arg2)] 
 -- TODO: hash table?
@@ -530,8 +516,16 @@ listToVector badArgList = throwError $ NumArgs 1 badArgList
 -------------- Hash Table Primitives --------------
 
 -- Future: support (equal?), (hash) parameters
-hashTblMake :: [LispVal] -> ThrowsError LispVal
-hashTblMake _ = return $ String "TODO" -- TODO: HashTable $ Data.Map.fromList [] --Data.HashTable.new
+hashTblMake, hashTblRef :: [LispVal] -> ThrowsError LispVal
+hashTblMake _ = return $ HashTable $ Data.Map.fromList []
+
+hashTblRef [(HashTable ht), key@(_)] = do
+  case Data.Map.lookup key ht of
+    Just val -> return $ val
+    Nothing -> throwError $ BadSpecialForm "Hash table does not contain key" key
+hashTblRef [badType] = throwError $ TypeMismatch "hash-table" badType
+hashTblRef badArgList = throwError $ NumArgs 2 badArgList
+
 
 -------------- String Primitives --------------
 

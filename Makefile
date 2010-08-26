@@ -8,6 +8,7 @@ test: skim
 	cd scm-unit-tests ; ../skim t-cond.scm
 	cd scm-unit-tests ; ../skim t-delay.scm
 	cd scm-unit-tests ; ../skim t-macro.scm
+	cd scm-unit-tests ; ../skim t-hashtable.scm
 	cd scm-unit-tests ; ../skim t-special-forms.scm
 	cd scm-unit-tests ; ../skim t-stdlib.scm
 	cd scm-unit-tests ; ../skim t-vector.scm

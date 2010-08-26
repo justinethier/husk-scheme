@@ -86,7 +86,43 @@ data LispVal = Atom String
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)
 	| Port Handle
         | Nil String -- String is probably wrong type here, but OK for now (do not expect to use this much, just internally)
---  deriving (Eq, Ord)
+
+instance Ord LispVal where
+  compare (Number a) (Number b) = compare a b
+-- TODO: other Ord types
+
+eqv :: [LispVal] -> ThrowsError LispVal
+eqv [(Bool arg1), (Bool arg2)] = return $ Bool $ arg1 == arg2
+eqv [(Number arg1), (Number arg2)] = return $ Bool $ arg1 == arg2
+eqv [(Float arg1), (Float arg2)] = return $ Bool $ arg1 == arg2
+eqv [(String arg1), (String arg2)] = return $ Bool $ arg1 == arg2
+eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
+eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
+eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
+eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
+eqv [(HashTable arg1), (HashTable arg2)] = 
+  eqv [List $ (map (\(x, y) -> List [x, y]) $ Data.Map.toAscList arg1), 
+       List $ (map (\(x, y) -> List [x, y]) $ Data.Map.toAscList arg2)] 
+eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
+eqv [_, _] = return $ Bool False
+eqv badArgList = throwError $ NumArgs 2 badArgList
+
+eqvList :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
+eqvList eqvFunc [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) && 
+                                                    (all eqvPair $ zip arg1 arg2)
+    where eqvPair (x1, x2) = case eqvFunc [x1, x2] of
+                               Left err -> False
+                               Right (Bool val) -> val
+
+eqVal :: LispVal -> LispVal -> Bool
+eqVal a b = do
+  let result = eqv [a, b]
+  case result of
+    Left err -> False
+    Right (Bool val) -> val
+
+instance Eq LispVal where
+  x == y = eqVal x y
 
 showVal :: LispVal -> String
 showVal (Nil _) = ""
