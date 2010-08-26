@@ -14,12 +14,12 @@ skim includes the following features:
 - Read-Eval-Print-Loop (REPL) interpreter
 - Standard library of Scheme functions
 - Hygenic Macros: High-level macros via define-syntax - work in progress
+- Hash tables, as specified by SRFI 69: <http://srfi.schemers.org/srfi-69/srfi-69.html> - work in progress 
 
 Features under development:
 
 - Iteration (do)
 - Test cases, including those for: backtick, primitives (see spec section 4.1), others
-- Hash tables, as specified by SRFI 69: <http://srfi.schemers.org/srfi-69/srfi-69.html> 
 - Full numeric tower, including support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types, other constraints from spec.
 - Continuations
 - Improved REPL features (EG: proper keyboard arrow support, etc)
