@@ -88,6 +88,7 @@ eval env val@(Char _) = return val
 eval env val@(Number _) = return val
 eval env val@(Float _) = return val
 eval env val@(Bool _) = return val
+eval env val@(HashTable _) = return val
 eval env (Atom id) = getVar env id
 eval env (List [Atom "quote", val]) = return val
 eval env (List [Atom "quasiquote", val]) = do
@@ -213,6 +214,17 @@ eval env (List [Atom "vector-fill!", Atom var, object]) = do
         -- TODO: error handler?
 -- TODO: error handler? - eval env (List [Atom "vector-fill!", args]) = throwError $ NumArgs 2 args
 
+eval env (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do 
+  key <- eval env rkey
+  value <- eval env rvalue
+  h <- eval env =<< getVar env var
+  case h of
+    HashTable ht -> (eval env $ HashTable $ Data.Map.insert key value ht) >>= setVar env var
+    otherwise -> throwError $ TypeMismatch "hash-table" otherwise
+--  (eval env $ (updateVector vec idx obj)) >>= setVar env var
+--  where updateVector (Vector vec) (Number idx) obj = Vector $ vec//[(fromInteger idx, obj)]
+        -- TODO: error handler?
+-- TODO: error handler? - eval env (List [Atom "vector-set!", args]) = throwError $ NumArgs 2 args
 {- TODO: hash-table-set!
 hashTblSet [(HashTable ht), key@(_), value@(_)] = return $ 
 buildString [badType] = throwError $ TypeMismatch "hash-table" badType
