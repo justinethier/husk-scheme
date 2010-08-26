@@ -7,7 +7,9 @@
 (hash-table-set! ht 1 "test")
 (assert-equal (lambda () (hash-table-ref ht 1)) "test")
 
-;(hash-table-set! ht "test2" "testing")
-;(assert-equal (lambda () (hash-table-ref ht "test2")) "testing")
+(hash-table-set! ht "test2" "testing")
+(assert-equal (lambda () (hash-table-ref ht "test2")) "testing")
+
+; TODO: Many more simple test cases like this, using expressions and every type of primitive
 
 (unit-test-handler-results)

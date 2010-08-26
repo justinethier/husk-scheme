@@ -88,8 +88,18 @@ data LispVal = Atom String
         | Nil String -- String is probably wrong type here, but OK for now (do not expect to use this much, just internally)
 
 instance Ord LispVal where
+  compare (Bool a) (Bool b) = compare a b
   compare (Number a) (Number b) = compare a b
--- TODO: other Ord types
+  compare (Float a) (Float b) = compare a b
+  compare (String a) (String b) = compare a b
+  compare (Char a) (Char b) = compare a b
+  compare (Atom a) (Atom b) = compare a b
+--  compare (DottedList xs x) (DottedList xs x) = compare a b
+-- Vector
+-- HashTable
+-- List
+  compare _ _ = EQ -- I assume this is horribly wrong???
+-- TODO: other Ord types, what happens when types are mixed (EG: number/string)?
 
 eqv :: [LispVal] -> ThrowsError LispVal
 eqv [(Bool arg1), (Bool arg2)] = return $ Bool $ arg1 == arg2
