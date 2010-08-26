@@ -29,6 +29,7 @@ import Control.Monad.Error
 import Char
 import Data.Array
 import Data.IORef
+import qualified Data.Map
 import Maybe
 import List
 import IO hiding (try)
@@ -379,6 +380,8 @@ primitives = [("+", numericBinop (+)),
               ("vector->list", vectorToList),
               ("list->vector", listToVector),
 
+              ("make-hash-table", hashTblMake),
+
               ("string?", isString),
               ("string", buildString),
               ("make-string", makeString),
@@ -469,6 +472,7 @@ eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
 eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
+-- TODO: hash table?
 eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
 eqv [_, _] = return $ Bool False
 eqv badArgList = throwError $ NumArgs 2 badArgList
@@ -482,6 +486,7 @@ eqvList eqvFunc [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == len
 
 equal :: [LispVal] -> ThrowsError LispVal
 equal [(Vector arg1), (Vector arg2)] = eqvList equal [List $ (elems arg1), List $ (elems arg2)] 
+-- TODO: hash table?
 equal [l1@(List arg1), l2@(List arg2)] = eqvList equal [l1, l2]
 equal [(DottedList xs x), (DottedList ys y)] = equal [List $ xs ++ [x], List $ ys ++ [y]]
 equal [arg1, arg2] = do
@@ -521,6 +526,13 @@ vectorToList badArgList = throwError $ NumArgs 1 badArgList
 listToVector [(List l)] = return $ Vector $ (listArray (0, length l - 1)) l
 listToVector [badType] = throwError $ TypeMismatch "list" badType 
 listToVector badArgList = throwError $ NumArgs 1 badArgList
+
+-------------- Hash Table Primitives --------------
+
+-- Future: support (equal?), (hash) parameters
+hashTblMake :: [LispVal] -> ThrowsError LispVal
+hashTblMake _ = return $ String "TODO" -- TODO: HashTable $ Data.Map.fromList [] --Data.HashTable.new
+
 -------------- String Primitives --------------
 
 buildString :: [LispVal] -> ThrowsError LispVal

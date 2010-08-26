@@ -14,6 +14,7 @@ import Control.Monad
 import Control.Monad.Error
 import Data.Array
 import Data.IORef
+import qualified Data.Map
 import IO hiding (try)
 import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
@@ -73,6 +74,7 @@ data LispVal = Atom String
 	| List [LispVal]
 	| DottedList [LispVal] LispVal
 	| Vector (Array Int LispVal)
+	| HashTable (Data.Map.Map LispVal LispVal)
 	| Number Integer
 	| Float Float
  	| String String
@@ -83,7 +85,8 @@ data LispVal = Atom String
 	        body :: [LispVal], closure :: Env}
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)
 	| Port Handle
-    | Nil String -- String is probably wrong type here, but OK for now (do not expect to use this much, just internally)
+        | Nil String -- String is probably wrong type here, but OK for now (do not expect to use this much, just internally)
+--  deriving (Eq, Ord)
 
 showVal :: LispVal -> String
 showVal (Nil _) = ""
@@ -95,6 +98,7 @@ showVal (Float contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
 showVal (Vector contents) = "#(" ++ (unwordsList $ Data.Array.elems contents) ++ ")"
+showVal (HashTable _) = "<hash-table>"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
