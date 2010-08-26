@@ -12,4 +12,6 @@
 
 ; TODO: Many more simple test cases like this, using expressions and every type of primitive
 
+
+; TODO: many more functions now, cross-reference core code and add more cases...
 (unit-test-handler-results)
