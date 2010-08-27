@@ -98,8 +98,9 @@ instance Ord LispVal where
 -- Vector
 -- HashTable
 -- List
-  compare _ _ = EQ -- I assume this is horribly wrong???
--- TODO: other Ord types, what happens when types are mixed (EG: number/string)?
+-- Func
+-- Others?
+  compare a b = compare (show a) (show b) -- Hack (??): sort alphabetically when types differ or have no handlers
 
 eqv :: [LispVal] -> ThrowsError LispVal
 eqv [(Bool arg1), (Bool arg2)] = return $ Bool $ arg1 == arg2
