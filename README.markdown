@@ -1,4 +1,4 @@
-skim-scheme is a "simple" dialect of scheme, implementing a subset of the [R5RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/).
+skim-scheme is a "simple" dialect of scheme, implementing a subset of the [R5RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/).  
 skim includes the following features:
 
 - Most primitive data types and their standard forms
