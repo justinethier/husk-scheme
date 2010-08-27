@@ -399,6 +399,7 @@ primitives = [("+", numericBinop (+)),
               ("hash-table-size", hashTblSize),
 -- TODO next: val, key funcs
 -- TODO: many more, see SRFI
+              ("hash-table->alist", hashTbl2List),
 
               ("string?", isString),
               ("string", buildString),
@@ -527,7 +528,7 @@ listToVector badArgList = throwError $ NumArgs 1 badArgList
 -------------- Hash Table Primitives --------------
 
 -- Future: support (equal?), (hash) parameters
-hashTblMake, isHashTbl, hashTblExists, hashTblRef, hashTblSize :: [LispVal] -> ThrowsError LispVal
+hashTblMake, isHashTbl, hashTblExists, hashTblRef, hashTblSize, hashTbl2List :: [LispVal] -> ThrowsError LispVal
 hashTblMake _ = return $ HashTable $ Data.Map.fromList []
 
 isHashTbl [(HashTable _)] = return $ Bool True
@@ -553,6 +554,11 @@ hashTblRef badArgList = throwError $ NumArgs 2 badArgList
 hashTblSize [(HashTable ht)] = return $ Number $ toInteger $ Data.Map.size ht
 hashTblSize [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblSize badArgList = throwError $ NumArgs 1 badArgList
+
+hashTbl2List [(HashTable ht)] = do
+  return $ List $ map (\(k, v) -> List [k, v]) $ Data.Map.toList ht
+hashTbl2List [badType] = throwError $ TypeMismatch "hash-table" badType
+hashTbl2List badArgList = throwError $ NumArgs 1 badArgList
 
 -------------- String Primitives --------------
 
