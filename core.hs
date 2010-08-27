@@ -400,8 +400,9 @@ primitives = [("+", numericBinop (+)),
 -- TODO next: val, key funcs
 -- TODO: many more, see SRFI
               ("hash-table->alist", hashTbl2List),
-              ("hash-table-keys", hashTblKeys), -- hash-table → list
-              ("hash-table-values", hashTblValues), -- hash-table → list
+              ("hash-table-keys", hashTblKeys),
+              ("hash-table-values", hashTblValues),
+              ("hash-table-copy", hashTblCopy),
 
               ("string?", isString),
               ("string", buildString),
@@ -530,7 +531,7 @@ listToVector badArgList = throwError $ NumArgs 1 badArgList
 -------------- Hash Table Primitives --------------
 
 -- Future: support (equal?), (hash) parameters
-hashTblMake, isHashTbl, hashTblExists, hashTblRef, hashTblSize, hashTbl2List, hashTblKeys, hashTblValues :: [LispVal] -> ThrowsError LispVal
+hashTblMake, isHashTbl, hashTblExists, hashTblRef, hashTblSize, hashTbl2List, hashTblKeys, hashTblValues, hashTblCopy:: [LispVal] -> ThrowsError LispVal
 hashTblMake _ = return $ HashTable $ Data.Map.fromList []
 
 isHashTbl [(HashTable _)] = return $ Bool True
@@ -571,6 +572,11 @@ hashTblValues [(HashTable ht)] = do
   return $ List $ map (\(k, v) -> v) $ Data.Map.toList ht
 hashTblValues [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblValues badArgList = throwError $ NumArgs 1 badArgList
+
+hashTblCopy [(HashTable ht)] = do
+  return $ HashTable $ Data.Map.fromList $ Data.Map.toList ht
+hashTblCopy [badType] = throwError $ TypeMismatch "hash-table" badType
+hashTblCopy badArgList = throwError $ NumArgs 1 badArgList
 
 -------------- String Primitives --------------
 
