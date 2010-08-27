@@ -219,8 +219,14 @@ eval env (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
     HashTable ht -> (eval env $ HashTable $ Data.Map.insert key value ht) >>= setVar env var
     otherwise -> throwError $ TypeMismatch "hash-table" otherwise
 
+eval env (List [Atom "hash-table-delete!", Atom var, rkey]) = do 
+  key <- eval env rkey
+  h <- eval env =<< getVar env var
+  case h of
+    HashTable ht -> (eval env $ HashTable $ Data.Map.delete key ht) >>= setVar env var
+    otherwise -> throwError $ TypeMismatch "hash-table" otherwise
+
 -- TODO:
---  hash-table-delete!
 --  hash-table-update!
 --  hash-table-update!/default
 
