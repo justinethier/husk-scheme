@@ -21,11 +21,12 @@ Features planned for development:
 - Full numeric tower, including support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types, other constraints from spec.
 - Continuations
 - Improved REPL features (EG: proper keyboard arrow support, etc)
+- A skim "library" that may be used to embed scheme scripting within a Haskell program.
 - More example programs
 - General refactoring of haskell code including into multiple modules/files, addressing TODO items, etc...
 - Compare skim features to R5RS spec: <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
 
-skim-scheme is available under the MIT license.
+skim-scheme is available under the [MIT license](http://www.opensource.org/licenses/mit-license.php).
 
 Usage
 -----
