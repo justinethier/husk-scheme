@@ -1,6 +1,4 @@
-About
-===========
-skim-scheme is a "simple" dialect of scheme, implementing a subset of the R5RS standard: <http://www.schemers.org/Documents/Standards/R5RS/HTML/>
+skim-scheme is a "simple" dialect of scheme, implementing a subset of the [R5RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/).
 skim includes the following features:
 
 - Most primitive data types and their standard forms
@@ -13,7 +11,7 @@ skim includes the following features:
 - Basic IO functions
 - Standard library of Scheme functions
 - Hygenic Macros: High-level macros via define-syntax - work in progress
-- Hash tables, as specified by SRFI 69: <http://srfi.schemers.org/srfi-69/srfi-69.html> - work in progress 
+- Hash tables, as specified by [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html) - work in progress 
 - Read-Eval-Print-Loop (REPL) interpreter
 
 Features planned for development:
@@ -44,7 +42,7 @@ Alternatively, you may run an individual scheme program:
 Development
 -----------
 
-GHC is required to build skim-scheme: <http://www.haskell.org/ghc/>
+[GHC](http://www.haskell.org/ghc/) is required to build skim-scheme.
 
 The 'scm-unit-tests' directory contains unit tests for much of the scheme code. Tests may be executed via 'make test'
 
@@ -54,9 +52,9 @@ The examples directory contains example scheme programs.
 Credits
 -------
 
-skim-scheme is developed by Justin Ethier.
+skim-scheme is developed by [Justin Ethier](http://github.com/justinethier).
 
-The interpreter is based on the code from the book "Write Yourself a Scheme in 48 Hours" written by Jonathan Tang and hosted / maintained by Wikibooks: <http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours>
+The interpreter is based on the code from the book [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) written by Jonathan Tang and hosted / maintained by Wikibooks.
 
 If you would like to request changes, report bug fixes, or contact the developer of skim-scheme, visit the project web site at [GitHub](http://github.com/justinethier/skim-scheme).
 
