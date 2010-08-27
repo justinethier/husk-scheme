@@ -397,6 +397,7 @@ primitives = [("+", numericBinop (+)),
               ("hash-table-exists?", hashTblExists),
               ("hash-table-ref", hashTblRef),
               ("hash-table-size", hashTblSize),
+-- TODO next: val, key funcs
 -- TODO: many more, see SRFI
 
               ("string?", isString),
@@ -541,12 +542,11 @@ hashTblRef [(HashTable ht), key@(_)] = do
   case Data.Map.lookup key ht of
     Just val -> return $ val
     Nothing -> throwError $ BadSpecialForm "Hash table does not contain key" key
-{- TODO: a thunk can optionally be specified, this drives definition of /default
- - hashTblRef [(HashTable ht), key@(_), thunk@(Func params vararg body closure)] = do
+-- TODO: a thunk can optionally be specified, this drives definition of /default
+hashTblRef [(HashTable ht), key@(_), thunk@(Func params vararg body closure)] = do
   case Data.Map.lookup key ht of
     Just val -> return $ val
-    Nothing -> apply thunk []
--}	
+-- TODO:    Nothing -> apply thunk []
 hashTblRef [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblRef badArgList = throwError $ NumArgs 2 badArgList
 
