@@ -229,6 +229,7 @@ eval env (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 -- TODO:
 --  hash-table-update!
 --  hash-table-update!/default
+--  hash-table-merge!
 
 eval env (List (function : args)) = do
   func <- eval env function
@@ -403,11 +404,11 @@ primitives = [("+", numericBinop (+)),
               ("hash-table-exists?", hashTblExists),
               ("hash-table-ref", hashTblRef),
               ("hash-table-size", hashTblSize),
--- TODO next: val, key funcs
--- TODO: many more, see SRFI
               ("hash-table->alist", hashTbl2List),
               ("hash-table-keys", hashTblKeys),
               ("hash-table-values", hashTblValues),
+-- TODO next: hash-table-walk, hash-table-fold 
+-- TODO: many more, see SRFI
               ("hash-table-copy", hashTblCopy),
 
               ("string?", isString),
