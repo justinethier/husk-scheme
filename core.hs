@@ -400,6 +400,8 @@ primitives = [("+", numericBinop (+)),
 -- TODO next: val, key funcs
 -- TODO: many more, see SRFI
               ("hash-table->alist", hashTbl2List),
+              ("hash-table-keys", hashTblKeys), -- hash-table → list
+              ("hash-table-values", hashTblValues), -- hash-table → list
 
               ("string?", isString),
               ("string", buildString),
@@ -528,7 +530,7 @@ listToVector badArgList = throwError $ NumArgs 1 badArgList
 -------------- Hash Table Primitives --------------
 
 -- Future: support (equal?), (hash) parameters
-hashTblMake, isHashTbl, hashTblExists, hashTblRef, hashTblSize, hashTbl2List :: [LispVal] -> ThrowsError LispVal
+hashTblMake, isHashTbl, hashTblExists, hashTblRef, hashTblSize, hashTbl2List, hashTblKeys, hashTblValues :: [LispVal] -> ThrowsError LispVal
 hashTblMake _ = return $ HashTable $ Data.Map.fromList []
 
 isHashTbl [(HashTable _)] = return $ Bool True
@@ -559,6 +561,16 @@ hashTbl2List [(HashTable ht)] = do
   return $ List $ map (\(k, v) -> List [k, v]) $ Data.Map.toList ht
 hashTbl2List [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTbl2List badArgList = throwError $ NumArgs 1 badArgList
+
+hashTblKeys [(HashTable ht)] = do
+  return $ List $ map (\(k, v) -> k) $ Data.Map.toList ht
+hashTblKeys [badType] = throwError $ TypeMismatch "hash-table" badType
+hashTblKeys badArgList = throwError $ NumArgs 1 badArgList
+
+hashTblValues [(HashTable ht)] = do
+  return $ List $ map (\(k, v) -> v) $ Data.Map.toList ht
+hashTblValues [badType] = throwError $ TypeMismatch "hash-table" badType
+hashTblValues badArgList = throwError $ NumArgs 1 badArgList
 
 -------------- String Primitives --------------
 
