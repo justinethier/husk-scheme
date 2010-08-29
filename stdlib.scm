@@ -170,5 +170,17 @@
                   (begin (set! result x)
                          (set! result-ready? #t)
                          result))))))))
+
+; TODO:
+;Procedure: hash-table-walk hash-table proc → unspecified
+(define hash-table-walk
+  (lambda (ht proc)
+
+  ))
+;
+;proc should be a function taking two arguments, a key and a value. This procedure calls proc for each association in hash-table, giving the key of the association as key and the value of the association as value. The results of proc are discarded. The order in which proc is called for the different associations is unspecified.
+;
+; TODO: hash-table-fold
+
 ; End delayed evaluation section
 
