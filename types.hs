@@ -74,6 +74,13 @@ data LispVal = Atom String
 	| List [LispVal]
 	| DottedList [LispVal] LispVal
 	| Vector (Array Int LispVal)
+	-- 
+	-- Map is technically the wrong structure to use for a hash table since it is based on a binary tree
+	-- and hence operations tend to be O(log n) instead of O(1).
+	--
+	-- However, according to http://www.opensubscriber.com/message/haskell-cafe@haskell.org/10779624.html
+	-- Map has good performance characteristics compared to the alternatives. So it stays for the moment...
+	--
 	| HashTable (Data.Map.Map LispVal LispVal)
 	| Number Integer
 	| Float Float
