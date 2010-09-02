@@ -341,7 +341,7 @@ readAll :: [LispVal] -> IOThrowsError LispVal
 readAll [String filename] = liftM List $ load filename
 
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
-primitives = [("+", numericBinop (+)),
+primitives = [("+", numtowerBinop (+)),
               ("-", numericBinop(-)),
               ("*", numericBinop(*)),
               ("/", numericBinop div),
@@ -461,6 +461,15 @@ unpackBool notBool = throwError $ TypeMismatch "boolean" notBool
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError LispVal
 numericBinop op singleVal@[_] = throwError $ NumArgs 2 singleVal
 numericBinop op params = mapM unpackNum params >>= return . Number . foldl1 op
+
+numtowerBinop op params = do
+  return $ foldl1 (numtowerOp op) params
+
+numtowerOp :: (a -> a -> a) -> LispVal -> LispVal -> LispVal
+numtowerOp op (Number a) (Number b) =  Number $ (op) a b
+numtowerOp op (Float a) (Float b) =  Float $ (op) a b
+numtowerOp op (Float a) (Number b) =  Float $ (op) a b
+numtowerOp op (Number a) (Float b) =  Float $ (op) a b
 
 unpackNum :: LispVal -> ThrowsError Integer
 unpackNum (Number n) = return n
