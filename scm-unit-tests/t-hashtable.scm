@@ -20,5 +20,13 @@
 (assert-equal (lambda () (hash-table-exists? ht "test3")) #f)
 (assert-equal (lambda () (hash-table-size ht)) 6)
 
+; TODO:
+;              ("hash-table?", isHashTbl),
+;              ("hash-table->alist", hashTbl2List),
+;              ("hash-table-keys", hashTblKeys),
+;              ("hash-table-values", hashTblValues),
+;              ("hash-table-copy", hashTblCopy),
+;"hash-table-delete!" 
+
 ; TODO: many more functions now, cross-reference core code and add more cases...
 (unit-test-handler-results)
