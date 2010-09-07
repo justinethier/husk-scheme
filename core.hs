@@ -341,10 +341,10 @@ readAll :: [LispVal] -> IOThrowsError LispVal
 readAll [String filename] = liftM List $ load filename
 
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
-primitives = [("+", numtowerBinop (+)),
-              ("-", numericBinop(-)),
-              ("*", numericBinop(*)),
-              ("/", numericBinop div),
+primitives = [("+", numAdd),
+              ("-", numSub),
+              ("*", numMul),
+              ("/", numDiv),
               ("mod", numericBinop mod),
               ("quotient", numericBinop quot),
               ("remainder", numericBinop rem),
@@ -462,14 +462,33 @@ numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError Lisp
 numericBinop op singleVal@[_] = throwError $ NumArgs 2 singleVal
 numericBinop op params = mapM unpackNum params >>= return . Number . foldl1 op
 
-numtowerBinop op params = do
-  return $ foldl1 (numtowerOp op) params
+--- Begin GenUtil - http://repetae.net/computer/haskell/GenUtil.hs
+foldlM :: Monad m => (a -> b -> m a) -> a -> [b] -> m a
+foldlM f v (x:xs) = (f v x) >>= \a -> foldlM f a xs
+foldlM _ v [] = return v
 
-numtowerOp :: (a -> a -> a) -> LispVal -> LispVal -> LispVal
-numtowerOp op (Number a) (Number b) =  Number $ (op) a b
-numtowerOp op (Float a) (Float b) =  Float $ (op) a b
-numtowerOp op (Float a) (Number b) =  Float $ (op) a b
-numtowerOp op (Number a) (Float b) =  Float $ (op) a b
+foldl1M :: Monad m => (a -> a -> m a) ->  [a] -> m a
+foldl1M f (x:xs) = foldlM f x xs
+foldl1M _ _ = error "foldl1M"
+-- end GenUtil
+
+--- Numeric operations section ---
+
+-- TODO: is there a way to be smart about this and upconvert each member to the "highest" type in the tower?
+--       would then to numerical op using all vars of this type...
+numAdd params = do
+  foldl1M (myAdd) params
+  where --numtowerOp :: Num a => (a -> a -> a) -> LispVal -> LispVal -> LispVal
+    myAdd (Number a) (Number b) = return $  Number $ (+) a b
+    myAdd (Float a) (Float b) =  return $ Float $ (+) a b
+    myAdd (Float a) (Number b) = return $ Float $ (+) a $ fromInteger b
+    myAdd (Number a) (Float b) = return $ Float $ (+) (fromInteger a) b
+    myAdd a b = throwError $ TypeMismatch "number" $ List [a, b]
+
+numSub params = return $ String "TODO"
+numMul params = return $ String "TODO"
+numDiv params = return $ String "TODO"
+--- end Numeric operations section ---
 
 unpackNum :: LispVal -> ThrowsError Integer
 unpackNum (Number n) = return n
