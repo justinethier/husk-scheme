@@ -10,12 +10,14 @@
  -
  - -}
 module Skim.Types where
+import Complex
 import Control.Monad
 import Control.Monad.Error
 import Data.Array
 import Data.IORef
 import qualified Data.Map
 import IO hiding (try)
+import Ratio
 import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
 
@@ -83,7 +85,9 @@ data LispVal = Atom String
 	--
 	| HashTable (Data.Map.Map LispVal LispVal)
 	| Number Integer
-	| Float Float
+	| Float Double -- TODO: call this "Real" instead...
+	| Complex Complex Integer -- TODO
+	| Rational Rational
  	| String String
 	| Char Char
 	| Bool Bool
@@ -92,7 +96,7 @@ data LispVal = Atom String
 	        body :: [LispVal], closure :: Env}
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)
 	| Port Handle
-        | Nil String -- String is probably wrong type here, but OK for now (do not expect to use this much, just internally)
+        | Nil String -- String may be wrong choice, but do not use this type much, just internally
 
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b
