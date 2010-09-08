@@ -85,8 +85,8 @@ data LispVal = Atom String
 	--
 	| HashTable (Data.Map.Map LispVal LispVal)
 	| Number Integer
-	| Float Double -- TODO: call this "Real" instead...
-	| Complex Complex Integer -- TODO
+	| Float Double -- TODO: call this "Real" instead of "Float"...
+	| Complex (Complex Double)
 	| Rational Rational
  	| String String
 	| Char Char
@@ -101,6 +101,8 @@ data LispVal = Atom String
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b
   compare (Number a) (Number b) = compare a b
+-- TODO:  compare (Complex a) (Complex b) = compare a b
+  compare (Rational a) (Rational b) = compare a b
   compare (Float a) (Float b) = compare a b
   compare (String a) (String b) = compare a b
   compare (Char a) (Char b) = compare a b
@@ -116,6 +118,8 @@ instance Ord LispVal where
 eqv :: [LispVal] -> ThrowsError LispVal
 eqv [(Bool arg1), (Bool arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Number arg1), (Number arg2)] = return $ Bool $ arg1 == arg2
+eqv [(Complex arg1), (Complex arg2)] = return $ Bool $ arg1 == arg2
+eqv [(Rational arg1), (Rational arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Float arg1), (Float arg2)] = return $ Bool $ arg1 == arg2
 eqv [(String arg1), (String arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
