@@ -7,8 +7,8 @@
  - @author Justin Ethier
  -
  - -}
-module Skim.Parser where
-import Skim.Types
+module Scheme.Parser where
+import Scheme.Types
 import Control.Monad.Error
 import Char
 import Complex

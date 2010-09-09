@@ -17,10 +17,10 @@
  - -}
 
 module Main where
-import Skim.Macro
-import Skim.Parser
-import Skim.Types
-import Skim.Variables
+import Scheme.Macro
+import Scheme.Parser
+import Scheme.Types
+import Scheme.Variables
 import Control.Monad
 import Control.Monad.Error
 import Char

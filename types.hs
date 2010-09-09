@@ -9,7 +9,7 @@
  - @author Justin Ethier
  -
  - -}
-module Skim.Types where
+module Scheme.Types where
 import Complex
 import Control.Monad
 import Control.Monad.Error

@@ -7,9 +7,9 @@
  - @author Justin Ethier
  -
  - -}
-module Skim.Macro where
-import Skim.Types
-import Skim.Variables
+module Scheme.Macro where
+import Scheme.Types
+import Scheme.Variables
 import Control.Monad
 import Control.Monad.Error
 

@@ -7,8 +7,8 @@
  - @author Justin Ethier
  -
  - -}
-module Skim.Variables where
-import Skim.Types
+module Scheme.Variables where
+import Scheme.Types
 import Control.Monad
 import Control.Monad.Error
 import Data.IORef
