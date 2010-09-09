@@ -13,6 +13,7 @@ import Control.Monad.Error
 import Char
 import Data.Array
 import Numeric
+import Ratio
 import Text.ParserCombinators.Parsec hiding (spaces)
 
 symbol :: Parser Char
@@ -96,8 +97,8 @@ parseNumber = parseDecimalNumber <|>
               "Unable to parse number"
 
 {- Parser for floating points -}
-parseDecimal :: Parser LispVal
-parseDecimal = do 
+parseRealNumber :: Parser LispVal
+parseRealNumber = do 
   sign <- many (oneOf "-")
   num <- many1(digit)
   char '.'
@@ -108,6 +109,10 @@ parseDecimal = do
      1 -> return $ Float $ (*) (-1.0) $ fst $ Numeric.readFloat dec !! 0
      _ -> pzero
 
+parseRationalNumber :: Parser LispVal
+parseRationalNumber = do
+ -- TODO: parse out rational - int / int
+ return $ Rational $ (1 % 2)
 {- TODO: implement full numeric stack, see Parsing, exercise #7 -}
 
 
@@ -177,7 +182,7 @@ parseComment = do
 
 
 parseExpr :: Parser LispVal
-parseExpr = try(parseDecimal) 
+parseExpr = try(parseRealNumber) 
   <|> parseComment
   <|> try(parseNumber)
   <|> parseChar
