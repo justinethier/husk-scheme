@@ -97,7 +97,10 @@ parseNumber = parseDecimalNumber <|>
               parseOctalNumber   <?> 
               "Unable to parse number"
 
-{- Parser for floating points -}
+{- Parser for floating points 
+ -
+ - TODO: parse numbers in format #e1e10
+ - -}
 parseRealNumber :: Parser LispVal
 parseRealNumber = do 
   sign <- many (oneOf "-")
