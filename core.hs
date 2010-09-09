@@ -82,8 +82,10 @@ eval :: Env -> LispVal -> IOThrowsError LispVal
 eval env val@(Nil _) = return val
 eval env val@(String _) = return val
 eval env val@(Char _) = return val
-eval env val@(Number _) = return val
+eval env val@(Complex _) = return val
 eval env val@(Float _) = return val
+eval env val@(Rational _) = return val
+eval env val@(Number _) = return val
 eval env val@(Bool _) = return val
 eval env val@(HashTable _) = return val
 eval env (Atom id) = getVar env id
@@ -342,9 +344,9 @@ readAll [String filename] = liftM List $ load filename
 
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
 primitives = [("+", numAdd),
-              ("-", numSub),
-              ("*", numMul),
-              ("/", numDiv),
+              ("-", numericBinop (-)), --numSub),
+              ("*", numericBinop (*)), --numMul),
+              ("/", numericBinop div), --numDiv),
               ("mod", numericBinop mod),
               ("quotient", numericBinop quot),
               ("remainder", numericBinop rem),
@@ -485,9 +487,9 @@ numAdd params = do
     myAdd (Number a) (Float b) = return $ Float $ (+) (fromInteger a) b
     myAdd a b = throwError $ TypeMismatch "number" $ List [a, b]
 
-numSub params = return $ String "TODO"
-numMul params = return $ String "TODO"
-numDiv params = return $ String "TODO"
+--numSub params = return $ String "TODO"
+--numMul params = return $ String "TODO"
+--numDiv params = return $ String "TODO"
 --- end Numeric operations section ---
 
 unpackNum :: LispVal -> ThrowsError Integer

@@ -11,6 +11,7 @@ module Skim.Parser where
 import Skim.Types
 import Control.Monad.Error
 import Char
+import Complex
 import Data.Array
 import Numeric
 import Ratio
@@ -111,10 +112,30 @@ parseRealNumber = do
 
 parseRationalNumber :: Parser LispVal
 parseRationalNumber = do
- -- TODO: parse out rational - int / int
- return $ Rational $ (1 % 2)
-{- TODO: implement full numeric stack, see Parsing, exercise #7 -}
+  numerator <- parseDecimalNumber
+  case numerator of 
+    Number n -> do
+      char '/'
+      sign <- many (oneOf "-")
+      num <- many1 (digit)
+      if (length sign) > 1
+         then pzero
+         else return $ Rational $ n % (read $ sign ++ num)
+    otherwise -> pzero
 
+parseComplexNumber :: Parser LispVal
+parseComplexNumber = do
+  lispreal <- (parseDecimalNumber <|> parseRealNumber)
+  let real = case lispreal of
+                  Number n -> fromInteger n
+                  Float f -> f
+  char '+'
+  lispimag <- (parseDecimalNumber <|> parseRealNumber)
+  let imag = case lispimag of
+                  Number n -> fromInteger n
+                  Float f -> f
+  char 'i'
+  return $ Complex $ real :+ imag
 
 parseEscapedChar = do 
   char '\\'
@@ -182,7 +203,9 @@ parseComment = do
 
 
 parseExpr :: Parser LispVal
-parseExpr = try(parseRealNumber) 
+parseExpr = try(parseRealNumber)
+  <|> try(parseRationalNumber)
+  <|> try(parseComplexNumber)
   <|> parseComment
   <|> try(parseNumber)
   <|> parseChar
