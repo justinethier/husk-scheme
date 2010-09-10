@@ -490,6 +490,9 @@ numAdd params = do
 --numSub params = return $ String "TODO"
 --numMul params = return $ String "TODO"
 --numDiv params = return $ String "TODO"
+
+-- TODO: for sin, etc - can have a func that converts args to proper input type (such as real)
+
 --- end Numeric operations section ---
 
 unpackNum :: LispVal -> ThrowsError Integer
