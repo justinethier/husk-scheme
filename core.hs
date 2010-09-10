@@ -479,13 +479,29 @@ foldl1M _ _ = error "foldl1M"
 -- TODO: is there a way to be smart about this and upconvert each member to the "highest" type in the tower?
 --       would then to numerical op using all vars of this type...
 numAdd params = do
-  foldl1M (myAdd) params
-  where --numtowerOp :: Num a => (a -> a -> a) -> LispVal -> LispVal -> LispVal
-    myAdd (Number a) (Number b) = return $  Number $ (+) a b
-    myAdd (Float a) (Float b) =  return $ Float $ (+) a b
-    myAdd (Float a) (Number b) = return $ Float $ (+) a $ fromInteger b
-    myAdd (Number a) (Float b) = return $ Float $ (+) (fromInteger a) b
-    myAdd a b = throwError $ TypeMismatch "number" $ List [a, b]
+{-  foldl1M (myAdd) params
+  where myAdd a b = do
+    cast <- numCast [a, b]
+	result <- (cast !! 0) + (cast !! 1)-}
+  return $ String "TODO"
+numCast :: [LispVal] -> ThrowsError LispVal
+numCast [a@(Number _), b@(Float _)] = return $ List [a, b]
+numCast [a@(Float _), b@(Float _)] = return $ List [a, b]
+numCast [(Number a), b@(Float _)] = return $ List [Float $ fromInteger a, b]
+numCast [a@(Float _), (Number b)] = return $ List [a, Float $ fromInteger b]
+-- TODO: full numeric tower
+numCast [a, b] = case a of 
+               Number _   -> doThrowError b
+               Float _    -> doThrowError b
+               Rational _ -> doThrowError b
+               Complex _  -> doThrowError b
+               otherwise  -> doThrowError a
+  where doThrowError a = throwError $ TypeMismatch "number" a
+
+-- could add a cast function that takes 2 nums as input and upcasts as necessary
+-- of course, it would return lispvals, so that would require more work by the caller to then unbox
+-- those values... but it centralizes the casting to one place
+
 -- TODO: look at definition of prelude.sum, consider that as how to implement the above in a more general way...
 
 --numSub params = return $ String "TODO"
@@ -714,8 +730,11 @@ stringCopy badArgList = throwError $ NumArgs 2 badArgList
 isNumber :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number n]) = return $ Bool True
 isNumber ([Float f]) = return $ Bool True
+isNumber ([Complex _]) = return $ Bool True
+isNumber ([Rational _]) = return $ Bool True
 isNumber _ = return $ Bool False
 
+-- TODO: full numeric tower
 isReal :: [LispVal] -> ThrowsError LispVal
 isReal ([Number n]) = return $ Bool True
 isReal ([Float f]) = return $ Bool True
