@@ -486,6 +486,7 @@ numAdd params = do
     myAdd (Float a) (Number b) = return $ Float $ (+) a $ fromInteger b
     myAdd (Number a) (Float b) = return $ Float $ (+) (fromInteger a) b
     myAdd a b = throwError $ TypeMismatch "number" $ List [a, b]
+-- TODO: look at definition of prelude.sum, consider that as how to implement the above in a more general way...
 
 --numSub params = return $ String "TODO"
 --numMul params = return $ String "TODO"
