@@ -1,5 +1,5 @@
-skim-scheme is a "simple" dialect of scheme, implementing a subset of the [R5RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/).  
-skim includes the following features:
+husk scheme is a "simple" dialect of scheme, implementing a subset of the [R5RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/).  
+husk includes the following features:
 
 - Most primitive data types and their standard forms
 - Conditionals: if, case, cond
@@ -21,29 +21,29 @@ Features planned for development:
 - Full numeric tower, including support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types, other constraints from spec.
 - Continuations
 - Improved REPL features (EG: proper keyboard arrow support, etc)
-- A skim "library" that may be used to embed scheme scripting within a Haskell program.
+- A scheme "library" that may be used to embed scheme scripting within a Haskell program.
 - More example programs
 - General refactoring of haskell code including into multiple modules/files, addressing TODO items, etc...
-- Compare skim features to R5RS spec: <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
+- Compare our features to R5RS spec: <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
 
-skim-scheme is available under the [MIT license](http://www.opensource.org/licenses/mit-license.php).
+husk scheme is available under the [MIT license](http://www.opensource.org/licenses/mit-license.php).
 
 Usage
 -----
 
 The interpreter may be invoked by running it directly from the command line:
 
-    ./skim
+    ./huski
 
 Alternatively, you may run an individual scheme program:
 
-    ./skim my-scheme-file.scm
+    ./huski my-scheme-file.scm
 
 
 Development
 -----------
 
-[GHC](http://www.haskell.org/ghc/) is required to build skim-scheme.
+[GHC](http://www.haskell.org/ghc/) is required to build husk scheme.
 
 The 'scm-unit-tests' directory contains unit tests for much of the scheme code. Tests may be executed via 'make test'
 
@@ -53,9 +53,9 @@ The examples directory contains example scheme programs.
 Credits
 -------
 
-skim-scheme is developed by [Justin Ethier](http://github.com/justinethier).
+husk scheme is developed by [Justin Ethier](http://github.com/justinethier).
 
 The interpreter is based on the code from the book [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) written by Jonathan Tang and hosted / maintained by Wikibooks.
 
-If you would like to request changes, report bug fixes, or contact the developer of skim-scheme, visit the project web site at [GitHub](http://github.com/justinethier/skim-scheme).
+If you would like to request changes, report bug fixes, or contact the developer of husk scheme, visit the project web site at [GitHub](http://github.com/justinethier/husk-scheme).
 

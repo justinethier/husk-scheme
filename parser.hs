@@ -1,5 +1,5 @@
 {-
- - skim-scheme
+ - husk scheme
  - Parser
  -
  - This file contains the code for parsing scheme

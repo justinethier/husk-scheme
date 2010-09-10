@@ -1,5 +1,5 @@
 {-
- - skim-scheme
+ - husk scheme
  - Variables
  -
  - This file contains code for working with Scheme variables

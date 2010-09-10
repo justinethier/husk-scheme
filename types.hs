@@ -1,5 +1,5 @@
 {-
- - skim-scheme
+ - husk scheme
  - Types
  -
  - This file contains top-level data type definitions and their associated functions, including:

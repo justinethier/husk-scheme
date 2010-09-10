@@ -1,5 +1,5 @@
 {-
- - skim-scheme interpreter
+ - husk scheme interpreter
  -
  - A lightweight dialect of R5RS scheme.
  - Core functionality
@@ -11,7 +11,7 @@
 {-
  - TODO: 
  -
- - => compare skim's functions against those listed on 
+ - => compare my functions against those listed on 
  -    http://en.wikipedia.org/wiki/Scheme_(programming_language)
  -
  - -}
@@ -72,7 +72,7 @@ runOne args = do
      else (runIOThrows $ liftM show $ eval env $ Nil "") >>= hPutStrLn stderr
 
 runRepl :: IO ()
-runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "skim> ") . evalAndPrint
+runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "husk> ") . evalAndPrint
 
 -- End REPL Section
 
