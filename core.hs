@@ -483,7 +483,7 @@ numAdd params = do
   foldl1M (myAdd) params
   where myAdd a b = do
           result <- numCast [a, b]
-          doAdd $ liftThrows result
+          doAdd $ result
 {-          case result of
             Left err -> throwError err
             Right val -> doAdd val-}
