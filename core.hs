@@ -21,6 +21,7 @@ import Scheme.Macro
 import Scheme.Parser
 import Scheme.Types
 import Scheme.Variables
+import Complex
 import Control.Monad
 import Control.Monad.Error
 import Char
@@ -31,6 +32,7 @@ import Maybe
 import List
 import IO hiding (try)
 import Numeric
+import Ratio
 import System.Environment
 
 main :: IO ()
@@ -478,24 +480,49 @@ foldl1M _ _ = error "foldl1M"
 
 -- TODO: is there a way to be smart about this and upconvert each member to the "highest" type in the tower?
 --       would then to numerical op using all vars of this type...
-numAdd :: [LispVal] -> ThrowsError LispVal
+numAdd, numSub, numMul, numDiv :: [LispVal] -> ThrowsError LispVal
 numAdd params = do
-  foldl1M (myAdd) params
-  where myAdd a b = do
-          result <- numCast [a, b]
-          doAdd $ result
-{-          case result of
-            Left err -> throwError err
-            Right val -> doAdd val-}
-        doAdd (List [(Number a), (Number b)]) = return $ Number $ a + b
+  foldl1M (\a b -> doAdd =<< (numCast [a, b])) params
+  where doAdd (List [(Number a), (Number b)]) = return $ Number $ a + b
         doAdd (List [(Float a), (Float b)]) = return $ Float $ a + b
+        doAdd (List [(Rational a), (Rational b)]) = return $ Rational $ a + b
+        doAdd (List [(Complex a), (Complex b)]) = return $ Complex $ a + b
+numSub params = do
+  foldl1M (\a b -> doAdd =<< (numCast [a, b])) params
+  where doAdd (List [(Number a), (Number b)]) = return $ Number $ a - b
+        doAdd (List [(Float a), (Float b)]) = return $ Float $ a - b
+        doAdd (List [(Rational a), (Rational b)]) = return $ Rational $ a - b
+        doAdd (List [(Complex a), (Complex b)]) = return $ Complex $ a - b
+numMul params = do 
+  foldl1M (\a b -> doAdd =<< (numCast [a, b])) params
+  where doAdd (List [(Number a), (Number b)]) = return $ Number $ a * b
+        doAdd (List [(Float a), (Float b)]) = return $ Float $ a * b
+        doAdd (List [(Rational a), (Rational b)]) = return $ Rational $ a * b
+        doAdd (List [(Complex a), (Complex b)]) = return $ Complex $ a * b
+numDiv params = do 
+  foldl1M (\a b -> doAdd =<< (numCast [a, b])) params
+  where doAdd (List [(Number a), (Number b)]) = return $ Number $ div a b
+{-        doAdd (List [(Float a), (Float b)]) = return $ Float $ a / b
+        doAdd (List [(Rational a), (Rational b)]) = return $ Rational $ a / b
+        doAdd (List [(Complex a), (Complex b)]) = return $ Complex $ a / b-}
 
 numCast :: [LispVal] -> ThrowsError LispVal
 numCast [a@(Number _), b@(Number _)] = return $ List [a, b]
 numCast [a@(Float _), b@(Float _)] = return $ List [a, b]
+numCast [a@(Rational _), b@(Rational _)] = return $ List [a, b]
+numCast [a@(Complex _), b@(Complex _)] = return $ List [a, b]
 numCast [(Number a), b@(Float _)] = return $ List [Float $ fromInteger a, b]
+numCast [(Number a), b@(Rational _)] = return $ List [Rational $ fromInteger a, b]
+numCast [(Number a), b@(Complex _)] = return $ List [Complex $ fromInteger a, b]
 numCast [a@(Float _), (Number b)] = return $ List [a, Float $ fromInteger b]
--- TODO: full numeric tower
+numCast [(Float a), b@(Rational _)] = return $ List [Rational $ toRational a, b]
+numCast [(Float a), b@(Complex _)] = return $ List [Complex $ a :+ 0, b]
+numCast [a@(Rational _), (Number b)] = return $ List [a, Rational $ fromInteger b]
+numCast [a@(Rational _), (Float b)] = return $ List [a, Rational $ toRational b]
+numCast [(Rational a), b@(Complex _)] = return $ List [Complex $ (fromInteger $ numerator a) / (fromInteger $ denominator a), b]
+numCast [a@(Complex _), (Number b)] = return $ List [a, Complex $ fromInteger b]
+numCast [a@(Complex _), (Float b)] = return $ List [a, Complex $ b :+ 0]
+numCast [a@(Complex _), (Rational b)] = return $ List [a, Complex $ (fromInteger $ numerator b) / (fromInteger $ denominator b)]
 numCast [a, b] = case a of 
                Number _   -> doThrowError b
                Float _    -> doThrowError b
