@@ -478,14 +478,20 @@ foldl1M _ _ = error "foldl1M"
 
 -- TODO: is there a way to be smart about this and upconvert each member to the "highest" type in the tower?
 --       would then to numerical op using all vars of this type...
+numAdd :: [LispVal] -> ThrowsError LispVal
 numAdd params = do
-{-  foldl1M (myAdd) params
+  foldl1M (myAdd) params
   where myAdd a b = do
-    cast <- numCast [a, b]
-	result <- (cast !! 0) + (cast !! 1)-}
-  return $ String "TODO"
+          result <- numCast [a, b]
+          doAdd $ liftThrows result
+{-          case result of
+            Left err -> throwError err
+            Right val -> doAdd val-}
+        doAdd (List [(Number a), (Number b)]) = return $ Number $ a + b
+        doAdd (List [(Float a), (Float b)]) = return $ Float $ a + b
+
 numCast :: [LispVal] -> ThrowsError LispVal
-numCast [a@(Number _), b@(Float _)] = return $ List [a, b]
+numCast [a@(Number _), b@(Number _)] = return $ List [a, b]
 numCast [a@(Float _), b@(Float _)] = return $ List [a, b]
 numCast [(Number a), b@(Float _)] = return $ List [Float $ fromInteger a, b]
 numCast [a@(Float _), (Number b)] = return $ List [a, Float $ fromInteger b]
