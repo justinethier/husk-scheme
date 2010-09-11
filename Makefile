@@ -8,6 +8,7 @@ test: husk
 	cd scm-unit-tests ; ../huski t-cond.scm
 	cd scm-unit-tests ; ../huski t-delay.scm
 	cd scm-unit-tests ; ../huski t-macro.scm
+	cd scm-unit-tests ; ../huski t-numerical-ops.scm
 	cd scm-unit-tests ; ../huski t-hashtable.scm
 	cd scm-unit-tests ; ../huski t-special-forms.scm
 	cd scm-unit-tests ; ../huski t-stdlib.scm

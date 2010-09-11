@@ -385,8 +385,10 @@ primitives = [("+", numAdd),
 			  TODO: full numeric tower: number?, complex?, rational?
 			  --}
               ("number?", isNumber),
-              ("integer?", isInteger),
+              ("complex?", isComplex),
               ("real?", isReal),
+              ("rational?", isRational),
+              ("integer?", isInteger),
               ("list?", unaryOp isList),
               ("null?", isNull),
               ("symbol?", isSymbol),
@@ -476,10 +478,10 @@ foldl1M f (x:xs) = foldlM f x xs
 foldl1M _ _ = error "foldl1M"
 -- end GenUtil
 
---- Numeric operations section ---
 
--- TODO: is there a way to be smart about this and upconvert each member to the "highest" type in the tower?
---       would then to numerical op using all vars of this type...
+--- Numeric operations section ---
+-- TODO: move all of this out into its own file
+
 numAdd, numSub, numMul, numDiv :: [LispVal] -> ThrowsError LispVal
 numAdd params = do
   foldl1M (\a b -> doAdd =<< (numCast [a, b])) params
@@ -531,19 +533,38 @@ numCast [a, b] = case a of
                otherwise  -> doThrowError a
   where doThrowError a = throwError $ TypeMismatch "number" a
 
--- could add a cast function that takes 2 nums as input and upcasts as necessary
--- of course, it would return lispvals, so that would require more work by the caller to then unbox
--- those values... but it centralizes the casting to one place
-
--- TODO: look at definition of prelude.sum, consider that as how to implement the above in a more general way...
-
---numSub params = return $ String "TODO"
---numMul params = return $ String "TODO"
---numDiv params = return $ String "TODO"
-
 -- TODO: for sin, etc - can have a func that converts args to proper input type (such as real)
 
+isNumber, isComplex, isReal, isRational, isInteger :: [LispVal] -> ThrowsError LispVal
+isNumber ([Number n]) = return $ Bool True
+isNumber ([Float f]) = return $ Bool True
+isNumber ([Complex _]) = return $ Bool True
+isNumber ([Rational _]) = return $ Bool True
+isNumber _ = return $ Bool False
+
+isComplex ([Complex _]) = return $ Bool True
+isComplex ([Number _]) = return $ Bool True
+isComplex ([Rational _]) = return $ Bool True
+isComplex ([Float _]) = return $ Bool True
+isComplex _ = return $ Bool False
+
+isReal ([Number _]) = return $ Bool True
+isReal ([Rational _]) = return $ Bool True
+isReal ([Float _]) = return $ Bool True
+isReal ([Complex c]) = return $ Bool $ (imagPart c) == 0
+isReal _ = return $ Bool False
+
+isRational ([Number _]) = return $ Bool True
+isRational ([Rational _]) = return $ Bool True
+-- TODO: true of float if it can be represented exactly???
+isRational _ = return $ Bool False
+
+isInteger ([Number _]) = return $ Bool True
+-- TODO: true of real/rational types if they round to an integer
+isInteger _ = return $ Bool False
+
 --- end Numeric operations section ---
+
 
 unpackNum :: LispVal -> ThrowsError Integer
 unpackNum (Number n) = return n
@@ -759,23 +780,6 @@ stringCopy :: [LispVal] -> ThrowsError LispVal
 stringCopy [String s] = return $ String s
 stringCopy [badType] = throwError $ TypeMismatch "string" badType
 stringCopy badArgList = throwError $ NumArgs 2 badArgList
-
-isNumber :: [LispVal] -> ThrowsError LispVal
-isNumber ([Number n]) = return $ Bool True
-isNumber ([Float f]) = return $ Bool True
-isNumber ([Complex _]) = return $ Bool True
-isNumber ([Rational _]) = return $ Bool True
-isNumber _ = return $ Bool False
-
--- TODO: full numeric tower
-isReal :: [LispVal] -> ThrowsError LispVal
-isReal ([Number n]) = return $ Bool True
-isReal ([Float f]) = return $ Bool True
-isReal _ = return $ Bool False
-
-isInteger :: [LispVal] -> ThrowsError LispVal
-isInteger ([Number n]) = return $ Bool True
-isInteger _ = return $ Bool False
 
 isDottedList :: [LispVal] -> ThrowsError LispVal
 isDottedList ([DottedList l d]) = return $ Bool True
