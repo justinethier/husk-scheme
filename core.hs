@@ -346,9 +346,9 @@ readAll [String filename] = liftM List $ load filename
 
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
 primitives = [("+", numAdd),
-              ("-", numericBinop (-)), --numSub),
-              ("*", numericBinop (*)), --numMul),
-              ("/", numericBinop div), --numDiv),
+              ("-", numSub),
+              ("*", numMul),
+              ("/", numDiv),
               ("mod", numericBinop mod),
               ("quotient", numericBinop quot),
               ("remainder", numericBinop rem),
@@ -502,9 +502,9 @@ numMul params = do
 numDiv params = do 
   foldl1M (\a b -> doAdd =<< (numCast [a, b])) params
   where doAdd (List [(Number a), (Number b)]) = return $ Number $ div a b
-{-        doAdd (List [(Float a), (Float b)]) = return $ Float $ a / b
+        doAdd (List [(Float a), (Float b)]) = return $ Float $ a / b
         doAdd (List [(Rational a), (Rational b)]) = return $ Rational $ a / b
-        doAdd (List [(Complex a), (Complex b)]) = return $ Complex $ a / b-}
+        doAdd (List [(Complex a), (Complex b)]) = return $ Complex $ a / b
 
 numCast :: [LispVal] -> ThrowsError LispVal
 numCast [a@(Number _), b@(Number _)] = return $ List [a, b]
