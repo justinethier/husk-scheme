@@ -191,8 +191,32 @@ numLog [x] = throwError $ TypeMismatch "number" x
 numLog badArgList = throwError $ NumArgs 1 badArgList
 
 
---numMakeRectangular, numMakePolar, numRealPart, numImagPart, numMagnitude, numAngle :: [LispVal] -> ThrowsError LispVal
--- TODO: numMakeRectangular, numMakePolar, numRealPart, numImagPart, numMagnitude, numAngle 
+-- Complex number functions
+numMakeRectangular, numMakePolar, numRealPart, numImagPart, numMagnitude, numAngle :: [LispVal] -> ThrowsError LispVal
+numMakeRectangular [(Complex c)] = return $ Float $ -- TODO
+numMakeRectangular [x] = throwError $ TypeMismatch "number" x
+numMakeRectangular badArgList = throwError $ NumArgs 1 badArgList
+
+numMakePolar [(Complex c)] = return $ Float $ -- TODO
+numMakePolar [x] = throwError $ TypeMismatch "number" x
+numMakePolar badArgList = throwError $ NumArgs 1 badArgList
+
+numAngle [(Complex c)] = return $ Float $ phase c -- TODO: correct?? need to check this
+numAngle [x] = throwError $ TypeMismatch "number" x
+numAngle badArgList = throwError $ NumArgs 1 badArgList
+
+numMagnitude [(Complex c)] = return $ Float $ magnitude c
+numMagnitude [x] = throwError $ TypeMismatch "number" x
+numMagnitude badArgList = throwError $ NumArgs 1 badArgList
+
+numRealPart [(Complex c)] = return $ Float $ realPart c
+numRealPart [x] = throwError $ TypeMismatch "number" x
+numRealPart badArgList = throwError $ NumArgs 1 badArgList
+
+numImagPart [(Complex c)] = return $ Float $ imagPart c
+numImagPart [x] = throwError $ TypeMismatch "number" x
+numImagPart badArgList = throwError $ NumArgs 1 badArgList
+
 
 numNumerator, numDenominator:: [LispVal] -> ThrowsError LispVal
 numNumerator [(Rational r)] = return $ Number $ numerator r
