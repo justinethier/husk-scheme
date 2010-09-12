@@ -164,7 +164,8 @@ numAcos [(Rational n)] = return $ Float $ acos $ fromRational n
 numAcos [(Complex n)] = return $ Complex $ acos n
 numAcos [x] = throwError $ TypeMismatch "number" x
 numAcos badArgList = throwError $ NumArgs 1 badArgList
-   
+
+-- TODO: support for (atan y x) - see spec
 numAtan :: [LispVal] -> ThrowsError LispVal
 numAtan [(Number n)] = return $ Float $ atan $ fromInteger n
 numAtan [(Float n)] = return $ Float $ atan n
@@ -189,6 +190,9 @@ numLog [(Complex n)] = return $ Complex $ log n
 numLog [x] = throwError $ TypeMismatch "number" x
 numLog badArgList = throwError $ NumArgs 1 badArgList
 
+
+numMakeRectangular, numMakePolar, numRealPart, numImagPart, numMagnitude, numAngle :: [LispVal] -> ThrowsError LispVal
+-- TODO: numMakeRectangular, numMakePolar, numRealPart, numImagPart, numMagnitude, numAngle 
 
 isNumber, isComplex, isReal, isRational, isInteger :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number n]) = return $ Bool True
