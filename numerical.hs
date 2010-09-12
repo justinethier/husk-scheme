@@ -12,18 +12,9 @@ module Scheme.Numerical where
 import Scheme.Types
 import Scheme.Variables
 import Complex
-import Control.Monad
 import Control.Monad.Error
---import Char
---import Data.Array
---import Data.IORef
---import qualified Data.Map
-import Maybe
-import List
---import IO hiding (try)
 import Numeric
 import Ratio
---import System.Environment
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError LispVal
 numericBinop op singleVal@[_] = throwError $ NumArgs 2 singleVal
@@ -50,6 +41,10 @@ numAdd params = do
         doAdd (List [(Float a), (Float b)]) = return $ Float $ a + b
         doAdd (List [(Rational a), (Rational b)]) = return $ Rational $ a + b
         doAdd (List [(Complex a), (Complex b)]) = return $ Complex $ a + b
+numSub [Number n] = return $ Number $ -1 * n
+numSub [Float n] = return $ Float $ -1 * n
+numSub [Rational n] = return $ Rational $ -1 * n
+numSub [Complex n] = return $ Complex $ -1 * n
 numSub params = do
   foldl1M (\a b -> doAdd =<< (numCast [a, b])) params
   where doAdd (List [(Number a), (Number b)]) = return $ Number $ a - b
@@ -62,7 +57,11 @@ numMul params = do
         doAdd (List [(Float a), (Float b)]) = return $ Float $ a * b
         doAdd (List [(Rational a), (Rational b)]) = return $ Rational $ a * b
         doAdd (List [(Complex a), (Complex b)]) = return $ Complex $ a * b
-numDiv params = do 
+numDiv [Number n] = return $ Rational $ 1 / (fromInteger n)
+numDiv [Float n] = return $ Float $ 1.0 / n
+numDiv [Rational n] = return $ Rational $ 1 / n
+numDiv [Complex n] = return $ Complex $ 1 / n
+numDiv params = do -- TODO: for Number type, need to cast results to Rational, per R5RS spec 
   foldl1M (\a b -> doAdd =<< (numCast [a, b])) params
   where doAdd (List [(Number a), (Number b)]) = return $ Number $ div a b
         doAdd (List [(Float a), (Float b)]) = return $ Float $ a / b

@@ -67,8 +67,8 @@
 (define zero?        (curry = 0))
 (define positive?    (curry < 0))
 (define negative?    (curry > 0))
-(define (odd? num)   (= (mod num 2) 1))
-(define (even? num)  (= (mod num 2) 0))
+(define (odd? num)   (= (modulo num 2) 1))
+(define (even? num)  (= (modulo num 2) 0))
 
 (define (length lst)    (fold (lambda (x y) (+ x 1)) 0 lst))
 (define (reverse lst)   (fold (flip cons) '() lst))
