@@ -1,5 +1,5 @@
-husk: core.hs macro.hs parser.hs types.hs variables.hs
-	ghc --make -package parsec -fglasgow-exts -o huski core.hs macro.hs parser.hs types.hs variables.hs
+husk: core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
+	ghc --make -package parsec -fglasgow-exts -o huski core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
 
 # Run all unit tests
 test: husk
