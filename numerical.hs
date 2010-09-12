@@ -124,15 +124,71 @@ numTruncate [(Float n)] = return $ Float $ fromInteger $ truncate n
 numTruncate [x] = throwError $ TypeMismatch "number" x
 numTruncate badArgList = throwError $ NumArgs 1 badArgList
 
--- TODO: remaining funcs: sin, cos, etc... refer to spec 
+
+numSin :: [LispVal] -> ThrowsError LispVal
+numSin [(Number n)] = return $ Float $ sin $ fromInteger n
+numSin [(Float n)] = return $ Float $ sin n
+numSin [(Rational n)] = return $ Float $ sin $ fromRational n
+numSin [(Complex n)] = return $ Complex $ sin n
+numSin [x] = throwError $ TypeMismatch "number" x
+numSin badArgList = throwError $ NumArgs 1 badArgList
 
 numCos :: [LispVal] -> ThrowsError LispVal
 numCos [(Number n)] = return $ Float $ cos $ fromInteger n
 numCos [(Float n)] = return $ Float $ cos n
 numCos [(Rational n)] = return $ Float $ cos $ fromRational n
--- TODO: complex?
+numCos [(Complex n)] = return $ Complex $ cos n
 numCos [x] = throwError $ TypeMismatch "number" x
 numCos badArgList = throwError $ NumArgs 1 badArgList
+
+numTan :: [LispVal] -> ThrowsError LispVal
+numTan [(Number n)] = return $ Float $ tan $ fromInteger n
+numTan [(Float n)] = return $ Float $ tan n
+numTan [(Rational n)] = return $ Float $ tan $ fromRational n
+numTan [(Complex n)] = return $ Complex $ tan n
+numTan [x] = throwError $ TypeMismatch "number" x
+numTan badArgList = throwError $ NumArgs 1 badArgList
+       
+numAsin :: [LispVal] -> ThrowsError LispVal
+numAsin [(Number n)] = return $ Float $ asin $ fromInteger n
+numAsin [(Float n)] = return $ Float $ asin n
+numAsin [(Rational n)] = return $ Float $ asin $ fromRational n
+numAsin [(Complex n)] = return $ Complex $ asin n
+numAsin [x] = throwError $ TypeMismatch "number" x
+numAsin badArgList = throwError $ NumArgs 1 badArgList
+      
+numAcos :: [LispVal] -> ThrowsError LispVal
+numAcos [(Number n)] = return $ Float $ acos $ fromInteger n
+numAcos [(Float n)] = return $ Float $ acos n
+numAcos [(Rational n)] = return $ Float $ acos $ fromRational n
+numAcos [(Complex n)] = return $ Complex $ acos n
+numAcos [x] = throwError $ TypeMismatch "number" x
+numAcos badArgList = throwError $ NumArgs 1 badArgList
+   
+numAtan :: [LispVal] -> ThrowsError LispVal
+numAtan [(Number n)] = return $ Float $ atan $ fromInteger n
+numAtan [(Float n)] = return $ Float $ atan n
+numAtan [(Rational n)] = return $ Float $ atan $ fromRational n
+numAtan [(Complex n)] = return $ Complex $ atan n
+numAtan [x] = throwError $ TypeMismatch "number" x
+numAtan badArgList = throwError $ NumArgs 1 badArgList
+
+numExp :: [LispVal] -> ThrowsError LispVal
+numExp [(Number n)] = return $ Float $ exp $ fromInteger n
+numExp [(Float n)] = return $ Float $ exp n
+numExp [(Rational n)] = return $ Float $ exp $ fromRational n
+numExp [(Complex n)] = return $ Complex $ exp n
+numExp [x] = throwError $ TypeMismatch "number" x
+numExp badArgList = throwError $ NumArgs 1 badArgList
+
+numLog :: [LispVal] -> ThrowsError LispVal
+numLog [(Number n)] = return $ Float $ log $ fromInteger n
+numLog [(Float n)] = return $ Float $ log n
+numLog [(Rational n)] = return $ Float $ log $ fromRational n
+numLog [(Complex n)] = return $ Complex $ log n
+numLog [x] = throwError $ TypeMismatch "number" x
+numLog badArgList = throwError $ NumArgs 1 badArgList
+
 
 isNumber, isComplex, isReal, isRational, isInteger :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number n]) = return $ Bool True
