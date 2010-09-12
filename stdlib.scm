@@ -61,6 +61,11 @@
 (define (and . lst)     (fold && #t lst))
 (define (or . lst)      (fold || #f lst))
 
+(define (abs num)
+  (if (negative? num)
+      (* num -1)
+      num))
+
 (define (max first . rest) (fold (lambda (old new) (if (> old new) old new)) first rest))
 (define (min first . rest) (fold (lambda (old new) (if (< old new) old new)) first rest))
 
