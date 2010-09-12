@@ -359,6 +359,10 @@ primitives = [("+", numAdd),
               ("ceiling", numCeiling),
               ("truncate", numTruncate),
 
+{- TODO:
+procedure:  (numerator q) 
+procedure:  (denominator q) 
+-}
               ("exp", numExp), 
               ("log", numLog), 
               ("sin", numSin), 
@@ -381,12 +385,23 @@ primitives = [("+", numAdd),
 procedure:  (exact->inexact z) 
 procedure:  (inexact->exact z) 
 -}
+
+-- TODO: need to make sure these handle the full tower:
               ("=", numBoolBinop (==)),
               ("<", numBoolBinop (<)),
               (">", numBoolBinop (>)),
               ("/=", numBoolBinop (/=)),
               (">=", numBoolBinop (>=)),
               ("<=", numBoolBinop (<=)),
+
+-- TODO: sweep through the spec to make sure all numeric procedures are accounted for
+
+-- TODO: sweep through spec and implement all numeric "library procedures" - but in stdlib.scm
+
+-- TODO: string and number conversion functions; need to make
+--       sure they are implemented and that they handle the full tower
+
+
               ("&&", boolBoolBinop (&&)),
               ("||", boolBoolBinop (||)),
               ("string=?", strBoolBinop (==)),
