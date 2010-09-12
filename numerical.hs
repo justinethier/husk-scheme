@@ -93,7 +93,46 @@ numCast [a, b] = case a of
                otherwise  -> doThrowError a
   where doThrowError a = throwError $ TypeMismatch "number" a
 
--- TODO: for sin, etc - can have a func that converts args to proper input type (such as real)
+
+numRound, numFloor, numCeiling, numTruncate :: [LispVal] -> ThrowsError LispVal
+numRound [n@(Number _)] = return n
+numRound [(Rational n)] = return $ Number $ round n
+numRound [(Float n)] = return $ Float $ fromInteger $ round n
+-- TODO: complex (?)
+numRound [x] = throwError $ TypeMismatch "number" x
+numRound badArgList = throwError $ NumArgs 1 badArgList
+
+-- TODO:
+numFloor [n@(Number _)] = return n
+numFloor [(Rational n)] = return $ Number $ floor n
+numFloor [(Float n)] = return $ Float $ fromInteger $ floor n
+-- TODO: complex (?)
+numFloor [x] = throwError $ TypeMismatch "number" x
+numFloor badArgList = throwError $ NumArgs 1 badArgList
+
+numCeiling [n@(Number _)] = return n
+numCeiling [(Rational n)] = return $ Number $ ceiling n
+numCeiling [(Float n)] = return $ Float $ fromInteger $ ceiling n
+-- TODO: complex (?)
+numCeiling [x] = throwError $ TypeMismatch "number" x
+numCeiling badArgList = throwError $ NumArgs 1 badArgList
+
+numTruncate [n@(Number _)] = return n
+numTruncate [(Rational n)] = return $ Number $ truncate n
+numTruncate [(Float n)] = return $ Float $ fromInteger $ truncate n
+-- TODO: complex (?)
+numTruncate [x] = throwError $ TypeMismatch "number" x
+numTruncate badArgList = throwError $ NumArgs 1 badArgList
+
+-- TODO: remaining funcs: sin, cos, etc... refer to spec 
+
+numCos :: [LispVal] -> ThrowsError LispVal
+numCos [(Number n)] = return $ Float $ cos $ fromInteger n
+numCos [(Float n)] = return $ Float $ cos n
+numCos [(Rational n)] = return $ Float $ cos $ fromRational n
+-- TODO: complex?
+numCos [x] = throwError $ TypeMismatch "number" x
+numCos badArgList = throwError $ NumArgs 1 badArgList
 
 isNumber, isComplex, isReal, isRational, isInteger :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number n]) = return $ Bool True

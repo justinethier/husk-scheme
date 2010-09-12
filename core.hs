@@ -354,6 +354,13 @@ primitives = [("+", numAdd),
               ("quotient", numericBinop quot),
               ("remainder", numericBinop rem),
 
+              ("round", numRound),
+              ("floor", numFloor),
+              ("ceiling", numCeiling),
+              ("truncate", numTruncate),
+
+              ("cos", numCos),
+
               ("=", numBoolBinop (==)),
               ("<", numBoolBinop (<)),
               (">", numBoolBinop (>)),
