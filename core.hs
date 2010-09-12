@@ -367,7 +367,20 @@ primitives = [("+", numAdd),
               ("asin", numAsin),
               ("acos", numAcos), 
               ("atan", numAtan),
+-- TODO: (sqrt z) 
+-- TODO: (expt z1 z2) 
 
+              ("make-rectangular", numMakeRectangular),
+              ("make-polar", numMakePolar), 
+              ("real-part", numRealPart ), 
+              ("imag-part", numImagPart), 
+              ("magnitude", numMagnitude), 
+              ("angle", numAngle ), 
+
+{- TODO (??):
+procedure:  (exact->inexact z) 
+procedure:  (inexact->exact z) 
+-}
               ("=", numBoolBinop (==)),
               ("<", numBoolBinop (<)),
               (">", numBoolBinop (>)),
