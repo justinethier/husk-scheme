@@ -191,8 +191,19 @@ numLog [x] = throwError $ TypeMismatch "number" x
 numLog badArgList = throwError $ NumArgs 1 badArgList
 
 
-numMakeRectangular, numMakePolar, numRealPart, numImagPart, numMagnitude, numAngle :: [LispVal] -> ThrowsError LispVal
+--numMakeRectangular, numMakePolar, numRealPart, numImagPart, numMagnitude, numAngle :: [LispVal] -> ThrowsError LispVal
 -- TODO: numMakeRectangular, numMakePolar, numRealPart, numImagPart, numMagnitude, numAngle 
+
+numNumerator, numDenominator:: [LispVal] -> ThrowsError LispVal
+numNumerator [(Rational r)] = return $ Number $ numerator r
+-- TODO: real?
+numNumerator [x] = throwError $ TypeMismatch "rational number" x
+numNumerator badArgList = throwError $ NumArgs 1 badArgList
+
+numDenominator [(Rational r)] = return $ Number $ denominator r
+-- TODO: real?
+numDenominator [x] = throwError $ TypeMismatch "rational number" x
+numDenominator badArgList = throwError $ NumArgs 1 badArgList
 
 isNumber, isComplex, isReal, isRational, isInteger :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number n]) = return $ Bool True

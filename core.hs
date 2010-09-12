@@ -75,7 +75,7 @@ runOne args = do
      else (runIOThrows $ liftM show $ eval env $ Nil "") >>= hPutStrLn stderr
 
 runRepl :: IO ()
-runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "husk> ") . evalAndPrint
+runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "huski> ") . evalAndPrint
 
 -- End REPL Section
 
@@ -359,10 +359,9 @@ primitives = [("+", numAdd),
               ("ceiling", numCeiling),
               ("truncate", numTruncate),
 
-{- TODO:
-procedure:  (numerator q) 
-procedure:  (denominator q) 
--}
+              ("numerator", numNumerator),
+              ("denominator", numDenominator),
+
               ("exp", numExp), 
               ("log", numLog), 
               ("sin", numSin), 
