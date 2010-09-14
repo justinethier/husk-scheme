@@ -255,6 +255,18 @@ numDenominator [(Rational r)] = return $ Number $ denominator r
 numDenominator [x] = throwError $ TypeMismatch "rational number" x
 numDenominator badArgList = throwError $ NumArgs 1 badArgList
 
+numExact2Inexact, numInexact2Exact :: [LispVal] -> ThrowsError LispVal
+numExact2Inexact [(Number n)] = return $ Float $ fromInteger n
+numExact2Inexact [(Rational n)] = return $ Float $ fromRational n
+numExact2Inexact [n@(Float _)] = return n
+-- TODO: numExact2Inexact [(Complex n)] = return ??
+
+numInexact2Exact [n@(Number _)] = return n
+numInexact2Exact [n@(Rational _)] = return n
+numInexact2Exact [(Float n)] = return $ Number $ round n
+-- TODO: numInexact2Exact [(Complex n)] = return ??
+
+
 isNumber, isComplex, isReal, isRational, isInteger :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number n]) = return $ Bool True
 isNumber ([Float f]) = return $ Bool True

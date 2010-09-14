@@ -381,10 +381,8 @@ primitives = [("+", numAdd),
               ("magnitude", numMagnitude), 
               ("angle", numAngle ), 
 
-{- TODO (??):
-procedure:  (exact->inexact z) 
-procedure:  (inexact->exact z) 
--}
+              ("exact->inexact", numExact2Inexact),
+              ("inexact->exact", numInexact2Exact),
 
 -- TODO: need to make sure these handle the full tower:
               ("=", numBoolBinop (==)),
