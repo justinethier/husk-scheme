@@ -193,13 +193,15 @@ numLog badArgList = throwError $ NumArgs 1 badArgList
 
 -- Complex number functions
 numMakeRectangular, numMakePolar, numRealPart, numImagPart, numMagnitude, numAngle :: [LispVal] -> ThrowsError LispVal
-numMakeRectangular [(Complex c)] = return $ Float $ -- TODO
-numMakeRectangular [x] = throwError $ TypeMismatch "number" x
-numMakeRectangular badArgList = throwError $ NumArgs 1 badArgList
+numMakeRectangular [(Float x), (Float y)] = return $ Complex $ x :+ y 
+-- TODO: other members of the numeric tower (?)
+numMakeRectangular [x, y] = throwError $ TypeMismatch "real real" $ List [x, y]
+numMakeRectangular badArgList = throwError $ NumArgs 2 badArgList
 
-numMakePolar [(Complex c)] = return $ Float $ -- TODO
-numMakePolar [x] = throwError $ TypeMismatch "number" x
-numMakePolar badArgList = throwError $ NumArgs 1 badArgList
+numMakePolar [(Float x), (Float y)] = return $ Complex $ mkPolar x y
+-- TODO: other members of the numeric tower (?)
+numMakePolar [x, y] = throwError $ TypeMismatch "real real" $ List [x, y]
+numMakePolar badArgList = throwError $ NumArgs 2 badArgList
 
 numAngle [(Complex c)] = return $ Float $ phase c -- TODO: correct?? need to check this
 numAngle [x] = throwError $ TypeMismatch "number" x
