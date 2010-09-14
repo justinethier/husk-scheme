@@ -11,4 +11,6 @@
 ;(assert-equal (lambda () (integer? 3.0)) #t)
 ;(assert-equal (lambda () (integer? 8/4)) #t)
 
+; TODO: test for all types: (=
+; TODO: <, >, >=, <=
 (unit-test-handler-results)
