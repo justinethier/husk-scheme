@@ -370,8 +370,9 @@ primitives = [("+", numAdd),
               ("asin", numAsin),
               ("acos", numAcos), 
               ("atan", numAtan),
--- TODO: (sqrt z) 
--- TODO: (expt z1 z2) 
+
+              ("sqrt", numSqrt),
+              ("expt", numExpt),
 
               ("make-rectangular", numMakeRectangular),
               ("make-polar", numMakePolar), 

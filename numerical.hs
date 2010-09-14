@@ -174,6 +174,30 @@ numAtan [(Complex n)] = return $ Complex $ atan n
 numAtan [x] = throwError $ TypeMismatch "number" x
 numAtan badArgList = throwError $ NumArgs 1 badArgList
 
+numSqrt, numExpt :: [LispVal] -> ThrowsError LispVal
+numSqrt [(Number n)] = if n >= 0 then return $ Float $ sqrt $ fromInteger n
+                                 else return $ Complex $ sqrt ((fromInteger n) :+ 0)
+numSqrt [(Float n)] = if n >= 0 then return $ Float $ sqrt n
+                                else return $ Complex $ sqrt (n :+ 0)
+numSqrt [(Rational n)] = numSqrt  [Float $ fromRational n]
+numSqrt [(Complex n)] = return $ Complex $ sqrt n
+numSqrt [x] = throwError $ TypeMismatch "number" x
+numSqrt badArgList = throwError $ NumArgs 1 badArgList
+
+numExpt [(Number n),   (Number p)] = return $ Float $ (fromInteger n) ^ p
+numExpt [(Rational n), (Number p)] = return $ Float $ (fromRational n) ^ p
+numExpt [(Float n),    (Number p)] = return $ Float $ n ^ p
+numExpt [(Complex n),  (Number p)] = return $ Complex $ n ^ p
+numExpt [x, y] = throwError $ TypeMismatch "integer" y
+numExpt badArgList = throwError $ NumArgs 2 badArgList
+
+{-numExpt params = do
+  foldl1M (\a b -> doExpt =<< (numCast [a, b])) params
+  where doExpt (List [(Number a), (Number b)]) = return $ Float $ (fromInteger a) ^ (fromInteger b)
+--        doExpt (List [(Rational a), (Rational b)]) = return $ Float $ fromRational $ a ^ b
+        doExpt (List [(Float a), (Float b)]) = return $ Float $ a ^ b
+--        doExpt (List [(Complex a), (Complex b)]) = return $ Complex $ a ^ b-}
+
 numExp :: [LispVal] -> ThrowsError LispVal
 numExp [(Number n)] = return $ Float $ exp $ fromInteger n
 numExp [(Float n)] = return $ Float $ exp n
