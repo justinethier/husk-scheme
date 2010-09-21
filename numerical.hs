@@ -266,6 +266,14 @@ numInexact2Exact [n@(Rational _)] = return n
 numInexact2Exact [(Float n)] = return $ Number $ round n
 -- TODO: numInexact2Exact [(Complex n)] = return ??
 
+-- TODO: remember to support both forms:
+-- procedure:  (number->string z) 
+-- procedure:  (number->string z radix) 
+num2String :: [LispVal] -> ThrowsError LispVal
+num2String [(Number n)] = return $ String "TODO"
+
+-- TODO: relocated string->number logic here (???),
+--       and extend to support all of the tower...
 
 isNumber, isComplex, isReal, isRational, isInteger :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number n]) = return $ Bool True

@@ -384,6 +384,8 @@ primitives = [("+", numAdd),
               ("exact->inexact", numExact2Inexact),
               ("inexact->exact", numInexact2Exact),
 
+              ("number->string", num2String),
+
 -- TODO: need to make sure these handle the full tower:
               ("=", numBoolBinop (==)),
               ("<", numBoolBinop (<)),
