@@ -15,6 +15,7 @@ import Complex
 import Control.Monad.Error
 import Numeric
 import Ratio
+import Text.Printf
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError LispVal
 numericBinop op singleVal@[_] = throwError $ NumArgs 2 singleVal
@@ -270,7 +271,19 @@ numInexact2Exact [(Float n)] = return $ Number $ round n
 -- procedure:  (number->string z) 
 -- procedure:  (number->string z radix) 
 num2String :: [LispVal] -> ThrowsError LispVal
-num2String [(Number n)] = return $ String "TODO"
+num2String [(Number n)] = return $ String $ show n
+num2String [(Number n), (Number radix)] = do
+  case radix of
+-- TODO: boolean    2 -> return $ String $ printf "%x" n
+     8 -> return $ String $ printf "%o" n
+    10 -> return $ String $ printf "%d" n
+    16 -> return $ String $ printf "%x" n
+    -- TODO: error
+num2String [n@(Rational _)] = return $ String $ show n
+num2String [(Float n)] = return $ String $ show n
+num2String [n@(Complex _)] = return $ String $ show n
+num2String [x] = throwError $ TypeMismatch "number" x
+num2String badArgList = throwError $ NumArgs 1 badArgList
 
 -- TODO: relocated string->number logic here (???),
 --       and extend to support all of the tower...
