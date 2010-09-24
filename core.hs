@@ -35,6 +35,7 @@ import IO hiding (try)
 import Numeric
 import Ratio
 import System.Environment
+import System.Console.Haskeline
 
 main :: IO ()
 main = do args <- getArgs
@@ -44,21 +45,11 @@ main = do args <- getArgs
 flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
 
-readPrompt :: String -> IO String
-readPrompt prompt = flushStr prompt >> getLine
-
 evalString :: Env -> String -> IO String
 evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= eval env
 
 evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn
-
-until_ :: Monad m => (a -> Bool) -> m a -> (a -> m ()) -> m ()
-until_ pred prompt action = do
-  result <- prompt
-  if pred result
-     then return ()
-     else action result >> until_ pred prompt action
 
 runOne :: [String] -> IO ()
 runOne args = do
@@ -75,8 +66,19 @@ runOne args = do
      else (runIOThrows $ liftM show $ eval env $ Nil "") >>= hPutStrLn stderr
 
 runRepl :: IO ()
-runRepl = primitiveBindings >>= until_ (== "quit") (readPrompt "huski> ") . evalAndPrint
-
+runRepl = do
+    env <- primitiveBindings
+    runInputT defaultSettings (loop env) 
+    where 
+        loop :: Env -> InputT IO ()
+        loop env = do
+            minput <- getInputLine "huski> "
+            case minput of
+                Nothing -> return ()
+                Just "quit" -> return ()
+                Just input -> do result <- liftIO (evalString env input)
+                                 outputStrLn result 
+                                 loop env
 -- End REPL Section
 
 

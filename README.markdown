@@ -10,17 +10,16 @@ husk includes the following features:
 - Binding constructs: let, named let, let*, letrec
 - Basic IO functions
 - Standard library of Scheme functions
+- Read-Eval-Print-Loop (REPL) interpreter, with input driven by Haskeline
 - Hygenic Macros: High-level macros via define-syntax - work in progress
 - Full numeric tower - work in progress, targeted to include support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types, other constraints from spec.
 - Hash tables, as specified by [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html) - work in progress 
-- Read-Eval-Print-Loop (REPL) interpreter
 
 Features planned for development:
 
 - Iteration: do
 - Test cases, including those for: backtick, primitives (see spec section 4.1), others
 - Continuations
-- Improved REPL features (EG: proper keyboard arrow support, etc)
 - A scheme "library" that may be used to embed scheme scripting within a Haskell program.
 - More example programs
 - General refactoring of haskell code including into multiple modules/files, addressing TODO items, etc...
@@ -43,7 +42,12 @@ Alternatively, you may run an individual scheme program:
 Development
 -----------
 
-[GHC](http://www.haskell.org/ghc/) is required to build husk scheme.
+The following packages are required to build husk scheme:
+
+- [GHC](http://www.haskell.org/ghc/)
+- Haskeline - which may be installed using cabal:
+
+    cabal install haskeline
 
 The 'scm-unit-tests' directory contains unit tests for much of the scheme code. Tests may be executed via 'make test'
 
