@@ -65,6 +65,16 @@ runOne args = do
      then (runIOThrows $ liftM show $ eval env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
      else (runIOThrows $ liftM show $ eval env $ Nil "") >>= hPutStrLn stderr
 
+-- TODO: showBanner 
+{-
+ 
+  __  __     __  __     ______     __  __       
+ /\ \_\ \   /\ \/\ \   /\  ___\   /\ \/ /       
+ \ \  __ \  \ \ \_\ \  \ \___  \  \ \  _"-.     
+  \ \_\ \_\  \ \_____\  \/\_____\  \ \_\ \_\    
+   \/_/\/_/   \/_____/   \/_____/   \/_/\/_/    
+
+ - -}
 runRepl :: IO ()
 runRepl = do
     env <- primitiveBindings
