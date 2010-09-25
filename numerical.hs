@@ -278,7 +278,7 @@ num2String [(Number n), (Number radix)] = do
     8 -> return $ String $ printf "%o" n
     10 -> return $ String $ printf "%d" n
     16 -> return $ String $ printf "%x" n
-    -- TODO: error
+    otherwise -> throwError $ BadSpecialForm "Invalid radix value" $ Number radix
 num2String [n@(Rational _)] = return $ String $ show n
 num2String [(Float n)] = return $ String $ show n
 num2String [n@(Complex _)] = return $ String $ show n
