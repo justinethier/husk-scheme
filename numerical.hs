@@ -47,27 +47,35 @@ numSub [Float n] = return $ Float $ -1 * n
 numSub [Rational n] = return $ Rational $ -1 * n
 numSub [Complex n] = return $ Complex $ -1 * n
 numSub params = do
-  foldl1M (\a b -> doAdd =<< (numCast [a, b])) params
-  where doAdd (List [(Number a), (Number b)]) = return $ Number $ a - b
-        doAdd (List [(Float a), (Float b)]) = return $ Float $ a - b
-        doAdd (List [(Rational a), (Rational b)]) = return $ Rational $ a - b
-        doAdd (List [(Complex a), (Complex b)]) = return $ Complex $ a - b
+  foldl1M (\a b -> doSub =<< (numCast [a, b])) params
+  where doSub (List [(Number a), (Number b)]) = return $ Number $ a - b
+        doSub (List [(Float a), (Float b)]) = return $ Float $ a - b
+        doSub (List [(Rational a), (Rational b)]) = return $ Rational $ a - b
+        doSub (List [(Complex a), (Complex b)]) = return $ Complex $ a - b
 numMul params = do 
-  foldl1M (\a b -> doAdd =<< (numCast [a, b])) params
-  where doAdd (List [(Number a), (Number b)]) = return $ Number $ a * b
-        doAdd (List [(Float a), (Float b)]) = return $ Float $ a * b
-        doAdd (List [(Rational a), (Rational b)]) = return $ Rational $ a * b
-        doAdd (List [(Complex a), (Complex b)]) = return $ Complex $ a * b
+  foldl1M (\a b -> doMul =<< (numCast [a, b])) params
+  where doMul (List [(Number a), (Number b)]) = return $ Number $ a * b
+        doMul (List [(Float a), (Float b)]) = return $ Float $ a * b
+        doMul (List [(Rational a), (Rational b)]) = return $ Rational $ a * b
+        doMul (List [(Complex a), (Complex b)]) = return $ Complex $ a * b
 numDiv [Number n] = return $ Rational $ 1 / (fromInteger n)
 numDiv [Float n] = return $ Float $ 1.0 / n
 numDiv [Rational n] = return $ Rational $ 1 / n
 numDiv [Complex n] = return $ Complex $ 1 / n
 numDiv params = do -- TODO: for Number type, need to cast results to Rational, per R5RS spec 
-  foldl1M (\a b -> doAdd =<< (numCast [a, b])) params
-  where doAdd (List [(Number a), (Number b)]) = return $ Number $ div a b
-        doAdd (List [(Float a), (Float b)]) = return $ Float $ a / b
-        doAdd (List [(Rational a), (Rational b)]) = return $ Rational $ a / b
-        doAdd (List [(Complex a), (Complex b)]) = return $ Complex $ a / b
+  foldl1M (\a b -> doDiv =<< (numCast [a, b])) params
+  where doDiv (List [(Number a), (Number b)]) = if b == 0 
+                                                   then throwError $ DivideByZero 
+                                                   else return $ Number $ div a b
+        doDiv (List [(Float a), (Float b)]) = if b == 0.0 
+                                                   then throwError $ DivideByZero 
+                                                   else return $ Float $ a / b
+        doDiv (List [(Rational a), (Rational b)]) = if b == 0
+                                                       then throwError $ DivideByZero 
+                                                       else return $ Rational $ a / b
+        doDiv (List [(Complex a), (Complex b)]) = if b == 0
+                                                       then throwError $ DivideByZero 
+                                                       else return $ Complex $ a / b
 
 numCast :: [LispVal] -> ThrowsError LispVal
 numCast [a@(Number _), b@(Number _)] = return $ List [a, b]
