@@ -11,6 +11,44 @@
 ;(assert-equal (lambda () (integer? 3.0)) #t)
 ;(assert-equal (lambda () (integer? 8/4)) #t)
 
+; primitives = [("+", numAdd),
+;             ("-", numSub),
+;            ("*", numMul),
+;            ("/", numDiv),
+;            ("modulo", numericBinop mod),
+;            ("quotient", numericBinop quot),
+;            ("remainder", numericBinop rem),
+;
+;            ("round", numRound),
+;            ("floor", numFloor),
+;            ("ceiling", numCeiling),
+;            ("truncate", numTruncate),
+;
+;            ("numerator", numNumerator),
+;           ("denominator", numDenominator),
+;
+;            ("exp", numExp), 
+;            ("log", numLog), 
+;            ("sin", numSin), 
+;            ("cos", numCos), 
+;            ("tan", numTan), 
+;            ("asin", numAsin),
+;            ("acos", numAcos), 
+;            ("atan", numAtan),
+;
+;            ("sqrt", numSqrt),
+;            ("expt", numExpt),
+;
+;            ("make-rectangular", numMakeRectangular),
+;            ("make-polar", numMakePolar), 
+;            ("real-part", numRealPart ), 
+;            ("imag-part", numImagPart), 
+;             ("magnitude", numMagnitude), 
+;             ("angle", numAngle ), 
+;
+;             ("exact->inexact", numExact2Inexact),
+;            ("inexact->exact", numInexact2Exact),
+
 ; TODO: test for all types: (=
 ; TODO: <, >, >=, <=
 (unit-test-handler-results)
