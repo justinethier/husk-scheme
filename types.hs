@@ -37,6 +37,7 @@ data LispError = NumArgs Integer [LispVal]
   | BadSpecialForm String LispVal
   | NotFunction String String
   | UnboundVar String String
+  | DivideByZero
   | Default String
 
 showError :: LispError -> String
@@ -48,6 +49,7 @@ showError (Parser parseErr) = "Parse error at " ++ ": " ++ show parseErr
 showError (BadSpecialForm message form) = message ++ ": " ++ show form
 showError (NotFunction message func) = message ++ ": " ++ show func
 showError (UnboundVar message varname) = message ++ ": " ++ varname
+showError (DivideByZero) = "Division by zero"
 
 instance Show LispError where show = showError
 instance Error LispError where
