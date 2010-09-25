@@ -65,16 +65,14 @@ runOne args = do
      then (runIOThrows $ liftM show $ eval env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
      else (runIOThrows $ liftM show $ eval env $ Nil "") >>= hPutStrLn stderr
 
--- TODO: showBanner 
-{-
- 
-  __  __     __  __     ______     __  __       
- /\ \_\ \   /\ \/\ \   /\  ___\   /\ \/ /       
- \ \  __ \  \ \ \_\ \  \ \___  \  \ \  _"-.     
-  \ \_\ \_\  \ \_____\  \/\_____\  \ \_\ \_\    
-   \/_/\/_/   \/_____/   \/_____/   \/_/\/_/    
+showBanner = do
+  outputStrLn " __  __     __  __     ______     __  __                             "
+  outputStrLn "/\\ \\_\\ \\   /\\ \\/\\ \\   /\\  ___\\   /\\ \\/ /      Scheme Interpreter " 
+  outputStrLn "\\ \\  __ \\  \\ \\ \\_\\ \\  \\ \\___  \\  \\ \\  _\\\"-.   Version 1.0"
+  outputStrLn " \\ \\_\\ \\_\\  \\ \\_____\\  \\/\\_____\\  \\ \\_\\ \\_\\   " --(c) 2010 Justin Ethier "
+  outputStrLn "  \\/_/\\/_/   \\/_____/   \\/_____/   \\/_/\\/_/   (c) 2010 Justin Ethier "
+  outputStrLn ""
 
- - -}
 runRepl :: IO ()
 runRepl = do
     env <- primitiveBindings
@@ -82,6 +80,7 @@ runRepl = do
     where 
         loop :: Env -> InputT IO ()
         loop env = do
+            showBanner
             minput <- getInputLine "huski> "
             case minput of
                 Nothing -> return ()
