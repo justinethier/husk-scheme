@@ -275,7 +275,7 @@ num2String [(Number n)] = return $ String $ show n
 num2String [(Number n), (Number radix)] = do
   case radix of
 -- TODO: boolean    2 -> return $ String $ printf "%x" n
-     8 -> return $ String $ printf "%o" n
+    8 -> return $ String $ printf "%o" n
     10 -> return $ String $ printf "%d" n
     16 -> return $ String $ printf "%x" n
     -- TODO: error
