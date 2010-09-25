@@ -70,10 +70,10 @@ runOne args = do
 showBanner :: IO ()
 showBanner = do
   putStrLn " __  __     __  __     ______     __  __                             "
-  putStrLn "/\\ \\_\\ \\   /\\ \\/\\ \\   /\\  ___\\   /\\ \\/ /      Scheme Interpreter " 
-  putStrLn "\\ \\  __ \\  \\ \\ \\_\\ \\  \\ \\___  \\  \\ \\  _\\\"-.   Version 1.0"
-  putStrLn " \\ \\_\\ \\_\\  \\ \\_____\\  \\/\\_____\\  \\ \\_\\ \\_\\   " --(c) 2010 Justin Ethier "
-  putStrLn "  \\/_/\\/_/   \\/_____/   \\/_____/   \\/_/\\/_/   (c) 2010 Justin Ethier "
+  putStrLn "/\\ \\_\\ \\   /\\ \\/\\ \\   /\\  ___\\   /\\ \\/ /     Scheme Interpreter " 
+  putStrLn "\\ \\  __ \\  \\ \\ \\_\\ \\  \\ \\___  \\  \\ \\  _\\\"-.  Version 1.0"
+  putStrLn " \\ \\_\\ \\_\\  \\ \\_____\\  \\/\\_____\\  \\ \\_\\ \\_\\  (c) 2010 Justin Ethier "
+  putStrLn "  \\/_/\\/_/   \\/_____/   \\/_____/   \\/_/\\/_/  github.com/justinethier/husk-scheme "
   putStrLn ""
 
 runRepl :: IO ()
@@ -88,8 +88,10 @@ runRepl = do
                 Nothing -> return ()
                 Just "quit" -> return ()
                 Just input -> do result <- liftIO (evalString env input)
-                                 outputStrLn result 
-                                 loop env
+                                 if (length result) > 0
+                                    then do outputStrLn result
+                                            loop env
+                                    else loop env
 -- End REPL Section
 
 
@@ -706,8 +708,16 @@ stringAppend [badType] = throwError $ TypeMismatch "string" badType
 stringAppend badArgList = throwError $ NumArgs 1 badArgList
 
 -- This could be expanded, for now just converts integers
+-- TODO: handle a radix param
 stringToNumber :: [LispVal] -> ThrowsError LispVal
-stringToNumber [(String s)] = return $ Number $ read s
+stringToNumber [(String s)] = do
+  result <- (readExpr s) -- result <- parseExpr s
+  case result of
+    n@(Number _) -> return n
+    n@(Rational _) -> return n
+    n@(Float _) -> return n
+    n@(Complex _) -> return n
+    otherwise -> return $ Bool False
 stringToNumber [badType] = throwError $ TypeMismatch "string" badType
 stringToNumber badArgList = throwError $ NumArgs 1 badArgList
 
