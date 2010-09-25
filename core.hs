@@ -403,7 +403,7 @@ primitives = [("+", numAdd),
               ("number->string", num2String),
 
 -- TODO: need to make sure these handle the full tower:
-              ("=", numBoolBinop (==)),
+              ("=", numBoolBinopEq), --numBoolBinop (==)),
               ("<", numBoolBinop (<)),
               (">", numBoolBinop (>)),
               ("/=", numBoolBinop (/=)),
