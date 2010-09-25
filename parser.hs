@@ -100,6 +100,9 @@ parseNumber = parseDecimalNumber <|>
 {- Parser for floating points 
  -
  - TODO: parse numbers in format #e1e10
+ - TODO: bug - 
+ -           huski> (string->number "3.42323+2i")
+ -           3.42323
  - -}
 parseRealNumber :: Parser LispVal
 parseRealNumber = do 
