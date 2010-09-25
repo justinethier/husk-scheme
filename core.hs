@@ -39,7 +39,9 @@ import System.Console.Haskeline
 
 main :: IO ()
 main = do args <- getArgs
-          if null args then runRepl else runOne $ args
+          if null args then do showBanner
+                               runRepl
+                       else runOne $ args
 
 -- REPL Section
 flushStr :: String -> IO ()
@@ -65,13 +67,14 @@ runOne args = do
      then (runIOThrows $ liftM show $ eval env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
      else (runIOThrows $ liftM show $ eval env $ Nil "") >>= hPutStrLn stderr
 
+showBanner :: IO ()
 showBanner = do
-  outputStrLn " __  __     __  __     ______     __  __                             "
-  outputStrLn "/\\ \\_\\ \\   /\\ \\/\\ \\   /\\  ___\\   /\\ \\/ /      Scheme Interpreter " 
-  outputStrLn "\\ \\  __ \\  \\ \\ \\_\\ \\  \\ \\___  \\  \\ \\  _\\\"-.   Version 1.0"
-  outputStrLn " \\ \\_\\ \\_\\  \\ \\_____\\  \\/\\_____\\  \\ \\_\\ \\_\\   " --(c) 2010 Justin Ethier "
-  outputStrLn "  \\/_/\\/_/   \\/_____/   \\/_____/   \\/_/\\/_/   (c) 2010 Justin Ethier "
-  outputStrLn ""
+  putStrLn " __  __     __  __     ______     __  __                             "
+  putStrLn "/\\ \\_\\ \\   /\\ \\/\\ \\   /\\  ___\\   /\\ \\/ /      Scheme Interpreter " 
+  putStrLn "\\ \\  __ \\  \\ \\ \\_\\ \\  \\ \\___  \\  \\ \\  _\\\"-.   Version 1.0"
+  putStrLn " \\ \\_\\ \\_\\  \\ \\_____\\  \\/\\_____\\  \\ \\_\\ \\_\\   " --(c) 2010 Justin Ethier "
+  putStrLn "  \\/_/\\/_/   \\/_____/   \\/_____/   \\/_/\\/_/   (c) 2010 Justin Ethier "
+  putStrLn ""
 
 runRepl :: IO ()
 runRepl = do
@@ -80,7 +83,6 @@ runRepl = do
     where 
         loop :: Env -> InputT IO ()
         loop env = do
-            showBanner
             minput <- getInputLine "huski> "
             case minput of
                 Nothing -> return ()
