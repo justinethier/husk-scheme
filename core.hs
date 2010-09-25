@@ -87,6 +87,7 @@ runRepl = do
             case minput of
                 Nothing -> return ()
                 Just "quit" -> return ()
+                Just "" -> loop env -- FUTURE: integrate with strip to ignore inputs of just whitespace
                 Just input -> do result <- liftIO (evalString env input)
                                  if (length result) > 0
                                     then do outputStrLn result
@@ -781,4 +782,12 @@ isBoolean ([Bool n]) = return $ Bool True
 isBoolean _ = return $ Bool False
 -- end Eval section
 
+-- Begin Util section, of generic functions
 
+-- Remove leading/trailing white space from a string; based on corresponding Python function
+-- Code taken from: http://gimbo.org.uk/blog/2007/04/20/splitting-a-string-in-haskell/
+strip :: String -> String
+strip s = dropWhile ws $ reverse $ dropWhile ws $ reverse s
+    where ws = (`elem` [' ', '\n', '\t', '\r'])
+
+-- End Util
