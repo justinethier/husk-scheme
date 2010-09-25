@@ -77,6 +77,14 @@ numDiv params = do -- TODO: for Number type, need to cast results to Rational, p
                                                        then throwError $ DivideByZero 
                                                        else return $ Complex $ a / b
 
+numBoolBinopEq :: [LispVal] -> ThrowsError LispVal
+numBoolBinopEq params = do 
+  foldl1M (\a b -> doOp =<< (numCast [a, b])) params
+  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a == b
+        doOp (List [(Float a), (Float b)]) = return $ Bool $ a == b
+        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a == b
+        doOp (List [(Complex a), (Complex b)]) = return $ Bool $ a == b
+
 numCast :: [LispVal] -> ThrowsError LispVal
 numCast [a@(Number _), b@(Number _)] = return $ List [a, b]
 numCast [a@(Float _), b@(Float _)] = return $ List [a, b]
