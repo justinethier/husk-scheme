@@ -103,7 +103,6 @@ data LispVal = Atom String
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b
   compare (Number a) (Number b) = compare a b
--- TODO:  compare (Complex a) (Complex b) = compare a b
   compare (Rational a) (Rational b) = compare a b
   compare (Float a) (Float b) = compare a b
   compare (String a) (String b) = compare a b
