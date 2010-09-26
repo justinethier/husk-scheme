@@ -85,6 +85,34 @@ numBoolBinopEq params = do
         doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a == b
         doOp (List [(Complex a), (Complex b)]) = return $ Bool $ a == b
 
+numBoolBinopGt :: [LispVal] -> ThrowsError LispVal
+numBoolBinopGt params = do 
+  foldl1M (\a b -> doOp =<< (numCast [a, b])) params
+  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a > b
+        doOp (List [(Float a), (Float b)]) = return $ Bool $ a > b
+        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a > b
+
+numBoolBinopGte :: [LispVal] -> ThrowsError LispVal
+numBoolBinopGte params = do 
+  foldl1M (\a b -> doOp =<< (numCast [a, b])) params
+  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a >= b
+        doOp (List [(Float a), (Float b)]) = return $ Bool $ a >= b
+        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a >= b
+
+numBoolBinopLt :: [LispVal] -> ThrowsError LispVal
+numBoolBinopLt params = do 
+  foldl1M (\a b -> doOp =<< (numCast [a, b])) params
+  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a < b
+        doOp (List [(Float a), (Float b)]) = return $ Bool $ a < b
+        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a < b
+
+numBoolBinopLte :: [LispVal] -> ThrowsError LispVal
+numBoolBinopLte params = do 
+  foldl1M (\a b -> doOp =<< (numCast [a, b])) params
+  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a <= b
+        doOp (List [(Float a), (Float b)]) = return $ Bool $ a <= b
+        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a <= b
+
 numCast :: [LispVal] -> ThrowsError LispVal
 numCast [a@(Number _), b@(Number _)] = return $ List [a, b]
 numCast [a@(Float _), b@(Float _)] = return $ List [a, b]

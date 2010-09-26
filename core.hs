@@ -402,13 +402,11 @@ primitives = [("+", numAdd),
 
               ("number->string", num2String),
 
--- TODO: need to make sure these handle the full tower:
-              ("=", numBoolBinopEq), --numBoolBinop (==)),
-              ("<", numBoolBinop (<)),
-              (">", numBoolBinop (>)),
-              ("/=", numBoolBinop (/=)),
-              (">=", numBoolBinop (>=)),
-              ("<=", numBoolBinop (<=)),
+              ("=", numBoolBinopEq),
+              (">", numBoolBinopGt),
+              (">=", numBoolBinopGte),
+              ("<", numBoolBinopLt),
+              ("<=", numBoolBinopLte),
 
 -- TODO: sweep through the spec to make sure all numeric procedures are accounted for
 
