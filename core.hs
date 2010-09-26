@@ -79,6 +79,7 @@ showBanner = do
 runRepl :: IO ()
 runRepl = do
     env <- primitiveBindings
+    evalString env "(load \"stdlib.scm\")" -- Load standard library into the REPL
     runInputT defaultSettings (loop env) 
     where 
         loop :: Env -> InputT IO ()
