@@ -28,13 +28,17 @@
 (assert-equal (lambda () (/ 1 2)) 0)
 (assert-equal (lambda () (/ 1.0 2)) 0.5)
 (assert-equal (lambda () (/ 1/1 2/1)) 1/2)
-; primitives = [("+", numAdd),
-;             ("-", numSub),
-;            ("*", numMul),
-;            ("/", numDiv),
-;            ("modulo", numericBinop mod),
-;            ("quotient", numericBinop quot),
-;            ("remainder", numericBinop rem),
+(assert-equal (lambda () (modulo 8 2)) 0)
+(assert-equal (lambda () (modulo 9 2)) 1)
+(assert-equal (lambda () (quotient 44 2)) 22)
+
+(assert-equal (lambda () (modulo 13 -4)) -3)
+(assert-equal (lambda () (remainder 13 -4)) -3)
+(assert-equal (lambda () (modulo -13 -4)) -1)
+(assert-equal (lambda () (remainder -13 -4)) -1)
+;TODO: - support for inexact - (remainder -13 -4.0)            ===>  -1.0  ; inexact
+;(assert-equal (lambda () ()) )
+
 ;
 ;            ("round", numRound),
 ;            ("floor", numFloor),
