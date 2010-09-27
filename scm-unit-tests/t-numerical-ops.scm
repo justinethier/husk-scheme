@@ -11,6 +11,23 @@
 ;(assert-equal (lambda () (integer? 3.0)) #t)
 ;(assert-equal (lambda () (integer? 8/4)) #t)
 
+
+(assert-equal (lambda () (max 3 4)) 4)
+(assert-equal (lambda () (max 3.9 4)) 4) ; TODO: technically not to spec
+
+(assert-equal (lambda () (+ 1 2 3 4 5)) 15)
+(assert-equal (lambda () (+ 4/8 5)) 44/8)
+(assert-equal (lambda () (+ 1/1 2 3.0 4 10/2)) 15.0)
+(assert-equal (lambda () (+ 1+0i 2+0i)) 3+0i)
+(assert-equal (lambda () (- 1 2)) -1)
+(assert-equal (lambda () (* 2 3)) 6)
+(assert-equal (lambda () (* 4/2 6/2)) 6/1)
+(assert-equal (lambda () (* 8/4 6/2)) 24/4)
+(assert-equal (lambda () (* 3 1+1i)) 3+3i)
+(assert-equal (lambda () (/ 2 1)) 2)
+(assert-equal (lambda () (/ 1 2)) 0)
+(assert-equal (lambda () (/ 1.0 2)) 0.5)
+(assert-equal (lambda () (/ 1/1 2/1)) 1/2)
 ; primitives = [("+", numAdd),
 ;             ("-", numSub),
 ;            ("*", numMul),
@@ -49,6 +66,9 @@
 ;             ("exact->inexact", numExact2Inexact),
 ;            ("inexact->exact", numInexact2Exact),
 
-; TODO: test for all types: (=
-; TODO: <, >, >=, <=
+;"=", 
+;">", 
+;">=",
+;"<", 
+;"<=",
 (unit-test-handler-results)
