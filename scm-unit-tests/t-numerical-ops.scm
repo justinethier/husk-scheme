@@ -33,7 +33,7 @@
 (assert-equal (lambda () (quotient 44 2)) 22)
 
 (assert-equal (lambda () (modulo 13 -4)) -3)
-(assert-equal (lambda () (remainder 13 -4)) -3)
+(assert-equal (lambda () (remainder 13 -4)) 1)
 (assert-equal (lambda () (modulo -13 -4)) -1)
 (assert-equal (lambda () (remainder -13 -4)) -1)
 ;TODO: - support for inexact - (remainder -13 -4.0)            ===>  -1.0  ; inexact
@@ -70,8 +70,13 @@
 ;             ("exact->inexact", numExact2Inexact),
 ;            ("inexact->exact", numInexact2Exact),
 
-;"=", 
-;">", 
+(assert-equal (lambda () (= 1 (+ 0 1))) #t)
+(assert-equal (lambda () (= 1.0 1)) #t)
+(assert-equal (lambda () (= 1 4/4)) #t)
+(assert-equal (lambda () (= 10 10+0i)) #t)
+(assert-equal (lambda () (> 2 1)) #t)
+(assert-equal (lambda () (> 2 1.9)) #t)
+(assert-equal (lambda () (> 2 1/9)) #t)
 ;">=",
 ;"<", 
 ;"<=",
