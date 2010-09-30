@@ -37,6 +37,7 @@
 (assert-equal (lambda () (modulo -13 -4)) -1)
 (assert-equal (lambda () (remainder -13 -4)) -1)
 ;TODO: - support for inexact - (remainder -13 -4.0)            ===>  -1.0  ; inexact
+
 ;(assert-equal (lambda () ()) )
 
 ;
@@ -66,9 +67,9 @@
 ;            ("imag-part", numImagPart), 
 ;             ("magnitude", numMagnitude), 
 ;             ("angle", numAngle ), 
-;
-;             ("exact->inexact", numExact2Inexact),
-;            ("inexact->exact", numInexact2Exact),
+
+(assert-equal (lambda () (exact->inexact 2)) 2.0)
+(assert-equal (lambda () (inexact->exact 2.0)) 2)
 
 (assert-equal (lambda () (= 1 (+ 0 1))) #t)
 (assert-equal (lambda () (= 1.0 1)) #t)
@@ -77,7 +78,14 @@
 (assert-equal (lambda () (> 2 1)) #t)
 (assert-equal (lambda () (> 2 1.9)) #t)
 (assert-equal (lambda () (> 2 1/9)) #t)
-;">=",
-;"<", 
-;"<=",
+(assert-equal (lambda () (>= 2 1)) #t)
+(assert-equal (lambda () (>= 2 1.9)) #t)
+(assert-equal (lambda () (>= 2 1/9)) #t)
+(assert-equal (lambda () (>= 2 2)) #t)
+(assert-equal (lambda () (>= 2 2.0)) #t)
+(assert-equal (lambda () (>= 2 18/9)) #t)
+(assert-equal (lambda () (<= 2 2.0)) #t)
+(assert-equal (lambda () (<= 2 18/9)) #t)
+(assert-equal (lambda () (< 2 2.0)) #f)
+(assert-equal (lambda () (< 2 18/9)) #f)
 (unit-test-handler-results)
