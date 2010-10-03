@@ -186,3 +186,9 @@
 
 ; End delayed evaluation section
 
+; TODO: from numeric section -
+; gcd
+; lcm
+; rationalize
+; 
+
