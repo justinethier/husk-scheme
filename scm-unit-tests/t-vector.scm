@@ -17,7 +17,12 @@
 (assert-equal (lambda () (eqv? '#("1" "2" "3") '#(1 2 3))) #f)
 (assert-equal (lambda () (equal? '#("1" "2" "3") '#(1 2 3))) #t)
 
-;
+; TODO:
+;(define foo 1)
+;(define bar 2)
+;`#(,foo ,bar) should be #(1 2) but is not...
+
+
 ; TODO: test cases for the following forms:
 ;
 ;              ("vector", Vector),
