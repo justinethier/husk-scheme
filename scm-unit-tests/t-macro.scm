@@ -117,4 +117,7 @@
                  (cons (car numbers) neg))))))
  '((5 6 1 2 3) ()))
 
+; TODO: support, test cases for
+; let-syntax and letrec-syntax
+
 (unit-test-handler-results)
