@@ -131,12 +131,12 @@ parseRationalNumber = do
 
 parseComplexNumber :: Parser LispVal
 parseComplexNumber = do
-  lispreal <- (parseDecimalNumber <|> parseRealNumber)
+  lispreal <- (try(parseRealNumber) <|> parseDecimalNumber)
   let real = case lispreal of
                   Number n -> fromInteger n
                   Float f -> f
   char '+'
-  lispimag <- (parseDecimalNumber <|> parseRealNumber)
+  lispimag <- (try(parseRealNumber) <|> parseDecimalNumber)
   let imag = case lispimag of
                   Number n -> fromInteger n
                   Float f -> f
@@ -209,10 +209,11 @@ parseComment = do
 
 
 parseExpr :: Parser LispVal
-parseExpr = try(parseRealNumber)
-  <|> try(parseRationalNumber)
+parseExpr = 
+      try(parseRationalNumber)
   <|> try(parseComplexNumber)
   <|> parseComment
+  <|> try(parseRealNumber)
   <|> try(parseNumber)
   <|> parseChar
   <|> parseUnquoteSpliced

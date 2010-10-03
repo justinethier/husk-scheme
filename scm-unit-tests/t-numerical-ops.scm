@@ -3,7 +3,7 @@
 (assert-equal (lambda () (complex? 3+4i)) #t)
 (assert-equal (lambda () (complex? 3)) #t)
 (assert-equal (lambda () (real? 3)) #t)
-;(assert-equal (lambda () (real? -2.5+0.0i)) #t)
+(assert-equal (lambda () (real? -2.5+0.0i)) #t)
 ;(assert-equal (lambda () (real? #e1e103)) #t)
 (assert-equal (lambda () (rational? 6/10)) #t)
 (assert-equal (lambda () (rational? 6/3)) #t)
