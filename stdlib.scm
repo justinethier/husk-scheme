@@ -188,6 +188,7 @@
 
 ; TODO: from numeric section -
 ; gcd
+;(define (gcd . nums)  nums)
 ; lcm
 ; rationalize
 ; 

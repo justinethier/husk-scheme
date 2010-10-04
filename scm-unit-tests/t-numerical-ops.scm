@@ -68,6 +68,12 @@
 ;             ("magnitude", numMagnitude), 
 ;             ("angle", numAngle ), 
 
+;(gcd 32 -36)                    ===>  4
+;(gcd)                           ===>  0
+;(lcm 32 -36)                    ===>  288
+;(lcm 32.0 -36)                  ===>  288.0  ; inexact
+;(lcm)                           ===>  1
+
 (assert-equal (lambda () (exact->inexact 2)) 2.0)
 (assert-equal (lambda () (inexact->exact 2.0)) 2)
 
