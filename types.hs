@@ -95,7 +95,7 @@ data LispVal = Atom String
 	| Bool Bool
 	| PrimitiveFunc ([LispVal] -> ThrowsError LispVal)
 	| Func {params :: [String], vararg :: (Maybe String),
-	        body :: [LispVal], closure :: Env}
+	        body :: [LispVal], closure :: Env} -- TODO: continuation member
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)
 	| Port Handle
         | Nil String -- String may be wrong choice, but do not use this type much, just internally

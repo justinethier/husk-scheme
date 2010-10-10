@@ -188,6 +188,16 @@ eval env (List (Atom "lambda" : DottedList params varargs : body)) =
 eval env (List (Atom "lambda" : varargs@(Atom _) : body)) = 
   makeVarargs varargs env [] body
 
+{- TODO: for proper tail calls (above):
+ -
+ - consider comments from http://www.sidhe.org/~dan/blog/archives/000211.html
+ - in particular:
+ -  - how a compiler can deal with tail recursion
+ -  - And if you have a continuation passing style of calling functions, it turns out to be essentially free, which is really cool, though the topic of another WTHI entry
+ -   perhaps: http://www.sidhe.org/~dan/blog/archives/000213.html
+ -   
+ - -}
+
 eval env (List [Atom "string-fill!", Atom var, character]) = do 
   str <- eval env =<< getVar env var
   chr <- eval env character
