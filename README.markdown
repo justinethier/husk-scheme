@@ -18,9 +18,10 @@ husk includes the following features:
 Features planned for development:
 
 - Iteration: do
-- Test cases, including those for: backtick, primitives (see spec section 4.1), others
+- Proper tail recursion
 - Continuations
 - A scheme "library" that may be used to embed scheme scripting within a Haskell program.
+- Test cases, including those for: backtick, primitives (see spec section 4.1), others
 - More example programs
 - General refactoring of haskell code including into multiple modules/files, addressing TODO items, etc...
 - Compare our features to R5RS spec: <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
