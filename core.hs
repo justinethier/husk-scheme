@@ -313,6 +313,9 @@ makeFunc varargs env params body = return $ Func (map showVal params) varargs bo
 makeNormalFunc = makeFunc Nothing
 makeVarargs = makeFunc . Just . showVal
 
+-- TODO:
+-- If using a trampoline, would it go here? anywhere else a function may be called from, besides apply???
+--
 apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
 apply (IOFunc func) args = func args
 apply (PrimitiveFunc func) args = liftThrows $ func args
