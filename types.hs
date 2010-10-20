@@ -94,11 +94,16 @@ data LispVal = Atom String
 	| Char Char
 	| Bool Bool
 	| PrimitiveFunc ([LispVal] -> ThrowsError LispVal)
-	| Func {params :: [String], vararg :: (Maybe String),
-	        body :: [LispVal], closure :: Env} -- TODO: continuation member
+	| Func {params :: [String], 
+ 	        vararg :: (Maybe String),
+	        body :: [LispVal], 
+ 	        closure :: Env
+ 	        -- TODO: delayed :: Bool - could use to determine whether a function should be
+            --                         evaluated by the trampoline (but need to think this through)
+ 	       } -- TODO: continuation member?
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)
 	| Port Handle
-        | Nil String -- String may be wrong choice, but do not use this type much, just internally
+ 	| Nil String -- String may be wrong choice, but do not use this type much, just internally
 
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b
