@@ -1,0 +1,10 @@
+Some design notes regarding TCO:
+
+
+Important notes from http://paulbarry.com/articles/2009/09/02/infinite-recursion
+
+TCO isn't just about self-calling. I think the following is expected to run forever in scheme (forgive my poor scheme) but has no equivalent in Clojure, hence Clojure doesn't really have TCO (which it freely admits).
+
+(define (foo) (bar))
+(define (bar) (foo))
+(foo)
