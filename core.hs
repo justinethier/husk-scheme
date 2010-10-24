@@ -48,24 +48,23 @@ flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
 
 evalString :: Env -> String -> IO String
-evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= eval env
+evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= trampoline env
 
 evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn
 
 runOne :: [String] -> IO ()
 runOne args = do
--- TODO: hook into macroEval (probably at a lower level, though)
   env <-primitiveBindings >>= flip bindVars [((varNamespace, "args"), List $ map String $ drop 1 args)]
   (runIOThrows $ liftM show $ eval env (List [Atom "load", String (args !! 0)]))
-     >>= hPutStrLn stderr  -- TODO: echo this or not??
+     >>= hPutStrLn stderr  -- echo this or not??
 
   -- Call into (main) if it exists...
   alreadyDefined <- liftIO $ isBound env "main"
   let argv = List $ map String $ args
   if alreadyDefined
-     then (runIOThrows $ liftM show $ eval env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
-     else (runIOThrows $ liftM show $ eval env $ Nil "") >>= hPutStrLn stderr
+     then (runIOThrows $ liftM show $ trampoline env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
+     else (runIOThrows $ liftM show $ trampoline env $ Nil "") >>= hPutStrLn stderr
 
 showBanner :: IO ()
 showBanner = do
@@ -96,6 +95,13 @@ runRepl = do
                                     else loop env
 -- End REPL Section
 
+trampoline :: Env -> LispVal -> IOThrowsError LispVal
+trampoline env val = do
+  result <- eval env val
+  case result of
+       -- If a form is not fully-evaluated to a value, bounce it back onto the trampoline...
+       func@(Func params vararg body closure True) -> trampoline env func -- next iteration, via tail call (?)
+       val -> return val
 
 -- Eval section
 eval :: Env -> LispVal -> IOThrowsError LispVal
@@ -169,8 +175,9 @@ eval env (List (Atom "begin" : funcs)) =
 
 eval env (List [Atom "load", String filename]) =
      load filename >>= liftM last . mapM (evaluate env)
-	 where evaluate env val = macroEval env val >>= eval env
+	 where evaluate env val = macroEval env val >>= trampoline env
 
+-- TODO: for assignment operations, may need to consider trampolining the form - need to think on this
 eval env (List [Atom "set!", Atom var, form]) = 
   eval env form >>= setVar env var
 
@@ -309,17 +316,14 @@ evalCond env (List [test, expr]) = eval env expr
 evalCond env (List (test : expr)) = last $ map (eval env) expr -- TODO: all expr's need to be evaluated, not sure happening right now
 evalCond env badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
-makeFunc varargs env params body = return $ Func (map showVal params) varargs body env
+makeFunc varargs env params body = return $ Func (map showVal params) varargs body env False
 makeNormalFunc = makeFunc Nothing
 makeVarargs = makeFunc . Just . showVal
 
--- TODO:
--- If using a trampoline, would it go here? anywhere else a function may be called from, besides apply???
---
 apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
 apply (IOFunc func) args = func args
 apply (PrimitiveFunc func) args = liftThrows $ func args
-apply (Func params varargs body closure) args =
+apply (Func params varargs body closure _) args =
   if num params /= num args && varargs == Nothing
      then throwError $ NumArgs (num params) args
      else (liftIO $ bindVars closure $ zip (map ((,) varNamespace) params) args) >>= bindVarArgs varargs >>= evalBody
@@ -618,7 +622,7 @@ hashTblRef [(HashTable ht), key@(_)] = do
     Just val -> return $ val
     Nothing -> throwError $ BadSpecialForm "Hash table does not contain key" key
 -- TODO: a thunk can optionally be specified, this drives definition of /default
-hashTblRef [(HashTable ht), key@(_), thunk@(Func params vararg body closure)] = do
+hashTblRef [(HashTable ht), key@(_), thunk@(Func params vararg body closure _)] = do
   case Data.Map.lookup key ht of
     Just val -> return $ val
 -- TODO:    Nothing -> apply thunk []
@@ -755,7 +759,7 @@ isDottedList _ = return $  Bool False
 
 isProcedure :: [LispVal] -> ThrowsError LispVal
 isProcedure ([PrimitiveFunc f]) = return $ Bool True
-isProcedure ([Func params vararg body closure]) = return $ Bool True
+isProcedure ([Func params vararg body closure partial]) = return $ Bool True
 isProcedure ([IOFunc f]) = return $ Bool True
 isProcedure _ = return $ Bool False
 
