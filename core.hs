@@ -330,8 +330,17 @@ apply (Func params varargs body closure _) args =
   where remainingArgs = drop (length params) args
         num = toInteger . length
         evalBody restBody env = do
-          TODO: need to iterate on this, maybe process head and then recurse...
-          liftM last $ mapM (eval env) restBody
+            -- Iterate through, executing each member of the body
+            -- Interestingly, this seems to handle Scheme tail recursion just fine. Need to analyze this
+            -- a bit more, but the trampoline itself may be unnecessary (which makes sense as Haskell has TCO)
+
+-- Old code, remove soon:          liftM last $ mapM (eval env) restBody
+
+            case restBody of
+                [lv] -> eval env lv
+                (lv : lvs) -> do
+                    eval env lv
+                    evalBody lvs env
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ bindVars env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
