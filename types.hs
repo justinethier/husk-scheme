@@ -87,19 +87,21 @@ data LispVal = Atom String
 	--
 	| HashTable (Data.Map.Map LispVal LispVal)
 	| Number Integer
-	| Float Double -- TODO: call this "Real" instead of "Float"...
+	| Float Double -- TODO: rename this "Real" instead of "Float"...
 	| Complex (Complex Double)
 	| Rational Rational
  	| String String
 	| Char Char
 	| Bool Bool
+ 	  -- TODO: could use to determine whether a function should be
+          --           evaluated by the trampoline (but need to think this through)
+--	| Partial (ThrowsError LispVal)
 	| PrimitiveFunc ([LispVal] -> ThrowsError LispVal)
 	| Func {params :: [String], 
  	        vararg :: (Maybe String),
 	        body :: [LispVal], 
- 	        closure :: Env
- 	        -- TODO: delayed :: Bool - could use to determine whether a function should be
-            --                         evaluated by the trampoline (but need to think this through)
+ 	        closure :: Env,
+                partialEval :: Bool
  	       } -- TODO: continuation member?
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)
 	| Port Handle
