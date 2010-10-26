@@ -23,6 +23,7 @@ Features planned for development:
 - A scheme "library" that may be used to embed scheme scripting within a Haskell program. This will necessitate extracting the repl code from Core.hs and relocating it to its own file.
 - Implementation of approved SRFI's
 - Documentation, including a description of Scheme / Haskell, API docs (?), etc
+- Release as a cabal package - see: http://www.haskell.org/haskellwiki/How_to_write_a_Haskell_program
 
 TODO Items:
 
