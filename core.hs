@@ -48,7 +48,7 @@ flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
 
 evalString :: Env -> String -> IO String
-evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= trampoline env
+evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= eval env
 
 evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn
@@ -63,8 +63,8 @@ runOne args = do
   alreadyDefined <- liftIO $ isBound env "main"
   let argv = List $ map String $ args
   if alreadyDefined
-     then (runIOThrows $ liftM show $ trampoline env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
-     else (runIOThrows $ liftM show $ trampoline env $ Nil "") >>= hPutStrLn stderr
+     then (runIOThrows $ liftM show $ eval env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
+     else (runIOThrows $ liftM show $ eval env $ Nil "") >>= hPutStrLn stderr
 
 showBanner :: IO ()
 showBanner = do
@@ -95,6 +95,7 @@ runRepl = do
                                     else loop env
 -- End REPL Section
 
+{- Should not need this function, since we are using Haskell
 trampoline :: Env -> LispVal -> IOThrowsError LispVal
 trampoline env val = do
   result <- eval env val
@@ -102,6 +103,7 @@ trampoline env val = do
        -- If a form is not fully-evaluated to a value, bounce it back onto the trampoline...
        func@(Func params vararg body closure True) -> trampoline env func -- next iteration, via tail call (?)
        val -> return val
+-}
 
 -- Eval section
 eval :: Env -> LispVal -> IOThrowsError LispVal
@@ -175,7 +177,7 @@ eval env (List (Atom "begin" : funcs)) =
 
 eval env (List [Atom "load", String filename]) =
      load filename >>= liftM last . mapM (evaluate env)
-	 where evaluate env val = macroEval env val >>= trampoline env
+	 where evaluate env val = macroEval env val >>= eval env
 
 -- TODO: for assignment operations, may need to consider trampolining the form - need to think on this
 eval env (List [Atom "set!", Atom var, form]) = 
