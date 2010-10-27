@@ -1,3 +1,11 @@
+;
+; husk-scheme
+; http://github.com/justinethier/husk-scheme
+;
+; Written by Justin Ethier
+;
+; Standard library of scheme functions
+;
 (define (caar pair) (car (car pair)))
 (define (cadr pair) (car (cdr pair)))
 (define (cdar pair) (cdr (car pair)))
