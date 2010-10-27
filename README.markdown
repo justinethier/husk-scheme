@@ -35,6 +35,8 @@ Features planned for development:
 
 TODO Items:
 
+- Better error reporting. For example:
+  * huski crashes when macro transformation not enclosed in ()
 - Correct parsing of comments, including allowing them in the middle of a form (eg: (cond))
 - Test cases, including those for: backtick, primitives (see spec section 4.1), others
 - More example programs, perhaps derive some from SICP and http://www.scheme.dk/planet/
