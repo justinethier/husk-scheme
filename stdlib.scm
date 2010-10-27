@@ -162,18 +162,20 @@
 
 ; Iteration - do
 ; TODO: will need to make step optional on a per-variable basis
-; TODO: need to firm up macro code a bit, mostly on error reporting / crashing side...
 (define-syntax do
   (syntax-rules ()
-     ((_ ((var init step) ...)
+     ((_ ((var init step ...) ...)
          (test expr ...) 
           command ...)
      (let loop ((var init) ...)
        (if test
          (begin expr ...)
          (begin (begin command ...)
-          (loop step ...)))))))
-
+                (loop step ...)))))))
+;try putting this above prev line:                (begin (write (list (list var) ...)))
+;                (loop step ...)))))))
+; I wanted to do this, but the macro code seems to think that both var, step are empty:
+;                (loop (begin var step) ...)))))))
 ; Delayed evaluation functions
 (define force
     (lambda (object)
