@@ -179,7 +179,6 @@ eval env (List [Atom "load", String filename]) =
      load filename >>= liftM last . mapM (evaluate env)
 	 where evaluate env val = macroEval env val >>= eval env
 
--- TODO: for assignment operations, may need to consider trampolining the form - need to think on this
 eval env (List [Atom "set!", Atom var, form]) = 
   eval env form >>= setVar env var
 
@@ -336,7 +335,7 @@ apply (Func params varargs body closure _) args =
             -- Interestingly, this seems to handle Scheme tail recursion just fine. Need to analyze this
             -- a bit more, but the trampoline itself may be unnecessary (which makes sense as Haskell has TCO)
 
--- Old code, remove soon:          liftM last $ mapM (eval env) restBody
+-- Old code, which will overflow stack:     liftM last $ mapM (eval env) restBody
 
             case restBody of
                 [lv] -> eval env lv

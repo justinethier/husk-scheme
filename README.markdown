@@ -1,4 +1,9 @@
 husk scheme is a "simple" dialect of scheme, implementing a subset of the [R5RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/).  
+
+TODO: explain more about scheme, haskell, husk, etc...
+
+Feature List
+------------
 husk includes the following features:
 
 - Most primitive data types and their standard forms
@@ -11,10 +16,13 @@ husk includes the following features:
 - Basic IO functions
 - Standard library of Scheme functions
 - Read-Eval-Print-Loop (REPL) interpreter, with input driven by Haskeline
+- Proper tail recursion
 - Hygenic Macros: High-level macros via define-syntax - work in progress
-- Proper tail recursion - work in progress
 - Full numeric tower - work in progress, targeted to include support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types, other constraints from spec.
 - Hash tables, as specified by [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html) - work in progress 
+
+Roadmap
+-------
 
 Features planned for development:
 
