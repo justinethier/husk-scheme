@@ -8,6 +8,14 @@
                      (vector-set! vec i i)))
                 #(0 1 2 3 4))
 
+; Per spec, <step> does not have to be specified
+(assert-equal (lambda () 
+                (do ((vec (make-vector 5))
+                     (i 0 (+ i 1)))
+                    ((= i 5) vec)
+                     (vector-set! vec i i)))
+                #(0 1 2 3 4))
+
 (assert-equal (lambda () 
                 (let ((x '(1 3 5 7 9)))
                     (do ((x x (cdr x))
