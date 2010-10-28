@@ -20,17 +20,16 @@ import Control.Monad.Error
 -- There is also a special case (define-syntax) that loads new rules.
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
 macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
+  -- TODO: there really ought to be some error checking of the syntax rules, since they could be malformed...
+  --       As it stands now, there is no checking until the code attempts to perform a macro transformation.
   defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
-
 macroEval env lisp@(List (x@(List _) : xs)) = do
   first <- macroEval env x
   rest <- mapM (macroEval env) xs
   return $ List $ first : rest
-
 -- TODO: equivalent matches/transforms for vectors
 --       what about dotted lists?
-
 macroEval env lisp@(List (Atom x : xs)) = do
   isDefined <- liftIO $ isNamespacedBound env macroNamespace x
   if isDefined
@@ -52,9 +51,10 @@ macroTransform env identifiers rules@(rule@(List r) : rs) input = do
   case result of 
     Nil _ -> macroTransform env identifiers rs input
     otherwise -> return result
-macroTransform _ _ rules input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
+-- Ran out of rules to match...
+macroTransform _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
 
--- Determine if the next element matches 0-to-n times due to an ellipsis
+-- Determine if the next element in a list matches 0-to-n times due to an ellipsis
 macroElementMatchesMany :: LispVal -> Bool
 macroElementMatchesMany (List (p:ps)) = do
   if length ps > 0
@@ -84,9 +84,6 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
                      throwError $ BadSpecialForm "DEBUG" $ List [temp, temp2]
                      throwError $ BadSpecialForm "DEBUG" trans-}
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
-        --
-        -- loadLocal - determine if pattern matches input, loading input into pattern variables as we go,
-        --             in preparation for macro transformation.
   where findAtom :: LispVal -> LispVal -> IOThrowsError LispVal
         findAtom (Atom target) (List (Atom a:as)) = do
           if target == a
@@ -95,6 +92,9 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
         findAtom target (List (badtype : _)) = throwError $ TypeMismatch "symbol" badtype -- TODO: test this, non-atoms should throw err
         findAtom target _ = return $ Bool False
   
+        --
+        -- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
+        --             in preparation for macro transformation.
         loadLocal :: Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
         loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do -- TODO: kind of a hack to have both ellipsis vars. Is only outer req'd?
           case (pattern, input) of
