@@ -161,7 +161,23 @@
 		     body)))))
 
 ; Iteration - do
-; TODO: will need to make step optional on a per-variable basis
+; TODO: New version of do that makes step optional on a per-variable basis
+;       This works great in csi but the macro does not match in huski.
+;       It looks like our macro logic needs to have some more work done :)
+(define-syntax my-do
+  (syntax-rules ()
+     ((_ ((var init . step) ...)
+         (test expr ...) 
+          command ...)
+     (let loop ((var init) ...)
+       (if test
+         (begin expr ...)
+         (begin (begin command ...)
+                (loop 
+                  (if (null? (cdr (list var . step))) 
+                      (car  (list var . step))
+                      (cadr (list var . step))) ...)))))))
+; Old version that always requires step be specified, which violates spec
 (define-syntax do
   (syntax-rules ()
      ((_ ((var init step ...) ...)
@@ -172,10 +188,8 @@
          (begin expr ...)
          (begin (begin command ...)
                 (loop step ...)))))))
-;try putting this above prev line:                (begin (write (list (list var) ...)))
-;                (loop step ...)))))))
-; I wanted to do this, but the macro code seems to think that both var, step are empty:
-;                (loop (begin var step) ...)))))))
+
+
 ; Delayed evaluation functions
 (define force
     (lambda (object)
