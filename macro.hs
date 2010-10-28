@@ -168,8 +168,13 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
 
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
+--
+--      TODO: is this below transform even correct? need to write some test cases for this one...
         checkLocal localEnv identifiers hasEllipsis (DottedList ps p) (DottedList is i) = 
           loadLocal localEnv identifiers (List $ ps ++ [p]) (List $ is ++ [i]) False hasEllipsis
+        -- TODO: testing following function as part of the do macro - may not be correct yet :)
+        checkLocal localEnv identifiers hasEllipsis (DottedList (p : ps) pss) input@(List (i : is)) = 
+          loadLocal localEnv identifiers (List $ [p] ++ ps ++ [pss]) input False hasEllipsis
         checkLocal localEnv identifiers hasEllipsis pattern@(List _) input@(List _) = 
           loadLocal localEnv identifiers pattern input False hasEllipsis
 
