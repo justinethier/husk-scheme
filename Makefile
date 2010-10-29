@@ -14,6 +14,8 @@ test: husk
 	cd scm-unit-tests ; ../huski t-stdlib.scm
 	cd scm-unit-tests ; ../huski t-vector.scm
 
+	cd scm-unit-tests ; ../huski t-iteration.scm
+
 clean:
 	rm -f *.o
 	rm -f *.hi
