@@ -75,6 +75,7 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
              return $ Nil "" --throwError $ BadSpecialForm "Input does not match macro pattern" (List is)
            otherwise -> do
 		     transformRule localEnv 0 (List []) template (List [])
+                     -- DEBUGGING: throwError $ BadSpecialForm "Input does not match macro pattern" (List is)
 		     {- DEBUGGING: remove once macro's are working...
                       - trans <- transformRule localEnv 0 (List []) template (List [])
                      --flushStr $ show $ trans
@@ -98,6 +99,12 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
         loadLocal :: Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
         loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do -- TODO: kind of a hack to have both ellipsis vars. Is only outer req'd?
           case (pattern, input) of
+               ((DottedList ps p), (DottedList is i)) -> do
+                 result <- loadLocal localEnv  identifiers (List ps) (List is) False outerHasEllipsis
+                 case result of
+                    Bool True -> loadLocal localEnv identifiers p i False outerHasEllipsis
+                    otherwise -> return $ Bool False
+
                (List (p:ps), List (i:is)) -> do -- check first input against first pattern, recurse...
 
                  let hasEllipsis = macroElementMatchesMany pattern
@@ -170,11 +177,14 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
 --
 --      TODO: is this below transform even correct? need to write some test cases for this one...
-        checkLocal localEnv identifiers hasEllipsis (DottedList ps p) (DottedList is i) = 
-          loadLocal localEnv identifiers (List $ ps ++ [p]) (List $ is ++ [i]) False hasEllipsis
-        -- TODO: testing following function as part of the do macro - may not be correct yet :)
-        checkLocal localEnv identifiers hasEllipsis (DottedList (p : ps) pss) input@(List (i : is)) = 
-          loadLocal localEnv identifiers (List $ [p] ++ ps ++ [pss]) input False hasEllipsis
+--            seems correct so far. need to preserve dotted lists and process them in loadLocal - converting
+--            them to lists right here seems like the wrong place...
+        checkLocal localEnv identifiers hasEllipsis pattern@(DottedList ps p) input@(DottedList is i) = 
+          loadLocal localEnv identifiers pattern input False hasEllipsis
+        -- Idea here is that if we have a dotted list, the last component does not have to be provided
+        -- in the input. So we just need to fill in an empty list for the missing component.
+        checkLocal localEnv identifiers hasEllipsis pattern@(DottedList ps p) input@(List (i : is)) = 
+          loadLocal localEnv identifiers pattern (DottedList (i : is) (List [])) False hasEllipsis
         checkLocal localEnv identifiers hasEllipsis pattern@(List _) input@(List _) = 
           loadLocal localEnv identifiers pattern input False hasEllipsis
 
