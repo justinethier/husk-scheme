@@ -120,4 +120,31 @@
 ; TODO: support, test cases for
 ; let-syntax and letrec-syntax
 
+; Dotted lists (pairs)
+;
+; First test macro, tests that pairs are correctly processed in the pattern
+(define-syntax my-pair-test/01
+  (syntax-rules ()
+     ((_ (var init . step))
+      (list (quote (var init step))))))
+
+; Second test macro, tests that pairs are correctly detected in pattern and
+; are then transformed correctly as well.
+(define-syntax my-pair-test/02
+  (syntax-rules ()
+     ((_ (var init . step))
+      (list (quote (var init . step))))))
+
+; Following test cases for v01 are without the dot in the transform. (IE: (var init step))
+; need test cases for both versions of the macro (IE: (var init . step) as well)
+(assert-equal (lambda ()
+                (my-pair-test/01 (1 2 . 3)))
+                 '((1 2 3)))
+(assert-equal (lambda ()
+                (my-pair-test/01 (1 2)))
+                '((1 2 ())))  
+(assert-equal (lambda ()
+                (my-pair-test/01 (1 (2 3 4 5) . 4)))
+                '((1 (2 3 4 5) 4)))
+
 (unit-test-handler-results)
