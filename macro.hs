@@ -243,7 +243,31 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                                List lst -> lst
 
 -- TODO: vector transform (and taking vectors into account in other cases as well???)
--- TODO: what about dotted lists?
+
+
+{- PLACING HERE AS A REMINDER, SINCE THIS IS VERY IMPORTANT TO GET RIGHT IN BELOW FUNCTION
+; TODO - before finishing here, need to explicitly test case where the
+;        member after the . is just a symbol and should not be transformed.
+;        (IE: (var init . my-symbol))
+;        also test - (var my-symbol . step)
+-}
+
+-- TODO: what about dotted lists? - Here is a first-cut...
+-- TODO: not sure what to put for index or if ellipsisList is required. Need to answer both
+--       questions before below function is truly complete...
+transformRule localEnv ellipsisIndex (List result) transform@(List (DottedList ds d : ts)) unused = do
+ -- TODO: what index to use below?
+  lsto <- transformRule localEnv (ellipsisIndex + 0) (List []) (List ds) unused
+  case lsto of
+    List lst -> do 
+                 rst <- transformRule localEnv (ellipsisIndex + 0) (List []) d unused
+                 case rst of
+                      -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
+                      -- TODO: is this correct, or is it Nil _?
+                      List [Nil _] -> transformRule localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) unused
+                      List _ -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) unused
+                      otherwise -> throwError $ BadSpecialForm "Macro transform error" d 
+    otherwise -> throwError $ BadSpecialForm "Macro transform error" $ List [DottedList ds d, lsto]
 
 -- Transform an atom by attempting to look it up as a var...
 transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)) unused = do
@@ -268,6 +292,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                                           List v -> if (length v) > (ellipsisIndex - 1)
                                                        then return $ v !! (ellipsisIndex - 1)
                                                        else return $ Nil ""
+                                          otherwise -> return $ Nil "" -- Looked up variable and it does not exist
 					            else return var
                      else if ellipsisIndex > 0
                              then return $ Nil "" -- Zero-match case
