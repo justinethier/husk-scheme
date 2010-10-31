@@ -253,8 +253,6 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
 -}
 
 -- TODO: what about dotted lists? - Here is a first-cut...
--- TODO: not sure what to put for index or if ellipsisList is required. Need to answer both
---       questions before below function is truly complete...
 transformRule localEnv ellipsisIndex (List result) transform@(List (DottedList ds d : ts)) unused = do
  -- TODO: what index to use below?
   lsto <- transformRule localEnv ellipsisIndex (List []) (List ds) unused
