@@ -257,17 +257,17 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
 --       questions before below function is truly complete...
 transformRule localEnv ellipsisIndex (List result) transform@(List (DottedList ds d : ts)) unused = do
  -- TODO: what index to use below?
-  lsto <- transformRule localEnv (ellipsisIndex + 0) (List []) (List ds) unused
+  lsto <- transformRule localEnv ellipsisIndex (List []) (List ds) unused
   case lsto of
     List lst -> do 
-                 rst <- transformRule localEnv (ellipsisIndex + 0) (List []) d unused
+                 rst <- transformRule localEnv ellipsisIndex (List []) d unused
                  case rst of
                       -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
                       -- TODO: is this correct, or is it Nil _?
                       List [Nil _] -> transformRule localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) unused
                       List _ -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) unused
                       otherwise -> throwError $ BadSpecialForm "Macro transform error" d 
-    otherwise -> throwError $ BadSpecialForm "Macro transform error" $ List [DottedList ds d, lsto]
+    otherwise -> throwError $ BadSpecialForm "Macro transform error - " $ List [DottedList ds d, lsto]
 
 -- Transform an atom by attempting to look it up as a var...
 transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)) unused = do
@@ -293,6 +293,11 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                                                        then return $ v !! (ellipsisIndex - 1)
                                                        else return $ Nil ""
                                           otherwise -> return $ Nil "" -- Looked up variable and it does not exist
+                                                                       -- This may just be a band-aid; may need to
+                                                                       -- flag those vars in the pattern so can
+                                                                       -- determine here if it an atom or empty var.
+                                                                       -- Then again, isn't that the point of the
+                                                                       -- 'identifiers' list?
 					            else return var
                      else if ellipsisIndex > 0
                              then return $ Nil "" -- Zero-match case
@@ -309,3 +314,5 @@ transformRule localEnv ellipsisIndex result@(List r) transform@(List (t : ts)) u
 transformRule localEnv ellipsisIndex result@(List _) transform@(List []) unused = do
   return result
 
+transformRule localEnv ellipsisIndex result transform unused = do
+  throwError $ BadSpecialForm "An error occurred during macro transform" $ List [(Number $ toInteger ellipsisIndex), result, transform, unused]
