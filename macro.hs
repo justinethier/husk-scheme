@@ -258,12 +258,13 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (DottedList d
   lsto <- transformRule localEnv ellipsisIndex (List []) (List ds) unused
   case lsto of
     List lst -> do 
-                 rst <- transformRule localEnv ellipsisIndex (List []) d unused
-                 case rst of
+                 r <- transformRule localEnv ellipsisIndex (List []) (List [d]) unused
+                 case r of
                       -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
                       -- TODO: is this correct, or is it Nil _?
+                      -- TODO: below func never seems to be called, need to verify...
                       List [Nil _] -> transformRule localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) unused
-                      List _ -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) unused
+                      List rst -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst $ head rst]) (List ts) unused
                       otherwise -> throwError $ BadSpecialForm "Macro transform error" d 
     otherwise -> throwError $ BadSpecialForm "Macro transform error - " $ List [DottedList ds d, lsto]
 
@@ -296,6 +297,8 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                                                                        -- determine here if it an atom or empty var.
                                                                        -- Then again, isn't that the point of the
                                                                        -- 'identifiers' list?
+                                                                       -- Also, need to reconsider all of this since this
+                                                                       -- is within the isBound section...
 					            else return var
                      else if ellipsisIndex > 0
                              then return $ Nil "" -- Zero-match case
