@@ -179,13 +179,13 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
 --
         checkLocal localEnv identifiers hasEllipsis pattern@(DottedList ps p) input@(DottedList is i) = 
           loadLocal localEnv identifiers pattern input False hasEllipsis
-        -- TODO: For a list there are two cases, the last item in the pair may be omitted, but it may also be present
-        --       in the input list. Need to handle both
-        -- Idea here is that if we have a dotted list, the last component does not have to be provided
-        -- in the input. So we just need to fill in an empty list for the missing component.
         checkLocal localEnv identifiers hasEllipsis pattern@(DottedList ps p) input@(List (i : is)) = do
           if (length ps) == (length is)
-             then -- TODO: lists are same length, so convert them both to the same type (dotted or list, not sure it matters) - loadLocal localEnv identifiers pattern (DottedList (i : is) (List [])) False hasEllipsis
+                  -- Lists are same length, implying elements in both should be the same.
+                  -- Cast pair to a List for further processing
+             then loadLocal localEnv identifiers (List $ ps ++ [p]) input False hasEllipsis
+                  -- Idea here is that if we have a dotted list, the last component does not have to be provided
+                  -- in the input. So in that case just fill in an empty list for the missing component.
              else loadLocal localEnv identifiers pattern (DottedList (i : is) (List [])) False hasEllipsis
         checkLocal localEnv identifiers hasEllipsis pattern@(List _) input@(List _) = 
           loadLocal localEnv identifiers pattern input False hasEllipsis
