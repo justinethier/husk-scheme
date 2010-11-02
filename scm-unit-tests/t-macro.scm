@@ -157,4 +157,15 @@
                 (my-pair-test/02 (1 (2 3 4 5) . 4)))
                 '((1 (2 3 4 5) . 4)))
 
+(define-syntax my-pair-test/03
+  (syntax-rules (step)
+     ((_ (var init . step))
+      (list (quote (var init . step))))))
+(assert-equal (lambda ()
+                (my-pair-test/03 (1 2 . step)))
+                 '((1 2 . step)))
+(assert-equal (lambda ()
+                (my-pair-test/03 (1 (2 3 4 5) . step)))
+                '((1 (2 3 4 5) . step)))
+
 (unit-test-handler-results)
