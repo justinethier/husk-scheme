@@ -147,4 +147,14 @@
                 (my-pair-test/01 (1 (2 3 4 5) . 4)))
                 '((1 (2 3 4 5) 4)))
 
+(assert-equal (lambda ()
+                (my-pair-test/02 (1 2 . 3)))
+                 '((1 2 . 3)))
+(assert-equal (lambda ()
+                (my-pair-test/02 (1 2)))
+                '((1 2)))  
+(assert-equal (lambda ()
+                (my-pair-test/02 (1 (2 3 4 5) . 4)))
+                '((1 (2 3 4 5) . 4)))
+
 (unit-test-handler-results)

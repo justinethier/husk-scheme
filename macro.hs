@@ -261,10 +261,8 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (DottedList d
                  r <- transformRule localEnv ellipsisIndex (List []) (List [d]) unused
                  case r of
                       -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
-                      -- TODO: is this correct, or is it Nil _?
-                      -- TODO: below func never seems to be called, need to verify...
-                      List [Nil _] -> transformRule localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) unused
-                      List rst -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst $ head rst]) (List ts) unused
+                      List [List []] -> transformRule localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) unused
+                      List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) unused
                       otherwise -> throwError $ BadSpecialForm "Macro transform error" d 
     otherwise -> throwError $ BadSpecialForm "Macro transform error - " $ List [DottedList ds d, lsto]
 
@@ -291,7 +289,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                                           List v -> if (length v) > (ellipsisIndex - 1)
                                                        then return $ v !! (ellipsisIndex - 1)
                                                        else return $ Nil ""
-                                          otherwise -> return $ Nil "" -- Looked up variable and it does not exist
+--                                          otherwise -> return $ Nil "" -- Looked up variable and it does not exist
                                                                        -- This may just be a band-aid; may need to
                                                                        -- flag those vars in the pattern so can
                                                                        -- determine here if it an atom or empty var.
