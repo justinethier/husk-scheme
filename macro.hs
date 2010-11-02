@@ -173,18 +173,20 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
              else defineVar localEnv pattern input
           return $ Bool True
 
+-- TODO: vector support. And what the heck are these next two TODO's doing here? :)
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 -- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
 --
---      TODO: is this below transform even correct? need to write some test cases for this one...
---            seems correct so far. need to preserve dotted lists and process them in loadLocal - converting
---            them to lists right here seems like the wrong place...
         checkLocal localEnv identifiers hasEllipsis pattern@(DottedList ps p) input@(DottedList is i) = 
           loadLocal localEnv identifiers pattern input False hasEllipsis
+        -- TODO: For a list there are two cases, the last item in the pair may be omitted, but it may also be present
+        --       in the input list. Need to handle both
         -- Idea here is that if we have a dotted list, the last component does not have to be provided
         -- in the input. So we just need to fill in an empty list for the missing component.
-        checkLocal localEnv identifiers hasEllipsis pattern@(DottedList ps p) input@(List (i : is)) = 
-          loadLocal localEnv identifiers pattern (DottedList (i : is) (List [])) False hasEllipsis
+        checkLocal localEnv identifiers hasEllipsis pattern@(DottedList ps p) input@(List (i : is)) = do
+          if (length ps) == (length is)
+             then -- TODO: lists are same length, so convert them both to the same type (dotted or list, not sure it matters) - loadLocal localEnv identifiers pattern (DottedList (i : is) (List [])) False hasEllipsis
+             else loadLocal localEnv identifiers pattern (DottedList (i : is) (List [])) False hasEllipsis
         checkLocal localEnv identifiers hasEllipsis pattern@(List _) input@(List _) = 
           loadLocal localEnv identifiers pattern input False hasEllipsis
 
