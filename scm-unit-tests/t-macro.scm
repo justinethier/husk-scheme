@@ -122,6 +122,14 @@
 
 ; Dotted lists (pairs)
 ;
+; According to the spec, the following is one of the cases where an input form F matches a pattern P:
+;
+; P is an improper list (P1 P2 ... Pn . Pn+1) and F is a list or improper list of 
+; n or more forms that match P1 through Pn, respectively, and whose nth ``cdr'' matches Pn+1;
+;
+; The following test cases attempt to cover all possible permutations of this case, comparing
+; dotted (improper) lists, lists (with Pn+1 missing), and lists (with Pn+1 present).
+;
 ; First test macro, tests that pairs are correctly processed in the pattern
 (define-syntax my-pair-test/01
   (syntax-rules ()
@@ -141,6 +149,9 @@
                 (my-pair-test/01 (1 2 . 3)))
                  '((1 2 3)))
 (assert-equal (lambda ()
+                (my-pair-test/01 (1 2 3)))
+                 '((1 2 3)))
+(assert-equal (lambda ()
                 (my-pair-test/01 (1 2)))
                 '((1 2 ())))  
 (assert-equal (lambda ()
@@ -149,6 +160,9 @@
 
 (assert-equal (lambda ()
                 (my-pair-test/02 (1 2 . 3)))
+                 '((1 2 . 3)))
+(assert-equal (lambda ()
+                (my-pair-test/02 (1 2 3)))
                  '((1 2 . 3)))
 (assert-equal (lambda ()
                 (my-pair-test/02 (1 2)))
