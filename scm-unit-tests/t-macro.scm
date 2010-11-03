@@ -182,4 +182,16 @@
                 (my-pair-test/03 (1 (2 3 4 5) . step)))
                 '((1 (2 3 4 5) . step)))
 
+(define-syntax my-pair-test/04
+  (syntax-rules ()
+     ((_ (var init . step) ...)
+      (quote ((var init . step) ...)))))
+; TODO: output for both of the following test cases is so screwed up (!)
+(write
+  (my-pair-test/04 (1 2 6) (3 4 5)))
+; expected - ((1 2 6) (3 4 5))
+(write
+  (my-pair-test/04 (1 2) (3 4 5)))
+; expected - ((1 2) (3 4 5))
+
 (unit-test-handler-results)
