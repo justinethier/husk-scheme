@@ -177,17 +177,18 @@
                   (if (null? (cdr (list var . step))) 
                       (car  (list var . step))
                       (cadr (list var . step))) ...)))))))
+
 ; Old version that always requires step be specified, which violates spec
-(define-syntax old-do
-  (syntax-rules ()
-     ((_ ((var init step ...) ...)
-         (test expr ...) 
-          command ...)
-     (let loop ((var init) ...)
-       (if test
-         (begin expr ...)
-         (begin (begin command ...)
-                (loop step ...)))))))
+;(define-syntax old-do
+;  (syntax-rules ()
+;     ((_ ((var init step ...) ...)
+;         (test expr ...) 
+;          command ...)
+;     (let loop ((var init) ...)
+;       (if test
+;         (begin expr ...)
+;         (begin (begin command ...)
+;                (loop step ...)))))))
 
 
 ; Delayed evaluation functions

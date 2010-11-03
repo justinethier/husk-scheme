@@ -37,6 +37,10 @@ TODO Items:
 
 - Better error reporting. For example:
   * huski crashes when macro transformation not enclosed in ()
+  * What's up with this error message:
+    huski> (define vec)
+    Getting an unbound variable: define
+
 - Correct parsing of comments, including allowing them in the middle of a form (eg: (cond))
 - Test cases, including those for: backtick, primitives (see spec section 4.1), others
 - More example programs, perhaps derive some from SICP and http://www.scheme.dk/planet/
