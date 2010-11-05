@@ -199,6 +199,14 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
 -- with the same form, replacing identifiers in the tranform with those bound in localEnv
 transformRule :: Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
 
+-- TODO: need to implement this for dotted lists
+--       apparently not good enough to just transform these as themselves, need to be able to have
+--       intelligence regarding zero-or-many matches
+transformRule localEnv ellipsisIndex (List result) transform@(List(DottedList ls l : ts)) (List ellipsisList) = do
+  throwError $ BadSpecialForm "Not yet implemented" l 
+
+-- TODO: similar transform for vectors
+
 -- Recursively transform a list
 transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts)) (List ellipsisList) = do
   let hasEllipsis = macroElementMatchesMany transform
@@ -217,7 +225,8 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                                 -- First time through and no match ("zero" case)....
                            then transformRule localEnv 0 (List $ result) (List $ tail ts) (List []) -- tail => Move past the ...
                            else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
-               List t -> if lastElementIsNil t
+               List t -> {- TODO: this code block does not seem to be used, need to revisit why it is even here...
+                            if lastElementIsNil t
 			                     -- Base case, there is no more data to transform for this ellipsis
                             -- 0 (and above nesting) means we cannot allow more than one ... active at a time (OK per spec???)
                             then if ellipsisIndex == 0
@@ -225,7 +234,8 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                                     then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])
                                     else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
 			                     -- Next iteration of the zero-to-many match
-                            else do if ellipsisIndex == 0
+                            else-}
+                            do if ellipsisIndex == 0
                                     -- First time through, swap out result
                                       then do 
                                               transformRule localEnv (ellipsisIndex + 1) (List [curT]) transform (List result)
