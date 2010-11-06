@@ -285,6 +285,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
                                 List [List []] -> transformRule localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) unused
                                 List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) unused
                                 otherwise -> throwError $ BadSpecialForm "transformPair1: Macro transform error" d 
+            Nil _ -> throwError $ BadSpecialForm "transformPair2: Macro transform error - Nil - " $ List [DottedList ds d, lsto]
             otherwise -> throwError $ BadSpecialForm "transformPair2: Macro transform error - " $ List [DottedList ds d, lsto]
 
 -- Transform an atom by attempting to look it up as a var...
