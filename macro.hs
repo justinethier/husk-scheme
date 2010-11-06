@@ -203,6 +203,7 @@ transformRule :: Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError Li
 -- Recursively transform a list
 --
 -- Parameters:
+--
 --  localEnv - Local variable environment
 --  ellipsisIndex - Zero-or-more match variables are stored as a list. 
 --                  This is the index into the current value to read from list
@@ -213,15 +214,14 @@ transformRule :: Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError Li
 --
 transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts)) (List ellipsisList) = do
   if macroElementMatchesMany transform
-
-
      then do 
              curT <- transformRule localEnv (ellipsisIndex + 1) (List []) (List l) (List result)
 --             throwError $ BadSpecialForm "test" $ List [curT, Number $ toInteger ellipsisIndex, List l] -- TODO: debugging
              case curT of
                Nil _ -> if ellipsisIndex == 0
-                                -- First time through and no match ("zero" case)....
-                           then transformRule localEnv 0 (List $ result) (List $ tail ts) (List []) -- tail => Move past the ...
+                                -- First time through and no match ("zero" case). Use tail to move past the "..."
+                           then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
+                                -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
                            else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
                List t -> {- TODO: this code block does not seem to be used, need to revisit why it is even here...
                             if lastElementIsNil t
