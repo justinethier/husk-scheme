@@ -261,7 +261,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
      then do 
      -- Idea here is that we need to handle case where you have (pair ...) - EG: ((var . step) ...)
              curT <- transformDottedList localEnv (ellipsisIndex + 1) (List []) (List [dl]) (List result)
---             throwError $ BadSpecialForm "test" $ List [curT, Number $ toInteger ellipsisIndex, List l] -- TODO: debugging
+             throwError $ BadSpecialForm "test" $ List [curT, Number $ toInteger ellipsisIndex, List l] -- TODO: debugging
              case curT of
                Nil _ -> if ellipsisIndex == 0
                                 -- First time through and no match ("zero" case). Use tail to move past the "..."
@@ -285,16 +285,19 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
                                 List [List []] -> transformRule localEnv ellipsisIndex (List $ result ++ lst) (List ts) (List ellipsisList)
                                 List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList)
                                 otherwise -> throwError $ BadSpecialForm "transformPair1: Macro transform error" d 
-            Nil _ -> throwError $ BadSpecialForm "transformPair2: Macro transform error - Nil - " $ List [DottedList ds d, lsto, Number $ toInteger ellipsisIndex, List ellipsisList]
---          This is based on the same code from the "main" dotted list transform, and could probably
+--            Nil _ -> throwError $ BadSpecialForm "transformPair2: Macro transform error - Nil - " $ List [DottedList ds d, lsto, Number $ toInteger ellipsisIndex, List ellipsisList]
+--          This was based on the same code from the "main" dotted list transform, and could probably
 --          be rolled into a common function
-{-            Nil _ -> if ellipsisIndex == 0
+--
+-- Actually, need to think about this. Perhaps only one (this one) will be needed. In which case the outer code needs
+-- to change to accept a return value from this
+--
+            Nil _ -> return $ List ellipsisList {-if ellipsisIndex == 0
                              -- First time through and no match ("zero" case). Use tail to move past the "..."
                         then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
                              -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
-                        else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
+                        else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List []) -}
             otherwise -> throwError $ BadSpecialForm "transformPair2: Macro transform error - " $ List [DottedList ds d, lsto]
--}
 -- Transform an atom by attempting to look it up as a var...
 transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)) unused = do
   let hasEllipsis = macroElementMatchesMany transform
