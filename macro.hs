@@ -289,7 +289,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
                            r <- transformRule localEnv ellipsisIndex (List []) (List [d]) (List ellipsisList)
                            case r of
                                 -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
-                                List [List []] -> transformRule localEnv ellipsisIndex (List $ result ++ lst) (List ts) (List ellipsisList)
+                                List [List []] -> transformRule localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) (List ellipsisList)
                                 List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList)
                                 otherwise -> throwError $ BadSpecialForm "transformPair1: Macro transform error" d 
 --            Nil _ -> throwError $ BadSpecialForm "transformPair2: Macro transform error - Nil - " $ List [DottedList ds d, lsto, Number $ toInteger ellipsisIndex, List ellipsisList]
