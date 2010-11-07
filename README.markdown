@@ -1,6 +1,6 @@
-husk scheme is a dialect of Scheme written in Haskell that implements a subset of the [R5RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Husk is not intended to be a highly optimized version of Scheme. Rather, the goal of the project is to provide a tight integration between Haskell and Scheme while at the same time providing a great opportunity for deeper understanding of both languages. In addition, by closely following the R5RS standard the intent is to develop a Scheme that is as compatible as possible with other R5RS Schemes.
+husk is a dialect of Scheme written in Haskell that implements a subset of the [R5RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Husk is not intended to be a highly optimized version of Scheme. Rather, the goal of the project is to provide a tight integration between Haskell and Scheme while at the same time providing a great opportunity for deeper understanding of both languages. In addition, by closely following the R5RS standard the intent is to develop a Scheme that is as compatible as possible with other R5RS Schemes.
 
-Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy: the core language consists of a small number of fundamental forms, which may be used to implement other built-int forms. Scheme is an excellent language for writing small, elegant programs and can be a wonderful choice as the "glue" to hold together various components of an overall solution.
+Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy: the core language consists of a small number of fundamental forms, which may be used to implement other built-int forms. Scheme is an excellent language for writing small, elegant programs and can also be used as a "glue" language to hold together various components of an overall solution.
 
 TODO: explain more about scheme, haskell, husk, etc...
 
@@ -42,7 +42,7 @@ TODO Items:
   * What's up with this error message:
     huski> (define vec)
     Getting an unbound variable: define
-
+- Crashes if the first line of a scheme file is blank
 - Correct parsing of comments, including allowing them in the middle of a form (eg: (cond))
 - Test cases, including those for: backtick, primitives (see spec section 4.1), others
 - More example programs, perhaps derive some from SICP and http://www.scheme.dk/planet/
