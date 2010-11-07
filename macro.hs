@@ -261,13 +261,20 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
      then do 
      -- Idea here is that we need to handle case where you have (pair ...) - EG: ((var . step) ...)
              curT <- transformDottedList localEnv (ellipsisIndex + 1) (List []) (List [dl]) (List result)
-             throwError $ BadSpecialForm "test" $ List [curT, Number $ toInteger ellipsisIndex, List l] -- TODO: debugging
+--             throwError $ BadSpecialForm "test" $ List [curT, Number $ toInteger ellipsisIndex, List [dl]] -- TODO: debugging
              case curT of
                Nil _ -> if ellipsisIndex == 0
                                 -- First time through and no match ("zero" case). Use tail to move past the "..."
                            then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
                                 -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
                            else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
+               -- This case is here because we need to process individual components of the pair to determine
+               -- whether we are done with the match. It is similar to above but not exact...
+               List [Nil _, List elst] -> if ellipsisIndex == 0
+                                -- First time through and no match ("zero" case). Use tail to move past the "..."
+                           then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
+                                -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
+                           else transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])
                List t -> transformRule localEnv (ellipsisIndex + 1) (List $ result ++ t) transform (List ellipsisList)
      else do lst <- transformDottedList localEnv ellipsisIndex (List []) (List [dl]) (List ellipsisList)
              case lst of
@@ -292,7 +299,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
 -- Actually, need to think about this. Perhaps only one (this one) will be needed. In which case the outer code needs
 -- to change to accept a return value from this
 --
-            Nil _ -> return $ List ellipsisList {-if ellipsisIndex == 0
+            Nil _ -> return $ List [Nil "", List ellipsisList] {-if ellipsisIndex == 0
                              -- First time through and no match ("zero" case). Use tail to move past the "..."
                         then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
                              -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
