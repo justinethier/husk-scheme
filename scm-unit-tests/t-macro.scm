@@ -164,6 +164,7 @@
 (assert-equal (lambda ()
                 (my-pair-test/02 (1 2 3)))
                  '((1 2 . 3)))
+
 (assert-equal (lambda ()
                 (my-pair-test/02 (1 2)))
                 '((1 2)))  
@@ -187,11 +188,11 @@
      ((_ (var init . step) ...)
       (quote ((var init . step) ...)))))
 ; TODO: output for both of the following test cases is so screwed up (!)
-(write
+(assert-equal (lambda ()
   (my-pair-test/04 (1 2 6) (3 4 5)))
-; expected - ((1 2 6) (3 4 5))
-(write
+  '((1 2 6) (3 4 5)))
+(assert-equal (lambda ()
   (my-pair-test/04 (1 2) (3 4 5)))
-; expected - ((1 2) (3 4 5))
+  '((1 2) (3 4 5)))
 
 (unit-test-handler-results)
