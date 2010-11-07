@@ -131,7 +131,7 @@ eval env (List [Atom "quasiquote", val]) = do
             List [Atom "unquote-splicing", val] -> eval env val -- TODO: not quite right behavior
             otherwise -> eval env (List [Atom "quote", val]) -- TODO: could this be simplified?
 
-eval env (List [Atom "if", pred, conseq, alt]) = {- TODO: alt should be optional (though not per spec)-} 
+eval env (List [Atom "if", pred, conseq, alt]) =
     do result <- eval env pred
        case result of
          Bool False -> eval env alt
