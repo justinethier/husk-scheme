@@ -86,15 +86,16 @@
 (define (length lst)    (fold (lambda (x y) (+ x 1)) 0 lst))
 (define (reverse lst)   (fold (flip cons) '() lst))
 
-(define (mem-helper pred op)  (lambda (acc next) (if (and (not acc) (pred (op next))) next acc)))
-;(define (memq obj lst)        (fold (mem-helper (curry eq? obj) id) #f lst))
-(define (memq obj lst)
+(define (my-mem-helper obj lst cmp-proc)
  (cond 
    ((null? lst) #f)
-   ((eq? obj (car lst)) (cdr lst))
-   (else (memq obj (cdr lst)))))
-(define (memv obj lst)        (fold (mem-helper (curry eqv? obj) id) #f lst))
-(define (member obj lst)      (fold (mem-helper (curry equal? obj) id) #f lst))
+   ((cmp-proc obj (car lst)) lst)
+   (else (my-mem-helper obj (cdr lst) cmp-proc))))
+(define (memq obj lst) (my-mem-helper obj lst eq?))
+(define (memv obj lst) (my-mem-helper obj lst eqv?))
+(define (member obj lst) (my-mem-helper obj lst equal?))
+
+(define (mem-helper pred op)  (lambda (acc next) (if (and (not acc) (pred (op next))) next acc)))
 (define (assq obj alist)      (fold (mem-helper (curry eq? obj) car) #f alist))
 (define (assv obj alist)      (fold (mem-helper (curry eqv? obj) car) #f alist))
 (define (assoc obj alist)     (fold (mem-helper (curry equal? obj) car) #f alist))
