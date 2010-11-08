@@ -19,9 +19,9 @@ husk includes the following features:
 - Standard library of Scheme functions
 - Read-Eval-Print-Loop (REPL) interpreter, with input driven by Haskeline
 - Proper tail recursion
-- Hygenic Macros: High-level macros via define-syntax - work in progress
-- Full numeric tower - work in progress, targeted to include support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types, other constraints from spec.
-- Hash tables, as specified by [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html) - work in progress 
+- Full numeric tower - includes support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types, other constraints from spec.
+- Hash tables, as specified by [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html)
+- Hygenic Macros: High-level macros via define-syntax - *Note this is still a heavy work in progress* and while it works well enough that many derived forms are implemented in our standard library, you may still run into problems when defining your own macros.
 
 Roadmap
 -------
@@ -31,6 +31,9 @@ Features planned for development:
 - Iteration: do
 - Continuations
 - A scheme "library" that may be used to embed scheme scripting within a Haskell program. This will necessitate extracting the repl code from Core.hs and relocating it to its own file.
+
+  See: http://book.realworldhaskell.org/read/writing-a-library-working-with-json-data.html
+
 - Implementation of approved SRFI's
 - Documentation, including a description of Scheme / Haskell, API docs (?), etc
 - Release as a cabal package - see: http://www.haskell.org/haskellwiki/How_to_write_a_Haskell_program
