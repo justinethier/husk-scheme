@@ -195,4 +195,19 @@
   (my-pair-test/04 (1 2) (3 4 5)))
   '((1 2) (3 4 5)))
 
+
+; TODO: following test cases will fail, need more work on macro code
+(define-syntax my-pair-test/05
+  (syntax-rules ()
+     ((_ (var init) ...)
+      (quote (((var init)) ...)))))
+
+(define-syntax my-pair-test/06
+  (syntax-rules ()
+     ((_ (var . init) ...)
+      (quote (((var . init)) ...)))))
+
+(write
+  (my-pair-test/05 (1 2) (4 5) (6 7) (8 9)))
+
 (unit-test-handler-results)
