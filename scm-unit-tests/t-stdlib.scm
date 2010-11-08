@@ -3,6 +3,8 @@
 ;
 (load "skim-unit.scm")
 
+; TODO: (assert/equal? (+ 1 1) 2)
+
 (assert-equal (lambda () (map (curry + 2) '(1 2 3 4))) 
 			  '(3 4 5 6))
 
