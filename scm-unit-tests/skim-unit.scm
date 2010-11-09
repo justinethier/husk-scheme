@@ -14,10 +14,10 @@
 (define (assert-equal proc value) (unit-test-handler value (proc)))
 
 ; TODO:
-(define-syntax assert/equal?
+(define-syntax assert/equal
   (syntax-rules ()
     ((_ test expected)
-     ((unit-test-handler expected (lambda () test))))))
+     (unit-test-handler expected ((lambda () test))))))
 
 (define (unit-test-handler-results)
   (write `("Test Complete" Passed: ,pass-count Failed: ,fail-count)))
