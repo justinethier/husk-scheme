@@ -210,4 +210,8 @@
 (write
   (my-pair-test/05 (1 2) (4 5) (6 7) (8 9)))
 
+;
+; TODO: once those work, test cases for vector transforms
+;
+
 (unit-test-handler-results)
