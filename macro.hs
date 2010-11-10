@@ -238,6 +238,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
      else do lst <- transformRule localEnv ellipsisIndex (List []) (List l) (List ellipsisList)
              case lst of
                   List _ -> transformRule localEnv ellipsisIndex (List $ result ++ [lst]) (List ts) (List ellipsisList)
+                  Nil _ -> return lst
                   otherwise -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisIndex]
 
   where lastElementIsNil l = case (last l) of
@@ -279,7 +280,8 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
      else do lst <- transformDottedList localEnv ellipsisIndex (List []) (List [dl]) (List ellipsisList)
              case lst of
                   List l -> transformRule localEnv ellipsisIndex (List $ result ++ l) (List ts) (List ellipsisList)
-                  otherwise -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [dl]), Number $ toInteger ellipsisIndex]
+                  Nil n -> return lst
+                  otherwise -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [(List ellipsisList), lst, (List [dl]), Number $ toInteger ellipsisIndex]
 
   where transformDottedList :: Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
         transformDottedList localEnv ellipsisIndex (List result) transform@(List (DottedList ds d : ts)) (List ellipsisList) = do
