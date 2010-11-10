@@ -183,6 +183,7 @@
                   (if (null? (cdr (list var . step))) 
                       (car  (list var . step))
                       (cadr (list var . step))) ...)))))))
+; TODO: above (if) block has many transformation problems that need to be worked through
 
 ; Old version that always requires step be specified, which violates spec
 ;(define-syntax old-do
