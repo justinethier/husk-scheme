@@ -52,4 +52,13 @@
                               '(0 1 2 3 4 5)))
                #(0 1 4 9 16 25))
 
+; See: http://en.wikibooks.org/wiki/Talk:Haskell/Write_Yourself_a_Scheme_in_48_Hours 
+; Environment bug:
+(define x 3)
+(define (f n) (define x n) x)
+(assert/equal (f 5) 5)
+(assert/equal x 3)
+;(f 5) ==> 5 (OK)
+;x ==> 5 (BAD, expected it to remain 3)
+
 (unit-test-handler-results)
