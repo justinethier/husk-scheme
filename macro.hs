@@ -223,6 +223,12 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                            then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
                                 -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
                            else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
+               -- Dotted list transform returned during processing...
+               List [Nil _, List elst] -> if ellipsisIndex == 0
+                                -- First time through and no match ("zero" case). Use tail to move past the "..."
+                           then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
+                                -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
+                          else transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])
                List t -> {- TODO: this code block does not seem to be used, need to revisit why it is even here...
                             if lastElementIsNil t
 			                     -- Base case, there is no more data to transform for this ellipsis
