@@ -13,8 +13,14 @@
        (if test
          (begin expr ...)
          (begin (begin command ...)
-                (quote (loop 
-                      (list var . step) ...))))))))
+                (quote ((loop 
+                      (list var . step)) ...))))))))
+
+
+;                (quote (loop 
+;                      (list var . step) ...))))))))
+
+
 ;                (loop 
 ;                  (if (null? (cdr (list var . step))) 
 ;                      (car  (list var . step))
