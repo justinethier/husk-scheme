@@ -102,16 +102,22 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
                 List (p:ps) -> do initializePatternVars localEnv identifiers p
                                   initializePatternVars localEnv identifiers $ List ps
                 List [] -> return $ Bool True
-                
-        -- TODO: dotted list
+
+        -- TODO: I think this is correct, but need to test it...
+        initializePatternVars localEnv identifiers pattern@(DottedList ps p) = do
+            initializePatternVars localEnv identifiers $ List ps
+            initializePatternVars localEnv identifiers p
+
         -- TODO: vector
         
         initializePatternVars localEnv identifiers (Atom pattern) =  
             do isDefined <- liftIO $ isBound localEnv pattern
-               found <- findAtom (Atom pattern) identifiers
+               found <- findAtom (trace pattern $ Atom pattern) identifiers
                case found of
                     (Bool False) -> if not isDefined -- Set variable in the local environment
-                                       then defineVar localEnv pattern (List [])
+                                       then do
+                                                defineVar localEnv pattern (List [])
+                                                --throwError $ BadSpecialForm "Test" found
                                        else return $ Bool True
                      -- Ignore identifiers since they are just passed along as-is
                     otherwise -> return $ Bool True
@@ -125,6 +131,9 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
         loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do -- TODO: kind of a hack to have both ellipsis vars. Is only outer req'd?
           case (pattern, input) of
                ((DottedList ps p), (DottedList is i)) -> do
+-- TODO: may not be right place to call init...               
+                 initializePatternVars localEnv identifiers $ List ps
+                 initializePatternVars localEnv identifiers p
                  result <- loadLocal localEnv  identifiers (List ps) (List is) False outerHasEllipsis
                  case result of
                     Bool True -> loadLocal localEnv identifiers p i False outerHasEllipsis
@@ -137,16 +146,19 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
                  -- TODO: error if ... detected when there is an outer ... ????
                  --       no, this should (eventually) be allowed. See scheme-faq-macros
 			 
+-- TODO: if there is no match, still need to make sure those vars are loaded up into an empty list (should be OK?)
+-- need some way of differentiating atoms in the transformation
+--
+-- This may not be the optimal place to call init...
+                 initializePatternVars localEnv identifiers p
+
                  status <- checkLocal localEnv identifiers (hasEllipsis || outerHasEllipsis) p i 
                  case status of
                       -- No match
                       Bool False -> if hasEllipsis
--- TODO: if there is no match, still need to make sure those vars are loaded up into an empty list (should be OK?)
--- need some way of differentiating atoms in the transformation
                                         -- No match, must be finished with ...
                                         -- Move past it, but keep the same input.
-                                        then do initializePatternVars localEnv identifiers p
-                                                loadLocal localEnv identifiers (List $ tail ps) (List (i:is)) False outerHasEllipsis
+                                        then loadLocal localEnv identifiers (List $ tail ps) (List (i:is)) False outerHasEllipsis
                                         else return $ Bool False
                       -- There was a match
                       otherwise -> if hasEllipsis
@@ -364,22 +376,9 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                                           List v -> if (length v) > (ellipsisIndex - 1)
                                                        then return $ v !! (ellipsisIndex - 1)
                                                        else return $ Nil ""
---                                          otherwise -> return $ Nil "" -- Looked up variable and it does not exist
-                                                                       -- This may just be a band-aid; may need to
-                                                                       -- flag those vars in the pattern so can
-                                                                       -- determine here if it an atom or empty var.
-                                                                       -- Then again, isn't that the point of the
-                                                                       -- 'identifiers' list?
-                                                                       -- Also, need to reconsider all of this since this
-                                                                       -- is within the isBound section...
                                 else return var
-                     else {-if ellipsisIndex > 0
-                       -- TODO: zero match case should be an empty list, which is already handled
-                       --       in the above 'if'
-                             then return $ Nil "" -- Zero-match case
---                             then throwError $ BadSpecialForm "DEBUGGING" $ List [transform, List result] 
-                             else return $ trace a $ Atom a -- Not defined in the macro, just pass it through the macro as-is -}
-                             return $ trace a $ Atom a
+--                     else return $ trace a $ Atom a
+                     else return $ Atom a
              case t of
                Nil _ -> return t
                otherwise -> transformRule localEnv ellipsisIndex (List $ result ++ [t]) (List ts) unused
