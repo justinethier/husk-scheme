@@ -12,6 +12,7 @@ import Scheme.Types
 import Scheme.Variables
 import Control.Monad
 import Control.Monad.Error
+import Debug.Trace
 
 -- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 -- http://community.schemewiki.org/?scheme-faq-macros
@@ -116,6 +117,8 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
                  case status of
                       -- No match
                       Bool False -> if hasEllipsis
+-- TODO: if there is no match, still need to make sure those vars are loaded up into an empty list (should be OK?)
+-- need some way of differentiating atoms in the transformation
                                         -- No match, must be finished with ...
                                         -- Move past it, but keep the same input.
                                         then loadLocal localEnv identifiers (List $ tail ps) (List (i:is)) False outerHasEllipsis
@@ -344,10 +347,12 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                                                                        -- 'identifiers' list?
                                                                        -- Also, need to reconsider all of this since this
                                                                        -- is within the isBound section...
-					            else return var
+                                else return var
                      else if ellipsisIndex > 0
+                       -- TODO: zero match case should be an empty list
                              then return $ Nil "" -- Zero-match case
-                             else return $ Atom a -- Not defined in the macro, just pass it through the macro as-is
+--                             then throwError $ BadSpecialForm "DEBUGGING" $ List [transform, List result] 
+                             else return $ trace a $ Atom a -- Not defined in the macro, just pass it through the macro as-is
              case t of
                Nil _ -> return t
                otherwise -> transformRule localEnv ellipsisIndex (List $ result ++ [t]) (List ts) unused
