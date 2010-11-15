@@ -93,7 +93,31 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
              else findAtom (Atom target) (List as)
         findAtom target (List (badtype : _)) = throwError $ TypeMismatch "symbol" badtype -- TODO: test this, non-atoms should throw err
         findAtom target _ = return $ Bool False
-  
+ 
+        -- Initialize any pattern variables as an empty list.
+        -- That way a zero-match case can be identified later during transformation.
+        initializePatternVars :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+        initializePatternVars localEnv identifiers pattern@(List _) = do
+            case pattern of
+                List (p:ps) -> do initializePatternVars localEnv identifiers p
+                                  initializePatternVars localEnv identifiers $ List ps
+                List [] -> return $ Bool True
+                
+        -- TODO: dotted list
+        -- TODO: vector
+        
+        initializePatternVars localEnv identifiers (Atom pattern) =  
+            do isDefined <- liftIO $ isBound localEnv pattern
+               found <- findAtom (Atom pattern) identifiers
+               case found of
+                    (Bool False) -> if not isDefined -- Set variable in the local environment
+                                       then defineVar localEnv pattern (List [])
+                                       else return $ Bool True
+                     -- Ignore identifiers since they are just passed along as-is
+                    otherwise -> return $ Bool True
+
+        initializePatternVars localEnv identifiers pattern =  
+            return $ Bool True 
         --
         -- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
         --             in preparation for macro transformation.
@@ -121,7 +145,8 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
 -- need some way of differentiating atoms in the transformation
                                         -- No match, must be finished with ...
                                         -- Move past it, but keep the same input.
-                                        then loadLocal localEnv identifiers (List $ tail ps) (List (i:is)) False outerHasEllipsis
+                                        then do initializePatternVars localEnv identifiers p
+                                                loadLocal localEnv identifiers (List $ tail ps) (List (i:is)) False outerHasEllipsis
                                         else return $ Bool False
                       -- There was a match
                       otherwise -> if hasEllipsis
@@ -348,11 +373,13 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                                                                        -- Also, need to reconsider all of this since this
                                                                        -- is within the isBound section...
                                 else return var
-                     else if ellipsisIndex > 0
-                       -- TODO: zero match case should be an empty list
+                     else {-if ellipsisIndex > 0
+                       -- TODO: zero match case should be an empty list, which is already handled
+                       --       in the above 'if'
                              then return $ Nil "" -- Zero-match case
 --                             then throwError $ BadSpecialForm "DEBUGGING" $ List [transform, List result] 
-                             else return $ trace a $ Atom a -- Not defined in the macro, just pass it through the macro as-is
+                             else return $ trace a $ Atom a -- Not defined in the macro, just pass it through the macro as-is -}
+                             return $ trace a $ Atom a
              case t of
                Nil _ -> return t
                otherwise -> transformRule localEnv ellipsisIndex (List $ result ++ [t]) (List ts) unused
