@@ -112,7 +112,7 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
         
         initializePatternVars localEnv identifiers (Atom pattern) =  
             do isDefined <- liftIO $ isBound localEnv pattern
-               found <- findAtom (trace pattern $ Atom pattern) identifiers
+               found <- findAtom (Atom pattern) identifiers
                case found of
                     (Bool False) -> if not isDefined -- Set variable in the local environment
                                        then do
@@ -324,7 +324,8 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
                            else transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])
                List t -> transformRule localEnv (ellipsisIndex + 1) (List $ result ++ t) transform (List ellipsisList)
      else do lst <- transformDottedList localEnv ellipsisIndex (List []) (List [dl]) (List ellipsisList)
-             case lst of
+             case (trace (show lst) lst) of
+                  List [Nil _, List _] -> throwError $ BadSpecialForm "TODO: test" lst
                   List l -> transformRule localEnv ellipsisIndex (List $ result ++ l) (List ts) (List ellipsisList)
                   Nil n -> return lst
                   otherwise -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [(List ellipsisList), lst, (List [dl]), Number $ toInteger ellipsisIndex]
