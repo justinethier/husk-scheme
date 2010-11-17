@@ -13,8 +13,8 @@
        (if test
          (begin expr ...)
          (begin (begin command ...)
-                (quote ((loop 
-                      (list var . step)) ...))))))))
+                (quote (((loop 
+                      (list var . step))) ...))))))))
 ; Above line is broken when used as a dotted list:
 ;(list var .  step)) ...))))))))
 ; This points to a problem with the dotted list logic, where

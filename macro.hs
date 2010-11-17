@@ -325,7 +325,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
                List t -> transformRule localEnv (ellipsisIndex + 1) (List $ result ++ t) transform (List ellipsisList)
      else do lst <- transformDottedList localEnv ellipsisIndex (List []) (List [dl]) (List ellipsisList)
              case (trace (show lst) lst) of
-                  List [Nil _, List _] -> throwError $ BadSpecialForm "TODO: test" lst
+                  List [Nil _, List l] -> return lst 
                   List l -> transformRule localEnv ellipsisIndex (List $ result ++ l) (List ts) (List ellipsisList)
                   Nil n -> return lst
                   otherwise -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [(List ellipsisList), lst, (List [dl]), Number $ toInteger ellipsisIndex]
@@ -378,7 +378,6 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                                                        then return $ v !! (ellipsisIndex - 1)
                                                        else return $ Nil ""
                                 else return var
---                     else return $ trace a $ Atom a
                      else return $ Atom a
              case t of
                Nil _ -> return t
