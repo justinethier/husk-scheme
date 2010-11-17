@@ -27,14 +27,14 @@ Roadmap
 
 Features planned for development:
 
-- Continuations
 - A scheme "library" that may be used to embed scheme scripting within a Haskell program. This will necessitate extracting the repl code from Core.hs and relocating it to its own file.
 
   See: http://book.realworldhaskell.org/read/writing-a-library-working-with-json-data.html
 
-- Implementation of approved SRFI's
 - Documentation, including a description of Scheme / Haskell, API docs (?), etc
 - Release as a cabal package - see: http://www.haskell.org/haskellwiki/How_to_write_a_Haskell_program
+- Continuations
+- Implementation of approved SRFI's
 
 TODO Items:
 
@@ -43,11 +43,11 @@ TODO Items:
   * What's up with this error message:
     huski> (define vec)
     Getting an unbound variable: define
-- Crashes if the first line of a scheme file is blank
+- huski crashes if the first line of a scheme file is blank
 - Correct parsing of comments, including allowing them in the middle of a form (eg: (cond))
 - Test cases, including those for: backtick, primitives (see spec section 4.1), others
 - More example programs, perhaps derive some from SICP and http://www.scheme.dk/planet/
-- General refactoring of haskell code including into multiple modules/files, addressing of TODO items, etc...
+- General refactoring of haskell code including addressing of TODO items, etc...
 - Compare our features to R5RS spec: <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
 
 husk scheme is available under the [MIT license](http://www.opensource.org/licenses/mit-license.php).
