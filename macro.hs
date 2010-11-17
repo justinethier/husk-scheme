@@ -283,6 +283,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
 
      else do lst <- transformRule localEnv ellipsisIndex (List []) (List l) (List ellipsisList)
              case lst of
+                  List [Nil _, l] -> return lst
                   List _ -> transformRule localEnv ellipsisIndex (List $ result ++ [lst]) (List ts) (List ellipsisList)
                   Nil _ -> return lst
                   otherwise -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisIndex]
