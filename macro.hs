@@ -325,7 +325,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
                            else transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])
                List t -> transformRule localEnv (ellipsisIndex + 1) (List $ result ++ t) transform (List ellipsisList)
      else do lst <- transformDottedList localEnv ellipsisIndex (List []) (List [dl]) (List ellipsisList)
-             case (trace (show lst) lst) of
+             case lst of
                   List [Nil _, List l] -> return lst 
                   List l -> transformRule localEnv ellipsisIndex (List $ result ++ l) (List ts) (List ellipsisList)
                   Nil n -> return lst
