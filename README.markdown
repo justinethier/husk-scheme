@@ -1,6 +1,6 @@
 husk is a dialect of Scheme written in Haskell that implements a subset of the [R5RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Husk is not intended to be a highly optimized version of Scheme. Rather, the goal of the project is to provide a tight integration between Haskell and Scheme while at the same time providing a great opportunity for deeper understanding of both languages. In addition, by closely following the R5RS standard the intent is to develop a Scheme that is as compatible as possible with other R5RS Schemes.
 
-Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy: the core language consists of a small number of fundamental forms, which may be used to implement other built-int forms. Scheme is an excellent language for writing small, elegant programs and can also be used as a "glue" language to hold together various components of a larger overall solution or even to write scripts.
+Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy: the core language consists of a small number of fundamental forms, which may be used to implement other built-int forms. Scheme is an excellent language for writing small, elegant programs, and may also be used to write scripts or embed scripting functionality within a larger application.
 
 Feature List
 ------------
@@ -10,6 +10,7 @@ husk includes the following features:
 - Conditionals: if, case, cond
 - Assignment operations
 - Sequencing: begin
+- Iteration: do
 - Quasi-quotation
 - Delayed Execution: delay, force
 - Binding constructs: let, named let, let*, letrec
@@ -26,7 +27,6 @@ Roadmap
 
 Features planned for development:
 
-- Iteration: do
 - Continuations
 - A scheme "library" that may be used to embed scheme scripting within a Haskell program. This will necessitate extracting the repl code from Core.hs and relocating it to its own file.
 
@@ -86,5 +86,5 @@ husk scheme is developed by [Justin Ethier](http://github.com/justinethier).
 
 The interpreter is based on the code from the book [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) written by Jonathan Tang and hosted / maintained by Wikibooks.
 
-If you would like to request changes, report bug fixes, or contact the developer of husk scheme, visit the project web site at [GitHub](http://github.com/justinethier/husk-scheme).
+If you would like to request changes, report bug fixes, or contact me, visit the project web site at [GitHub](http://github.com/justinethier/husk-scheme).
 
