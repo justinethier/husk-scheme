@@ -210,6 +210,43 @@
 (write
   (my-pair-test/05 (1 2) (4 5) (6 7) (8 9)))
 
+
+(define-syntax my-do/1
+  (syntax-rules ()
+     ((_ ((var init . step) ...)
+         (test expr ...) 
+          command ...)
+     (let loop ((var init) ...)
+       (if test
+         (begin expr ...)
+         (begin (begin command ...)
+                (quote (((((((loop 
+                      (list var . step))))))) ...))))))))
+(assert/equal
+                (my-do/1 ((vec (make-vector 5) vec)
+                     (i 0 (+ i 1)))
+                    ((= i 5) vec)
+                     (vector-set! vec i i))
+ (quote (((((((loop (list vec . vec))))))) ((((((loop (list i . (+ i 1)))))))))))
+
+(define-syntax my-do/2
+  (syntax-rules ()
+     ((_ ((var init . step) ...)
+         (test expr ...) 
+          command ...)
+     (let loop ((var init) ...)
+       (if test
+         (begin expr ...)
+         (begin (begin command ...)
+                (quote (loop 
+                      (list var . step) ...))))))))
+(assert/equal
+                (my-do/2 ((vec (make-vector 5) vec)
+                     (i 0 (+ i 1)))
+                    ((= i 5) vec)
+                     (vector-set! vec i i))
+ (quote (loop (list vec . vec) (list i . (+ i 1)))))
+   
 ;
 ; TODO: once those work, test cases for vector transforms
 ;
