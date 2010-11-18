@@ -340,12 +340,11 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
                            case r of
                                 -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
                                 List [List []] -> transformRule localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) (List ellipsisList)
-                                -- Transforming into a list instead of a DottedList. This is not (officially) documented in the R5RS spec, but seems to be how other Schemes are implemented.
-                                -- TODO:
-                                -- In fact, I think there is a subtlety here that I am missing, because this makes some
-                                -- of our test cases pass and others fail. I am leaving this change in for the moment, but
-                                -- need to recheck our test cases one-by-one to attempt to figure out the real solution.
-                                List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList) 
+                                -- TODO: the transform needs to be as follows:
+                                --  - transform into a list if original input was a list
+                                --  - transform into a dotted list if original input was a dotted list
+--                                List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList) 
+                                List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
                                 otherwise -> throwError $ BadSpecialForm "transformPair1: Macro transform error" d 
 --            Nil _ -> throwError $ BadSpecialForm "transformPair2: Macro transform error - Nil - " $ List [DottedList ds d, lsto, Number $ toInteger ellipsisIndex, List ellipsisList]
 --          This was based on the same code from the "main" dotted list transform, and could probably
