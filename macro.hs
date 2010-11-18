@@ -341,24 +341,14 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
                                 -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
                                 List [List []] -> transformRule localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) (List ellipsisList)
                                 -- TODO: the transform needs to be as follows:
-                                --  - transform into a list if original input was a list
+                                --  - transform into a list if original input was a list - code is below but commented-out
                                 --  - transform into a dotted list if original input was a dotted list
 --                                List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList) 
                                 List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
-                                otherwise -> throwError $ BadSpecialForm "transformPair1: Macro transform error" d 
---            Nil _ -> throwError $ BadSpecialForm "transformPair2: Macro transform error - Nil - " $ List [DottedList ds d, lsto, Number $ toInteger ellipsisIndex, List ellipsisList]
---          This was based on the same code from the "main" dotted list transform, and could probably
---          be rolled into a common function
---
--- Actually, need to think about this. Perhaps only one (this one) will be needed. In which case the outer code needs
--- to change to accept a return value from this
---
-            Nil _ -> return $ List [Nil "", List ellipsisList] {-if ellipsisIndex == 0
-                             -- First time through and no match ("zero" case). Use tail to move past the "..."
-                        then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
-                             -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
-                        else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List []) -}
-            otherwise -> throwError $ BadSpecialForm "transformPair2: Macro transform error - " $ List [DottedList ds d, lsto]
+                                otherwise -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d 
+            Nil _ -> return $ List [Nil "", List ellipsisList]
+            otherwise -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
+
 -- Transform an atom by attempting to look it up as a var...
 transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)) unused = do
   let hasEllipsis = macroElementMatchesMany transform
