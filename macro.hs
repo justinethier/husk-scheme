@@ -12,7 +12,7 @@ import Scheme.Types
 import Scheme.Variables
 import Control.Monad
 import Control.Monad.Error
-import Debug.Trace
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 -- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 -- http://community.schemewiki.org/?scheme-faq-macros
@@ -73,18 +73,9 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
         match <- loadLocal localEnv identifiers (List ps) (List is) False False
         case match of
            Bool False -> do
-             return $ Nil "" --throwError $ BadSpecialForm "Input does not match macro pattern" (List is)
+             return $ Nil ""
            otherwise -> do
 		     transformRule localEnv 0 (List []) template (List [])
-                     -- DEBUGGING: throwError $ BadSpecialForm "Input does not match macro pattern" (List is)
-		     {- DEBUGGING: remove once macro's are working...
-                      - trans <- transformRule localEnv 0 (List []) template (List [])
-                     --flushStr $ show $ trans
-
-                     temp <- getVar localEnv "vars"
-                     temp2 <- getVar localEnv "vals"
-                     throwError $ BadSpecialForm "DEBUG" $ List [temp, temp2]
-                     throwError $ BadSpecialForm "DEBUG" trans-}
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
   where findAtom :: LispVal -> LispVal -> IOThrowsError LispVal
         findAtom (Atom target) (List (Atom a:as)) = do
@@ -103,7 +94,6 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
                                   initializePatternVars localEnv identifiers $ List ps
                 List [] -> return $ Bool True
 
-        -- TODO: I think this is correct, but need to test it...
         initializePatternVars localEnv identifiers pattern@(DottedList ps p) = do
             initializePatternVars localEnv identifiers $ List ps
             initializePatternVars localEnv identifiers p
@@ -117,7 +107,6 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
                     (Bool False) -> if not isDefined -- Set variable in the local environment
                                        then do
                                                 defineVar localEnv pattern (List [])
-                                                --throwError $ BadSpecialForm "Test" found
                                        else return $ Bool True
                      -- Ignore identifiers since they are just passed along as-is
                     otherwise -> return $ Bool True
@@ -146,10 +135,7 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
                  -- TODO: error if ... detected when there is an outer ... ????
                  --       no, this should (eventually) be allowed. See scheme-faq-macros
 			 
--- TODO: if there is no match, still need to make sure those vars are loaded up into an empty list (should be OK?)
--- need some way of differentiating atoms in the transformation
---
--- This may not be the optimal place to call init...
+                 -- TODO: This may not be the optimal place to call init...
                  initializePatternVars localEnv identifiers p
 
                  status <- checkLocal localEnv identifiers (hasEllipsis || outerHasEllipsis) p i 
@@ -256,7 +242,6 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
   if macroElementMatchesMany transform
      then do 
              curT <- transformRule localEnv (ellipsisIndex + 1) (List []) (List l) (List result)
---             throwError $ BadSpecialForm "test" $ List [curT, Number $ toInteger ellipsisIndex, List l] -- TODO: debugging
              case curT of
                Nil _ -> if ellipsisIndex == 0
                                 -- First time through and no match ("zero" case). Use tail to move past the "..."
@@ -269,19 +254,9 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                            then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
                                 -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
                           else transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])
-               List t -> {- TODO: this code block does not seem to be used, need to revisit why it is even here...
-                            if lastElementIsNil t
-			                     -- Base case, there is no more data to transform for this ellipsis
-                            -- 0 (and above nesting) means we cannot allow more than one ... active at a time (OK per spec???)
-                            then if ellipsisIndex == 0
-                                         -- First time through and no match ("zero" case)....
-                                    then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])
-                                    else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
-			                     -- Next iteration of the zero-to-many match
-                            else-}
-                            transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform (List ellipsisList)
-
-     else do lst <- transformRule localEnv ellipsisIndex (List []) (List l) (List ellipsisList)
+               List t -> transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform (List ellipsisList)
+     else do
+             lst <- transformRule localEnv ellipsisIndex (List []) (List l) (List ellipsisList)
              case lst of
                   List [Nil _, l] -> return lst
                   List _ -> transformRule localEnv ellipsisIndex (List $ result ++ [lst]) (List ts) (List ellipsisList)
@@ -309,7 +284,6 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
      then do 
      -- Idea here is that we need to handle case where you have (pair ...) - EG: ((var . step) ...)
              curT <- transformDottedList localEnv (ellipsisIndex + 1) (List []) (List [dl]) (List result)
---             throwError $ BadSpecialForm "test" $ List [curT, Number $ toInteger ellipsisIndex, List [dl]] -- TODO: debugging
              case curT of
                Nil _ -> if ellipsisIndex == 0
                                 -- First time through and no match ("zero" case). Use tail to move past the "..."
@@ -377,20 +351,6 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
              case t of
                Nil _ -> return t
                otherwise -> transformRule localEnv ellipsisIndex (List $ result ++ [t]) (List ts) unused
-
-{-
-core issue here is that in cases such as (dotted_list ...), the dotted_list portion needs to be treated
-as part of a zero-to-many match. But there is currently no logic to do so. perhaps these funcs
-should be defined, or the generic catch-all should detect the ellipsis...
-
--- TODO: need to implement this for dotted lists
---       apparently not good enough to just transform these as themselves, need to be able to have
---       intelligence regarding zero-or-many matches
-transformRule localEnv ellipsisIndex (List result) transform@(List(DottedList ls l : ts)) (List ellipsisList) = do
-  throwError $ BadSpecialForm "Not yet implemented" $ Number $ toInteger ellipsisIndex
-
--- TODO: similar transform for vectors
--}
 
 -- Transform anything else as itself...
 transformRule localEnv ellipsisIndex (List result) transform@(List (t : ts)) (List ellipsisList) = do
