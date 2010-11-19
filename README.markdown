@@ -1,12 +1,12 @@
 husk is a dialect of Scheme written in Haskell that implements a subset of the [R5RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Husk is not intended to be a highly optimized version of Scheme. Rather, the goal of the project is to provide a tight integration between Haskell and Scheme while at the same time providing a great opportunity for deeper understanding of both languages. In addition, by closely following the R5RS standard the intent is to develop a Scheme that is as compatible as possible with other R5RS Schemes.
 
-Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy: the core language consists of a small number of fundamental forms, which may be used to implement other built-int forms. Scheme is an excellent language for writing small, elegant programs, and may also be used to write scripts or embed scripting functionality within a larger application.
+Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy: the core language consists of a small number of fundamental forms, which may be used to implement the other built-in forms. Scheme is an excellent language for writing small, elegant programs, and may also be used to write scripts or embed scripting functionality within a larger application.
 
 Feature List
 ------------
 husk includes the following features:
 
-- Most primitive data types and their standard forms
+- Most primitive data types and their standard forms (TODO: which are? string, char, etc)
 - Conditionals: if, case, cond
 - Assignment operations
 - Sequencing: begin
@@ -49,6 +49,7 @@ TODO Items:
 - More example programs, perhaps derive some from SICP and http://www.scheme.dk/planet/
 - General refactoring of haskell code including addressing of TODO items, etc...
 - Compare our features to R5RS spec: <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
+- At some point, need to enter bugs for this sort of thing...
 
 husk scheme is available under the [MIT license](http://www.opensource.org/licenses/mit-license.php).
 
