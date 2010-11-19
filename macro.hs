@@ -86,10 +86,15 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
           case (pattern, input) of
                ((DottedList ps p), (DottedList is i)) -> do
 -- TODO: may not be right place to call init...               
+-- interesting, these next 2 lines are not called if the "list" call
+-- is made prior, presumably because there is nothing left for these functions to do???
+--
+-- TODO: bottom line, I don't think src is going to work with how it is implemented now.
+-- let's try passing it as a parameter to checkLocal and loadLocal...
                  initializePatternVars localEnv "pair" identifiers $ List ps
                  initializePatternVars localEnv "pair" identifiers p
                  result <- loadLocal localEnv  identifiers (List ps) (List is) False outerHasEllipsis
-                 case result of
+                 case (trace (show result) result) of
                     Bool True -> loadLocal localEnv identifiers p i False outerHasEllipsis
                     otherwise -> return $ Bool False
 
@@ -170,6 +175,7 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
 --
         checkLocal localEnv identifiers hasEllipsis pattern@(DottedList ps p) input@(DottedList is i) = 
           loadLocal localEnv identifiers pattern input False hasEllipsis
+--            throwError $ BadSpecialForm "Test" input
         checkLocal localEnv identifiers hasEllipsis pattern@(DottedList ps p) input@(List (i : is)) = do
           if (length ps) == (length is)
                   -- Lists are same length, implying elements in both should be the same.
@@ -369,18 +375,20 @@ initializePatternVars localEnv src identifiers pattern@(DottedList ps p) = do
 -- TODO: vector
 
 initializePatternVars localEnv src identifiers (Atom pattern) =  
-    do isDefined <- liftIO $ isBound localEnv pattern
+    do defineNamespacedVar localEnv "src" pattern $ String (trace src src)
+       isDefined <- liftIO $ isBound localEnv pattern
        found <- findAtom (Atom pattern) identifiers
        case found of
             (Bool False) -> if not isDefined -- Set variable in the local environment
                                then do
                                         defineVar localEnv pattern (List [])
-                               else return $ Bool True
+                               else do
+                                        return $ Bool True
              -- Ignore identifiers since they are just passed along as-is
             otherwise -> return $ Bool True
        -- Load up a new var based upon "src", to let transform code know...
        -- FUTURE: optimize this a bit better
-       defineNamespacedVar localEnv "src" "src" $ String src 
+--       defineNamespacedVar localEnv "src" pattern $ String src 
 
 initializePatternVars localEnv src identifiers pattern =  
     return $ Bool True 
@@ -405,7 +413,7 @@ lookupPatternVarSrc localEnv pattern@(DottedList ps p) = do
 
 lookupPatternVarSrc localEnv (Atom pattern) =  
     do isDefined <- liftIO $ isNamespacedBound localEnv "src" pattern
-       if isDefined then getNamespacedVar localEnv "src" "src"
+       if isDefined then getNamespacedVar localEnv "src" pattern
                     else return $ Bool False
 
 lookupPatternVarSrc localEnv pattern =  
