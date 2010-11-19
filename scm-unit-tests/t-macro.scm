@@ -247,6 +247,15 @@
                      (vector-set! vec i i))
  (quote (loop (list vec . vec) (list i . (+ i 1)))))
    
+; New test cases, crashes the interpreter!
+(define-syntax my-pair-test/06
+  (syntax-rules ()
+     ((_ var . step)
+      (list (quote (var . step))))))
+
+(write (my-pair-test/06 (1 . 3)))
+(write (my-pair-test/06 (1 2)))
+
 ;
 ; TODO: once those work, test cases for vector transforms
 ;
