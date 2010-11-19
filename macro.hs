@@ -87,20 +87,27 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
  
         -- Initialize any pattern variables as an empty list.
         -- That way a zero-match case can be identified later during transformation.
-        initializePatternVars :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-        initializePatternVars localEnv identifiers pattern@(List _) = do
+        --
+        -- Input:
+        --  localEnv - Local environment that contains variables
+        --  src - Input source, required because a pair in the pattern may be matched by either a list or a pair,
+        --        and the transform needs to know this...
+        --  identifiers - Literal identifiers that are transformed as themselves
+        --  pattern - Pattern portion of the syntax rule
+        initializePatternVars :: Env -> String -> LispVal -> LispVal -> IOThrowsError LispVal
+        initializePatternVars localEnv src identifiers pattern@(List _) = do
             case pattern of
-                List (p:ps) -> do initializePatternVars localEnv identifiers p
-                                  initializePatternVars localEnv identifiers $ List ps
+                List (p:ps) -> do initializePatternVars localEnv src identifiers p
+                                  initializePatternVars localEnv src identifiers $ List ps
                 List [] -> return $ Bool True
 
-        initializePatternVars localEnv identifiers pattern@(DottedList ps p) = do
-            initializePatternVars localEnv identifiers $ List ps
-            initializePatternVars localEnv identifiers p
+        initializePatternVars localEnv src identifiers pattern@(DottedList ps p) = do
+            initializePatternVars localEnv src identifiers $ List ps
+            initializePatternVars localEnv src identifiers p
 
         -- TODO: vector
         
-        initializePatternVars localEnv identifiers (Atom pattern) =  
+        initializePatternVars localEnv src identifiers (Atom pattern) =  
             do isDefined <- liftIO $ isBound localEnv pattern
                found <- findAtom (Atom pattern) identifiers
                case found of
@@ -110,8 +117,9 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
                                        else return $ Bool True
                      -- Ignore identifiers since they are just passed along as-is
                     otherwise -> return $ Bool True
+-- TODO: load up a new var based upon "src"
 
-        initializePatternVars localEnv identifiers pattern =  
+        initializePatternVars localEnv src identifiers pattern =  
             return $ Bool True 
         --
         -- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
@@ -121,8 +129,8 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
           case (pattern, input) of
                ((DottedList ps p), (DottedList is i)) -> do
 -- TODO: may not be right place to call init...               
-                 initializePatternVars localEnv identifiers $ List ps
-                 initializePatternVars localEnv identifiers p
+                 initializePatternVars localEnv "pair" identifiers $ List ps
+                 initializePatternVars localEnv "pair" identifiers p
                  result <- loadLocal localEnv  identifiers (List ps) (List is) False outerHasEllipsis
                  case result of
                     Bool True -> loadLocal localEnv identifiers p i False outerHasEllipsis
@@ -136,7 +144,7 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
                  --       no, this should (eventually) be allowed. See scheme-faq-macros
 			 
                  -- TODO: This may not be the optimal place to call init...
-                 initializePatternVars localEnv identifiers p
+                 initializePatternVars localEnv "list" identifiers p
 
                  status <- checkLocal localEnv identifiers (hasEllipsis || outerHasEllipsis) p i 
                  case status of
@@ -224,7 +232,6 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
 -- Transform input by walking the tranform structure and creating a new structure
 -- with the same form, replacing identifiers in the tranform with those bound in localEnv
 transformRule :: Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
-
 
 -- Recursively transform a list
 --
@@ -317,6 +324,11 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
                                 -- TODO: the transform needs to be as follows:
                                 --  - transform into a list if original input was a list - code is below but commented-out
                                 --  - transform into a dotted list if original input was a dotted list
+                                --
+                                -- Could implement this by calling a new function on input (ds?) that goes through it and
+                                -- looks up each atom that it finds, looking for its src. The src (or Nil?) would then be returned
+                                -- and used here to determine what type of transform is used.
+                                --
 --                                List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList) 
                                 List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
                                 otherwise -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d 
