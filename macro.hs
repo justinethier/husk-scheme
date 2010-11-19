@@ -77,50 +77,7 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
            otherwise -> do
 		     transformRule localEnv 0 (List []) template (List [])
       otherwise -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
-  where findAtom :: LispVal -> LispVal -> IOThrowsError LispVal
-        findAtom (Atom target) (List (Atom a:as)) = do
-          if target == a
-             then return $ Bool True
-             else findAtom (Atom target) (List as)
-        findAtom target (List (badtype : _)) = throwError $ TypeMismatch "symbol" badtype -- TODO: test this, non-atoms should throw err
-        findAtom target _ = return $ Bool False
- 
-        -- Initialize any pattern variables as an empty list.
-        -- That way a zero-match case can be identified later during transformation.
-        --
-        -- Input:
-        --  localEnv - Local environment that contains variables
-        --  src - Input source, required because a pair in the pattern may be matched by either a list or a pair,
-        --        and the transform needs to know this...
-        --  identifiers - Literal identifiers that are transformed as themselves
-        --  pattern - Pattern portion of the syntax rule
-        initializePatternVars :: Env -> String -> LispVal -> LispVal -> IOThrowsError LispVal
-        initializePatternVars localEnv src identifiers pattern@(List _) = do
-            case pattern of
-                List (p:ps) -> do initializePatternVars localEnv src identifiers p
-                                  initializePatternVars localEnv src identifiers $ List ps
-                List [] -> return $ Bool True
-
-        initializePatternVars localEnv src identifiers pattern@(DottedList ps p) = do
-            initializePatternVars localEnv src identifiers $ List ps
-            initializePatternVars localEnv src identifiers p
-
-        -- TODO: vector
-        
-        initializePatternVars localEnv src identifiers (Atom pattern) =  
-            do isDefined <- liftIO $ isBound localEnv pattern
-               found <- findAtom (Atom pattern) identifiers
-               case found of
-                    (Bool False) -> if not isDefined -- Set variable in the local environment
-                                       then do
-                                                defineVar localEnv pattern (List [])
-                                       else return $ Bool True
-                     -- Ignore identifiers since they are just passed along as-is
-                    otherwise -> return $ Bool True
--- TODO: load up a new var based upon "src"
-
-        initializePatternVars localEnv src identifiers pattern =  
-            return $ Bool True 
+  where 
         --
         -- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
         --             in preparation for macro transformation.
@@ -330,7 +287,12 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
                                 -- and used here to determine what type of transform is used.
                                 --
 --                                List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList) 
-                                List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
+--                                List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
+                                List [rst] -> do
+                                                 src <- lookupPatternVarSrc localEnv $ List ds
+                                                 case src of
+                                                    String "list" -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList) 
+                                                    otherwise -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
                                 otherwise -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d 
             Nil _ -> return $ List [Nil "", List ellipsisList]
             otherwise -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
@@ -374,3 +336,77 @@ transformRule localEnv ellipsisIndex result@(List _) transform@(List []) unused 
 
 transformRule localEnv ellipsisIndex result transform unused = do
   throwError $ BadSpecialForm "An error occurred during macro transform" $ List [(Number $ toInteger ellipsisIndex), result, transform, unused]
+
+-- Find an atom in a list; non-recursive (IE, a sub-list will not be inspected)
+findAtom :: LispVal -> LispVal -> IOThrowsError LispVal
+findAtom (Atom target) (List (Atom a:as)) = do
+  if target == a
+     then return $ Bool True
+     else findAtom (Atom target) (List as)
+findAtom target (List (badtype : _)) = throwError $ TypeMismatch "symbol" badtype -- TODO: test this, non-atoms should throw err
+findAtom target _ = return $ Bool False
+ 
+-- Initialize any pattern variables as an empty list.
+-- That way a zero-match case can be identified later during transformation.
+--
+-- Input:
+--  localEnv - Local environment that contains variables
+--  src - Input source, required because a pair in the pattern may be matched by either a list or a pair,
+--        and the transform needs to know this...
+--  identifiers - Literal identifiers that are transformed as themselves
+--  pattern - Pattern portion of the syntax rule
+initializePatternVars :: Env -> String -> LispVal -> LispVal -> IOThrowsError LispVal
+initializePatternVars localEnv src identifiers pattern@(List _) = do
+    case pattern of
+        List (p:ps) -> do initializePatternVars localEnv src identifiers p
+                          initializePatternVars localEnv src identifiers $ List ps
+        List [] -> return $ Bool True
+
+initializePatternVars localEnv src identifiers pattern@(DottedList ps p) = do
+    initializePatternVars localEnv src identifiers $ List ps
+    initializePatternVars localEnv src identifiers p
+
+-- TODO: vector
+
+initializePatternVars localEnv src identifiers (Atom pattern) =  
+    do isDefined <- liftIO $ isBound localEnv pattern
+       found <- findAtom (Atom pattern) identifiers
+       case found of
+            (Bool False) -> if not isDefined -- Set variable in the local environment
+                               then do
+                                        defineVar localEnv pattern (List [])
+                               else return $ Bool True
+             -- Ignore identifiers since they are just passed along as-is
+            otherwise -> return $ Bool True
+       -- Load up a new var based upon "src", to let transform code know...
+       -- FUTURE: optimize this a bit better
+       defineNamespacedVar localEnv "src" "src" $ String src 
+
+initializePatternVars localEnv src identifiers pattern =  
+    return $ Bool True 
+
+-- Find the first pattern var that reports being from a src, or False if none
+lookupPatternVarSrc :: Env -> LispVal -> IOThrowsError LispVal
+lookupPatternVarSrc localEnv pattern@(List _) = do
+    case pattern of
+        List (p:ps) -> do result <- lookupPatternVarSrc localEnv p
+                          case result of
+                            Bool False -> lookupPatternVarSrc localEnv $ List ps
+                            otherwise -> return result
+        List [] -> return $ Bool False
+
+lookupPatternVarSrc localEnv pattern@(DottedList ps p) = do
+    result <- lookupPatternVarSrc localEnv $ List ps
+    case result of
+        Bool False -> lookupPatternVarSrc localEnv p
+        otherwise -> return result
+
+-- TODO: vector
+
+lookupPatternVarSrc localEnv (Atom pattern) =  
+    do isDefined <- liftIO $ isNamespacedBound localEnv "src" pattern
+       if isDefined then getNamespacedVar localEnv "src" "src"
+                    else return $ Bool False
+
+lookupPatternVarSrc localEnv pattern =  
+    return $ Bool False 
