@@ -105,8 +105,16 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
                  -- TODO: error if ... detected when there is an outer ... ????
                  --       no, this should (eventually) be allowed. See scheme-faq-macros
 			 
-                 -- TODO: This may not be the optimal place to call init...
-                 initializePatternVars localEnv "list" identifiers p
+                  -- TODO: This may not be the optimal place to call init...
+                  --
+                  -- by commenting this out, it passes the "simple" pair vs list test, but
+                  -- hangs when running the full test suite.
+                  --
+                  -- I wonder if  instead of calling a fully recursive function here, if we need to
+                  -- just call a func that processes the list...
+                  -- need to understand how to call this, and do that correctly.
+                  --
+--                 initializePatternVars (trace "init pattern vars - list" localEnv) "list" identifiers p
 
                  status <- checkLocal localEnv identifiers (hasEllipsis || outerHasEllipsis) p i 
                  case status of
@@ -114,7 +122,8 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
                       Bool False -> if hasEllipsis
                                         -- No match, must be finished with ...
                                         -- Move past it, but keep the same input.
-                                        then loadLocal localEnv identifiers (List $ tail ps) (List (i:is)) False outerHasEllipsis
+                                        then do
+                                                loadLocal localEnv identifiers (List $ tail ps) (List (i:is)) False outerHasEllipsis
                                         else return $ Bool False
                       -- There was a match
                       otherwise -> if hasEllipsis
@@ -297,8 +306,8 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
                                 List [rst] -> do
                                                  src <- lookupPatternVarSrc localEnv $ List ds
                                                  case src of
-                                                    String "list" -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList) 
-                                                    otherwise -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
+                                                    String "pair" -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
+                                                    otherwise -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList) 
                                 otherwise -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d 
             Nil _ -> return $ List [Nil "", List ellipsisList]
             otherwise -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
@@ -375,8 +384,8 @@ initializePatternVars localEnv src identifiers pattern@(DottedList ps p) = do
 -- TODO: vector
 
 initializePatternVars localEnv src identifiers (Atom pattern) =  
-    do defineNamespacedVar localEnv "src" pattern $ String (trace src src)
-       isDefined <- liftIO $ isBound localEnv pattern
+    do defineNamespacedVar localEnv "src" pattern $ String (trace ("defineSrc " ++ src) src)
+       isDefined <- liftIO $ isBound localEnv (trace ("fromInit " ++ src ++ " pattern " ++ pattern) pattern)
        found <- findAtom (Atom pattern) identifiers
        case found of
             (Bool False) -> if not isDefined -- Set variable in the local environment
