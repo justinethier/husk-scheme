@@ -89,12 +89,10 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
 -- interesting, these next 2 lines are not called if the "list" call
 -- is made prior, presumably because there is nothing left for these functions to do???
 --
--- TODO: bottom line, I don't think src is going to work with how it is implemented now.
--- let's try passing it as a parameter to checkLocal and loadLocal...
-                 initializePatternVars localEnv "pair" identifiers $ List ps
-                 initializePatternVars localEnv "pair" identifiers p
+--                 initializePatternVars localEnv "pair" identifiers $ List ps
+--                 initializePatternVars localEnv "pair" identifiers p
                  result <- loadLocal localEnv  identifiers (List ps) (List is) False outerHasEllipsis
-                 case (trace (show result) result) of
+                 case result of
                     Bool True -> loadLocal localEnv identifiers p i False outerHasEllipsis
                     otherwise -> return $ Bool False
 
@@ -104,7 +102,13 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
 
                  -- TODO: error if ... detected when there is an outer ... ????
                  --       no, this should (eventually) be allowed. See scheme-faq-macros
-			 
+
+{-
+Need to completely rethink initpatternvars. may only need to call it when there is no input (see below)?
+but this means we cannot piggy-back on it for pair/list identification.
+
+I think the next step is to consider both issues, and perhaps implement separate solutions...
+-}
                   -- TODO: This may not be the optimal place to call init...
                   --
                   -- by commenting this out, it passes the "simple" pair vs list test, but
@@ -135,6 +139,8 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
 
                -- Ran out of input to process
                (List (p:ps), List []) -> do
+                                         initializePatternVars localEnv "list" identifiers pattern
+--                                         initializePatternVars (trace "init pattern vars - list" localEnv) "list" identifiers pattern
                                          let hasEllipsis = macroElementMatchesMany pattern
                                          if hasEllipsis && ((length ps) == 1) 
                                                    then return $ Bool True
@@ -384,8 +390,10 @@ initializePatternVars localEnv src identifiers pattern@(DottedList ps p) = do
 -- TODO: vector
 
 initializePatternVars localEnv src identifiers (Atom pattern) =  
-    do defineNamespacedVar localEnv "src" pattern $ String (trace ("defineSrc " ++ src) src)
-       isDefined <- liftIO $ isBound localEnv (trace ("fromInit " ++ src ++ " pattern " ++ pattern) pattern)
+    do defineNamespacedVar localEnv "src" pattern $ String src
+       isDefined <- liftIO $ isBound localEnv pattern
+--    do defineNamespacedVar localEnv "src" pattern $ String (trace ("defineSrc " ++ src) src)
+--       isDefined <- liftIO $ isBound localEnv (trace ("fromInit " ++ src ++ " pattern " ++ pattern) pattern)
        found <- findAtom (Atom pattern) identifiers
        case found of
             (Bool False) -> if not isDefined -- Set variable in the local environment
