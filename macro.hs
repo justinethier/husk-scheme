@@ -67,6 +67,12 @@ macroEval _ lisp@(_) = return lisp
 
 -- Given input and syntax-rules, determine if any rule is a match and transform it. 
 -- FUTURE: validate that the pattern's template and pattern are consistent (IE: no vars in transform that do not appear in matching pattern - csi "stmt1" case)
+--
+-- Parameters:
+--  env - Higher level LISP environment
+--  identifiers - Literal identifiers - IE, atoms that should not be transformed
+--  rules - pattern/transform pairs to compare to input
+--  input - Code from the scheme application
 macroTransform :: Env -> LispVal -> [LispVal] -> LispVal -> IOThrowsError LispVal
 macroTransform env identifiers rules@(rule@(List r) : rs) input = do
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
@@ -87,7 +93,9 @@ macroElementMatchesMany (List (p:ps)) = do
      else False
 macroElementMatchesMany _ = False
 
---matchRule :: Env -> Env -> LispVal -> LispVal -> LispVal
+-- Given input, determine if that input matches any rules
+-- @return Transformed code, or Nil if no rules match
+matchRule :: Env -> LispVal -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
 matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)]) (List inputVar) = do
    let is = tail inputVar
    case p of 
