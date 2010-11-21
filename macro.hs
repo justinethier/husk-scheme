@@ -97,8 +97,14 @@ macroElementMatchesMany _ = False
 -- Given input, determine if that input matches any rules
 -- @return Transformed code, or Nil if no rules match
 matchRule :: Env -> LispVal -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
-matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)]) (List inputVar) = do
+--matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)]) (List inputVar) = do
+matchRule env identifiers localEnv (List [pattern, template]) (List inputVar) = do
    let is = tail inputVar
+   let p = case pattern of
+              DottedList ds d -> case ds of
+                                  (Atom l : ls) -> List [Atom l, DottedList ls d]
+                                  otherwise -> pattern
+              otherwise -> pattern
    case p of 
       List (Atom _ : ps) -> do
         match <- loadLocal localEnv identifiers (List ps) (List is) False False
@@ -116,6 +122,9 @@ matchRule _ identifiers _ rule input = do
 loadLocal :: Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
 loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do -- TODO: kind of a hack to have both ellipsis vars. Is only outer req'd?
   case (pattern, input) of
+
+       -- Future: vector
+
        ((DottedList ps p), (DottedList is i)) -> do
          result <- loadLocal localEnv  identifiers (List ps) (List is) False outerHasEllipsis
          case result of
