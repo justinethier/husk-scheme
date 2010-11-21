@@ -1,4 +1,4 @@
-(load "stdlib.scm")
+;(load "stdlib.scm")
 
 ; Problem below is (list ...)
 ; our code is not smart enough to know that list is not
@@ -13,8 +13,8 @@
        (if test
          (begin expr ...)
          (begin (begin command ...)
-                (quote (((loop 
-                      (list var . step))) ...))))))))
+                (quote (loop 
+                      (list var . step) ...))))))))
 ; Above line is broken when used as a dotted list:
 ;(list var .  step)) ...))))))))
 ; This points to a problem with the dotted list logic, where
@@ -30,8 +30,20 @@
 ;                  (if (null? (cdr (list var . step))) 
 ;                      (car  (list var . step))
 ;                      (cadr (list var . step))) ...)))))))
-(write
-                (my-do ((vec (make-vector 5) vec)
-                     (i 0 (+ i 1)))
-                    ((= i 5) vec)
-                     (vector-set! vec i i)))
+
+;;(write
+;;                (my-do ((vec (make-vector 5) vec)
+;;                     (i 0 (+ i 1)))
+;;                    ((= i 5) vec)
+;;                     (vector-set! vec i i)))
+;(load "stdlib.scm")
+
+; Second test macro, tests that pairs are correctly detected in pattern and
+; are then transformed correctly as well.
+(define-syntax my-pair-test/02
+  (syntax-rules ()
+     ((_ (var init . step))
+      (quote (var init . step)))))
+
+(write                 (my-pair-test/02 (1 2 . 3)))
+(write                 (my-pair-test/02 (1 2 3)))
