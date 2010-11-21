@@ -1,10 +1,32 @@
 {-
  - husk scheme
  - Macro
- -
- - This file contains code for hygenic macros 
- -
  - @author Justin Ethier
+ -
+ - Purpose:
+ -
+ - This file contains code for hygenic macros.
+ -
+ - During transformation, the following components are considered:
+ -  - Pattern (part of a rule that matches input)
+ -  - Transform (what the macro "expands" into)
+ -  - Input (the actual code in the user's program)
+ -
+ - At a high level, macro transformation is broken down into the following steps:
+ -
+ -  1) Search for a rule that matches the input.
+ -     During this process, any variables in the input are loaded into a temporary environment
+ -  2) If a rule matches,
+ -  3) Transform by walking the transform, inserting variables as needed
+ -
+ -
+ - Remaining Work:
+ -
+ - * Vectors are currently not supported
+ -
+ - * Dotted lists are not 100% correctly implemented. In particular, the transformation should
+ -   take into account whether the input was presented as a list or a pair, and replicate that
+ -    in the output.
  -
  - -}
 module Scheme.Macro where
@@ -44,8 +66,8 @@ macroEval env lisp@(List (Atom x : xs)) = do
 macroEval _ lisp@(_) = return lisp
 
 -- Given input and syntax-rules, determine if any rule is a match and transform it. 
--- TODO (later): validate that the pattern's template and pattern are consistent (IE: no vars in transform that do not appear in matching pattern - csi "stmt1" case)
---macroTransform :: Env -> [LispVal] -> LispVal -> LispVal -> IOThrowsError LispVal
+-- FUTURE: validate that the pattern's template and pattern are consistent (IE: no vars in transform that do not appear in matching pattern - csi "stmt1" case)
+macroTransform :: Env -> LispVal -> [LispVal] -> LispVal -> IOThrowsError LispVal
 macroTransform env identifiers rules@(rule@(List r) : rs) input = do
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
   result <- matchRule env identifiers localEnv rule input
@@ -85,12 +107,6 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
         loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do -- TODO: kind of a hack to have both ellipsis vars. Is only outer req'd?
           case (pattern, input) of
                ((DottedList ps p), (DottedList is i)) -> do
--- TODO: may not be right place to call init...               
--- interesting, these next 2 lines are not called if the "list" call
--- is made prior, presumably because there is nothing left for these functions to do???
---
---                 initializePatternVars localEnv "pair" identifiers $ List ps
---                 initializePatternVars localEnv "pair" identifiers p
                  result <- loadLocal localEnv  identifiers (List ps) (List is) False outerHasEllipsis
                  case result of
                     Bool True -> loadLocal localEnv identifiers p i False outerHasEllipsis
@@ -102,23 +118,6 @@ matchRule env identifiers localEnv (List [p@(List patternVar), template@(List _)
 
                  -- TODO: error if ... detected when there is an outer ... ????
                  --       no, this should (eventually) be allowed. See scheme-faq-macros
-
-{-
-Need to completely rethink initpatternvars. may only need to call it when there is no input (see below)?
-but this means we cannot piggy-back on it for pair/list identification.
-
-I think the next step is to consider both issues, and perhaps implement separate solutions...
--}
-                  -- TODO: This may not be the optimal place to call init...
-                  --
-                  -- by commenting this out, it passes the "simple" pair vs list test, but
-                  -- hangs when running the full test suite.
-                  --
-                  -- I wonder if  instead of calling a fully recursive function here, if we need to
-                  -- just call a func that processes the list...
-                  -- need to understand how to call this, and do that correctly.
-                  --
---                 initializePatternVars (trace "init pattern vars - list" localEnv) "list" identifiers p
 
                  status <- checkLocal localEnv identifiers (hasEllipsis || outerHasEllipsis) p i 
                  case status of
@@ -139,8 +138,9 @@ I think the next step is to consider both issues, and perhaps implement separate
 
                -- Ran out of input to process
                (List (p:ps), List []) -> do
+                                         -- Ensure any patterns that are not present in the input still
+                                         -- have their variables initialized so they are ready during trans.
                                          initializePatternVars localEnv "list" identifiers pattern
---                                         initializePatternVars (trace "init pattern vars - list" localEnv) "list" identifiers pattern
                                          let hasEllipsis = macroElementMatchesMany pattern
                                          if hasEllipsis && ((length ps) == 1) 
                                                    then return $ Bool True
@@ -204,9 +204,6 @@ I think the next step is to consider both issues, and perhaps implement separate
 
         checkLocal localEnv identifiers hasEllipsis _ _ = return $ Bool False
 
---
--- TODO: transforming into form (a b) ... does not work at the moment. Causes problems for (let*)
---
 -- Transform input by walking the tranform structure and creating a new structure
 -- with the same form, replacing identifiers in the tranform with those bound in localEnv
 transformRule :: Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
@@ -254,15 +251,9 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
         getListAtTail l = case (last l) of
                                List lst -> lst
 
+
 -- TODO: vector transform (and taking vectors into account in other cases as well???)
 
-
-{- PLACING HERE AS A REMINDER, SINCE THIS IS VERY IMPORTANT TO GET RIGHT IN BELOW FUNCTION
-; TODO - before finishing here, need to explicitly test case where the
-;        member after the . is just a symbol and should not be transformed.
-;        (IE: (var init . my-symbol))
-;        also test - (var my-symbol . step)
--}
 
 transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedList ds d) : ts)) (List ellipsisList) = do
   if macroElementMatchesMany transform
@@ -390,10 +381,12 @@ initializePatternVars localEnv src identifiers pattern@(DottedList ps p) = do
 -- TODO: vector
 
 initializePatternVars localEnv src identifiers (Atom pattern) =  
+       -- FUTURE:
+       -- there is code to attempt to flag "src" here, but it is not
+       -- wire up correctly. In fact, the whole design here probably
+       -- needs to be rethinked.
     do defineNamespacedVar localEnv "src" pattern $ String src
        isDefined <- liftIO $ isBound localEnv pattern
---    do defineNamespacedVar localEnv "src" pattern $ String (trace ("defineSrc " ++ src) src)
---       isDefined <- liftIO $ isBound localEnv (trace ("fromInit " ++ src ++ " pattern " ++ pattern) pattern)
        found <- findAtom (Atom pattern) identifiers
        case found of
             (Bool False) -> if not isDefined -- Set variable in the local environment
@@ -403,9 +396,6 @@ initializePatternVars localEnv src identifiers (Atom pattern) =
                                         return $ Bool True
              -- Ignore identifiers since they are just passed along as-is
             otherwise -> return $ Bool True
-       -- Load up a new var based upon "src", to let transform code know...
-       -- FUTURE: optimize this a bit better
---       defineNamespacedVar localEnv "src" pattern $ String src 
 
 initializePatternVars localEnv src identifiers pattern =  
     return $ Bool True 
