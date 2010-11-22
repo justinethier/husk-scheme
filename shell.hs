@@ -11,24 +11,11 @@
  - -}
 
 module Main where
-import Scheme.Core
-import Scheme.Macro
-import Scheme.Numerical
-import Scheme.Parser
-import Scheme.Types
-import Scheme.Variables
-import Complex
-import Control.Monad
+import Scheme.Core      -- Scheme Interpreter
+import Scheme.Types     -- Scheme data types
+import Scheme.Variables -- Scheme variable operations
 import Control.Monad.Error
-import Char
-import Data.Array
-import Data.IORef
-import qualified Data.Map
-import Maybe
-import List
 import IO hiding (try)
-import Numeric
-import Ratio
 import System.Environment
 import System.Console.Haskeline
 
@@ -41,12 +28,6 @@ main = do args <- getArgs
 -- REPL Section
 flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
-
-evalString :: Env -> String -> IO String
-evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= eval env
-
-evalAndPrint :: Env -> String -> IO ()
-evalAndPrint env expr = evalString env expr >>= putStrLn
 
 runOne :: [String] -> IO ()
 runOne args = do

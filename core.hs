@@ -34,10 +34,17 @@ import List
 import IO hiding (try)
 import Numeric
 import Ratio
-import System.Environment
 
+-- Evaluate a string containing Scheme code
+evalString :: Env -> String -> IO String
+evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= eval env
 
--- Eval section
+-- Evaluate a string and print results to console
+evalAndPrint :: Env -> String -> IO ()
+evalAndPrint env expr = evalString env expr >>= putStrLn
+
+-- Core eval section
+-- Note: do not call directly if you want Macro support; instead, call macroEval first.
 eval :: Env -> LispVal -> IOThrowsError LispVal
 eval env val@(Nil _) = return val
 eval env val@(String _) = return val
