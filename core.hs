@@ -16,7 +16,14 @@
  -
  - -}
 
-module Scheme.Core where
+module Scheme.Core 
+    (
+      eval
+    , evalString
+    , evalAndPrint
+    , primitiveBindings -- FUTURE: this may be a bad idea...
+                        -- but there should be an interface to inject custom functions written in Haskell
+    ) where
 import Scheme.Macro
 import Scheme.Numerical
 import Scheme.Parser
