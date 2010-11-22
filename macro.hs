@@ -29,7 +29,10 @@
  -    in the output.
  -
  - -}
-module Scheme.Macro where
+module Scheme.Macro 
+    (
+      macroEval
+    ) where
 import Scheme.Types
 import Scheme.Variables
 import Control.Monad
