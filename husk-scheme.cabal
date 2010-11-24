@@ -1,8 +1,14 @@
 Name:                husk-scheme
 Version:             1.0
 Synopsis:            An R5RS Scheme interpreter written in Haskell.
-Description:         My super cool, indeed, even mega lambdas 
-                     will demonstrate a basic project. You will marvel.
+Description:         husk is a dialect of Scheme written in Haskell that implements 
+                     a subset of the R5RS standard. Husk is not intended to be a 
+                     highly optimized version of Scheme. Rather, the goal of the 
+                     project is to provide a tight integration between Haskell and 
+                     Scheme while at the same time providing a great opportunity for 
+                     deeper understanding of both languages. In addition, by closely 
+                     following the R5RS standard the intent is to develop a Scheme 
+                     that is as compatible as possible with other R5RS Schemes.
 License:             MIT
 License-file:        LICENSE
 Author:              Justin Ethier
