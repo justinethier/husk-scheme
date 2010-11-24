@@ -1,0 +1,21 @@
+Name:                husk-scheme
+Version:             1.0
+Synopsis:            An R5RS Scheme interpreter written in Haskell.
+Description:         My super cool, indeed, even mega lambdas 
+                     will demonstrate a basic project. You will marvel.
+License:             MIT
+License-file:        LICENSE
+Author:              Justin Ethier
+Maintainer:          Justin Ethier <github.com/justinethier>
+Cabal-Version:       >= 1.2
+Build-Depends:       base
+Executable:          huski
+Main-is:             shell.hs
+library
+  Exposed-Modules: Scheme.Core
+                   Scheme.Types
+                   Scheme.Variables
+  Other-Modules:   Scheme.Macro
+                   Scheme.Numerical
+                   Scheme.Parser
+  Build-Depends:   base >= 2.0
