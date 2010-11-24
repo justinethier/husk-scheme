@@ -14,9 +14,8 @@ License-file:        LICENSE
 Author:              Justin Ethier
 Maintainer:          Justin Ethier <github.com/justinethier>
 Cabal-Version:       >= 1.2
-Build-Depends:       base
-Executable:          huski
-Main-is:             shell.hs
+Build-Type:          Simple
+Category:            Compilers/Interpreters
 library
   Exposed-Modules: Scheme.Core
                    Scheme.Types
@@ -24,4 +23,13 @@ library
   Other-Modules:   Scheme.Macro
                    Scheme.Numerical
                    Scheme.Parser
-  Build-Depends:   base >= 2.0
+  Build-Depends:   base >= 2.0, haskeline
+Executable         huski
+  Build-Depends:   base >= 2.0, haskeline
+  Main-is:         shell.hs
+  Other-Modules:   Scheme.Core
+                   Scheme.Types
+                   Scheme.Variables
+                   Scheme.Macro
+                   Scheme.Numerical
+                   Scheme.Parser
