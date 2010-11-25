@@ -5,7 +5,7 @@
  -
  - Purpose:
  -
- - This file contains code for hygenic macros.
+ - This file contains code for hygienic macros.
  -
  - During transformation, the following components are considered:
  -  - Pattern (part of a rule that matches input)
