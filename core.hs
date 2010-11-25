@@ -16,7 +16,14 @@
  -
  - -}
 
-module Main where
+module Scheme.Core 
+    (
+      eval
+    , evalString
+    , evalAndPrint
+    , primitiveBindings -- FUTURE: this may be a bad idea...
+                        -- but there should be an interface to inject custom functions written in Haskell
+    ) where
 import Scheme.Macro
 import Scheme.Numerical
 import Scheme.Parser
@@ -34,78 +41,17 @@ import List
 import IO hiding (try)
 import Numeric
 import Ratio
-import System.Environment
-import System.Console.Haskeline
 
-main :: IO ()
-main = do args <- getArgs
-          if null args then do showBanner
-                               runRepl
-                       else runOne $ args
-
--- REPL Section
-flushStr :: String -> IO ()
-flushStr str = putStr str >> hFlush stdout
-
+-- Evaluate a string containing Scheme code
 evalString :: Env -> String -> IO String
 evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= eval env
 
+-- Evaluate a string and print results to console
 evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn
 
-runOne :: [String] -> IO ()
-runOne args = do
-  env <-primitiveBindings >>= flip bindVars [((varNamespace, "args"), List $ map String $ drop 1 args)]
-  (runIOThrows $ liftM show $ eval env (List [Atom "load", String (args !! 0)]))
-     >>= hPutStrLn stderr  -- echo this or not??
-
-  -- Call into (main) if it exists...
-  alreadyDefined <- liftIO $ isBound env "main"
-  let argv = List $ map String $ args
-  if alreadyDefined
-     then (runIOThrows $ liftM show $ eval env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
-     else (runIOThrows $ liftM show $ eval env $ Nil "") >>= hPutStrLn stderr
-
-showBanner :: IO ()
-showBanner = do
-  putStrLn " __  __     __  __     ______     __  __                             "
-  putStrLn "/\\ \\_\\ \\   /\\ \\/\\ \\   /\\  ___\\   /\\ \\/ /     Scheme Interpreter " 
-  putStrLn "\\ \\  __ \\  \\ \\ \\_\\ \\  \\ \\___  \\  \\ \\  _\\\"-.  Version 1.0"
-  putStrLn " \\ \\_\\ \\_\\  \\ \\_____\\  \\/\\_____\\  \\ \\_\\ \\_\\  (c) 2010 Justin Ethier "
-  putStrLn "  \\/_/\\/_/   \\/_____/   \\/_____/   \\/_/\\/_/  github.com/justinethier/husk-scheme "
-  putStrLn ""
-
-runRepl :: IO ()
-runRepl = do
-    env <- primitiveBindings
-    evalString env "(load \"stdlib.scm\")" -- Load standard library into the REPL
-    runInputT defaultSettings (loop env) 
-    where 
-        loop :: Env -> InputT IO ()
-        loop env = do
-            minput <- getInputLine "huski> "
-            case minput of
-                Nothing -> return ()
-                Just "quit" -> return ()
-                Just "" -> loop env -- FUTURE: integrate with strip to ignore inputs of just whitespace
-                Just input -> do result <- liftIO (evalString env input)
-                                 if (length result) > 0
-                                    then do outputStrLn result
-                                            loop env
-                                    else loop env
--- End REPL Section
-
-{- Should not need this function, since we are using Haskell
-trampoline :: Env -> LispVal -> IOThrowsError LispVal
-trampoline env val = do
-  result <- eval env val
-  case result of
-       -- If a form is not fully-evaluated to a value, bounce it back onto the trampoline...
-       func@(Func params vararg body closure True) -> trampoline env func -- next iteration, via tail call (?)
-       val -> return val
--}
-
--- Eval section
+-- Core eval section
+-- Note: do not call directly if you want Macro support; instead, call macroEval first.
 eval :: Env -> LispVal -> IOThrowsError LispVal
 eval env val@(Nil _) = return val
 eval env val@(String _) = return val
@@ -810,12 +756,12 @@ isBoolean ([Bool n]) = return $ Bool True
 isBoolean _ = return $ Bool False
 -- end Eval section
 
--- Begin Util section, of generic functions
-
--- Remove leading/trailing white space from a string; based on corresponding Python function
--- Code taken from: http://gimbo.org.uk/blog/2007/04/20/splitting-a-string-in-haskell/
-strip :: String -> String
-strip s = dropWhile ws $ reverse $ dropWhile ws $ reverse s
-    where ws = (`elem` [' ', '\n', '\t', '\r'])
-
--- End Util
+{- Should not need this function, since we are using Haskell
+trampoline :: Env -> LispVal -> IOThrowsError LispVal
+trampoline env val = do
+  result <- eval env val
+  case result of
+       -- If a form is not fully-evaluated to a value, bounce it back onto the trampoline...
+       func@(Func params vararg body closure True) -> trampoline env func -- next iteration, via tail call (?)
+       val -> return val
+-}

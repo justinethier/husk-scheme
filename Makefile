@@ -1,5 +1,10 @@
-husk: core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
-	ghc --make -package parsec -fglasgow-exts -o huski core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
+# TODO: see http://en.wikibooks.org/wiki/Haskell/Packaging
+#       for a proper haskell way to set this up.
+husk: shell.hs core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
+	ghc --make -package parsec -fglasgow-exts -o huski shell.hs core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
+
+#husk-lib: core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
+#	ghc --make -package parsec -fglasgow-exts -o huski shell.hs core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
 
 # Run all unit tests
 test: husk

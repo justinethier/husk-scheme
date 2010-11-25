@@ -93,9 +93,6 @@ data LispVal = Atom String
  	| String String
 	| Char Char
 	| Bool Bool
- 	  -- TODO: could use to determine whether a function should be
-          --           evaluated by the trampoline (but need to think this through)
---	| Partial (ThrowsError LispVal)
 	| PrimitiveFunc ([LispVal] -> ThrowsError LispVal)
 	| Func {params :: [String], 
  	        vararg :: (Maybe String),
