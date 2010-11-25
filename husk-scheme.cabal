@@ -13,23 +13,28 @@ License:             MIT
 License-file:        LICENSE
 Author:              Justin Ethier
 Maintainer:          Justin Ethier <github.com/justinethier>
+Homepage:            https://github.com/justinethier/husk-scheme
 Cabal-Version:       >= 1.2
 Build-Type:          Simple
 Category:            Compilers/Interpreters
-library
-  Exposed-Modules: Scheme.Core
-                   Scheme.Types
-                   Scheme.Variables
-  Other-Modules:   Scheme.Macro
-                   Scheme.Numerical
-                   Scheme.Parser
-  Build-Depends:   base >= 2.0, haskeline
+
+--Library
+--  Exposed-Modules: Scheme.Core
+--                   Scheme.Types
+--                   Scheme.Variables
+--  Other-Modules:   Scheme.Macro
+--                   Scheme.Numerical
+--                   Scheme.Parser
+--  Build-Depends:   base >= 2.0, haskeline
+
 Executable         huski
-  Build-Depends:   base >= 2.0, haskeline
+  Build-Depends:   base >= 2.0, haskeline, haskell98, mtl
   Main-is:         shell.hs
-  Other-Modules:   Scheme.Core
-                   Scheme.Types
-                   Scheme.Variables
-                   Scheme.Macro
-                   Scheme.Numerical
-                   Scheme.Parser
+  Other-Modules:   Scheme.Variables
+-- TODO: does cabal expect these files to be in a "Scheme" directory, with proper capitalization?
+--  Other-Modules:   Scheme.Core
+--                   Scheme.Types
+--                   Scheme.Variables
+--                   Scheme.Macro
+--                   Scheme.Numerical
+--                   Scheme.Parser
