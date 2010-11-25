@@ -25,3 +25,4 @@ clean:
 	rm -f *.o
 	rm -f *.hi
 	rm -f huski
+	rm -rf dist
