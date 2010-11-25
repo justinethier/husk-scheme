@@ -1,7 +1,7 @@
 # TODO: see http://en.wikibooks.org/wiki/Haskell/Packaging
 #       for a proper haskell way to set this up.
-husk: shell.hs core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
-	ghc --make -package parsec -fglasgow-exts -o huski shell.hs core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
+husk: hs-src/shell.hs hs-src/Scheme/Core.hs hs-src/Scheme/Macro.hs hs-src/Scheme/Numerical.hs hs-src/Scheme/Parser.hs hs-src/Scheme/Types.hs hs-src/Scheme/Variables.hs
+	ghc --make -package parsec -fglasgow-exts -o huski hs-src/shell.hs hs-src/Scheme/Core.hs hs-src/Scheme/Macro.hs hs-src/Scheme/Numerical.hs hs-src/Scheme/Parser.hs hs-src/Scheme/Types.hs hs-src/Scheme/Variables.hs
 
 #husk-lib: core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
 #	ghc --make -package parsec -fglasgow-exts -o huski shell.hs core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
@@ -23,6 +23,10 @@ test: husk
 
 clean:
 	rm -f *.o
+	rm -f hs-src/*.o
+	rm -f hs-src/Scheme/*.o
 	rm -f *.hi
+	rm -f hs-src/*.hi
+	rm -f hs-src/Scheme/*.hi
 	rm -f huski
 	rm -rf dist
