@@ -18,6 +18,8 @@ Cabal-Version:       >= 1.2
 Build-Type:          Simple
 Category:            Compilers/Interpreters
 
+-- TODO: need to move source to a dir such as: src/Scheme/*.hs
+--
 --Library
 --  Exposed-Modules: Scheme.Core
 --                   Scheme.Types
@@ -26,10 +28,12 @@ Category:            Compilers/Interpreters
 --                   Scheme.Numerical
 --                   Scheme.Parser
 --  Build-Depends:   base >= 2.0, haskeline
+-- Might be a good idea:  Hs-Source-Dirs:  src
 
 Executable         huski
   Build-Depends:   base >= 2.0, haskeline, haskell98, mtl
   Main-is:         shell.hs
+-- Might be a good idea:  Hs-Source-Dirs:  src
   Other-Modules:   Scheme.Variables
 -- TODO: does cabal expect these files to be in a "Scheme" directory, with proper capitalization?
 --  Other-Modules:   Scheme.Core
