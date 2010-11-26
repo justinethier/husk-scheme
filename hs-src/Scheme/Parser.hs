@@ -80,7 +80,7 @@ parseHexNumber = do
      1 -> return $ Number $ toInteger $ (*) (-1) $ fst $ Numeric.readHex num !! 0
      _ -> pzero
 
-{- Parser for Integer, base 10-}
+-- |Parser for Integer, base 10
 parseDecimalNumber :: Parser LispVal
 parseDecimalNumber = do
   try (many(string "#d"))
