@@ -7,7 +7,7 @@ husk: hs-src/shell.hs hs-src/Scheme/Core.hs hs-src/Scheme/Macro.hs hs-src/Scheme
 #	ghc --make -package parsec -fglasgow-exts -o huski shell.hs core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
 
 cabal:
-	runhaskell Setup.hs configure --user
+	runhaskell Setup.hs configure --prefix=$(HOME) --user
 	runhaskell Setup.hs build 
 	# TODO: runhaskell Setup.hs install
 
