@@ -6,8 +6,13 @@ husk: hs-src/shell.hs hs-src/Scheme/Core.hs hs-src/Scheme/Macro.hs hs-src/Scheme
 #husk-lib: core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
 #	ghc --make -package parsec -fglasgow-exts -o huski shell.hs core.hs macro.hs numerical.hs parser.hs types.hs variables.hs
 
+cabal:
+	runhaskell Setup.hs configure --user
+	runhaskell Setup.hs build 
+	# TODO: runhaskell Setup.hs install
+
 # Run all unit tests
-test: husk
+test:
 #	cd scm-unit-tests ; ../huski t-backquote.scm
 	cd scm-unit-tests ; ../huski t-case.scm
 	cd scm-unit-tests ; ../huski t-cond.scm

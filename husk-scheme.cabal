@@ -18,27 +18,39 @@ Cabal-Version:       >= 1.2
 Build-Type:          Simple
 Category:            Compilers/Interpreters
 
--- TODO: need to move source to a dir such as: src/Scheme/*.hs
---
---Library
---  Exposed-Modules: Scheme.Core
---                   Scheme.Types
---                   Scheme.Variables
---  Other-Modules:   Scheme.Macro
---                   Scheme.Numerical
---                   Scheme.Parser
---  Build-Depends:   base >= 2.0, haskeline
--- Might be a good idea:  Hs-Source-Dirs:  src
+Library
+  Build-Depends:   base >= 2.0, array, containers, haskeline, haskell98, mtl, parsec
+  Extensions:      ForeignFunctionInterface, Rank2Types, FlexibleInstances,
+                   TypeSynonymInstances
+                   FlexibleContexts, ExistentialQuantification
+                   ScopedTypeVariables, GeneralizedNewtypeDeriving
+                   MultiParamTypeClasses, OverlappingInstances
+                   UndecidableInstances
+                   PatternSignatures, CPP, DeriveDataTypeable,
+                   PatternGuards
+  Hs-Source-Dirs:  hs-src
+  Exposed-Modules: Scheme.Core
+                   Scheme.Types
+                   Scheme.Variables
+  Other-Modules:   Scheme.Macro
+                   Scheme.Numerical
+                   Scheme.Parser
 
 Executable         huski
-  Build-Depends:   base >= 2.0, haskeline, haskell98, mtl
+  Build-Depends:   base >= 2.0, array, containers, haskeline, haskell98, mtl, parsec
+  Extensions:      ForeignFunctionInterface, Rank2Types, FlexibleInstances,
+                   TypeSynonymInstances
+                   FlexibleContexts, ExistentialQuantification
+                   ScopedTypeVariables, GeneralizedNewtypeDeriving
+                   MultiParamTypeClasses, OverlappingInstances
+                   UndecidableInstances
+                   PatternSignatures, CPP, DeriveDataTypeable,
+                   PatternGuards
   Main-is:         shell.hs
--- Might be a good idea:  Hs-Source-Dirs:  src
-  Other-Modules:   Scheme.Variables
--- TODO: does cabal expect these files to be in a "Scheme" directory, with proper capitalization?
---  Other-Modules:   Scheme.Core
---                   Scheme.Types
---                   Scheme.Variables
---                   Scheme.Macro
---                   Scheme.Numerical
---                   Scheme.Parser
+  Hs-Source-Dirs:  hs-src
+  Other-Modules:   Scheme.Core
+                   Scheme.Types
+                   Scheme.Variables
+                   Scheme.Macro
+                   Scheme.Numerical
+                   Scheme.Parser
