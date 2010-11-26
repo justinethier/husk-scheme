@@ -11,6 +11,7 @@
  - -}
 
 module Main where
+import Paths_husk_scheme
 import Scheme.Core      -- Scheme Interpreter
 import Scheme.Types     -- Scheme data types
 import Scheme.Variables -- Scheme variable operations
@@ -53,8 +54,9 @@ showBanner = do
 
 runRepl :: IO ()
 runRepl = do
+    stdlib <- getDataFileName "stdlib.scm"
     env <- primitiveBindings
-    evalString env "(load \"stdlib.scm\")" -- Load standard library into the REPL
+    evalString env $ "(load \"" ++ stdlib ++ "\")" -- Load standard library into the REPL
     runInputT defaultSettings (loop env) 
     where 
         loop :: Env -> InputT IO ()
