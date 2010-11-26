@@ -13,17 +13,19 @@ import Control.Monad
 import Control.Monad.Error
 import Data.IORef
 
--- Determine if a variable is bound in the "variable" namespace
+-- |Determine if a variable is bound in the default namespace
 isBound :: Env -> String -> IO Bool
 isBound envRef var = isNamespacedBound envRef varNamespace var
 
--- Determine if a variable is bound in the given namespace
+-- |Determine if a variable is bound in a given namespace
 isNamespacedBound :: Env -> String -> String -> IO Bool
 isNamespacedBound envRef namespace var = readIORef envRef >>= return . maybe False (const True) . lookup (namespace, var)
 
+-- |Retrieve the value of a variable defined in the default namespace
 getVar :: Env -> String -> IOThrowsError LispVal
 getVar envRef var = getNamespacedVar envRef varNamespace var
 
+-- |Retrieve the value of a variable defined in a given namespace
 getNamespacedVar :: Env -> String -> String -> IOThrowsError LispVal
 getNamespacedVar envRef
                  namespace
@@ -32,10 +34,14 @@ getNamespacedVar envRef
                                 (liftIO . readIORef)
                                 (lookup (namespace, var) env)
 
+-- |Set a variable in the default namespace
 setVar, defineVar :: Env -> String -> LispVal -> IOThrowsError LispVal
 setVar envRef var value = setNamespacedVar envRef varNamespace var value
+
+-- ^Bind a variable in the default namespace
 defineVar envRef var value = defineNamespacedVar envRef varNamespace var value
 
+-- |Set a variable in a given namespace
 setNamespacedVar :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
 setNamespacedVar envRef 
                  namespace
@@ -45,6 +51,7 @@ setNamespacedVar envRef
                                       (lookup (namespace, var) env)
                                 return value
 
+-- |Bind a variable in the given namespace
 defineNamespacedVar :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
 defineNamespacedVar envRef 
                     namespace 
@@ -58,6 +65,9 @@ defineNamespacedVar envRef
        writeIORef envRef (((namespace, var), valueRef) : env)
        return value
 
+-- |Bind a series of values to the given environment.
+--
+-- Input is of form: @(namespaceName, variableName), variableValue@
 bindVars :: Env -> [((String, String), LispVal)] -> IO Env
 bindVars envRef bindings = readIORef envRef >>= extendEnv bindings >>= newIORef
   where extendEnv bindings env = liftM  (++ env) (mapM addBinding bindings)

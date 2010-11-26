@@ -47,13 +47,18 @@ import Ratio
 
     For example:
 
-    Prelude Scheme.Core> env <- primitiveBindings
-    Prelude Scheme.Core> evalString env "(+ x x x)"
-    "3"
-    Prelude Scheme.Core> evalString env "(+ x x x (* 3 9))"
-    "30"
-    Prelude Scheme.Core> evalString env "(* 3 9)"            
-    "27"
+@
+env <- primitiveBindings
+
+evalString env "(+ x x x)"
+"3"
+
+evalString env "(+ x x x (* 3 9))"
+"30"
+
+evalString env "(* 3 9)"            
+"27"
+@
 -}
 evalString :: Env -> String -> IO String
 evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= eval env
@@ -63,14 +68,14 @@ evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn
 
 -- |Evaluate lisp code that has already been loaded into haskell
+--
 --  TODO: code example for this, via ghci and/or a custom program.
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = macroEval env lisp >>= eval env
 
 -- |Core eval function
---  NOTE:
---  This function does not include macro support and should not be called directly.
---  Instead, use evalLisp
+--
+--  NOTE:  This function does not include macro support and should not be called directly. Instead, use 'evalLisp'
 eval :: Env -> LispVal -> IOThrowsError LispVal
 eval env val@(Nil _) = return val
 eval env val@(String _) = return val
