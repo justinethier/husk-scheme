@@ -19,6 +19,7 @@
 module Scheme.Core 
     (
       eval
+    , evalLisp
     , evalString
     , evalAndPrint
     , primitiveBindings -- FUTURE: this may be a bad idea...
@@ -42,16 +43,34 @@ import IO hiding (try)
 import Numeric
 import Ratio
 
--- Evaluate a string containing Scheme code
+{-| Evaluate a string containing Scheme code.
+
+    For example:
+
+    Prelude Scheme.Core> env <- primitiveBindings
+    Prelude Scheme.Core> evalString env "(+ x x x)"
+    "3"
+    Prelude Scheme.Core> evalString env "(+ x x x (* 3 9))"
+    "30"
+    Prelude Scheme.Core> evalString env "(* 3 9)"            
+    "27"
+-}
 evalString :: Env -> String -> IO String
 evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= eval env
 
--- Evaluate a string and print results to console
+-- |Evaluate a string and print results to console
 evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn
 
--- Core eval section
--- Note: do not call directly if you want Macro support; instead, call macroEval first.
+-- |Evaluate lisp code that has already been loaded into haskell
+--  TODO: code example for this, via ghci and/or a custom program.
+evalLisp :: Env -> LispVal -> IOThrowsError LispVal
+evalLisp env lisp = macroEval env lisp >>= eval env
+
+-- |Core eval function
+--  NOTE:
+--  This function does not include macro support and should not be called directly.
+--  Instead, use evalLisp
 eval :: Env -> LispVal -> IOThrowsError LispVal
 eval env val@(Nil _) = return val
 eval env val@(String _) = return val
@@ -293,6 +312,9 @@ apply (Func params varargs body closure _) args =
           Nothing -> return env
 apply func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List (func : args)
 
+-- |Environment containing the primitive forms that are built into the Scheme language. Note that this only includes
+--  forms that are implemented in Haskell; derived forms implemented in Scheme (such as let, list, etc) are available
+--  in the standard library which must be pulled into the environment using (load).
 primitiveBindings :: IO Env
 primitiveBindings = nullEnv >>= (flip bindVars $ map (makeFunc IOFunc) ioPrimitives
                                               ++ map (makeFunc PrimitiveFunc) primitives)
