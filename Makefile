@@ -9,6 +9,9 @@ husk: hs-src/shell.hs hs-src/Scheme/Core.hs hs-src/Scheme/Macro.hs hs-src/Scheme
 cabal:
 	runhaskell Setup.hs configure --prefix=$(HOME) --user && runhaskell Setup.hs build && runhaskell Setup.hs install
 
+doc:
+	runhaskell Setup.hs haddock 
+
 # Run all unit tests
 test:
 #	cd scm-unit-tests ; ../huski t-backquote.scm
