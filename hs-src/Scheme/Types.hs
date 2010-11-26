@@ -22,24 +22,31 @@ import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
 
 {-  Environment management -}
+
+-- |A Scheme environment containing variable bindings of form @(namespaceName, variableName), variableValue@
 type Env = IORef [((String, String), IORef LispVal)] -- lookup via: (namespace, variable)
 
+-- |An empty environment
 nullEnv :: IO Env
 nullEnv = newIORef []
 
+-- Internal namespace for macros
 macroNamespace = "m"
+
+-- Internal namespace for variables
 varNamespace = "v"
 
-{- Scheme error handling -}
-data LispError = NumArgs Integer [LispVal]
-  | TypeMismatch String LispVal
-  | Parser ParseError
-  | BadSpecialForm String LispVal
+-- |Types of errors that may occur when evaluating Scheme code
+data LispError = NumArgs Integer [LispVal] -- ^Invalid number of function arguments
+  | TypeMismatch String LispVal -- ^Type error
+  | Parser ParseError -- ^Parsing error
+  | BadSpecialForm String LispVal -- ^Invalid special (built-in) form
   | NotFunction String String
   | UnboundVar String String
-  | DivideByZero
-  | Default String
+  | DivideByZero -- ^Divide by Zero error
+  | Default String -- ^Default error
 
+-- |Create a textual description for a 'LispError'
 showError :: LispError -> String
 showError (NumArgs expected found) = "Expected " ++ show expected
                                   ++ " args; found values " ++ unwordsList found
@@ -73,36 +80,46 @@ runIOThrows :: IOThrowsError String -> IO String
 runIOThrows action = runErrorT (trapError action) >>= return . extractValue
 
 
-{-  Scheme data types  -}
+-- |Scheme data types
 data LispVal = Atom String
+          -- ^Symbol
 	| List [LispVal]
+          -- ^List
 	| DottedList [LispVal] LispVal
+          -- ^Pair
 	| Vector (Array Int LispVal)
-	-- 
-	-- Map is technically the wrong structure to use for a hash table since it is based on a binary tree
-	-- and hence operations tend to be O(log n) instead of O(1).
-	--
-	-- However, according to http://www.opensubscriber.com/message/haskell-cafe@haskell.org/10779624.html
-	-- Map has good performance characteristics compared to the alternatives. So it stays for the moment...
-	--
+          -- ^Vector
 	| HashTable (Data.Map.Map LispVal LispVal)
+	-- ^Hash table. Map is technically the wrong structure to use for a hash table since it is based on a binary tree and hence operations tend to be O(log n) instead of O(1). However, according to <http://www.opensubscriber.com/message/haskell-cafe@haskell.org/10779624.html> Map has good performance characteristics compared to the alternatives. So it stays for the moment...
 	| Number Integer
+          -- ^Integer
 	| Float Double -- TODO: rename this "Real" instead of "Float"...
+          -- ^Floating point
 	| Complex (Complex Double)
+          -- ^Complex number
 	| Rational Rational
+          -- ^Rational number
  	| String String
+          -- ^String
 	| Char Char
+          -- ^Character
 	| Bool Bool
+          -- ^Boolean
 	| PrimitiveFunc ([LispVal] -> ThrowsError LispVal)
+          -- ^
 	| Func {params :: [String], 
  	        vararg :: (Maybe String),
 	        body :: [LispVal], 
  	        closure :: Env,
                 partialEval :: Bool
  	       } -- TODO: continuation member?
+          -- ^Function
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)
+         -- ^
 	| Port Handle
- 	| Nil String -- String may be wrong choice, but do not use this type much, just internally
+         -- ^I/O port
+ 	| Nil String
+         -- ^Internal use only; do not use this type directly.
 
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b
@@ -120,6 +137,7 @@ instance Ord LispVal where
 -- Others?
   compare a b = compare (show a) (show b) -- Hack (??): sort alphabetically when types differ or have no handlers
 
+-- |Compare two 'LispVal' instances
 eqv :: [LispVal] -> ThrowsError LispVal
 eqv [(Bool arg1), (Bool arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Number arg1), (Number arg2)] = return $ Bool $ arg1 == arg2
@@ -155,6 +173,7 @@ eqVal a b = do
 instance Eq LispVal where
   x == y = eqVal x y
 
+-- |Create a textual description of a 'LispVal'
 showVal :: LispVal -> String
 showVal (Nil _) = ""
 showVal (String contents) = "\"" ++ contents ++ "\""
@@ -182,5 +201,5 @@ showVal (IOFunc _) = "<IO primitive>"
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map showVal
 
-{- Allow conversion of lispval instances to strings -}
+-- |Allow conversion of lispval instances to strings
 instance Show LispVal where show = showVal
