@@ -18,6 +18,10 @@ Cabal-Version:       >= 1.2
 Build-Type:          Simple
 Category:            Compilers/Interpreters
 
+Extra-Source-Files:  README.markdown
+                     LICENSE
+Data-Files:          stdlib.scm
+
 Library
   Build-Depends:   base >= 2.0, array, containers, haskeline, haskell98, mtl, parsec
   Extensions:      ExistentialQuantification
