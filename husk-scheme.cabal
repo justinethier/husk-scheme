@@ -20,14 +20,7 @@ Category:            Compilers/Interpreters
 
 Library
   Build-Depends:   base >= 2.0, array, containers, haskeline, haskell98, mtl, parsec
-  Extensions:      ForeignFunctionInterface, Rank2Types, FlexibleInstances,
-                   TypeSynonymInstances
-                   FlexibleContexts, ExistentialQuantification
-                   ScopedTypeVariables, GeneralizedNewtypeDeriving
-                   MultiParamTypeClasses, OverlappingInstances
-                   UndecidableInstances
-                   PatternSignatures, CPP, DeriveDataTypeable,
-                   PatternGuards
+  Extensions:      ExistentialQuantification
   Hs-Source-Dirs:  hs-src
   Exposed-Modules: Scheme.Core
                    Scheme.Types
@@ -38,14 +31,7 @@ Library
 
 Executable         huski
   Build-Depends:   base >= 2.0, array, containers, haskeline, haskell98, mtl, parsec
-  Extensions:      ForeignFunctionInterface, Rank2Types, FlexibleInstances,
-                   TypeSynonymInstances
-                   FlexibleContexts, ExistentialQuantification
-                   ScopedTypeVariables, GeneralizedNewtypeDeriving
-                   MultiParamTypeClasses, OverlappingInstances
-                   UndecidableInstances
-                   PatternSignatures, CPP, DeriveDataTypeable,
-                   PatternGuards
+  Extensions:      ExistentialQuantification
   Main-is:         shell.hs
   Hs-Source-Dirs:  hs-src
   Other-Modules:   Scheme.Core
