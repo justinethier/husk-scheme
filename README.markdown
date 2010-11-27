@@ -64,13 +64,20 @@ Alternatively, you may run an individual scheme program:
 
     ./huski my-scheme-file.scm
 
+A Haskell API is also provided to allow you to embed a Scheme interpreter within a Haskell program. The key API modules are:
+
+- Scheme.Core - Contains functions to evaluate (execute) Scheme code.
+- Scheme.Types - Contains Haskell data types used to represent Scheme primitives.
+
+For more information, run `make doc` to generate API documentation from the source code. Also, see shell.hs for a quick example of how you might get started.
 
 Development
 -----------
 
 The following packages are required to build husk scheme:
 
-- [GHC](http://www.haskell.org/ghc/)
+- [GHC](http://www.haskell.org/ghc/) - Or at the very least, no other compiler has been tested.
+- [cabal-install](http://hackage.haskell.org/trac/hackage/wiki/CabalInstall) may be used to build, deploy, and generate packages for husk.
 - Haskeline - which may be installed using cabal:
 
     cabal install haskeline
