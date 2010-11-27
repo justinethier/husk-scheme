@@ -1,6 +1,6 @@
 Name:                husk-scheme
 Version:             1.0
-Synopsis:            An R5RS Scheme interpreter written in Haskell.
+Synopsis:            R5RS Scheme interpreter program and library.
 Description:         Husk is a dialect of Scheme written in Haskell that implements 
                      a subset of the R5RS standard. Husk is not intended to be a 
                      highly optimized version of Scheme. Rather, the goal of the 
@@ -9,21 +9,26 @@ Description:         Husk is a dialect of Scheme written in Haskell that impleme
                      deeper understanding of both languages. In addition, by closely 
                      following the R5RS standard the intent is to develop a Scheme 
                      that is as compatible as possible with other R5RS Schemes.
+
+                     This package includes a stand-alone executable as well as
+                     a library that allows an interpreter to be embedded within an 
+                     existing Haskell application.
+
 License:             MIT
 License-file:        LICENSE
 Author:              Justin Ethier
 Maintainer:          Justin Ethier <github.com/justinethier>
 Homepage:            https://github.com/justinethier/husk-scheme
-Cabal-Version:       >= 1.2
+Cabal-Version:       >= 1.4
 Build-Type:          Simple
-Category:            Compilers/Interpreters
+Category:            Compilers/Interpreters, Language
 
 Extra-Source-Files:  README.markdown
                      LICENSE
 Data-Files:          stdlib.scm
 
 Library
-  Build-Depends:   base >= 2.0, array, containers, haskeline, haskell98, mtl, parsec
+  Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, haskell98, mtl, parsec
   Extensions:      ExistentialQuantification
   Hs-Source-Dirs:  hs-src
   Exposed-Modules: Scheme.Core
@@ -34,7 +39,7 @@ Library
                    Scheme.Parser
 
 Executable         huski
-  Build-Depends:   base >= 2.0, array, containers, haskeline, haskell98, mtl, parsec
+  Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, haskell98, mtl, parsec
   Extensions:      ExistentialQuantification
   Main-is:         shell.hs
   Hs-Source-Dirs:  hs-src
