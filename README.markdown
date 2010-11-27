@@ -22,35 +22,6 @@ husk includes the following features:
 - Hash tables, as specified by [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html)
 - Hygenic Macros: High-level macros via define-syntax - *Note this is still a heavy work in progress* and while it works well enough that many derived forms are implemented in our standard library, you may still run into problems when defining your own macros.
 
-Roadmap
--------
-
-Features planned for development:
-
-- A scheme "library" that may be used to embed scheme scripting within a Haskell program. This will necessitate extracting the repl code from Core.hs and relocating it to its own file.
-
-  See: http://book.realworldhaskell.org/read/writing-a-library-working-with-json-data.html
-
-- Documentation, including a description of Scheme / Haskell, API docs (?), etc
-- Release as a cabal package - see: http://www.haskell.org/haskellwiki/How_to_write_a_Haskell_program
-- Continuations
-- Implementation of approved SRFI's
-
-TODO Items:
-
-- Better error reporting. For example:
-  * huski crashes when macro transformation not enclosed in ()
-  * What's up with this error message:
-    huski> (define vec)
-    Getting an unbound variable: define
-- huski crashes if the first line of a scheme file is blank
-- Correct parsing of comments, including allowing them in the middle of a form (eg: (cond))
-- Test cases, including those for: backtick, primitives (see spec section 4.1), others
-- More example programs, perhaps derive some from SICP and http://www.scheme.dk/planet/
-- General refactoring of haskell code including addressing of TODO items, etc...
-- Compare our features to R5RS spec: <http://practical-scheme.net/wiliki/schemexref.cgi?R5RS> and <http://en.wikipedia.org/wiki/Scheme_(programming_language)>
-- At some point, need to enter bugs for this sort of thing...
-
 husk scheme is available under the [MIT license](http://www.opensource.org/licenses/mit-license.php).
 
 Usage
