@@ -12,6 +12,19 @@
 (assert/equal (let ((name 'a)) `(list ,name ((,name))))
               '(list a ((a))))
 
+(assert/equal (let ((name 'a)) `(list ,name . ,name))
+              '(list a . a))
+
+(assert/equal (let ((name 'a)) `(list ,name . (,name)))
+              '(list a a))
+
+(assert/equal (let ((name 'a)) `(list ,name . ((,name))))
+              '(list a (a)))
+
+(assert/equal (let ((name 'a)) `(list ,name . (,name . ,name)))
+              '(list a a . a))
+
+;(assert-equal (lambda () (`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)))
 ;(assert-equal (lambda () (`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)))
 ;				(a 3 4 5 6 b))
 
