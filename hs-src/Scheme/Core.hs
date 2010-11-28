@@ -92,13 +92,18 @@ eval env (List [Atom "quasiquote", val]) = do
   case val of
     List [Atom "unquote", val] -> eval env val -- Handle cases like `,(+ 1 2) 
     List [Atom "unquote-splicing", val] -> eval env val -- TODO: not quite right behavior 
-    List (x : xs) -> mapM (doUnQuote env) (x:xs) >>= return . List -- TODO: understand *why* this works 
+    List (x : xs) -> mapM (doUnQuote env) (x:xs) >>= return . List -- TODO: understand *why* this works -- TODO: pair?
+ -- TODO: vector?
+ 
     otherwise -> doUnQuote env val 
   where doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
         doUnQuote env val = do
           case val of
             List [Atom "unquote", val] -> eval env val
             List [Atom "unquote-splicing", val] -> eval env val -- TODO: not quite right behavior
+            List (x : xs) -> mapM (doUnQuote env) (x:xs) >>= return . List -- TODO: understand *why* this works -- TODO: pair?
+         -- TODO: vector?
+ 
             otherwise -> eval env (List [Atom "quote", val]) -- TODO: could this be simplified?
 
 eval env (List [Atom "if", pred, conseq, alt]) =
