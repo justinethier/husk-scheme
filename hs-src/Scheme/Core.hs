@@ -103,9 +103,11 @@ eval env (List [Atom "quasiquote", val]) = doUnQuote env val
                 List rxlst -> return $ List $ rxs ++ rxlst 
                 DottedList rxlst rxlast -> return $ DottedList (rxs ++ rxlst) rxlast
                 otherwise -> return $ DottedList rxs rx
-         -- TODO: Vector
- 
-            otherwise -> eval env (List [Atom "quote", val]) -- TODO: could this be simplified?
+            Vector vec -> do
+              let len = length (elems vec)
+              vList <- mapM (doUnQuote env) $ elems vec
+              return $ Vector $ listArray (0, len - 1) vList 
+            otherwise -> eval env (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"... 
 
 eval env (List [Atom "if", pred, conseq, alt]) =
     do result <- eval env pred
