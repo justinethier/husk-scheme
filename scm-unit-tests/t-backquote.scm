@@ -1,16 +1,22 @@
 (load "skim-unit.scm")
 
-(assert-equal (lambda () (`(list ,(+ 1 2) 4)))
-			  '(3 4))
+(assert/equal `(list ,(+ 1 2) 4)
+	      '(list 3 4))
 
-(assert-equal (lambda () ((let ((name 'a)) `(list ,name ',name))))
-              (list a (quote a)))
+(assert/equal (let ((name 'a)) `(list ,name ',name))
+              '(list a (quote a)))
 
-(assert-equal (lambda () (`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)))
-				(a 3 4 5 6 b))
+(assert/equal (let ((name 'a)) `(list ,name (,name)))
+              '(list a (a)))
 
-(assert-equal (lambda () (`((foo ,(- 10 3)) ,@(cdr '(c)) . ,(car '(cons)))))
-                 ((foo 7) . cons))
+(assert/equal (let ((name 'a)) `(list ,name ((,name))))
+              '(list a ((a))))
+
+;(assert-equal (lambda () (`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)))
+;				(a 3 4 5 6 b))
+
+;(assert-equal (lambda () (`((foo ,(- 10 3)) ,@(cdr '(c)) . ,(car '(cons)))))
+;                 ((foo 7) . cons))
 
 ; TODO: needs vector support
 ;(assert-equal (lambda () (
