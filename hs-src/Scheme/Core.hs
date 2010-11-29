@@ -95,10 +95,15 @@ eval env (List [Atom "quasiquote", val]) = doUnQuote env val
             List [Atom "unquote", val] -> eval env val
             List [Atom "unquote-splicing", val] -> eval env val -- TODO: not quite right behavior, need to "splice" the results
                                                                 -- back into the outer list, and probably throw an error if result is not a list
-            List (x : xs) -> mapM (doUnQuote env) (x:xs) >>= return . List
-              -- TODO: instead, a fold (?) should be performed that promotes an unquote-splice into t he outer list.
-              -- this fold should be performed here and as part of vector processing.
-              -- should also throw an error if splicing result is not a list (or does it depend on the context?)
+            List (x : xs) -> do
+              return $ unquoteList env (List []) $ List (x:xs) 
+            --mapM (doUnQuote env) (x:xs) >>= return . List
+            --
+              -- TODO: instead, a fold (?) should be performed that promotes an unquote-splice into the outer list.
+              --       this fold should be performed here and as part of vector processing.
+              --       should also throw an error if splicing result is not a list (or does it depend on the context?)
+              --
+              --       this is what we are attempting to do with unquoteList
             DottedList xs x -> do
               rxs <- mapM (doUnQuote env) xs
               rx <- doUnQuote env x
@@ -112,6 +117,20 @@ eval env (List [Atom "quasiquote", val]) = doUnQuote env val
               vList <- mapM (doUnQuote env) $ elems vec
               return $ Vector $ listArray (0, len - 1) vList 
             otherwise -> eval env (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"... 
+        -- |Unquote an element of a list
+        -- acc - Accumulated value (list)
+        -- val - Value of current list element we are iterating over
+        unquoteList :: Env -> LispVal -> LispVal -> LispVal
+        unquoteList env (List acc) val = do
+          case val of 
+            List [] -> List acc
+            List (List [Atom "unquote-splicing", v] : rst) -> do
+              result <- eval env v -- TODO: make sure the result is a list (?)
+              case result of
+                List l -> unquoteList env (List $ acc ++ l) rst
+                otherwise -> throwError $ BadSpecialForm "TODO: type error" result
+            List (x:xs) -> unquoteList env (List $ acc ++ [doUnQuote env x]) xs
+            otherwise -> acc ++ [doUnQuote env val] -- TODO: throw an error here?
 
 eval env (List [Atom "if", pred, conseq, alt]) =
     do result <- eval env pred
