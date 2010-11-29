@@ -90,7 +90,7 @@ macroTransform _ _ _ input = throwError $ BadSpecialForm "Input does not match a
 -- Determine if the next element in a list matches 0-to-n times due to an ellipsis
 macroElementMatchesMany :: LispVal -> Bool
 macroElementMatchesMany (List (p:ps)) = do
-  if length ps > 0
+  if not (null ps)
      then case (head ps) of
                 Atom "..." -> True
                 otherwise -> False
