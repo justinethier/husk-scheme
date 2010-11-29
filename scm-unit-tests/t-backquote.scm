@@ -36,6 +36,10 @@
 (assert/equal `#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)
               '#(10 5 2 4 3 8))
 
+; In csi, the following is allowed, need to handle this correctly, where a scalar is supplied
+(assert/equal `(,@2)
+              2)
+
 (assert/equal `(1 2 . ,(list 3 4))
               '(1 2 3 4))
 
