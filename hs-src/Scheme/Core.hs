@@ -93,11 +93,9 @@ eval env (List [Atom "quasiquote", val]) = doUnQuote env val
         doUnQuote env val = do
           case val of
             List [Atom "unquote", val] -> eval env val
-            List (x : xs) -> do
-              unquoteList env (x:xs)
-                --mapM (doUnQuote env) (x:xs) >>= return . List
+            List (x : xs) -> unquoteListM env (x:xs) >>= return . List
             DottedList xs x -> do
-              rxs <- mapM (doUnQuote env) xs
+              rxs <- unquoteListM env xs >>= return 
               rx <- doUnQuote env x
               case rx of
                 List [] -> return $ List rxs
@@ -106,21 +104,20 @@ eval env (List [Atom "quasiquote", val]) = doUnQuote env val
                 otherwise -> return $ DottedList rxs rx
             Vector vec -> do
               let len = length (elems vec)
-              vList <- unquoteList env $ elems vec
-              case vList of -- TODO: would be nice if upper func just returned a "raw" list, instead of a lisp List
-                List v -> return $ Vector $ listArray (0, len - 1) v 
+              vList <- unquoteListM env $ elems vec >>= return
+              return $ Vector $ listArray (0, len - 1) vList
             otherwise -> eval env (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"... 
-        unquoteList env lst = foldlM (unquoteListFld env) (List []) lst >>= return
-        unquoteListFld env (List acc) val = do
+        unquoteListM env lst = foldlM (unquoteListFld env) ([]) lst
+        unquoteListFld env (acc) val = do
             case val of
                 List [Atom "unquote-splicing", val] -> do
                     value <- eval env val
                     case value of
-                        List v -> return $ List (acc ++ v) 
-                    -- TODO: error if value is not a list?
+                        List v -> return $ (acc ++ v) 
+                    -- TODO: type error if value is not a list?
 
                 otherwise -> do result <- doUnQuote env val
-                                return $ List (acc ++ [result])
+                                return $ (acc ++ [result])
 
 eval env (List [Atom "if", pred, conseq, alt]) =
     do result <- eval env pred
