@@ -93,8 +93,12 @@ eval env (List [Atom "quasiquote", val]) = doUnQuote env val
         doUnQuote env val = do
           case val of
             List [Atom "unquote", val] -> eval env val
-            List [Atom "unquote-splicing", val] -> eval env val -- TODO: not quite right behavior
+            List [Atom "unquote-splicing", val] -> eval env val -- TODO: not quite right behavior, need to "splice" the results
+                                                                -- back into the outer list, and probably throw an error if result is not a list
             List (x : xs) -> mapM (doUnQuote env) (x:xs) >>= return . List
+              -- TODO: instead, a fold (?) should be performed that promotes an unquote-splice into t he outer list.
+              -- this fold should be performed here and as part of vector processing.
+              -- should also throw an error if splicing result is not a list (or does it depend on the context?)
             DottedList xs x -> do
               rxs <- mapM (doUnQuote env) xs
               rx <- doUnQuote env x
