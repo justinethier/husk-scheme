@@ -114,11 +114,15 @@ eval env (List [Atom "quasiquote", val]) = doUnQuote env val
                     value <- eval env val
                     case value of
                         List v -> return $ (acc ++ v)
-                        --otherwise -> return $ (acc ++ [v])
+                        -- Question: In which cases should I generate a type error if value is not a list?
+                        --
+                        -- csi reports an error for this: `(1 ,@(+ 1 2) 4)
+                        -- but allows cases such as: `,@2
+                        -- For now we just throw an error - perhaps more strict than we need to be, but at
+                        -- least we will not allow anything invalid to be returned.
+                        --
+                        -- Old code that we might build on if this changes down the road: otherwise -> return $ (acc ++ [v])
                         otherwise -> throwError $ TypeMismatch "proper list" value
-                        -- TODO: in which cases should I generate a type error if value is not a list?
-                        -- yes - csi reports an error for this: `(1 ,@(+ 1 2) 4)
-                        -- could attempt to allow cases such as `,@2, or perhaps just throw an error for them as well?
 
                 otherwise -> do result <- doUnQuote env val
                                 return $ (acc ++ [result])
