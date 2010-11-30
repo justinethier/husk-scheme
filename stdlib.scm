@@ -222,11 +222,20 @@
                          (set! result-ready? #t)
                          result))))))))
 
+
+; Hash table derived forms
 (define hash-table-walk
   (lambda (ht proc)
     (map 
       (lambda (kv) (proc (car kv) (cdr kv)))
       (hash-table->alist ht)))) 
+
+(define (hash-table-update! hash-table key function)
+  (hash-table-set! hash-table key
+                  (function (hash-table-ref hash-table key thunk))))
+
+;(define (hash-table-update!/default hash-table key function default)
+;  (hash-table-update! hash-table key function (lambda () default)))
 
 ; TODO: hash-table-fold
 
