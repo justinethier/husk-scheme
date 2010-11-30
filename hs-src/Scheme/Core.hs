@@ -132,9 +132,7 @@ eval env (List [Atom "if", pred, conseq, alt]) =
        case result of
          Bool False -> eval env alt
          otherwise -> eval env conseq
-         {- ex #1: only allow boolean conditions: otherwise -> throwError $ TypeMismatch "bool" otherwise-}
 
--- TODO: implement this 'if' form, such that it returns nothing if the pred evaluates to false
 eval env (List [Atom "if", pred, conseq]) = 
     do result <- eval env pred
        case result of
@@ -191,16 +189,6 @@ eval env (List (Atom "lambda" : DottedList params varargs : body)) =
   makeVarargs varargs env params body
 eval env (List (Atom "lambda" : varargs@(Atom _) : body)) = 
   makeVarargs varargs env [] body
-
-{- TODO: for proper tail calls (above):
- -
- - consider comments from http://www.sidhe.org/~dan/blog/archives/000211.html
- - in particular:
- -  - how a compiler can deal with tail recursion
- -  - And if you have a continuation passing style of calling functions, it turns out to be essentially free, which is really cool, though the topic of another WTHI entry
- -   perhaps: http://www.sidhe.org/~dan/blog/archives/000213.html
- -   
- - -}
 
 eval env (List [Atom "string-fill!", Atom var, character]) = do 
   str <- eval env =<< getVar env var
@@ -263,8 +251,6 @@ eval env (List [Atom "hash-table-delete!", Atom var, rkey]) = do
     otherwise -> throwError $ TypeMismatch "hash-table" otherwise
 
 -- TODO:
---  hash-table-update!
---  hash-table-update!/default
 --  hash-table-merge!
 
 eval env (List (function : args)) = do
