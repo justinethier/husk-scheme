@@ -105,7 +105,7 @@ eval env (List [Atom "quasiquote", val]) = doUnQuote env val
             Vector vec -> do
               let len = length (elems vec)
               vList <- unquoteListM env $ elems vec >>= return
-              return $ Vector $ listArray (0, len - 1) vList
+              return $ Vector $ listArray (0, len) vList
             otherwise -> eval env (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"... 
         unquoteListM env lst = foldlM (unquoteListFld env) ([]) lst
         unquoteListFld env (acc) val = do
