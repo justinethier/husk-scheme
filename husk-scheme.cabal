@@ -1,5 +1,5 @@
 Name:                husk-scheme
-Version:             1.1
+Version:             1.2
 Synopsis:            R5RS Scheme interpreter program and library.
 Description:         Husk is a dialect of Scheme written in Haskell that implements 
                      a subset of the R5RS standard. Husk is not intended to be a 
