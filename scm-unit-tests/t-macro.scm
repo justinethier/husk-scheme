@@ -7,72 +7,72 @@
 	(begin x))))
 (define x "hello, world")
 
-(assert-equal (lambda () (my-let 2)) 2)
-(assert-equal (lambda () (my-let x)) "hello, world")
-(assert-equal (lambda () (my-let (+ 1 2 3 4 5))) 15)
+(assert/equal (my-let 2) 2)
+(assert/equal (my-let x) "hello, world")
+(assert/equal (my-let (+ 1 2 3 4 5)) 15)
 
 
 (define-syntax test (syntax-rules () ((test 1 ...) (list 1))))
 
-;TODO: form of atom by itself does not work yet, should pass this test - (assert-equal (lambda () (test)) '(1))
+;TODO: form of atom by itself does not work yet, should pass this test - (assert/equal (test)) '(1))
 
-(assert-equal (lambda () (test 1)) '(1))
-(assert-equal (lambda () (test 1 1 1 1 1 1 1 1 1 1)) '(1))
+(assert/equal (test 1) '(1))
+(assert/equal (test 1 1 1 1 1 1 1 1 1 1) '(1))
 ; FUTURE (unit test framework): this should not pass, since 2 is not in the pattern - (test 1 2)
 ;                               this test case works, but can't put it here since it halts the program.
 ;                               would be nice if there was a way to test this...
 
 (define-syntax test (syntax-rules () ((test 1 ... 2) (list 1 2))))
-(assert-equal (lambda () (test 2)) '(1 2))
-(assert-equal (lambda () (test 1 2)) '(1 2))
-(assert-equal (lambda () (test 1 1 1 1 2)) '(1 2))
+(assert/equal (test 2) '(1 2))
+(assert/equal (test 1 2) '(1 2))
+(assert/equal (test 1 1 1 1 2) '(1 2))
 
 (define-syntax test (syntax-rules () ((test 1 ... 2 ... 3) (list 1 2 3))))
-(assert-equal (lambda () (test 3)) '(1 2 3))
-(assert-equal (lambda () (test 2 3)) '(1 2 3))
-(assert-equal (lambda () (test 1 2 3)) '(1 2 3))
-(assert-equal (lambda () (test 1 1 1 2 2 2 3)) '(1 2 3))
+(assert/equal (test 3) '(1 2 3))
+(assert/equal (test 2 3) '(1 2 3))
+(assert/equal (test 1 2 3) '(1 2 3))
+(assert/equal (test 1 1 1 2 2 2 3) '(1 2 3))
 
 (define-syntax test (syntax-rules () ((test x ...) (list 1))))
-(assert-equal (lambda () (test "hello, world!" (+ 1 2 3) x)) '(1))
-(assert-equal (lambda () (test "hello, world!" 1 2 3)) '(1))
+(assert/equal (test "hello, world!" (+ 1 2 3) x) '(1))
+(assert/equal (test "hello, world!" 1 2 3) '(1))
 
 (define-syntax test (syntax-rules () ((test x ...) (list x ...))))
-(assert-equal (lambda () (test "hello, world!")) '("hello, world!"))
-(assert-equal (lambda () (test 3 2 1)) '(3 2 1))
-(assert-equal (lambda () (test 'a 'b "c" #\d)) '(a b "c" #\d))
+(assert/equal (test "hello, world!") '("hello, world!"))
+(assert/equal (test 3 2 1) '(3 2 1))
+(assert/equal (test 'a 'b "c" #\d) '(a b "c" #\d))
 
 ;TODO: with above macro, what happens when transform is just (list x) - assume an error?
 
 (define-syntax test (syntax-rules () ((_ (1 2) (3 x)) (list x))))
-(assert-equal (lambda () (test (1 2) (3 4))) '(4))
+(assert/equal (test (1 2) (3 4)) '(4))
 
 (define-syntax test (syntax-rules () ((_ (1 2) (3 . x)) (list x))))
-(assert-equal (lambda () (test (1 2) (3 . 4))) '(4))
+(assert/equal (test (1 2) (3 . 4)) '(4))
 
 (define-syntax my-let
   (syntax-rules ()
     ((_ e1 ...)
     ((lambda () e1 ...)))))
-(assert-equal (lambda () (my-let (+ 1 2))) 3)
+(assert/equal (my-let (+ 1 2)) 3)
 
 ; let
-(assert-equal (lambda () (let ((x 1) (y 2) (z 3)) (+ x y z))) 6)
-(assert-equal (lambda () (let ((x 11) (y 22) (z 34)) (+ x y z))) 67)
-(assert-equal (lambda () (let ((x (* 1 2 3 4)) (y 22) (z 34)) (+ x y z))) (+ 24 22 34))
+(assert/equal (let ((x 1) (y 2) (z 3)) (+ x y z)) 6)
+(assert/equal (let ((x 11) (y 22) (z 34)) (+ x y z)) 67)
+(assert/equal (let ((x (* 1 2 3 4)) (y 22) (z 34)) (+ x y z)) (+ 24 22 34))
 
-(assert-equal (lambda () (let () (let ((x 1)) x))) 1)
-(assert-equal (lambda () ((lambda () (let ((x 1)) x)))) 1)
+(assert/equal (let () (let ((x 1)) x)) 1)
+(assert/equal ((lambda () (let ((x 1)) x))) 1)
 
 ; let*
-(assert-equal (lambda () (let* () 1)) 1)
-(assert-equal (lambda () (let* ((x 1)) x)) 1)
-(assert-equal (lambda () (let* ((x 1) (y x)) (+ x y))) 2)
-(assert-equal (lambda () (let* ((x 1)
+(assert/equal (let* () 1) 1)
+(assert/equal (let* ((x 1)) x) 1)
+(assert/equal (let* ((x 1) (y x)) (+ x y)) 2)
+(assert/equal (let* ((x 1)
                                 (y x)
-                                (z (+ x y))) (* x y z))) (* 1 1 2))
+                                (z (+ x y))) (* x y z)) (* 1 1 2))
 ; letrec
-(assert-equal (lambda () 
+(assert/equal 
   (letrec ((even?
           (lambda (n)
             (if (zero? n)
@@ -83,10 +83,10 @@
             (if (zero? n)
                 #f
                 (even? (- n 1))))))
-   (even? 88)))
+   (even? 88))
   #t)
 
-(assert-equal (lambda () 
+(assert/equal 
   (letrec ((even?
           (lambda (n)
             (if (zero? n)
@@ -97,12 +97,12 @@
             (if (zero? n)
                 #f
                 (even? (- n 1))))))
-   (odd? 88)))
+   (odd? 88))
   #f)
 
 ; named let
 ; TODO: add this back in once parser can handle negative integers - ;(let loop ((numbers '(3 -2 1 6 -5))
-(assert-equal (lambda ()
+(assert/equal
   (let loop ((numbers '(3 2 1 6 5))
            (nonneg '())
            (neg '()))
@@ -114,7 +114,7 @@
           ((< (car numbers) 0)
            (loop (cdr numbers)
                  nonneg
-                 (cons (car numbers) neg))))))
+                 (cons (car numbers) neg)))))
  '((5 6 1 2 3) ()))
 
 ; TODO: support, test cases for
@@ -145,42 +145,42 @@
 
 ; Following test cases for v01 are without the dot in the transform. (IE: (var init step))
 ; need test cases for both versions of the macro (IE: (var init . step) as well)
-(assert-equal (lambda ()
-                (my-pair-test/01 (1 2 . 3)))
+(assert/equal
+                (my-pair-test/01 (1 2 . 3))
                  '((1 2 3)))
-(assert-equal (lambda ()
-                (my-pair-test/01 (1 2 3)))
+(assert/equal
+                (my-pair-test/01 (1 2 3))
                  '((1 2 3)))
-(assert-equal (lambda ()
-                (my-pair-test/01 (1 2)))
+(assert/equal
+                (my-pair-test/01 (1 2))
                 '((1 2 ())))  
-(assert-equal (lambda ()
-                (my-pair-test/01 (1 (2 3 4 5) . 4)))
+(assert/equal
+                (my-pair-test/01 (1 (2 3 4 5) . 4))
                 '((1 (2 3 4 5) 4)))
 
-(assert-equal (lambda ()
-                (my-pair-test/02 (1 2 . 3)))
+(assert/equal
+                (my-pair-test/02 (1 2 . 3))
                  '((1 2 . 3)))
-(assert-equal (lambda ()
-                (my-pair-test/02 (1 2 3)))
+(assert/equal
+                (my-pair-test/02 (1 2 3))
                  '((1 2 . 3)))
 
-(assert-equal (lambda ()
-                (my-pair-test/02 (1 2)))
+(assert/equal
+                (my-pair-test/02 (1 2))
                 '((1 2)))  
-(assert-equal (lambda ()
-                (my-pair-test/02 (1 (2 3 4 5) . 4)))
+(assert/equal
+                (my-pair-test/02 (1 (2 3 4 5) . 4))
                 '((1 (2 3 4 5) . 4)))
 
 (define-syntax my-pair-test/03
   (syntax-rules (step)
      ((_ (var init . step))
       (list (quote (var init . step))))))
-(assert-equal (lambda ()
-                (my-pair-test/03 (1 2 . step)))
+(assert/equal
+                (my-pair-test/03 (1 2 . step))
                  '((1 2 . step)))
-(assert-equal (lambda ()
-                (my-pair-test/03 (1 (2 3 4 5) . step)))
+(assert/equal
+                (my-pair-test/03 (1 (2 3 4 5) . step))
                 '((1 (2 3 4 5) . step)))
 
 (define-syntax my-pair-test/04
@@ -188,11 +188,11 @@
      ((_ (var init . step) ...)
       (quote ((var init . step) ...)))))
 ; TODO: output for both of the following test cases is so screwed up (!)
-(assert-equal (lambda ()
-  (my-pair-test/04 (1 2 6) (3 4 5)))
+(assert/equal
+  (my-pair-test/04 (1 2 6) (3 4 5))
   '((1 2 6) (3 4 5)))
-(assert-equal (lambda ()
-  (my-pair-test/04 (1 2) (3 4 5)))
+(assert/equal
+  (my-pair-test/04 (1 2) (3 4 5))
   '((1 2) (3 4 5)))
 
 

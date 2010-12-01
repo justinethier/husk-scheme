@@ -1,7 +1,7 @@
 ; TODO: test cases for delayed evaluation
 (load "skim-unit.scm")
 
-(assert-equal (lambda () (force (delay 1)))
+(assert/equal (force (delay 1))
 			  1)
 (define count 0)
 (define x 50)
@@ -10,7 +10,7 @@
                             count
                             (force p)))))
 
-(assert-equal (lambda () (p)) 51)
+(assert/equal (p) 51)
 
 (unit-test-handler-results)
 
