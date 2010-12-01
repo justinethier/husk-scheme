@@ -1,6 +1,6 @@
 # Run a "simple" build using GHC directly 
 husk: hs-src/shell.hs hs-src/Scheme/Core.hs hs-src/Scheme/Macro.hs hs-src/Scheme/Numerical.hs hs-src/Scheme/Parser.hs hs-src/Scheme/Types.hs hs-src/Scheme/Variables.hs
-	ghc --make -package parsec -fglasgow-exts -o huski hs-src/shell.hs hs-src/Scheme/Core.hs hs-src/Scheme/Macro.hs hs-src/Scheme/Numerical.hs hs-src/Scheme/Parser.hs hs-src/Scheme/Types.hs hs-src/Scheme/Variables.hs Paths_husk_scheme.hs
+	ghc -Wall --make -package parsec -fglasgow-exts -o huski hs-src/shell.hs hs-src/Scheme/Core.hs hs-src/Scheme/Macro.hs hs-src/Scheme/Numerical.hs hs-src/Scheme/Parser.hs hs-src/Scheme/Types.hs hs-src/Scheme/Variables.hs Paths_husk_scheme.hs
 
 # Create files for distribution
 dist:
