@@ -13,13 +13,24 @@ import Control.Monad
 import Control.Monad.Error
 import Data.IORef
 
--- |Create a new environment that is an extention of the given one.
+-- |Bind a series of values to the given environment.
 extendEnv :: Env -> [((String, String), LispVal)] -> IO Env
 extendEnv envRef bindings = do bindinglist <- mapM (\((namespace, name), val) ->
                                                     do ref <- newIORef val
                                                        return ((namespace, name), ref)) bindings
                                               >>= newIORef
                                return $ Environment (Just envRef) bindinglist
+
+{-
+-- |Bind a series of values to the given environment.
+--
+-- Input is of form: @(namespaceName, variableName), variableValue@
+bindVars :: Env -> [((String, String), LispVal)] -> IO Env
+bindVars envRef abindings = (readIORef $ bindings envRef) >>= myExtendEnv abindings >>= newIORef
+  where myExtendEnv bindings env = liftM  (++ env) (mapM addBinding bindings)
+        addBinding (var, value) = do ref <- newIORef value
+                                     return (var, ref)
+-}
 
 -- |Determine if a variable is bound in the default namespace
 isBound :: Env -> String -> IO Bool
@@ -43,11 +54,7 @@ getNamespacedVar envRef
                             Nothing -> case parentEnv envRef of
                                          (Just par) -> getNamespacedVar par namespace var
                                          Nothing -> (throwError $ UnboundVar "Getting an unbound variable" var)
-{- OLD CODE:                 var = do env <- liftIO $ readIORef envRef
-                          maybe (throwError $ UnboundVar "Getting an unbound variable" var)
-                                (liftIO . readIORef)
-                                (lookup (namespace, var) env)
--}
+
 -- |Set a variable in the default namespace
 setVar, defineVar :: Env -> String -> LispVal -> IOThrowsError LispVal
 setVar envRef var value = setNamespacedVar envRef varNamespace var value
@@ -67,11 +74,7 @@ setNamespacedVar envRef
                                   Nothing -> case parentEnv envRef of
                                               (Just par) -> setNamespacedVar par namespace var value
                                               Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
-{-                                maybe (throwError $ UnboundVar "Setting an unbound variable: " var)
-                                      (liftIO . (flip writeIORef value))
-                                      (lookup (namespace, var) env)
-                                return value
--}
+
 -- |Bind a variable in the given namespace
 defineNamespacedVar :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
 defineNamespacedVar envRef 
@@ -85,13 +88,3 @@ defineNamespacedVar envRef
        env <- readIORef $ bindings envRef
        writeIORef (bindings envRef) (((namespace, var), valueRef) : env)
        return value
-{-
--- |Bind a series of values to the given environment.
---
--- Input is of form: @(namespaceName, variableName), variableValue@
-bindVars :: Env -> [((String, String), LispVal)] -> IO Env
-bindVars envRef abindings = (readIORef $ bindings envRef) >>= myExtendEnv abindings >>= newIORef
-  where myExtendEnv bindings env = liftM  (++ env) (mapM addBinding bindings)
-        addBinding (var, value) = do ref <- newIORef value
-                                     return (var, ref)
--}
