@@ -6,7 +6,9 @@ Feature List
 ------------
 husk includes the following features:
 
-- Most primitive data types and their standard forms (TODO: which are? string, char, etc)
+- Primitive data types and their standard forms, including string, char, numbers (integer, rational, floating point, and complex), list, pair, vector, and symbols
+- Proper tail recursion
+- Proper lexical scoping
 - Conditionals: if, case, cond
 - Assignment operations
 - Sequencing: begin
@@ -17,7 +19,6 @@ husk includes the following features:
 - Basic IO functions
 - Standard library of Scheme functions
 - Read-Eval-Print-Loop (REPL) interpreter, with input driven by Haskeline
-- Proper tail recursion
 - Full numeric tower - includes support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types, other constraints from spec.
 - Hash tables, as specified by [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html)
 - Hygenic Macros: High-level macros via define-syntax - *Note this is still a heavy work in progress* and while it works well enough that many derived forms are implemented in our standard library, you may still run into problems when defining your own macros.
