@@ -335,7 +335,7 @@ apply func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List (
 --  forms that are implemented in Haskell; derived forms implemented in Scheme (such as let, list, etc) are available
 --  in the standard library which must be pulled into the environment using (load).
 primitiveBindings :: IO Env
-primitiveBindings = nullEnv >>= (flip bindVars $ map (makeFunc IOFunc) ioPrimitives
+primitiveBindings = nullEnv >>= (flip extendEnv $ map (makeFunc IOFunc) ioPrimitives
                                               ++ map (makeFunc PrimitiveFunc) primitives)
   where makeFunc constructor (var, func) = ((varNamespace, var), constructor func)
 

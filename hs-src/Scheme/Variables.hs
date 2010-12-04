@@ -14,8 +14,8 @@ import Control.Monad.Error
 import Data.IORef
 
 -- |Create a new environment that is an extention of the given one.
-extendEnv :: [((String, String), LispVal)] -> Env -> IO Env
-extendEnv bindings envRef = do bindinglist <- mapM (\((namespace, name), val) ->
+extendEnv :: Env -> [((String, String), LispVal)] -> IO Env
+extendEnv envRef bindings = do bindinglist <- mapM (\((namespace, name), val) ->
                                                     do ref <- newIORef val
                                                        return ((namespace, name), ref)) bindings
                                               >>= newIORef
