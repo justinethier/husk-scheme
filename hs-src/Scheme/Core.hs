@@ -309,7 +309,8 @@ apply (PrimitiveFunc func) args = liftThrows $ func args
 apply (Func params varargs body closure _) args =
   if num params /= num args && varargs == Nothing
      then throwError $ NumArgs (num params) args
-     else (liftIO $ bindVars closure $ zip (map ((,) varNamespace) params) args) >>= bindVarArgs varargs >>= (evalBody body)
+     else (liftIO $ extendEnv closure $ zip (map ((,) varNamespace) params) args) >>= bindVarArgs varargs >>= (evalBody body)
+--     else (liftIO $ bindVars closure $ zip (map ((,) varNamespace) params) args) >>= bindVarArgs varargs >>= (evalBody body)
   where remainingArgs = drop (length params) args
         num = toInteger . length
         evalBody restBody env = do
@@ -325,7 +326,8 @@ apply (Func params varargs body closure _) args =
                     eval env lv
                     evalBody lvs env
         bindVarArgs arg env = case arg of
-          Just argName -> liftIO $ bindVars env [((varNamespace, argName), List $ remainingArgs)]
+          Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
+--          Just argName -> liftIO $ bindVars env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
 apply func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List (func : args)
 
