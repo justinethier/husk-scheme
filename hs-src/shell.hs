@@ -32,7 +32,7 @@ flushStr str = putStr str >> hFlush stdout
 
 runOne :: [String] -> IO ()
 runOne args = do
-  env <-primitiveBindings >>= flip bindVars [((varNamespace, "args"), List $ map String $ drop 1 args)]
+  env <- primitiveBindings >>= flip extendEnv [((varNamespace, "args"), List $ map String $ drop 1 args)]
   (runIOThrows $ liftM show $ eval env (List [Atom "load", String (args !! 0)]))
      >>= hPutStrLn stderr  -- echo this or not??
 
