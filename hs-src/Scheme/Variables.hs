@@ -13,7 +13,7 @@ import Control.Monad
 import Control.Monad.Error
 import Data.IORef
 
--- |Bind a series of values to the given environment.
+-- |Extend given environment by binding a series of values to a new environment.
 extendEnv :: Env -> [((String, String), LispVal)] -> IO Env
 extendEnv envRef bindings = do bindinglist <- mapM (\((namespace, name), val) ->
                                                     do ref <- newIORef val
@@ -22,6 +22,8 @@ extendEnv envRef bindings = do bindinglist <- mapM (\((namespace, name), val) ->
                                return $ Environment (Just envRef) bindinglist
 
 {-
+-- Old implementation, left for the moment for reference purposes only:
+--
 -- |Bind a series of values to the given environment.
 --
 -- Input is of form: @(namespaceName, variableName), variableValue@
