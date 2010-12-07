@@ -56,38 +56,46 @@ evalString env "(* 3 9)"
 @
 -}
 evalString :: Env -> String -> IO String
-evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= eval env
+evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= (eval env (Nil "")) -- TODO: populate continuation parameter
 
 -- |Evaluate a string and print results to console
 evalAndPrint :: Env -> String -> IO ()
-evalAndPrint env expr = evalString env expr >>= putStrLn
+evalAndPrint env expr = evalString env expr >>= putStrLn --TODO: cont parameter
 
 -- |Evaluate lisp code that has already been loaded into haskell
 --
 --  TODO: code example for this, via ghci and/or a custom program.
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
-evalLisp env lisp = macroEval env lisp >>= eval env
+evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont parameter
+
+
+{-
+ - Changes will be required to eval to support continuations. According to original wiki book:
+ -
+ - Some of my notes:
+ - as simple as using CPS to evaluate lists of "lines" (body)? Then could pass the next part of the CPS as the cont arg to eval. Or is this too simple to work? need to think about this - http://en.wikipedia.org/wiki/Continuation-passing_style
+ - -}
 
 -- |Core eval function
 --
 --  NOTE:  This function does not include macro support and should not be called directly. Instead, use 'evalLisp'
-eval :: Env -> LispVal -> IOThrowsError LispVal
-eval _ val@(Nil _) = return val
-eval _ val@(String _) = return val
-eval _ val@(Char _) = return val
-eval _ val@(Complex _) = return val
-eval _ val@(Float _) = return val
-eval _ val@(Rational _) = return val
-eval _ val@(Number _) = return val
-eval _ val@(Bool _) = return val
-eval _ val@(HashTable _) = return val
-eval env (Atom a) = getVar env a
-eval _ (List [Atom "quote", val]) = return val
-eval envi (List [Atom "quasiquote", value]) = doUnQuote envi value
+eval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+eval _ _ val@(Nil _) = return val
+eval _ _ val@(String _) = return val
+eval _ _ val@(Char _) = return val
+eval _ _ val@(Complex _) = return val
+eval _ _ val@(Float _) = return val
+eval _ _ val@(Rational _) = return val
+eval _ _ val@(Number _) = return val
+eval _ _ val@(Bool _) = return val
+eval _ _ val@(HashTable _) = return val
+eval env _ (Atom a) = getVar env a
+eval _ cont (List [Atom "quote", val]) = return val
+eval envi cont (List [Atom "quasiquote", value]) = doUnQuote envi value
   where doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
         doUnQuote env val = do
           case val of
-            List [Atom "unquote", val] -> eval env val
+            List [Atom "unquote", val] -> eval env cont val
             List (x : xs) -> unquoteListM env (x:xs) >>= return . List
             DottedList xs x -> do
               rxs <- unquoteListM env xs >>= return 
@@ -101,12 +109,12 @@ eval envi (List [Atom "quasiquote", value]) = doUnQuote envi value
               let len = length (elems vec)
               vList <- unquoteListM env $ elems vec >>= return
               return $ Vector $ listArray (0, len) vList
-            _ -> eval env (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"... 
+            _ -> eval env cont (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"... 
         unquoteListM env lst = foldlM (unquoteListFld env) ([]) lst
         unquoteListFld env (acc) val = do
             case val of
                 List [Atom "unquote-splicing", val] -> do
-                    value <- eval env val
+                    value <- eval env cont val
                     case value of
                         List v -> return $ (acc ++ v)
                         -- Question: In which cases should I generate a type error if value is not a list?
@@ -122,73 +130,73 @@ eval envi (List [Atom "quasiquote", value]) = doUnQuote envi value
                 _ -> do result <- doUnQuote env val
                         return $ (acc ++ [result])
 
-eval env (List [Atom "if", pred, conseq, alt]) =
-    do result <- eval env pred
+eval env cont (List [Atom "if", pred, conseq, alt]) =
+    do result <- eval env cont pred
        case result of
-         Bool False -> eval env alt
-         otherwise -> eval env conseq
+         Bool False -> eval env cont alt
+         otherwise -> eval env cont conseq
 
-eval env (List [Atom "if", pred, conseq]) = 
-    do result <- eval env pred
+eval env cont (List [Atom "if", pred, conseq]) = 
+    do result <- eval env cont pred
        case result of
-         Bool True -> eval env conseq
-         otherwise -> eval env $ List []
+         Bool True -> eval env cont conseq
+         otherwise -> eval env cont $ List []
 
-eval env (List (Atom "cond" : clauses)) = 
+eval env cont (List (Atom "cond" : clauses)) = 
   if length clauses == 0
    then throwError $ BadSpecialForm "No matching clause" $ String "cond"
    else do
        let c =  clauses !! 0 -- First clause
        let cs = tail clauses -- other clauses
        test <- case c of
-         List (Atom "else" : expr) -> eval env $ Bool True
-         List (cond : expr) -> eval env cond
+         List (Atom "else" : expr) -> eval env cont $ Bool True
+         List (cond : expr) -> eval env cont cond
          badType -> throwError $ TypeMismatch "clause" badType 
        case test of
-         Bool True -> evalCond env c
-         otherwise -> eval env $ List $ (Atom "cond" : cs)
+         Bool True -> evalCond env cont c
+         otherwise -> eval env cont $ List $ (Atom "cond" : cs)
 
-eval env (List (Atom "case" : keyAndClauses)) = 
+eval env cont (List (Atom "case" : keyAndClauses)) = 
     do let key = keyAndClauses !! 0
        let cls = tail keyAndClauses
-       ekey <- eval env key
-       evalCase env $ List $ (ekey : cls)
+       ekey <- eval env cont key
+       evalCase env cont $ List $ (ekey : cls)
 
-eval env (List (Atom "begin" : funcs)) = 
+eval env cont (List (Atom "begin" : funcs)) = 
   if length funcs == 0
-     then eval env $ Nil ""
+     then eval env cont $ Nil ""
      else if length funcs == 1
-             then eval env (head funcs)
+             then eval env cont (head funcs)
              else do
                  let fs = tail funcs
-                 eval env (head funcs)
-                 eval env (List (Atom "begin" : fs))
+                 eval env cont (head funcs)
+                 eval env cont (List (Atom "begin" : fs))
 
-eval env (List [Atom "load", String filename]) =
-     load filename >>= liftM last . mapM (evaluate env)
-	 where evaluate env val = macroEval env val >>= eval env
+eval env cont (List [Atom "load", String filename]) =
+     load filename >>= liftM last . mapM (evaluate env cont)
+	 where evaluate env cont val = macroEval env val >>= eval env cont
 
-eval env (List [Atom "set!", Atom var, form]) = 
-  eval env form >>= setVar env var
+eval env cont (List [Atom "set!", Atom var, form]) = 
+  eval env cont form >>= setVar env var
 
-eval env (List [Atom "define", Atom var, form]) = 
-  eval env form >>= defineVar env var
+eval env cont (List [Atom "define", Atom var, form]) = 
+  eval env cont form >>= defineVar env var
 
-eval env (List (Atom "define" : List (Atom var : params) : body )) = 
+eval env cont (List (Atom "define" : List (Atom var : params) : body )) = 
   makeNormalFunc env params body >>= defineVar env var
-eval env (List (Atom "define" : DottedList (Atom var : params) varargs : body)) = 
+eval env cont (List (Atom "define" : DottedList (Atom var : params) varargs : body)) = 
   makeVarargs varargs env params body >>= defineVar env var
-eval env (List (Atom "lambda" : List params : body)) = 
+eval env cont (List (Atom "lambda" : List params : body)) = 
   makeNormalFunc env params body
-eval env (List (Atom "lambda" : DottedList params varargs : body)) = 
+eval env cont (List (Atom "lambda" : DottedList params varargs : body)) = 
   makeVarargs varargs env params body
-eval env (List (Atom "lambda" : varargs@(Atom _) : body)) = 
+eval env cont (List (Atom "lambda" : varargs@(Atom _) : body)) = 
   makeVarargs varargs env [] body
 
-eval env (List [Atom "string-fill!", Atom var, character]) = do 
-  str <- eval env =<< getVar env var
-  chr <- eval env character
-  (eval env $ fillStr(str, chr)) >>= setVar env var
+eval env cont (List [Atom "string-fill!", Atom var, character]) = do 
+  str <- eval env cont =<< getVar env var
+  chr <- eval env cont character
+  (eval env cont $ fillStr(str, chr)) >>= setVar env var
   where fillStr (String str, Char chr) = doFillStr (String "", Char chr, length str)
   
         doFillStr (String str, Char chr, left) = do
@@ -196,101 +204,101 @@ eval env (List [Atom "string-fill!", Atom var, character]) = do
            then String str
            else doFillStr(String $ chr : str, Char chr, left - 1)
 
-eval env (List [Atom "string-set!", Atom var, index, character]) = do 
-  idx <- eval env index
-  str <- eval env =<< getVar env var
-  (eval env $ substr(str, character, idx)) >>= setVar env var
+eval env cont (List [Atom "string-set!", Atom var, index, character]) = do 
+  idx <- eval env cont index
+  str <- eval env cont =<< getVar env var
+  (eval env cont $ substr(str, character, idx)) >>= setVar env var
   where substr (String str, Char char, Number index) = do
                               String $ (take (fromInteger index) . drop 0) str ++ 
                                        [char] ++
                                        (take (length str) . drop (fromInteger index + 1)) str
     -- TODO: error handler
 
-eval env val@(Vector _) = return val
+eval env cont val@(Vector _) = return val
 
-eval env (List [Atom "vector-set!", Atom var, index, object]) = do 
-  idx <- eval env index
-  obj <- eval env object
-  vec <- eval env =<< getVar env var
-  (eval env $ (updateVector vec idx obj)) >>= setVar env var
+eval env cont (List [Atom "vector-set!", Atom var, index, object]) = do 
+  idx <- eval env cont index
+  obj <- eval env cont object
+  vec <- eval env cont =<< getVar env var
+  (eval env cont $ (updateVector vec idx obj)) >>= setVar env var
   where updateVector (Vector vec) (Number idx) obj = Vector $ vec//[(fromInteger idx, obj)]
         -- TODO: error handler?
 -- TODO: error handler? - eval env (List [Atom "vector-set!", args]) = throwError $ NumArgs 2 args
 
-eval env (List [Atom "vector-fill!", Atom var, object]) = do 
-  obj <- eval env object
-  vec <- eval env =<< getVar env var
-  (eval env $ (fillVector vec obj)) >>= setVar env var
+eval env cont (List [Atom "vector-fill!", Atom var, object]) = do 
+  obj <- eval env cont object
+  vec <- eval env cont =<< getVar env var
+  (eval env cont $ (fillVector vec obj)) >>= setVar env var
   where fillVector (Vector vec) obj = do
           let l = replicate (lenVector vec) obj
           Vector $ (listArray (0, length l - 1)) l
         lenVector v = length (elems v)
         -- TODO: error handler?
--- TODO: error handler? - eval env (List [Atom "vector-fill!", args]) = throwError $ NumArgs 2 args
+-- TODO: error handler? - eval env cont (List [Atom "vector-fill!", args]) = throwError $ NumArgs 2 args
 
-eval env (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do 
-  key <- eval env rkey
-  value <- eval env rvalue
-  h <- eval env =<< getVar env var
+eval env cont (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do 
+  key <- eval env cont rkey
+  value <- eval env cont rvalue
+  h <- eval env cont =<< getVar env var
   case h of
-    HashTable ht -> (eval env $ HashTable $ Data.Map.insert key value ht) >>= setVar env var
+    HashTable ht -> (eval env cont $ HashTable $ Data.Map.insert key value ht) >>= setVar env var
     other -> throwError $ TypeMismatch "hash-table" other
 
-eval env (List [Atom "hash-table-delete!", Atom var, rkey]) = do 
-  key <- eval env rkey
-  h <- eval env =<< getVar env var
+eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do 
+  key <- eval env cont rkey
+  h <- eval env cont =<< getVar env var
   case h of
-    HashTable ht -> (eval env $ HashTable $ Data.Map.delete key ht) >>= setVar env var
+    HashTable ht -> (eval env cont $ HashTable $ Data.Map.delete key ht) >>= setVar env var
     other -> throwError $ TypeMismatch "hash-table" other
 
 -- TODO:
 --  hash-table-merge!
 
-eval env (List (function : args)) = do
-  func <- eval env function
-  argVals <- mapM (eval env) args
+eval env cont (List (function : args)) = do
+  func <- eval env cont function
+  argVals <- mapM (eval env cont) args
   apply func argVals
 
---Obsolete (?) - eval env (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
-eval env badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
+--Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
+eval env cont badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 -- Helper function for evaluating 'case'
 -- TODO: still need to handle case where nothing matches key
 --       (same problem exists with cond, if)
-evalCase :: Env -> LispVal -> IOThrowsError LispVal
-evalCase env (List (key : cases)) = do
+evalCase :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+evalCase env cont (List (key : cases)) = do
          let c = cases !! 0
-         ekey <- eval env key
+         ekey <- eval env cont key
          case c of
-           List (Atom "else" : exprs) -> last $ map (eval env) exprs
+           List (Atom "else" : exprs) -> last $ map (eval env cont) exprs
            List (List cond : exprs) -> do test <- checkEq env ekey (List cond)
                                           case test of
-                                            Bool True -> last $ map (eval env) exprs
-                                            _ -> evalCase env $ List $ ekey : tail cases
+                                            Bool True -> last $ map (eval env cont) exprs
+                                            _ -> evalCase env cont $ List $ ekey : tail cases
            badForm -> throwError $ BadSpecialForm "Unrecognized special form in case" badForm
   where
     checkEq env ekey (List (x : xs)) = do 
-     test <- eval env $ List [Atom "eqv?", ekey, x]
+     test <- eval env cont $ List [Atom "eqv?", ekey, x]
      case test of
-       Bool True -> eval env $ Bool True
+       Bool True -> eval env cont $ Bool True
        _ -> checkEq env ekey (List xs)
 
     checkEq env ekey val =
      case val of
-       List [] -> eval env $ Bool False -- If nothing else is left, then nothing matched key
+       List [] -> eval env cont $ Bool False -- If nothing else is left, then nothing matched key
        _ -> do
-          test <- eval env $ List [Atom "eqv?", ekey, val]
+          test <- eval env cont $ List [Atom "eqv?", ekey, val]
           case test of
-            Bool True -> eval env $ Bool True
-            _ -> eval env $ Bool False
+            Bool True -> eval env cont $ Bool True
+            _ -> eval env cont $ Bool False
 
-evalCase _ badForm = throwError $ BadSpecialForm "case: Unrecognized special form" badForm
+evalCase _ _ badForm = throwError $ BadSpecialForm "case: Unrecognized special form" badForm
 
 -- Helper function for evaluating 'cond'
-evalCond :: Env -> LispVal -> IOThrowsError LispVal
-evalCond env (List [_, expr]) = eval env expr
-evalCond env (List (_ : expr)) = last $ map (eval env) expr -- TODO: all expr's need to be evaluated, not sure happening right now
-evalCond _ badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
+evalCond :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+evalCond env cont (List [_, expr]) = eval env cont expr
+evalCond env cont (List (_ : expr)) = last $ map (eval env cont) expr -- TODO: all expr's need to be evaluated, not sure happening right now
+evalCond _ _ badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
 --makeFunc :: forall (m :: * -> *).(Monad m) => Maybe String -> Env -> [LispVal] -> [LispVal] -> m LispVal
 makeFunc varargs env params body = return $ Func (map showVal params) varargs body env False
@@ -311,11 +319,11 @@ apply (PrimitiveFunc func) args = liftThrows $ func args
 apply (Func aparams avarargs abody aclosure _) args =
   if num aparams /= num args && avarargs == Nothing
      then throwError $ NumArgs (num aparams) args
-     else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
+     else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody $ Nil "") -- TODO: cont member needs to be filled
 --     else (liftIO $ bindVars closure $ zip (map ((,) varNamespace) params) args) >>= bindVarArgs varargs >>= (evalBody body)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
-        evalBody restBody env = do
+        evalBody restBody cont env = do
             -- Iterate through, executing each member of the body
             -- Interestingly, this seems to handle Scheme tail recursion just fine. Need to analyze this
             -- a bit more, but the trampoline itself may be unnecessary (which makes sense as Haskell has TCO)
@@ -323,10 +331,10 @@ apply (Func aparams avarargs abody aclosure _) args =
 -- Old code, which will overflow stack:     liftM last $ mapM (eval env) restBody
 
             case restBody of
-                [lv] -> eval env lv
+                [lv] -> eval env cont lv
                 (lv : lvs) -> do
-                    eval env lv
-                    evalBody lvs env
+                    eval env cont lv
+                    evalBody lvs cont env
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
 --          Just argName -> liftIO $ bindVars env [((varNamespace, argName), List $ remainingArgs)]
