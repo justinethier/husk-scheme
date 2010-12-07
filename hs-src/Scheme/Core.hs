@@ -69,11 +69,17 @@ evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont parameter
 
 
-{-
- - Changes will be required to eval to support continuations. According to original wiki book:
+{- Changes will be required to eval to support continuations. According to original wiki book:
+ -   TBD
  -
  - Some of my notes:
  - as simple as using CPS to evaluate lists of "lines" (body)? Then could pass the next part of the CPS as the cont arg to eval. Or is this too simple to work? need to think about this - http://en.wikipedia.org/wiki/Continuation-passing_style
+ -
+ - Possible design approach:
+ -
+ -  * thread cont through eval
+ -  * instead of returning, call into next eval using cont. this replaces code 
+ -
  - -}
 
 -- |Core eval function
