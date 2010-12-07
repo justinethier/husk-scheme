@@ -45,6 +45,7 @@ data LispError = NumArgs Integer [LispVal] -- ^Invalid number of function argume
   | NotFunction String String
   | UnboundVar String String
   | DivideByZero -- ^Divide by Zero error
+  | NotImplemented String
   | Default String -- ^Default error
 
 -- |Create a textual description for a 'LispError'
@@ -58,6 +59,7 @@ showError (BadSpecialForm message form) = message ++ ": " ++ show form
 showError (NotFunction message func) = message ++ ": " ++ show func
 showError (UnboundVar message varname) = message ++ ": " ++ varname
 showError (DivideByZero) = "Division by zero"
+showError (NotImplemented message) = "Not implemented: " ++ message
 
 instance Show LispError where show = showError
 instance Error LispError where
