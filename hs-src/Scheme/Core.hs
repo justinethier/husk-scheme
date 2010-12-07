@@ -30,18 +30,13 @@ import Scheme.Numerical
 import Scheme.Parser
 import Scheme.Types
 import Scheme.Variables
-import Complex
-import Control.Monad
 import Control.Monad.Error
 import Char
 import Data.Array
-import Data.IORef
 import qualified Data.Map
 import Maybe
 import List
 import IO hiding (try)
-import Numeric
-import Ratio
 
 {-| Evaluate a string containing Scheme code.
 
@@ -77,18 +72,18 @@ evalLisp env lisp = macroEval env lisp >>= eval env
 --
 --  NOTE:  This function does not include macro support and should not be called directly. Instead, use 'evalLisp'
 eval :: Env -> LispVal -> IOThrowsError LispVal
-eval env val@(Nil _) = return val
-eval env val@(String _) = return val
-eval env val@(Char _) = return val
-eval env val@(Complex _) = return val
-eval env val@(Float _) = return val
-eval env val@(Rational _) = return val
-eval env val@(Number _) = return val
-eval env val@(Bool _) = return val
-eval env val@(HashTable _) = return val
-eval env (Atom id) = getVar env id
-eval env (List [Atom "quote", val]) = return val
-eval env (List [Atom "quasiquote", val]) = doUnQuote env val 
+eval _ val@(Nil _) = return val
+eval _ val@(String _) = return val
+eval _ val@(Char _) = return val
+eval _ val@(Complex _) = return val
+eval _ val@(Float _) = return val
+eval _ val@(Rational _) = return val
+eval _ val@(Number _) = return val
+eval _ val@(Bool _) = return val
+eval _ val@(HashTable _) = return val
+eval env (Atom a) = getVar env a
+eval _ (List [Atom "quote", val]) = return val
+eval envi (List [Atom "quasiquote", value]) = doUnQuote envi value
   where doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
         doUnQuote env val = do
           case val of
@@ -101,12 +96,12 @@ eval env (List [Atom "quasiquote", val]) = doUnQuote env val
                 List [] -> return $ List rxs
                 List rxlst -> return $ List $ rxs ++ rxlst 
                 DottedList rxlst rxlast -> return $ DottedList (rxs ++ rxlst) rxlast
-                otherwise -> return $ DottedList rxs rx
+                _ -> return $ DottedList rxs rx
             Vector vec -> do
               let len = length (elems vec)
               vList <- unquoteListM env $ elems vec >>= return
               return $ Vector $ listArray (0, len) vList
-            otherwise -> eval env (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"... 
+            _ -> eval env (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"... 
         unquoteListM env lst = foldlM (unquoteListFld env) ([]) lst
         unquoteListFld env (acc) val = do
             case val of
@@ -122,10 +117,10 @@ eval env (List [Atom "quasiquote", val]) = doUnQuote env val
                         -- least we will not allow anything invalid to be returned.
                         --
                         -- Old code that we might build on if this changes down the road: otherwise -> return $ (acc ++ [v])
-                        otherwise -> throwError $ TypeMismatch "proper list" value
+                        _ -> throwError $ TypeMismatch "proper list" value
 
-                otherwise -> do result <- doUnQuote env val
-                                return $ (acc ++ [result])
+                _ -> do result <- doUnQuote env val
+                        return $ (acc ++ [result])
 
 eval env (List [Atom "if", pred, conseq, alt]) =
     do result <- eval env pred
@@ -203,13 +198,11 @@ eval env (List [Atom "string-fill!", Atom var, character]) = do
 
 eval env (List [Atom "string-set!", Atom var, index, character]) = do 
   idx <- eval env index
-  chr <- eval env character
   str <- eval env =<< getVar env var
   (eval env $ substr(str, character, idx)) >>= setVar env var
-  where substr (String str, Char chr, Number index) = do
-                              let slength = fromInteger index
+  where substr (String str, Char char, Number index) = do
                               String $ (take (fromInteger index) . drop 0) str ++ 
-                                       [chr] ++
+                                       [char] ++
                                        (take (length str) . drop (fromInteger index + 1)) str
     -- TODO: error handler
 
@@ -241,14 +234,14 @@ eval env (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
   h <- eval env =<< getVar env var
   case h of
     HashTable ht -> (eval env $ HashTable $ Data.Map.insert key value ht) >>= setVar env var
-    otherwise -> throwError $ TypeMismatch "hash-table" otherwise
+    other -> throwError $ TypeMismatch "hash-table" other
 
 eval env (List [Atom "hash-table-delete!", Atom var, rkey]) = do 
   key <- eval env rkey
   h <- eval env =<< getVar env var
   case h of
     HashTable ht -> (eval env $ HashTable $ Data.Map.delete key ht) >>= setVar env var
-    otherwise -> throwError $ TypeMismatch "hash-table" otherwise
+    other -> throwError $ TypeMismatch "hash-table" other
 
 -- TODO:
 --  hash-table-merge!
@@ -273,45 +266,54 @@ evalCase env (List (key : cases)) = do
            List (List cond : exprs) -> do test <- checkEq env ekey (List cond)
                                           case test of
                                             Bool True -> last $ map (eval env) exprs
-                                            otherwise -> evalCase env $ List $ ekey : tail cases
+                                            _ -> evalCase env $ List $ ekey : tail cases
            badForm -> throwError $ BadSpecialForm "Unrecognized special form in case" badForm
   where
     checkEq env ekey (List (x : xs)) = do 
      test <- eval env $ List [Atom "eqv?", ekey, x]
      case test of
        Bool True -> eval env $ Bool True
-       otherwise -> checkEq env ekey (List xs)
+       _ -> checkEq env ekey (List xs)
 
     checkEq env ekey val =
      case val of
        List [] -> eval env $ Bool False -- If nothing else is left, then nothing matched key
-       otherwise -> do
+       _ -> do
           test <- eval env $ List [Atom "eqv?", ekey, val]
           case test of
             Bool True -> eval env $ Bool True
-            otherwise -> eval env $ Bool False
+            _ -> eval env $ Bool False
 
-evalCase key badForm = throwError $ BadSpecialForm "case: Unrecognized special form" badForm
+evalCase _ badForm = throwError $ BadSpecialForm "case: Unrecognized special form" badForm
 
 -- Helper function for evaluating 'cond'
 evalCond :: Env -> LispVal -> IOThrowsError LispVal
-evalCond env (List [test, expr]) = eval env expr
-evalCond env (List (test : expr)) = last $ map (eval env) expr -- TODO: all expr's need to be evaluated, not sure happening right now
-evalCond env badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
+evalCond env (List [_, expr]) = eval env expr
+evalCond env (List (_ : expr)) = last $ map (eval env) expr -- TODO: all expr's need to be evaluated, not sure happening right now
+evalCond _ badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
+--makeFunc :: forall (m :: * -> *).(Monad m) => Maybe String -> Env -> [LispVal] -> [LispVal] -> m LispVal
 makeFunc varargs env params body = return $ Func (map showVal params) varargs body env False
+{-makeNormalFunc :: Env
+               -> [LispVal]
+               -> [LispVal]
+               -> m LispVal-}
 makeNormalFunc = makeFunc Nothing
+{-makeVarargs :: LispVal  -> Env
+                        -> [LispVal]
+                        -> [LispVal]
+                        -> m LispVal-}
 makeVarargs = makeFunc . Just . showVal
 
 apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
 apply (IOFunc func) args = func args
 apply (PrimitiveFunc func) args = liftThrows $ func args
-apply (Func params varargs body closure _) args =
-  if num params /= num args && varargs == Nothing
-     then throwError $ NumArgs (num params) args
-     else (liftIO $ extendEnv closure $ zip (map ((,) varNamespace) params) args) >>= bindVarArgs varargs >>= (evalBody body)
+apply (Func aparams avarargs abody aclosure _) args =
+  if num aparams /= num args && avarargs == Nothing
+     then throwError $ NumArgs (num aparams) args
+     else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
 --     else (liftIO $ bindVars closure $ zip (map ((,) varNamespace) params) args) >>= bindVarArgs varargs >>= (evalBody body)
-  where remainingArgs = drop (length params) args
+  where remainingArgs = drop (length aparams) args
         num = toInteger . length
         evalBody restBody env = do
             -- Iterate through, executing each member of the body
@@ -335,9 +337,9 @@ apply func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List (
 --  forms that are implemented in Haskell; derived forms implemented in Scheme (such as let, list, etc) are available
 --  in the standard library which must be pulled into the environment using (load).
 primitiveBindings :: IO Env
-primitiveBindings = nullEnv >>= (flip extendEnv $ map (makeFunc IOFunc) ioPrimitives
-                                              ++ map (makeFunc PrimitiveFunc) primitives)
-  where makeFunc constructor (var, func) = ((varNamespace, var), constructor func)
+primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrimitives
+                                              ++ map (domakeFunc PrimitiveFunc) primitives)
+  where domakeFunc constructor (var, func) = ((varNamespace, var), constructor func)
 
 ioPrimitives :: [(String, [LispVal] -> IOThrowsError LispVal)]
 ioPrimitives = [("apply", applyProc),
@@ -353,6 +355,7 @@ ioPrimitives = [("apply", applyProc),
 applyProc :: [LispVal] -> IOThrowsError LispVal
 applyProc [func, List args] = apply func args
 applyProc (func : args) = apply func args
+applyProc [] = throwError $ BadSpecialForm "applyProc" $ String "Function not specified"
 
 makePort :: IOMode -> [LispVal] -> IOThrowsError LispVal
 makePort mode [String filename] = liftM Port $ liftIO $ openFile filename mode
@@ -523,9 +526,11 @@ boolBinop unpacker op args = if length args /= 2
 
 unaryOp :: (LispVal -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
 unaryOp f [v] = f v
-
-numBoolBinop = boolBinop unpackNum
+--numBoolBinop :: (Integer -> Integer -> Bool) -> [LispVal] -> ThrowsError LispVal
+--numBoolBinop = boolBinop unpackNum
+strBoolBinop :: (String -> String -> Bool) -> [LispVal] -> ThrowsError LispVal
 strBoolBinop = boolBinop unpackStr
+boolBoolBinop :: (Bool -> Bool -> Bool) -> [LispVal] -> ThrowsError LispVal
 boolBoolBinop = boolBinop unpackBool
 
 unpackStr :: LispVal -> ThrowsError String
@@ -540,14 +545,14 @@ unpackBool notBool = throwError $ TypeMismatch "boolean" notBool
 
 {- List primitives -}
 car :: [LispVal] -> ThrowsError LispVal
-car [List (x : xs)] = return x
-car [DottedList (x : xs) _] = return x
+car [List (x : _)] = return x
+car [DottedList (x : _) _] = return x
 car [badArg] = throwError $ TypeMismatch "pair" badArg
 car badArgList = throwError $ NumArgs 1 badArgList
 
 cdr :: [LispVal] -> ThrowsError LispVal
-cdr [List (x : xs)] = return $ List xs
-cdr [DottedList [xs] x] = return x
+cdr [List (_ : xs)] = return $ List xs
+cdr [DottedList [_] x] = return x
 cdr [DottedList (_ : xs) x] = return $ DottedList xs x
 cdr [badArg] = throwError $ TypeMismatch "pair" badArg
 cdr badArgList = throwError $ NumArgs 1 badArgList
@@ -562,7 +567,7 @@ cons badArgList = throwError $ NumArgs 2 badArgList
 equal :: [LispVal] -> ThrowsError LispVal
 equal [(Vector arg1), (Vector arg2)] = eqvList equal [List $ (elems arg1), List $ (elems arg2)] 
 -- TODO: hash table?
-equal [l1@(List arg1), l2@(List arg2)] = eqvList equal [l1, l2]
+equal [l1@(List _), l2@(List _)] = eqvList equal [l1, l2]
 equal [(DottedList xs x), (DottedList ys y)] = equal [List $ xs ++ [x], List $ ys ++ [y]]
 equal [arg1, arg2] = do
   primitiveEquals <- liftM or $ mapM (unpackEquals arg1 arg2)
@@ -613,18 +618,19 @@ isHashTbl _             = return $ Bool False
 
 hashTblExists [(HashTable ht), key@(_)] = do
   case Data.Map.lookup key ht of
-    Just val -> return $ Bool True
+    Just _ -> return $ Bool True
     Nothing -> return $ Bool False
 
 hashTblRef [(HashTable ht), key@(_)] = do
   case Data.Map.lookup key ht of
     Just val -> return $ val
     Nothing -> throwError $ BadSpecialForm "Hash table does not contain key" key
--- TODO: a thunk can optionally be specified, this drives definition of /default
-hashTblRef [(HashTable ht), key@(_), thunk@(Func params vararg body closure _)] = do
+hashTblRef [(HashTable ht), key@(_), Func _ _ _ _ _] = do --thunk@(Func _ _ _ _ _)] = do
   case Data.Map.lookup key ht of
     Just val -> return $ val
--- TODO:    Nothing -> apply thunk []
+    Nothing -> throwError $ NotImplemented "thunk"
+-- FUTURE: a thunk can optionally be specified, this drives definition of /default
+--         Nothing -> apply thunk []
 hashTblRef [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblRef badArgList = throwError $ NumArgs 2 badArgList
 
@@ -638,12 +644,12 @@ hashTbl2List [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTbl2List badArgList = throwError $ NumArgs 1 badArgList
 
 hashTblKeys [(HashTable ht)] = do
-  return $ List $ map (\(k, v) -> k) $ Data.Map.toList ht
+  return $ List $ map (\(k, _) -> k) $ Data.Map.toList ht
 hashTblKeys [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblKeys badArgList = throwError $ NumArgs 1 badArgList
 
 hashTblValues [(HashTable ht)] = do
-  return $ List $ map (\(k, v) -> v) $ Data.Map.toList ht
+  return $ List $ map (\(_, v) -> v) $ Data.Map.toList ht
 hashTblValues [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblValues badArgList = throwError $ NumArgs 1 badArgList
 
@@ -669,10 +675,11 @@ makeString [(Number n)] = return $ doMakeString n ' ' ""
 makeString [(Number n), (Char c)] = return $ doMakeString n c ""
 makeString badArgList = throwError $ NumArgs 1 badArgList
 
-doMakeString n chr s = 
+doMakeString :: forall a.(Num a) => a -> Char -> String -> LispVal
+doMakeString n char s = 
     if n == 0 
        then String s
-       else doMakeString (n - 1) chr (s ++ [chr])
+       else doMakeString (n - 1) char (s ++ [char])
 
 stringLength :: [LispVal] -> ThrowsError LispVal
 stringLength [String s] = return $ Number $ foldr (const (+1)) 0 s -- Could probably do 'length s' instead...
@@ -686,17 +693,17 @@ stringRef badArgList = throwError $ NumArgs 2 badArgList
 
 substring :: [LispVal] -> ThrowsError LispVal
 substring [(String s), (Number start), (Number end)] = 
-  do let length = fromInteger $ end - start
+  do let slength = fromInteger $ end - start
      let begin = fromInteger start 
-     return $ String $ (take length . drop begin) s
+     return $ String $ (take slength . drop begin) s
 substring [badType] = throwError $ TypeMismatch "string number number" badType
 substring badArgList = throwError $ NumArgs 3 badArgList
 
 stringCIEquals :: [LispVal] -> ThrowsError LispVal
-stringCIEquals [(String s1), (String s2)] = do
-  if (length s1) /= (length s2)
+stringCIEquals [(String str1), (String str2)] = do
+  if (length str1) /= (length str2)
      then return $ Bool False
-     else return $ Bool $ ciCmp s1 s2 0
+     else return $ Bool $ ciCmp str1 str2 0
   where ciCmp s1 s2 idx = if idx == (length s1)
                              then True
                              else if (toLower $ s1 !! idx) == (toLower $ s2 !! idx)
@@ -708,8 +715,8 @@ stringCIEquals badArgList = throwError $ NumArgs 2 badArgList
 stringCIBoolBinop :: ([Char] -> [Char] -> Bool) -> [LispVal] -> ThrowsError LispVal
 stringCIBoolBinop op [(String s1), (String s2)] = boolBinop unpackStr op [(String $ strToLower s1), (String $ strToLower s2)]
   where strToLower str = map (toLower) str 
-stringCIBoolBinop op [badType] = throwError $ TypeMismatch "string string" badType
-stringCIBoolBinop op badArgList = throwError $ NumArgs 2 badArgList
+stringCIBoolBinop _ [badType] = throwError $ TypeMismatch "string string" badType
+stringCIBoolBinop _ badArgList = throwError $ NumArgs 2 badArgList
 
 stringAppend :: [LispVal] -> ThrowsError LispVal
 stringAppend [(String s)] = return $ String s -- Needed for "last" string value
@@ -719,7 +726,7 @@ stringAppend (String st:sts) = do
 -- TBD: this probably will solve type problems when processing other lists of objects in the other string functions
   case rest of
     String s -> return $ String $ st ++ s
-    otherwise -> throwError $ TypeMismatch "string" otherwise
+    other -> throwError $ TypeMismatch "string" other
 stringAppend [badType] = throwError $ TypeMismatch "string" badType
 stringAppend badArgList = throwError $ NumArgs 1 badArgList
 
@@ -733,7 +740,7 @@ stringToNumber [(String s)] = do
     n@(Rational _) -> return n
     n@(Float _) -> return n
     n@(Complex _) -> return n
-    otherwise -> return $ Bool False
+    _ -> return $ Bool False
 stringToNumber [badType] = throwError $ TypeMismatch "string" badType
 stringToNumber badArgList = throwError $ NumArgs 1 badArgList
 
@@ -753,13 +760,13 @@ stringCopy [badType] = throwError $ TypeMismatch "string" badType
 stringCopy badArgList = throwError $ NumArgs 2 badArgList
 
 isDottedList :: [LispVal] -> ThrowsError LispVal
-isDottedList ([DottedList l d]) = return $ Bool True
+isDottedList ([DottedList _ _]) = return $ Bool True
 isDottedList _ = return $  Bool False
 
 isProcedure :: [LispVal] -> ThrowsError LispVal
-isProcedure ([PrimitiveFunc f]) = return $ Bool True
-isProcedure ([Func params vararg body closure partial]) = return $ Bool True
-isProcedure ([IOFunc f]) = return $ Bool True
+isProcedure ([PrimitiveFunc _]) = return $ Bool True
+isProcedure ([Func _ _ _ _ _]) = return $ Bool True
+isProcedure ([IOFunc _]) = return $ Bool True
 isProcedure _ = return $ Bool False
 
 isVector, isList :: LispVal -> ThrowsError LispVal
@@ -773,7 +780,7 @@ isNull ([List []]) = return $ Bool True
 isNull _ = return $ Bool False
 
 isSymbol :: [LispVal] -> ThrowsError LispVal
-isSymbol ([Atom a]) = return $ Bool True
+isSymbol ([Atom _]) = return $ Bool True
 isSymbol _ = return $ Bool False
 
 symbol2String :: [LispVal] -> ThrowsError LispVal
@@ -785,15 +792,15 @@ string2Symbol ([String s]) = return $ Atom s
 string2Symbol [notString] = throwError $ TypeMismatch "string" notString
 
 isChar :: [LispVal] -> ThrowsError LispVal
-isChar ([Char a]) = return $ Bool True
+isChar ([Char _]) = return $ Bool True
 isChar _ = return $ Bool False
 
 isString :: [LispVal] -> ThrowsError LispVal
-isString ([String s]) = return $ Bool True
+isString ([String _]) = return $ Bool True
 isString _ = return $ Bool False
 
 isBoolean :: [LispVal] -> ThrowsError LispVal
-isBoolean ([Bool n]) = return $ Bool True
+isBoolean ([Bool _]) = return $ Bool True
 isBoolean _ = return $ Bool False
 -- end Eval section
 
