@@ -78,7 +78,20 @@ evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont par
  - Possible design approach:
  -
  -  * thread cont through eval
- -  * instead of returning, call into next eval using cont. this replaces code 
+ -  * instead of returning, call into next eval using CPS style, with the cont parameter.
+ -    this replaces code in evalBody (possibly other places?) that uses local CPS to execute a function
+ -  * parameter will consist of a lisp function
+ -  * eval will call into another function to deal with details of manipulating the cont prior to next call
+ -    need to work out details of exactly how that would work, but could for example just go to the next line
+ -    of body. 
+ -  * To continue above point, where is eval'd value returned to? May want to refer to R5RS section that describes call/cc:
+ -  A common use of call-with-current-continuation is for structured, non-local exits from loops or procedure bodies, but in fact call-with-current-continuation is extremely useful for implementing a wide variety of advanced control structures.
+ -
+ -  Whenever a Scheme expression is evaluated there is a continuation wanting the result of the expression. The continuation represents an entire (default) future for the computation. If the expression is evaluated at top level, for example, then the continuation might take the result, print it on the screen, prompt for the next input, evaluate it, and so on forever. Most of the time the continuation includes actions specified by user code, as in a continuation that will take the result, multiply it by the value stored in a local variable, add seven, and give the answer to the top level continuation to be printed. Normally these ubiquitous continuations are hidden behind the scenes and programmers do not think much about them. On rare occasions, however, a programmer may need to deal with continuations explicitly. Call-with-current-continuation allows Scheme programmers to do that by creating a procedure that acts just like the current continuation.
+ -
+ -  Most programming languages incorporate one or more special-purpose escape constructs with names like exit, return, or even goto. In 1965, however, Peter Landin [16] invented a general purpose escape operator called the J-operator. John Reynolds [24] described a simpler but equally powerful construct in 1972. The catch special form described by Sussman and Steele in the 1975 report on Scheme is exactly the same as Reynolds's construct, though its name came from a less general construct in MacLisp. Several Scheme implementors noticed that the full power of the catch construct could be provided by a procedure instead of by a special syntactic construct, and the name call-with-current-continuation was coined in 1982. This name is descriptive, but opinions differ on the merits of such a long name, and some people use the name call/cc instead.
+ -
+ -  * need to consider what would be passed when evaluating via a REPL, at top-level, via haskell entry points, etc...
  -
  - -}
 
