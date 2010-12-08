@@ -104,6 +104,10 @@ evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont par
  - This will replace evalBody. It will also require a full inspection of the eval
  - function, in order to call into this instead of returning (probably in all cases,
  - but will have to see)
+ -
+ - TBD: what data type to use for Cont? Originally I was thinking it would just use the
+ - LispVal func type, but is that really appropriate? Especially later on when we add
+ - a stack for dynamic-wind...
  - -}
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 continueEval _ _ val = return val
