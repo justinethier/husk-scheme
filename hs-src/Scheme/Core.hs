@@ -105,26 +105,26 @@ evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont par
  - function, in order to call into this instead of returning (probably in all cases,
  - but will have to see)
  - -}
---continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
---continueEval = do
+continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+continueEval _ _ val = return val
 
 -- |Core eval function
 --
 --  NOTE:  This function does not include macro support and should not be called directly. Instead, use 'evalLisp'
 eval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-eval _ _ val@(Nil _) = return val
-eval _ _ val@(String _) = return val
-eval _ _ val@(Char _) = return val
-eval _ _ val@(Complex _) = return val
-eval _ _ val@(Float _) = return val
-eval _ _ val@(Rational _) = return val
-eval _ _ val@(Number _) = return val
-eval _ _ val@(Bool _) = return val
-eval _ _ val@(HashTable _) = return val
-eval env cont val@(Vector _) = return val
-eval env _ (Atom a) = getVar env a
-eval _ cont (List [Atom "quote", val]) = return val
-eval envi cont (List [Atom "quasiquote", value]) = doUnQuote envi value
+eval env cont val@(Nil _)       = continueEval env cont val
+eval env cont val@(String _)    = continueEval env cont val
+eval env cont val@(Char _)      = continueEval env cont val
+eval env cont val@(Complex _)   = continueEval env cont val
+eval env cont val@(Float _)     = continueEval env cont val
+eval env cont val@(Rational _)  = continueEval env cont val
+eval env cont val@(Number _)    = continueEval env cont val
+eval env cont val@(Bool _)      = continueEval env cont val
+eval env cont val@(HashTable _) = continueEval env cont val
+eval env cont val@(Vector _)    = continueEval env cont val
+eval env cont (Atom a)          = continueEval env cont =<< getVar env a
+eval env cont (List [Atom "quote", val])         = continueEval env cont val
+eval envi cont (List [Atom "quasiquote", value]) = continueEval envi cont =<< doUnQuote envi value
   where doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
         doUnQuote env val = do
           case val of
