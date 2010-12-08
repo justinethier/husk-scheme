@@ -95,6 +95,19 @@ evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont par
  -
  - -}
 
+{- TODO: next step in implementing continuations
+ -
+ - Transform program into CPS by calling into this instead of returning from eval.
+ - this function will use the cont argument to determine whether to keep going or to 
+ - finally return a result.
+ -
+ - This will replace evalBody. It will also require a full inspection of the eval
+ - function, in order to call into this instead of returning (probably in all cases,
+ - but will have to see)
+ - -}
+--continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+--continueEval = do
+
 -- |Core eval function
 --
 --  NOTE:  This function does not include macro support and should not be called directly. Instead, use 'evalLisp'
@@ -108,6 +121,7 @@ eval _ _ val@(Rational _) = return val
 eval _ _ val@(Number _) = return val
 eval _ _ val@(Bool _) = return val
 eval _ _ val@(HashTable _) = return val
+eval env cont val@(Vector _) = return val
 eval env _ (Atom a) = getVar env a
 eval _ cont (List [Atom "quote", val]) = return val
 eval envi cont (List [Atom "quasiquote", value]) = doUnQuote envi value
@@ -233,8 +247,6 @@ eval env cont (List [Atom "string-set!", Atom var, index, character]) = do
                                        (take (length str) . drop (fromInteger index + 1)) str
     -- TODO: error handler
 
-eval env cont val@(Vector _) = return val
-
 eval env cont (List [Atom "vector-set!", Atom var, index, object]) = do 
   idx <- eval env cont index
   obj <- eval env cont object
@@ -339,16 +351,12 @@ apply (Func aparams avarargs abody aclosure _) args =
   if num aparams /= num args && avarargs == Nothing
      then throwError $ NumArgs (num aparams) args
      else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody $ Nil "") -- TODO: cont member needs to be filled
---     else (liftIO $ bindVars closure $ zip (map ((,) varNamespace) params) args) >>= bindVarArgs varargs >>= (evalBody body)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
         evalBody restBody cont env = do
             -- Iterate through, executing each member of the body
             -- Interestingly, this seems to handle Scheme tail recursion just fine. Need to analyze this
             -- a bit more, but the trampoline itself may be unnecessary (which makes sense as Haskell has TCO)
-
--- Old code, which will overflow stack:     liftM last $ mapM (eval env) restBody
-
             case restBody of
                 [lv] -> eval env cont lv
                 (lv : lvs) -> do
