@@ -82,7 +82,6 @@ liftThrows (Right val) = return val
 runIOThrows :: IOThrowsError String -> IO String
 runIOThrows action = runErrorT (trapError action) >>= return . extractValue
 
-
 -- |Scheme data types
 data LispVal = Atom String
           -- ^Symbol
@@ -114,13 +113,18 @@ data LispVal = Atom String
  	        vararg :: (Maybe String),
 	        body :: [LispVal], 
  	        closure :: Env,
-                partialEval :: Bool
- 	       } -- TODO: continuation member?
+                partialEval :: Bool -- TODO: Obsolete, this member should be removed
+ 	       }
           -- ^Function
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)
          -- ^
 	| Port Handle
          -- ^I/O port
+	| Continuation {closure :: Env,
+                        body :: [LispVal]
+                        -- stack (for dynamic wind)
+                       }
+         -- ^Continuation
  	| Nil String
          -- ^Internal use only; do not use this type directly.
 
@@ -193,6 +197,7 @@ showVal (HashTable _) = "<hash-table>"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
+showVal (Continuation {closure = env, body = body}) = "<continuation>"
 showVal (Func {params = args, vararg = varargs, body = body, closure = env}) = 
   "(lambda (" ++ unwords (map show args) ++
     (case varargs of
