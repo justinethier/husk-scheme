@@ -110,7 +110,14 @@ evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont par
  - a stack for dynamic-wind...
  - -}
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-continueEval _ _ val = return val
+continueEval env cont val = do
+  case cont of
+    Continuation cEnv cBody -> do
+      case cBody of
+        [] -> return val
+        [lv] -> eval env [] val
+        (lv : lvs) -> eval env (Continuation env lvs) lv
+    _ -> return val
 
 -- |Core eval function
 --
@@ -354,21 +361,15 @@ apply (PrimitiveFunc func) args = liftThrows $ func args
 apply (Func aparams avarargs abody aclosure _) args =
   if num aparams /= num args && avarargs == Nothing
      then throwError $ NumArgs (num aparams) args
-     else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody $ Nil "") -- TODO: cont member needs to be filled
+     else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
-        evalBody restBody cont env = do
-            -- Iterate through, executing each member of the body
-            -- Interestingly, this seems to handle Scheme tail recursion just fine. Need to analyze this
-            -- a bit more, but the trampoline itself may be unnecessary (which makes sense as Haskell has TCO)
-            case restBody of
-                [lv] -> eval env cont lv
-                (lv : lvs) -> do
-                    eval env cont lv
-                    evalBody lvs cont env
+        evalBody body env =
+            case body of
+                [lv] -> eval env (Continuation env []) lv
+                (lv : lvs) -> continueEval env lvs $ eval env (Continuation env []) lv
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
---          Just argName -> liftIO $ bindVars env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
 apply func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List (func : args)
 
