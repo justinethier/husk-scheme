@@ -365,9 +365,16 @@ apply (Func aparams avarargs abody aclosure _) args =
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
         evalBody body env =
+         case body of
+                          [lv] -> eval env (Continuation env []) lv
+                          (lv : lvs) -> do
+                              eval env (Continuation env []) lv
+                              evalBody lvs env
+{- TODO: need to add this back, but it breaks test cases:
             case body of
                 [lv] -> eval env (Continuation env []) lv
                 (lv : lvs) -> continueEval env (List lvs) =<< eval env (Continuation env []) lv -- TODO: is problem that env is used in both places?
+                -}
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
