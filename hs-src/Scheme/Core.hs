@@ -110,13 +110,13 @@ evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont par
  - a stack for dynamic-wind...
  - -}
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-continueEval env cont val = do
+continueEval _ cont val = do
   case cont of
     Continuation cEnv cBody -> do
       case cBody of
         [] -> return val
-        [lv] -> eval env (Continuation env []) val
-        (lv : lvs) -> eval env (Continuation env lvs) lv
+        [lv] -> eval cEnv (Continuation cEnv []) val
+        (lv : lvs) -> eval cEnv (Continuation cEnv lvs) lv
     _ -> return val
 
 -- |Core eval function
@@ -367,7 +367,7 @@ apply (Func aparams avarargs abody aclosure _) args =
         evalBody body env =
             case body of
                 [lv] -> eval env (Continuation env []) lv
-                (lv : lvs) -> continueEval env (List lvs) =<< eval env (Continuation env []) lv
+                (lv : lvs) -> continueEval env (List lvs) =<< eval env (Continuation env []) lv -- TODO: is problem that env is used in both places?
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
