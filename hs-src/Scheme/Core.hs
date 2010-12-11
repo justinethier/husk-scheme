@@ -38,6 +38,9 @@ import Maybe
 import List
 import IO hiding (try)
 
+import Debug.Trace
+
+
 {-| Evaluate a string containing Scheme code.
 
     For example:
@@ -95,8 +98,7 @@ evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont par
  -
  - -}
 
-{- TODO: next step in implementing continuations
- -
+{- TODO: 
  - Transform program into CPS by calling into this instead of returning from eval.
  - this function will use the cont argument to determine whether to keep going or to 
  - finally return a result.
@@ -105,9 +107,6 @@ evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont par
  - function, in order to call into this instead of returning (probably in all cases,
  - but will have to see)
  -
- - TBD: what data type to use for Cont? Originally I was thinking it would just use the
- - LispVal func type, but is that really appropriate? Especially later on when we add
- - a stack for dynamic-wind...
  - -}
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 continueEval _ cont val = do
@@ -115,7 +114,7 @@ continueEval _ cont val = do
     Continuation cEnv cBody -> do
       case cBody of
         [] -> return val
-        [lv] -> eval cEnv (Continuation cEnv []) val
+        [lv] -> eval cEnv (Continuation cEnv []) lv --val
         (lv : lvs) -> eval cEnv (Continuation cEnv lvs) lv
     _ -> return val
 
@@ -223,8 +222,10 @@ eval env cont (List [Atom "load", String filename]) =
 eval env cont (List [Atom "set!", Atom var, form]) = 
   eval env cont form >>= setVar env var
 
-eval env cont (List [Atom "define", Atom var, form]) = 
-  eval env cont form >>= defineVar env var
+eval env cont (List [Atom "define", Atom var, form]) = do 
+--  eval env cont form >>= defineVar env var
+  result <- eval env cont form >>= defineVar env var
+  continueEval env cont result
 
 eval env cont (List (Atom "define" : List (Atom var : params) : body )) = 
   makeNormalFunc env params body >>= defineVar env var
@@ -364,17 +365,17 @@ apply (Func aparams avarargs abody aclosure _) args =
      else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
-        evalBody body env =
-         case body of
+        evalBody body env = --continueEval env (Continuation env body) $ Nil "" -- Nil should never be used
+{-         case body of
                           [lv] -> eval env (Continuation env []) lv
                           (lv : lvs) -> do
                               eval env (Continuation env []) lv
-                              evalBody lvs env
-{- TODO: need to add this back, but it breaks test cases:
+                              evalBody lvs env -}
+{- TODO: need to add this back, but it breaks test cases: -}
             case body of
                 [lv] -> eval env (Continuation env []) lv
                 (lv : lvs) -> continueEval env (List lvs) =<< eval env (Continuation env []) lv -- TODO: is problem that env is used in both places?
-                -}
+                -- }
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
