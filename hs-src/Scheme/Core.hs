@@ -115,7 +115,7 @@ continueEval env cont val = do
     Continuation cEnv cBody -> do
       case cBody of
         [] -> return val
-        [lv] -> eval env [] val
+        [lv] -> eval env (Continuation env []) val
         (lv : lvs) -> eval env (Continuation env lvs) lv
     _ -> return val
 
@@ -367,7 +367,7 @@ apply (Func aparams avarargs abody aclosure _) args =
         evalBody body env =
             case body of
                 [lv] -> eval env (Continuation env []) lv
-                (lv : lvs) -> continueEval env lvs $ eval env (Continuation env []) lv
+                (lv : lvs) -> continueEval env (List lvs) =<< eval env (Continuation env []) lv
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
