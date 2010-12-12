@@ -38,7 +38,7 @@ import Maybe
 import List
 import IO hiding (try)
 
-import Debug.Trace
+--import Debug.Trace
 
 
 {-| Evaluate a string containing Scheme code.
@@ -224,7 +224,7 @@ eval env cont (List [Atom "set!", Atom var, form]) =
 
 eval env cont (List [Atom "define", Atom var, form]) = do 
 --  eval env cont form >>= defineVar env var
-  result <- eval env cont form >>= defineVar env var
+  result <- eval env (Continuation env []) form >>= defineVar env var
   continueEval env cont result
 
 eval env cont (List (Atom "define" : List (Atom var : params) : body )) = 
@@ -298,9 +298,12 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 --  hash-table-merge!
 
 eval env cont (List (function : args)) = do
-  func <- eval env cont function
-  argVals <- mapM (eval env cont) args
-  apply func argVals
+--  func <- eval env cont function
+--  argVals <- mapM (eval env cont) args
+  func <- eval env (Continuation env []) function
+  argVals <- mapM (eval env (Continuation env [])) args
+  result <- apply func argVals
+  continueEval env cont result
 
 --Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval env cont badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
@@ -374,7 +377,7 @@ apply (Func aparams avarargs abody aclosure _) args =
 {- TODO: need to add this back, but it breaks test cases: -}
             case body of
                 [lv] -> eval env (Continuation env []) lv
-                (lv : lvs) -> continueEval env (List lvs) =<< eval env (Continuation env []) lv -- TODO: is problem that env is used in both places?
+                (lv : lvs) -> continueEval env (Continuation env lvs) =<< eval env (Continuation env []) lv -- TODO: is problem that env is used in both places?
                 -- }
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
