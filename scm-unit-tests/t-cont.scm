@@ -15,9 +15,8 @@
     (return 2)
       3)
  
-(display (f (lambda (x) x))) ; displays 3
- 
-(display (call-with-current-continuation f)) ; displays 2
+(assert/equal (f (lambda (x) x)) 3) 
+(assert/equal (call/cc f) 2)
 
 
 (unit-test-handler-results)
