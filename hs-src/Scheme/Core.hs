@@ -385,10 +385,10 @@ makeNormalFunc = makeFunc Nothing
 makeVarargs = makeFunc . Just . showVal
 
 apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
-apply (Continuation env cont) args = do
+apply c@(Continuation env cont) args = do
   if (toInteger $ length args) /= 1 
     then throwError $ NumArgs 1 args
-    else continueEval ? ? $ head args -- may not be correct, what happens if call/cc is an inner part of a list? 
+    else continueEval env c $ head args -- may not be correct, what happens if call/cc is an inner part of a list? 
 apply (IOFunc func) args = func args
 apply (PrimitiveFunc func) args = liftThrows $ func args
 apply (Func aparams avarargs abody aclosure _) args =
