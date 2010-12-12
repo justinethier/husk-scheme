@@ -215,12 +215,16 @@ eval env cont (List (Atom "begin" : funcs)) =
                  eval env cont (head funcs)
                  eval env cont (List (Atom "begin" : fs))
 
-eval env cont (List [Atom "load", String filename]) =
-     load filename >>= liftM last . mapM (evaluate env cont)
-	 where evaluate env cont val = macroEval env val >>= eval env cont
+eval env cont (List [Atom "load", String filename]) = do
+--     load filename >>= liftM last . mapM (evaluate env cont)
+     result <- load filename >>= liftM last . mapM (evaluate env (Continuation env []))
+     continueEval env cont result
+	 where evaluate env cont2 val = macroEval env val >>= eval env cont2
 
-eval env cont (List [Atom "set!", Atom var, form]) = 
-  eval env cont form >>= setVar env var
+eval env cont (List [Atom "set!", Atom var, form]) = do 
+--  eval env cont form >>= setVar env var
+  result <- eval env (Continuation env []) form >>= setVar env var
+  continueEval env cont result
 
 eval env cont (List [Atom "define", Atom var, form]) = do 
 --  eval env cont form >>= defineVar env var
@@ -239,9 +243,10 @@ eval env cont (List (Atom "lambda" : varargs@(Atom _) : body)) =
   makeVarargs varargs env [] body
 
 eval env cont (List [Atom "string-fill!", Atom var, character]) = do 
-  str <- eval env cont =<< getVar env var
-  chr <- eval env cont character
-  (eval env cont $ fillStr(str, chr)) >>= setVar env var
+  str <- eval env (Continuation env []) =<< getVar env var 
+  chr <- eval env (Continuation env []) character
+  result <- (eval env (Continuation env []) $ fillStr(str, chr)) >>= setVar env var
+  continueEval env cont result
   where fillStr (String str, Char chr) = doFillStr (String "", Char chr, length str)
   
         doFillStr (String str, Char chr, left) = do
@@ -250,9 +255,10 @@ eval env cont (List [Atom "string-fill!", Atom var, character]) = do
            else doFillStr(String $ chr : str, Char chr, left - 1)
 
 eval env cont (List [Atom "string-set!", Atom var, index, character]) = do 
-  idx <- eval env cont index
-  str <- eval env cont =<< getVar env var
-  (eval env cont $ substr(str, character, idx)) >>= setVar env var
+  idx <- eval env (Continuation env []) index
+  str <- eval env (Continuation env []) =<< getVar env var
+  result <- (eval env (Continuation env []) $ substr(str, character, idx)) >>= setVar env var
+  continueEval env cont result
   where substr (String str, Char char, Number index) = do
                               String $ (take (fromInteger index) . drop 0) str ++ 
                                        [char] ++
@@ -260,18 +266,20 @@ eval env cont (List [Atom "string-set!", Atom var, index, character]) = do
     -- TODO: error handler
 
 eval env cont (List [Atom "vector-set!", Atom var, index, object]) = do 
-  idx <- eval env cont index
-  obj <- eval env cont object
-  vec <- eval env cont =<< getVar env var
-  (eval env cont $ (updateVector vec idx obj)) >>= setVar env var
+  idx <- eval env (Continuation env []) index
+  obj <- eval env (Continuation env []) object
+  vec <- eval env (Continuation env []) =<< getVar env var
+  result <- (eval env (Continuation env []) $ (updateVector vec idx obj)) >>= setVar env var
+  continueEval env cont result
   where updateVector (Vector vec) (Number idx) obj = Vector $ vec//[(fromInteger idx, obj)]
         -- TODO: error handler?
 -- TODO: error handler? - eval env (List [Atom "vector-set!", args]) = throwError $ NumArgs 2 args
 
 eval env cont (List [Atom "vector-fill!", Atom var, object]) = do 
-  obj <- eval env cont object
-  vec <- eval env cont =<< getVar env var
-  (eval env cont $ (fillVector vec obj)) >>= setVar env var
+  obj <- eval env (Continuation env []) object
+  vec <- eval env (Continuation env []) =<< getVar env var
+  result <- (eval env (Continuation env []) $ (fillVector vec obj)) >>= setVar env var
+  continueEval env cont result
   where fillVector (Vector vec) obj = do
           let l = replicate (lenVector vec) obj
           Vector $ (listArray (0, length l - 1)) l
@@ -280,22 +288,39 @@ eval env cont (List [Atom "vector-fill!", Atom var, object]) = do
 -- TODO: error handler? - eval env cont (List [Atom "vector-fill!", args]) = throwError $ NumArgs 2 args
 
 eval env cont (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do 
-  key <- eval env cont rkey
-  value <- eval env cont rvalue
-  h <- eval env cont =<< getVar env var
+  key <- eval env (Continuation env []) rkey
+  value <- eval env (Continuation env []) rvalue
+  h <- eval env (Continuation env []) =<< getVar env var
   case h of
-    HashTable ht -> (eval env cont $ HashTable $ Data.Map.insert key value ht) >>= setVar env var
+    HashTable ht -> do
+      result <- (eval env (Continuation env []) $ HashTable $ Data.Map.insert key value ht) >>= setVar env var
+      continueEval env cont result
     other -> throwError $ TypeMismatch "hash-table" other
 
 eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do 
-  key <- eval env cont rkey
-  h <- eval env cont =<< getVar env var
+  key <- eval env (Continuation env []) rkey
+  h <- eval env (Continuation env []) =<< getVar env var
   case h of
-    HashTable ht -> (eval env cont $ HashTable $ Data.Map.delete key ht) >>= setVar env var
+    HashTable ht -> do
+      result <- (eval env (Continuation env []) $ HashTable $ Data.Map.delete key ht) >>= setVar env var
+      continueEval env cont result
     other -> throwError $ TypeMismatch "hash-table" other
 
 -- TODO:
 --  hash-table-merge!
+
+-- TODO: implement these, then (to have this be useful) need to handle function application for a Continuation
+--"call-with-current-continuation"
+eval env cont (List [Atom "call/cc", proc]) = do
+  func <- eval env (Continuation env []) proc 
+  case func of
+    Func aparams _ _ _ _ ->
+      if (toInteger $ length aparams) == 1 
+        then do result <- apply func [cont]
+                continueEval env cont result
+        else throwError $ NumArgs (toInteger $ length aparams) [cont] 
+    other -> throwError $ TypeMismatch "procedure" other
+
 
 eval env cont (List (function : args)) = do
 --  func <- eval env cont function
