@@ -135,7 +135,7 @@ continueEval _ cont val = do
       case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
         [] -> return val
         [lv] -> eval cEnv (Continuation cEnv []) (trace ("clv => " ++ show lv) lv) --val
-        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs)) lv
+        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs)) (trace ("lv:lvs, (lv) => " ++ show lv) lv)
     _ -> return val
 
 -- |Core eval function
@@ -336,7 +336,9 @@ eval env cont (List [Atom "call/cc", proc]) = do
   case func of
     Func aparams _ _ _ _ ->
       if (toInteger $ length aparams) == 1 
-        then do result <- apply func [cont]
+        then do result <- apply func [cont] -- TODO: apply needs to call into the continuation itself...
+                                            -- this still may not be good enough, however. need to think it through.
+                                            -- but in the end, need to be able to replace cont with the current continuation
                 continueEval env cont result
         else throwError $ NumArgs (toInteger $ length aparams) [cont] 
     other -> throwError $ TypeMismatch "procedure" other
@@ -347,7 +349,7 @@ eval env cont (List (function : args)) = do
 --  argVals <- mapM (eval env cont) args
   func <- eval env (Continuation env []) function
   argVals <- mapM (eval env (Continuation env [])) args
-  result <- apply func argVals
+  result <- apply func argVals -- TODO: apply needs to call into the continuation itself, instead of below...
   continueEval env cont result
 
 --Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
