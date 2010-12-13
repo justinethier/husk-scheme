@@ -38,7 +38,7 @@ import Maybe
 import List
 import IO hiding (try)
 
---import Debug.Trace
+import Debug.Trace
 
 
 {-| Evaluate a string containing Scheme code.
@@ -112,10 +112,11 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 continueEval _ cont val = do
   case cont of
     Continuation cEnv cBody -> do
-      case cBody of
+--      case cBody of
+      case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
         [] -> return val
-        [lv] -> eval cEnv (Continuation cEnv []) lv --val
-        (lv : lvs) -> eval cEnv (Continuation cEnv lvs) lv
+        [lv] -> eval cEnv (Continuation cEnv []) (trace ("clv => " ++ show lv) lv) --val
+        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs)) lv
     _ -> return val
 
 -- |Core eval function
@@ -388,7 +389,10 @@ apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
 apply c@(Continuation env cont) args = do
   if (toInteger $ length args) /= 1 
     then throwError $ NumArgs 1 args
-    else continueEval env c $ head args -- may not be correct, what happens if call/cc is an inner part of a list? 
+    else continueEval env (trace ("continueEval => " ++ show cont) c) $ head args -- may not be correct, what happens if call/cc is an inner part of a list? 
+         -- a bigger problem, when replacing the continuation here, we need to "escape" from the existing continuation,
+         -- meaning that (for example) if there is more in the body we are returning to, we need to skip that
+         -- evaluation somehow...
 apply (IOFunc func) args = func args
 apply (PrimitiveFunc func) args = liftThrows $ func args
 apply (Func aparams avarargs abody aclosure _) args =
@@ -397,17 +401,14 @@ apply (Func aparams avarargs abody aclosure _) args =
      else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
-        evalBody body env = --continueEval env (Continuation env body) $ Nil "" -- Nil should never be used
-{-         case body of
-                          [lv] -> eval env (Continuation env []) lv
-                          (lv : lvs) -> do
-                              eval env (Continuation env []) lv
-                              evalBody lvs env -}
-{- TODO: need to add this back, but it breaks test cases: -}
-            case body of
-                [lv] -> eval env (Continuation env []) lv
-                (lv : lvs) -> continueEval env (Continuation env lvs) =<< eval env (Continuation env []) lv -- TODO: is problem that env is used in both places?
-                -- }
+        evalBody body env = continueEval env (Continuation env body) $ Nil ""
+{-
+ - --            case body of
+            case (trace ("body => " ++ show body) body) of
+                [lv] -> eval env (Continuation env []) (trace ("lv => " ++ show lv) lv)
+                (lv : lvs) -> eval env (Continuation env (trace ("lvs => " ++ show lvs) lvs)) (trace "test" lv) -- TODO: is problem that env is used in both places?
+-}
+--                (lv : lvs) -> continueEval env (Continuation env lvs) =<< eval env (Continuation env []) lv -- TODO: is problem that env is used in both places?
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
