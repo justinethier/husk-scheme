@@ -389,10 +389,11 @@ apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
 apply c@(Continuation env cont) args = do
   if (toInteger $ length args) /= 1 
     then throwError $ NumArgs 1 args
-    else continueEval env (trace ("continueEval => " ++ show cont) c) $ head args -- may not be correct, what happens if call/cc is an inner part of a list? 
-         -- a bigger problem, when replacing the continuation here, we need to "escape" from the existing continuation,
-         -- meaning that (for example) if there is more in the body we are returning to, we need to skip that
-         -- evaluation somehow...
+    else continueEval env (trace ("continueEval => " ++ show cont) c) $ head args -- may not be correct, what happens if call/cc is an inner part of a list?
+      -- TODO:
+      -- this is not good enough. is it correct if we take c and replace the "outer" continuation with it??
+      --
+      -- this would work for retutn and other simple examples
 apply (IOFunc func) args = func args
 apply (PrimitiveFunc func) args = liftThrows $ func args
 apply (Func aparams avarargs abody aclosure _) args =
