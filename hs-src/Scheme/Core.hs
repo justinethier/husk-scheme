@@ -75,6 +75,14 @@ evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont par
 {- Changes will be required to eval to support continuations. According to original wiki book:
  -   TBD
  -
+ -
+ - Need to rethink below and come up with a clear, top-level design approach. Some starting points
+ - for this are:
+ -  http://c2.com/cgi/wiki?ContinuationImplementation
+ -  http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
+ -  http://community.schemewiki.org/?call-with-current-continuation
+ -
+ -
  - Some of my notes:
  - as simple as using CPS to evaluate lists of "lines" (body)? Then could pass the next part of the CPS as the cont arg to eval. Or is this too simple to work? need to think about this - http://en.wikipedia.org/wiki/Continuation-passing_style
  -
