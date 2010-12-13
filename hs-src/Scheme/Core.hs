@@ -83,6 +83,16 @@ evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont par
  -  http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
  -  http://community.schemewiki.org/?call-with-current-continuation
  -
+ - ALSO, consider the following quote: 
+ -  "CPS is a programming style where no function is ever allowed to return."
+ - So, this would mean that when evaluating a simple integer, string, etc eval should call into
+ - the continuation instead of just returning.
+ - Need to think about how this will be handled, how functions will be called using CPS, and what
+ - the continuation data type needs to contain.
+ -
+ -
+ -
+ -
  -
  - Some of my notes:
  - as simple as using CPS to evaluate lists of "lines" (body)? Then could pass the next part of the CPS as the cont arg to eval. Or is this too simple to work? need to think about this - http://en.wikipedia.org/wiki/Continuation-passing_style
