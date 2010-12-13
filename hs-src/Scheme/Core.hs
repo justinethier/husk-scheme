@@ -79,6 +79,7 @@ evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont par
  - Need to rethink below and come up with a clear, top-level design approach. Some starting points
  - for this are:
  -  http://c2.com/cgi/wiki?ContinuationImplementation
+ -  http://c2.com/cgi/wiki?CallWithCurrentContinuation (the link to this book may be helpful as well: http://c2.com/cgi/wiki?EssentialsOfProgrammingLanguages - apparently if the interpreter is written using CPS, then call/cc is free)
  -  http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
  -  http://community.schemewiki.org/?call-with-current-continuation
  -
