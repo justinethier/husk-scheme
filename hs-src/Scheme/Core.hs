@@ -329,6 +329,22 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 -- TODO:
 --  hash-table-merge!
 
+
+-- TODO: for CPS form, need to be able to pass a continuation to a function
+-- need to work through this implementation.
+--
+-- See http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.6
+-- for test cases that are required to ensure apply is not broken by this change. Need
+-- it intact prior to proceeding with CPS and functions
+eval env cont (List [Atom "apply", func, List args]) = apply func args
+-- TODO: eval env cont (List [Atom "apply" : func : args]) = apply func args
+{- old reference implementation, from io primitives
+applyProc :: [LispVal] -> IOThrowsError LispVal
+applyProc [func, List args] = apply func args
+applyProc (func : args) = apply func args
+applyProc [] = throwError $ BadSpecialForm "applyProc" $ String "Function not specified"
+-}
+
 -- TODO: implement these, then (to have this be useful) need to handle function application for a Continuation
 --"call-with-current-continuation"
 eval env cont (List [Atom "call/cc", proc]) = do
@@ -445,8 +461,7 @@ primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrim
   where domakeFunc constructor (var, func) = ((varNamespace, var), constructor func)
 
 ioPrimitives :: [(String, [LispVal] -> IOThrowsError LispVal)]
-ioPrimitives = [("apply", applyProc),
-                ("open-input-file", makePort ReadMode),
+ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("open-output-file", makePort WriteMode),
                 ("close-input-port", closePort),
                 ("close-output-port", closePort),
@@ -454,11 +469,6 @@ ioPrimitives = [("apply", applyProc),
                 ("write", writeProc),
                 ("read-contents", readContents),
                 ("read-all", readAll)]
-
-applyProc :: [LispVal] -> IOThrowsError LispVal
-applyProc [func, List args] = apply func args
-applyProc (func : args) = apply func args
-applyProc [] = throwError $ BadSpecialForm "applyProc" $ String "Function not specified"
 
 makePort :: IOMode -> [LispVal] -> IOThrowsError LispVal
 makePort mode [String filename] = liftM Port $ liftIO $ openFile filename mode
