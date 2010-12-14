@@ -336,7 +336,20 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 -- See http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.6
 -- for test cases that are required to ensure apply is not broken by this change. Need
 -- it intact prior to proceeding with CPS and functions
-eval env cont (List [Atom "apply", func, List args]) = apply func args
+eval env cont (List (Atom "apply" : params)) = do
+    case params of
+        (function : List args) -> do
+            func <- eval env (Continuation env []) function -- TODO: almost certainly need to pull this into the continuation
+            argVals <- mapM (eval env (Continuation env [])) args -- TODO: almost certainly need to pull this into the continuation
+            result <- apply func argVals
+            continueEval env cont result -- incorrect, but just getting this to work right now
+        (function : args) -> do
+            func <- eval env (Continuation env []) function -- TODO: almost certainly need to pull this into the continuation
+            argVals <- mapM (eval env (Continuation env [])) args -- TODO: almost certainly need to pull this into the continuation
+            result <- apply func argVals
+            continueEval env cont result -- incorrect, but just getting this to work right now
+        _ -> throwError $ BadSpecialForm "apply" $ String "Function not specified"
+
 -- TODO: eval env cont (List [Atom "apply" : func : args]) = apply func args
 {- old reference implementation, from io primitives
 applyProc :: [LispVal] -> IOThrowsError LispVal
@@ -363,8 +376,8 @@ eval env cont (List [Atom "call/cc", proc]) = do
 eval env cont (List (function : args)) = do
 --  func <- eval env cont function
 --  argVals <- mapM (eval env cont) args
-  func <- eval env (Continuation env []) function
-  argVals <- mapM (eval env (Continuation env [])) args
+  func <- eval env (Continuation env []) function -- TODO: almost certainly need to pull this into the continuation
+  argVals <- mapM (eval env (Continuation env [])) args -- TODO: almost certainly need to pull this into the continuation
   result <- apply func argVals -- TODO: apply needs to call into the continuation itself, instead of below...
   continueEval env cont result
 
