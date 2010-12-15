@@ -338,16 +338,26 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 -- it intact prior to proceeding with CPS and functions
 eval env cont (List (Atom "apply" : params)) = do
     case params of
-        (function : List args) -> do
+-- { -
+        [function, List args] -> do
+            func <- eval env (Continuation env []) function -- TODO: almost certainly need to pull this into the continuation
+            argVals <- eval env (Continuation env []) $ List args
+            --argVals <- mapM (eval env (Continuation env [])) args -- TODO: almost certainly need to pull this into the continuation
+            case argVals of
+                List l -> do result <- apply func l
+                             continueEval env cont result -- incorrect, but just getting this to work right now
+                v -> do continueEval env cont =<< apply func [v]
+-- }
+{-TODO: need a better error for below case. also need to add more test cases for apply.
+ - need to ensure it works correctly like this before proceeding with further CPS implementation,
+ - or will be driving myself nuts later trying to figure out which part is wrong :)
+ -
+ - (function : args) -> do
             func <- eval env (Continuation env []) function -- TODO: almost certainly need to pull this into the continuation
             argVals <- mapM (eval env (Continuation env [])) args -- TODO: almost certainly need to pull this into the continuation
             result <- apply func argVals
             continueEval env cont result -- incorrect, but just getting this to work right now
-        (function : args) -> do
-            func <- eval env (Continuation env []) function -- TODO: almost certainly need to pull this into the continuation
-            argVals <- mapM (eval env (Continuation env [])) args -- TODO: almost certainly need to pull this into the continuation
-            result <- apply func argVals
-            continueEval env cont result -- incorrect, but just getting this to work right now
+            -}
         _ -> throwError $ BadSpecialForm "apply" $ String "Function not specified"
 
 -- TODO: eval env cont (List [Atom "apply" : func : args]) = apply func args
