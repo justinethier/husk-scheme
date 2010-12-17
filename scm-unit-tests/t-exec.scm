@@ -5,6 +5,6 @@
     (lambda (f g)
           (lambda args
                   (f (apply g args)))))
-(assert/equal ((compose sqrt *) 12 75) 30)
+(assert/equal ((compose sqrt *) 12 75) 30.0)
 
 (unit-test-handler-results)

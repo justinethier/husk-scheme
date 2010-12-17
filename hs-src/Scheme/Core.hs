@@ -131,11 +131,13 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 continueEval _ cont val = do
   case cont of
     Continuation cEnv cBody -> do
---      case cBody of
-      case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
+      case cBody of
+--      case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
         [] -> return val
-        [lv] -> eval cEnv (Continuation cEnv []) (trace ("clv => " ++ show lv) lv) --val
-        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs)) (trace ("lv:lvs, (lv) => " ++ show lv) lv)
+        [lv] -> eval cEnv (Continuation cEnv []) lv --val
+--        [lv] -> eval cEnv (Continuation cEnv []) (trace ("clv => " ++ show lv) lv) --val
+        (lv : lvs) -> eval cEnv (Continuation cEnv lvs) lv
+--        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs)) (trace ("lv:lvs, (lv) => " ++ show lv) lv)
     _ -> return val
 
 -- |Core eval function
@@ -336,30 +338,28 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 -- See http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.6
 -- for test cases that are required to ensure apply is not broken by this change. Need
 -- it intact prior to proceeding with CPS and functions
+eval env cont (List [Atom "apply"]) = throwError $ BadSpecialForm "apply" $ String "Function not specified"
+eval env cont (List [Atom "apply", proc]) = throwError $ BadSpecialForm "apply" $ String "Arguments not specified"
 eval env cont (List (Atom "apply" : params)) = do
+    -- TODO: verify length of list
+    -- TODO: for all Continuations below, will almost certainly need to pull each into this continuation
+    proc <- eval env (Continuation env []) $ head $ params
+    lst <- eval env (Continuation env []) $ head $ reverse params
+    argVals <- mapM (eval env (Continuation env [])) $ tail $ reverse $ tail (reverse params)
+    case lst of
+      List l -> apply proc (argVals ++ l) -- TODO: need to handle case where argVals is empty
+      other -> throwError $ TypeMismatch "list" other
+{-
     case params of
--- { -
         [function, List args] -> do
             func <- eval env (Continuation env []) function -- TODO: almost certainly need to pull this into the continuation
             argVals <- eval env (Continuation env []) $ List args
-            --argVals <- mapM (eval env (Continuation env [])) args -- TODO: almost certainly need to pull this into the continuation
             case argVals of
                 List l -> do result <- apply func l
                              continueEval env cont result -- incorrect, but just getting this to work right now
                 v -> do continueEval env cont =<< apply func [v]
--- }
-{-TODO: need a better error for below case. also need to add more test cases for apply.
- - need to ensure it works correctly like this before proceeding with further CPS implementation,
- - or will be driving myself nuts later trying to figure out which part is wrong :)
- -
- - (function : args) -> do
-            func <- eval env (Continuation env []) function -- TODO: almost certainly need to pull this into the continuation
-            argVals <- mapM (eval env (Continuation env [])) args -- TODO: almost certainly need to pull this into the continuation
-            result <- apply func argVals
-            continueEval env cont result -- incorrect, but just getting this to work right now
-            -}
         _ -> throwError $ BadSpecialForm "apply" $ String "Function not specified"
-
+-}
 -- TODO: eval env cont (List [Atom "apply" : func : args]) = apply func args
 {- old reference implementation, from io primitives
 applyProc :: [LispVal] -> IOThrowsError LispVal
@@ -449,7 +449,8 @@ apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
 apply c@(Continuation env cont) args = do
   if (toInteger $ length args) /= 1 
     then throwError $ NumArgs 1 args
-    else continueEval env (trace ("continueEval => " ++ show cont) c) $ head args -- may not be correct, what happens if call/cc is an inner part of a list?
+    else continueEval env c $ head args -- may not be correct, what happens if call/cc is an inner part of a list?
+--    else continueEval env (trace ("continueEval => " ++ show cont) c) $ head args -- may not be correct, what happens if call/cc is an inner part of a list?
       -- TODO:
       -- this is not good enough. is it correct if we take c and replace the "outer" continuation with it??
       --
@@ -463,13 +464,6 @@ apply (Func aparams avarargs abody aclosure _) args =
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
         evalBody body env = continueEval env (Continuation env body) $ Nil ""
-{-
- - --            case body of
-            case (trace ("body => " ++ show body) body) of
-                [lv] -> eval env (Continuation env []) (trace ("lv => " ++ show lv) lv)
-                (lv : lvs) -> eval env (Continuation env (trace ("lvs => " ++ show lvs) lvs)) (trace "test" lv) -- TODO: is problem that env is used in both places?
--}
---                (lv : lvs) -> continueEval env (Continuation env lvs) =<< eval env (Continuation env []) lv -- TODO: is problem that env is used in both places?
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
