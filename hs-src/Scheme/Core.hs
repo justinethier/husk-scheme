@@ -352,7 +352,7 @@ eval env cont (List (Atom "apply" : params)) = do
 
 -- TODO: implement these, then (to have this be useful) need to handle function application for a Continuation
 --"call-with-current-continuation"
-eval env cont (List [Atom "call-with-current-continuation", proc]) = do
+eval env cont (List [Atom "call/cc", proc]) = do
   func <- eval env (Continuation env []) proc 
   case func of
     Func aparams _ _ _ _ ->
