@@ -341,36 +341,18 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 eval env cont (List [Atom "apply"]) = throwError $ BadSpecialForm "apply" $ String "Function not specified"
 eval env cont (List [Atom "apply", proc]) = throwError $ BadSpecialForm "apply" $ String "Arguments not specified"
 eval env cont (List (Atom "apply" : params)) = do
-    -- TODO: verify length of list
+    -- FUTURE: verify length of list?
     -- TODO: for all Continuations below, will almost certainly need to pull each into this continuation
     proc <- eval env (Continuation env []) $ head $ params
     lst <- eval env (Continuation env []) $ head $ reverse params
     argVals <- mapM (eval env (Continuation env [])) $ tail $ reverse $ tail (reverse params)
     case lst of
-      List l -> apply proc (argVals ++ l) -- TODO: need to handle case where argVals is empty
+      List l -> apply proc (argVals ++ l)
       other -> throwError $ TypeMismatch "list" other
-{-
-    case params of
-        [function, List args] -> do
-            func <- eval env (Continuation env []) function -- TODO: almost certainly need to pull this into the continuation
-            argVals <- eval env (Continuation env []) $ List args
-            case argVals of
-                List l -> do result <- apply func l
-                             continueEval env cont result -- incorrect, but just getting this to work right now
-                v -> do continueEval env cont =<< apply func [v]
-        _ -> throwError $ BadSpecialForm "apply" $ String "Function not specified"
--}
--- TODO: eval env cont (List [Atom "apply" : func : args]) = apply func args
-{- old reference implementation, from io primitives
-applyProc :: [LispVal] -> IOThrowsError LispVal
-applyProc [func, List args] = apply func args
-applyProc (func : args) = apply func args
-applyProc [] = throwError $ BadSpecialForm "applyProc" $ String "Function not specified"
--}
 
 -- TODO: implement these, then (to have this be useful) need to handle function application for a Continuation
 --"call-with-current-continuation"
-eval env cont (List [Atom "call/cc", proc]) = do
+eval env cont (List [Atom "call-with-current-continuation", proc]) = do
   func <- eval env (Continuation env []) proc 
   case func of
     Func aparams _ _ _ _ ->
