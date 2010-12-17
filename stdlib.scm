@@ -221,7 +221,8 @@
                   (begin (set! result x)
                          (set! result-ready? #t)
                          result))))))))
-
+; Continuations
+(define call/cc call-with-current-continuation)
 
 ; Hash table derived forms
 (define hash-table-walk
