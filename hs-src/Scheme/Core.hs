@@ -365,8 +365,7 @@ eval env cont (List (function : args)) = do
 --  argVals <- mapM (eval env cont) args
   func <- eval env (Continuation env [] $ Nil "") function -- TODO: almost certainly need to pull this into the continuation
   argVals <- mapM (eval env (Continuation env [] $ Nil "")) args -- TODO: almost certainly need to pull this into the continuation
-  result <- apply cont func argVals -- TODO: apply needs to call into the continuation itself, instead of below...
-  continueEval env cont result
+  apply cont func argVals
 
 --Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval env cont badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
