@@ -126,16 +126,16 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 continueEval _ cont val = do
   case cont of
     Continuation cEnv cBody cCont -> do
---      case cBody of
-      case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
+      case cBody of
+--      case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
         [] -> do
           case cCont of
             Continuation nEnv nBody nCont -> continueEval nEnv cCont val
             _ -> return val
---        [lv] -> eval cEnv (Continuation cEnv [] cCont) lv --val
-        [lv] -> eval cEnv (Continuation cEnv [] cCont) (trace ("clv => " ++ show lv) lv) --val
---        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont) lv
-        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs) cCont) (trace ("lv:lvs, (lv) => " ++ show lv) lv)
+        [lv] -> eval cEnv (Continuation cEnv [] cCont) lv --val
+--        [lv] -> eval cEnv (Continuation cEnv [] cCont) (trace ("clv => " ++ show lv) lv) --val
+        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont) lv
+--        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs) cCont) (trace ("lv:lvs, (lv) => " ++ show lv) lv)
     _ -> return val
 
 -- |Core eval function
