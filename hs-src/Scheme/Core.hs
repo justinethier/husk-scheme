@@ -130,13 +130,16 @@ evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont par
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 continueEval _ cont val = do
   case cont of
-    Continuation cEnv cBody -> do
+    Continuation cEnv cBody cCont -> do
       case cBody of
 --      case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
-        [] -> return val
-        [lv] -> eval cEnv (Continuation cEnv []) lv --val
+        [] -> do
+          case cCont of
+            Continuation nEnv nBody nCont -> continueEval nEnv cCont val
+            _ -> return val
+        [lv] -> eval cEnv (Continuation cEnv [] cCont) lv --val
 --        [lv] -> eval cEnv (Continuation cEnv []) (trace ("clv => " ++ show lv) lv) --val
-        (lv : lvs) -> eval cEnv (Continuation cEnv lvs) lv
+        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont) lv
 --        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs)) (trace ("lv:lvs, (lv) => " ++ show lv) lv)
     _ -> return val
 
@@ -239,18 +242,18 @@ eval env cont (List (Atom "begin" : funcs)) =
 
 eval env cont (List [Atom "load", String filename]) = do
 --     load filename >>= liftM last . mapM (evaluate env cont)
-     result <- load filename >>= liftM last . mapM (evaluate env (Continuation env []))
+     result <- load filename >>= liftM last . mapM (evaluate env (Continuation env [] $ Nil ""))
      continueEval env cont result
 	 where evaluate env cont2 val = macroEval env val >>= eval env cont2
 
 eval env cont (List [Atom "set!", Atom var, form]) = do 
 --  eval env cont form >>= setVar env var
-  result <- eval env (Continuation env []) form >>= setVar env var
+  result <- eval env (Continuation env [] $ Nil "") form >>= setVar env var
   continueEval env cont result
 
 eval env cont (List [Atom "define", Atom var, form]) = do 
 --  eval env cont form >>= defineVar env var
-  result <- eval env (Continuation env []) form >>= defineVar env var
+  result <- eval env (Continuation env [] $ Nil "") form >>= defineVar env var
   continueEval env cont result
 
 eval env cont (List (Atom "define" : List (Atom var : params) : body )) = 
@@ -265,9 +268,9 @@ eval env cont (List (Atom "lambda" : varargs@(Atom _) : body)) =
   makeVarargs varargs env [] body
 
 eval env cont (List [Atom "string-fill!", Atom var, character]) = do 
-  str <- eval env (Continuation env []) =<< getVar env var 
-  chr <- eval env (Continuation env []) character
-  result <- (eval env (Continuation env []) $ fillStr(str, chr)) >>= setVar env var
+  str <- eval env (Continuation env [] $ Nil "") =<< getVar env var 
+  chr <- eval env (Continuation env [] $ Nil "") character
+  result <- (eval env (Continuation env [] $ Nil "") $ fillStr(str, chr)) >>= setVar env var
   continueEval env cont result
   where fillStr (String str, Char chr) = doFillStr (String "", Char chr, length str)
   
@@ -277,9 +280,9 @@ eval env cont (List [Atom "string-fill!", Atom var, character]) = do
            else doFillStr(String $ chr : str, Char chr, left - 1)
 
 eval env cont (List [Atom "string-set!", Atom var, index, character]) = do 
-  idx <- eval env (Continuation env []) index
-  str <- eval env (Continuation env []) =<< getVar env var
-  result <- (eval env (Continuation env []) $ substr(str, character, idx)) >>= setVar env var
+  idx <- eval env (Continuation env [] $ Nil "") index
+  str <- eval env (Continuation env [] $ Nil "") =<< getVar env var
+  result <- (eval env (Continuation env [] $ Nil "") $ substr(str, character, idx)) >>= setVar env var
   continueEval env cont result
   where substr (String str, Char char, Number index) = do
                               String $ (take (fromInteger index) . drop 0) str ++ 
@@ -288,19 +291,19 @@ eval env cont (List [Atom "string-set!", Atom var, index, character]) = do
     -- TODO: error handler
 
 eval env cont (List [Atom "vector-set!", Atom var, index, object]) = do 
-  idx <- eval env (Continuation env []) index
-  obj <- eval env (Continuation env []) object
-  vec <- eval env (Continuation env []) =<< getVar env var
-  result <- (eval env (Continuation env []) $ (updateVector vec idx obj)) >>= setVar env var
+  idx <- eval env (Continuation env [] $ Nil "") index
+  obj <- eval env (Continuation env [] $ Nil "") object
+  vec <- eval env (Continuation env [] $ Nil "") =<< getVar env var
+  result <- (eval env (Continuation env [] $ Nil "") $ (updateVector vec idx obj)) >>= setVar env var
   continueEval env cont result
   where updateVector (Vector vec) (Number idx) obj = Vector $ vec//[(fromInteger idx, obj)]
         -- TODO: error handler?
 -- TODO: error handler? - eval env (List [Atom "vector-set!", args]) = throwError $ NumArgs 2 args
 
 eval env cont (List [Atom "vector-fill!", Atom var, object]) = do 
-  obj <- eval env (Continuation env []) object
-  vec <- eval env (Continuation env []) =<< getVar env var
-  result <- (eval env (Continuation env []) $ (fillVector vec obj)) >>= setVar env var
+  obj <- eval env (Continuation env [] $ Nil "") object
+  vec <- eval env (Continuation env [] $ Nil "") =<< getVar env var
+  result <- (eval env (Continuation env [] $ Nil "") $ (fillVector vec obj)) >>= setVar env var
   continueEval env cont result
   where fillVector (Vector vec) obj = do
           let l = replicate (lenVector vec) obj
@@ -310,21 +313,21 @@ eval env cont (List [Atom "vector-fill!", Atom var, object]) = do
 -- TODO: error handler? - eval env cont (List [Atom "vector-fill!", args]) = throwError $ NumArgs 2 args
 
 eval env cont (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do 
-  key <- eval env (Continuation env []) rkey
-  value <- eval env (Continuation env []) rvalue
-  h <- eval env (Continuation env []) =<< getVar env var
+  key <- eval env (Continuation env [] $ Nil "") rkey
+  value <- eval env (Continuation env [] $ Nil "") rvalue
+  h <- eval env (Continuation env [] $ Nil "") =<< getVar env var
   case h of
     HashTable ht -> do
-      result <- (eval env (Continuation env []) $ HashTable $ Data.Map.insert key value ht) >>= setVar env var
+      result <- (eval env (Continuation env [] $ Nil "") $ HashTable $ Data.Map.insert key value ht) >>= setVar env var
       continueEval env cont result
     other -> throwError $ TypeMismatch "hash-table" other
 
 eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do 
-  key <- eval env (Continuation env []) rkey
-  h <- eval env (Continuation env []) =<< getVar env var
+  key <- eval env (Continuation env [] $ Nil "") rkey
+  h <- eval env (Continuation env [] $ Nil "") =<< getVar env var
   case h of
     HashTable ht -> do
-      result <- (eval env (Continuation env []) $ HashTable $ Data.Map.delete key ht) >>= setVar env var
+      result <- (eval env (Continuation env [] $ Nil "") $ HashTable $ Data.Map.delete key ht) >>= setVar env var
       continueEval env cont result
     other -> throwError $ TypeMismatch "hash-table" other
 
@@ -343,21 +346,21 @@ eval env cont (List [Atom "apply", proc]) = throwError $ BadSpecialForm "apply" 
 eval env cont (List (Atom "apply" : params)) = do
     -- FUTURE: verify length of list?
     -- TODO: for all Continuations below, will almost certainly need to pull each into this continuation
-    proc <- eval env (Continuation env []) $ head $ params
-    lst <- eval env (Continuation env []) $ head $ reverse params
-    argVals <- mapM (eval env (Continuation env [])) $ tail $ reverse $ tail (reverse params)
+    proc <- eval env (Continuation env [] $ Nil "") $ head $ params
+    lst <- eval env (Continuation env [] $ Nil "") $ head $ reverse params
+    argVals <- mapM (eval env (Continuation env [] $ Nil "")) $ tail $ reverse $ tail (reverse params)
     case lst of
-      List l -> apply proc (argVals ++ l)
+      List l -> apply cont proc (argVals ++ l)
       other -> throwError $ TypeMismatch "list" other
 
 -- TODO: implement these, then (to have this be useful) need to handle function application for a Continuation
 --"call-with-current-continuation"
 eval env cont (List [Atom "call/cc", proc]) = do
-  func <- eval env (Continuation env []) proc 
+  func <- eval env (Continuation env [] $ Nil "") proc 
   case func of
     Func aparams _ _ _ _ ->
       if (toInteger $ length aparams) == 1 
-        then do result <- apply func [cont] -- TODO: apply needs to call into the continuation itself...
+        then do result <- apply (Nil "") func [cont] -- TODO: apply needs to call into the continuation itself...
                                             -- this still may not be good enough, however. need to think it through.
                                             -- but in the end, need to be able to replace cont with the current continuation
                 continueEval env cont result
@@ -368,9 +371,9 @@ eval env cont (List [Atom "call/cc", proc]) = do
 eval env cont (List (function : args)) = do
 --  func <- eval env cont function
 --  argVals <- mapM (eval env cont) args
-  func <- eval env (Continuation env []) function -- TODO: almost certainly need to pull this into the continuation
-  argVals <- mapM (eval env (Continuation env [])) args -- TODO: almost certainly need to pull this into the continuation
-  result <- apply func argVals -- TODO: apply needs to call into the continuation itself, instead of below...
+  func <- eval env (Continuation env [] $ Nil "") function -- TODO: almost certainly need to pull this into the continuation
+  argVals <- mapM (eval env (Continuation env [] $ Nil "")) args -- TODO: almost certainly need to pull this into the continuation
+  result <- apply cont func argVals -- TODO: apply needs to call into the continuation itself, instead of below...
   continueEval env cont result
 
 --Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
@@ -427,8 +430,8 @@ makeNormalFunc = makeFunc Nothing
                         -> m LispVal-}
 makeVarargs = makeFunc . Just . showVal
 
-apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
-apply c@(Continuation env cont) args = do
+apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
+apply _ c@(Continuation env _ _) args = do
   if (toInteger $ length args) /= 1 
     then throwError $ NumArgs 1 args
     else continueEval env c $ head args -- may not be correct, what happens if call/cc is an inner part of a list?
@@ -436,20 +439,20 @@ apply c@(Continuation env cont) args = do
       -- TODO:
       -- this is not good enough. is it correct if we take c and replace the "outer" continuation with it??
       --
-      -- this would work for retutn and other simple examples
-apply (IOFunc func) args = func args
-apply (PrimitiveFunc func) args = liftThrows $ func args
-apply (Func aparams avarargs abody aclosure _) args =
+      -- this would work for return and other simple examples
+apply _ (IOFunc func) args = func args
+apply _ (PrimitiveFunc func) args = liftThrows $ func args
+apply cont (Func aparams avarargs abody aclosure _) args =
   if num aparams /= num args && avarargs == Nothing
      then throwError $ NumArgs (num aparams) args
      else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
-        evalBody body env = continueEval env (Continuation env body) $ Nil ""
+        evalBody body env = continueEval env (Continuation env body cont) $ Nil ""
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
-apply func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List (func : args)
+apply _ func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List (func : args)
 
 -- |Environment containing the primitive forms that are built into the Scheme language. Note that this only includes
 --  forms that are implemented in Haskell; derived forms implemented in Scheme (such as let, list, etc) are available

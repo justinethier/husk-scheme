@@ -120,8 +120,9 @@ data LispVal = Atom String
          -- ^
 	| Port Handle
          -- ^I/O port
-	| Continuation {closure :: Env,
-                        body :: [LispVal]
+	| Continuation {closure :: Env,    -- Environment of the continuation
+                        body :: [LispVal], -- Code in the body of the continuation
+                        cont :: LispVal    -- Code to resume after body of cont
                         -- stack (for dynamic wind)
                        }
          -- ^Continuation
