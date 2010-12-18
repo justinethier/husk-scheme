@@ -439,6 +439,9 @@ apply cont (Func aparams avarargs abody aclosure _) args =
      else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
+        --
+        -- TODO: this works , but at the cost of tco (high mem usage) due
+        -- to inner cont
         evalBody body env = continueEval env (Continuation env body cont) $ Nil ""
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
