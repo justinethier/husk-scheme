@@ -59,7 +59,7 @@ evalString env "(* 3 9)"
 @
 -}
 evalString :: Env -> String -> IO String
-evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= (eval env (Nil "")) -- TODO: populate continuation parameter
+evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= macroEval env >>= (eval env (Continuation env [] $ Nil ""))
 
 -- |Evaluate a string and print results to console
 evalAndPrint :: Env -> String -> IO ()
@@ -69,7 +69,7 @@ evalAndPrint env expr = evalString env expr >>= putStrLn --TODO: cont parameter
 --
 --  TODO: code example for this, via ghci and/or a custom program.
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
-evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont parameter
+evalLisp env lisp = macroEval env lisp >>= (eval env (Continuation env [] $ Nil ""))
 
 
 {- Changes will be required to eval to support continuations. According to original wiki book:
@@ -117,30 +117,25 @@ evalLisp env lisp = macroEval env lisp >>= (eval env $ Nil "") -- TODO: cont par
  -
  - -}
 
-{- TODO: 
- - Transform program into CPS by calling into this instead of returning from eval.
- - this function will use the cont argument to determine whether to keep going or to 
+{-  
+ - Transformed eval section into CPS by calling into this instead of returning from eval.
+ - This function uses the cont argument to determine whether to keep going or to 
  - finally return a result.
- -
- - This will replace evalBody. It will also require a full inspection of the eval
- - function, in order to call into this instead of returning (probably in all cases,
- - but will have to see)
- -
  - -}
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 continueEval _ cont val = do
   case cont of
     Continuation cEnv cBody cCont -> do
-      case cBody of
---      case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
+--      case cBody of
+      case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
         [] -> do
           case cCont of
             Continuation nEnv nBody nCont -> continueEval nEnv cCont val
             _ -> return val
-        [lv] -> eval cEnv (Continuation cEnv [] cCont) lv --val
---        [lv] -> eval cEnv (Continuation cEnv []) (trace ("clv => " ++ show lv) lv) --val
-        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont) lv
---        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs)) (trace ("lv:lvs, (lv) => " ++ show lv) lv)
+--        [lv] -> eval cEnv (Continuation cEnv [] cCont) lv --val
+        [lv] -> eval cEnv (Continuation cEnv [] cCont) (trace ("clv => " ++ show lv) lv) --val
+--        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont) lv
+        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs) cCont) (trace ("lv:lvs, (lv) => " ++ show lv) lv)
     _ -> return val
 
 -- |Core eval function
@@ -360,12 +355,9 @@ eval env cont (List [Atom "call/cc", proc]) = do
   case func of
     Func aparams _ _ _ _ ->
       if (toInteger $ length aparams) == 1 
-        then do result <- apply (Nil "") func [cont] -- TODO: apply needs to call into the continuation itself...
-                                            -- this still may not be good enough, however. need to think it through.
-                                            -- but in the end, need to be able to replace cont with the current continuation
-                continueEval env cont result
+        then apply cont func [cont] 
         else throwError $ NumArgs (toInteger $ length aparams) [cont] 
-    other -> throwError $ TypeMismatch "procedure" other
+    other -> throwError $ TypeMismatch "function" other
 
 
 eval env cont (List (function : args)) = do
