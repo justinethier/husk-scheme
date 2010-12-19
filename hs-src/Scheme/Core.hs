@@ -348,8 +348,8 @@ eval env cont (List (Atom "apply" : params)) = do
       List l -> apply cont proc (argVals ++ l)
       other -> throwError $ TypeMismatch "list" other
 
--- TODO: implement these, then (to have this be useful) need to handle function application for a Continuation
---"call-with-current-continuation"
+eval env cont (List (Atom "call-with-current-continuation" : args)) = 
+  eval env cont (List (Atom "call/cc" : args))
 eval env cont (List [Atom "call/cc"]) = throwError $ Default "Procedure not specified"
 eval env cont (List [Atom "call/cc", proc]) = do
   func <- eval env (Continuation env [] $ Nil "") proc 
