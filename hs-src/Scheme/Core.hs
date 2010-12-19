@@ -350,14 +350,16 @@ eval env cont (List (Atom "apply" : params)) = do
 
 -- TODO: implement these, then (to have this be useful) need to handle function application for a Continuation
 --"call-with-current-continuation"
+eval env cont (List [Atom "call/cc"]) = throwError $ Default "Procedure not specified"
 eval env cont (List [Atom "call/cc", proc]) = do
   func <- eval env (Continuation env [] $ Nil "") proc 
   case func of
+    PrimitiveFunc func -> liftThrows $ func [cont]
     Func aparams _ _ _ _ ->
       if (toInteger $ length aparams) == 1 
         then apply cont func [cont] 
         else throwError $ NumArgs (toInteger $ length aparams) [cont] 
-    other -> throwError $ TypeMismatch "function" other
+    other -> throwError $ TypeMismatch "procedure" other
 
 
 eval env cont (List (function : args)) = do
@@ -876,6 +878,7 @@ isDottedList ([DottedList _ _]) = return $ Bool True
 isDottedList _ = return $  Bool False
 
 isProcedure :: [LispVal] -> ThrowsError LispVal
+isProcedure ([Continuation _ _ _]) = return $ Bool True
 isProcedure ([PrimitiveFunc _]) = return $ Bool True
 isProcedure ([Func _ _ _ _ _]) = return $ Bool True
 isProcedure ([IOFunc _]) = return $ Bool True
