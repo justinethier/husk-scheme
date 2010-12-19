@@ -60,6 +60,7 @@ showError (NotFunction message func) = message ++ ": " ++ show func
 showError (UnboundVar message varname) = message ++ ": " ++ varname
 showError (DivideByZero) = "Division by zero"
 showError (NotImplemented message) = "Not implemented: " ++ message
+showError (Default message) = "Error: " ++ message
 
 instance Show LispError where show = showError
 instance Error LispError where
