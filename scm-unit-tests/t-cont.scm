@@ -23,5 +23,8 @@
       3)
 
 (assert/equal (call/cc f) (+ 1 2 3 4 5 6))
+(assert/equal (call-with-current-continuation f) (+ 1 2 3 4 5 6))
+
 (assert/equal (call/cc procedure?) #t)
+(assert/equal (call-with-current-continuation procedure?) #t)
 (unit-test-handler-results)
