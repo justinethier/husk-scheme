@@ -440,8 +440,11 @@ apply cont (Func aparams avarargs abody aclosure _) args =
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
         --
-        -- TODO: this works , but at the cost of tco (high mem usage) due
-        -- to inner cont
+        -- TODO: this works, but at the cost of breaking proper tail calls due to 
+        -- high mem usage. To fix this, we need to implement TCO, for example, by
+        -- not creating a new continuation object if the same function is being
+        -- called with the same parameters.
+        --
         evalBody body env = continueEval env (Continuation env body cont) $ Nil ""
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
