@@ -124,7 +124,20 @@ data LispVal = Atom String
 	| Continuation {closure :: Env,    -- Environment of the continuation
                         body :: [LispVal], -- Code in the body of the continuation
                         cont :: LispVal    -- Code to resume after body of cont
-                        -- stack (for dynamic wind)
+                        --
+                        --TODO: frame information
+                        --  for evaluating a function (prior to calling) need:
+                        --   - function obj
+                        --   - list of args
+                        --  for TCO within a function, need:
+                        --   - calling function name
+                        --   - calling function arg values
+                        --  may be able to have a single frame object take care of both
+                        --  purposes. but before implementing this, do a bit more research
+                        --  to verify the approach.
+                        --
+                        --
+                        -- FUTURE: stack (for dynamic wind)
                        }
          -- ^Continuation
  	| Nil String
