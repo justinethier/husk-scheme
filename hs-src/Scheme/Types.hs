@@ -124,13 +124,17 @@ data LispVal = Atom String
 	| Continuation {closure :: Env,    -- Environment of the continuation
                         body :: [LispVal], -- Code in the body of the continuation
                         cont :: LispVal    -- Code to resume after body of cont
+--                        , frameFunc :: (Maybe LispVal)
+--                        , frameRawArgs :: (Maybe [LispVal])
+--                        , frameEvaledArgs :: (Maybe [LispVal])
                         --
                         --TODO: frame information
                         --  for evaluating a function (prior to calling) need:
                         --   - function obj
                         --   - list of args
-                        --  for TCO within a function, need:
-                        --   - calling function name
+                        --
+                        -- TODO: for TCO within a function, need:
+                        --   - calling function name (or some unique ID, for lambda's)
                         --   - calling function arg values
                         --  may be able to have a single frame object take care of both
                         --  purposes. but before implementing this, do a bit more research
@@ -142,6 +146,9 @@ data LispVal = Atom String
          -- ^Continuation
  	| Nil String
          -- ^Internal use only; do not use this type directly.
+
+makeNullContinuation :: Env -> LispVal
+makeNullContinuation env = Continuation env [] $ Nil ""
 
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b
