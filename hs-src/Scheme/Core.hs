@@ -123,18 +123,21 @@ evalLisp env lisp = macroEval env lisp >>= (eval env (makeNullContinuation env))
  - finally return a result.
  - -}
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-continueEval _ cont val = do
-  case cont of
-    Continuation cEnv cBody cCont -> do
+continueEval _ cont@(Continuation cEnv cBody cCont cFunc cArgs) val = do
+  case cFunc of
+    Just (Bool False) -> -- TODO: function needs to eval'd, then args
+    Just func -> -- TODO: eval next argument, unless we are done, then apply the func
+
+    Nothing -> do
       case cBody of
 --      case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
         [] -> do
           case cCont of
-            Continuation nEnv nBody nCont -> continueEval nEnv cCont val
+            Continuation nEnv nBody nCont nFunc nArgs -> continueEval nEnv cCont val
             _ -> return val
-        [lv] -> eval cEnv (Continuation cEnv [] cCont) lv --val
+        [lv] -> eval cEnv (Continuation cEnv [] cCont Nothing Nothing) lv --val
 --        [lv] -> eval cEnv (Continuation cEnv [] cCont) (trace ("clv => " ++ show lv) lv) --val
-        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont) lv
+        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing) lv
 --        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs) cCont) (trace ("lv:lvs, (lv) => " ++ show lv) lv)
     _ -> return val
 
@@ -363,11 +366,12 @@ eval env cont (List [Atom "call/cc", proc]) = do
 
 
 eval env cont (List (function : args)) = do
---  func <- eval env cont function
---  argVals <- mapM (eval env cont) args
+    continueEval env (Continuation env (function : args) (makeNullContinuation env) (Just $ Bool False) $ Just []) $ Nil ""  
+{-
   func <- eval env (makeNullContinuation env) function -- TODO: almost certainly need to pull this into the continuation
   argVals <- mapM (eval env (makeNullContinuation env)) args -- TODO: almost certainly need to pull this into the continuation
   apply cont func argVals
+-}
 
 --Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval env cont badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
@@ -424,7 +428,7 @@ makeNormalFunc = makeFunc Nothing
 makeVarargs = makeFunc . Just . showVal
 
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
-apply _ c@(Continuation env _ _) args = do
+apply _ c@(Continuation env _ _ _ _) args = do
   if (toInteger $ length args) /= 1 
     then throwError $ NumArgs 1 args
     else continueEval env c $ head args -- may not be correct, what happens if call/cc is an inner part of a list?
@@ -435,7 +439,7 @@ apply _ c@(Continuation env _ _) args = do
       -- this would work for return and other simple examples
 apply _ (IOFunc func) args = func args
 apply _ (PrimitiveFunc func) args = liftThrows $ func args
-apply cont (Func aparams avarargs abody aclosure _) args =
+apply cont f@(Func aparams avarargs abody aclosure _) args =
   if num aparams /= num args && avarargs == Nothing
      then throwError $ NumArgs (num aparams) args
      else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
@@ -447,7 +451,7 @@ apply cont (Func aparams avarargs abody aclosure _) args =
         -- not creating a new continuation object if the same function is being
         -- called with the same parameters.
         --
-        evalBody body env = continueEval env (Continuation env body cont) $ Nil ""
+        evalBody body env = continueEval env (Continuation env body cont Nothing Nothing) $ Nil ""
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
@@ -878,7 +882,7 @@ isDottedList ([DottedList _ _]) = return $ Bool True
 isDottedList _ = return $  Bool False
 
 isProcedure :: [LispVal] -> ThrowsError LispVal
-isProcedure ([Continuation _ _ _]) = return $ Bool True
+isProcedure ([Continuation _ _ _ _ _]) = return $ Bool True
 isProcedure ([PrimitiveFunc _]) = return $ Bool True
 isProcedure ([Func _ _ _ _ _]) = return $ Bool True
 isProcedure ([IOFunc _]) = return $ Bool True
