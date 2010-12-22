@@ -145,18 +145,22 @@ continueEval _ cont@(Continuation cEnv cBody cCont cFunc Nothing) _ = do
     -- need to call back into the cont later on, probably after
     -- calling one of the makefunc variants? need to make sure
     -- changing those calls does not break anything else
-    eval cEnv (Continuation cEnv cBody cCont cFunc (Just [])) (fromJust cFunc)
+    eval cEnv (Continuation cEnv cBody cCont (Just $ Nil "") (Just [])) (fromJust cFunc)
+--    continueEval cEnv (Continuation cEnv cBody cCont cFunc (Just [])) =<< eval cEnv (Continuation cEnv cBody cCont (Just $ Nil "") (Just [])) (fromJust cFunc)
+    -- TODO: above call to continueEval is just temporary; this needs to be called from the proper place(s) in eval
 
 continueEval _ cont@(Continuation cEnv cBody cCont (Just cFunc) (Just cArgs)) val = do 
-    if length cArgs == 0
-       then case cBody of
+--    if length cArgs == 0 && cFunc == (Nil "")
+    case cFunc of
+       Nil _ -> do
+            case (trace ("cBody1: " ++ show cBody) cBody) of
                 [] -> apply cCont cFunc []
                 [arg] -> do -- Eval the arg, but keep in mind val contains the function
                             eval cEnv (Continuation cEnv [] cCont (Just val) (Just cArgs)) arg
                 (arg : args) -> do -- Peel off next arg and evaluate it, saving function
-                                   eval cEnv (Continuation cEnv args cCont (Just val) (Just cArgs)) arg
-       else case cBody of
-                [] -> apply cCont cFunc (cArgs ++ [val]) -- No more arguments, call the function
+                                   eval cEnv (Continuation cEnv args cCont (Just (trace ("val: " ++ show val) val)) (Just cArgs)) arg
+       o -> case (trace ("cBody2: " ++ show cBody) cBody) of
+                [] -> apply cCont cFunc (trace ("args: " ++ show (cArgs ++ [val])) (cArgs ++ [val])) -- No more arguments, call the function
                 [arg] -> do -- Evaluate the last arg
                             eval cEnv (Continuation cEnv [] cCont (Just cFunc) (Just $ cArgs ++ [val])) arg
                 (arg : args) -> do -- Peel off next arg and evaluate it
@@ -392,7 +396,7 @@ eval env cont (List (function : args)) = do
   func <- eval env (makeNullContinuation env) function -- TODO: almost certainly need to pull this into the continuation
   argVals <- mapM (eval env (makeNullContinuation env)) args -- TODO: almost certainly need to pull this into the continuation
   apply cont func argVals
---} 
+-- } 
 
 --Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval env cont badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
