@@ -123,17 +123,8 @@ evalLisp env lisp = macroEval env lisp >>= (eval env (makeNullContinuation env))
  - finally return a result.
  - -}
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-continueEval _ cont@(Continuation cEnv cBody cCont cFunc cArgs) val = do
-  case cFunc of
-    Just (Bool False) -> -- TODO: function needs to eval'd, then args
-    -- need to call back into the cont later on, probably after
-    -- calling one of the makefunc variants? need to make sure
-    -- changing those calls does not break anything else
-      eval cEnv (Continuation cEnv cBody cCont ?? cArgs) val 
-    Just func -> -- TODO: eval next argument, unless we are done, then apply the func
-
-    Nothing -> do
-      case cBody of
+continueEval _ cont@(Continuation cEnv cBody cCont cFunc@Nothing cArgs@Nothing) val = do
+    case cBody of
 --      case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
         [] -> do
           case cCont of
@@ -143,8 +134,34 @@ continueEval _ cont@(Continuation cEnv cBody cCont cFunc cArgs) val = do
 --        [lv] -> eval cEnv (Continuation cEnv [] cCont) (trace ("clv => " ++ show lv) lv) --val
         (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing) lv
 --        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs) cCont) (trace ("lv:lvs, (lv) => " ++ show lv) lv)
-    _ -> return val
+{-
+continueEval _ cont@(Continuation cEnv cBody cCont cFunc Nothing) _ = do
+    -- This section is called when we are evaluating a function call
+    -- First the function needs to be eval'd. Then once that is done,
+    -- We will drop into the section below to eval each argument.
+    -- Once all that is done, the function can be called.
+    --
+    -- Notes: function needs to eval'd, then args
+    -- need to call back into the cont later on, probably after
+    -- calling one of the makefunc variants? need to make sure
+    -- changing those calls does not break anything else
+    eval cEnv (Continuation cEnv cBody cCont cFunc (Just [])) (fromJust cFunc)
 
+continueEval _ cont@(Continuation cEnv cBody cCont (Just cFunc) (Just cArgs)) val = do 
+    if length cArgs == 0
+       then case cBody of
+                [] -> apply cCont cFunc []
+                [arg] -> do -- Eval the arg, but keep in mind val contains the function
+                            eval cEnv (Continuation cEnv [] cCont (Just val) (Just cArgs)) arg
+                (arg : args) -> do -- Peel off next arg and evaluate it, saving function
+                                   eval cEnv (Continuation cEnv args cCont (Just val) (Just cArgs)) arg
+       else case cBody of
+                [] -> apply cCont cFunc (cArgs ++ [val]) -- No more arguments, call the function
+                [arg] -> do -- Evaluate the last arg
+                            eval cEnv (Continuation cEnv [] cCont (Just cFunc) (Just $ cArgs ++ [val])) arg
+                (arg : args) -> do -- Peel off next arg and evaluate it
+                                   eval cEnv (Continuation cEnv args cCont (Just cFunc) (Just $ cArgs ++ [val])) arg
+-}
 -- |Core eval function
 --
 --  NOTE:  This function does not include macro support and should not be called directly. Instead, use 'evalLisp'
@@ -370,12 +387,12 @@ eval env cont (List [Atom "call/cc", proc]) = do
 
 
 eval env cont (List (function : args)) = do
-    continueEval env (Continuation env (function : args) cont (Just $ Bool False) $ Just []) $ Nil ""  
-{- TODO: obsolete code, delete once above is working
+--    continueEval env (Continuation env (args) cont (Just function) Nothing) $ Nil ""  
+--{ - TODO: obsolete code, delete once above is working
   func <- eval env (makeNullContinuation env) function -- TODO: almost certainly need to pull this into the continuation
   argVals <- mapM (eval env (makeNullContinuation env)) args -- TODO: almost certainly need to pull this into the continuation
   apply cont func argVals
--}
+--} 
 
 --Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval env cont badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
