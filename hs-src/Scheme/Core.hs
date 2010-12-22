@@ -126,6 +126,10 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 continueEval _ cont@(Continuation cEnv cBody cCont cFunc cArgs) val = do
   case cFunc of
     Just (Bool False) -> -- TODO: function needs to eval'd, then args
+    -- need to call back into the cont later on, probably after
+    -- calling one of the makefunc variants? need to make sure
+    -- changing those calls does not break anything else
+      eval cEnv (Continuation cEnv cBody cCont ?? cArgs) val 
     Just func -> -- TODO: eval next argument, unless we are done, then apply the func
 
     Nothing -> do
@@ -366,8 +370,8 @@ eval env cont (List [Atom "call/cc", proc]) = do
 
 
 eval env cont (List (function : args)) = do
-    continueEval env (Continuation env (function : args) (makeNullContinuation env) (Just $ Bool False) $ Just []) $ Nil ""  
-{-
+    continueEval env (Continuation env (function : args) cont (Just $ Bool False) $ Just []) $ Nil ""  
+{- TODO: obsolete code, delete once above is working
   func <- eval env (makeNullContinuation env) function -- TODO: almost certainly need to pull this into the continuation
   argVals <- mapM (eval env (makeNullContinuation env)) args -- TODO: almost certainly need to pull this into the continuation
   apply cont func argVals
