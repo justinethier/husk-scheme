@@ -135,6 +135,13 @@ continueEval _ cont@(Continuation cEnv cBody cCont cFunc@Nothing cArgs@Nothing) 
         (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing) lv
 --        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs) cCont) (trace ("lv:lvs, (lv) => " ++ show lv) lv)
 
+-- TODO:
+-- big bug with this! just try running:
+-- (+ `("test complete" "passed" ,1))
+-- versus
+-- (list `("test complete" "passed" ,1))
+-- and look at the different trace output. something funky is going on.
+-- perhaps this is because conts are not fully implemented? 
 continueEval _ cont@(Continuation cEnv cBody cCont cFunc Nothing) _ = do
     -- This section is called when we are evaluating a function call
     -- First the function needs to be eval'd. Then once that is done,
