@@ -3,6 +3,10 @@
 (assert/equal `(list ,(+ 1 2) 4)
 	      '(list 3 4))
 
+(assert/equal
+   (list `("test complete" "passed" ,1))
+  '(("test complete" "passed" 1)))
+
 ; Test case from R5RS
 (assert/equal (let ((name 'a)) `(list ,name ',name))
               '(list a (quote a)))
