@@ -156,6 +156,17 @@ continueEval _ cont@(Continuation cEnv cBody cCont cFunc Nothing) _ = do
 --    continueEval cEnv (Continuation cEnv cBody cCont cFunc (Just [])) =<< eval cEnv (Continuation cEnv cBody cCont (Just $ Nil "") (Just [])) (fromJust cFunc)
     -- TODO: above call to continueEval is just temporary; this needs to be called from the proper place(s) in eval
 
+
+-- Something to think about:
+-- Hack: attempting to "protect" last func/arg params by placing them within
+-- an inner Continuation object. If this works it will (hopefully) be more of
+-- a 1.0 solution than a permanent one. A better approach might be using some form
+-- of currying to evaluate a function, however have not thought through exactly
+-- how that would be implemented, and whether it would require transformation
+-- of the Scheme AST itself...
+
+
+
 continueEval _ cont@(Continuation cEnv cBody cCont (Just cFunc) (Just cArgs)) val = do 
 --    if length cArgs == 0 && cFunc == (Nil "")
     case cFunc of
@@ -192,11 +203,15 @@ eval env cont val@(HashTable _) = continueEval env cont val
 eval env cont val@(Vector _)    = continueEval env cont val
 eval env cont (Atom a)          = continueEval env cont =<< getVar env a
 eval env cont (List [Atom "quote", val])         = continueEval env cont val
+
+-- The way it is written now, quasiquotation does not support
+-- being part of a continuation, so we use the null continuation
+-- within it for right now
 eval envi cont (List [Atom "quasiquote", value]) = continueEval envi cont =<< doUnQuote envi value
   where doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
         doUnQuote env val = do
           case val of
-            List [Atom "unquote", val] -> eval env cont val
+            List [Atom "unquote", val] -> eval env (makeNullContinuation env) val
             List (x : xs) -> unquoteListM env (x:xs) >>= return . List
             DottedList xs x -> do
               rxs <- unquoteListM env xs >>= return 
@@ -210,12 +225,12 @@ eval envi cont (List [Atom "quasiquote", value]) = continueEval envi cont =<< do
               let len = length (elems vec)
               vList <- unquoteListM env $ elems vec >>= return
               return $ Vector $ listArray (0, len) vList
-            _ -> eval env cont (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"... 
+            _ -> eval env (makeNullContinuation env) (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"... 
         unquoteListM env lst = foldlM (unquoteListFld env) ([]) lst
         unquoteListFld env (acc) val = do
             case val of
                 List [Atom "unquote-splicing", val] -> do
-                    value <- eval env cont val
+                    value <- eval env (makeNullContinuation env) val
                     case value of
                         List v -> return $ (acc ++ v)
                         -- Question: In which cases should I generate a type error if value is not a list?
@@ -289,16 +304,21 @@ eval env cont (List [Atom "define", Atom var, form]) = do
   result <- eval env (makeNullContinuation env) form >>= defineVar env var
   continueEval env cont result
 
-eval env cont (List (Atom "define" : List (Atom var : params) : body )) = 
-  makeNormalFunc env params body >>= defineVar env var
-eval env cont (List (Atom "define" : DottedList (Atom var : params) varargs : body)) = 
-  makeVarargs varargs env params body >>= defineVar env var
-eval env cont (List (Atom "lambda" : List params : body)) = 
-  makeNormalFunc env params body
-eval env cont (List (Atom "lambda" : DottedList params varargs : body)) = 
-  makeVarargs varargs env params body
-eval env cont (List (Atom "lambda" : varargs@(Atom _) : body)) = 
-  makeVarargs varargs env [] body
+eval env cont (List (Atom "define" : List (Atom var : params) : body )) = do
+  result <- (makeNormalFunc env params body >>= defineVar env var)
+  continueEval env cont result
+eval env cont (List (Atom "define" : DottedList (Atom var : params) varargs : body)) = do
+  result <- (makeVarargs varargs env params body >>= defineVar env var)
+  continueEval env cont result
+eval env cont (List (Atom "lambda" : List params : body)) = do
+  result <- makeNormalFunc env params body
+  continueEval env cont result
+eval env cont (List (Atom "lambda" : DottedList params varargs : body)) = do
+  result <- makeVarargs varargs env params body
+  continueEval env cont result
+eval env cont (List (Atom "lambda" : varargs@(Atom _) : body)) = do
+  result <- makeVarargs varargs env [] body
+  continueEval env cont result
 
 eval env cont (List [Atom "string-fill!", Atom var, character]) = do 
   str <- eval env (makeNullContinuation env) =<< getVar env var 
