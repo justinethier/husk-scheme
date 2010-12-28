@@ -145,9 +145,9 @@ continueEval _ cont@(Continuation cEnv cBody cCont cFunc Nothing) _ = do
     -- need to call back into the cont later on, probably after
     -- calling one of the makefunc variants? need to make sure
     -- changing those calls does not break anything else
-    eval cEnv (Continuation cEnv cBody cCont (Just $ Nil "") (Just (trace ("calling function:" ++ show (fromJust cFunc)) []))) (fromJust cFunc)
---    continueEval cEnv (Continuation cEnv cBody cCont cFunc (Just [])) =<< eval cEnv (Continuation cEnv cBody cCont (Just $ Nil "") (Just [])) (fromJust cFunc)
-    -- TODO: above call to continueEval is just temporary; this needs to be called from the proper place(s) in eval
+    case cBody of
+      [] -> eval cEnv (Continuation cEnv [Nil ""] cCont (Just $ Nil "") (Just (trace ("calling function:" ++ show (fromJust cFunc)) []))) (fromJust cFunc)
+      other -> eval cEnv (Continuation cEnv cBody cCont (Just $ Nil "") (Just (trace ("calling function:" ++ show (fromJust cFunc)) []))) (fromJust cFunc)
 
 
 -- Something to think about:
@@ -158,7 +158,9 @@ continueEval _ cont@(Continuation cEnv cBody cCont cFunc Nothing) _ = do
 -- how that would be implemented, and whether it would require transformation
 -- of the Scheme AST itself...
 
-
+-- TODO: beginning to wonder if this approach will ever work (?)
+-- think about this - can we use haskell lambda functions to
+-- achieve the same goal?
 
 continueEval _ cont@(Continuation cEnv cBody cCont (Just cFunc) (Just cArgs)) val = do 
 --    if length cArgs == 0 && cFunc == (Nil "")
@@ -166,17 +168,20 @@ continueEval _ cont@(Continuation cEnv cBody cCont (Just cFunc) (Just cArgs)) va
        Nil _ -> do
             case (trace ("cBody1: " ++ show cBody) cBody) of
 --            case cBody of
-                [] -> continueEval cEnv cCont =<< apply cCont val [] -- TODO: ContinueEval is a temporary stopgap, here and in below (apply)
+                [] -> continueEval cEnv cCont =<< apply cCont cFunc [] -- TODO: ContinueEval is a temporary stopgap, here and in below (apply)
+                [Nil ""] -> continueEval cEnv cCont =<< apply cCont val [] -- TODO: ContinueEval is a temporary stopgap, here and in below (apply)
                 [arg] -> do -- Eval the arg, but keep in mind val contains the function
-                            eval cEnv (Continuation cEnv [] cCont (Just val) (Just cArgs)) arg
+                            eval cEnv (Continuation cEnv [Nil ""] cCont (Just val) (Just cArgs)) arg
                 (arg : args) -> do -- Peel off next arg and evaluate it, saving function
                                    eval cEnv (Continuation cEnv args cCont (Just val) (Just cArgs)) arg
        o -> case (trace ("cBody2: " ++ show cBody) cBody) of
-                [] -> continueEval cEnv cCont =<< apply cCont cFunc (trace ("args: " ++ show (cArgs ++ [val]) ++ " func: " ++ show cFunc) (cArgs ++ [val])) -- No more arguments, call the function
+                [] -> continueEval cEnv cCont =<< apply cCont cFunc (trace ("args: " ++ show (cArgs) ++ " func: " ++ show cFunc) (cArgs)) -- No more arguments, call the function
+                -- Nil value indicates that all args have been processed
+                [Nil ""] -> continueEval cEnv cCont =<< apply cCont cFunc (trace ("args (Nil): " ++ show (cArgs ++ [val]) ++ " func: " ++ show cFunc) (cArgs ++ [val])) -- No more arguments, call the function
 --       o -> case cBody of
 --                [] -> apply cCont cFunc (cArgs ++ [val]) -- No more arguments, call the function
                 [arg] -> do -- Evaluate the last arg
-                            eval cEnv (Continuation cEnv [] cCont (Just cFunc) (Just $ cArgs ++ [val])) arg
+                            eval cEnv (Continuation cEnv [Nil ""] cCont (Just cFunc) (Just $ cArgs ++ [val])) arg
                 (arg : args) -> do -- Peel off next arg and evaluate it
                                    eval cEnv (Continuation cEnv args cCont (Just cFunc) (Just $ cArgs ++ [val])) arg
 
