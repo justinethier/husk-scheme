@@ -135,13 +135,6 @@ continueEval _ cont@(Continuation cEnv cBody cCont cFunc@Nothing cArgs@Nothing) 
         (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing) lv
 --        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs) cCont) (trace ("lv:lvs, (lv) => " ++ show lv) lv)
 
--- TODO:
--- big bug with this! just try running:
--- (+ `("test complete" "passed" ,1))
--- versus
--- (list `("test complete" "passed" ,1))
--- and look at the different trace output. something funky is going on.
--- perhaps this is because conts are not fully implemented? 
 continueEval _ cont@(Continuation cEnv cBody cCont cFunc Nothing) _ = do
     -- This section is called when we are evaluating a function call
     -- First the function needs to be eval'd. Then once that is done,
@@ -152,7 +145,7 @@ continueEval _ cont@(Continuation cEnv cBody cCont cFunc Nothing) _ = do
     -- need to call back into the cont later on, probably after
     -- calling one of the makefunc variants? need to make sure
     -- changing those calls does not break anything else
-    eval cEnv (Continuation cEnv cBody cCont (Just $ Nil "") (Just [])) (fromJust cFunc)
+    eval cEnv (Continuation cEnv cBody cCont (Just $ Nil "") (Just (trace ("calling function:" ++ show (fromJust cFunc)) []))) (fromJust cFunc)
 --    continueEval cEnv (Continuation cEnv cBody cCont cFunc (Just [])) =<< eval cEnv (Continuation cEnv cBody cCont (Just $ Nil "") (Just [])) (fromJust cFunc)
     -- TODO: above call to continueEval is just temporary; this needs to be called from the proper place(s) in eval
 
@@ -173,13 +166,13 @@ continueEval _ cont@(Continuation cEnv cBody cCont (Just cFunc) (Just cArgs)) va
        Nil _ -> do
             case (trace ("cBody1: " ++ show cBody) cBody) of
 --            case cBody of
-                [] -> apply cCont val []
+                [] -> continueEval cEnv cCont =<< apply cCont val [] -- TODO: ContinueEval is a temporary stopgap, here and in below (apply)
                 [arg] -> do -- Eval the arg, but keep in mind val contains the function
                             eval cEnv (Continuation cEnv [] cCont (Just val) (Just cArgs)) arg
                 (arg : args) -> do -- Peel off next arg and evaluate it, saving function
                                    eval cEnv (Continuation cEnv args cCont (Just val) (Just cArgs)) arg
        o -> case (trace ("cBody2: " ++ show cBody) cBody) of
-                [] -> apply cCont cFunc (trace ("args: " ++ show (cArgs ++ [val])) (cArgs ++ [val])) -- No more arguments, call the function
+                [] -> continueEval cEnv cCont =<< apply cCont cFunc (trace ("args: " ++ show (cArgs ++ [val]) ++ " func: " ++ show cFunc) (cArgs ++ [val])) -- No more arguments, call the function
 --       o -> case cBody of
 --                [] -> apply cCont cFunc (cArgs ++ [val]) -- No more arguments, call the function
                 [arg] -> do -- Evaluate the last arg
