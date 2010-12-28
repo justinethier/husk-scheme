@@ -124,8 +124,8 @@ evalLisp env lisp = macroEval env lisp >>= (eval env (makeNullContinuation env))
  - -}
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 continueEval _ cont@(Continuation cEnv cBody cCont cFunc@Nothing cArgs@Nothing) val = do
---    case cBody of
-      case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
+    case cBody of
+--    case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
         [] -> do
           case cCont of
             Continuation nEnv nBody nCont nFunc nArgs -> continueEval nEnv cCont val
@@ -135,6 +135,7 @@ continueEval _ cont@(Continuation cEnv cBody cCont cFunc@Nothing cArgs@Nothing) 
         (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing) lv
 --        (lv : lvs) -> eval cEnv (Continuation cEnv (trace ("clvs => " ++ show lvs) lvs) cCont) (trace ("lv:lvs, (lv) => " ++ show lv) lv)
 
+{- Alpha code for next version...
 continueEval _ cont@(Continuation cEnv cBody cCont cFunc Nothing) _ = do
     -- This section is called when we are evaluating a function call
     -- First the function needs to be eval'd. Then once that is done,
@@ -161,6 +162,9 @@ continueEval _ cont@(Continuation cEnv cBody cCont cFunc Nothing) _ = do
 -- TODO: beginning to wonder if this approach will ever work (?)
 -- think about this - can we use haskell lambda functions to
 -- achieve the same goal?
+--
+-- alternatively, maybe shelf this for now and just get this branch good enough for a release??
+-- TCO is the missing component
 
 continueEval _ cont@(Continuation cEnv cBody cCont (Just cFunc) (Just cArgs)) val = do 
 --    if length cArgs == 0 && cFunc == (Nil "")
@@ -184,6 +188,7 @@ continueEval _ cont@(Continuation cEnv cBody cCont (Just cFunc) (Just cArgs)) va
                             eval cEnv (Continuation cEnv [Nil ""] cCont (Just cFunc) (Just $ cArgs ++ [val])) arg
                 (arg : args) -> do -- Peel off next arg and evaluate it
                                    eval cEnv (Continuation cEnv args cCont (Just cFunc) (Just $ cArgs ++ [val])) arg
+-}
 
 -- |Core eval function
 --
@@ -419,12 +424,12 @@ eval env cont (List [Atom "call/cc", proc]) = do
 
 
 eval env cont (List (function : args)) = do
-    continueEval env (Continuation env (args) cont (Just function) Nothing) $ Nil ""  
-{- TODO: obsolete code, delete once above is working
+-- Alpha code for next version:    continueEval env (Continuation env (args) cont (Just function) Nothing) $ Nil ""  
+-- { - TODO: obsolete code, delete once above is working
   func <- eval env (makeNullContinuation env) function -- TODO: almost certainly need to pull this into the continuation
   argVals <- mapM (eval env (makeNullContinuation env)) args -- TODO: almost certainly need to pull this into the continuation
   apply cont func argVals
--} 
+-- } 
 
 --Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval env cont badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
