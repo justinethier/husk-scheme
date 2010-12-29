@@ -504,12 +504,25 @@ apply cont f@(Func aparams avarargs abody aclosure _) args =
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
         --
-        -- TODO: this works, but at the cost of breaking proper tail calls due to 
-        -- high mem usage. To fix this, we need to implement TCO, for example, by
-        -- not creating a new continuation object if the same function is being
-        -- called with the same parameters.
+        -- Continue evaluation within the body, preserving the outer continuation.
         --
-        evalBody body env = continueEval env (Continuation env body cont Nothing Nothing) $ Nil ""
+        -- This link was helpful for implementing this, and has a *lot* of other useful information:
+        -- http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_73.html#SEC80
+        --
+        -- What we are doing now is simply not saving a continuation for tail calls. For now this may
+        -- be good enough, although it may need to be enhanced in the future in order to properly
+        -- detect all tail calls. See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
+        --
+        evalBody body env = case cont of
+            Continuation cEnv cBody cCont _ _ -> if length cBody == 0
+                then continueWithContinuation env body cCont
+                else continueWithContinuation env body cont
+            _ -> continueWithContinuation env body cont
+
+        -- Shortcut for calling continueEval
+        continueWithContinuation env body continuation = 
+            continueEval env (Continuation env body continuation Nothing Nothing) $ Nil ""
+
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
