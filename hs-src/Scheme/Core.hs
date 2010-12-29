@@ -547,6 +547,9 @@ readProc [Port port] = (liftIO $ hGetLine port) >>= liftThrows . readExpr
 writeProc :: [LispVal] -> IOThrowsError LispVal
 writeProc [obj] = writeProc [obj, Port stdout]
 writeProc [obj, Port port] = liftIO $ hPrint port obj >> (return $ Nil "")
+writeProc other = if length other == 2
+                     then throwError $ TypeMismatch "(value port)" $ List other 
+                     else throwError $ NumArgs 2 other
 
 readContents :: [LispVal] -> IOThrowsError LispVal
 readContents [String filename] = liftM String $ liftIO $ readFile filename
