@@ -812,6 +812,8 @@ hashTblExists [(HashTable ht), key@(_)] = do
   case Data.Map.lookup key ht of
     Just _ -> return $ Bool True
     Nothing -> return $ Bool False
+hashTblExists [] = throwError $ NumArgs 2 []
+hashTblExists args@(_ : _) = throwError $ NumArgs 2 args
 
 hashTblRef [(HashTable ht), key@(_)] = do
   case Data.Map.lookup key ht of
@@ -945,6 +947,8 @@ listToString :: [LispVal] -> ThrowsError LispVal
 listToString [(List [])] = return $ String ""
 listToString [(List l)] = buildString l
 listToString [badType] = throwError $ TypeMismatch "list" badType
+listToString [] = throwError $ NumArgs 1 []
+listToString args@(_ : _) = throwError $ NumArgs 1 args
 
 stringCopy :: [LispVal] -> ThrowsError LispVal
 stringCopy [String s] = return $ String s
@@ -979,10 +983,12 @@ isSymbol _ = return $ Bool False
 symbol2String :: [LispVal] -> ThrowsError LispVal
 symbol2String ([Atom a]) = return $ String a
 symbol2String [notAtom] = throwError $ TypeMismatch "symbol" notAtom
+symbol2String [] = throwError $ NumArgs 1 []
+symbol2String args@(_ : _) = throwError $ NumArgs 1 args
 
 string2Symbol :: [LispVal] -> ThrowsError LispVal
-string2Symbol [] = throwError $ NumArgs 1 []
 string2Symbol ([String s]) = return $ Atom s
+string2Symbol [] = throwError $ NumArgs 1 []
 string2Symbol [notString] = throwError $ TypeMismatch "string" notString
 string2Symbol args@(_ : _) = throwError $ NumArgs 1 args
 
