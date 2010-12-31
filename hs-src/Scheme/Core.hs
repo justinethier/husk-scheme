@@ -37,8 +37,7 @@ import qualified Data.Map
 import Maybe
 import List
 import IO hiding (try)
-
-import Debug.Trace
+--import Debug.Trace
 
 
 {-| Evaluate a string containing Scheme code.
@@ -123,12 +122,12 @@ evalLisp env lisp = macroEval env lisp >>= (eval env (makeNullContinuation env))
  - finally return a result.
  - -}
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-continueEval _ cont@(Continuation cEnv cBody cCont cFunc@Nothing cArgs@Nothing) val = do
+continueEval _ (Continuation cEnv cBody cCont Nothing Nothing) val = do
     case cBody of
 --    case (trace ("cBody => " ++ show cBody ++ " val => " ++ show val) cBody) of
         [] -> do
           case cCont of
-            Continuation nEnv nBody nCont nFunc nArgs -> continueEval nEnv cCont val
+            Continuation nEnv _ _ _ _ -> continueEval nEnv cCont val
             _ -> return val
         [lv] -> eval cEnv (Continuation cEnv [] cCont Nothing Nothing) lv --val
 --        [lv] -> eval cEnv (Continuation cEnv [] cCont) (trace ("clv => " ++ show lv) lv) --val
@@ -189,6 +188,8 @@ continueEval _ cont@(Continuation cEnv cBody cCont (Just cFunc) (Just cArgs)) va
                 (arg : args) -> do -- Peel off next arg and evaluate it
                                    eval cEnv (Continuation cEnv args cCont (Just cFunc) (Just $ cArgs ++ [val])) arg
 -}
+
+continueEval _ _ _ = throwError $ Default "Internal error in continueEval"
 
 -- |Core eval function
 --
@@ -253,13 +254,13 @@ eval env cont (List [Atom "if", pred, conseq, alt]) =
     do result <- eval env cont pred
        case result of
          Bool False -> eval env cont alt
-         otherwise -> eval env cont conseq
+         _ -> eval env cont conseq
 
 eval env cont (List [Atom "if", pred, conseq]) = 
     do result <- eval env cont pred
        case result of
          Bool True -> eval env cont conseq
-         otherwise -> eval env cont $ List []
+         _ -> eval env cont $ List []
 
 eval env cont (List (Atom "cond" : clauses)) = 
   if length clauses == 0
@@ -268,12 +269,12 @@ eval env cont (List (Atom "cond" : clauses)) =
        let c =  clauses !! 0 -- First clause
        let cs = tail clauses -- other clauses
        test <- case c of
-         List (Atom "else" : expr) -> eval env cont $ Bool True
-         List (cond : expr) -> eval env cont cond
+         List (Atom "else" : _) -> eval env cont $ Bool True
+         List (cond : _) -> eval env cont cond
          badType -> throwError $ TypeMismatch "clause" badType 
        case test of
          Bool True -> evalCond env cont c
-         otherwise -> eval env cont $ List $ (Atom "cond" : cs)
+         _ -> eval env cont $ List $ (Atom "cond" : cs)
 
 eval env cont (List (Atom "case" : keyAndClauses)) = 
     do let key = keyAndClauses !! 0
@@ -326,47 +327,53 @@ eval env cont (List (Atom "lambda" : varargs@(Atom _) : body)) = do
 eval env cont (List [Atom "string-fill!", Atom var, character]) = do 
   str <- eval env (makeNullContinuation env) =<< getVar env var 
   chr <- eval env (makeNullContinuation env) character
-  result <- (eval env (makeNullContinuation env) $ fillStr(str, chr)) >>= setVar env var
+  result <- ((eval env (makeNullContinuation env) =<< fillStr(str, chr))) >>= setVar env var
   continueEval env cont result
   where fillStr (String str, Char chr) = doFillStr (String "", Char chr, length str)
   
         doFillStr (String str, Char chr, left) = do
         if left == 0
-           then String str
+           then return $ String str
            else doFillStr(String $ chr : str, Char chr, left - 1)
 
 eval env cont (List [Atom "string-set!", Atom var, index, character]) = do 
   idx <- eval env (makeNullContinuation env) index
   str <- eval env (makeNullContinuation env) =<< getVar env var
-  result <- (eval env (makeNullContinuation env) $ substr(str, character, idx)) >>= setVar env var
+  result <- ((eval env (makeNullContinuation env) =<< substr(str, character, idx))) >>= setVar env var
   continueEval env cont result
   where substr (String str, Char char, Number index) = do
-                              String $ (take (fromInteger index) . drop 0) str ++ 
+                              return $ String $ (take (fromInteger index) . drop 0) str ++ 
                                        [char] ++
                                        (take (length str) . drop (fromInteger index + 1)) str
+{- TODO: error handling
+ - also need to add unit tests for this...
+ - substr (String _, Char _, n) = throwError $ TypeMismatch "number" n
+        substr (String _, c, _) = throwError $ TypeMismatch "character" c
+        substr (s, _, _) = throwError $ TypeMismatch "string" s
     -- TODO: error handler
+-}
 
 eval env cont (List [Atom "vector-set!", Atom var, index, object]) = do 
   idx <- eval env (makeNullContinuation env) index
   obj <- eval env (makeNullContinuation env) object
   vec <- eval env (makeNullContinuation env) =<< getVar env var
-  result <- (eval env (makeNullContinuation env) $ (updateVector vec idx obj)) >>= setVar env var
+  result <- ((eval env (makeNullContinuation env) =<< (updateVector vec idx obj))) >>= setVar env var
   continueEval env cont result
-  where updateVector (Vector vec) (Number idx) obj = Vector $ vec//[(fromInteger idx, obj)]
-        -- TODO: error handler?
--- TODO: error handler? - eval env (List [Atom "vector-set!", args]) = throwError $ NumArgs 2 args
+  where updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
+        updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec//[(fromInteger idx, obj)]
+        updateVector v _ _ = throwError $ TypeMismatch "vector" v
 
 eval env cont (List [Atom "vector-fill!", Atom var, object]) = do 
   obj <- eval env (makeNullContinuation env) object
   vec <- eval env (makeNullContinuation env) =<< getVar env var
-  result <- (eval env (makeNullContinuation env) $ (fillVector vec obj)) >>= setVar env var
+  result <- ((eval env (makeNullContinuation env) =<< (fillVector vec obj))) >>= setVar env var
   continueEval env cont result
-  where fillVector (Vector vec) obj = do
+  where fillVector :: LispVal -> LispVal -> IOThrowsError LispVal
+        fillVector (Vector vec) obj = do
           let l = replicate (lenVector vec) obj
-          Vector $ (listArray (0, length l - 1)) l
+          return $ Vector $ (listArray (0, length l - 1)) l
+        fillVector v _ = throwError $ TypeMismatch "vector" v
         lenVector v = length (elems v)
-        -- TODO: error handler?
--- TODO: error handler? - eval env cont (List [Atom "vector-fill!", args]) = throwError $ NumArgs 2 args
 
 eval env cont (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do 
   key <- eval env (makeNullContinuation env) rkey
