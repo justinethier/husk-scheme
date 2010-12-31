@@ -11,14 +11,12 @@
  - -}
 module Scheme.Types where
 import Complex
-import Control.Monad
 import Control.Monad.Error
 import Data.Array
 import Data.IORef
 import qualified Data.Map
 import IO hiding (try)
 import Ratio
-import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
 
 {-  Environment management -}
