@@ -123,7 +123,7 @@ data LispVal = Atom String
          -- ^I/O port
 	| Continuation {closure :: Env,    -- Environment of the continuation
                         body :: [LispVal], -- Code in the body of the continuation
-                        cont :: LispVal    -- Code to resume after body of cont
+                        continuation :: LispVal    -- Code to resume after body of cont
                         , frameFunc :: (Maybe LispVal)
 --                        , frameRawArgs :: (Maybe [LispVal])
                         , frameEvaledArgs :: (Maybe [LispVal])

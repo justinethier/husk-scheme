@@ -397,8 +397,8 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 -- See http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.6
 -- for test cases that are required to ensure apply is not broken by this change. Need
 -- it intact prior to proceeding with CPS and functions
-eval env cont (List [Atom "apply"]) = throwError $ BadSpecialForm "apply" $ String "Function not specified"
-eval env cont (List [Atom "apply", proc]) = throwError $ BadSpecialForm "apply" $ String "Arguments not specified"
+eval _ _ (List [Atom "apply"]) = throwError $ BadSpecialForm "apply" $ String "Function not specified"
+eval _ _ (List [Atom "apply", _]) = throwError $ BadSpecialForm "apply" $ String "Arguments not specified"
 eval env cont (List (Atom "apply" : params)) = do
     -- FUTURE: verify length of list?
     -- TODO: for all Continuations below, will almost certainly need to pull each into this continuation
@@ -411,11 +411,11 @@ eval env cont (List (Atom "apply" : params)) = do
 
 eval env cont (List (Atom "call-with-current-continuation" : args)) = 
   eval env cont (List (Atom "call/cc" : args))
-eval env cont (List [Atom "call/cc"]) = throwError $ Default "Procedure not specified"
+eval _ _ (List [Atom "call/cc"]) = throwError $ Default "Procedure not specified"
 eval env cont (List [Atom "call/cc", proc]) = do
   func <- eval env (makeNullContinuation env) proc 
   case func of
-    PrimitiveFunc func -> liftThrows $ func [cont]
+    PrimitiveFunc f -> liftThrows $ f [cont]
     Func aparams _ _ _ _ ->
       if (toInteger $ length aparams) == 1 
         then apply cont func [cont] 
@@ -432,7 +432,7 @@ eval env cont (List (function : args)) = do
 -- } 
 
 --Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
-eval env cont badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
+eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 -- Helper function for evaluating 'case'
 -- TODO: still need to handle case where nothing matches key
@@ -472,17 +472,19 @@ evalCond env cont (List [_, expr]) = eval env cont expr
 evalCond env cont (List (_ : expr)) = last $ map (eval env cont) expr -- TODO: all expr's need to be evaluated, not sure happening right now
 evalCond _ _ badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
---makeFunc :: forall (m :: * -> *).(Monad m) => Maybe String -> Env -> [LispVal] -> [LispVal] -> m LispVal
-makeFunc varargs env params body = return $ Func (map showVal params) varargs body env False
-{-makeNormalFunc :: Env
+makeFunc :: forall (m :: * -> *).
+            (Monad m) =>
+            Maybe String -> Env -> [LispVal] -> [LispVal] -> m LispVal
+makeFunc varargs env fparams fbody = return $ Func (map showVal fparams) varargs fbody env False
+makeNormalFunc :: (Monad m) => Env
                -> [LispVal]
                -> [LispVal]
-               -> m LispVal-}
+               -> m LispVal
 makeNormalFunc = makeFunc Nothing
-{-makeVarargs :: LispVal  -> Env
+makeVarargs :: (Monad m) => LispVal  -> Env
                         -> [LispVal]
                         -> [LispVal]
-                        -> m LispVal-}
+                        -> m LispVal
 makeVarargs = makeFunc . Just . showVal
 
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
@@ -497,7 +499,7 @@ apply _ c@(Continuation env _ _ _ _) args = do
       -- this would work for return and other simple examples
 apply _ (IOFunc func) args = func args
 apply _ (PrimitiveFunc func) args = liftThrows $ func args
-apply cont f@(Func aparams avarargs abody aclosure _) args =
+apply cont (Func aparams avarargs abody aclosure _) args =
   if num aparams /= num args && avarargs == Nothing
      then throwError $ NumArgs (num aparams) args
      else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
@@ -513,15 +515,15 @@ apply cont f@(Func aparams avarargs abody aclosure _) args =
         -- be good enough, although it may need to be enhanced in the future in order to properly
         -- detect all tail calls. See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
         --
-        evalBody body env = case cont of
-            Continuation cEnv cBody cCont _ _ -> if length cBody == 0
-                then continueWithContinuation env body cCont
-                else continueWithContinuation env body cont
-            _ -> continueWithContinuation env body cont
+        evalBody evBody env = case cont of
+            Continuation _ cBody cCont _ _ -> if length cBody == 0
+                then continueWithContinuation env evBody cCont
+                else continueWithContinuation env evBody cont
+            _ -> continueWithContinuation env evBody cont
 
         -- Shortcut for calling continueEval
-        continueWithContinuation env body continuation = 
-            continueEval env (Continuation env body continuation Nothing Nothing) $ Nil ""
+        continueWithContinuation cwcEnv cwcBody cwcCont = 
+            continueEval cwcEnv (Continuation cwcEnv cwcBody cwcCont Nothing Nothing) $ Nil ""
 
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
@@ -548,6 +550,8 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
 
 makePort :: IOMode -> [LispVal] -> IOThrowsError LispVal
 makePort mode [String filename] = liftM Port $ liftIO $ openFile filename mode
+makePort _ [] = throwError $ NumArgs 1 []
+makePort _ args@(_ : _) = throwError $ NumArgs 1 args
 
 closePort :: [LispVal] -> IOThrowsError LispVal
 closePort [Port port] = liftIO $ hClose port >> (return $ Bool True)
@@ -556,6 +560,7 @@ closePort _ = return $ Bool False
 readProc :: [LispVal] -> IOThrowsError LispVal
 readProc [] = readProc [Port stdin]
 readProc [Port port] = (liftIO $ hGetLine port) >>= liftThrows . readExpr
+readProc args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 
 writeProc :: [LispVal] -> IOThrowsError LispVal
 writeProc [obj] = writeProc [obj, Port stdout]
@@ -566,12 +571,17 @@ writeProc other = if length other == 2
 
 readContents :: [LispVal] -> IOThrowsError LispVal
 readContents [String filename] = liftM String $ liftIO $ readFile filename
+readContents [] = throwError $ NumArgs 1 []
+readContents args@(_ : _) = throwError $ NumArgs 1 args
 
 load :: String -> IOThrowsError [LispVal]
 load filename = (liftIO $ readFile filename) >>= liftThrows . readExprList
+-- TODO: load should not crash interpreter if file does not exist
 
 readAll :: [LispVal] -> IOThrowsError LispVal
 readAll [String filename] = liftM List $ load filename
+readAll [] = throwError $ NumArgs 1 []
+readAll args@(_ : _) = throwError $ NumArgs 1 args
 
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
 primitives = [("+", numAdd),
@@ -718,6 +728,9 @@ boolBinop unpacker op args = if length args /= 2
 
 unaryOp :: (LispVal -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
 unaryOp f [v] = f v
+unaryOp _ [] = throwError $ NumArgs 1 []
+unaryOp _ args@(_ : _) = throwError $ NumArgs 1 args
+
 --numBoolBinop :: (Integer -> Integer -> Bool) -> [LispVal] -> ThrowsError LispVal
 --numBoolBinop = boolBinop unpackNum
 strBoolBinop :: (String -> String -> Bool) -> [LispVal] -> ThrowsError LispVal
