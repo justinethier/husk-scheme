@@ -39,7 +39,6 @@ import List
 import IO hiding (try)
 --import Debug.Trace
 
-
 {-| Evaluate a string containing Scheme code.
 
     For example:
@@ -215,7 +214,7 @@ eval envi cont (List [Atom "quasiquote", value]) = continueEval envi cont =<< do
   where doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
         doUnQuote env val = do
           case val of
-            List [Atom "unquote", val] -> eval env (makeNullContinuation env) val
+            List [Atom "unquote", vval] -> eval env (makeNullContinuation env) vval
             List (x : xs) -> unquoteListM env (x:xs) >>= return . List
             DottedList xs x -> do
               rxs <- unquoteListM env xs >>= return 
@@ -233,11 +232,11 @@ eval envi cont (List [Atom "quasiquote", value]) = continueEval envi cont =<< do
         unquoteListM env lst = foldlM (unquoteListFld env) ([]) lst
         unquoteListFld env (acc) val = do
             case val of
-                List [Atom "unquote-splicing", val] -> do
-                    value <- eval env (makeNullContinuation env) val
-                    case value of
+                List [Atom "unquote-splicing", vvar] -> do
+                    evalue <- eval env (makeNullContinuation env) vvar
+                    case evalue of
                         List v -> return $ (acc ++ v)
-                        -- Question: In which cases should I generate a type error if value is not a list?
+                        -- Question: In which cases should I generate a type error if evalue is not a list?
                         --
                         -- csi reports an error for this: `(1 ,@(+ 1 2) 4)
                         -- but allows cases such as: `,@2
@@ -245,19 +244,19 @@ eval envi cont (List [Atom "quasiquote", value]) = continueEval envi cont =<< do
                         -- least we will not allow anything invalid to be returned.
                         --
                         -- Old code that we might build on if this changes down the road: otherwise -> return $ (acc ++ [v])
-                        _ -> throwError $ TypeMismatch "proper list" value
+                        _ -> throwError $ TypeMismatch "proper list" evalue
 
                 _ -> do result <- doUnQuote env val
                         return $ (acc ++ [result])
 
-eval env cont (List [Atom "if", pred, conseq, alt]) =
-    do result <- eval env cont pred
+eval env cont (List [Atom "if", predic, conseq, alt]) =
+    do result <- eval env cont predic
        case result of
          Bool False -> eval env cont alt
          _ -> eval env cont conseq
 
-eval env cont (List [Atom "if", pred, conseq]) = 
-    do result <- eval env cont pred
+eval env cont (List [Atom "if", predic, conseq]) = 
+    do result <- eval env cont predic
        case result of
          Bool True -> eval env cont conseq
          _ -> eval env cont $ List []
@@ -296,7 +295,7 @@ eval env cont (List [Atom "load", String filename]) = do
 --     load filename >>= liftM last . mapM (evaluate env cont)
      result <- load filename >>= liftM last . mapM (evaluate env (makeNullContinuation env))
      continueEval env cont result
-	 where evaluate env cont2 val = macroEval env val >>= eval env cont2
+	 where evaluate env2 cont2 val2 = macroEval env2 val2 >>= eval env2 cont2
 
 eval env cont (List [Atom "set!", Atom var, form]) = do 
 --  eval env cont form >>= setVar env var
@@ -308,53 +307,54 @@ eval env cont (List [Atom "define", Atom var, form]) = do
   result <- eval env (makeNullContinuation env) form >>= defineVar env var
   continueEval env cont result
 
-eval env cont (List (Atom "define" : List (Atom var : params) : body )) = do
-  result <- (makeNormalFunc env params body >>= defineVar env var)
+eval env cont (List (Atom "define" : List (Atom var : fparams) : fbody )) = do
+  result <- (makeNormalFunc env fparams fbody >>= defineVar env var)
   continueEval env cont result
-eval env cont (List (Atom "define" : DottedList (Atom var : params) varargs : body)) = do
-  result <- (makeVarargs varargs env params body >>= defineVar env var)
+eval env cont (List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) = do
+  result <- (makeVarargs varargs env fparams fbody >>= defineVar env var)
   continueEval env cont result
-eval env cont (List (Atom "lambda" : List params : body)) = do
-  result <- makeNormalFunc env params body
+eval env cont (List (Atom "lambda" : List fparams : fbody)) = do
+  result <- makeNormalFunc env fparams fbody
   continueEval env cont result
-eval env cont (List (Atom "lambda" : DottedList params varargs : body)) = do
-  result <- makeVarargs varargs env params body
+eval env cont (List (Atom "lambda" : DottedList fparams varargs : fbody)) = do
+  result <- makeVarargs varargs env fparams fbody
   continueEval env cont result
-eval env cont (List (Atom "lambda" : varargs@(Atom _) : body)) = do
-  result <- makeVarargs varargs env [] body
+eval env cont (List (Atom "lambda" : varargs@(Atom _) : fbody)) = do
+  result <- makeVarargs varargs env [] fbody
   continueEval env cont result
 
 eval env cont (List [Atom "string-fill!", Atom var, character]) = do 
   str <- eval env (makeNullContinuation env) =<< getVar env var 
-  chr <- eval env (makeNullContinuation env) character
-  result <- ((eval env (makeNullContinuation env) =<< fillStr(str, chr))) >>= setVar env var
+  echr <- eval env (makeNullContinuation env) character
+  result <- ((eval env (makeNullContinuation env) =<< fillStr(str, echr))) >>= setVar env var
   continueEval env cont result
-  where fillStr (String str, Char chr) = doFillStr (String "", Char chr, length str)
-  
-        doFillStr (String str, Char chr, left) = do
-        if left == 0
-           then return $ String str
-           else doFillStr(String $ chr : str, Char chr, left - 1)
-
-eval env cont (List [Atom "string-set!", Atom var, index, character]) = do 
-  idx <- eval env (makeNullContinuation env) index
+  where fillStr (String str, Char achr) = doFillStr (String "", Char achr, length str)
+        fillStr (String _, c) = throwError $ TypeMismatch "character" c
+        fillStr (s, _) = throwError $ TypeMismatch "string" s
+        doFillStr (String str, Char achr, left) = do
+          if left == 0
+             then return $ String str
+             else doFillStr(String $ achr : str, Char achr, left - 1)
+        doFillStr (String _, c, _) = throwError $ TypeMismatch "character" c
+        doFillStr (s, Char _, _) = throwError $ TypeMismatch "string" s
+        doFillStr (_, _, _) = throwError $ BadSpecialForm "Unexpected error in string-fill!" $ List []
+eval env cont (List [Atom "string-set!", Atom var, i, character]) = do 
+  idx <- eval env (makeNullContinuation env) i
   str <- eval env (makeNullContinuation env) =<< getVar env var
   result <- ((eval env (makeNullContinuation env) =<< substr(str, character, idx))) >>= setVar env var
   continueEval env cont result
-  where substr (String str, Char char, Number index) = do
-                              return $ String $ (take (fromInteger index) . drop 0) str ++ 
+  where substr (String str, Char char, Number ii) = do
+                              return $ String $ (take (fromInteger ii) . drop 0) str ++ 
                                        [char] ++
-                                       (take (length str) . drop (fromInteger index + 1)) str
-{- TODO: error handling
- - also need to add unit tests for this...
- - substr (String _, Char _, n) = throwError $ TypeMismatch "number" n
+                                       (take (length str) . drop (fromInteger ii + 1)) str
+{- TODO: 
+ - also need to add unit tests for this...-}
+        substr (String _, Char _, n) = throwError $ TypeMismatch "number" n
         substr (String _, c, _) = throwError $ TypeMismatch "character" c
         substr (s, _, _) = throwError $ TypeMismatch "string" s
-    -- TODO: error handler
--}
 
-eval env cont (List [Atom "vector-set!", Atom var, index, object]) = do 
-  idx <- eval env (makeNullContinuation env) index
+eval env cont (List [Atom "vector-set!", Atom var, i, object]) = do 
+  idx <- eval env (makeNullContinuation env) i
   obj <- eval env (makeNullContinuation env) object
   vec <- eval env (makeNullContinuation env) =<< getVar env var
   result <- ((eval env (makeNullContinuation env) =<< (updateVector vec idx obj))) >>= setVar env var
@@ -406,12 +406,12 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 -- it intact prior to proceeding with CPS and functions
 eval _ _ (List [Atom "apply"]) = throwError $ BadSpecialForm "apply" $ String "Function not specified"
 eval _ _ (List [Atom "apply", _]) = throwError $ BadSpecialForm "apply" $ String "Arguments not specified"
-eval env cont (List (Atom "apply" : params)) = do
+eval env cont (List (Atom "apply" : args)) = do
     -- FUTURE: verify length of list?
     -- TODO: for all Continuations below, will almost certainly need to pull each into this continuation
-    proc <- eval env (makeNullContinuation env) $ head $ params
-    lst <- eval env (makeNullContinuation env) $ head $ reverse params
-    argVals <- mapM (eval env (makeNullContinuation env)) $ tail $ reverse $ tail (reverse params)
+    proc <- eval env (makeNullContinuation env) $ head $ args
+    lst <- eval env (makeNullContinuation env) $ head $ reverse args
+    argVals <- mapM (eval env (makeNullContinuation env)) $ tail $ reverse $ tail (reverse args)
     case lst of
       List l -> apply cont proc (argVals ++ l)
       other -> throwError $ TypeMismatch "list" other
@@ -445,15 +445,15 @@ eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badFo
 -- TODO: still need to handle case where nothing matches key
 --       (same problem exists with cond, if)
 evalCase :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-evalCase env cont (List (key : cases)) = do
+evalCase envOuter cont (List (key : cases)) = do
          let c = cases !! 0
-         ekey <- eval env cont key
+         ekey <- eval envOuter cont key
          case c of
-           List (Atom "else" : exprs) -> last $ map (eval env cont) exprs
-           List (List cond : exprs) -> do test <- checkEq env ekey (List cond)
+           List (Atom "else" : exprs) -> last $ map (eval envOuter cont) exprs
+           List (List cond : exprs) -> do test <- checkEq envOuter ekey (List cond)
                                           case test of
-                                            Bool True -> last $ map (eval env cont) exprs
-                                            _ -> evalCase env cont $ List $ ekey : tail cases
+                                            Bool True -> last $ map (eval envOuter cont) exprs
+                                            _ -> evalCase envOuter cont $ List $ ekey : tail cases
            badForm -> throwError $ BadSpecialForm "Unrecognized special form in case" badForm
   where
     checkEq env ekey (List (x : xs)) = do 
