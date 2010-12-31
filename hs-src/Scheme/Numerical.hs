@@ -5,21 +5,19 @@
  - Numerical tower functionality
  -
  - @author Justin Ethier
- -
+ - 
  - -}
 
 module Scheme.Numerical where
 import Scheme.Types
-import Scheme.Variables
 import Complex
 import Control.Monad.Error
-import Numeric
 import Ratio
 import Text.Printf
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError LispVal
-numericBinop op singleVal@[_] = throwError $ NumArgs 2 singleVal
-numericBinop op params = mapM unpackNum params >>= return . Number . foldl1 op
+numericBinop _ singleVal@[_] = throwError $ NumArgs 2 singleVal
+numericBinop op aparams = mapM unpackNum aparams >>= return . Number . foldl1 op
 
 --- Begin GenUtil - http://repetae.net/computer/haskell/GenUtil.hs
 foldlM :: Monad m => (a -> b -> m a) -> a -> [b] -> m a
@@ -28,7 +26,7 @@ foldlM _ v [] = return v
 
 foldl1M :: Monad m => (a -> a -> m a) ->  [a] -> m a
 foldl1M f (x:xs) = foldlM f x xs
-foldl1M _ _ = error "foldl1M"
+foldl1M _ _ = error "Unexpected error in foldl1M"
 -- end GenUtil
 
 
@@ -36,34 +34,41 @@ foldl1M _ _ = error "foldl1M"
 -- TODO: move all of this out into its own file
 
 numAdd, numSub, numMul, numDiv :: [LispVal] -> ThrowsError LispVal
-numAdd params = do
-  foldl1M (\a b -> doAdd =<< (numCast [a, b])) params
+numAdd [] = throwError $ NumArgs 1 [] 
+numAdd aparams = do
+  foldl1M (\a b -> doAdd =<< (numCast [a, b])) aparams
   where doAdd (List [(Number a), (Number b)]) = return $ Number $ a + b
         doAdd (List [(Float a), (Float b)]) = return $ Float $ a + b
         doAdd (List [(Rational a), (Rational b)]) = return $ Rational $ a + b
         doAdd (List [(Complex a), (Complex b)]) = return $ Complex $ a + b
+        doAdd _ = throwError $ Default "Unexpected error in +"
+numSub [] = throwError $ NumArgs 1 [] 
 numSub [Number n] = return $ Number $ -1 * n
 numSub [Float n] = return $ Float $ -1 * n
 numSub [Rational n] = return $ Rational $ -1 * n
 numSub [Complex n] = return $ Complex $ -1 * n
-numSub params = do
-  foldl1M (\a b -> doSub =<< (numCast [a, b])) params
+numSub aparams = do
+  foldl1M (\a b -> doSub =<< (numCast [a, b])) aparams
   where doSub (List [(Number a), (Number b)]) = return $ Number $ a - b
         doSub (List [(Float a), (Float b)]) = return $ Float $ a - b
         doSub (List [(Rational a), (Rational b)]) = return $ Rational $ a - b
         doSub (List [(Complex a), (Complex b)]) = return $ Complex $ a - b
-numMul params = do 
-  foldl1M (\a b -> doMul =<< (numCast [a, b])) params
+        doSub _ = throwError $ Default "Unexpected error in -"
+numMul [] = throwError $ NumArgs 1 [] 
+numMul aparams = do 
+  foldl1M (\a b -> doMul =<< (numCast [a, b])) aparams
   where doMul (List [(Number a), (Number b)]) = return $ Number $ a * b
         doMul (List [(Float a), (Float b)]) = return $ Float $ a * b
         doMul (List [(Rational a), (Rational b)]) = return $ Rational $ a * b
         doMul (List [(Complex a), (Complex b)]) = return $ Complex $ a * b
+        doMul _ = throwError $ Default "Unexpected error in *"
+numDiv [] = throwError $ NumArgs 1 [] 
 numDiv [Number n] = return $ Rational $ 1 / (fromInteger n)
 numDiv [Float n] = return $ Float $ 1.0 / n
 numDiv [Rational n] = return $ Rational $ 1 / n
 numDiv [Complex n] = return $ Complex $ 1 / n
-numDiv params = do -- TODO: for Number type, need to cast results to Rational, per R5RS spec 
-  foldl1M (\a b -> doDiv =<< (numCast [a, b])) params
+numDiv aparams = do -- TODO: for Number type, need to cast results to Rational, per R5RS spec 
+  foldl1M (\a b -> doDiv =<< (numCast [a, b])) aparams
   where doDiv (List [(Number a), (Number b)]) = if b == 0 
                                                    then throwError $ DivideByZero 
                                                    else return $ Number $ div a b
@@ -76,42 +81,53 @@ numDiv params = do -- TODO: for Number type, need to cast results to Rational, p
         doDiv (List [(Complex a), (Complex b)]) = if b == 0
                                                        then throwError $ DivideByZero 
                                                        else return $ Complex $ a / b
+        doDiv _ = throwError $ Default "Unexpected error in /"
 
 numBoolBinopEq :: [LispVal] -> ThrowsError LispVal
-numBoolBinopEq params = do 
-  foldl1M (\a b -> doOp =<< (numCast [a, b])) params
+numBoolBinopEq [] = throwError $ NumArgs 0 []
+numBoolBinopEq aparams = do 
+  foldl1M (\a b -> doOp =<< (numCast [a, b])) aparams
   where doOp (List [(Number a), (Number b)]) = return $ Bool $ a == b
         doOp (List [(Float a), (Float b)]) = return $ Bool $ a == b
         doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a == b
         doOp (List [(Complex a), (Complex b)]) = return $ Bool $ a == b
+        doOp _ = throwError $ Default "Unexpected error in =" 
 
 numBoolBinopGt :: [LispVal] -> ThrowsError LispVal
-numBoolBinopGt params = do 
-  foldl1M (\a b -> doOp =<< (numCast [a, b])) params
+numBoolBinopGt [] = throwError $ NumArgs 0 []
+numBoolBinopGt aparams = do 
+  foldl1M (\a b -> doOp =<< (numCast [a, b])) aparams
   where doOp (List [(Number a), (Number b)]) = return $ Bool $ a > b
         doOp (List [(Float a), (Float b)]) = return $ Bool $ a > b
         doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a > b
+        doOp _ = throwError $ Default "Unexpected error in >" 
 
 numBoolBinopGte :: [LispVal] -> ThrowsError LispVal
-numBoolBinopGte params = do 
-  foldl1M (\a b -> doOp =<< (numCast [a, b])) params
+numBoolBinopGte [] = throwError $ NumArgs 0 []
+numBoolBinopGte aparams = do 
+  foldl1M (\a b -> doOp =<< (numCast [a, b])) aparams
   where doOp (List [(Number a), (Number b)]) = return $ Bool $ a >= b
         doOp (List [(Float a), (Float b)]) = return $ Bool $ a >= b
         doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a >= b
+        doOp _ = throwError $ Default "Unexpected error in >=" 
 
 numBoolBinopLt :: [LispVal] -> ThrowsError LispVal
-numBoolBinopLt params = do 
-  foldl1M (\a b -> doOp =<< (numCast [a, b])) params
+numBoolBinopLt [] = throwError $ NumArgs 0 []
+numBoolBinopLt aparams = do 
+  foldl1M (\a b -> doOp =<< (numCast [a, b])) aparams
   where doOp (List [(Number a), (Number b)]) = return $ Bool $ a < b
         doOp (List [(Float a), (Float b)]) = return $ Bool $ a < b
         doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a < b
+        doOp _ = throwError $ Default "Unexpected error in <" 
 
 numBoolBinopLte :: [LispVal] -> ThrowsError LispVal
-numBoolBinopLte params = do 
-  foldl1M (\a b -> doOp =<< (numCast [a, b])) params
+numBoolBinopLte [] = throwError $ NumArgs 0 []
+numBoolBinopLte aparams = do 
+  foldl1M (\a b -> doOp =<< (numCast [a, b])) aparams
   where doOp (List [(Number a), (Number b)]) = return $ Bool $ a <= b
         doOp (List [(Float a), (Float b)]) = return $ Bool $ a <= b
         doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a <= b
+        doOp _ = throwError $ Default "Unexpected error in <=" 
 
 numCast :: [LispVal] -> ThrowsError LispVal
 numCast [a@(Number _), b@(Number _)] = return $ List [a, b]
@@ -135,9 +151,9 @@ numCast [a, b] = case a of
                Float _    -> doThrowError b
                Rational _ -> doThrowError b
                Complex _  -> doThrowError b
-               otherwise  -> doThrowError a
-  where doThrowError a = throwError $ TypeMismatch "number" a
-
+               _          -> doThrowError a
+  where doThrowError num = throwError $ TypeMismatch "number" num
+numCast _ = throwError $ Default "Unexpected error in numCast"
 
 numRound, numFloor, numCeiling, numTruncate :: [LispVal] -> ThrowsError LispVal
 numRound [n@(Number _)] = return n
@@ -233,7 +249,7 @@ numExpt [(Number n),   (Number p)] = return $ Float $ (fromInteger n) ^ p
 numExpt [(Rational n), (Number p)] = return $ Float $ (fromRational n) ^ p
 numExpt [(Float n),    (Number p)] = return $ Float $ n ^ p
 numExpt [(Complex n),  (Number p)] = return $ Complex $ n ^ p
-numExpt [x, y] = throwError $ TypeMismatch "integer" y
+numExpt [_, y] = throwError $ TypeMismatch "integer" y
 numExpt badArgList = throwError $ NumArgs 2 badArgList
 
 {-numExpt params = do
@@ -305,11 +321,15 @@ numExact2Inexact [(Number n)] = return $ Float $ fromInteger n
 numExact2Inexact [(Rational n)] = return $ Float $ fromRational n
 numExact2Inexact [n@(Float _)] = return n
 -- TODO: numExact2Inexact [(Complex n)] = return ??
+numExact2Inexact [badType] = throwError $ TypeMismatch "number" badType
+numExact2Inexact badArgList = throwError $ NumArgs 1 badArgList
 
 numInexact2Exact [n@(Number _)] = return n
 numInexact2Exact [n@(Rational _)] = return n
 numInexact2Exact [(Float n)] = return $ Number $ round n
 -- TODO: numInexact2Exact [(Complex n)] = return ??
+numInexact2Exact [badType] = throwError $ TypeMismatch "number" badType
+numInexact2Exact badArgList = throwError $ NumArgs 1 badArgList
 
 -- TODO: remember to support both forms:
 -- procedure:  (number->string z) 
@@ -322,7 +342,7 @@ num2String [(Number n), (Number radix)] = do
     8 -> return $ String $ printf "%o" n
     10 -> return $ String $ printf "%d" n
     16 -> return $ String $ printf "%x" n
-    otherwise -> throwError $ BadSpecialForm "Invalid radix value" $ Number radix
+    _ -> throwError $ BadSpecialForm "Invalid radix value" $ Number radix
 num2String [n@(Rational _)] = return $ String $ show n
 num2String [(Float n)] = return $ String $ show n
 num2String [n@(Complex _)] = return $ String $ show n
@@ -333,8 +353,8 @@ num2String badArgList = throwError $ NumArgs 1 badArgList
 --       and extend to support all of the tower...
 
 isNumber, isComplex, isReal, isRational, isInteger :: [LispVal] -> ThrowsError LispVal
-isNumber ([Number n]) = return $ Bool True
-isNumber ([Float f]) = return $ Bool True
+isNumber ([Number _]) = return $ Bool True
+isNumber ([Float _]) = return $ Bool True
 isNumber ([Complex _]) = return $ Bool True
 isNumber ([Rational _]) = return $ Bool True
 isNumber _ = return $ Bool False
