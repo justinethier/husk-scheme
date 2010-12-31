@@ -1,4 +1,4 @@
-{-
+{- 
  - husk scheme
  - Macro
  - @author Justin Ethier
@@ -35,9 +35,8 @@ module Scheme.Macro
     ) where
 import Scheme.Types
 import Scheme.Variables
-import Control.Monad
 import Control.Monad.Error
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+--import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 -- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 -- http://community.schemewiki.org/?scheme-faq-macros
@@ -253,31 +252,25 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                                 -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
                            else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
                -- Dotted list transform returned during processing...
-               List [Nil _, List elst] -> if ellipsisIndex == 0
+               List [Nil _, List _] -> if ellipsisIndex == 0
                                 -- First time through and no match ("zero" case). Use tail to move past the "..."
                            then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
                                 -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
                           else transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])
-               List t -> transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform (List ellipsisList)
+               List _ -> transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform (List ellipsisList)
+               _ -> throwError $ Default "Unexpected error"
      else do
              lst <- transformRule localEnv ellipsisIndex (List []) (List l) (List ellipsisList)
              case lst of
-                  List [Nil _, l] -> return lst
+                  List [Nil _, _] -> return lst
                   List _ -> transformRule localEnv ellipsisIndex (List $ result ++ [lst]) (List ts) (List ellipsisList)
                   Nil _ -> return lst
-                  otherwise -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisIndex]
-
-  where lastElementIsNil l = case (last l) of
-                               Nil _ -> True
-                               otherwise -> False
-        getListAtTail l = case (last l) of
-                               List lst -> lst
-
+                  _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisIndex]
 
 -- TODO: vector transform (and taking vectors into account in other cases as well???)
 
 
-transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedList ds d) : ts)) (List ellipsisList) = do
+transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedList _ _) : ts)) (List ellipsisList) = do
   if macroElementMatchesMany transform
      then do 
      -- Idea here is that we need to handle case where you have (pair ...) - EG: ((var . step) ...)
@@ -290,46 +283,20 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedLi
                            else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
                -- This case is here because we need to process individual components of the pair to determine
                -- whether we are done with the match. It is similar to above but not exact...
-               List [Nil _, List elst] -> if ellipsisIndex == 0
+               List [Nil _, List _] -> if ellipsisIndex == 0
                                 -- First time through and no match ("zero" case). Use tail to move past the "..."
                            then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
                                 -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
                            else transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])
                List t -> transformRule localEnv (ellipsisIndex + 1) (List $ result ++ t) transform (List ellipsisList)
+               _ -> throwError $ Default "Unexpected error in transformRule"
      else do lst <- transformDottedList localEnv ellipsisIndex (List []) (List [dl]) (List ellipsisList)
              case lst of
-                  List [Nil _, List l] -> return lst 
+                  List [Nil _, List _] -> return lst 
                   List l -> transformRule localEnv ellipsisIndex (List $ result ++ l) (List ts) (List ellipsisList)
-                  Nil n -> return lst
-                  otherwise -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [(List ellipsisList), lst, (List [dl]), Number $ toInteger ellipsisIndex]
+                  Nil _ -> return lst
+                  _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [(List ellipsisList), lst, (List [dl]), Number $ toInteger ellipsisIndex]
 
-  where transformDottedList :: Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
-        transformDottedList localEnv ellipsisIndex (List result) transform@(List (DottedList ds d : ts)) (List ellipsisList) = do
-          lsto <- transformRule localEnv ellipsisIndex (List []) (List ds) (List ellipsisList)
-          case lsto of
-            List lst -> do 
-                           r <- transformRule localEnv ellipsisIndex (List []) (List [d]) (List ellipsisList)
-                           case r of
-                                -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
-                                List [List []] -> transformRule localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) (List ellipsisList)
-                                -- TODO: the transform needs to be as follows:
-                                --  - transform into a list if original input was a list - code is below but commented-out
-                                --  - transform into a dotted list if original input was a dotted list
-                                --
-                                -- Could implement this by calling a new function on input (ds?) that goes through it and
-                                -- looks up each atom that it finds, looking for its src. The src (or Nil?) would then be returned
-                                -- and used here to determine what type of transform is used.
-                                --
---                                List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList) 
---                                List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
-                                List [rst] -> do
-                                                 src <- lookupPatternVarSrc localEnv $ List ds
-                                                 case src of
-                                                    String "pair" -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
-                                                    otherwise -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList) 
-                                otherwise -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d 
-            Nil _ -> return $ List [Nil "", List ellipsisList]
-            otherwise -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
 
 -- Transform an atom by attempting to look it up as a var...
 transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)) unused = do
@@ -354,22 +321,53 @@ transformRule localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)
                                           List v -> if (length v) > (ellipsisIndex - 1)
                                                        then return $ v !! (ellipsisIndex - 1)
                                                        else return $ Nil ""
+                                          _ -> throwError $ Default "Unexpected error in transformRule"
                                 else return var
                      else return $ Atom a
              case t of
                Nil _ -> return t
-               otherwise -> transformRule localEnv ellipsisIndex (List $ result ++ [t]) (List ts) unused
+               _ -> transformRule localEnv ellipsisIndex (List $ result ++ [t]) (List ts) unused
 
 -- Transform anything else as itself...
-transformRule localEnv ellipsisIndex (List result) transform@(List (t : ts)) (List ellipsisList) = do
+transformRule localEnv ellipsisIndex (List result) (List (t : ts)) (List ellipsisList) = do
   transformRule localEnv ellipsisIndex (List $ result ++ [t]) (List ts) (List ellipsisList)
 
 -- Base case - empty transform
-transformRule localEnv ellipsisIndex result@(List _) transform@(List []) unused = do
+transformRule _ _ result@(List _) (List []) _ = do
   return result
 
-transformRule localEnv ellipsisIndex result transform unused = do
+transformRule _ ellipsisIndex result transform unused = do
   throwError $ BadSpecialForm "An error occurred during macro transform" $ List [(Number $ toInteger ellipsisIndex), result, transform, unused]
+
+transformDottedList :: Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
+transformDottedList localEnv ellipsisIndex (List result) (List (DottedList ds d : ts)) (List ellipsisList) = do
+          lsto <- transformRule localEnv ellipsisIndex (List []) (List ds) (List ellipsisList)
+          case lsto of
+            List lst -> do 
+                           r <- transformRule localEnv ellipsisIndex (List []) (List [d]) (List ellipsisList)
+                           case r of
+                                -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
+                                List [List []] -> transformRule localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) (List ellipsisList)
+                                -- TODO: the transform needs to be as follows:
+                                --  - transform into a list if original input was a list - code is below but commented-out
+                                --  - transform into a dotted list if original input was a dotted list
+                                --
+                                -- Could implement this by calling a new function on input (ds?) that goes through it and
+                                -- looks up each atom that it finds, looking for its src. The src (or Nil?) would then be returned
+                                -- and used here to determine what type of transform is used.
+                                --
+--                                List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList) 
+--                                List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
+                                List [rst] -> do
+                                                 src <- lookupPatternVarSrc localEnv $ List ds
+                                                 case src of
+                                                    String "pair" -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
+                                                    _ -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList) 
+                                _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d 
+            Nil _ -> return $ List [Nil "", List ellipsisList]
+            _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
+
+transformDottedList _ _ _ _ _ = throwError $ Default "Unexpected error in transformDottedList"
 
 -- Find an atom in a list; non-recursive (IE, a sub-list will not be inspected)
 findAtom :: LispVal -> LispVal -> IOThrowsError LispVal
@@ -377,8 +375,8 @@ findAtom (Atom target) (List (Atom a:as)) = do
   if target == a
      then return $ Bool True
      else findAtom (Atom target) (List as)
-findAtom target (List (badtype : _)) = throwError $ TypeMismatch "symbol" badtype -- TODO: test this, non-atoms should throw err
-findAtom target _ = return $ Bool False
+findAtom _ (List (badtype : _)) = throwError $ TypeMismatch "symbol" badtype -- TODO: test this, non-atoms should throw err
+findAtom _ _ = return $ Bool False
  
 -- Initialize any pattern variables as an empty list.
 -- That way a zero-match case can be identified later during transformation.
@@ -395,8 +393,9 @@ initializePatternVars localEnv src identifiers pattern@(List _) = do
         List (p:ps) -> do initializePatternVars localEnv src identifiers p
                           initializePatternVars localEnv src identifiers $ List ps
         List [] -> return $ Bool True
+        _ -> return $ Bool True
 
-initializePatternVars localEnv src identifiers pattern@(DottedList ps p) = do
+initializePatternVars localEnv src identifiers (DottedList ps p) = do
     initializePatternVars localEnv src identifiers $ List ps
     initializePatternVars localEnv src identifiers p
 
@@ -417,9 +416,9 @@ initializePatternVars localEnv src identifiers (Atom pattern) =
                                else do
                                         return $ Bool True
              -- Ignore identifiers since they are just passed along as-is
-            otherwise -> return $ Bool True
+            _ -> return $ Bool True
 
-initializePatternVars localEnv src identifiers pattern =  
+initializePatternVars _ _ _ _ =  
     return $ Bool True 
 
 -- Find the first pattern var that reports being from a src, or False if none
@@ -429,14 +428,15 @@ lookupPatternVarSrc localEnv pattern@(List _) = do
         List (p:ps) -> do result <- lookupPatternVarSrc localEnv p
                           case result of
                             Bool False -> lookupPatternVarSrc localEnv $ List ps
-                            otherwise -> return result
+                            _ -> return result
         List [] -> return $ Bool False
+        _ -> return $ Bool False
 
-lookupPatternVarSrc localEnv pattern@(DottedList ps p) = do
+lookupPatternVarSrc localEnv (DottedList ps p) = do
     result <- lookupPatternVarSrc localEnv $ List ps
     case result of
         Bool False -> lookupPatternVarSrc localEnv p
-        otherwise -> return result
+        _ -> return result
 
 -- TODO: vector
 
@@ -445,5 +445,5 @@ lookupPatternVarSrc localEnv (Atom pattern) =
        if isDefined then getNamespacedVar localEnv "src" pattern
                     else return $ Bool False
 
-lookupPatternVarSrc localEnv pattern =  
+lookupPatternVarSrc _ _ =  
     return $ Bool False 

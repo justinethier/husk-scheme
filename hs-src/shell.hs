@@ -52,7 +52,7 @@ showBanner = do
   putStrLn " \\ \\_\\ \\_\\  \\ \\_____\\  \\/\\_____\\  \\ \\_\\ \\_\\  (c) 2010 Justin Ethier "
   putStrLn "  \\/_/\\/_/   \\/_____/   \\/_____/   \\/_/\\/_/  github.com/justinethier/husk-scheme "
   putStrLn ""
-
+ 
 runRepl :: IO ()
 runRepl = do
     stdlib <- getDataFileName "stdlib.scm"
