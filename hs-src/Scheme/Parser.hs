@@ -5,7 +5,7 @@
  - This file contains the code for parsing scheme
  -
  - @author Justin Ethier
- -
+ - 
  - -}
 module Scheme.Parser where
 import Scheme.Types
@@ -38,14 +38,15 @@ parseBool = do string "#"
                return $ case x of
                           't' -> Bool True
                           'f' -> Bool False
+                          _ -> Bool False
 
 parseChar :: Parser LispVal
 parseChar = do
   try (string "#\\")
   c <- anyChar 
   r <- many(letter)
-  let chr = c:r
-  return $ case chr of
+  let pchr = c:r
+  return $ case pchr of
     "space"   -> Char ' '
     "newline" -> Char '\n'
     _         -> Char c {- TODO: err if invalid char -}
@@ -118,8 +119,8 @@ parseRealNumber = do
 
 parseRationalNumber :: Parser LispVal
 parseRationalNumber = do
-  numerator <- parseDecimalNumber
-  case numerator of 
+  pnumerator <- parseDecimalNumber
+  case pnumerator of 
     Number n -> do
       char '/'
       sign <- many (oneOf "-")
@@ -127,7 +128,7 @@ parseRationalNumber = do
       if (length sign) > 1
          then pzero
          else return $ Rational $ n % (read $ sign ++ num)
-    otherwise -> pzero
+    _ -> pzero
 
 parseComplexNumber :: Parser LispVal
 parseComplexNumber = do
@@ -135,14 +136,18 @@ parseComplexNumber = do
   let real = case lispreal of
                   Number n -> fromInteger n
                   Float f -> f
+                  _ -> 0
   char '+'
   lispimag <- (try(parseRealNumber) <|> parseDecimalNumber)
   let imag = case lispimag of
                   Number n -> fromInteger n
                   Float f -> f
+                  _ -> 0 -- Case should never be reached
   char 'i'
   return $ Complex $ real :+ imag
 
+parseEscapedChar :: forall st.
+                    GenParser Char st Char
 parseEscapedChar = do 
   char '\\'
   c <- anyChar
@@ -170,9 +175,9 @@ parseList = liftM List $ sepBy parseExpr spaces
 
 parseDottedList :: Parser LispVal
 parseDottedList = do
-  head <- endBy parseExpr spaces
-  tail <- char '.' >> spaces >> parseExpr
-  return $ DottedList head tail
+  phead <- endBy parseExpr spaces
+  ptail <- char '.' >> spaces >> parseExpr
+  return $ DottedList phead ptail
 
 parseQuoted :: Parser LispVal
 parseQuoted = do
@@ -238,6 +243,9 @@ readOrThrow parser input = case parse parser "lisp" input of
 	Left err -> throwError $ Parser err
 	Right val -> return val
 
+readExpr :: String -> ThrowsError LispVal
 readExpr = readOrThrow parseExpr
+
+readExprList :: String -> ThrowsError [LispVal]
 readExprList = readOrThrow (endBy parseExpr spaces)
 
