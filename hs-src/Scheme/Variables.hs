@@ -9,7 +9,6 @@
  - -}
 module Scheme.Variables where
 import Scheme.Types
-import Control.Monad
 import Control.Monad.Error
 import Data.IORef
 
@@ -70,7 +69,7 @@ setNamespacedVar envRef
                  namespace
                  var value = do env <- liftIO $ readIORef $ bindings envRef
                                 case lookup (namespace, var) env of
-                                  (Just a) -> do vprime <- liftIO $ readIORef a
+                                  (Just a) -> do --vprime <- liftIO $ readIORef a
                                                  liftIO $ writeIORef a value
                                                  return value
                                   Nothing -> case parentEnv envRef of
