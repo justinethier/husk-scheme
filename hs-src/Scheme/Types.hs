@@ -1,4 +1,4 @@
-{-
+{--
  - husk scheme
  - Types
  -
@@ -26,13 +26,15 @@ data Env = Environment {parentEnv :: (Maybe Env), bindings :: (IORef [((String, 
 
 -- |An empty environment
 nullEnv :: IO Env
-nullEnv = do bindings <- newIORef []
-             return $ Environment Nothing bindings
+nullEnv = do nullBindings <- newIORef []
+             return $ Environment Nothing nullBindings
 
 -- Internal namespace for macros
+macroNamespace :: [Char]
 macroNamespace = "m"
 
 -- Internal namespace for variables
+varNamespace :: [Char]
 varNamespace = "v"
 
 -- |Types of errors that may occur when evaluating Scheme code
@@ -67,10 +69,14 @@ instance Error LispError where
 
 type ThrowsError = Either LispError
 
+trapError :: forall (m :: * -> *) e.
+            (MonadError e m, Show e) =>
+             m String -> m String
 trapError action = catchError action (return . show)
 
 extractValue :: ThrowsError a -> a
 extractValue (Right val) = val
+-- TODO: extractValue (Left _) = throwError $ Default "Unexpected error in extractValue"
 
 type IOThrowsError = ErrorT LispError IO
 
@@ -179,7 +185,7 @@ eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg
 eqv [(HashTable arg1), (HashTable arg2)] = 
   eqv [List $ (map (\(x, y) -> List [x, y]) $ Data.Map.toAscList arg1), 
        List $ (map (\(x, y) -> List [x, y]) $ Data.Map.toAscList arg2)] 
-eqv [l1@(List arg1), l2@(List arg2)] = eqvList eqv [l1, l2]
+eqv [l1@(List _), l2@(List _)] = eqvList eqv [l1, l2]
 eqv [_, _] = return $ Bool False
 eqv badArgList = throwError $ NumArgs 2 badArgList
 
@@ -187,15 +193,18 @@ eqvList :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVa
 eqvList eqvFunc [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) && 
                                                     (all eqvPair $ zip arg1 arg2)
     where eqvPair (x1, x2) = case eqvFunc [x1, x2] of
-                               Left err -> False
+                               Left _ -> False
                                Right (Bool val) -> val
+                               _ -> False -- OK?
+eqvList _ _ = throwError $ Default "Unexpected error in eqvList"
 
 eqVal :: LispVal -> LispVal -> Bool
 eqVal a b = do
   let result = eqv [a, b]
   case result of
-    Left err -> False
+    Left _ -> False
     Right (Bool val) -> val
+    _ -> False -- Is this OK?
 
 instance Eq LispVal where
   x == y = eqVal x y
@@ -215,10 +224,10 @@ showVal (Bool False) = "#f"
 showVal (Vector contents) = "#(" ++ (unwordsList $ Data.Array.elems contents) ++ ")"
 showVal (HashTable _) = "<hash-table>"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
-showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
+showVal (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showVal t ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
-showVal (Continuation {closure = env, body = body}) = "<continuation>"
-showVal (Func {params = args, vararg = varargs, body = body, closure = env}) = 
+showVal (Continuation {closure = _, body = _}) = "<continuation>"
+showVal (Func {params = args, vararg = varargs, body = _, closure = _}) = 
   "(lambda (" ++ unwords (map show args) ++
     (case varargs of
       Nothing -> ""
