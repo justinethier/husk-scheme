@@ -128,9 +128,10 @@ data LispVal = Atom String
 	| Continuation {closure :: Env,    -- Environment of the continuation
                         body :: [LispVal], -- Code in the body of the continuation
                         continuation :: LispVal    -- Code to resume after body of cont
-                        , frameFunc :: (Maybe LispVal)
+                        , frameFunc :: (Maybe LispVal) -- TODO: obsolete, remove if higher-order works
 --                        , frameRawArgs :: (Maybe [LispVal])
-                        , frameEvaledArgs :: (Maybe [LispVal])
+                        , frameEvaledArgs :: (Maybe [LispVal]) -- TODO: obsolete, remove if higher-order works
+                        , continuationFunction :: (Maybe (Env -> LispVal -> LispVal -> IOThrowsError LispVal))
                         --
                         --TODO: frame information
                         --  for evaluating a function (prior to calling) need:
@@ -152,7 +153,10 @@ data LispVal = Atom String
          -- ^Internal use only; do not use this type directly.
 
 makeNullContinuation :: Env -> LispVal
-makeNullContinuation env = Continuation env [] (Nil "") Nothing Nothing
+makeNullContinuation env = Continuation env [] (Nil "") Nothing Nothing Nothing
+
+makeCPS :: Env -> LispVal -> (Env -> LispVal -> LispVal -> IOThrowsError LispVal) -> LispVal
+makeCPS env cont cps = Continuation env [] cont Nothing Nothing (Just cps)
 
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b
