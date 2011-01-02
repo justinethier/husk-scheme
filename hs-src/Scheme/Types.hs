@@ -76,7 +76,7 @@ trapError action = catchError action (return . show)
 
 extractValue :: ThrowsError a -> a
 extractValue (Right val) = val
--- TODO: extractValue (Left _) = throwError $ Default "Unexpected error in extractValue"
+extractValue (Left _) = error "Unexpected error in extractValue; "
 
 type IOThrowsError = ErrorT LispError IO
 
