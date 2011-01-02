@@ -479,7 +479,7 @@ evalCond env cont (List [_, expr]) = eval env cont expr
 evalCond env cont (List (_ : expr)) = last $ map (eval env cont) expr -- TODO: all expr's need to be evaluated, not sure happening right now
 evalCond _ _ badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
-makeFunc :: forall (m :: * -> *).
+makeFunc :: --forall (m :: * -> *).
             (Monad m) =>
             Maybe String -> Env -> [LispVal] -> [LispVal] -> m LispVal
 makeFunc varargs env fparams fbody = return $ Func (map showVal fparams) varargs fbody env False

@@ -69,9 +69,9 @@ instance Error LispError where
 
 type ThrowsError = Either LispError
 
-trapError :: forall (m :: * -> *) e.
+trapError :: -- forall (m :: * -> *) e.
             (MonadError e m, Show e) =>
-             m String -> m String
+             m String -> m String 
 trapError action = catchError action (return . show)
 
 extractValue :: ThrowsError a -> a
