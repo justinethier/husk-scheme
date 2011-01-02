@@ -204,20 +204,21 @@ eval env cont (List [Atom "if", predic, conseq, alt]) = do
   case result of
        Bool False -> eval env cont alt
        _ -> eval env cont conseq
+-- }
 {- CPS version:
  -
  - unfortunately this breaks tests, looks like it is because the "False" value may "leak" out
  - into other places in the code that are not written using CPS. This reference code needs to be
  - used to convert the rest of eval into CPS (or at least to start, those areas affected by the
  - "leak"); then all tests would be expected to pass.
- -
+ - }
   eval env (makeCPS env cont cps) predic
   where   cps :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
           cps e c result = 
             case result of
               Bool False -> eval e c alt
               _ -> eval e c conseq
--}
+--}
 eval env cont (List [Atom "if", predic, conseq]) = 
     do result <- eval env cont predic
        case result of
@@ -467,8 +468,16 @@ apply _ c@(Continuation env _ _ _ _ _) args = do
       -- this is not good enough. is it correct if we take c and replace the "outer" continuation with it??
       --
       -- this would work for return and other simple examples
-apply _ (IOFunc func) args = func args
-apply _ (PrimitiveFunc func) args = liftThrows $ func args
+apply cont (IOFunc func) args = do
+  result <- func args
+  case cont of
+    Continuation cEnv _ _ _ _ (Just cFunc) -> continueEval cEnv cont result
+    _ -> return result
+apply cont (PrimitiveFunc func) args = do
+  result <- liftThrows $ func args
+  case cont of
+    Continuation cEnv _ _ _ _ (Just cFunc) -> continueEval cEnv cont result
+    _ -> return result
 apply cont (Func aparams avarargs abody aclosure _) args =
   if num aparams /= num args && avarargs == Nothing
      then throwError $ NumArgs (num aparams) args
