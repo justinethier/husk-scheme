@@ -5,7 +5,7 @@
  - This file contains the code for parsing scheme
  -
  - @author Justin Ethier
- - 
+ -
  - -}
 module Scheme.Parser where
 import Scheme.Types
@@ -58,7 +58,7 @@ parseOctalNumber = do
   num <- many1(oneOf "01234567")
   case (length sign) of
      0 -> return $ Number $ fst $ Numeric.readOct num !! 0
-     1 -> return $ Number $ toInteger $ (*) (-1) $ fst $ Numeric.readOct num !! 0
+     1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ Numeric.readOct num !! 0
      _ -> pzero
 
 parseBinaryNumber :: Parser LispVal
@@ -68,7 +68,7 @@ parseBinaryNumber = do
   num <- many1(oneOf "01")
   case (length sign) of
      0 -> return $ Number $ fst $ Numeric.readInt 2 (`elem` "01") Char.digitToInt num !! 0
-     1 -> return $ Number $ toInteger $ (*) (-1) $ fst $ Numeric.readInt 2 (`elem` "01") Char.digitToInt num !! 0
+     1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ Numeric.readInt 2 (`elem` "01") Char.digitToInt num !! 0
      _ -> pzero
 
 parseHexNumber :: Parser LispVal
@@ -78,7 +78,7 @@ parseHexNumber = do
   num <- many1(digit <|> oneOf "abcdefABCDEF")
   case (length sign) of
      0 -> return $ Number $ fst $ Numeric.readHex num !! 0 
-     1 -> return $ Number $ toInteger $ (*) (-1) $ fst $ Numeric.readHex num !! 0
+     1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ Numeric.readHex num !! 0
      _ -> pzero
 
 -- |Parser for Integer, base 10
