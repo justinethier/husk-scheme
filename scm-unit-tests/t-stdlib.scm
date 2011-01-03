@@ -61,4 +61,16 @@
 ;(f 5) ==> 5 (OK)
 ;x ==> 5 (BAD, expected it to remain 3)
 
+(define (test2) #f)
+(define (test)
+  1
+  (test2)
+  (null? '())
+    2
+      (write (+ 1 2 3))
+        4
+          (write (+ 4 5 6))
+            #f)
+(assert/equal (if (test) 'true 'false) 'false)
+
 (unit-test-handler-results)
