@@ -37,7 +37,7 @@ import qualified Data.Map
 import Maybe
 import List
 import IO hiding (try)
---import Debug.Trace
+import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
 
@@ -126,16 +126,17 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 -- We could probably just use higher order functions instead, but it remains to be seen
 -- how ugly that code will become. Using cBody may be a nice covenience... but it remains 
 -- to be seen.
-continueEval _ (Continuation cEnv _ cCont Nothing Nothing (Just func)) val = func cEnv cCont val
+continueEval _ (Continuation cEnv _ cCont Nothing Nothing (Just func)) val = func cEnv cCont (trace (show "cps function with value = " ++ show val) val)
 -- 
 continueEval _ (Continuation cEnv cBody cCont Nothing Nothing Nothing) val = do
-    case cBody of
+--    case cBody of
+    case (trace ("cBody = " ++ show cBody ++ " val = " ++ show val) cBody) of
         [] -> do
           case cCont of
             Continuation nEnv _ _ _ _ _ -> continueEval nEnv cCont val
             _ -> return val
-        [lv] -> eval cEnv (Continuation cEnv [] cCont Nothing Nothing Nothing) lv --val
-        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing Nothing) lv
+        [lv] -> eval cEnv (Continuation cEnv [] cCont Nothing Nothing Nothing) (trace ("lv = " ++ show lv) lv)
+        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing Nothing) (trace ("lv2 = " ++ show lv) lv)
 
 continueEval _ _ _ = throwError $ Default "Internal error in continueEval"
 
@@ -199,26 +200,38 @@ eval envi cont (List [Atom "quasiquote", value]) = continueEval envi cont =<< do
                         return $ (acc ++ [result])
 
 eval env cont (List [Atom "if", predic, conseq, alt]) = do
--- original version:
+{- Test code for this:
+ -
+(write (if (null? '(1)) 'null 'not_null))
+(define (test)
+  1
+    2
+      (write (+ 1 2 3))
+        4
+          (write (+ 4 5 6))
+            #f)
+(write (if (test) 'true 'false))
+ - -}
+{-- original version:
   result <- eval env cont predic
   case result of
        Bool False -> eval env cont alt
        _ -> eval env cont conseq
--- }
+--}
 {- CPS version:
  -
  - unfortunately this breaks tests, looks like it is because the "False" value may "leak" out
  - into other places in the code that are not written using CPS. This reference code needs to be
  - used to convert the rest of eval into CPS (or at least to start, those areas affected by the
  - "leak"); then all tests would be expected to pass.
- - }
-  eval env (makeCPS env cont cps) predic
+ -}
+  eval env (makeCPS env cont cps) (trace ("pred = " ++ show predic) predic)
   where   cps :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
           cps e c result = 
-            case result of
+            case (trace ("result = " ++ show result) result) of
               Bool False -> eval e c alt
               _ -> eval e c conseq
---}
+-- }
 eval env cont (List [Atom "if", predic, conseq]) = 
     do result <- eval env cont predic
        case result of
@@ -471,12 +484,12 @@ apply _ c@(Continuation env _ _ _ _ _) args = do
 apply cont (IOFunc func) args = do
   result <- func args
   case cont of
-    Continuation cEnv _ _ _ _ (Just cFunc) -> continueEval cEnv cont result
+    Continuation cEnv _ _ _ _ (Just _) -> continueEval cEnv cont result
     _ -> return result
 apply cont (PrimitiveFunc func) args = do
   result <- liftThrows $ func args
   case cont of
-    Continuation cEnv _ _ _ _ (Just cFunc) -> continueEval cEnv cont result
+    Continuation cEnv _ _ _ _ (Just _) -> continueEval cEnv cont result
     _ -> return result
 apply cont (Func aparams avarargs abody aclosure _) args =
   if num aparams /= num args && avarargs == Nothing
@@ -495,14 +508,14 @@ apply cont (Func aparams avarargs abody aclosure _) args =
         -- detect all tail calls. See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
         --
         evalBody evBody env = case cont of
-            Continuation _ cBody cCont _ _ _ -> if length cBody == 0
-                then continueWithContinuation env evBody cCont -- No more scheme code in body, do not create a new instance of cont
-                else continueWithContinuation env evBody cont
-            _ -> continueWithContinuation env evBody cont
+            Continuation _ cBody cCont _ _ cFunc -> if length cBody == 0
+                then continueWithContinuation env evBody (trace ("cont case 1") cCont) Nothing 
+                else continueWithContinuation env evBody (trace "cont case 2" cont) Nothing
+            _ -> continueWithContinuation env evBody (trace "cont case 3" cont) Nothing
 
         -- Shortcut for calling continueEval
-        continueWithContinuation cwcEnv cwcBody cwcCont = 
-            continueEval cwcEnv (Continuation cwcEnv cwcBody cwcCont Nothing Nothing Nothing) $ Nil ""
+        continueWithContinuation cwcEnv cwcBody cwcCont cwcFunc = 
+            continueEval cwcEnv (Continuation cwcEnv cwcBody cwcCont Nothing Nothing cwcFunc) $ Nil ""
 
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
