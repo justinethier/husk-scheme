@@ -484,12 +484,12 @@ apply _ c@(Continuation env _ _ _ _ _) args = do
 apply cont (IOFunc func) args = do
   result <- func args
   case cont of
-    Continuation cEnv _ _ _ _ (Just _) -> continueEval cEnv cont result
+    Continuation cEnv _ _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
 apply cont (PrimitiveFunc func) args = do
   result <- liftThrows $ func args
   case cont of
-    Continuation cEnv _ _ _ _ (Just _) -> continueEval cEnv cont result
+    Continuation cEnv _ _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
 apply cont (Func aparams avarargs abody aclosure _) args =
   if num aparams /= num args && avarargs == Nothing
