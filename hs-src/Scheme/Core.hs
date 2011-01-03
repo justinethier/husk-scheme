@@ -133,8 +133,8 @@ continueEval _ (Continuation cEnv cBody cCont Nothing Nothing Nothing) val = do
     case (trace ("cBody = " ++ show cBody ++ " val = " ++ show val) cBody) of
         [] -> do
           case cCont of
-            Continuation nEnv _ _ _ _ _ -> continueEval nEnv cCont val
-            _ -> return val
+            Continuation nEnv _ _ _ _ _ -> continueEval nEnv cCont (trace ("returning val=" ++ show val) val)
+            _ -> return (trace ("no cont, returning val = " ++ show val) val)
         [lv] -> eval cEnv (Continuation cEnv [] cCont Nothing Nothing Nothing) (trace ("lv = " ++ show lv) lv)
         (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing Nothing) (trace ("lv2 = " ++ show lv) lv)
 
@@ -509,7 +509,13 @@ apply cont (Func aparams avarargs abody aclosure _) args =
         --
         evalBody evBody env = case cont of
             Continuation _ cBody cCont _ _ cFunc -> if length cBody == 0
-                then continueWithContinuation env evBody (trace ("cont case 1") cCont) Nothing 
+                -- TODO: changed following back to cont to get continuations to work when using higher
+                --       order functions - but this breaks proper tail recursion!
+                --
+                --       Need to get both to work, probably by figuring out what exactly is
+                --       going on to prevent this optimization from working...
+                --
+                then continueWithContinuation env evBody (trace ("cont case 1") cont) Nothing -- cCont
                 else continueWithContinuation env evBody (trace "cont case 2" cont) Nothing
             _ -> continueWithContinuation env evBody (trace "cont case 3" cont) Nothing
 
