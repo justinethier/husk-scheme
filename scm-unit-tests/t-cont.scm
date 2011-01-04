@@ -47,4 +47,16 @@
 
 ;(list-length '(a b . c))                    ===>  #f
 
+(define (test-cont) #f)
+(assert/equal (if (call/cc
+                    (lambda (c)
+                        (set! test-cont c)
+                        #f))
+                    'true
+                    'false)
+              'false)
+(assert/equal (test-cont #t)
+              'true)
+(assert/equal (test-cont #f)
+              'false)
 (unit-test-handler-results)
