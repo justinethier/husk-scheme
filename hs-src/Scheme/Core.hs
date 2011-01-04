@@ -508,16 +508,16 @@ apply cont (Func aparams avarargs abody aclosure _) args =
         -- detect all tail calls. See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
         --
         evalBody evBody env = case cont of
-            Continuation _ cBody cCont _ _ cFunc -> if length cBody == 0
+            Continuation _ cBody cCont _ _ Nothing -> if length cBody == 0
                 -- TODO: changed following back to cont to get continuations to work when using higher
                 --       order functions - but this breaks proper tail recursion!
                 --
                 --       Need to get both to work, probably by figuring out what exactly is
                 --       going on to prevent this optimization from working...
                 --
-                then continueWithContinuation env evBody (trace ("cont case 1") cont) Nothing -- cCont
-                else continueWithContinuation env evBody (trace "cont case 2" cont) Nothing
-            _ -> continueWithContinuation env evBody (trace "cont case 3" cont) Nothing
+                then continueWithContinuation env (trace ("cont case 1") evBody) cCont Nothing -- cCont
+                else continueWithContinuation env (trace "cont case 2" evBody) cont Nothing
+            _ -> continueWithContinuation env (trace "cont case 3" evBody) cont Nothing
 
         -- Shortcut for calling continueEval
         continueWithContinuation cwcEnv cwcBody cwcCont cwcFunc = 
