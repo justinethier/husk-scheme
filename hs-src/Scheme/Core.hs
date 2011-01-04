@@ -37,7 +37,7 @@ import qualified Data.Map
 import Maybe
 import List
 import IO hiding (try)
-import Debug.Trace
+--import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
 
@@ -126,18 +126,23 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 -- We could probably just use higher order functions instead, but it remains to be seen
 -- how ugly that code will become. Using cBody may be a nice covenience... but it remains 
 -- to be seen.
-continueEval _ (Continuation cEnv _ cCont Nothing Nothing (Just func)) val = func cEnv cCont (trace (show "cps function with value = " ++ show val) val)
+continueEval _ (Continuation cEnv _ cCont Nothing Nothing (Just func)) val = func cEnv cCont val
+--continueEval _ (Continuation cEnv _ cCont Nothing Nothing (Just func)) val = func cEnv cCont (trace (show "cps function with value = " ++ show val) val)
 -- 
 continueEval _ (Continuation cEnv cBody cCont Nothing Nothing Nothing) val = do
---    case cBody of
-    case (trace ("cBody = " ++ show cBody ++ " val = " ++ show val) cBody) of
+    case cBody of
+--    case (trace ("cBody = " ++ show cBody ++ " val = " ++ show val) cBody) of
         [] -> do
           case cCont of
-            Continuation nEnv _ _ _ _ _ -> continueEval nEnv cCont (trace ("returning val=" ++ show val) val)
+            Continuation nEnv _ _ _ _ _ -> continueEval nEnv cCont val
+            _ -> return (val)
+        [lv] -> eval cEnv (Continuation cEnv [] cCont Nothing Nothing Nothing) (lv)
+        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing Nothing) (lv)
+
+{-            Continuation nEnv _ _ _ _ _ -> continueEval nEnv cCont (trace ("returning val=" ++ show val) val)
             _ -> return (trace ("no cont, returning val = " ++ show val) val)
         [lv] -> eval cEnv (Continuation cEnv [] cCont Nothing Nothing Nothing) (trace ("lv = " ++ show lv) lv)
-        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing Nothing) (trace ("lv2 = " ++ show lv) lv)
-
+        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing Nothing) (trace ("lv2 = " ++ show lv) lv)-}
 continueEval _ _ _ = throwError $ Default "Internal error in continueEval"
 
 -- |Core eval function
@@ -225,10 +230,12 @@ eval env cont (List [Atom "if", predic, conseq, alt]) = do
  - used to convert the rest of eval into CPS (or at least to start, those areas affected by the
  - "leak"); then all tests would be expected to pass.
  -}
-  eval env (makeCPS env cont cps) (trace ("pred = " ++ show predic) predic)
+--  eval env (makeCPS env cont cps) (trace ("pred = " ++ show predic) predic)
+  eval env (makeCPS env cont cps) (predic)
   where   cps :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
           cps e c result = 
-            case (trace ("result = " ++ show result) result) of
+--            case (trace ("result = " ++ show result) result) of
+            case (result) of
               Bool False -> eval e c alt
               _ -> eval e c conseq
 -- }
@@ -515,10 +522,13 @@ apply cont (Func aparams avarargs abody aclosure _) args =
                 --       Need to get both to work, probably by figuring out what exactly is
                 --       going on to prevent this optimization from working...
                 --
-                then continueWithContinuation env (trace ("cont case 1") evBody) cCont Nothing -- cCont
-                else continueWithContinuation env (trace "cont case 2" evBody) cont Nothing
-            _ -> continueWithContinuation env (trace "cont case 3" evBody) cont Nothing
+                then continueWithContinuation env (evBody) cCont Nothing -- cCont
+                else continueWithContinuation env (evBody) cont Nothing
+            _ -> continueWithContinuation env (evBody) cont Nothing
 
+{-                then continueWithContinuation env (trace ("cont case 1") evBody) cCont Nothing -- cCont
+                else continueWithContinuation env (trace "cont case 2" evBody) cont Nothing
+            _ -> continueWithContinuation env (trace "cont case 3" evBody) cont Nothing -}
         -- Shortcut for calling continueEval
         continueWithContinuation cwcEnv cwcBody cwcCont cwcFunc = 
             continueEval cwcEnv (Continuation cwcEnv cwcBody cwcCont Nothing Nothing cwcFunc) $ Nil ""
