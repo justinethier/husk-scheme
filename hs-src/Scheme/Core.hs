@@ -205,31 +205,13 @@ eval envi cont (List [Atom "quasiquote", value]) = continueEval envi cont =<< do
                         return $ (acc ++ [result])
 
 eval env cont (List [Atom "if", predic, conseq, alt]) = do
-{- Test code for this:
- -
-(write (if (null? '(1)) 'null 'not_null))
-(define (test)
-  1
-    2
-      (write (+ 1 2 3))
-        4
-          (write (+ 4 5 6))
-            #f)
-(write (if (test) 'true 'false))
- - -}
 {-- original version:
   result <- eval env cont predic
   case result of
        Bool False -> eval env cont alt
        _ -> eval env cont conseq
 --}
-{- CPS version:
- -
- - unfortunately this breaks tests, looks like it is because the "False" value may "leak" out
- - into other places in the code that are not written using CPS. This reference code needs to be
- - used to convert the rest of eval into CPS (or at least to start, those areas affected by the
- - "leak"); then all tests would be expected to pass.
- -}
+-- CPS version:
 --  eval env (makeCPS env cont cps) (trace ("pred = " ++ show predic) predic)
   eval env (makeCPS env cont cps) (predic)
   where   cps :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
