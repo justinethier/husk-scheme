@@ -128,12 +128,13 @@ data LispVal = Atom String
 	| Continuation {closure :: Env,    -- Environment of the continuation
                         body :: [LispVal], -- Code in the body of the continuation
                         continuation :: LispVal    -- Code to resume after body of cont
-                        , frameFunc :: (Maybe LispVal) -- TODO: obsolete, remove if higher-order works
---                        , frameRawArgs :: (Maybe [LispVal])
-                        , frameEvaledArgs :: (Maybe [LispVal]) -- TODO: obsolete, remove if higher-order works
-                        , continuationFunction :: (Maybe (Env -> LispVal -> LispVal -> IOThrowsError LispVal))
+                        , argUnused :: (Maybe LispVal) -- TODO: obsolete, remove if higher-order works
+                        , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to a higher-order function 
+                        , continuationFunction :: (Maybe (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal))
                         --
                         --TODO: frame information
+                        --      this is just prototype code, but idea was to be able to identify
+                        --      functions for TCO... but may not need/use this
                         --  for evaluating a function (prior to calling) need:
                         --   - function obj
                         --   - list of args
@@ -152,11 +153,17 @@ data LispVal = Atom String
  	| Nil String
          -- ^Internal use only; do not use this type directly.
 
+-- Make an "empty" continuation that does not contain any code
 makeNullContinuation :: Env -> LispVal
 makeNullContinuation env = Continuation env [] (Nil "") Nothing Nothing Nothing
 
-makeCPS :: Env -> LispVal -> (Env -> LispVal -> LispVal -> IOThrowsError LispVal) -> LispVal
+-- Make a continuation that takes a higher-order function
+makeCPS :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal]-> IOThrowsError LispVal) -> LispVal
 makeCPS env cont cps = Continuation env [] cont Nothing Nothing (Just cps)
+
+-- Make a continuation that passes arguments to a higher-order function
+makeCPSWArgs :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) -> [LispVal] -> LispVal
+makeCPSWArgs env cont cps args = Continuation env [] cont Nothing (Just args) (Just cps)
 
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b

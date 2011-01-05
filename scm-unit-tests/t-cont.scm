@@ -59,4 +59,14 @@
               'true)
 (assert/equal (test-cont #f)
               'false)
+
+(assert/equal (if (call/cc
+                    (lambda (c)
+                        (set! test-cont c)
+                        #t))
+                    'true2)
+              'true2)
+(assert/equal (test-cont #t)
+              'true2)
+
 (unit-test-handler-results)
