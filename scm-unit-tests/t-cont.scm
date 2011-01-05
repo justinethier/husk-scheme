@@ -69,4 +69,6 @@
 (assert/equal (test-cont #t)
               'true2)
 
+;TODO: test cases for (begin) once CPS style is working
+;
 (unit-test-handler-results)
