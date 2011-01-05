@@ -37,7 +37,7 @@ import qualified Data.Map
 import Maybe
 import List
 import IO hiding (try)
---import Debug.Trace
+import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
 
@@ -249,25 +249,25 @@ eval env cont (List (Atom "case" : keyAndClauses)) =
        evalCase env cont $ List $ (ekey : cls)
 
 eval env cont (List (Atom "begin" : funcs)) = 
-  if length funcs == 0
+  if length (trace ("begin args = " ++ show funcs) funcs) == 0
      then eval env cont $ Nil ""
      else if length funcs == 1
              then eval env cont (head funcs)
              else do
                  let fs = tail funcs
-                 eval env cont (head funcs)
-                 eval env cont (List (Atom "begin" : fs))
-{-
+--                 eval env cont (head funcs)
+--                 eval env cont (List (Atom "begin" : fs))
+
+-- TODO: some stack issue with this, try (begin 1 2 3 4) to see...
                  eval env (makeCPSWArgs env cont cpsRest fs) (head funcs)
-    where cpsRest :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsRest e c _ args = do
-          let fs = case args of
-                      Just fArgs -> if length fArgs > 0
-                                        then tail fArgs
-                                        else []
-                      Nothing -> []
-          eval e (makeCPSWArgs e c cpsRest fs) (List (Atom "begin" : fs))
--}
+  where cpsRest :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsRest e c val args = 
+          case args of
+            Just fArgs -> if length fArgs > 0
+                             then eval e (makeCPSWArgs e c cpsRest $ tail fArgs) (List (Atom "begin" : fArgs))
+                             else continueEval e c val
+            Nothing -> throwError $ Default "Unexpected error in begin"
+-- }
 eval env cont (List [Atom "load", String filename]) = do
 --     load filename >>= liftM last . mapM (evaluate env cont)
      result <- load filename >>= liftM last . mapM (evaluate env (makeNullContinuation env))
