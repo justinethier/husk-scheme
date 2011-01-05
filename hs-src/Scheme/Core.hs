@@ -126,7 +126,7 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 -- We could probably just use higher order functions instead, but it remains to be seen
 -- how ugly that code will become. Using cBody may be a nice covenience... but it remains 
 -- to be seen.
-continueEval _ (Continuation cEnv _ cCont Nothing Nothing (Just func)) val = func cEnv cCont val
+continueEval _ (Continuation cEnv _ cCont Nothing funcArgs (Just func)) val = func cEnv cCont val funcArgs
 --continueEval _ (Continuation cEnv _ cCont Nothing Nothing (Just func)) val = func cEnv cCont (trace (show "cps function with value = " ++ show val) val)
 -- 
 continueEval _ (Continuation cEnv cBody cCont Nothing Nothing Nothing) val = do
@@ -212,20 +212,21 @@ eval env cont (List [Atom "if", predic, conseq, alt]) = do
        _ -> eval env cont conseq
 --}
 -- CPS version:
---  eval env (makeCPS env cont cps) (trace ("pred = " ++ show predic) predic)
   eval env (makeCPS env cont cps) (predic)
-  where   cps :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-          cps e c result = 
+  where   cps :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+          cps e c result _ = 
 --            case (trace ("result = " ++ show result) result) of
             case (result) of
               Bool False -> eval e c alt
               _ -> eval e c conseq
 -- }
 eval env cont (List [Atom "if", predic, conseq]) = 
-    do result <- eval env cont predic
-       case result of
-         Bool True -> eval env cont conseq
-         _ -> eval env cont $ List []
+    eval env (makeCPS env cont cpsResult) predic
+    where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+          cpsResult e c result _ = 
+            case result of
+              Bool True -> eval e c conseq
+              _ -> eval e c $ List [] -- Unspecified return value per R5RS
 
 eval env cont (List (Atom "cond" : clauses)) = 
   if length clauses == 0
@@ -256,7 +257,17 @@ eval env cont (List (Atom "begin" : funcs)) =
                  let fs = tail funcs
                  eval env cont (head funcs)
                  eval env cont (List (Atom "begin" : fs))
-
+{-
+                 eval env (makeCPSWArgs env cont cpsRest fs) (head funcs)
+    where cpsRest :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsRest e c _ args = do
+          let fs = case args of
+                      Just fArgs -> if length fArgs > 0
+                                        then tail fArgs
+                                        else []
+                      Nothing -> []
+          eval e (makeCPSWArgs e c cpsRest fs) (List (Atom "begin" : fs))
+-}
 eval env cont (List [Atom "load", String filename]) = do
 --     load filename >>= liftM last . mapM (evaluate env cont)
      result <- load filename >>= liftM last . mapM (evaluate env (makeNullContinuation env))
