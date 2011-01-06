@@ -88,4 +88,7 @@
 ; TODO: this fails until set! properly uses CPS
 (assert/equal a 2)
 
+
+; TODO: test cases for all 3 forms of (define)
+
 (unit-test-handler-results)
