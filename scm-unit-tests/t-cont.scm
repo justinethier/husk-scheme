@@ -71,4 +71,14 @@
 
 ;TODO: test cases for (begin) once CPS style is working
 ;
+
+(assert/equal (begin 1 2 (call/cc
+                           (lambda (c)
+                             (set! test-cont c)
+                             3))
+                     4)
+              4)
+(assert/equal (test-cont 4) 4)
+(assert/equal (test-cont 3) 4)
+
 (unit-test-handler-results)
