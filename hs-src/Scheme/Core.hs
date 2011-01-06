@@ -241,6 +241,11 @@ eval env cont (List (Atom "cond" : clauses)) =
        case test of
          Bool True -> evalCond env cont c
          _ -> eval env cont $ List $ (Atom "cond" : cs)
+        -- Helper function for evaluating 'cond'
+  where evalCond :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+        evalCond e c (List [_, expr]) = eval e c expr
+        evalCond e c (List (_ : expr)) = last $ map (eval e c) expr -- TODO: all expr's need to be evaluated, not sure happening right now
+        evalCond _ _ badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
 eval env cont (List (Atom "case" : keyAndClauses)) = 
     do let key = keyAndClauses !! 0
@@ -267,7 +272,6 @@ eval env cont (List [Atom "load", String filename]) = do
 	 where evaluate env2 cont2 val2 = macroEval env2 val2 >>= eval env2 cont2
 
 eval env cont (List [Atom "set!", Atom var, form]) = do 
---  eval env cont form >>= setVar env var
   result <- eval env (makeNullContinuation env) form >>= setVar env var
   continueEval env cont result
 
@@ -441,12 +445,6 @@ evalCase envOuter cont (List (key : cases)) = do
             _ -> eval env cont $ Bool False
 
 evalCase _ _ badForm = throwError $ BadSpecialForm "case: Unrecognized special form" badForm
-
--- Helper function for evaluating 'cond'
-evalCond :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-evalCond env cont (List [_, expr]) = eval env cont expr
-evalCond env cont (List (_ : expr)) = last $ map (eval env cont) expr -- TODO: all expr's need to be evaluated, not sure happening right now
-evalCond _ _ badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
 makeFunc :: --forall (m :: * -> *).
             (Monad m) =>
