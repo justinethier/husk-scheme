@@ -272,8 +272,9 @@ eval env cont (List [Atom "load", String filename]) = do
 	 where evaluate env2 cont2 val2 = macroEval env2 val2 >>= eval env2 cont2
 
 eval env cont (List [Atom "set!", Atom var, form]) = do 
-  result <- eval env (makeNullContinuation env) form >>= setVar env var
-  continueEval env cont result
+  eval env (makeCPS env cont cpsResult) form
+ where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+       cpsResult e c result _ = setVar e var result >>= continueEval e c
 
 eval env cont (List [Atom "define", Atom var, form]) = do 
 --  eval env cont form >>= defineVar env var
