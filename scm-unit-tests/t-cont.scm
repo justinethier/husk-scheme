@@ -81,4 +81,11 @@
 (assert/equal (test-cont 4) 4)
 (assert/equal (test-cont 3) 4)
 
+(define a #f)
+(set! a (call/cc (lambda (c) (set! test-cont c) 1)))
+(assert/equal a 1)
+(test-cont 2)
+; TODO: this fails until set! properly uses CPS
+(assert/equal a 2)
+
 (unit-test-handler-results)
