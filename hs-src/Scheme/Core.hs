@@ -277,16 +277,18 @@ eval env cont (List [Atom "set!", Atom var, form]) = do
        cpsResult e c result _ = setVar e var result >>= continueEval e c
 
 eval env cont (List [Atom "define", Atom var, form]) = do 
---  eval env cont form >>= defineVar env var
-  result <- eval env (makeNullContinuation env) form >>= defineVar env var
-  continueEval env cont result
+  eval env (makeCPS env cont cpsResult) form
+ where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+       cpsResult e c result _ = defineVar e var result >>= continueEval e c
 
 eval env cont (List (Atom "define" : List (Atom var : fparams) : fbody )) = do
   result <- (makeNormalFunc env fparams fbody >>= defineVar env var)
   continueEval env cont result
+
 eval env cont (List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) = do
   result <- (makeVarargs varargs env fparams fbody >>= defineVar env var)
   continueEval env cont result
+
 eval env cont (List (Atom "lambda" : List fparams : fbody)) = do
   result <- makeNormalFunc env fparams fbody
   continueEval env cont result
