@@ -248,11 +248,42 @@ eval env cont (List (Atom "cond" : clauses)) =
         evalCond e c (List (_ : expr)) = last $ map (eval e c) expr -- TODO: need to remove map so all can be evaled using CPS 
         evalCond _ _ badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
-eval env cont (List (Atom "case" : keyAndClauses)) = 
+eval outerEnv outerCont (List (Atom "case" : keyAndClauses)) = 
     do let key = keyAndClauses !! 0
        let cls = tail keyAndClauses
-       ekey <- eval env cont key
-       evalCase env cont $ List $ (ekey : cls)
+       ekey <- eval outerEnv outerCont key
+       evalCase outerEnv outerCont $ List $ (ekey : cls)
+  -- Helper function for evaluating 'case'
+  -- TODO: still need to handle case where nothing matches key
+  --       (same problem exists with cond, if)
+  where
+    evalCase :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+    evalCase envOuter cont (List (key : cases)) = do
+         let c = cases !! 0
+         ekey <- eval envOuter cont key
+         case c of
+           List (Atom "else" : exprs) -> last $ map (eval envOuter cont) exprs
+           List (List cond : exprs) -> do test <- checkEq envOuter cont ekey (List cond)
+                                          case test of
+                                            Bool True -> last $ map (eval envOuter cont) exprs
+                                            _ -> evalCase envOuter cont $ List $ ekey : tail cases
+           badForm -> throwError $ BadSpecialForm "Unrecognized special form in case" badForm
+    evalCase _ _ badForm = throwError $ BadSpecialForm "case: Unrecognized special form" badForm
+    
+    checkEq env cont ekey (List (x : xs)) = do 
+     test <- eval env cont $ List [Atom "eqv?", ekey, x]
+     case test of
+       Bool True -> eval env cont $ Bool True
+       _ -> checkEq env cont ekey (List xs)
+
+    checkEq env cont ekey val =
+     case val of
+       List [] -> eval env cont $ Bool False -- If nothing else is left, then nothing matched key
+       _ -> do
+          test <- eval env cont $ List [Atom "eqv?", ekey, val]
+          case test of
+            Bool True -> eval env cont $ Bool True
+            _ -> eval env cont $ Bool False
 
 eval env cont (List (Atom "begin" : funcs)) = 
   if length funcs == 0
@@ -293,12 +324,16 @@ eval env cont (List (Atom "define" : DottedList (Atom var : fparams) varargs : f
 eval env cont (List (Atom "lambda" : List fparams : fbody)) = do
   result <- makeNormalFunc env fparams fbody
   continueEval env cont result
+
 eval env cont (List (Atom "lambda" : DottedList fparams varargs : fbody)) = do
   result <- makeVarargs varargs env fparams fbody
   continueEval env cont result
+
 eval env cont (List (Atom "lambda" : varargs@(Atom _) : fbody)) = do
   result <- makeVarargs varargs env [] fbody
   continueEval env cont result
+
+-- TODO: pick up CPS conversion here....
 
 eval env cont (List [Atom "string-fill!", Atom var, character]) = do 
   str <- eval env (makeNullContinuation env) =<< getVar env var 
@@ -315,6 +350,7 @@ eval env cont (List [Atom "string-fill!", Atom var, character]) = do
         doFillStr (String _, c, _) = throwError $ TypeMismatch "character" c
         doFillStr (s, Char _, _) = throwError $ TypeMismatch "string" s
         doFillStr (_, _, _) = throwError $ BadSpecialForm "Unexpected error in string-fill!" $ List []
+
 eval env cont (List [Atom "string-set!", Atom var, i, character]) = do 
   idx <- eval env (makeNullContinuation env) i
   str <- eval env (makeNullContinuation env) =<< getVar env var
@@ -385,7 +421,7 @@ eval _ _ (List [Atom "apply"]) = throwError $ BadSpecialForm "apply" $ String "F
 eval _ _ (List [Atom "apply", _]) = throwError $ BadSpecialForm "apply" $ String "Arguments not specified"
 eval env cont (List (Atom "apply" : args)) = do
     -- FUTURE: verify length of list?
-    -- TODO: for all Continuations below, will almost certainly need to pull each into this continuation
+    -- TODO: for all Continuations below, need to pull each into this continuation
     proc <- eval env (makeNullContinuation env) $ head $ args
     lst <- eval env (makeNullContinuation env) $ head $ reverse args
     argVals <- mapM (eval env (makeNullContinuation env)) $ tail $ reverse $ tail (reverse args)
@@ -397,7 +433,7 @@ eval env cont (List (Atom "call-with-current-continuation" : args)) =
   eval env cont (List (Atom "call/cc" : args))
 eval _ _ (List [Atom "call/cc"]) = throwError $ Default "Procedure not specified"
 eval env cont (List [Atom "call/cc", proc]) = do
-  func <- eval env (makeNullContinuation env) proc 
+  func <- eval env (makeNullContinuation env) proc -- TODO: Use CPS here instead???? 
   case func of
     PrimitiveFunc f -> liftThrows $ f [cont]
     Func aparams _ _ _ _ ->
@@ -408,8 +444,7 @@ eval env cont (List [Atom "call/cc", proc]) = do
 
 
 eval env cont (List (function : args)) = do
--- Alpha code for next version:    continueEval env (Continuation env (args) cont (Just function) Nothing) $ Nil ""  
--- { - TODO: obsolete code, delete once above is working
+-- { - TODO: obsolete code, need to transform into CPS 
   func <- eval env (makeNullContinuation env) function -- TODO: almost certainly need to pull this into the continuation
   argVals <- mapM (eval env (makeNullContinuation env)) args -- TODO: almost certainly need to pull this into the continuation
   apply cont func argVals
@@ -417,38 +452,6 @@ eval env cont (List (function : args)) = do
 
 --Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
-
--- Helper function for evaluating 'case'
--- TODO: still need to handle case where nothing matches key
---       (same problem exists with cond, if)
-evalCase :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-evalCase envOuter cont (List (key : cases)) = do
-         let c = cases !! 0
-         ekey <- eval envOuter cont key
-         case c of
-           List (Atom "else" : exprs) -> last $ map (eval envOuter cont) exprs
-           List (List cond : exprs) -> do test <- checkEq envOuter ekey (List cond)
-                                          case test of
-                                            Bool True -> last $ map (eval envOuter cont) exprs
-                                            _ -> evalCase envOuter cont $ List $ ekey : tail cases
-           badForm -> throwError $ BadSpecialForm "Unrecognized special form in case" badForm
-  where
-    checkEq env ekey (List (x : xs)) = do 
-     test <- eval env cont $ List [Atom "eqv?", ekey, x]
-     case test of
-       Bool True -> eval env cont $ Bool True
-       _ -> checkEq env ekey (List xs)
-
-    checkEq env ekey val =
-     case val of
-       List [] -> eval env cont $ Bool False -- If nothing else is left, then nothing matched key
-       _ -> do
-          test <- eval env cont $ List [Atom "eqv?", ekey, val]
-          case test of
-            Bool True -> eval env cont $ Bool True
-            _ -> eval env cont $ Bool False
-
-evalCase _ _ badForm = throwError $ BadSpecialForm "case: Unrecognized special form" badForm
 
 makeFunc :: --forall (m :: * -> *).
             (Monad m) =>
