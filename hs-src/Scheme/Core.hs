@@ -448,7 +448,15 @@ eval env cont (List (function : args)) = do
   func <- eval env (makeNullContinuation env) function -- TODO: almost certainly need to pull this into the continuation
   argVals <- mapM (eval env (makeNullContinuation env)) args -- TODO: almost certainly need to pull this into the continuation
   apply cont func argVals
--- } 
+{- TODO:
+ - else eval env (makeCPSWArgs env cont cpsRest $ tail funcs) (head funcs)
+  where cpsRest :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsRest e c _ args = 
+          case args of
+            Just fArgs -> eval e c $ List (Atom "begin" : fArgs)
+            Nothing -> throwError $ Default "Unexpected error in begin"
+
+--} 
 
 --Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
