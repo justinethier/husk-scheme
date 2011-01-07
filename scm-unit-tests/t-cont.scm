@@ -90,5 +90,6 @@
 
 
 ; TODO: test cases for all 3 forms of (define)
-
+;       test cases for cond
+;
 (unit-test-handler-results)
