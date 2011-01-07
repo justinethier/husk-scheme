@@ -232,19 +232,20 @@ eval env cont (List (Atom "cond" : clauses)) =
   if length clauses == 0
    then throwError $ BadSpecialForm "No matching clause" $ String "cond"
    else do
-       let c =  clauses !! 0 -- First clause
-       let cs = tail clauses -- other clauses
-       test <- case c of
-         List (Atom "else" : _) -> eval env cont $ Bool True
-         List (cond : _) -> eval env cont cond
+       case (clauses !! 0) of
+         List (Atom "else" : _) -> eval env (makeCPSWArgs env cont cpsResult clauses) $ Bool True
+         List (cond : _) -> eval env (makeCPSWArgs env cont cpsResult clauses) cond
          badType -> throwError $ TypeMismatch "clause" badType 
-       case test of
-         Bool True -> evalCond env cont c
-         _ -> eval env cont $ List $ (Atom "cond" : cs)
+  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsResult e cnt result (Just (c:cs)) = 
+            case result of
+              Bool True -> evalCond e cnt c
+              _ -> eval env cnt $ List $ (Atom "cond" : cs)
+        cpsResult _ _ _ _ = throwError $ Default "Unexpected error in cond"
         -- Helper function for evaluating 'cond'
-  where evalCond :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+        evalCond :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
         evalCond e c (List [_, expr]) = eval e c expr
-        evalCond e c (List (_ : expr)) = last $ map (eval e c) expr -- TODO: all expr's need to be evaluated, not sure happening right now
+        evalCond e c (List (_ : expr)) = last $ map (eval e c) expr -- TODO: need to remove map so all can be evaled using CPS 
         evalCond _ _ badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
 eval env cont (List (Atom "case" : keyAndClauses)) = 
