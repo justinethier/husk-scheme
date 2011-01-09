@@ -443,20 +443,32 @@ eval env cont (List [Atom "call/cc", proc]) = do
     other -> throwError $ TypeMismatch "procedure" other
 
 
-eval env cont (List (function : args)) = do
--- { - TODO: obsolete code, need to transform into CPS 
+eval env cont (List (function : args)) = 
+  eval env (makeCPSWArgs env cont cpsPrepArgs $ args) function
+ where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+       cpsPrepArgs e c func args = 
+          case args of
+            Just [] -> apply c func [] -- No args, immediately apply the function
+            Just [a] -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List []]) a
+            Just (a:as) -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List as]) a
+            Nothing -> throwError $ Default "Unexpected error in function application (1)"
+        -- |Store value of previous argument, evaluate the next arg until all are done
+        -- parg - Previous argument that has now been evaluated
+        -- state - List containing the following, in order:
+        --         - Function to apply when args are ready
+        --         - List of evaluated parameters
+        --         - List of parameters awaiting evaluation
+       cpsEvalArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+       cpsEvalArgs e c evaledArg (Just [func, List argsEvaled, List argsRemaining]) = 
+          case argsRemaining of
+            [] -> apply c func (argsEvaled ++ [evaledArg])
+            [a] -> eval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List []]) a
+            (a:as) -> eval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List as]) a
+
+{- TODO: obsolete code, delete once above passes 
   func <- eval env (makeNullContinuation env) function -- TODO: almost certainly need to pull this into the continuation
   argVals <- mapM (eval env (makeNullContinuation env)) args -- TODO: almost certainly need to pull this into the continuation
-  apply cont func argVals
-{- TODO:
- - else eval env (makeCPSWArgs env cont cpsRest $ tail funcs) (head funcs)
-  where cpsRest :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsRest e c _ args = 
-          case args of
-            Just fArgs -> eval e c $ List (Atom "begin" : fArgs)
-            Nothing -> throwError $ Default "Unexpected error in begin"
-
---} 
+  apply cont func argVals -}
 
 --Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
