@@ -55,8 +55,14 @@
                     'true
                     'false)
               'false)
-(assert/equal (test-cont #t)
-              'true)
+; 
+; Following is not a valid test case because in above, (assert/equal) is
+; apparently pulled into the continuation. So below, the result of calling
+; into the continuation is then compared to false. Weird... but results are
+; consistent when run in either husk or chicken scheme.
+;
+;(assert/equal (test-cont 1)
+;              'true)
 (assert/equal (test-cont #f)
               'false)
 
