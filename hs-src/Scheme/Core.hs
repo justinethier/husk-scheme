@@ -37,7 +37,7 @@ import qualified Data.Map
 import Maybe
 import List
 import IO hiding (try)
---import Debug.Trace
+import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
 
@@ -443,15 +443,19 @@ eval env cont (List [Atom "call/cc", proc]) = do
     other -> throwError $ TypeMismatch "procedure" other
 
 
-eval env cont (List (function : args)) = 
-  eval env (makeCPSWArgs env cont cpsPrepArgs $ args) function
+eval env cont (List (function : functionArgs)) = do 
+{- new version, but breaks several test cases.
+ - may wish to consider moving case into CPS style and then retesting this code, although
+ - I *thought* it would be self-contained in the same sense the original code is...
+ -
+  eval env (makeCPSWArgs env cont cpsPrepArgs $ functionArgs) function
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-       cpsPrepArgs e c func args = 
-          case args of
-            Just [] -> apply c func [] -- No args, immediately apply the function
-            Just [a] -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List []]) a
-            Just (a:as) -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List as]) a
-            Nothing -> throwError $ Default "Unexpected error in function application (1)"
+       cpsPrepArgs e c func (Just args) = 
+          case (trace ("prep eval of args: " ++ show args) args) of
+            [] -> apply c func [] -- No args, immediately apply the function
+            [a] -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List []]) a
+            (a:as) -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List as]) a
+       cpsPrepArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (1)"
         -- |Store value of previous argument, evaluate the next arg until all are done
         -- parg - Previous argument that has now been evaluated
         -- state - List containing the following, in order:
@@ -464,11 +468,11 @@ eval env cont (List (function : args)) =
             [] -> apply c func (argsEvaled ++ [evaledArg])
             [a] -> eval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List []]) a
             (a:as) -> eval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List as]) a
-
-{- TODO: obsolete code, delete once above passes 
+-}
+-- { - TODO: original, obsolete code, delete once above passes 
   func <- eval env (makeNullContinuation env) function -- TODO: almost certainly need to pull this into the continuation
-  argVals <- mapM (eval env (makeNullContinuation env)) args -- TODO: almost certainly need to pull this into the continuation
-  apply cont func argVals -}
+  argVals <- mapM (eval env (makeNullContinuation env)) functionArgs -- TODO: almost certainly need to pull this into the continuation
+  apply cont func argVals --}
 
 --Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
