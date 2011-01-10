@@ -448,6 +448,11 @@ eval env cont (List (function : functionArgs)) = do
  - may wish to consider moving case into CPS style and then retesting this code, although
  - I *thought* it would be self-contained in the same sense the original code is...
  -
+ - another thing to consider here, the test case that fails in t-cont appears to be broken
+ - in part because of the CPS args - 'false' is brought through to the trailing test cases
+ - because it is a CPS arg, even though it only applies to first test case (?).
+ - would be a nice section of code to break out and test separately in csi.
+ -
   eval env (makeCPSWArgs env cont cpsPrepArgs $ functionArgs) function
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsPrepArgs e c func (Just args) = 
