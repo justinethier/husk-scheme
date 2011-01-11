@@ -230,7 +230,7 @@ eval env cont (List [Atom "if", predic, conseq]) =
               Bool True -> eval e c conseq
               _ -> eval e c $ List [] -- Unspecified return value per R5RS
 
--- TODO: convert cond to a derived form (scheme macro)
+-- FUTURE: convert cond to a derived form (scheme macro)
 eval env cont (List (Atom "cond" : clauses)) = 
   if length clauses == 0
    then throwError $ BadSpecialForm "No matching clause" $ String "cond"
@@ -248,7 +248,7 @@ eval env cont (List (Atom "cond" : clauses)) =
         -- Helper function for evaluating 'cond'
         evalCond :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
         evalCond e c (List [_, expr]) = eval e c expr
-        evalCond e c (List (_ : expr)) = last $ map (eval e c) expr -- TODO: need to remove map so all can be evaled using CPS 
+        evalCond e c (List (_ : expr)) = eval e c $ List (Atom "begin" : expr)
         evalCond _ _ badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
 
 eval env cont (List (Atom "begin" : funcs)) = 
