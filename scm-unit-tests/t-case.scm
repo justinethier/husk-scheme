@@ -1,5 +1,20 @@
 (load "skim-unit.scm")
 
+; Tests from spec
+(assert/equal (case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))
+              'composite)
+
+(assert/equal (case (car '(c d))
+                ((a e i o u) 'vowel)
+                ((w y) 'semivowel)
+                (else 'consonant))
+              'consonant)
+
+; TODO: why is this returning 'b'?
+(assert/equal (case (car '(c d)) ((a) 'a) ((b) 'b))
+              #f)
+
+; Misc test cases
 (assert/equal (case (* 2 3) ((6) '(#t)) (else #f)) 
 			  '(#t))
 
@@ -20,5 +35,9 @@
 
 (assert/equal (case (* 2 3) (else #t))
 			  #t)
+
+; First clause has no datums
+(assert/equal (case 1 (() 'test) (else 'pass))
+              'pass)
 
 (unit-test-handler-results)
