@@ -70,7 +70,10 @@ evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = macroEval env lisp >>= (eval env (makeNullContinuation env))
 
 
-{- Changes will be required to eval to support continuations. According to original wiki book:
+{- TODO: write a wiki page about continuations once everything is implemented. 
+ -       maybe use some of this as background material for the article.
+ -
+ - Changes will be required to eval to support continuations. According to original wiki book:
  -   TBD
  -
  -
