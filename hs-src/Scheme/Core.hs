@@ -162,6 +162,8 @@ eval env cont val@(Vector _)    = continueEval env cont val
 eval env cont (Atom a)          = continueEval env cont =<< getVar env a
 eval env cont (List [Atom "quote", val])         = continueEval env cont val
 
+-- TODO: rewrite this in CPS style
+--
 -- The way it is written now, quasiquotation does not support
 -- being part of a continuation, so we use the null continuation
 -- within it for right now
@@ -261,6 +263,7 @@ eval env cont (List (Atom "begin" : funcs)) =
             Just fArgs -> eval e c $ List (Atom "begin" : fArgs)
             Nothing -> throwError $ Default "Unexpected error in begin"
 
+-- TODO: rewrite in CPS (??)
 eval env cont (List [Atom "load", String filename]) = do
 --     load filename >>= liftM last . mapM (evaluate env cont)
      result <- load filename >>= liftM last . mapM (evaluate env (makeNullContinuation env))
@@ -410,17 +413,9 @@ eval env cont (List [Atom "call/cc", proc]) = do
         else throwError $ NumArgs (toInteger $ length aparams) [cont] 
     other -> throwError $ TypeMismatch "procedure" other
 
-
+-- |Call a function by evaluating its arguments and then 
+--  executing it via 'apply'.
 eval env cont (List (function : functionArgs)) = do 
-{- new version, but breaks several test cases.
- - may wish to consider moving case into CPS style and then retesting this code, although
- - I *thought* it would be self-contained in the same sense the original code is...
- -
- - another thing to consider here, the test case that fails in t-cont appears to be broken
- - in part because of the CPS args - 'false' is brought through to the trailing test cases
- - because it is a CPS arg, even though it only applies to first test case (?).
- - would be a nice section of code to break out and test separately in csi.
- -}
   eval env (makeCPSWArgs env cont cpsPrepArgs $ functionArgs) function
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsPrepArgs e c func (Just args) = 
@@ -445,12 +440,7 @@ eval env cont (List (function : functionArgs)) = do
 
        cpsEvalArgs _ _ _ (Just _) = throwError $ Default "Unexpected error in function application (1)"
        cpsEvalArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (2)"
-{- TODO: original, obsolete code, delete once above passes 
-  func <- eval env (makeNullContinuation env) function -- TODO: almost certainly need to pull this into the continuation
-  argVals <- mapM (eval env (makeNullContinuation env)) functionArgs -- TODO: almost certainly need to pull this into the continuation
-  apply cont func argVals - -}
 
---Obsolete (?) - eval env cont (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
 eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 makeFunc :: --forall (m :: * -> *).
