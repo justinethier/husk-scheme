@@ -171,12 +171,19 @@
 ; http://blog.jcoglan.com/2009/02/25/announcing-heist-a-new-scheme-implementation-written-in-ruby/
 (define-syntax case
   (syntax-rules (else)
-    ((case key) ((lambda () #f)))))
+    ((_ key) ((lambda () #f)))
+    ((_ key (else expr1 expr2 ...))
+     (begin expr1 expr2 ...))
+    ((_ key (() expr ...) clause ...)
+     (case key clause ...))
+    ((_ key
+           ((datum1 datum2 ...) expr1 expr2 ...)
+           clause ...)
+     (if (eqv? #f (memv key '(datum1 datum2 ...)))
+          (case key clause ...)
+          (begin expr1 expr2 ...)))))
 
 ; Iteration - do
-; TODO: New version of do that makes step optional on a per-variable basis
-;       This works great in csi but the macro does not match in huski.
-;       It looks like our macro logic needs to have some more work done :)
 (define-syntax do
   (syntax-rules ()
      ((_ ((var init . step) ...)
@@ -190,20 +197,6 @@
                   (if (null? (cdr (list var . step))) 
                       (car  (list var . step))
                       (cadr (list var . step))) ...)))))))
-; TODO: above (if) block has many transformation problems that need to be worked through
-
-; Old version that always requires step be specified, which violates spec
-;(define-syntax old-do
-;  (syntax-rules ()
-;     ((_ ((var init step ...) ...)
-;         (test expr ...) 
-;          command ...)
-;     (let loop ((var init) ...)
-;       (if test
-;         (begin expr ...)
-;         (begin (begin command ...)
-;                (loop step ...)))))))
-
 
 ; Delayed evaluation functions
 (define force
