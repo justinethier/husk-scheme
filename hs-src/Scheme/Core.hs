@@ -247,7 +247,7 @@ eval env cont (List (Atom "cond" : clauses)) =
         evalCond e c (List [_, expr]) = eval e c expr
         evalCond e c (List (_ : expr)) = last $ map (eval e c) expr -- TODO: need to remove map so all can be evaled using CPS 
         evalCond _ _ badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
-
+{-
 eval outerEnv outerCont (List (Atom "case" : keyAndClauses)) = 
     do let key = keyAndClauses !! 0
        let cls = tail keyAndClauses
@@ -284,7 +284,7 @@ eval outerEnv outerCont (List (Atom "case" : keyAndClauses)) =
           case test of
             Bool True -> eval env cont $ Bool True
             _ -> eval env cont $ Bool False
-
+-}
 eval env cont (List (Atom "begin" : funcs)) = 
   if length funcs == 0
      then eval env cont $ Nil ""
