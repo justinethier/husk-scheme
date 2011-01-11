@@ -95,7 +95,9 @@
 (assert/equal a 2)
 
 
-; TODO: test cases for all 3 forms of (define)
-;       test cases for cond
-;
+; TODO: test cases for:
+;  applicable forms of (define)
+;  case
+;  cond
+;  quote, quasi-quote, etc
 (unit-test-handler-results)
