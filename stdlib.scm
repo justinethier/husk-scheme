@@ -166,6 +166,8 @@
        (let* ((vars vals) ...)
 		     body)))))
 
+; FUTURE: cond
+
 ; Case
 ; consider some ideas from:
 ; http://blog.jcoglan.com/2009/02/25/announcing-heist-a-new-scheme-implementation-written-in-ruby/
