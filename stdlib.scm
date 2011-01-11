@@ -166,6 +166,13 @@
        (let* ((vars vals) ...)
 		     body)))))
 
+; Case
+; consider some ideas from:
+; http://blog.jcoglan.com/2009/02/25/announcing-heist-a-new-scheme-implementation-written-in-ruby/
+(define-syntax case
+  (syntax-rules (else)
+    ((case key) ((lambda () #f)))))
+
 ; Iteration - do
 ; TODO: New version of do that makes step optional on a per-variable basis
 ;       This works great in csi but the macro does not match in huski.
