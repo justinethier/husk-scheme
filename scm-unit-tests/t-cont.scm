@@ -94,6 +94,15 @@
 ; TODO: this fails until set! properly uses CPS
 (assert/equal a 2)
 
+; General function application
+; Tests from: http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
+(define handle #f)
+(define test-value #f)
+(set! test-value (+ 2 (call/cc (lambda (k) (set! handle k) 2))))
+(set! test-value (handle 20))
+(assert/equal test-value 22)
+(set! test-value (handle 100))
+(assert/equal test-value 102)
 
 ; TODO: test cases for:
 ;  applicable forms of (define)
