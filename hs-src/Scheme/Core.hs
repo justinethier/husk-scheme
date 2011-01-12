@@ -307,11 +307,15 @@ eval env cont (List [Atom "string-fill!", Atom var, character]) = do
   eval env (makeCPS env cont cpsVar) =<< getVar env var
   where cpsVar :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsVar e c result _ = eval e (makeCPSWArgs e c cpsChr $ [result]) $ character
+
         cpsChr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsChr e c result (Just [rVar]) = (fillStr(rVar, result) >>= setVar e var) >>= continueEval e c
+        cpsChr _ _ _ _ = throwError $ Default "Unexpected error in string-fill!"
+
         fillStr (String str, Char achr) = doFillStr (String "", Char achr, length str)
         fillStr (String _, c) = throwError $ TypeMismatch "character" c
         fillStr (s, _) = throwError $ TypeMismatch "string" s
+
         doFillStr (String str, Char achr, left) = do
           if left == 0
              then return $ String str
