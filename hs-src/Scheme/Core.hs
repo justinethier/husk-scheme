@@ -165,11 +165,45 @@ eval env cont val@(Vector _)    = continueEval env cont val
 eval env cont (Atom a)          = continueEval env cont =<< getVar env a
 eval env cont (List [Atom "quote", val])         = continueEval env cont val
 
--- TODO: rewrite this in CPS style
---
--- The way it is written now, quasiquotation does not support
--- being part of a continuation, so we use the null continuation
--- within it for right now
+-- TODO: rewriting this in CPS style
+eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value Nothing
+--continueEval envi cont =<< doUnQuote envi value
+--  eval env (makeCPS env cont cps) (predic)
+  where cpsUnquote :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsUnquote e c val _ = do 
+          case val of
+            List [Atom "unquote", vval] -> eval e c vval
+            List (x : xs) -> cpsUnquoteList e c (x:xs) $ Just (List [])
+{- TODO:            DottedList xs x -> do
+              rxs <- unquoteListM env xs >>= return 
+              rx <- doUnQuote env x
+              case rx of
+                List [] -> return $ List rxs
+                List rxlst -> return $ List $ rxs ++ rxlst 
+                DottedList rxlst rxlast -> return $ DottedList (rxs ++ rxlst) rxlast
+                _ -> return $ DottedList rxs rx
+            Vector vec -> do
+              let len = length (elems vec)
+              vList <- unquoteListM env $ elems vec >>= return
+              return $ Vector $ listArray (0, len) vList
+-}
+            _ -> eval e c  (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"... 
+        cpsUnquoteList :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsUnquoteList e c val (Just args) = do 
+        -- TODO: rewrite using above: unquoteListM env lst = foldlM (unquoteListFld env) ([]) lst
+        cpsUnquoteListFld :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsUnquoteListFld e c val (Just args) = do 
+        unquoteListFld env (acc) val = do
+            case val of
+                List [Atom "unquote-splicing", vvar] -> do
+                    evalue <- eval env (makeNullContinuation env) vvar
+                    case evalue of
+                        List v -> return $ (acc ++ v)
+                        _ -> throwError $ TypeMismatch "proper list" evalue
+
+                _ -> do result <- doUnQuote env val
+                        return $ (acc ++ [result])
+{- Old version
 eval envi cont (List [Atom "quasiquote", value]) = continueEval envi cont =<< doUnQuote envi value
   where doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
         doUnQuote env val = do
@@ -207,7 +241,7 @@ eval envi cont (List [Atom "quasiquote", value]) = continueEval envi cont =<< do
                         _ -> throwError $ TypeMismatch "proper list" evalue
 
                 _ -> do result <- doUnQuote env val
-                        return $ (acc ++ [result])
+ - -}
 
 eval env cont (List [Atom "if", predic, conseq, alt]) = do
 {-- original version:
