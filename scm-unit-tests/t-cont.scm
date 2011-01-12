@@ -104,6 +104,12 @@
 (set! test-value (handle 100))
 (assert/equal test-value 102)
 
+(define test "abcdefg")
+(string-fill! test (call/cc (lambda (k) (set! handle k) #\a)))
+(assert/equal test "aaaaaaa")
+(set! test (handle #\b))
+(assert/equal test "bbbbbbb")
+
 ; TODO: test cases for:
 ;  applicable forms of (define)
 ;  case
