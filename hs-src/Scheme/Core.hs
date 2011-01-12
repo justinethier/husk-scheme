@@ -173,7 +173,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
         cpsUnquote e c val _ = do 
           case val of
             List [Atom "unquote", vval] -> eval e c vval
-            List (x : xs) -> cpsUnquoteList e c (x:xs) $ Just (List [])
+            List (x : xs) -> cpsUnquoteListFld e c (x:xs) $ Just (List [])
 {- TODO:            DottedList xs x -> do
               rxs <- unquoteListM env xs >>= return 
               rx <- doUnQuote env x
@@ -188,12 +188,12 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
               return $ Vector $ listArray (0, len) vList
 -}
             _ -> eval e c  (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"... 
-        cpsUnquoteList :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquoteList e c val (Just args) = do 
+--        cpsUnquoteList :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+--        cpsUnquoteList e c val (Just args) = do 
         -- TODO: rewrite using above: unquoteListM env lst = foldlM (unquoteListFld env) ([]) lst
         cpsUnquoteListFld :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquoteListFld e c val (Just args) = do 
-        unquoteListFld env (acc) val = do
+        cpsUnquoteListFld e c val (Just (List acc)) = do
+        -- TODO:
             case val of
                 List [Atom "unquote-splicing", vvar] -> do
                     evalue <- eval env (makeNullContinuation env) vvar
