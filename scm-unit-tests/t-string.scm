@@ -11,4 +11,9 @@
 ;(string-set! (symbol->string 'immutable)
 ;                          0
 ;                                       #\?)          ===>  error
+
+(define test "abcdefg")
+(assert/equal (string-fill! test #\a)
+              "aaaaaaa")
+
 (unit-test-handler-results)

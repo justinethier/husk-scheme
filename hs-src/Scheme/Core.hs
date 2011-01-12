@@ -306,11 +306,18 @@ eval env cont (List (Atom "lambda" : varargs@(Atom _) : fbody)) = do
 -- TODO: pick up CPS conversion here....
 
 eval env cont (List [Atom "string-fill!", Atom var, character]) = do 
-  str <- eval env (makeNullContinuation env) =<< getVar env var 
-  echr <- eval env (makeNullContinuation env) character
-  result <- ((eval env (makeNullContinuation env) =<< fillStr(str, echr))) >>= setVar env var
-  continueEval env cont result
-  where fillStr (String str, Char achr) = doFillStr (String "", Char achr, length str)
+  eval env (makeCPS env cont cpsVar) =<< getVar env var
+
+--  str <- eval env (makeNullContinuation env) =<< getVar env var 
+--  echr <- eval env (makeNullContinuation env) character
+--  result <- ((eval env (makeNullContinuation env) =<< fillStr(str, echr))) >>= setVar env var
+--  continueEval env cont result
+  where cpsVar :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsVar e c result _ = eval e (makeCPSWArgs e c cpsChr $ [result]) $ character
+        cpsChr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsChr e c result (Just [rVar]) = (fillStr(rVar, result) >>= setVar e var) >>= continueEval e c
+
+        fillStr (String str, Char achr) = doFillStr (String "", Char achr, length str)
         fillStr (String _, c) = throwError $ TypeMismatch "character" c
         fillStr (s, _) = throwError $ TypeMismatch "string" s
         doFillStr (String str, Char achr, left) = do
