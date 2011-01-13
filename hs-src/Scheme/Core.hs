@@ -173,7 +173,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
         cpsUnquote e c val _ = do 
           case val of
             List [Atom "unquote", vval] -> eval e c vval
-            List (x : xs) -> cpsUnquoteListFld e c (x:xs) $ Just (List [])
+            List (x : xs) -> cpsUnquoteListFld e c (x:xs) $ Just ([List xs, List []])
 {- TODO:            DottedList xs x -> do
               rxs <- unquoteListM env xs >>= return 
               rx <- doUnQuote env x
@@ -192,17 +192,21 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
 --        cpsUnquoteList e c val (Just args) = do 
         -- TODO: rewrite using above: unquoteListM env lst = foldlM (unquoteListFld env) ([]) lst
         cpsUnquoteListFld :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquoteListFld e c val (Just (List acc)) = do
+        cpsUnquoteListFld e c val (Just ([List unEvaled, List acc])) = do
         -- TODO:
             case val of
                 List [Atom "unquote-splicing", vvar] -> do
-                    evalue <- eval env (makeNullContinuation env) vvar
-                    case evalue of
-                        List v -> return $ (acc ++ v)
-                        _ -> throwError $ TypeMismatch "proper list" evalue
+                    eval e (makeCPSWArgs e c cpsUnquoteFldList $ [List unEvaled, List acc]) vvar
 
-                _ -> do result <- doUnQuote env val
+                _ -> do result <- doUnQuote env val -- TODO: call into cpsUnquoteFld
                         return $ (acc ++ [result])
+        cpsUnquoteFldList :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsUnquoteFldList e c val (Just ([List unEvaled, List acc])) = do
+                    case val of
+                        List v -> cpsUnquoteListFld e c (head unEvaled) (Just [List (tail unEvaled), List $ acc ++ v ]) --return $ (acc ++ v)
+                        _ -> throwError $ TypeMismatch "proper list" evalue
+        cpsUnquoteFld :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsUnquoteFld e c val (Just (List acc)) = do
 {- Old version
 eval envi cont (List [Atom "quasiquote", value]) = continueEval envi cont =<< doUnQuote envi value
   where doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
