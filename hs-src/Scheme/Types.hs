@@ -46,6 +46,8 @@ data LispError = NumArgs Integer [LispVal] -- ^Invalid number of function argume
   | UnboundVar String String
   | DivideByZero -- ^Divide by Zero error
   | NotImplemented String
+  | InternalError String -- ^An internal error within husk; in theory user (Scheme) code
+                         --  should never allow one of these errors to be triggered.
   | Default String -- ^Default error
 
 -- |Create a textual description for a 'LispError'
@@ -60,6 +62,7 @@ showError (NotFunction message func) = message ++ ": " ++ show func
 showError (UnboundVar message varname) = message ++ ": " ++ varname
 showError (DivideByZero) = "Division by zero"
 showError (NotImplemented message) = "Not implemented: " ++ message
+showError (InternalError message) = "An internal error occurred: " ++ message
 showError (Default message) = "Error: " ++ message
 
 instance Show LispError where show = showError
@@ -131,22 +134,6 @@ data LispVal = Atom String
                         , argUnused :: (Maybe LispVal) -- TODO: obsolete, remove if higher-order works
                         , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to a higher-order function 
                         , continuationFunction :: (Maybe (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal))
-                        --
-                        --TODO: frame information
-                        --      this is just prototype code, but idea was to be able to identify
-                        --      functions for TCO... but may not need/use this
-                        --  for evaluating a function (prior to calling) need:
-                        --   - function obj
-                        --   - list of args
-                        --
-                        -- TODO: for TCO within a function, need:
-                        --   - calling function name (or some unique ID, for lambda's)
-                        --   - calling function arg values
-                        --  may be able to have a single frame object take care of both
-                        --  purposes. but before implementing this, do a bit more research
-                        --  to verify the approach.
-                        --
-                        --
                         -- FUTURE: stack (for dynamic wind)
                        }
          -- ^Continuation
