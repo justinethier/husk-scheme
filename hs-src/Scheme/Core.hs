@@ -2,17 +2,9 @@
  - husk scheme interpreter
  -
  - A lightweight dialect of R5RS scheme.
- - Core functionality
+ - This file contains Core functionality, primarily Scheme expression evaluation.
  -
  - @author Justin Ethier
- -
- - -}
-
-{-
- - TODO: 
- -
- - => compare my functions against those listed on 
- -    http://en.wikipedia.org/wiki/Scheme_(programming_language)
  -
  - -}
 
@@ -70,56 +62,7 @@ evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = macroEval env lisp >>= (eval env (makeNullContinuation env))
 
 
-{- TODO: write a wiki page about continuations once everything is implemented. 
- -       maybe use some of this as background material for the article.
- -
- - Changes will be required to eval to support continuations. According to original wiki book:
- -   TBD
- -
- -
- - Need to rethink below and come up with a clear, top-level design approach. Some starting points
- - for this are:
- -  http://c2.com/cgi/wiki?ContinuationImplementation
- -  http://c2.com/cgi/wiki?CallWithCurrentContinuation (the link to this book may be helpful as well: http://c2.com/cgi/wiki?EssentialsOfProgrammingLanguages - apparently if the interpreter is written using CPS, then call/cc is free)
- -  http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
- -  http://community.schemewiki.org/?call-with-current-continuation
- -
- - ALSO, consider the following quote: 
- -  "CPS is a programming style where no function is ever allowed to return."
- - So, this would mean that when evaluating a simple integer, string, etc eval should call into
- - the continuation instead of just returning.
- - Need to think about how this will be handled, how functions will be called using CPS, and what
- - the continuation data type needs to contain.
- -
- -
- -
- -
- -
- - Some of my notes:
- - as simple as using CPS to evaluate lists of "lines" (body)? Then could pass the next part of the CPS as the cont arg to eval. Or is this too simple to work? need to think about this - http://en.wikipedia.org/wiki/Continuation-passing_style
- -
- - Possible design approach:
- -
- -  * thread cont through eval
- -  * instead of returning, call into next eval using CPS style, with the cont parameter.
- -    this replaces code in evalBody (possibly other places?) that uses local CPS to execute a function
- -  * parameter will consist of a lisp function
- -  * eval will call into another function to deal with details of manipulating the cont prior to next call
- -    need to work out details of exactly how that would work, but could for example just go to the next line
- -    of body. 
- -  * To continue above point, where is eval'd value returned to? May want to refer to R5RS section that describes call/cc:
- -  A common use of call-with-current-continuation is for structured, non-local exits from loops or procedure bodies, but in fact call-with-current-continuation is extremely useful for implementing a wide variety of advanced control structures.
- -
- -  Whenever a Scheme expression is evaluated there is a continuation wanting the result of the expression. The continuation represents an entire (default) future for the computation. If the expression is evaluated at top level, for example, then the continuation might take the result, print it on the screen, prompt for the next input, evaluate it, and so on forever. Most of the time the continuation includes actions specified by user code, as in a continuation that will take the result, multiply it by the value stored in a local variable, add seven, and give the answer to the top level continuation to be printed. Normally these ubiquitous continuations are hidden behind the scenes and programmers do not think much about them. On rare occasions, however, a programmer may need to deal with continuations explicitly. Call-with-current-continuation allows Scheme programmers to do that by creating a procedure that acts just like the current continuation.
- -
- -  Most programming languages incorporate one or more special-purpose escape constructs with names like exit, return, or even goto. In 1965, however, Peter Landin [16] invented a general purpose escape operator called the J-operator. John Reynolds [24] described a simpler but equally powerful construct in 1972. The catch special form described by Sussman and Steele in the 1975 report on Scheme is exactly the same as Reynolds's construct, though its name came from a less general construct in MacLisp. Several Scheme implementors noticed that the full power of the catch construct could be provided by a procedure instead of by a special syntactic construct, and the name call-with-current-continuation was coined in 1982. This name is descriptive, but opinions differ on the merits of such a long name, and some people use the name call/cc instead.
- -
- -  * need to consider what would be passed when evaluating via a REPL, at top-level, via haskell entry points, etc...
- -
- - -}
-
-
-{- |continueEval is a support function for eval, below.
+{- continueEval is a support function for eval, below.
  -
  - Transformed eval section into CPS by calling into this instead of returning from eval.
  - This function uses the cont argument to determine whether to keep going or to finally
@@ -204,7 +147,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
               doCpsUnquoteList e (makeCPSWArgs e c cpsUnquoteVector $ [Number $ toInteger len]) $ List $ elems vec
             _ -> eval e c  (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"...
 
-        -- |Unquote a pair
+        -- Unquote a pair
         --  This must be started by unquoting the "left" hand side of the pair,
         --  then pass a continuation to this function to unquote the right-hand side (RHS).
         --  This function does the RHS and then calls into a continuation to finish the pair.
@@ -213,7 +156,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
           cpsUnquote e (makeCPSWArgs e c cpsUnquotePairFinish $ [List rxs]) rx Nothing
         cpsUnquotePair _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquotePair"
           
-        -- |Finish unquoting a pair by combining both of the unquoted left/right hand sides.
+        -- Finish unquoting a pair by combining both of the unquoted left/right hand sides.
         cpsUnquotePairFinish :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUnquotePairFinish e c rx (Just [List rxs]) = do
             case rx of
@@ -223,17 +166,17 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
               _ -> continueEval e c $ DottedList rxs rx
         cpsUnquotePairFinish _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquotePairFinish"
           
-        -- |Unquote a vector
+        -- Unquote a vector
         cpsUnquoteVector :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUnquoteVector e c (List vList) (Just [Number len]) = continueEval e c (Vector $ listArray (0, fromInteger len) vList)
         cpsUnquoteVector _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteVector"
 
-        -- |Front-end to cpsUnquoteList, to encapsulate default values in the call
+        -- Front-end to cpsUnquoteList, to encapsulate default values in the call
         doCpsUnquoteList :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
         doCpsUnquoteList e c (List (x:xs)) = cpsUnquoteList e c x $ Just ([List xs, List []])
         doCpsUnquoteList _ _ _ = throwError $ InternalError "Unexpected parameters to doCpsUnquoteList"
 
-        -- |Unquote a list
+        -- Unquote a list
         cpsUnquoteList :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUnquoteList e c val (Just ([List unEvaled, List acc])) = do
             case val of
@@ -242,7 +185,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
                 _ -> cpsUnquote e (makeCPSWArgs e c cpsUnquoteFld $ [List unEvaled, List acc]) val Nothing 
         cpsUnquoteList _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteList"
 
-        -- |Evaluate an expression instead of quoting it
+        -- Evaluate an expression instead of quoting it
         cpsUnquoteSplicing :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUnquoteSplicing e c val (Just ([List unEvaled, List acc])) = do
                     case val of
@@ -252,7 +195,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
                         _ -> throwError $ TypeMismatch "proper list" val
         cpsUnquoteSplicing _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteSplicing"
 
-        -- |Unquote processing for single field of a list
+        -- Unquote processing for single field of a list
         cpsUnquoteFld :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUnquoteFld e c val (Just ([List unEvaled, List acc])) = do
           case unEvaled of
@@ -431,6 +374,11 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 -- TODO:
 --  hash-table-merge!
 
+--
+-- End CPS TODO section
+--
+
+
 
 eval _ _ (List [Atom "apply"]) = throwError $ BadSpecialForm "apply" $ String "Function not specified"
 eval _ _ (List [Atom "apply", _]) = throwError $ BadSpecialForm "apply" $ String "Arguments not specified"
@@ -479,8 +427,8 @@ eval env cont (List [Atom "call/cc", proc]) = do
         else throwError $ NumArgs (toInteger $ length aparams) [cont] 
     other -> throwError $ TypeMismatch "procedure" other
 
--- |Call a function by evaluating its arguments and then 
---  executing it via 'apply'.
+-- Call a function by evaluating its arguments and then 
+-- executing it via 'apply'.
 eval env cont (List (function : functionArgs)) = do 
   eval env (makeCPSWArgs env cont cpsPrepArgs $ functionArgs) function
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -491,7 +439,7 @@ eval env cont (List (function : functionArgs)) = do
             [a] -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List []]) a
             (a:as) -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List as]) a
        cpsPrepArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (1)"
-        -- |Store value of previous argument, evaluate the next arg until all are done
+        -- Store value of previous argument, evaluate the next arg until all are done
         -- parg - Previous argument that has now been evaluated
         -- state - List containing the following, in order:
         --         - Function to apply when args are ready
@@ -524,16 +472,12 @@ makeVarargs :: (Monad m) => LispVal  -> Env
                         -> m LispVal
 makeVarargs = makeFunc . Just . showVal
 
+-- Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 apply _ c@(Continuation env _ _ _ _ _) args = do
   if (toInteger $ length args) /= 1 
     then throwError $ NumArgs 1 args
-    else continueEval env c $ head args -- may not be correct, what happens if call/cc is an inner part of a list?
---    else continueEval env (trace ("continueEval => " ++ show cont) c) $ head args -- may not be correct, what happens if call/cc is an inner part of a list?
-      -- TODO:
-      -- this is not good enough. is it correct if we take c and replace the "outer" continuation with it??
-      --
-      -- this would work for return and other simple examples
+    else continueEval env c $ head args
 apply cont (IOFunc func) args = do
   result <- func args
   case cont of
@@ -558,26 +502,19 @@ apply cont (Func aparams avarargs abody aclosure _) args =
         --
         -- What we are doing now is simply not saving a continuation for tail calls. For now this may
         -- be good enough, although it may need to be enhanced in the future in order to properly
-        -- detect all tail calls. See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
+        -- detect all tail calls. 
+        --
+        -- See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
         --
         evalBody evBody env = case cont of
             Continuation _ cBody cCont _ _ Nothing -> if length cBody == 0
-                -- TODO: changed following back to cont to get continuations to work when using higher
-                --       order functions - but this breaks proper tail recursion!
-                --
-                --       Need to get both to work, probably by figuring out what exactly is
-                --       going on to prevent this optimization from working...
-                --
-                then continueWithContinuation env (evBody) cCont Nothing -- cCont
-                else continueWithContinuation env (evBody) cont Nothing
-            _ -> continueWithContinuation env (evBody) cont Nothing
+                then continueWCont env (evBody) cCont
+                else continueWCont env (evBody) cont -- Might be a problem, not fully optimizing
+            _ -> continueWCont env (evBody) cont
 
-{-                then continueWithContinuation env (trace ("cont case 1") evBody) cCont Nothing -- cCont
-                else continueWithContinuation env (trace "cont case 2" evBody) cont Nothing
-            _ -> continueWithContinuation env (trace "cont case 3" evBody) cont Nothing -}
         -- Shortcut for calling continueEval
-        continueWithContinuation cwcEnv cwcBody cwcCont cwcFunc = 
-            continueEval cwcEnv (Continuation cwcEnv cwcBody cwcCont Nothing Nothing cwcFunc) $ Nil ""
+        continueWCont cwcEnv cwcBody cwcCont = 
+            continueEval cwcEnv (Continuation cwcEnv cwcBody cwcCont Nothing Nothing Nothing) $ Nil ""
 
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
@@ -1081,3 +1018,54 @@ trampoline env val = do
        func@(Func params vararg body closure True) -> trampoline env func -- next iteration, via tail call (?)
        val -> return val
 -}
+
+{- My original notes about implementing continuations
+ -
+ - TODO: write a wiki page about continuations once everything is implemented. 
+ -       maybe use some of this as background material for the article.
+ -
+ - Changes will be required to eval to support continuations. According to original wiki book:
+ -   TBD
+ -
+ -
+ - Need to rethink below and come up with a clear, top-level design approach. Some starting points
+ - for this are:
+ -  http://c2.com/cgi/wiki?ContinuationImplementation
+ -  http://c2.com/cgi/wiki?CallWithCurrentContinuation (the link to this book may be helpful as well: http://c2.com/cgi/wiki?EssentialsOfProgrammingLanguages - apparently if the interpreter is written using CPS, then call/cc is free)
+ -  http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
+ -  http://community.schemewiki.org/?call-with-current-continuation
+ -
+ - ALSO, consider the following quote: 
+ -  "CPS is a programming style where no function is ever allowed to return."
+ - So, this would mean that when evaluating a simple integer, string, etc eval should call into
+ - the continuation instead of just returning.
+ - Need to think about how this will be handled, how functions will be called using CPS, and what
+ - the continuation data type needs to contain.
+ -
+ -
+ -
+ -
+ -
+ - Some of my notes:
+ - as simple as using CPS to evaluate lists of "lines" (body)? Then could pass the next part of the CPS as the cont arg to eval. Or is this too simple to work? need to think about this - http://en.wikipedia.org/wiki/Continuation-passing_style
+ -
+ - Possible design approach:
+ -
+ -  * thread cont through eval
+ -  * instead of returning, call into next eval using CPS style, with the cont parameter.
+ -    this replaces code in evalBody (possibly other places?) that uses local CPS to execute a function
+ -  * parameter will consist of a lisp function
+ -  * eval will call into another function to deal with details of manipulating the cont prior to next call
+ -    need to work out details of exactly how that would work, but could for example just go to the next line
+ -    of body. 
+ -  * To continue above point, where is eval'd value returned to? May want to refer to R5RS section that describes call/cc:
+ -  A common use of call-with-current-continuation is for structured, non-local exits from loops or procedure bodies, but in fact call-with-current-continuation is extremely useful for implementing a wide variety of advanced control structures.
+ -
+ -  Whenever a Scheme expression is evaluated there is a continuation wanting the result of the expression. The continuation represents an entire (default) future for the computation. If the expression is evaluated at top level, for example, then the continuation might take the result, print it on the screen, prompt for the next input, evaluate it, and so on forever. Most of the time the continuation includes actions specified by user code, as in a continuation that will take the result, multiply it by the value stored in a local variable, add seven, and give the answer to the top level continuation to be printed. Normally these ubiquitous continuations are hidden behind the scenes and programmers do not think much about them. On rare occasions, however, a programmer may need to deal with continuations explicitly. Call-with-current-continuation allows Scheme programmers to do that by creating a procedure that acts just like the current continuation.
+ -
+ -  Most programming languages incorporate one or more special-purpose escape constructs with names like exit, return, or even goto. In 1965, however, Peter Landin [16] invented a general purpose escape operator called the J-operator. John Reynolds [24] described a simpler but equally powerful construct in 1972. The catch special form described by Sussman and Steele in the 1975 report on Scheme is exactly the same as Reynolds's construct, though its name came from a less general construct in MacLisp. Several Scheme implementors noticed that the full power of the catch construct could be provided by a procedure instead of by a special syntactic construct, and the name call-with-current-continuation was coined in 1982. This name is descriptive, but opinions differ on the merits of such a long name, and some people use the name call/cc instead.
+ -
+ -  * need to consider what would be passed when evaluating via a REPL, at top-level, via haskell entry points, etc...
+ -
+ - -}
+
