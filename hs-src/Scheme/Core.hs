@@ -432,25 +432,9 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 --  hash-table-merge!
 
 
--- TODO: for CPS form, need to be able to pass a continuation to a function
--- need to work through this implementation.
---
--- See http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.6
--- for test cases that are required to ensure apply is not broken by this change. Need
--- it intact prior to proceeding with CPS and functions
 eval _ _ (List [Atom "apply"]) = throwError $ BadSpecialForm "apply" $ String "Function not specified"
 eval _ _ (List [Atom "apply", _]) = throwError $ BadSpecialForm "apply" $ String "Arguments not specified"
 eval env cont (List (Atom "apply" : applyArgs)) = do
-    -- FUTURE: verify length of list?
-    -- TODO: for all Continuations below, need to pull each into this continuation
-{- Original code:
- - proc <- eval env (makeNullContinuation env) $ head $ args
-    lst <- eval env (makeNullContinuation env) $ head $ reverse args
-    argVals <- mapM (eval env (makeNullContinuation env)) $ tail $ reverse $ tail (reverse args)
-    case lst of
-      List l -> apply cont proc (argVals ++ l)
-      other -> throwError $ TypeMismatch "list" other
--}
   eval env (makeCPSWArgs env cont cpsLast $ [List applyArgs]) $ head applyArgs
   where cpsLast :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsLast e c proc (Just [List args]) = 
