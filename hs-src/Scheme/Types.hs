@@ -120,8 +120,7 @@ data LispVal = Atom String
 	| Func {params :: [String], 
  	        vararg :: (Maybe String),
 	        body :: [LispVal], 
- 	        closure :: Env,
-                partialEval :: Bool -- TODO: Obsolete, this member should be removed
+ 	        closure :: Env
  	       }
           -- ^Function
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)

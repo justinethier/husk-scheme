@@ -421,7 +421,7 @@ eval env cont (List [Atom "call/cc", proc]) = do
         case cont of 
             Continuation cEnv _ _ _ _ _ -> continueEval cEnv cont result
             _ -> return result
-    Func aparams _ _ _ _ ->
+    Func aparams _ _ _ ->
       if (toInteger $ length aparams) == 1 
         then apply cont func [cont] 
         else throwError $ NumArgs (toInteger $ length aparams) [cont] 
@@ -460,7 +460,7 @@ eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badFo
 makeFunc :: --forall (m :: * -> *).
             (Monad m) =>
             Maybe String -> Env -> [LispVal] -> [LispVal] -> m LispVal
-makeFunc varargs env fparams fbody = return $ Func (map showVal fparams) varargs fbody env False
+makeFunc varargs env fparams fbody = return $ Func (map showVal fparams) varargs fbody env
 makeNormalFunc :: (Monad m) => Env
                -> [LispVal]
                -> [LispVal]
@@ -488,7 +488,7 @@ apply cont (PrimitiveFunc func) args = do
   case cont of
     Continuation cEnv _ _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
-apply cont (Func aparams avarargs abody aclosure _) args =
+apply cont (Func aparams avarargs abody aclosure) args =
   if num aparams /= num args && avarargs == Nothing
      then throwError $ NumArgs (num aparams) args
      else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
@@ -823,7 +823,7 @@ hashTblRef [(HashTable ht), key@(_)] = do
   case Data.Map.lookup key ht of
     Just val -> return $ val
     Nothing -> throwError $ BadSpecialForm "Hash table does not contain key" key
-hashTblRef [(HashTable ht), key@(_), Func _ _ _ _ _] = do --thunk@(Func _ _ _ _ _)] = do
+hashTblRef [(HashTable ht), key@(_), Func _ _ _ _] = do 
   case Data.Map.lookup key ht of
     Just val -> return $ val
     Nothing -> throwError $ NotImplemented "thunk"
@@ -966,7 +966,7 @@ isDottedList _ = return $  Bool False
 isProcedure :: [LispVal] -> ThrowsError LispVal
 isProcedure ([Continuation _ _ _ _ _ _]) = return $ Bool True
 isProcedure ([PrimitiveFunc _]) = return $ Bool True
-isProcedure ([Func _ _ _ _ _]) = return $ Bool True
+isProcedure ([Func _ _ _ _]) = return $ Bool True
 isProcedure ([IOFunc _]) = return $ Bool True
 isProcedure _ = return $ Bool False
 
