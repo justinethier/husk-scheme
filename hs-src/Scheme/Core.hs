@@ -440,7 +440,7 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 -- it intact prior to proceeding with CPS and functions
 eval _ _ (List [Atom "apply"]) = throwError $ BadSpecialForm "apply" $ String "Function not specified"
 eval _ _ (List [Atom "apply", _]) = throwError $ BadSpecialForm "apply" $ String "Arguments not specified"
-eval env cont (List (Atom "apply" : args)) = do
+eval env cont (List (Atom "apply" : applyArgs)) = do
     -- FUTURE: verify length of list?
     -- TODO: for all Continuations below, need to pull each into this continuation
 {- Original code:
@@ -451,28 +451,32 @@ eval env cont (List (Atom "apply" : args)) = do
       List l -> apply cont proc (argVals ++ l)
       other -> throwError $ TypeMismatch "list" other
 -}
-  eval env (makeCPS env cont cps) $ head args
+  eval env (makeCPSWArgs env cont cpsLast $ [List applyArgs]) $ head applyArgs
   where cpsLast :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsLast e c proc (Just [args]) = 
+        cpsLast e c proc (Just [List args]) = 
           eval e (makeCPSWArgs e c cpsArgs $ [proc, List $ tail $ reverse $ tail $ reverse args]) $ head $ reverse args 
+        cpsLast _ _ _ _ = throwError $ InternalError "Invalid arguments to cpsLast"
+
         cpsArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsArgs e c lst (Just [proc, List args]) =
           case args of
-            [] -> cpsApply e c (Just [proc, lst, List args])
-            other -> 
-          eval e (makeCPSWArgs e c cpsEvalArgs $ Just [proc, lst, List $ tail args, List []]) $ head args
+            [] -> cpsApply c (Just [proc, lst, List args])
+            _ -> eval e (makeCPSWArgs e c cpsEvalArgs $ [proc, lst, List $ tail args, List []]) $ head args
+        cpsArgs _ _ _ _ = throwError $ InternalError "Invalid arguments to cpsArgs"
 
         cpsEvalArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsEvalArgs e c result (Just [proc, lst, List args, List evaledArgs]) =
           case args of
-            [] -> cpsApply e c (Just [proc, lst, List (args ++ [result]])
-            (x:xs) -> eval e (makeCPSWArgs e c cpsEvalArgs $ Just [proc, lst, List (args ++ [result]), List xs ]) x
+            [] -> cpsApply c (Just [proc, lst, List (evaledArgs ++ [result])])
+            (x:xs) -> eval e (makeCPSWArgs e c cpsEvalArgs $ [proc, lst, List xs, List (evaledArgs ++ [result])]) x
+        cpsEvalArgs _ _ _ _ = throwError $ InternalError "Invalid arguments to cpsEvalArgs"
 
-        cpsApply :: Env -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsApply e c (Just [proc, lst, argVals]) = do 
+        cpsApply :: LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsApply c (Just [proc, lst, List argVals]) = do 
           case lst of
             List l -> apply c proc (argVals ++ l)
             other -> throwError $ TypeMismatch "list" other
+        cpsApply _ _ = throwError $ InternalError "Invalid arguments to cpsApply"
 
 eval env cont (List (Atom "call-with-current-continuation" : args)) = 
   eval env cont (List (Atom "call/cc" : args))
