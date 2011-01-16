@@ -182,17 +182,27 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
                 List rxlst -> return $ List $ rxs ++ rxlst 
                 DottedList rxlst rxlast -> return $ DottedList (rxs ++ rxlst) rxlast
                 _ -> return $ DottedList rxs rx
-            Vector vec -> do
-              let len = length (elems vec)
-              vList <- unquoteListM env $ elems vec >>= return
-              return $ Vector $ listArray (0, len) vList
 -}
+            DottedList xs x -> do
+              doCpsUnquoteList e (makeCPSWArgs e c cpsPairPrep $ [x] ) $ List xs
+
             Vector vec -> do
               let len = length (elems vec)
               doCpsUnquoteList e (makeCPSWArgs e c cpsVector $ [Number $ toInteger len]) $ List $ elems vec
---              vList <- unquoteListM env $ elems vec >>= return
---              return $ Vector $ listArray (0, len) vList
             _ -> eval e c  (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"...
+
+        cpsPairPrep :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsPairPrep e c (List rxs) (Just [rx]) = do
+          cpsUnquote e (makeCPSWArgs e c cpsPair $ [List rxs]) rx Nothing
+          
+        cpsPair :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsPair e c rx (Just [List rxs]) = do
+            case rx of
+              List [] -> continueEval e c $ List rxs
+              List rxlst -> continueEval e c $ List $ rxs ++ rxlst 
+              DottedList rxlst rxlast -> continueEval e c $ DottedList (rxs ++ rxlst) rxlast
+              _ -> continueEval e c $ DottedList rxs rx
+          
         cpsVector :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsVector e c (List vList) (Just [Number len]) = continueEval e c (Vector $ listArray (0, fromInteger len) vList)
 
