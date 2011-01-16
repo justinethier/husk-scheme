@@ -127,10 +127,9 @@ data LispVal = Atom String
          -- ^
 	| Port Handle
          -- ^I/O port
-	| Continuation {closure :: Env,    -- Environment of the continuation
-                        body :: [LispVal], -- Code in the body of the continuation
-                        continuation :: LispVal    -- Code to resume after body of cont
-                        , argUnused :: (Maybe LispVal) -- TODO: obsolete, remove if higher-order works
+	| Continuation {  closure :: Env    -- Environment of the continuation
+                        , body :: [LispVal] -- Code in the body of the continuation
+                        , continuation :: LispVal    -- Code to resume after body of cont
                         , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to a higher-order function 
                         , continuationFunction :: (Maybe (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal))
                         -- FUTURE: stack (for dynamic wind)
@@ -141,15 +140,15 @@ data LispVal = Atom String
 
 -- Make an "empty" continuation that does not contain any code
 makeNullContinuation :: Env -> LispVal
-makeNullContinuation env = Continuation env [] (Nil "") Nothing Nothing Nothing
+makeNullContinuation env = Continuation env [] (Nil "") Nothing Nothing 
 
 -- Make a continuation that takes a higher-order function
 makeCPS :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal]-> IOThrowsError LispVal) -> LispVal
-makeCPS env cont cps = Continuation env [] cont Nothing Nothing (Just cps)
+makeCPS env cont cps = Continuation env [] cont Nothing (Just cps)
 
 -- Make a continuation that passes arguments to a higher-order function
 makeCPSWArgs :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) -> [LispVal] -> LispVal
-makeCPSWArgs env cont cps args = Continuation env [] cont Nothing (Just args) (Just cps)
+makeCPSWArgs env cont cps args = Continuation env [] cont (Just args) (Just cps)
 
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b

@@ -76,7 +76,7 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 -- This perhaps shows cruft as we also pass cBody (scheme code) as a continuation.
 -- We could probably just use higher-order functions instead, but both are used for
 -- two different things.
-continueEval _ (Continuation cEnv _ cCont Nothing funcArgs (Just func)) val = func cEnv cCont val funcArgs
+continueEval _ (Continuation cEnv _ cCont funcArgs (Just func)) val = func cEnv cCont val funcArgs
 
 -- No higher order function, so:
 --
@@ -86,14 +86,14 @@ continueEval _ (Continuation cEnv _ cCont Nothing funcArgs (Just func)) val = fu
 -- continuation (if there is one), or we just return the result. Yes technically with
 -- CPS you are supposed to keep calling into functions and never return, but eventually
 -- when the computation is complete, you have to return something.
-continueEval _ (Continuation cEnv cBody cCont Nothing Nothing Nothing) val = do
+continueEval _ (Continuation cEnv cBody cCont Nothing Nothing) val = do
     case cBody of
         [] -> do
           case cCont of
-            Continuation nEnv _ _ _ _ _ -> continueEval nEnv cCont val
+            Continuation nEnv _ _ _ _ -> continueEval nEnv cCont val
             _ -> return (val)
-        [lv] -> eval cEnv (Continuation cEnv [] cCont Nothing Nothing Nothing) (lv)
-        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing Nothing) (lv)
+        [lv] -> eval cEnv (Continuation cEnv [] cCont Nothing Nothing) (lv)
+        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing) (lv)
 continueEval _ _ _ = throwError $ Default "Internal error in continueEval"
 
 -- |Core eval function
@@ -419,7 +419,7 @@ eval env cont (List [Atom "call/cc", proc]) = do
     PrimitiveFunc f -> do
         result <- liftThrows $ f [cont]
         case cont of 
-            Continuation cEnv _ _ _ _ _ -> continueEval cEnv cont result
+            Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
             _ -> return result
     Func aparams _ _ _ ->
       if (toInteger $ length aparams) == 1 
@@ -474,19 +474,19 @@ makeVarargs = makeFunc . Just . showVal
 
 -- Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
-apply _ c@(Continuation env _ _ _ _ _) args = do
+apply _ c@(Continuation env _ _ _ _) args = do
   if (toInteger $ length args) /= 1 
     then throwError $ NumArgs 1 args
     else continueEval env c $ head args
 apply cont (IOFunc func) args = do
   result <- func args
   case cont of
-    Continuation cEnv _ _ _ _ _ -> continueEval cEnv cont result
+    Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
 apply cont (PrimitiveFunc func) args = do
   result <- liftThrows $ func args
   case cont of
-    Continuation cEnv _ _ _ _ _ -> continueEval cEnv cont result
+    Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
 apply cont (Func aparams avarargs abody aclosure) args =
   if num aparams /= num args && avarargs == Nothing
@@ -507,14 +507,14 @@ apply cont (Func aparams avarargs abody aclosure) args =
         -- See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
         --
         evalBody evBody env = case cont of
-            Continuation _ cBody cCont _ _ Nothing -> if length cBody == 0
+            Continuation _ cBody cCont _ Nothing -> if length cBody == 0
                 then continueWCont env (evBody) cCont
                 else continueWCont env (evBody) cont -- Might be a problem, not fully optimizing
             _ -> continueWCont env (evBody) cont
 
         -- Shortcut for calling continueEval
         continueWCont cwcEnv cwcBody cwcCont = 
-            continueEval cwcEnv (Continuation cwcEnv cwcBody cwcCont Nothing Nothing Nothing) $ Nil ""
+            continueEval cwcEnv (Continuation cwcEnv cwcBody cwcCont Nothing Nothing) $ Nil ""
 
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
@@ -964,7 +964,7 @@ isDottedList ([DottedList _ _]) = return $ Bool True
 isDottedList _ = return $  Bool False
 
 isProcedure :: [LispVal] -> ThrowsError LispVal
-isProcedure ([Continuation _ _ _ _ _ _]) = return $ Bool True
+isProcedure ([Continuation _ _ _ _ _]) = return $ Bool True
 isProcedure ([PrimitiveFunc _]) = return $ Bool True
 isProcedure ([Func _ _ _ _]) = return $ Bool True
 isProcedure ([IOFunc _]) = return $ Bool True
