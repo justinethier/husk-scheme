@@ -118,39 +118,63 @@ evalLisp env lisp = macroEval env lisp >>= (eval env (makeNullContinuation env))
  -
  - -}
 
-{-  
+
+{- |continueEval is a support function for eval, below.
+ -
  - Transformed eval section into CPS by calling into this instead of returning from eval.
- - This function uses the cont argument to determine whether to keep going or to 
- - finally return a result.
+ - This function uses the cont argument to determine whether to keep going or to finally
+ - return a result.
  - -}
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
--- Passing a higher-order function as the continuation; just evaluate it.
+-- Passing a higher-order function as the continuation; just evaluate it. This is 
+-- done to enable an 'eval' function to be broken up into multiple sub-functions,
+-- so that any of the sub-functions can be passed around as a continuation.
+--
 -- This perhaps shows cruft as we also pass cBody (scheme code) as a continuation.
--- We could probably just use higher order functions instead, but it remains to be seen
--- how ugly that code will become. Using cBody may be a nice covenience... but it remains 
--- to be seen.
+-- We could probably just use higher-order functions instead, but both are used for
+-- two different things.
 continueEval _ (Continuation cEnv _ cCont Nothing funcArgs (Just func)) val = func cEnv cCont val funcArgs
---continueEval _ (Continuation cEnv _ cCont Nothing Nothing (Just func)) val = func cEnv cCont (trace (show "cps function with value = " ++ show val) val)
--- 
+
+-- No higher order function, so:
+--
+-- If there is Scheme code to evaluate in the function body, we continue to evaluate it.
+--
+-- Otherwise, if all code in the function has been executed, we 'unwind' to an outer
+-- continuation (if there is one), or we just return the result. Yes technically with
+-- CPS you are supposed to keep calling into functions and never return, but eventually
+-- when the computation is complete, you have to return something.
 continueEval _ (Continuation cEnv cBody cCont Nothing Nothing Nothing) val = do
     case cBody of
---    case (trace ("cBody = " ++ show cBody ++ " val = " ++ show val) cBody) of
         [] -> do
           case cCont of
             Continuation nEnv _ _ _ _ _ -> continueEval nEnv cCont val
             _ -> return (val)
         [lv] -> eval cEnv (Continuation cEnv [] cCont Nothing Nothing Nothing) (lv)
         (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing Nothing) (lv)
-
-{-            Continuation nEnv _ _ _ _ _ -> continueEval nEnv cCont (trace ("returning val=" ++ show val) val)
-            _ -> return (trace ("no cont, returning val = " ++ show val) val)
-        [lv] -> eval cEnv (Continuation cEnv [] cCont Nothing Nothing Nothing) (trace ("lv = " ++ show lv) lv)
-        (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing Nothing) (trace ("lv2 = " ++ show lv) lv)-}
 continueEval _ _ _ = throwError $ Default "Internal error in continueEval"
 
 -- |Core eval function
---
+--  Evaluate a scheme expression. 
 --  NOTE:  This function does not include macro support and should not be called directly. Instead, use 'evalLisp'
+--
+--
+--  Implementation Notes:
+--
+--  Internally, this function is written in continuation passing style (CPS) to allow the Scheme language
+--  itself to support first-class continuations. That is, at any point in the evaluation, call/cc may
+--  be used to capture the current continuation. Thus this code must call into the next continuation point, eg:
+--
+--    eval ... (makeCPS ...)
+--
+--  Instead of calling eval directly from within the same function, eg:
+--
+--    eval ...
+--    eval ...
+--
+--  This can make the code harder to follow, however some coding conventions have been established to make the
+--  code easier to follow. Whenever a single function has been broken into multiple ones for the purpose of CPS,
+--  those additional functions are defined locally using 'where', and each has been given a 'cps' prefix.
+--
 eval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 eval env cont val@(Nil _)       = continueEval env cont val
 eval env cont val@(String _)    = continueEval env cont val
@@ -233,62 +257,14 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
             _ -> cpsUnquoteList e c (head unEvaled) (Just [List (tail unEvaled), List $ acc ++ [val] ])
         cpsUnquoteFld _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteFld"
 
-{- Old version
-eval envi cont (List [Atom "quasiquote", value]) = continueEval envi cont =<< doUnQuote envi value
-  where doUnQuote :: Env -> LispVal -> IOThrowsError LispVal
-        doUnQuote env val = do
-          case val of
-            List [Atom "unquote", vval] -> eval env (makeNullContinuation env) vval
-            List (x : xs) -> unquoteListM env (x:xs) >>= return . List
-            DottedList xs x -> do
-              rxs <- unquoteListM env xs >>= return 
-              rx <- doUnQuote env x
-              case rx of
-                List [] -> return $ List rxs
-                List rxlst -> return $ List $ rxs ++ rxlst 
-                DottedList rxlst rxlast -> return $ DottedList (rxs ++ rxlst) rxlast
-                _ -> return $ DottedList rxs rx
-            Vector vec -> do
-              let len = length (elems vec)
-              vList <- unquoteListM env $ elems vec >>= return
-              return $ Vector $ listArray (0, len) vList
-            _ -> eval env (makeNullContinuation env) (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"... 
-        unquoteListM env lst = foldlM (unquoteListFld env) ([]) lst
-        unquoteListFld env (acc) val = do
-            case val of
-                List [Atom "unquote-splicing", vvar] -> do
-                    evalue <- eval env (makeNullContinuation env) vvar
-                    case evalue of
-                        List v -> return $ (acc ++ v)
-                        -- Question: In which cases should I generate a type error if evalue is not a list?
-                        --
-                        -- csi reports an error for this: `(1 ,@(+ 1 2) 4)
-                        -- but allows cases such as: `,@2
-                        -- For now we just throw an error - perhaps more strict than we need to be, but at
-                        -- least we will not allow anything invalid to be returned.
-                        --
-                        -- Old code that we might build on if this changes down the road: otherwise -> return $ (acc ++ [v])
-                        _ -> throwError $ TypeMismatch "proper list" evalue
-
-                _ -> do result <- doUnQuote env val
- - -}
-
 eval env cont (List [Atom "if", predic, conseq, alt]) = do
-{-- original version:
-  result <- eval env cont predic
-  case result of
-       Bool False -> eval env cont alt
-       _ -> eval env cont conseq
---}
--- CPS version:
   eval env (makeCPS env cont cps) (predic)
   where   cps :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
           cps e c result _ = 
---            case (trace ("result = " ++ show result) result) of
             case (result) of
               Bool False -> eval e c alt
               _ -> eval e c conseq
--- }
+
 eval env cont (List [Atom "if", predic, conseq]) = 
     eval env (makeCPS env cont cpsResult) predic
     where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
