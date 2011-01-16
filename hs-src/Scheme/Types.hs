@@ -142,11 +142,11 @@ data LispVal = Atom String
 makeNullContinuation :: Env -> LispVal
 makeNullContinuation env = Continuation env [] (Nil "") Nothing Nothing 
 
--- Make a continuation that takes a higher-order function
+-- Make a continuation that takes a higher-order function (written in Haskell)
 makeCPS :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal]-> IOThrowsError LispVal) -> LispVal
 makeCPS env cont cps = Continuation env [] cont Nothing (Just cps)
 
--- Make a continuation that passes arguments to a higher-order function
+-- Make a continuation that stores a higher-order function and arguments to that function
 makeCPSWArgs :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) -> [LispVal] -> LispVal
 makeCPSWArgs env cont cps args = Continuation env [] cont (Just args) (Just cps)
 
