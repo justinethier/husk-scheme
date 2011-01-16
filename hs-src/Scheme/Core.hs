@@ -164,75 +164,74 @@ eval env cont val@(HashTable _) = continueEval env cont val
 eval env cont val@(Vector _)    = continueEval env cont val
 eval env cont (Atom a)          = continueEval env cont =<< getVar env a
 eval env cont (List [Atom "quote", val])         = continueEval env cont val
-
--- TODO: rewriting this in CPS style
 eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value Nothing
---continueEval envi cont =<< doUnQuote envi value
---  eval env (makeCPS env cont cps) (predic)
   where cpsUnquote :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUnquote e c val _ = do 
           case val of
             List [Atom "unquote", vval] -> eval e c vval
-            List (x : xs) -> doCpsUnquoteList e c val
-{- TODO:            DottedList xs x -> do
-              rxs <- unquoteListM env xs >>= return 
-              rx <- doUnQuote env x
-              case rx of
-                List [] -> return $ List rxs
-                List rxlst -> return $ List $ rxs ++ rxlst 
-                DottedList rxlst rxlast -> return $ DottedList (rxs ++ rxlst) rxlast
-                _ -> return $ DottedList rxs rx
--}
+            List (_ : _) -> doCpsUnquoteList e c val
             DottedList xs x -> do
-              doCpsUnquoteList e (makeCPSWArgs e c cpsPairPrep $ [x] ) $ List xs
-
+              doCpsUnquoteList e (makeCPSWArgs e c cpsUnquotePair $ [x] ) $ List xs
             Vector vec -> do
               let len = length (elems vec)
-              doCpsUnquoteList e (makeCPSWArgs e c cpsVector $ [Number $ toInteger len]) $ List $ elems vec
+              doCpsUnquoteList e (makeCPSWArgs e c cpsUnquoteVector $ [Number $ toInteger len]) $ List $ elems vec
             _ -> eval e c  (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"...
 
-        cpsPairPrep :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsPairPrep e c (List rxs) (Just [rx]) = do
-          cpsUnquote e (makeCPSWArgs e c cpsPair $ [List rxs]) rx Nothing
+        -- |Unquote a pair
+        --  This must be started by unquoting the "left" hand side of the pair,
+        --  then pass a continuation to this function to unquote the right-hand side (RHS).
+        --  This function does the RHS and then calls into a continuation to finish the pair.
+        cpsUnquotePair :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsUnquotePair e c (List rxs) (Just [rx]) = do
+          cpsUnquote e (makeCPSWArgs e c cpsUnquotePairFinish $ [List rxs]) rx Nothing
+        cpsUnquotePair _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquotePair"
           
-        cpsPair :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsPair e c rx (Just [List rxs]) = do
+        -- |Finish unquoting a pair by combining both of the unquoted left/right hand sides.
+        cpsUnquotePairFinish :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsUnquotePairFinish e c rx (Just [List rxs]) = do
             case rx of
               List [] -> continueEval e c $ List rxs
               List rxlst -> continueEval e c $ List $ rxs ++ rxlst 
               DottedList rxlst rxlast -> continueEval e c $ DottedList (rxs ++ rxlst) rxlast
               _ -> continueEval e c $ DottedList rxs rx
+        cpsUnquotePairFinish _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquotePairFinish"
           
-        cpsVector :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsVector e c (List vList) (Just [Number len]) = continueEval e c (Vector $ listArray (0, fromInteger len) vList)
+        -- |Unquote a vector
+        cpsUnquoteVector :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsUnquoteVector e c (List vList) (Just [Number len]) = continueEval e c (Vector $ listArray (0, fromInteger len) vList)
+        cpsUnquoteVector _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteVector"
 
-        -- |Front-end to cpsUnquoteList
+        -- |Front-end to cpsUnquoteList, to encapsulate default values in the call
         doCpsUnquoteList :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
         doCpsUnquoteList e c (List (x:xs)) = cpsUnquoteList e c x $ Just ([List xs, List []])
+        doCpsUnquoteList _ _ _ = throwError $ InternalError "Unexpected parameters to doCpsUnquoteList"
+
         -- |Unquote a list
         cpsUnquoteList :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUnquoteList e c val (Just ([List unEvaled, List acc])) = do
             case val of
                 List [Atom "unquote-splicing", vvar] -> do
-                    eval e (makeCPSWArgs e c cpsUnquoteFldList $ [List unEvaled, List acc]) vvar
+                    eval e (makeCPSWArgs e c cpsUnquoteSplicing $ [List unEvaled, List acc]) vvar
                 _ -> cpsUnquote e (makeCPSWArgs e c cpsUnquoteFld $ [List unEvaled, List acc]) val Nothing 
---                        result <- doUnQuote env val -- TODO: call into cpsUnquoteFld
---                        return $ (acc ++ [result])
-        -- Unquote processing for a list (only used after splicing?) 
-        cpsUnquoteFldList :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquoteFldList e c val (Just ([List unEvaled, List acc])) = do
+        cpsUnquoteList _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteList"
+
+        -- |Evaluate an expression instead of quoting it
+        cpsUnquoteSplicing :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsUnquoteSplicing e c val (Just ([List unEvaled, List acc])) = do
                     case val of
                         List v -> case unEvaled of
                                     [] -> continueEval e c $ List $ acc ++ v
                                     _ -> cpsUnquoteList e c (head unEvaled) (Just [List (tail unEvaled), List $ acc ++ v ])
                         _ -> throwError $ TypeMismatch "proper list" val
-        -- Unquote processing for single field
+        cpsUnquoteSplicing _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteSplicing"
+
+        -- |Unquote processing for single field of a list
         cpsUnquoteFld :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUnquoteFld e c val (Just ([List unEvaled, List acc])) = do
           case unEvaled of
             [] -> continueEval e c $ List $ acc ++ [val]
             _ -> cpsUnquoteList e c (head unEvaled) (Just [List (tail unEvaled), List $ acc ++ [val] ])
-
+        cpsUnquoteFld _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteFld"
 
 {- Old version
 eval envi cont (List [Atom "quasiquote", value]) = continueEval envi cont =<< doUnQuote envi value
