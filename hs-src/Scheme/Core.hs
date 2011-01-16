@@ -188,6 +188,9 @@ eval env cont val@(HashTable _) = continueEval env cont val
 eval env cont val@(Vector _)    = continueEval env cont val
 eval env cont (Atom a)          = continueEval env cont =<< getVar env a
 eval env cont (List [Atom "quote", val])         = continueEval env cont val
+
+-- Unquote an expression; unquoting is different than quoting in that
+-- it may also be inter-spliced with code that is meant to be evaluated.
 eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value Nothing
   where cpsUnquote :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUnquote e c val _ = do 
@@ -306,12 +309,14 @@ eval env cont (List (Atom "begin" : funcs)) =
             Just fArgs -> eval e c $ List (Atom "begin" : fArgs)
             Nothing -> throwError $ Default "Unexpected error in begin"
 
+
 -- TODO: rewrite in CPS (??)
 eval env cont (List [Atom "load", String filename]) = do
 --     load filename >>= liftM last . mapM (evaluate env cont)
      result <- load filename >>= liftM last . mapM (evaluate env (makeNullContinuation env))
      continueEval env cont result
 	 where evaluate env2 cont2 val2 = macroEval env2 val2 >>= eval env2 cont2
+
 
 eval env cont (List [Atom "set!", Atom var, form]) = do 
   eval env (makeCPS env cont cpsResult) form
@@ -363,6 +368,7 @@ eval env cont (List [Atom "string-fill!", Atom var, character]) = do
         doFillStr (String _, c, _) = throwError $ TypeMismatch "character" c
         doFillStr (s, Char _, _) = throwError $ TypeMismatch "string" s
         doFillStr (_, _, _) = throwError $ BadSpecialForm "Unexpected error in string-fill!" $ List []
+
 
 -- TODO: pick up CPS conversion here....
 
@@ -437,12 +443,36 @@ eval _ _ (List [Atom "apply", _]) = throwError $ BadSpecialForm "apply" $ String
 eval env cont (List (Atom "apply" : args)) = do
     -- FUTURE: verify length of list?
     -- TODO: for all Continuations below, need to pull each into this continuation
-    proc <- eval env (makeNullContinuation env) $ head $ args
+{- Original code:
+ - proc <- eval env (makeNullContinuation env) $ head $ args
     lst <- eval env (makeNullContinuation env) $ head $ reverse args
     argVals <- mapM (eval env (makeNullContinuation env)) $ tail $ reverse $ tail (reverse args)
     case lst of
       List l -> apply cont proc (argVals ++ l)
       other -> throwError $ TypeMismatch "list" other
+-}
+  eval env (makeCPS env cont cps) $ head args
+  where cpsLast :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsLast e c proc (Just [args]) = 
+          eval e (makeCPSWArgs e c cpsArgs $ [proc, List $ tail $ reverse $ tail $ reverse args]) $ head $ reverse args 
+        cpsArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsArgs e c lst (Just [proc, List args]) =
+          case args of
+            [] -> cpsApply e c (Just [proc, lst, List args])
+            other -> 
+          eval e (makeCPSWArgs e c cpsEvalArgs $ Just [proc, lst, List $ tail args, List []]) $ head args
+
+        cpsEvalArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsEvalArgs e c result (Just [proc, lst, List args, List evaledArgs]) =
+          case args of
+            [] -> cpsApply e c (Just [proc, lst, List (args ++ [result]])
+            (x:xs) -> eval e (makeCPSWArgs e c cpsEvalArgs $ Just [proc, lst, List (args ++ [result]), List xs ]) x
+
+        cpsApply :: Env -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsApply e c (Just [proc, lst, argVals]) = do 
+          case lst of
+            List l -> apply c proc (argVals ++ l)
+            other -> throwError $ TypeMismatch "list" other
 
 eval env cont (List (Atom "call-with-current-continuation" : args)) = 
   eval env cont (List (Atom "call/cc" : args))
