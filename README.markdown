@@ -22,7 +22,7 @@ husk includes the following features:
 - Full numeric tower - includes support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types, other constraints from spec.
 - Hash tables, as specified by [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html)
 - Hygenic Macros: High-level macros via define-syntax - *Note this is still a heavy work in progress* and while it works well enough that many derived forms are implemented in our standard library, you may still run into problems when defining your own macros.
-- Continuations - call/cc and first-class continuations are partially implemented, however this functionality is extremely limited and in an alpha state. See the change log (release notes) for more information.
+- Continuations - call/cc and first-class continuations. See the change log (release notes) for more information.
 
 husk scheme is available under the [MIT license](http://www.opensource.org/licenses/mit-license.php).
 

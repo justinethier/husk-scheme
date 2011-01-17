@@ -1,3 +1,8 @@
+v2.0
+----
+- Full implementation of continuations via call/cc. This involved reworking
+eval to thread a continuation through all versions of this function.
+
 v1.3
 ----
 - Added limited support for continuations, by adding the call/cc keyword and first-class continuations. This is still a work in progress, and only a subset of continuations are supported - continuations can only be used as escape procedures from a function (along the lines of a 'return' call).
