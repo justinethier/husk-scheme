@@ -3,7 +3,7 @@ Version:             2.0
 Synopsis:            R5RS Scheme interpreter program and library.
 Description:         Husk is a dialect of Scheme written in Haskell that implements 
                      a subset of the R5RS standard. Advanced R5RS features are
-                     provided, including continuations, hygenic macros, and the
+                     provided including continuations, hygenic macros, and the
                      full numeric tower.
                      
                      Husk is not intended to be a highly optimized version of Scheme. 
