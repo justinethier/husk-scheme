@@ -313,44 +313,63 @@ eval env cont (List [Atom "string-fill!", Atom var, character]) = do
         doFillStr (_, _, _) = throwError $ BadSpecialForm "Unexpected error in string-fill!" $ List []
 
 
--- TODO: pick up CPS conversion here....
-
 eval env cont (List [Atom "string-set!", Atom var, i, character]) = do 
-  idx <- eval env (makeNullContinuation env) i
-  str <- eval env (makeNullContinuation env) =<< getVar env var
-  result <- ((eval env (makeNullContinuation env) =<< substr(str, character, idx))) >>= setVar env var
-  continueEval env cont result
-  where substr (String str, Char char, Number ii) = do
+  eval env (makeCPS env cont cpsStr) i
+  where 
+        cpsStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsStr e c idx _ = eval e (makeCPSWArgs e c cpsSubStr $ [idx]) =<< getVar e var
+
+        cpsSubStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsSubStr e c str (Just [idx]) = 
+            substr(str, character, idx) >>= setVar env var >>= continueEval e c
+        cpsSubStr _ _ _ _ = throwError $ InternalError "Invalid argument to cpsSubStr" 
+
+        substr (String str, Char char, Number ii) = do
                               return $ String $ (take (fromInteger ii) . drop 0) str ++ 
                                        [char] ++
                                        (take (length str) . drop (fromInteger ii + 1)) str
-{- TODO: 
- - also need to add unit tests for this...-}
         substr (String _, Char _, n) = throwError $ TypeMismatch "number" n
         substr (String _, c, _) = throwError $ TypeMismatch "character" c
         substr (s, _, _) = throwError $ TypeMismatch "string" s
 
 eval env cont (List [Atom "vector-set!", Atom var, i, object]) = do 
-  idx <- eval env (makeNullContinuation env) i
-  obj <- eval env (makeNullContinuation env) object
-  vec <- eval env (makeNullContinuation env) =<< getVar env var
-  result <- ((eval env (makeNullContinuation env) =<< (updateVector vec idx obj))) >>= setVar env var
-  continueEval env cont result
-  where updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
+  eval env (makeCPS env cont cpsObj) i
+  where
+        cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsObj e c idx _ = eval e (makeCPSWArgs e c cpsVec $ [idx]) object
+
+        cpsVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsVec e c obj (Just [idx]) = eval e (makeCPSWArgs e c cpsUpdateVec $ [idx, obj]) =<< getVar e var
+        cpsVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsVec"
+
+        cpsUpdateVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsUpdateVec e c vec (Just [idx, obj]) = 
+            updateVector vec idx obj >>= setVar e var >>= continueEval e c
+        cpsUpdateVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateVec"
+
+        updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
         updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec//[(fromInteger idx, obj)]
         updateVector v _ _ = throwError $ TypeMismatch "vector" v
 
 eval env cont (List [Atom "vector-fill!", Atom var, object]) = do 
-  obj <- eval env (makeNullContinuation env) object
-  vec <- eval env (makeNullContinuation env) =<< getVar env var
-  result <- ((eval env (makeNullContinuation env) =<< (fillVector vec obj))) >>= setVar env var
-  continueEval env cont result
-  where fillVector :: LispVal -> LispVal -> IOThrowsError LispVal
+  eval env (makeCPS env cont cpsVec) object
+  where
+        cpsVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsVec e c obj _ = eval e (makeCPSWArgs e c cpsFillVec $ [obj]) =<< getVar e var
+
+        cpsFillVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsFillVec e c vec (Just [obj]) = 
+            fillVector vec obj >>= setVar e var >>= continueEval e c 
+        cpsFillVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsFillVec" 
+
+        fillVector :: LispVal -> LispVal -> IOThrowsError LispVal
         fillVector (Vector vec) obj = do
           let l = replicate (lenVector vec) obj
           return $ Vector $ (listArray (0, length l - 1)) l
         fillVector v _ = throwError $ TypeMismatch "vector" v
         lenVector v = length (elems v)
+
+-- TODO: pick up CPS conversion here....
 
 eval env cont (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do 
   key <- eval env (makeNullContinuation env) rkey
