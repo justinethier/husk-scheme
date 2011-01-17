@@ -369,34 +369,40 @@ eval env cont (List [Atom "vector-fill!", Atom var, object]) = do
         fillVector v _ = throwError $ TypeMismatch "vector" v
         lenVector v = length (elems v)
 
--- TODO: pick up CPS conversion here....
-
 eval env cont (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do 
-  key <- eval env (makeNullContinuation env) rkey
-  value <- eval env (makeNullContinuation env) rvalue
-  h <- eval env (makeNullContinuation env) =<< getVar env var
-  case h of
-    HashTable ht -> do
-      result <- (eval env (makeNullContinuation env) $ HashTable $ Data.Map.insert key value ht) >>= setVar env var
-      continueEval env cont result
-    other -> throwError $ TypeMismatch "hash-table" other
+  eval env (makeCPS env cont cpsValue) rkey
+  where
+        cpsValue :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsValue e c key _ = eval e (makeCPSWArgs e c cpsH $ [key]) rvalue
+        
+        cpsH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsH e c value (Just [key]) = eval e (makeCPSWArgs e c cpsEvalH $ [key, value]) =<< getVar e var
+        cpsH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsH" 
+
+        cpsEvalH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsEvalH e c h (Just [key, value]) = do 
+            case h of
+                HashTable ht -> do
+                  setVar env var (HashTable $ Data.Map.insert key value ht) >>= eval e c
+                other -> throwError $ TypeMismatch "hash-table" other
+        cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
 
 eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do 
-  key <- eval env (makeNullContinuation env) rkey
-  h <- eval env (makeNullContinuation env) =<< getVar env var
-  case h of
-    HashTable ht -> do
-      result <- (eval env (makeNullContinuation env) $ HashTable $ Data.Map.delete key ht) >>= setVar env var
-      continueEval env cont result
-    other -> throwError $ TypeMismatch "hash-table" other
+  eval env (makeCPS env cont cpsH) rkey
+  where
+        cpsH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsH e c key _ = eval e (makeCPSWArgs e c cpsEvalH $ [key]) =<< getVar e var
+
+        cpsEvalH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsEvalH e c h (Just [key]) = do 
+            case h of
+                HashTable ht -> do
+                  setVar env var (HashTable $ Data.Map.delete key ht) >>= eval e c
+                other -> throwError $ TypeMismatch "hash-table" other
+        cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
 
 -- TODO:
 --  hash-table-merge!
-
---
--- End CPS TODO section
---
-
 
 
 eval _ _ (List [Atom "apply"]) = throwError $ BadSpecialForm "apply" $ String "Function not specified"
