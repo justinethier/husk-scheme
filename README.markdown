@@ -65,6 +65,7 @@ The 'scm-unit-tests' directory contains unit tests for much of the scheme code. 
 
 The examples directory contains example scheme programs.
 
+Patches are welcome; please send via pull request on github.
 
 Credits
 -------
