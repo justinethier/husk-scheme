@@ -21,6 +21,7 @@
 (assert/equal (call-with-current-continuation procedure?) #t)
 
 ; TODO:
+;(assert/equal
 ;(call-with-current-continuation
 ;    (lambda (exit)
 ;          (for-each (lambda (x)
@@ -28,8 +29,10 @@
 ;                                (exit x)))
 ;                   '(54 0 37 -3 245 19))
 ;              #t))
+;-3)
 ;===>  -3
 
+; TODO:
 (define list-length
   (lambda (obj)
     (call-with-current-continuation
@@ -42,10 +45,11 @@
                         (else (return #f))))))
         (r obj))))))
 
-; TODO:
-;(list-length '(1 2 3 4))                    ===>  4
+(assert/equal (list-length '(1 2 3 4)) 4)
+              ;                   ===>  4
 
-;(list-length '(a b . c))                    ===>  #f
+(assert/equal (list-length '(a b . c)) #f)
+              ;                   ===>  #f
 
 (define (test-cont) #f)
 (assert/equal (if (call/cc
@@ -75,9 +79,6 @@
 (assert/equal (test-cont #t)
               'true2)
 
-;TODO: test cases for (begin) once CPS style is working
-;
-
 (assert/equal (begin 1 2 (call/cc
                            (lambda (c)
                              (set! test-cont c)
@@ -91,7 +92,6 @@
 (set! a (call/cc (lambda (c) (set! test-cont c) 1)))
 (assert/equal a 1)
 (test-cont 2)
-; TODO: this fails until set! properly uses CPS
 (assert/equal a 2)
 
 ; General function application
