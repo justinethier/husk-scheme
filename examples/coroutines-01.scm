@@ -3,6 +3,8 @@
 ;
 ;;; A naive queue for thread scheduling.
 ;;; It holds a list of continuations "waiting to run".
+(load "../stdlib.scm")
+
 
 (define *queue* '())
 
@@ -48,9 +50,10 @@
 (define (do-stuff-n-print str)
   (lambda ()
     (let loop ((n 0))
-      (format #t "~A ~A\n" str n)
+      (write (list str n))
       (yield)
-      (loop (1+ n)))))
+      (loop (+ 1 n)))))
+;      (format #t "~A ~A\n" str n)
 
 ;;; Create two threads, and start them running.
 (fork (do-stuff-n-print "This is AAA"))
