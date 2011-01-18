@@ -20,17 +20,15 @@
 (assert/equal (call/cc procedure?) #t)
 (assert/equal (call-with-current-continuation procedure?) #t)
 
-; TODO:
-;(assert/equal
-;(call-with-current-continuation
-;    (lambda (exit)
-;          (for-each (lambda (x)
-;                            (if (negative? x)
-;                                (exit x)))
-;                   '(54 0 37 -3 245 19))
-;              #t))
-;-3)
-;===>  -3
+(assert/equal
+  (call-with-current-continuation
+    (lambda (exit)
+          (for-each (lambda (x)
+                            (if (negative? x)
+                                (exit x)))
+                   '(54 0 37 -3 245 19))
+              #t))
+  -3)
 
 ; TODO:
 (define list-length
@@ -44,8 +42,10 @@
                          (+ (r (cdr obj)) 1))
                         (else (return #f))))))
         (r obj))))))
-
-(assert/equal (list-length '(1 2 3 4)) 4)
+;(define test #f)
+;(set! test (list-length '(1 2 3 4)))
+;(assert/equal test 4)
+;(assert/equal (list-length '(1 2 3 4)) 4)
               ;                   ===>  4
 
 (assert/equal (list-length '(a b . c)) #f)
