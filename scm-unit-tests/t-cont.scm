@@ -42,10 +42,10 @@
                          (+ (r (cdr obj)) 1))
                         (else (return #f))))))
         (r obj))))))
-;(define test #f)
-;(set! test (list-length '(1 2 3 4)))
-;(assert/equal test 4)
-;(assert/equal (list-length '(1 2 3 4)) 4)
+(define test #f)
+(set! test (list-length '(1 2 3 4)))
+(assert/equal test 4)
+(assert/equal (list-length '(1 2 3 4)) 4)
               ;                   ===>  4
 
 (assert/equal (list-length '(a b . c)) #f)
