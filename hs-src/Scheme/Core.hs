@@ -321,7 +321,7 @@ eval env cont (List [Atom "string-set!", Atom var, i, character]) = do
 
         cpsSubStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsSubStr e c str (Just [idx]) = 
-            substr(str, character, idx) >>= setVar env var >>= continueEval e c
+            substr(str, character, idx) >>= setVar e var >>= continueEval e c
         cpsSubStr _ _ _ _ = throwError $ InternalError "Invalid argument to cpsSubStr" 
 
         substr (String str, Char char, Number ii) = do
@@ -331,6 +331,21 @@ eval env cont (List [Atom "string-set!", Atom var, i, character]) = do
         substr (String _, Char _, n) = throwError $ TypeMismatch "number" n
         substr (String _, c, _) = throwError $ TypeMismatch "character" c
         substr (s, _, _) = throwError $ TypeMismatch "string" s
+
+eval env cont (List [Atom "set-cdr!", Atom var, argObj]) = do
+--  eval env (makeCPS env cont cpsObj) =<< getVar env var
+  continueEval env (makeCPS env cont cpsObj) =<< getVar env var
+  where 
+        cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsObj _ _ pair@(List []) _ = throwError $ TypeMismatch "pair" pair 
+        cpsObj e c pair@(List (_:_)) _ = eval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
+        cpsObj e c pair@(DottedList _ _) _ = eval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
+        cpsObj _ _ pair _ = throwError $ TypeMismatch "pair" pair 
+
+        cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsSet e c obj (Just [List (l : _)]) = setVar e var (DottedList [l] obj) >>= continueEval e c
+        cpsSet e c obj (Just [DottedList (l : _) _]) = setVar e var (DottedList [l] obj) >>= continueEval e c
+        cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet" 
 
 eval env cont (List [Atom "vector-set!", Atom var, i, object]) = do 
   eval env (makeCPS env cont cpsObj) i
