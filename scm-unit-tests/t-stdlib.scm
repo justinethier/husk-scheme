@@ -12,7 +12,26 @@
 ;
 ;
 
-; Pair section
+; Pairs and Lists section, from R5RS spec
+(define x (list 'a 'b 'c))
+(define y x)
+(assert/equal y  
+              '(a b c))
+(assert/equal (list? y)  
+              #t)
+(set-cdr! x 4)
+(assert/equal x 
+              '(a . 4))
+; TODO:
+; Looks like (need to confirm) all of below fail because (define y x) 
+; is assigning to to the evaluated value of x instead of the symbol x.
+(assert/equal (eqv? x y) #t)
+(assert/equal y '(a . 4))
+(assert/equal (list? y) #f)
+; End test failures
+(set-cdr! x x)
+(assert/equal (list? x)  #f)
+
 (assert/equal (pair? (list 1 2 3)) #t)
 (assert/equal (pair? 1) #f)
 (assert/equal (pair? '(a . b)) #t)
