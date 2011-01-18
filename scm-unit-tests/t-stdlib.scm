@@ -12,6 +12,16 @@
 ;
 ;
 
+; Pair section
+(assert/equal (pair? (list 1 2 3)) #t)
+(assert/equal (pair? 1) #f)
+(assert/equal (pair? '(a . b)) #t)
+(assert/equal (pair? '(a b c)) #t)
+(assert/equal (pair? '()) #f)
+(assert/equal (pair? '#(a b)) #f)
+
+
+; General tests
 (assert/equal (+ 1 1) 2)
 
 (assert/equal (map (curry + 2) '(1 2 3 4)) 

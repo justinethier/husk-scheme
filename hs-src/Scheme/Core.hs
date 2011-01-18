@@ -986,6 +986,9 @@ stringCopy badArgList = throwError $ NumArgs 2 badArgList
 
 isDottedList :: [LispVal] -> ThrowsError LispVal
 isDottedList ([DottedList _ _]) = return $ Bool True
+-- Must include lists as well since they are made up of 'chains' of pairs
+isDottedList ([List []]) = return $ Bool False
+isDottedList ([List _]) = return $ Bool True
 isDottedList _ = return $  Bool False
 
 isProcedure :: [LispVal] -> ThrowsError LispVal
