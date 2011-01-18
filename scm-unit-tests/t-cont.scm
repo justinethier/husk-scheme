@@ -30,7 +30,6 @@
               #t))
   -3)
 
-; TODO:
 (define list-length
   (lambda (obj)
     (call-with-current-continuation
@@ -46,10 +45,7 @@
 (set! test (list-length '(1 2 3 4)))
 (assert/equal test 4)
 (assert/equal (list-length '(1 2 3 4)) 4)
-              ;                   ===>  4
-
 (assert/equal (list-length '(a b . c)) #f)
-              ;                   ===>  #f
 
 (define (test-cont) #f)
 (assert/equal (if (call/cc
@@ -110,16 +106,12 @@
 (set! test (handle #\b))
 (assert/equal test "bbbbbbb")
 
-; TODO: test cases for:
-;  applicable forms of (define)
-;  case
-;  cond
-;  quote, quasi-quote, etc
-
 (define test-value #f)
 (define test-cont #f)
 `(a b c ,(call/cc (lambda (k) (set! test-cont k) 'd)) e f g)
 (set! test-value (test-cont 1))
 ; TODO: for some reason, returns false. Confirmed by csi: (assert/equal test-value '(a b c 1 e f g))
+
+; TODO: test case for cond
 
 (unit-test-handler-results)
