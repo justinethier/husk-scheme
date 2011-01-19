@@ -1,4 +1,4 @@
-![husk Scheme](docs/husk-scheme.png)
+![husk Scheme](https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png)
 
 husk is a dialect of Scheme written in Haskell that implements a subset of the [R5RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Advanced R5RS features are provided including continuations, hygenic macros, and the full numeric tower.
 
