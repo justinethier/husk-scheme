@@ -81,25 +81,35 @@
     (let ((x '(a)))
         (eqv? x x))
     #t)
-;TODO: the comments here cause a parser error
-;     highlights a problem with Parser.hs, perhaps
-;     that needs to be changed to use a token parser
-;
-;(assert/equal (eq? 'a 'a) #t)
+
+; Many tests that do not meet spec
+(assert/equal (eq? 'a 'a) #t)
 ;(eq? '(a) '(a))                         ===>  unspecified
 ;(assert/equal (eq? (list 'a) (list 'a))  #f)
-(;eq? "a" "a")                           ===>  unspecified
-(;eq? "" "")                             ===>  unspecified
-;(assert/equal (eq? '() '())              #t)
+;(eq? "a" "a")                           ===>  unspecified
+;(eq? "" "")                             ===>  unspecified
+(assert/equal (eq? '() '())              #t)
 ;(eq? 2 2)                               ===>  unspecified
 ;(eq? #\A #\A)         ===>  unspecified
 ;(assert/equal (eq? car car)              #t)
 ;(let ((n (+ 2 3)))
 ;    (eq? n n))              ===>  unspecified
-;(assert/equal (let ((x '(a)))
-;    (eq? x x))              #t)
-;(assert/equal (let ((x '#()))
-;    (eq? x x))              #t)
+(assert/equal (let ((x '(a)))
+    (eq? x x))              #t)
+(assert/equal (let ((x '#()))
+    (eq? x x))              #t)
 ;(assert/equal (let ((p (lambda (x) x)))
 ;    (eq? p p))              #t)
+
+(assert/equal (equal? 'a 'a) #t)
+(assert/equal (equal? '(a) '(a))         #t)
+(assert/equal (equal? '(a (b) c)
+                '(a (b) c))              #t)
+(assert/equal (equal? "abc" "abc")       #t)
+(assert/equal (equal? 2 2)               #t)
+(assert/equal (equal? (make-vector 5 'a)
+                (make-vector 5 'a))      #t)
+;(equal? (lambda (x) x)
+;                (lambda (y) y))          ===>  unspecified
+
 (unit-test-handler-results)
