@@ -21,6 +21,7 @@ test:
 	cd scm-unit-tests ; ../huski t-numerical-ops.scm
 	cd scm-unit-tests ; ../huski t-hashtable.scm
 	cd scm-unit-tests ; ../huski t-special-forms.scm
+	cd scm-unit-tests ; ../huski t-standard-procedures.scm
 	cd scm-unit-tests ; ../huski t-stdlib.scm
 	cd scm-unit-tests ; ../huski t-string.scm
 	cd scm-unit-tests ; ../huski t-vector.scm
