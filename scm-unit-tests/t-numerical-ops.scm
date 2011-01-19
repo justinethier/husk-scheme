@@ -1,5 +1,6 @@
 (load "skim-unit.scm")
 
+; Many test cases below that are not to spec:
 (assert/equal (complex? 3+4i) #t)
 (assert/equal (complex? 3) #t)
 (assert/equal (real? 3) #t)
@@ -15,6 +16,19 @@
 (assert/equal (max 3 4) 4)
 (assert/equal (max 3.9 4) 4) ; TODO: technically not to spec
 
+(assert/equal (+ 3 4)     7)
+(assert/equal (+ 3)       3)
+;(assert/equal (+)         0)
+(assert/equal (* 4)       4)
+;(assert/equal (*)         1)
+
+(assert/equal (- 3 4)       -1)
+(assert/equal (- 3 4 5)     -6)
+(assert/equal (- 3)         -3)
+;(assert/equal (/ 3 4 5)     3/20)
+(assert/equal (/ 3)         1/3)
+
+(assert/equal (abs -7)            7)
 (assert/equal (+ 1 2 3 4 5) 15)
 (assert/equal (+ 4/8 5) 44/8)
 (assert/equal (+ 1/1 2 3.0 4 10/2) 15.0)
@@ -38,17 +52,29 @@
 (assert/equal (remainder -13 -4) -1)
 ;TODO: - support for inexact - (remainder -13 -4.0)            ===>  -1.0  ; inexact
 
-;(assert/equal () )
+;(assert/equal (numerator (/ 6 4))        3)
+;(assert/equal (denominator (/ 6 4))      2)
+;(assert/equal (denominator
+;    (exact->inexact (/ 6 4)))           2.0)
 
-;
-;            ("round", numRound),
-;            ("floor", numFloor),
-;            ("ceiling", numCeiling),
-;            ("truncate", numTruncate),
-;
-;            ("numerator", numNumerator),
-;           ("denominator", numDenominator),
-;
+(assert/equal (floor -4.3)      -5.0)
+(assert/equal (ceiling -4.3)    -4.0)
+(assert/equal (truncate -4.3)   -4.0)
+(assert/equal (round -4.3)      -4.0)
+
+(assert/equal (floor 3.5)       3.0)
+(assert/equal (ceiling 3.5)     4.0)
+(assert/equal (truncate 3.5)    3.0)
+(assert/equal (round 3.5)       4.0)  ; inexact
+
+(assert/equal (round 7/2)       4)    ; exact
+(assert/equal (round 7)         7)
+
+;(assert/equal (rationalize
+;    (inexact->exact .3) 1/10)        1/3)    ; exact
+;(assert/equal (rationalize .3 1/10)                #i1/3)  ; inexact
+
+
 ;            ("exp", numExp), 
 ;            ("log", numLog), 
 ;            ("sin", numSin), 
@@ -68,6 +94,7 @@
 ;             ("magnitude", numMagnitude), 
 ;             ("angle", numAngle ), 
 
+; TODO:
 ;(gcd 32 -36)                    ===>  4
 ;(gcd)                           ===>  0
 ;(lcm 32 -36)                    ===>  288
@@ -76,6 +103,11 @@
 
 (assert/equal (exact->inexact 2) 2.0)
 (assert/equal (inexact->exact 2.0) 2)
+
+(assert/equal (string->number "100")      100)
+;(assert/equal (string->number "100" 16)   256)
+;(assert/equal (string->number "1e2")      100.0)
+;(assert/equal (string->number "15##")     1500.0)
 
 (assert/equal (= 1 (+ 0 1)) #t)
 (assert/equal (= 1.0 1) #t)

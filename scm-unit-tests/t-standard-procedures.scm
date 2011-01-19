@@ -112,4 +112,16 @@
 ;(equal? (lambda (x) x)
 ;                (lambda (y) y))          ===>  unspecified
 
+(assert/equal (not #t)         #f)
+(assert/equal (not 3)          #f)
+(assert/equal (not (list 3))   #f)
+(assert/equal (not #f)         #t)
+(assert/equal (not '())        #f)
+(assert/equal (not (list))     #f)
+(assert/equal (not 'nil)       #f)
+
+(assert/equal (boolean? #f)     #t)
+(assert/equal (boolean? 0)      #f)
+(assert/equal (boolean? '())    #f)
+
 (unit-test-handler-results)
