@@ -118,6 +118,19 @@
  70)
 
 
+(define add3
+    (lambda (x) (+ x 3)))
+(assert/equal (add3 3)
+               6)
+(define first car)
+(assert/equal (first '(1 2))
+              1)
+(assert/equal
+  (let ((x 5))
+    (define foo (lambda (y) (bar x y)))
+      (define bar (lambda (a b) (+ (* a b) a)))
+        (foo (+ x 3)))                        
+   45)
 
 ; General tests
 (assert/equal (+ 1 1) 2)
