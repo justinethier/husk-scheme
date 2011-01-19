@@ -84,6 +84,77 @@
 (assert/equal (pair? '#(a b)) #f)
 
 
+(assert/equal (cons 'a '())            '(a))
+(assert/equal (cons '(a) '(b c d))     '((a) b c d))
+(assert/equal (cons "a" '(b c))        '("a" b c))
+(assert/equal (cons 'a 3)              '(a . 3))
+(assert/equal (cons '(a b) 'c)         '((a b) . c))
+(assert/equal (car '(a b c))           'a)
+(assert/equal (car '((a) b c d))       '(a))
+(assert/equal (car '(1 . 2))           1)
+;(assert/equal (car '())               ==> error)
+(assert/equal (cdr '((a) b c d))       '(b c d))
+(assert/equal (cdr '(1 . 2))           2)
+;(assert/equal (cdr '())               ==>  error)
+;(define (f) (list 'not-a-constant-list))
+;(define (g) '(constant-list))
+;(set-car! (f) 3)                     ===>  unspecified
+;(set-car! (g) 3)                     ===>  error
+(assert/equal (list? '(a b c))          #t)
+(assert/equal (list? '())               #t)
+(assert/equal (list? '(a . b))          #f)
+;(let ((x (list 'a)))
+;      (set-cdr! x x)
+;      (list? x))             ===>  #f
+(assert/equal (list 'a (+ 3 4) 'c)               '(a 7 c))
+(assert/equal (list)                             '())
+(assert/equal (length '(a b c))                  3)
+(assert/equal (length '(a (b) (c d e)))          3)
+(assert/equal (length '())                       0)
+(assert/equal (append '(x) '(y))                 '(x y))
+(assert/equal (append '(a) '(b c d))             '(a b c d))
+(assert/equal (append '(a (b)) '((c)))           '(a (b) (c)))
+(assert/equal (append '(a b) '(c . d))           '(a b c . d))
+(assert/equal (append '() 'a)                    'a)
+(assert/equal (reverse '(a b c))                 '(c b a))
+(assert/equal (reverse '(a (b c) d (e (f))))  
+                                                  '((e (f)) d (b c) a))
+
+(assert/equal (list-ref '(a b c d) 2)     'c)
+(assert/equal (list-ref '(a b c d)
+                (inexact->exact (round 1.8))) 
+              'c)
+
+(assert/equal (symbol? 'foo)                  #t)
+(assert/equal (symbol? (car '(a b)))          #t)
+(assert/equal (symbol? "bar")                 #f)
+(assert/equal (symbol? 'nil)                  #t)
+(assert/equal (symbol? '())                   #f)
+(assert/equal (symbol? #f)                    #f)
+
+
+(assert/equal (symbol->string 'flying-fish)     
+               "flying-fish")
+(assert/equal (symbol->string 'Martin) 
+              "Martin")
+(assert/equal (symbol->string
+                 (string->symbol "Malvina"))
+              "Malvina")
+(assert/equal (eq? 'mISSISSIppi 'mississippi)  
+                #f)
+(assert/equal (string->symbol "mISSISSIppi")  
+                'mISSISSIppi)
+(assert/equal (eq? 'bitBlt (string->symbol "bitBlt"))     
+               #t)
+(assert/equal (eq? 'JollyWog
+          (string->symbol
+                   (symbol->string 'JollyWog)))  
+                #t)
+(assert/equal (string=? "K. Harper, M.D."
+                    (symbol->string
+                                  (string->symbol "K. Harper, M.D.")))  
+                 #t)
+
 (assert/equal (and (= 2 2) (> 2 1))   #t)
 (assert/equal (and (= 2 2) (< 2 1))   #f)
 ;TODO: test from spec
