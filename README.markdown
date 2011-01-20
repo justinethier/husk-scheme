@@ -1,10 +1,10 @@
 ![husk Scheme](https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png)
 
-husk is a dialect of Scheme written in Haskell that implements a subset of the [R5RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Advanced R5RS features are provided including continuations, hygenic macros, and the full numeric tower.
+husk is a dialect of Scheme written in Haskell that implements a subset of the [R5RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Advanced R5RS features are provided including continuations, hygenic macros, and a full numeric tower.
 
-Husk is not intended to be a highly optimized version of Scheme. Rather, the goal of the project is to provide a tight integration between Haskell and Scheme while at the same time providing a great opportunity for deeper understanding of both languages. In addition, by closely following the R5RS standard the intent is to develop a Scheme that is as compatible as possible with other R5RS Schemes.
+husk provides many features and is intended as a good choice for certain applications, however it is not a highly optimized version of Scheme. Rather, the goal of the project is to provide a tight integration between Haskell and Scheme while at the same time providing an opportunity for deeper understanding of both languages. In addition, by closely following the R5RS standard the intent is to develop a Scheme that is as compatible as possible with other R5RS Schemes.
 
-Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy: the core language consists of a small number of fundamental forms, which may be used to implement the other built-in forms. Scheme is an excellent language for writing small, elegant programs, and may also be used to write scripts or embed scripting functionality within a larger application.
+Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy: the core language consists of a small number of fundamental forms which may be used to implement the other built-in forms. Scheme is an excellent language for writing small, elegant programs, and may also be used to write scripts or embed scripting functionality within a larger application.
 
 Feature List
 ------------
@@ -46,6 +46,9 @@ The interpreter may be invoked by running it directly from the command line:
 Alternatively, you may run an individual scheme program:
 
     ./huski my-scheme-file.scm
+
+API
+---
 
 A Haskell API is also provided to allow you to embed a Scheme interpreter within a Haskell program. The key API modules are:
 
