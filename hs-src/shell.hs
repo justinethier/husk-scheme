@@ -46,13 +46,17 @@ runOne args = do
 
 showBanner :: IO ()
 showBanner = do
-  putStrLn " __  __     __  __     ______     __  __                             "
-  putStrLn "/\\ \\_\\ \\   /\\ \\/\\ \\   /\\  ___\\   /\\ \\/ /     Scheme Interpreter " 
-  putStrLn "\\ \\  __ \\  \\ \\ \\_\\ \\  \\ \\___  \\  \\ \\  _\\\"-.  Version 2.0"
-  putStrLn " \\ \\_\\ \\_\\  \\ \\_____\\  \\/\\_____\\  \\ \\_\\ \\_\\  (c) 2010 Justin Ethier "
-  putStrLn "  \\/_/\\/_/   \\/_____/   \\/_____/   \\/_/\\/_/  github.com/justinethier/husk-scheme "
-  putStrLn ""
- 
+  putStrLn "  _               _        __                 _                          " 
+  putStrLn " | |             | |       \\\\\\               | |                         "
+  putStrLn " | |__  _   _ ___| | __     \\\\\\      ___  ___| |__   ___ _ __ ___   ___  "
+  putStrLn " | '_ \\| | | / __| |/ /    //\\\\\\    / __|/ __| '_ \\ / _ \\ '_ ` _ \\ / _ \\ "
+  putStrLn " | | | | |_| \\__ \\   <    /// \\\\\\   \\__ \\ (__| | | |  __/ | | | | |  __/ "
+  putStrLn " |_| |_|\\__,_|___/_|\\_\\  ///   \\\\\\  |___/\\___|_| |_|\\___|_| |_| |_|\\___| "
+  putStrLn "                                                                         "
+  putStrLn " husk Scheme Interpreter                                     Version 2.0 "
+  putStrLn " (c) 2010 Justin Ethier              github.com/justinethier/husk-scheme "
+  putStrLn "                                                                         "
+
 runRepl :: IO ()
 runRepl = do
     stdlib <- getDataFileName "stdlib.scm"
