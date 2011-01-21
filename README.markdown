@@ -8,25 +8,28 @@ Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design p
 
 Feature List
 ------------
-husk includes the following features:
+husk includes the following features from R5RS:
 
 - Primitive data types and their standard forms, including string, char, numbers (integer, rational, floating point, and complex), list, pair, vector, and symbols
 - Proper tail recursion
 - Proper lexical scoping
 - Conditionals: if, case, cond
-- Assignment operations
 - Sequencing: begin
 - Iteration: do
 - Quasi-quotation
 - Delayed Execution: delay, force
 - Binding constructs: let, named let, let*, letrec
+- Assignment operations
 - Basic IO functions
 - Standard library of Scheme functions
-- Read-Eval-Print-Loop (REPL) interpreter, with input driven by Haskeline
-- Full numeric tower - includes support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types, other constraints from spec.
-- Hash tables, as specified by [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html)
+- Read-Eval-Print-Loop (REPL) interpreter, with input driven by Haskeline to provide a rich user experience
+- Full numeric tower - includes support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types and other constraints from the R5RS specification.
 - Hygienic Macros: High-level macros via define-syntax - *Note this is still a heavy work in progress* and while it works well enough that many derived forms are implemented in our standard library, you may still run into problems when defining your own macros.
 - Continuations - call/cc and first-class continuations. See the change log (release notes) for more information.
+
+As well as the following approved extensions:
+
+- Hash tables, as specified by [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html)
 
 husk scheme is available under the [MIT license](http://www.opensource.org/licenses/mit-license.php).
 
