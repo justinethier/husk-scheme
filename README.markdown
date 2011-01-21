@@ -68,7 +68,7 @@ The following packages are required to build husk scheme:
 
     cabal install haskeline
 
-The 'scm-unit-tests' directory contains unit tests for much of the scheme code. Tests may be executed via 'make test'
+The `scm-unit-tests` directory contains unit tests for much of the scheme code. All tests may be executed via `make test` command.
 
 The examples directory contains example scheme programs.
 
