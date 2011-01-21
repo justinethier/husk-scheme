@@ -189,6 +189,12 @@ checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
      -- Var is part of a 0-to-many match, store up in a list...
      then do isDefined <- liftIO $ isBound localEnv pattern
              -- If pattern is a literal identifier, then just pass it along as-is
+             --
+             --
+             -- TODO: is this OK? May need to compare literal identifier as we are
+             --       doing below in the 'else do'
+             --
+             --
              found <- findAtom (Atom pattern) identifiers
              let val = case found of
                          (Bool True) -> Atom pattern
@@ -200,9 +206,26 @@ checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
                           (List vs) -> setVar localEnv pattern (List $ vs ++ [val])
                           _ -> throwError $ Default "Unexpected error in checkLocal (Atom)"
                 else defineVar localEnv pattern (List [val])
-     -- Simple var, load up into macro env
-     else defineVar localEnv pattern input
-  return $ Bool True
+             return $ Bool True
+     -- Simple var, try to load up into macro env
+     else do
+         isIdent <- findAtom (Atom pattern) identifiers
+         case isIdent of
+            -- Fail the match if pattern is a literal identifier and input does not match
+            Bool True -> do
+                case input of
+                    Atom inpt -> do
+                        -- Pattern/Input are atoms; both must match
+                        if (pattern == inpt)
+                           then do defineVar localEnv pattern input
+                                   return $ Bool True
+                           else return $ (Bool False)
+                    -- Pattern/Input cannot match because input is not an atom
+                    _ -> return $ (Bool False)
+
+            -- No literal identifier, just load up the var
+            _ -> do defineVar localEnv pattern input
+                    return $ Bool True
 
 -- TODO: vector support. And what the heck are these next two TODO's doing here? :)
 -- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
