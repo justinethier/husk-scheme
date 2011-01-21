@@ -1,7 +1,10 @@
 v2.0
 ----
-- Full implementation of continuations via call/cc. This involved reworking
-eval to thread a continuation through all versions of this function.
+- Full implementation of continuations via call/cc. This involved passing a new continuation type through all versions of the eval function.
+- Fixed a bug where a macro pattern would be incorrectly matched even though a literal identifier in the pattern was not present in the input.
+- Added over 100 new Scheme test cases from the R5RS language specification.
+- Added set-cdr!
+- Changed the banner text on startup to match the new husk logo.
 
 v1.3
 ----
