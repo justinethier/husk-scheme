@@ -144,7 +144,9 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
               doCpsUnquoteList e (makeCPSWArgs e c cpsUnquotePair $ [x] ) $ List xs
             Vector vec -> do
               let len = length (elems vec)
-              doCpsUnquoteList e (makeCPSWArgs e c cpsUnquoteVector $ [Number $ toInteger len]) $ List $ elems vec
+              if len > 0
+                 then doCpsUnquoteList e (makeCPSWArgs e c cpsUnquoteVector $ [Number $ toInteger len]) $ List $ elems vec
+                 else continueEval e c $ Vector $ listArray (0, -1) []
             _ -> eval e c  (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"...
 
         -- Unquote a pair

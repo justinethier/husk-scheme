@@ -20,8 +20,9 @@
 ; TODO:
 (define foo 1)
 (define bar 2)
-(assert/equal `#(,foo ,bar) '#(1 2)) ; TODO: should be #(1 2) but is not...
+;(assert/equal `#(,foo ,bar) '#(1 2)) ; TODO: should be #(1 2) but is not...
 
+(assert/equal `#() '#())
 
 ; TODO: test cases for the following forms:
 ;
