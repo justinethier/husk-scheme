@@ -236,6 +236,17 @@
   (hash-table-set! hash-table key
                   (function (hash-table-ref hash-table key thunk))))
 
+; TODO: does not work yet,
+;       probably because hash-table-set! expects an "Atom var" for the variable, instead of
+;       allowing for a dynamic name to be passed in. This is a systemic problem across
+;       each of these similar built-in eval functions.
+;
+(define (hash-table-merge! hdest hsrc)
+  (map (lambda (node) (hash-table-set! hdest 
+                                       (car node)
+                                       (cdr node)))
+       (hash-table->alist hsrc)))
+
 ;(define (hash-table-update!/default hash-table key function default)
 ;  (hash-table-update! hash-table key function (lambda () default)))
 
