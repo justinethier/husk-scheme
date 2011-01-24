@@ -57,7 +57,7 @@ evalAndPrint env expr = evalString env expr >>= putStrLn --TODO: cont parameter
 
 -- |Evaluate lisp code that has already been loaded into haskell
 --
---  TODO: code example for this, via ghci and/or a custom program.
+--  TODO: code example for this, via ghci and/or a custom Haskell program.
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = macroEval env lisp >>= (eval env (makeNullContinuation env))
 
@@ -255,9 +255,7 @@ eval env cont (List (Atom "begin" : funcs)) =
             Nothing -> throwError $ Default "Unexpected error in begin"
 
 
--- TODO: rewrite in CPS (??)
 eval env cont (List [Atom "load", String filename]) = do
---     load filename >>= liftM last . mapM (evaluate env cont)
      result <- load filename >>= liftM last . mapM (evaluate env (makeNullContinuation env))
      continueEval env cont result
 	 where evaluate env2 cont2 val2 = macroEval env2 val2 >>= eval env2 cont2
@@ -417,9 +415,6 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
                   setVar env var (HashTable $ Data.Map.delete key ht) >>= eval e c
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
-
--- TODO:
---  hash-table-merge!
 
 
 eval _ _ (List [Atom "apply"]) = throwError $ BadSpecialForm "apply" $ String "Function not specified"
