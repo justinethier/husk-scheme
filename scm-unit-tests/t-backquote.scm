@@ -36,7 +36,6 @@
 (assert/equal `((foo ,(- 10 3)) ,@(cdr '(c)) . ,(car '(cons)))
               '((foo 7) . cons))
 
-; TODO: needs vector support
 (assert/equal `#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)
               '#(10 5 2.0 4.0 3.0 8))
 

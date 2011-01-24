@@ -1,4 +1,3 @@
-; TODO: test cases for delayed evaluation
 (load "skim-unit.scm")
 
 (assert/equal (force (delay 1))
