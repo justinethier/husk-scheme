@@ -1,3 +1,7 @@
+v2.1
+----
+- Fixed cases where backquoting of a vector would crash the interpreter.
+
 v2.0
 ----
 - Full implementation of continuations via call/cc. This involved passing a new continuation type through all versions of the eval function.
