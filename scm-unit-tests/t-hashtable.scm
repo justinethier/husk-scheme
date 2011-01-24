@@ -29,6 +29,13 @@
 ;              ("hash-table-keys", hashTblKeys),
 ;              ("hash-table-values", hashTblValues),
 ;              ("hash-table-copy", hashTblCopy),
-
+;
 ; TODO: many more functions now, cross-reference core code and add more cases...
+
+(define test-ht (make-hash-table))
+(hash-table-set! test-ht "test" "testing")
+(assert/equal (hash-table-ref test-ht "test") "testing")
+(hash-table-merge! ht test-ht)
+(assert/equal (hash-table-ref ht "test") "testing")
+
 (unit-test-handler-results)
