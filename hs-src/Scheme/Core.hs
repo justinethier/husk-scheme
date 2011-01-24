@@ -145,7 +145,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
             Vector vec -> do
               let len = length (elems vec)
               if len > 0
-                 then doCpsUnquoteList e (makeCPSWArgs e c cpsUnquoteVector $ [Number $ toInteger len]) $ List $ elems vec
+                 then doCpsUnquoteList e (makeCPS e c cpsUnquoteVector) $ List $ elems vec
                  else continueEval e c $ Vector $ listArray (0, -1) []
             _ -> eval e c  (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"...
 
@@ -170,7 +170,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
           
         -- Unquote a vector
         cpsUnquoteVector :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquoteVector e c (List vList) (Just [Number len]) = continueEval e c (Vector $ listArray (0, fromInteger len) vList)
+        cpsUnquoteVector e c (List vList) _ = continueEval e c (Vector $ listArray (0, (length vList - 1)) vList)
         cpsUnquoteVector _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteVector"
 
         -- Front-end to cpsUnquoteList, to encapsulate default values in the call
