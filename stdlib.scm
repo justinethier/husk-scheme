@@ -100,7 +100,7 @@
 (define (assv obj alist)      (fold (mem-helper (curry eqv? obj) car) #f alist))
 (define (assoc obj alist)     (fold (mem-helper (curry equal? obj) car) #f alist))
 
-; TODO on map and for-each - Support variable number of args, per spec:
+; FUTURE: on map and for-each - Support variable number of args, per spec:
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4
 ;(define (for-each func . lsts) )
 
