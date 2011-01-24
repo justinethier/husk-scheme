@@ -10,7 +10,6 @@
                 (else 'consonant))
               'consonant)
 
-; TODO: why is this returning 'b'?
 (assert/equal (case (car '(c d)) 
                 ((a) 'a)
                 ((b) 'b))
