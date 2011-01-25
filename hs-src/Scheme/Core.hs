@@ -668,10 +668,6 @@ primitives = [("+", numAdd),
 
 -- TODO: sweep through spec and implement all numeric "library procedures" - but in stdlib.scm
 
--- TODO: string and number conversion functions; need to make
---       sure they are implemented and that they handle the full tower
-
-
               ("&&", boolBoolBinop (&&)),
               ("||", boolBoolBinop (||)),
               ("string=?", strBoolBinop (==)),
@@ -694,9 +690,6 @@ primitives = [("+", numAdd),
 
               ("pair?", isDottedList),
               ("procedure?", isProcedure),
-{-
-			  TODO: full numeric tower: number?, complex?, rational?
-			  --}
               ("number?", isNumber),
               ("complex?", isComplex),
               ("real?", isReal),
@@ -726,8 +719,6 @@ primitives = [("+", numAdd),
               ("hash-table->alist", hashTbl2List),
               ("hash-table-keys", hashTblKeys),
               ("hash-table-values", hashTblValues),
--- TODO next: hash-table-walk, hash-table-fold 
--- TODO: many more, see SRFI
               ("hash-table-copy", hashTblCopy),
 
               ("string?", isString),
@@ -805,7 +796,6 @@ cons badArgList = throwError $ NumArgs 2 badArgList
 
 equal :: [LispVal] -> ThrowsError LispVal
 equal [(Vector arg1), (Vector arg2)] = eqvList equal [List $ (elems arg1), List $ (elems arg2)] 
--- TODO: hash table?
 equal [l1@(List _), l2@(List _)] = eqvList equal [l1, l2]
 equal [(DottedList xs x), (DottedList ys y)] = equal [List $ xs ++ [x], List $ ys ++ [y]]
 equal [arg1, arg2] = do
@@ -963,8 +953,6 @@ stringAppend :: [LispVal] -> ThrowsError LispVal
 stringAppend [(String s)] = return $ String s -- Needed for "last" string value
 stringAppend (String st:sts) = do
   rest <- stringAppend sts
--- TODO: I needed to use <- instead of "let = " here, for type problems. Why???
--- TBD: this probably will solve type problems when processing other lists of objects in the other string functions
   case rest of
     String s -> return $ String $ st ++ s
     other -> throwError $ TypeMismatch "string" other
