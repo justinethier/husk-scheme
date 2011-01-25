@@ -45,8 +45,8 @@ import Control.Monad.Error
 -- There is also a special case (define-syntax) that loads new rules.
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
 macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List _ : _)))]) = do
-  -- TODO: there really ought to be some error checking of the syntax rules, since they could be malformed...
-  --       As it stands now, there is no checking until the code attempts to perform a macro transformation.
+  -- FUTURE: there really ought to be some error checking of the syntax rules, since they could be malformed...
+  --         As it stands now, there is no checking until the code attempts to perform a macro transformation.
   defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
 macroEval env (List (x@(List _) : xs)) = do
@@ -191,8 +191,15 @@ checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
              -- If pattern is a literal identifier, then just pass it along as-is
              --
              --
-             -- TODO: is this OK? May need to compare literal identifier as we are
-             --       doing below in the 'else do'
+             -- TODO: is this OK? Need to compare literal identifier as we are
+             --       doing below in the 'else do', and need a test case.
+             --
+             --       Perhaps a test along the lines of:
+             --
+             --       else ...
+             --
+             --       Where identifier is optionally matched n times...
+             --       Need to test w/csi or equivalent
              --
              --
              found <- findAtom (Atom pattern) identifiers
