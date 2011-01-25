@@ -30,8 +30,10 @@ foldl1M _ _ = error "Unexpected error in foldl1M"
 -- end GenUtil
 
 
---- Numeric operations section ---
--- TODO: move all of this out into its own file
+-- FUTURE: as a general comment here, operations need to be more permissive of the
+--         numerical types they accept. Within reason, a user should not have to know
+--         what numerical type they are passing when using these functions
+
 
 numAdd, numSub, numMul, numDiv :: [LispVal] -> ThrowsError LispVal
 numAdd [] = throwError $ NumArgs 1 [] 
@@ -67,7 +69,7 @@ numDiv [Number n] = return $ Rational $ 1 / (fromInteger n)
 numDiv [Float n] = return $ Float $ 1.0 / n
 numDiv [Rational n] = return $ Rational $ 1 / n
 numDiv [Complex n] = return $ Complex $ 1 / n
-numDiv aparams = do -- TODO: for Number type, need to cast results to Rational, per R5RS spec 
+numDiv aparams = do -- FUTURE: for Number type, consider casting results to Rational, per R5RS spec 
   foldl1M (\a b -> doDiv =<< (numCast [a, b])) aparams
   where doDiv (List [(Number a), (Number b)]) = if b == 0 
                                                    then throwError $ DivideByZero 
@@ -159,11 +161,10 @@ numRound, numFloor, numCeiling, numTruncate :: [LispVal] -> ThrowsError LispVal
 numRound [n@(Number _)] = return n
 numRound [(Rational n)] = return $ Number $ round n
 numRound [(Float n)] = return $ Float $ fromInteger $ round n
--- TODO: complex (?)
+numRound [(Complex _)] = throwError $ NotImplemented "complex number support for round"
 numRound [x] = throwError $ TypeMismatch "number" x
 numRound badArgList = throwError $ NumArgs 1 badArgList
 
--- TODO:
 numFloor [n@(Number _)] = return n
 numFloor [(Rational n)] = return $ Number $ floor n
 numFloor [(Float n)] = return $ Float $ fromInteger $ floor n
@@ -288,7 +289,7 @@ numMakePolar [(Float x), (Float y)] = return $ Complex $ mkPolar x y
 numMakePolar [x, y] = throwError $ TypeMismatch "real real" $ List [x, y]
 numMakePolar badArgList = throwError $ NumArgs 2 badArgList
 
-numAngle [(Complex c)] = return $ Float $ phase c -- TODO: correct?? need to check this
+numAngle [(Complex c)] = return $ Float $ phase c
 numAngle [x] = throwError $ TypeMismatch "number" x
 numAngle badArgList = throwError $ NumArgs 1 badArgList
 
@@ -377,7 +378,12 @@ isRational ([Rational _]) = return $ Bool True
 isRational _ = return $ Bool False
 
 isInteger ([Number _]) = return $ Bool True
--- TODO: true of real/rational types if they round to an integer
+-- TODO: true of complex type if they round to an integer (and complex part is 0??)
+isInteger ([Rational n]) = do
+    let numer = numerator n
+    let denom = denominator n
+    return $ Bool $ (numer >= denom) && ((mod numer denom) == 0)
+isInteger ([Float n]) = return $ Bool $ (floor n) == (ceiling n)
 isInteger _ = return $ Bool False
 
 --- end Numeric operations section ---
