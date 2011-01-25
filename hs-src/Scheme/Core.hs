@@ -450,20 +450,22 @@ eval env cont (List (Atom "apply" : applyArgs)) = do
 eval env cont (List (Atom "call-with-current-continuation" : args)) = 
   eval env cont (List (Atom "call/cc" : args))
 eval _ _ (List [Atom "call/cc"]) = throwError $ Default "Procedure not specified"
-eval env cont (List [Atom "call/cc", proc]) = do
-  func <- eval env (makeNullContinuation env) proc -- TODO: Use CPS here instead???? 
-  case func of
-    PrimitiveFunc f -> do
-        result <- liftThrows $ f [cont]
-        case cont of 
-            Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
-            _ -> return result
-    Func aparams _ _ _ ->
-      if (toInteger $ length aparams) == 1 
-        then apply cont func [cont] 
-        else throwError $ NumArgs (toInteger $ length aparams) [cont] 
-    other -> throwError $ TypeMismatch "procedure" other
-
+eval e c (List [Atom "call/cc", proc]) = eval e (makeCPS e c cpsEval) proc
+ where
+   cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+   cpsEval _ cont func _ = 
+      case func of
+        PrimitiveFunc f -> do
+            result <- liftThrows $ f [cont]
+            case cont of 
+                Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
+                _ -> return result
+        Func aparams _ _ _ ->
+          if (toInteger $ length aparams) == 1 
+            then apply cont func [cont] 
+            else throwError $ NumArgs (toInteger $ length aparams) [cont] 
+        other -> throwError $ TypeMismatch "procedure" other
+     
 -- Call a function by evaluating its arguments and then 
 -- executing it via 'apply'.
 eval env cont (List (function : functionArgs)) = do 
