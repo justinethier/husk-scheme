@@ -18,7 +18,7 @@ import Ratio
 import Text.ParserCombinators.Parsec hiding (spaces)
 
 symbol :: Parser Char
-symbol = oneOf "!$%&|*+-/:<=>?@^_~" -- TODO: I removed #, make sure this is OK w/spec, and test cases
+symbol = oneOf "!$%&|*+-/:<=>?@^_~" 
 
 spaces :: Parser ()
 spaces = skipMany1 space
@@ -49,7 +49,7 @@ parseChar = do
   return $ case pchr of
     "space"   -> Char ' '
     "newline" -> Char '\n'
-    _         -> Char c {- TODO: err if invalid char -}
+    _         -> Char c 
 
 parseOctalNumber :: Parser LispVal
 parseOctalNumber = do
@@ -168,7 +168,6 @@ parseVector :: Parser LispVal
 parseVector = do
   vals <- sepBy parseExpr spaces
   return $ Vector (listArray (0, (length vals - 1)) vals)
--- TODO: old code from Data.Vector implementation:  return $ Vector $ Data.Vector.fromList vals
 
 parseList :: Parser LispVal
 parseList = liftM List $ sepBy parseExpr spaces
@@ -205,7 +204,9 @@ parseUnquoteSpliced = do
 
 
 -- Comment parser
--- TODO: this is a hack, it should really not return anything...
+-- FUTURE: this is a hack, it should really not return anything...
+--         a better solution might be to use a tokenizer as a
+--         parser instead; need to investigate eventually.
 parseComment :: Parser LispVal
 parseComment = do
   char ';'
