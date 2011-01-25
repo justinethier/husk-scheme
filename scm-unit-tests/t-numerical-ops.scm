@@ -9,8 +9,10 @@
 (assert/equal (rational? 6/10) #t)
 (assert/equal (rational? 6/3) #t)
 ;(assert/equal (integer? 3+0i) #t)
-;(assert/equal (integer? 3.0) #t)
-;(assert/equal (integer? 8/4) #t)
+(assert/equal (integer? 3.0) #t)
+(assert/equal (integer? 3.2) #f)
+(assert/equal (integer? 8/4) #t)
+(assert/equal (integer? 8/5) #f)
 
 
 (assert/equal (max 3 4) 4)
