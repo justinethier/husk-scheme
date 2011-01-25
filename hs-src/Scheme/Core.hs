@@ -29,6 +29,7 @@ import qualified Data.Map
 import Maybe
 import List
 import IO hiding (try)
+import System.Directory (doesFileExist)
 --import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
@@ -605,8 +606,11 @@ readContents [] = throwError $ NumArgs 1 []
 readContents args@(_ : _) = throwError $ NumArgs 1 args
 
 load :: String -> IOThrowsError [LispVal]
-load filename = (liftIO $ readFile filename) >>= liftThrows . readExprList
--- TODO: load should not crash interpreter if file does not exist
+load filename = do
+  result <- liftIO $ doesFileExist filename
+  if result
+     then (liftIO $ readFile filename) >>= liftThrows . readExprList
+     else throwError $ Default $ "File does not exist: " ++ filename
 
 readAll :: [LispVal] -> IOThrowsError LispVal
 readAll [String filename] = liftM List $ load filename

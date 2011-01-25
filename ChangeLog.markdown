@@ -1,6 +1,8 @@
 v2.1
 ----
 - Fixed cases where backquoting of a vector would crash the interpreter.
+- Prevent interpreter from crashing when calling (load) if the file does not
+exist.
 
 v2.0
 ----
