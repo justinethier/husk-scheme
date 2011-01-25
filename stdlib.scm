@@ -241,6 +241,9 @@
 ;       allowing for a dynamic name to be passed in. This is a systemic problem across
 ;       each of these similar built-in eval functions.
 ;
+; But there is not a simple solution because just calling into eval would
+; return the value of the variable, not the variable name itself (!!)
+;
 (define (hash-table-merge! hdest hsrc)
   (map (lambda (node) (hash-table-set! hdest 
                                        (car node)
