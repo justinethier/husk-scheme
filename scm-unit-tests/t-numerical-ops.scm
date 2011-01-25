@@ -14,7 +14,7 @@
 
 
 (assert/equal (max 3 4) 4)
-(assert/equal (max 3.9 4) 4) ; TODO: technically not to spec
+(assert/equal (max 3.9 4) 4) ; Technically not to spec, which says 4.0
 
 (assert/equal (+ 3 4)     7)
 (assert/equal (+ 3)       3)
@@ -50,7 +50,7 @@
 (assert/equal (remainder 13 -4) 1)
 (assert/equal (modulo -13 -4) -1)
 (assert/equal (remainder -13 -4) -1)
-;TODO: - support for inexact - (remainder -13 -4.0)            ===>  -1.0  ; inexact
+;FUTURE: - support for inexact - (remainder -13 -4.0)            ===>  -1.0  ; inexact
 
 ;(assert/equal (numerator (/ 6 4))        3)
 ;(assert/equal (denominator (/ 6 4))      2)
