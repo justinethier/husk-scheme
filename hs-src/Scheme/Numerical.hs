@@ -378,13 +378,18 @@ isRational ([Rational _]) = return $ Bool True
 isRational _ = return $ Bool False
 
 isInteger ([Number _]) = return $ Bool True
--- TODO: true of complex type if they round to an integer (and complex part is 0??)
+isInteger ([Complex n]) = do
+  return $ Bool $ (isFloatAnInteger $ Float $ realPart n) && (isFloatAnInteger $ Float $ imagPart n)
 isInteger ([Rational n]) = do
     let numer = numerator n
     let denom = denominator n
     return $ Bool $ (numer >= denom) && ((mod numer denom) == 0)
-isInteger ([Float n]) = return $ Bool $ (floor n) == (ceiling n)
+isInteger ([n@(Float _)]) = return $ Bool $ isFloatAnInteger n 
 isInteger _ = return $ Bool False
+
+isFloatAnInteger :: LispVal -> Bool
+isFloatAnInteger (Float n) = (floor n) == (ceiling n)
+isFloatAnInteger _ = False 
 
 --- end Numeric operations section ---
 
