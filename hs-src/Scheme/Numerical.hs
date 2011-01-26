@@ -283,15 +283,26 @@ numLog [x] = throwError $ TypeMismatch "number" x
 numLog badArgList = throwError $ NumArgs 1 badArgList
 
 
+buildComplex :: LispVal -> LispVal -> ThrowsError LispVal
+buildComplex (Number x) (Number y)   = return $ Complex $ (fromInteger x) :+ (fromInteger y)
+buildComplex (Number x) (Rational y) = return $ Complex $(fromInteger x) :+ (fromRational y)
+buildComplex (Number x) (Float y)    = return $ Complex $ (fromInteger x) :+ y
+buildComplex (Rational x) (Number y)   = return $ Complex $ (fromRational x) :+ (fromInteger y)
+buildComplex (Rational x) (Rational y) = return $ Complex $ (fromRational x) :+ (fromRational y)
+buildComplex (Rational x) (Float y)    = return $ Complex $ (fromRational x) :+ y 
+buildComplex (Float x) (Number y)   = return $ Complex $ x :+ (fromInteger y)
+buildComplex (Float x) (Rational y) = return $ Complex $ x :+ (fromRational y)
+buildComplex (Float x) (Float y)    = return $ Complex $ x :+ y
+buildComplex x y = throwError $ TypeMismatch "number" $ List [x, y]
+
 -- Complex number functions
 numMakeRectangular, numMakePolar, numRealPart, numImagPart, numMagnitude, numAngle :: [LispVal] -> ThrowsError LispVal
-numMakeRectangular [(Float x), (Float y)] = return $ Complex $ x :+ y 
--- TODO: other members of the numeric tower (?)
-numMakeRectangular [x, y] = throwError $ TypeMismatch "real real" $ List [x, y]
+numMakeRectangular [x, y] = buildComplex x y
 numMakeRectangular badArgList = throwError $ NumArgs 2 badArgList
 
 numMakePolar [(Float x), (Float y)] = return $ Complex $ mkPolar x y
 -- TODO: other members of the numeric tower (?)
+--  perhaps overload buildComplex by passing a higher-order function such as mkPolar
 numMakePolar [x, y] = throwError $ TypeMismatch "real real" $ List [x, y]
 numMakePolar badArgList = throwError $ NumArgs 2 badArgList
 
@@ -314,12 +325,10 @@ numImagPart badArgList = throwError $ NumArgs 1 badArgList
 
 numNumerator, numDenominator:: [LispVal] -> ThrowsError LispVal
 numNumerator [(Rational r)] = return $ Number $ numerator r
--- TODO: real?
 numNumerator [x] = throwError $ TypeMismatch "rational number" x
 numNumerator badArgList = throwError $ NumArgs 1 badArgList
 
 numDenominator [(Rational r)] = return $ Number $ denominator r
--- TODO: real?
 numDenominator [x] = throwError $ TypeMismatch "rational number" x
 numDenominator badArgList = throwError $ NumArgs 1 badArgList
 

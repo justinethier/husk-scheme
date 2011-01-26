@@ -93,8 +93,11 @@
 ;
 ;            ("sqrt", numSqrt),
 ;            ("expt", numExpt),
-;
-;            ("make-rectangular", numMakeRectangular),
+
+(assert/equal (make-rectangular 1 2) 1+2i)
+(assert/equal (make-rectangular 1 2.0) 1+2.0i)
+;(assert/equal (make-rectangular 1/3 2) 1/3+2i)
+
 ;            ("make-polar", numMakePolar), 
 ;            ("real-part", numRealPart ), 
 ;            ("imag-part", numImagPart), 
