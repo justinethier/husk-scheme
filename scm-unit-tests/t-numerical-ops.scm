@@ -61,9 +61,13 @@
 ;    (exact->inexact (/ 6 4)))           2.0)
 
 (assert/equal (floor -4.3)      -5.0)
+(assert/equal (floor -4.3+-4.3i)      -5.0+-5.0i)
 (assert/equal (ceiling -4.3)    -4.0)
+(assert/equal (ceiling -4.3+-4.3i)    -4.0+-4.0i)
 (assert/equal (truncate -4.3)   -4.0)
+(assert/equal (truncate -4.3+-4.3i)   -4.0+-4.0i)
 (assert/equal (round -4.3)      -4.0)
+(assert/equal (round -4.3+-4.3i)      -4.0+-4.0i)
 
 (assert/equal (floor 3.5)       3.0)
 (assert/equal (ceiling 3.5)     4.0)

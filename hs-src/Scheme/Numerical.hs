@@ -161,28 +161,32 @@ numRound, numFloor, numCeiling, numTruncate :: [LispVal] -> ThrowsError LispVal
 numRound [n@(Number _)] = return n
 numRound [(Rational n)] = return $ Number $ round n
 numRound [(Float n)] = return $ Float $ fromInteger $ round n
-numRound [(Complex _)] = throwError $ NotImplemented "complex number support for round"
+numRound [(Complex n)] = do
+  return $ Complex $ (fromInteger $ round $ realPart n) :+ (fromInteger $ round $ imagPart n)
 numRound [x] = throwError $ TypeMismatch "number" x
 numRound badArgList = throwError $ NumArgs 1 badArgList
 
 numFloor [n@(Number _)] = return n
 numFloor [(Rational n)] = return $ Number $ floor n
 numFloor [(Float n)] = return $ Float $ fromInteger $ floor n
--- TODO: complex (?)
+numFloor [(Complex n)] = do
+  return $ Complex $ (fromInteger $ floor $ realPart n) :+ (fromInteger $ floor $ imagPart n)
 numFloor [x] = throwError $ TypeMismatch "number" x
 numFloor badArgList = throwError $ NumArgs 1 badArgList
 
 numCeiling [n@(Number _)] = return n
 numCeiling [(Rational n)] = return $ Number $ ceiling n
 numCeiling [(Float n)] = return $ Float $ fromInteger $ ceiling n
--- TODO: complex (?)
+numCeiling [(Complex n)] = do
+  return $ Complex $ (fromInteger $ ceiling $ realPart n) :+ (fromInteger $ ceiling $ imagPart n)
 numCeiling [x] = throwError $ TypeMismatch "number" x
 numCeiling badArgList = throwError $ NumArgs 1 badArgList
 
 numTruncate [n@(Number _)] = return n
 numTruncate [(Rational n)] = return $ Number $ truncate n
 numTruncate [(Float n)] = return $ Float $ fromInteger $ truncate n
--- TODO: complex (?)
+numTruncate [(Complex n)] = do
+  return $ Complex $ (fromInteger $ truncate $ realPart n) :+ (fromInteger $ truncate $ imagPart n)
 numTruncate [x] = throwError $ TypeMismatch "number" x
 numTruncate badArgList = throwError $ NumArgs 1 badArgList
 
@@ -374,7 +378,8 @@ isReal _ = return $ Bool False
 
 isRational ([Number _]) = return $ Bool True
 isRational ([Rational _]) = return $ Bool True
--- TODO: true of float if it can be represented exactly???
+isRational ([n@(Float _)]) = return $ Bool $ isFloatAnInteger n 
+                             -- TODO: not quite good enough, could be represented exactly and not an integer
 isRational _ = return $ Bool False
 
 isInteger ([Number _]) = return $ Bool True
