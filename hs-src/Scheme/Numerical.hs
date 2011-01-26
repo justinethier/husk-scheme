@@ -231,11 +231,13 @@ numAcos [(Complex n)] = return $ Complex $ acos n
 numAcos [x] = throwError $ TypeMismatch "number" x
 numAcos badArgList = throwError $ NumArgs 1 badArgList
 
--- TODO: support for (atan y x) - see spec
 numAtan :: [LispVal] -> ThrowsError LispVal
 numAtan [(Number n)] = return $ Float $ atan $ fromInteger n
+numAtan [Number y, Number x] = return $ Float $ phase $ (fromInteger x) :+ (fromInteger y)
 numAtan [(Float n)] = return $ Float $ atan n
+numAtan [Float y, Float x] = return $ Float $ phase $ x :+ y
 numAtan [(Rational n)] = return $ Float $ atan $ fromRational n
+numAtan [Rational y, Rational x] = return $ Float $ phase $ (fromRational x) :+ (fromRational y)
 numAtan [(Complex n)] = return $ Complex $ atan n
 numAtan [x] = throwError $ TypeMismatch "number" x
 numAtan badArgList = throwError $ NumArgs 1 badArgList
@@ -294,19 +296,19 @@ numMakePolar [x, y] = throwError $ TypeMismatch "real real" $ List [x, y]
 numMakePolar badArgList = throwError $ NumArgs 2 badArgList
 
 numAngle [(Complex c)] = return $ Float $ phase c
-numAngle [x] = throwError $ TypeMismatch "number" x
+numAngle [x] = throwError $ TypeMismatch "complex number" x
 numAngle badArgList = throwError $ NumArgs 1 badArgList
 
 numMagnitude [(Complex c)] = return $ Float $ magnitude c
-numMagnitude [x] = throwError $ TypeMismatch "number" x
+numMagnitude [x] = throwError $ TypeMismatch "complex number" x
 numMagnitude badArgList = throwError $ NumArgs 1 badArgList
 
 numRealPart [(Complex c)] = return $ Float $ realPart c
-numRealPart [x] = throwError $ TypeMismatch "number" x
+numRealPart [x] = throwError $ TypeMismatch "complex number" x
 numRealPart badArgList = throwError $ NumArgs 1 badArgList
 
 numImagPart [(Complex c)] = return $ Float $ imagPart c
-numImagPart [x] = throwError $ TypeMismatch "number" x
+numImagPart [x] = throwError $ TypeMismatch "complex number" x
 numImagPart badArgList = throwError $ NumArgs 1 badArgList
 
 
