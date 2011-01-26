@@ -3,6 +3,7 @@ v2.1
 - Fixed cases where backquoting of a vector would crash the interpreter.
 - Prevent interpreter from crashing when calling (load) if the file does not
 exist.
+- Improved support of diffent numeric types across the numerical functions.
 
 v2.0
 ----
