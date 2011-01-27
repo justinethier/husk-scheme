@@ -129,13 +129,6 @@
      (let () 
        (define x v) ...
        (let () e1 e2 ...)))))
-; TODO: should be able to use dotted lists, as below:
-;(define-syntax letrec
-;  (syntax-rules ()
-;    ((_ ((x v) ...) . body)
-;     (let () 
-;       (define x v) ...
-;       (let () . body)))))
 
 ; let and named let (using the Y-combinator):
 (define-syntax let
@@ -254,12 +247,22 @@
 ;  (hash-table-update! hash-table key function (lambda () default)))
 
 ; TODO: hash-table-fold
+;(define (hash-table-fold hash-table f init-value)
+;    TBD)
 
 ; End delayed evaluation section
 
 ; TODO: from numeric section -
 ; gcd
-;(define (gcd . nums)  nums)
+;(define (gcd . nums) 
+;  (if (eqv? nums '())
+;    0
+;    TBD...))
+
+; Limited form of gcd from: http://www.dreamincode.net/code/snippet1358.htm
+(define (gcd a b)
+    (if (= b 0) a
+            (gcd b (modulo a b))))
 ; lcm
 ; rationalize
 ; 
