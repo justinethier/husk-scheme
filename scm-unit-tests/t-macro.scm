@@ -13,9 +13,7 @@
 
 
 (define-syntax test (syntax-rules () ((test 1 ...) (list 1))))
-
-;TODO: form of atom by itself does not work yet, should pass this test - (assert/equal (test)) '(1))
-
+(assert/equal (test) '(1))
 (assert/equal (test 1) '(1))
 (assert/equal (test 1 1 1 1 1 1 1 1 1 1) '(1))
 ; FUTURE (unit test framework): this should not pass, since 2 is not in the pattern - (test 1 2)
@@ -41,8 +39,7 @@
 (assert/equal (test "hello, world!") '("hello, world!"))
 (assert/equal (test 3 2 1) '(3 2 1))
 (assert/equal (test 'a 'b "c" #\d) '(a b "c" #\d))
-
-;TODO: with above macro, what happens when transform is just (list x) - assume an error?
+;Question: with above macro, what happens when transform is just (list x) - assume an error?
 
 (define-syntax test (syntax-rules () ((_ (1 2) (3 x)) (list x))))
 (assert/equal (test (1 2) (3 4)) '(4))
@@ -117,8 +114,10 @@
                  (cons (car numbers) neg)))))
  '((5 6 1 2 3) ()))
 
-; TODO: support, test cases for
+
+; FUTURE: support, test cases for
 ; let-syntax and letrec-syntax
+
 
 ; Dotted lists (pairs)
 ;
@@ -252,15 +251,18 @@
 ;                     (vector-set! vec i i))
 ; (quote (loop (list vec . vec) (list i . (+ i 1)))))
    
-; New test cases, crashes the interpreter!
+; New test case, had crashed the interpreter!
 (define-syntax my-pair-test/06
   (syntax-rules ()
      ((_ var . step)
       (list (quote (var . step))))))
 
-;TODO?
-;(write (my-pair-test/06 (1 . 3)))
-;(write (my-pair-test/06 (1 2)))
+;TODO: question, is the output of these correct, or should it be a dotted list?
+(write (my-pair-test/06 (1 . 3)))
+; outputs: ((1 3))
+(write (my-pair-test/06 (1 2)))
+; outputs: ((1 2))
+
 
 ;
 ; TODO: once those work, test cases for vector transforms
