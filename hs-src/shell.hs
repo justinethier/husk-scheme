@@ -33,16 +33,15 @@ flushStr str = putStr str >> hFlush stdout
 runOne :: [String] -> IO ()
 runOne args = do
   env <- primitiveBindings >>= flip extendEnv [((varNamespace, "args"), List $ map String $ drop 1 args)]
-  (runIOThrows $ liftM show $ eval env (makeNullContinuation env) (List [Atom "load", String (args !! 0)])) -- TODO: replace with evalLisp
+  (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
      >>= hPutStrLn stderr  -- echo this or not??
 
   -- Call into (main) if it exists...
   alreadyDefined <- liftIO $ isBound env "main"
   let argv = List $ map String $ args
   if alreadyDefined
-      -- TODO: replace eval's below with evalLisp
-     then (runIOThrows $ liftM show $ eval env (makeNullContinuation env) (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
-     else (runIOThrows $ liftM show $ eval env (makeNullContinuation env) $ Nil "") >>= hPutStrLn stderr
+     then (runIOThrows $ liftM show $ evalLisp env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
+     else (runIOThrows $ liftM show $ evalLisp env (Nil "")) >>= hPutStrLn stderr
 
 showBanner :: IO ()
 showBanner = do
