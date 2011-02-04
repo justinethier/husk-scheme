@@ -13,8 +13,6 @@
 (assert/equal (hash-table-ref ht 1) "test")
 (assert/equal (hash-table-ref ht "test2") "testing")
 
-; TODO: Many more simple test cases like this, using expressions and every type of primitive
-
 (assert/equal (hash-table-exists? ht 1) #t)
 (assert/equal (hash-table-exists? ht "test2") #t)
 (assert/equal (hash-table-exists? ht "test3") #f)
@@ -23,21 +21,24 @@
 (hash-table-delete! ht 1)
 (assert/equal (hash-table-size ht) 5)
 
-; TODO:
-;              ("hash-table?", isHashTbl),
-;              ("hash-table->alist", hashTbl2List),
-;              ("hash-table-keys", hashTblKeys),
-;              ("hash-table-values", hashTblValues),
-;              ("hash-table-copy", hashTblCopy),
-;
-; TODO: many more functions now, cross-reference core code and add more cases...
-
 (define test-ht (make-hash-table))
+(assert/equal (hash-table? ht) #t)
+(assert/equal (hash-table? 'ht) #f)
+(assert/equal (hash-table? 42) #f)
 (hash-table-set! test-ht "test" "testing")
 (assert/equal (hash-table-ref test-ht "test") "testing")
 (hash-table-merge! ht test-ht)
 (hash-table-merge! ht test-ht)
 (assert/equal (hash-table-ref ht "test") "testing")
+
+(assert/equal (hash-table->alist ht) 
+              '(("test" "testing") ("test2" "testing") (2 2) (3 3) (4 4) (5 5)))
+(assert/equal (hash-table-keys ht)
+              '("test" "test2" 2 3 4 5))
+(assert/equal (hash-table-values ht)
+              '("testing" "testing" 2 3 4 5))
+
+(assert/equal  (hash-table-copy ht) ht)
 
 (define test-ht2 (make-hash-table))
 (hash-table-merge! ht test-ht2)
