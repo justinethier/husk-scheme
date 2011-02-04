@@ -118,6 +118,8 @@
 ;(assert/equal (string->number "100" 16)   256)
 ;(assert/equal (string->number "1e2")      100.0)
 ;(assert/equal (string->number "15##")     1500.0)
+(assert/equal (string->number "3.42323+2i")
+              3.42323+2i)
 
 (assert/equal (= 1 (+ 0 1)) #t)
 (assert/equal (= 1.0 1) #t)

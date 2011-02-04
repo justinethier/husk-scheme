@@ -99,11 +99,6 @@ parseNumber = parseDecimalNumber <|>
               "Unable to parse number"
 
 {- Parser for floating points 
- -
- - TODO: parse numbers in format #e1e10
- - TODO: bug - 
- -           huski> (string->number "3.42323+2i")
- -           3.42323
  - -}
 parseRealNumber :: Parser LispVal
 parseRealNumber = do 
@@ -113,7 +108,18 @@ parseRealNumber = do
   frac <- many1(digit)
   let dec = num ++ "." ++ frac
   case (length sign) of
-     0 -> return $ Float $ fst $ Numeric.readFloat dec !! 0
+     0 -> do
+              let numbr = fst $ Numeric.readFloat dec !! 0
+--              expnt <- try (char 'e')
+              return $ Float $ numbr
+{- TODO: parse numbers in format #e1e10
+ -
+              expnt <- try (char 'e')
+              case expnt of
+--                'e' -> return $ Float $ numbr
+                _ -> return $ Float $ numbr
+-}
+--             return $ Float $ fst $ Numeric.readFloat dec !! 0
      1 -> return $ Float $ (*) (-1.0) $ fst $ Numeric.readFloat dec !! 0
      _ -> pzero
 
