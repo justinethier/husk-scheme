@@ -1,6 +1,11 @@
 (load "skim-unit.scm")
 
-; TODO: commented out lines indicate issue with Core
+; FUTURE: commented out lines indicate issue with Core
+;
+;         However, since this is a fundamental difference between how a C implementation
+;         might work and how our Haskell one works, there may not be an easy or good
+;         solution to this problem.
+;
 ;(define (f) (make-string 3 #\*))
 (define f (make-string 3 #\*))
 (define (g) "***")

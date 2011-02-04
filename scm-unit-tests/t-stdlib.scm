@@ -67,8 +67,14 @@
 (assert/equal x 
               '(a . 4))
 ; TODO:
-; Looks like (need to confirm) all of below fail because (define y x) 
+; Looks like all of below fail because (define y x) 
 ; is assigning to to the evaluated value of x instead of the symbol x.
+;
+;
+; Not sure if we can resolve this or if it is just a fundamental problem
+; since we wrote the interpreter in Haskell.
+;
+;
 ;;(assert/equal (eqv? x y) #t)
 ;;(assert/equal y '(a . 4))
 ;;(assert/equal (list? y) #f)
