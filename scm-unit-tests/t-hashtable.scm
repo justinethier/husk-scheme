@@ -36,6 +36,11 @@
 (hash-table-set! test-ht "test" "testing")
 (assert/equal (hash-table-ref test-ht "test") "testing")
 (hash-table-merge! ht test-ht)
+(hash-table-merge! ht test-ht)
+(assert/equal (hash-table-ref ht "test") "testing")
+
+(define test-ht2 (make-hash-table))
+(hash-table-merge! ht test-ht2)
 (assert/equal (hash-table-ref ht "test") "testing")
 
 (unit-test-handler-results)
