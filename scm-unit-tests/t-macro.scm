@@ -156,27 +156,29 @@
                 (my-pair-test/01 (1 (2 3 4 5) . 4))
                 '((1 (2 3 4 5) 4)))
 
-; TODO:
+(assert/equal
+                (my-pair-test/02 (1 2))
+                '((1 2)))  
+
+(define-syntax my-pair-test/03
+  (syntax-rules (step)
+     ((_ (var init . step))
+      (list (quote (var init . step))))))
+
+; TODO: these test cases need to be added back once issues are
+;       resolved with pairs/lists in macro transformations
+;
 ;(assert/equal
 ;                (my-pair-test/02 (1 2 . 3))
 ;                 '((1 2 . 3)))
 ;(assert/equal
 ;                (my-pair-test/02 (1 2 3))
 ;                 '((1 2 . 3)))
-
-(assert/equal
-                (my-pair-test/02 (1 2))
-                '((1 2)))  
-; TODO:
+;
 ;(assert/equal
 ;                (my-pair-test/02 (1 (2 3 4 5) . 4))
 ;                '((1 (2 3 4 5) . 4)))
-
-(define-syntax my-pair-test/03
-  (syntax-rules (step)
-     ((_ (var init . step))
-      (list (quote (var init . step))))))
-;TODO:
+;
 ;(assert/equal
 ;                (my-pair-test/03 (1 2 . step))
 ;                 '((1 2 . step)))
@@ -208,7 +210,6 @@
      ((_ (var . init) ...)
       (quote (((var . init)) ...)))))
 
-; TODO?
 ;(write
 ;  (my-pair-test/05 (1 2) (4 5) (6 7) (8 9)))
 
@@ -261,7 +262,14 @@
 ; outputs: ((1 3))
 (write (my-pair-test/06 (1 2)))
 ; outputs: ((1 2))
-
+; 
+; According to csi, with macro defined as (test):
+;
+; #;2> (test (1 . 3))
+; (((1 . 3)))
+; #;3> (test (1 2))
+; (((1 2)))
+;
 
 ;
 ; TODO: once those work, test cases for vector transforms
