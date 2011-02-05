@@ -98,9 +98,8 @@
   #f)
 
 ; named let
-; TODO: add this back in once parser can handle negative integers - ;(let loop ((numbers '(3 -2 1 6 -5))
 (assert/equal
-  (let loop ((numbers '(3 2 1 6 5))
+  (let loop ((numbers '(3 -2 1 6 -5))
            (nonneg '())
            (neg '()))
     (cond ((null? numbers) (list nonneg neg))
@@ -112,7 +111,7 @@
            (loop (cdr numbers)
                  nonneg
                  (cons (car numbers) neg)))))
- '((5 6 1 2 3) ()))
+ '((6 1 3) (-5 -2)))
 
 
 ; FUTURE: support, test cases for
