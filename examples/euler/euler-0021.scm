@@ -7,6 +7,7 @@
 ;;
 ;; Programming Language: Scheme
 ;;
+(load "stdlib.scm")
 (define (divisor num cur divs)
   (if (equal? 0 cur) 
     divs
@@ -27,8 +28,7 @@
  (hash-table-set! h max (sum (pdiv max)))
  (if (equal? 1 max) 
      h
-     (build-pdiv (- max 1) h))
-)
+     (build-pdiv (- max 1) h)))
 
 
 (define (reduce-sums h count result)
@@ -38,9 +38,7 @@
               (hash-table-ref/default h (hash-table-ref h count) #f))
        (not (equal? count (hash-table-ref h count))))
    (reduce-sums h (- count 1) (append result (list count)))
-   (reduce-sums h (- count 1) result) 
-  )
- ))
+   (reduce-sums h (- count 1) result))))
 
 (define sums (build-pdiv 10000 (make-hash-table)))
 
