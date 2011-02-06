@@ -237,6 +237,12 @@
                                        (cadr node)))
        (hash-table->alist hsrc)))))
 
+(define (alist->hash-table lst)
+ (let ((ht (make-hash-table)))
+   (for-each (lambda (node)
+              (hash-table-set! ht (car node) (cadr node)))
+             lst)
+   ht))
 
 ;(define (hash-table-update!/default hash-table key function default)
 ;  (hash-table-update! hash-table key function (lambda () default)))

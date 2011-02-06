@@ -41,6 +41,10 @@
 
 (assert/equal (hash-table->alist ht) 
               '(("test" "testing") ("test2" "testing") (2 2) (3 3) (4 4) (5 5)))
+
+(assert/equal (hash-table->alist (alist->hash-table '((1 2) (3 4) (5 6))))
+            '((1 2) (3 4) (5 6)))
+
 (assert/equal (hash-table-keys ht)
               '("test" "test2" 2 3 4 5))
 (assert/equal (hash-table-values ht)

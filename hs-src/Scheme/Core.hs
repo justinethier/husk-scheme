@@ -54,7 +54,7 @@ evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>
 
 -- |Evaluate a string and print results to console
 evalAndPrint :: Env -> String -> IO ()
-evalAndPrint env expr = evalString env expr >>= putStrLn --TODO: cont parameter
+evalAndPrint env expr = evalString env expr >>= putStrLn
 
 -- |Evaluate lisp code that has already been loaded into haskell
 --
@@ -664,10 +664,6 @@ primitives = [("+", numAdd),
               ("<", numBoolBinopLt),
               ("<=", numBoolBinopLte),
 
--- TODO: sweep through the spec to make sure all numeric procedures are accounted for
-
--- TODO: sweep through spec and implement all numeric "library procedures" - but in stdlib.scm
-
               ("&&", boolBoolBinop (&&)),
               ("||", boolBoolBinop (||)),
               ("string=?", strBoolBinop (==)),
@@ -712,7 +708,6 @@ primitives = [("+", numAdd),
 
               ("make-hash-table", hashTblMake),
               ("hash-table?", isHashTbl),
--- TODO: alist->hash-table
               ("hash-table-exists?", hashTblExists),
               ("hash-table-ref", hashTblRef),
               ("hash-table-size", hashTblSize),
