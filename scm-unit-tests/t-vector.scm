@@ -1,3 +1,11 @@
+;
+; husk-scheme
+; http://github.com/justinethier/husk-scheme
+;
+; Written by Justin Ethier
+;
+; Test cases for built-in vector forms
+;
 (load "skim-unit.scm")
 
 (assert/equal (vector? '#(1 2 3 4 5)) #t)
