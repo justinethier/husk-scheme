@@ -57,8 +57,8 @@
 
 
 ; TODO: nested forms test cases from spec: 
-;(assert/equal `(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)
-;              '(a (quasiquote (b (unquote (+ 1 2)) (unquote (foo 4 d)) e)) f))
+(assert/equal `(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)
+              '(a (quasiquote (b (unquote (+ 1 2)) (unquote (foo 4 d)) e)) f))
 
 ; TODO:
 ;(assert/equal (let ((name1 'x) (name2 'y)) `(a `(b ,,name1 ,',name2 d) e))
