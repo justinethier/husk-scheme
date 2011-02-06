@@ -1,8 +1,6 @@
 ;;
 ;; Justin Ethier
 ;;
-;; TODO: this was written in chicken scheme; port it to skim-scheme
-;;
 ;; Solution to project euler #21
 ;;
 ;; Programming Language: Scheme
