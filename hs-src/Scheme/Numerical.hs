@@ -12,6 +12,8 @@ module Scheme.Numerical where
 import Scheme.Types
 import Complex
 import Control.Monad.Error
+import Data.Char
+import Numeric 
 import Ratio
 import Text.Printf
 
@@ -336,29 +338,28 @@ numExact2Inexact, numInexact2Exact :: [LispVal] -> ThrowsError LispVal
 numExact2Inexact [(Number n)] = return $ Float $ fromInteger n
 numExact2Inexact [(Rational n)] = return $ Float $ fromRational n
 numExact2Inexact [n@(Float _)] = return n
--- TODO: numExact2Inexact [(Complex n)] = return ??
+numExact2Inexact [n@(Complex _)] = return n
 numExact2Inexact [badType] = throwError $ TypeMismatch "number" badType
 numExact2Inexact badArgList = throwError $ NumArgs 1 badArgList
 
 numInexact2Exact [n@(Number _)] = return n
 numInexact2Exact [n@(Rational _)] = return n
 numInexact2Exact [(Float n)] = return $ Number $ round n
--- TODO: numInexact2Exact [(Complex n)] = return ??
+numInexact2Exact [c@(Complex _)] = numRound [c] 
 numInexact2Exact [badType] = throwError $ TypeMismatch "number" badType
 numInexact2Exact badArgList = throwError $ NumArgs 1 badArgList
 
--- TODO: remember to support both forms:
--- procedure:  (number->string z) 
--- procedure:  (number->string z radix) 
+-- Convert a number to a string; radix is optional, defaults to base 10
 num2String :: [LispVal] -> ThrowsError LispVal
 num2String [(Number n)] = return $ String $ show n
 num2String [(Number n), (Number radix)] = do
   case radix of
--- TODO: boolean    2 -> return $ String $ printf "%x" n
-    8 -> return $ String $ printf "%o" n
+    2  -> do -- Nice tip from StackOverflow question #1959715
+             return $ String $ showIntAtBase 2 intToDigit n ""
+    8  -> return $ String $ printf "%o" n
     10 -> return $ String $ printf "%d" n
     16 -> return $ String $ printf "%x" n
-    _ -> throwError $ BadSpecialForm "Invalid radix value" $ Number radix
+    _  -> throwError $ BadSpecialForm "Invalid radix value" $ Number radix
 num2String [n@(Rational _)] = return $ String $ show n
 num2String [(Float n)] = return $ String $ show n
 num2String [n@(Complex _)] = return $ String $ show n

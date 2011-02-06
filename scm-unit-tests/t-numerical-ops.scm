@@ -114,6 +114,12 @@
 (assert/equal (exact->inexact 2) 2.0)
 (assert/equal (inexact->exact 2.0) 2)
 
+(assert/equal (number->string 10) "10")
+(assert/equal (number->string 10 2) "1010")
+(assert/equal (number->string 10 8) "12")
+(assert/equal (number->string 10 10) "10")
+(assert/equal (number->string 10 16) "a")
+
 (assert/equal (string->number "100")      100)
 ;(assert/equal (string->number "100" 16)   256)
 ;(assert/equal (string->number "1e2")      100.0)
