@@ -1,3 +1,11 @@
+;
+; husk-scheme
+; http://github.com/justinethier/husk-scheme
+;
+; Written by Justin Ethier
+;
+; Test cases for cond form 
+;
 (load "skim-unit.scm")
 
 (assert/equal (cond ((> 3 2) 'greater) ((< 3 2) 'less))
