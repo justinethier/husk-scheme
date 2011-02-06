@@ -3,7 +3,7 @@ v2.1
 - Fixed cases where backquoting of a vector would crash the interpreter.
 - Prevent interpreter from crashing when calling (load) if the file does not
 exist.
-- Improved support of diffent numeric types across the numerical functions.
+- Improved support of different numeric types across the numerical functions.
 - Added support for binary numbers to (number->string)
 - Implemented (alist->hash-table)
 
@@ -21,7 +21,7 @@ v1.3
 
 v1.2
 ----
-- Fixed an ugly bug where the underlying functions used to mutate variabiables in (define), (set!), etc implemented dynamic scoping instead of the lexical (static) scoping required by R5RS. [This reference implementation](http://web.mit.edu/kmill/Public/lilscheme.hs) written by Kyle Miller was used as a starting point for this change.
+- Fixed an ugly bug where the underlying functions used to mutate variabiables in (define), (set!), etc implemented dynamic scoping instead of the lexical (static) scoping required by R5RS. [This reference implementation](http://web.mit.edu/kmill/Public/lilscheme.hs) written by Kyle Miller was used as a starting point.
 
 v1.1
 ----
