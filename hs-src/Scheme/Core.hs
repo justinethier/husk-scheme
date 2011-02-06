@@ -958,7 +958,7 @@ stringAppend badArgList = throwError $ NumArgs 1 badArgList
 -- TODO: handle a radix param
 stringToNumber :: [LispVal] -> ThrowsError LispVal
 stringToNumber [(String s)] = do
-  result <- (readExpr s) -- result <- parseExpr s
+  result <- (readExpr s)
   case result of
     n@(Number _) -> return n
     n@(Rational _) -> return n
