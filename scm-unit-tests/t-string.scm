@@ -1,3 +1,11 @@
+;
+; husk-scheme
+; http://github.com/justinethier/husk-scheme
+;
+; Written by Justin Ethier
+;
+; Test cases for built-in string forms
+;
 (load "skim-unit.scm")
 
 ; FUTURE: commented out lines indicate issue with Core
