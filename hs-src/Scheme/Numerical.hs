@@ -303,9 +303,8 @@ numMakeRectangular [x, y] = buildComplex x y
 numMakeRectangular badArgList = throwError $ NumArgs 2 badArgList
 
 numMakePolar [(Float x), (Float y)] = return $ Complex $ mkPolar x y
--- TODO: other members of the numeric tower (?)
---  perhaps overload buildComplex by passing a higher-order function such as mkPolar
-numMakePolar [x, y] = throwError $ TypeMismatch "real real" $ List [x, y]
+numMakePolar [(Float _), y] = throwError $ TypeMismatch "real" y
+numMakePolar [x, (Float _)] = throwError $ TypeMismatch "real real" $ x
 numMakePolar badArgList = throwError $ NumArgs 2 badArgList
 
 numAngle [(Complex c)] = return $ Float $ phase c
