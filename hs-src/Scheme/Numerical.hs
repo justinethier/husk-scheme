@@ -365,9 +365,6 @@ num2String [n@(Complex _)] = return $ String $ show n
 num2String [x] = throwError $ TypeMismatch "number" x
 num2String badArgList = throwError $ NumArgs 1 badArgList
 
--- TODO: relocated string->number logic here (???),
---       and extend to support all of the tower...
-
 isNumber, isComplex, isReal, isRational, isInteger :: [LispVal] -> ThrowsError LispVal
 isNumber ([Number _]) = return $ Bool True
 isNumber ([Float _]) = return $ Bool True
