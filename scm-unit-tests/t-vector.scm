@@ -19,16 +19,26 @@
 
 (define foo 1)
 (define bar 2)
-(assert/equal `#(,foo ,bar) '#(1 2)) ; TODO: should be #(1 2) but is not...
-
+(assert/equal `#(,foo ,bar) '#(1 2))
 (assert/equal `#() '#())
+(assert/equal (vector 'a 'b 'c)
+              '#(a b c))
+(assert/equal
+  (let ((vec (vector 0 '(2 2 2 2) "Anna")))
+    (vector-set! vec 1 '("Sue" "Sue"))
+      vec)
+  '#(0 ("Sue" "Sue") "Anna"))
 
-; TODO: test cases for the following forms:
-;
-;              ("vector", Vector),
-;              ("vector-set!", vectorSet),
-;              ("vector-fill!", vectorFill),
-;              ("vector-list", vectorToList),
-;              ("list-vector", listToVector),
+(assert/equal (let ((vec (vector 0 1 2 3 4)))
+    (vector-fill! vec 5))
+    '#(5 5 5 5 5))
+
+(assert/equal (let ((vec (vector 0 1 2 3 4)))
+    (vector->list vec))
+    '(0 1 2 3 4))
+
+(assert/equal (let ((lst (list 0 1 2 3 4)))
+    (list->vector lst))
+    #(0 1 2 3 4))
 
 (unit-test-handler-results)
