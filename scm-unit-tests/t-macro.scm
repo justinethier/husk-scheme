@@ -1,4 +1,11 @@
-; TODO: bug - if the first line of the file is blank, (load) spits out a Prelude.last error!
+;
+; husk-scheme
+; http://github.com/justinethier/husk-scheme
+;
+; Written by Justin Ethier
+;
+; Test cases for macros
+;
 (load "skim-unit.scm")
 
 (define-syntax my-let 

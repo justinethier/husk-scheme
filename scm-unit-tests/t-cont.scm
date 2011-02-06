@@ -1,4 +1,11 @@
+;
+; husk-scheme
+; http://github.com/justinethier/husk-scheme
+;
+; Written by Justin Ethier
+;
 ; Test cases for continuations
+;
 (load "skim-unit.scm")
 
 ; TODO: consider examples from http://en.wikipedia.org/wiki/Call-with-current-continuation - although most may be better as example programs rather than test cases

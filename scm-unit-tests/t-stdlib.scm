@@ -1,4 +1,9 @@
 ;
+; husk-scheme
+; http://github.com/justinethier/husk-scheme
+;
+; Written by Justin Ethier
+;
 ; Unit tests for the standard library
 ;
 (load "skim-unit.scm")
