@@ -387,7 +387,7 @@ isReal _ = return $ Bool False
 isRational ([Number _]) = return $ Bool True
 isRational ([Rational _]) = return $ Bool True
 isRational ([n@(Float _)]) = return $ Bool $ isFloatAnInteger n 
-                             -- TODO: not quite good enough, could be represented exactly and not an integer
+                             -- FUTURE: not quite good enough, could be represented exactly and not an integer
 isRational _ = return $ Bool False
 
 isInteger ([Number _]) = return $ Bool True
