@@ -41,20 +41,33 @@ import Control.Monad.Error
 -- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 -- http://community.schemewiki.org/?scheme-faq-macros
 
--- Search for macro's in the AST, and transform any that are found.
--- There is also a special case (define-syntax) that loads new rules.
+-- |macroEval
+--  Search for macro's in the AST, and transform any that are found.
+--  There is also a special case (define-syntax) that loads new rules.
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
+
+-- Special case, just load up the syntax rules
 macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List _ : _)))]) = do
   -- FUTURE: there really ought to be some error checking of the syntax rules, since they could be malformed...
   --         As it stands now, there is no checking until the code attempts to perform a macro transformation.
   defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
+
+-- Inspect a list of code, and transform as necessary
 macroEval env (List (x@(List _) : xs)) = do
   first <- macroEval env x
   rest <- mapM (macroEval env) xs
   return $ List $ first : rest
--- TODO: equivalent matches/transforms for vectors
---       what about dotted lists?
+
+--
+-- TODO: equivalent matches/transforms for vectors, and what about dotted lists?
+--
+-- macroEval env (Vector v) = do
+-- macroEval env (DottedList ls l) = do
+--
+-- but first, need to confirm such syntax is even allowed
+
+-- Inspect code for macro's
 macroEval env lisp@(List (Atom x : xs)) = do
   isDefined <- liftIO $ isNamespacedBound env macroNamespace x
   if isDefined
@@ -65,6 +78,8 @@ macroEval env lisp@(List (Atom x : xs)) = do
      else do
        rest <- mapM (macroEval env) xs
        return $ List $ (Atom x) : rest
+
+-- No macro to process, just return code as it is...
 macroEval _ lisp@(_) = return lisp
 
 -- Given input and syntax-rules, determine if any rule is a match and transform it.
@@ -121,7 +136,7 @@ matchRule _ _ _ rule input = do
 -- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 --             in preparation for macro transformation.
 loadLocal :: Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
-loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do -- TODO: kind of a hack to have both ellipsis vars. Is only outer req'd?
+loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do 
   case (pattern, input) of
 
        -- Future: vector
@@ -136,8 +151,8 @@ loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do -
 
          let localHasEllipsis = macroElementMatchesMany pattern
 
-         -- TODO: error if ... detected when there is an outer ... ????
-         --       no, this should (eventually) be allowed. See scheme-faq-macros
+         -- FUTURE: error if ... detected when there is an outer ... ????
+         --         no, this should (eventually) be allowed. See scheme-faq-macros
 
          status <- checkLocal localEnv identifiers (localHasEllipsis || outerHasEllipsis) p i 
          case status of
@@ -191,14 +206,14 @@ checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
              -- If pattern is a literal identifier, then just pass it along as-is
              --
              --
-             -- TODO: is this OK? Need to compare literal identifier as we are
+             -- TODO: Need to compare literal identifier as we are
              --       doing below in the 'else do', and need a test case.
              --
              --       Perhaps a test along the lines of:
              --
              --       else ...
              --
-             --       Where identifier is optionally matched n times...
+             --       Where identifier is optionally matched n times
              --       Need to test w/csi or equivalent
              --
              --
