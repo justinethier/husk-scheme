@@ -4,6 +4,7 @@ v2.1
 - Prevent interpreter from crashing when calling (load) if the file does not
 exist.
 - Improved support of diffent numeric types across the numerical functions.
+- Added support for binary numbers to (number->string)
 
 v2.0
 ----
