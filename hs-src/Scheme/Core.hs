@@ -448,6 +448,13 @@ eval env cont (List (Atom "apply" : applyArgs)) = do
             other -> throwError $ TypeMismatch "list" other
         cpsApply _ _ = throwError $ InternalError "Invalid arguments to cpsApply"
 
+-- 
+--
+-- TODO: support for other continuation-related functions, such as
+-- (dynamic-wind)
+--
+--
+
 eval env cont (List (Atom "call-with-current-continuation" : args)) = 
   eval env cont (List (Atom "call/cc" : args))
 eval _ _ (List [Atom "call/cc"]) = throwError $ Default "Procedure not specified"
