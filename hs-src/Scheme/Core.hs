@@ -135,6 +135,19 @@ eval env cont (List [Atom "quote", val])         = continueEval env cont val
 
 -- Unquote an expression; unquoting is different than quoting in that
 -- it may also be inter-spliced with code that is meant to be evaluated.
+--
+--
+-- TODO: need to take nesting of ` into account, as per spec:
+-- 
+-- * Quasiquote forms may be nested. 
+-- * Substitutions are made only for unquoted components appearing at the 
+--   same nesting level as the outermost backquote. 
+-- * The nesting level increases by one inside each successive quasiquotation, 
+--   and decreases by one inside each unquotation.
+--
+-- So the upshoot is that a new nesting level var needs to be threaded through,
+-- and used to determine whether or not to evaluate an unquote.
+--
 eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value Nothing
   where cpsUnquote :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUnquote e c val _ = do 
