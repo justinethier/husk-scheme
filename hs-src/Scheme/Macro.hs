@@ -60,7 +60,8 @@ macroEval env (List (x@(List _) : xs)) = do
   return $ List $ first : rest
 
 --
--- TODO: equivalent matches/transforms for vectors, and what about dotted lists?
+-- FUTURE: Issue #4
+-- equivalent matches/transforms for vectors, and what about dotted lists?
 --
 -- macroEval env (Vector v) = do
 -- macroEval env (DottedList ls l) = do
@@ -249,9 +250,10 @@ checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
             _ -> do defineVar localEnv pattern input
                     return $ Bool True
 
--- TODO: vector support. And what the heck are these next two TODO's doing here? :)
--- TODO, load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
--- TODO: eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
+-- FUTURE: Issue #4 - vector support. And what the heck are these next two lines doing here? :)
+--
+-- , load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
+-- : eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
 --
 checkLocal localEnv identifiers hasEllipsis pattern@(DottedList _ _) input@(DottedList _ _) = 
   loadLocal localEnv identifiers pattern input False hasEllipsis
@@ -311,7 +313,7 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisIndex]
 
--- TODO: vector transform (and taking vectors into account in other cases as well???)
+-- FUTURE: issue #4 - vector transform (and taking vectors into account in other cases as well???)
 
 
 transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedList _ _) : ts)) (List ellipsisList) = do
@@ -392,7 +394,9 @@ transformDottedList localEnv ellipsisIndex (List result) (List (DottedList ds d 
                            case r of
                                 -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
                                 List [List []] -> transformRule localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) (List ellipsisList)
-                                -- TODO: the transform needs to be as follows:
+                                -- 
+                                -- FUTURE: Issue #9 - the transform needs to be as follows:
+                                --
                                 --  - transform into a list if original input was a list - code is below but commented-out
                                 --  - transform into a dotted list if original input was a dotted list
                                 --
@@ -443,7 +447,7 @@ initializePatternVars localEnv src identifiers (DottedList ps p) = do
     initializePatternVars localEnv src identifiers $ List ps
     initializePatternVars localEnv src identifiers p
 
--- TODO: vector
+-- FUTURE: Issue #4: vector
 
 initializePatternVars localEnv src identifiers (Atom pattern) =  
        -- FUTURE:
@@ -482,7 +486,7 @@ lookupPatternVarSrc localEnv (DottedList ps p) = do
         Bool False -> lookupPatternVarSrc localEnv p
         _ -> return result
 
--- TODO: vector
+-- FUTURE: Issue #4: vector
 
 lookupPatternVarSrc localEnv (Atom pattern) =  
     do isDefined <- liftIO $ isNamespacedBound localEnv "src" pattern
