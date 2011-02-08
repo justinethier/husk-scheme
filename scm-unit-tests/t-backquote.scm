@@ -55,14 +55,17 @@
 (assert/equal `(1 2 . ,(list 3 4))
               '(1 2 3 4))
 
-
-; TODO: nested forms test cases from spec: 
-(assert/equal `(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)
-              '(a (quasiquote (b (unquote (+ 1 2)) (unquote (foo 4 d)) e)) f))
-
-; TODO:
+;
+; FUTURE: Issue #8 https://github.com/justinethier/husk-scheme/issues/#issue/8
+;         Nested forms test cases from spec: 
+;
+;(assert/equal `(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)
+;              '(a (quasiquote (b (unquote (+ 1 2)) (unquote (foo 4 d)) e)) f))
+;
+;
 ;(assert/equal (let ((name1 'x) (name2 'y)) `(a `(b ,,name1 ,',name2 d) e))
 ;             '(a `(b ,x ,'y d) e))
+;
 
 
 ; Final set of test cases from spec:

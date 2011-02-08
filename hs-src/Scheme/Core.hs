@@ -137,7 +137,8 @@ eval env cont (List [Atom "quote", val])         = continueEval env cont val
 -- it may also be inter-spliced with code that is meant to be evaluated.
 --
 --
--- TODO: need to take nesting of ` into account, as per spec:
+-- FUTURE: Issue #8 - https://github.com/justinethier/husk-scheme/issues/#issue/8
+--   need to take nesting of ` into account, as per spec:
 -- 
 -- * Quasiquote forms may be nested. 
 -- * Substitutions are made only for unquoted components appearing at the 
