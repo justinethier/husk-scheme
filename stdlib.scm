@@ -244,16 +244,14 @@
              lst)
    ht))
 
-;(define (hash-table-update!/default hash-table key function default)
-;  (hash-table-update! hash-table key function (lambda () default)))
 
-; TODO: hash-table-fold
+; FUTURE: Issue #11: hash-table-fold
 ;(define (hash-table-fold hash-table f init-value)
 ;    TBD)
 
 ; End delayed evaluation section
 
-; TODO: from numeric section -
+; FUTURE: Issue #10: from numeric section -
 ; gcd
 ;(define (gcd . nums) 
 ;  (if (eqv? nums '())

@@ -112,7 +112,7 @@
 ;             ("magnitude", numMagnitude), 
 ;             ("angle", numAngle ), 
 
-; TODO:
+; FUTURE: Issue #10
 ;(gcd 32 -36)                    ===>  4
 ;(gcd)                           ===>  0
 ;(lcm 32 -36)                    ===>  288
