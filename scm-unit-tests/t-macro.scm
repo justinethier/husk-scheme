@@ -172,7 +172,9 @@
      ((_ (var init . step))
       (list (quote (var init . step))))))
 
-; TODO: these test cases need to be added back once issues are
+;
+; FUTURE: Issue #9 https://github.com/justinethier/husk-scheme/issues/issue/9
+;       these test cases need to be added back once issues are
 ;       resolved with pairs/lists in macro transformations
 ;
 ;(assert/equal
@@ -197,7 +199,7 @@
   (syntax-rules ()
      ((_ (var init . step) ...)
       (quote ((var init . step) ...)))))
-; TODO: output for both of the following test cases is so screwed up (!)
+; Issue #9: output for both of the following test cases is so screwed up (!)
 (assert/equal
   (my-pair-test/04 (1 2 6) (3 4 5))
   '((1 2 6) (3 4 5)))
@@ -206,7 +208,7 @@
   '((1 2) (3 4 5)))
 
 
-; TODO: following test cases will fail, need more work on macro code
+; Issue #9: following test cases will fail, need more work on macro code
 (define-syntax my-pair-test/05
   (syntax-rules ()
      ((_ (var init) ...)
@@ -231,7 +233,7 @@
          (begin (begin command ...)
                 (quote (((((((loop 
                       (list var . step))))))) ...))))))))
-; TODO:
+; Issue #9:
 ;(assert/equal
 ;                (my-do/1 ((vec (make-vector 5) vec)
 ;                     (i 0 (+ i 1)))
@@ -250,7 +252,7 @@
          (begin (begin command ...)
                 (quote (loop 
                       (list var . step) ...))))))))
-;TODO:
+; Issue #9:
 ;(assert/equal
 ;                (my-do/2 ((vec (make-vector 5) vec)
 ;                     (i 0 (+ i 1)))
@@ -264,7 +266,7 @@
      ((_ var . step)
       (list (quote (var . step))))))
 
-;TODO: question, is the output of these correct, or should it be a dotted list?
+; Issue #9: question, is the output of these correct, or should it be a dotted list?
 (write (my-pair-test/06 (1 . 3)))
 ; outputs: ((1 3))
 (write (my-pair-test/06 (1 2)))
@@ -279,7 +281,7 @@
 ;
 
 ;
-; TODO: once those work, test cases for vector transforms
+; Issue #4: once those work, test cases for vector transforms
 ;
 
 (unit-test-handler-results)
