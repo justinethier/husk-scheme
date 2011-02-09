@@ -8,7 +8,6 @@
 ;
 (load "skim-unit.scm")
 
-; TODO: should not need 'vec' at the end of first line; see R5RS spec
 (assert/equal 
                 (do ((vec (make-vector 5) vec)
                      (i 0 (+ i 1)))
