@@ -975,8 +975,6 @@ stringAppend (String st:sts) = do
 stringAppend [badType] = throwError $ TypeMismatch "string" badType
 stringAppend badArgList = throwError $ NumArgs 1 badArgList
 
--- This could be expanded, for now just converts integers
--- TODO: handle a radix param
 stringToNumber :: [LispVal] -> ThrowsError LispVal
 stringToNumber [(String s)] = do
   result <- (readExpr s)
@@ -986,6 +984,13 @@ stringToNumber [(String s)] = do
     n@(Float _) -> return n
     n@(Complex _) -> return n
     _ -> return $ Bool False
+stringToNumber [(String s), Number radix] = do
+  case radix of
+    2  -> stringToNumber [String $ "#b" ++ s]
+    8  -> stringToNumber [String $ "#o" ++ s]
+    10 -> stringToNumber [String s]
+    16 -> stringToNumber [String $ "#x" ++ s]
+    _  -> throwError $ Default $ "Invalid radix: " ++ show radix 
 stringToNumber [badType] = throwError $ TypeMismatch "string" badType
 stringToNumber badArgList = throwError $ NumArgs 1 badArgList
 
