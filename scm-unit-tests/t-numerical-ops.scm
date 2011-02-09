@@ -8,7 +8,7 @@
 ;
 (load "skim-unit.scm")
 
-; Many test cases below that are not to spec:
+; TODO: Many test cases below that are not to spec are commented-out:
 (assert/equal (complex? 3+4i) #t)
 (assert/equal (complex? 3) #t)
 (assert/equal (real? 3) #t)
@@ -129,7 +129,7 @@
 (assert/equal (number->string 10 16) "a")
 
 (assert/equal (string->number "100")      100)
-;(assert/equal (string->number "100" 16)   256)
+(assert/equal (string->number "100" 16)   256)
 ;(assert/equal (string->number "1e2")      100.0)
 ;(assert/equal (string->number "15##")     1500.0)
 (assert/equal (string->number "3.42323+2i")
