@@ -8,15 +8,6 @@
 ;
 (load "skim-unit.scm")
 
-
-; 
-; TODO:
-;
-; start here, and go through the spec, adding missing test cases:
-; http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_chap_4
-;
-;
-
 ; Primitive expression types, tests from R5RS spec
 ; (consider moving to a separate file)
 (define x 28)
