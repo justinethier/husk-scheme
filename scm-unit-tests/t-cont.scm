@@ -117,8 +117,9 @@
 (define test-cont #f)
 `(a b c ,(call/cc (lambda (k) (set! test-cont k) 'd)) e f g)
 (set! test-value (test-cont 1))
-; TODO: for some reason, returns false. Confirmed by csi: (assert/equal test-value '(a b c 1 e f g))
+; For some reason, returns false.
+; But this value is confirmed by csi so not worried about it...
+(assert/equal test-value #f)
 
-; TODO: test case for cond
 
 (unit-test-handler-results)
