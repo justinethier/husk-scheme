@@ -464,7 +464,7 @@ eval env cont (List (Atom "apply" : applyArgs)) = do
 
 -- 
 --
--- TODO: support for other continuation-related functions, such as
+-- FUTURE: Issue #2: support for other continuation-related functions, such as
 -- (dynamic-wind)
 --
 --
