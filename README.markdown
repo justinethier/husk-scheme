@@ -1,14 +1,14 @@
 ![husk Scheme](https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png)
 
-husk is a dialect of Scheme written in Haskell that implements a subset of the [R<sup>5</sup>RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Advanced R5RS features are provided including continuations, hygienic  macros, and a full numeric tower.
+husk is a dialect of Scheme written in Haskell that implements a subset of the [R<sup>5</sup>RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Advanced R<sup>5</sup>RS features are provided including continuations, hygienic  macros, and a full numeric tower.
 
-husk provides many features and is intended as a good choice for certain applications, however it is not a highly optimized version of Scheme. Rather, the goal of the project is to provide a tight integration between Haskell and Scheme while at the same time providing an opportunity for deeper understanding of both languages. In addition, by closely following the R5RS standard, the intent is to develop a Scheme that is as compatible as possible with other R5RS Schemes.
+husk provides many features and is intended as a good choice for certain applications, however it is not a highly optimized version of Scheme. Rather, the goal of the project is to provide a tight integration between Haskell and Scheme while at the same time providing an opportunity for deeper understanding of both languages. In addition, by closely following the R<sup>5</sup>RS standard, the intent is to develop a Scheme that is as compatible as possible with other R<sup>5</sup>RS Schemes.
 
 Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy: the core language consists of a small number of fundamental forms which may be used to implement the other built-in forms. Scheme is an excellent language for writing small, elegant programs, and may also be used to write scripts or embed scripting functionality within a larger application.
 
 Feature List
 ------------
-husk includes the following features from R5RS:
+husk includes the following features from R<sup>5</sup>RS:
 
 - Primitive data types and their standard forms, including string, char, numbers (integer, rational, floating point, and complex), list, pair, vector, and symbols
 - Proper tail recursion
@@ -23,7 +23,7 @@ husk includes the following features from R5RS:
 - Basic IO functions
 - Standard library of Scheme functions
 - Read-Eval-Print-Loop (REPL) interpreter, with input driven by Haskeline to provide a rich user experience
-- <b>Full numeric tower</b>: includes support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types and other constraints from the R5RS specification.
+- <b>Full numeric tower</b>: includes support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types and other constraints from the R<sup>5</sup>RS specification.
 - <b>Continuations</b>: call/cc and first-class continuations.
 - <b>Hygienic Macros</b>: High-level macros via define-syntax - *Note this is still somewhat of a work in progress* and while it works well enough that many derived forms are implemented in our standard library, you may still run into problems when defining your own macros.
 
