@@ -112,7 +112,7 @@ parseRealNumber = do
               let numbr = fst $ Numeric.readFloat dec !! 0
 --              expnt <- try (char 'e')
               return $ Float $ numbr
-{- TODO: parse numbers in format #e1e10
+{- FUTURE: Issue #14: parse numbers in format #e1e10
  -
               expnt <- try (char 'e')
               case expnt of
