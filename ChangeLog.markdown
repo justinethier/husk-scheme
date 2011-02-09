@@ -1,5 +1,7 @@
 v2.1
 ----
+- Moved all Haskell code from the 'Scheme' namespace to the 'Language/Scheme'
+namespace.
 - Fixed cases where backquoting of a vector would crash the interpreter.
 - Prevent interpreter from crashing when calling (load) if the file does not
 exist.
