@@ -48,8 +48,10 @@ macroEval :: Env -> LispVal -> IOThrowsError LispVal
 
 -- Special case, just load up the syntax rules
 macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List _ : _)))]) = do
-  -- FUTURE: there really ought to be some error checking of the syntax rules, since they could be malformed...
-  --         As it stands now, there is no checking until the code attempts to perform a macro transformation.
+  -- TODO: there really ought to be some error checking of the syntax rules, since they could be malformed...
+  --  As it stands now, there is no checking until the code attempts to perform a macro transformation.
+  --  At a minimum, should check identifiers to make sure each is an atom (see findAtom)
+  --
   defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
 
@@ -423,7 +425,7 @@ findAtom (Atom target) (List (Atom a:as)) = do
   if target == a
      then return $ Bool True
      else findAtom (Atom target) (List as)
-findAtom _ (List (badtype : _)) = throwError $ TypeMismatch "symbol" badtype -- TODO: test this, non-atoms should throw err
+findAtom _ (List (badtype : _)) = throwError $ TypeMismatch "symbol" badtype
 findAtom _ _ = return $ Bool False
  
 -- Initialize any pattern variables as an empty list.
