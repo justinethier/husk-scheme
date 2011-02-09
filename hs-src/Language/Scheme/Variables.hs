@@ -7,8 +7,8 @@
  - @author Justin Ethier
  -
  - -}
-module Scheme.Variables where
-import Scheme.Types
+module Language.Scheme.Variables where
+import Language.Scheme.Types
 import Control.Monad.Error
 import Data.IORef
 

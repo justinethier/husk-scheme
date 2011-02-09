@@ -8,8 +8,8 @@
  - 
  - -}
 
-module Scheme.Numerical where
-import Scheme.Types
+module Language.Scheme.Numerical where
+import Language.Scheme.Types
 import Complex
 import Control.Monad.Error
 import Data.Char

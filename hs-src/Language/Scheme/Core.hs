@@ -8,7 +8,7 @@
  -
  - -}
 
-module Scheme.Core 
+module Language.Scheme.Core 
     (
       eval
     , evalLisp
@@ -17,11 +17,11 @@ module Scheme.Core
     , primitiveBindings -- FUTURE: this may be a bad idea...
                         -- but there should be an interface to inject custom functions written in Haskell
     ) where
-import Scheme.Macro
-import Scheme.Numerical
-import Scheme.Parser
-import Scheme.Types
-import Scheme.Variables
+import Language.Scheme.Macro
+import Language.Scheme.Numerical
+import Language.Scheme.Parser
+import Language.Scheme.Types
+import Language.Scheme.Variables
 import Control.Monad.Error
 import Char
 import Data.Array

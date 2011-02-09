@@ -9,7 +9,7 @@
  - @author Justin Ethier
  -
  - -}
-module Scheme.Types where
+module Language.Scheme.Types where
 import Complex
 import Control.Monad.Error
 import Data.Array

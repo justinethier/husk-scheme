@@ -7,8 +7,8 @@
  - @author Justin Ethier
  -
  - -}
-module Scheme.Parser where
-import Scheme.Types
+module Language.Scheme.Parser where
+import Language.Scheme.Types
 import Control.Monad.Error
 import Char
 import Complex

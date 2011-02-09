@@ -32,24 +32,24 @@ Extra-Source-Files:  README.markdown
 Data-Files:          stdlib.scm
 
 Library
-  Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, haskell98, mtl, parsec
+  Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, haskell98, mtl, parsec, directory
   Extensions:      ExistentialQuantification
   Hs-Source-Dirs:  hs-src
-  Exposed-Modules: Scheme.Core
-                   Scheme.Types
-                   Scheme.Variables
-  Other-Modules:   Scheme.Macro
-                   Scheme.Numerical
-                   Scheme.Parser
+  Exposed-Modules: Language.Scheme.Core
+                   Language.Scheme.Types
+                   Language.Scheme.Variables
+  Other-Modules:   Language.Scheme.Macro
+                   Language.Scheme.Numerical
+                   Language.Scheme.Parser
 
 Executable         huski
-  Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, haskell98, mtl, parsec
+  Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, haskell98, mtl, parsec, directory
   Extensions:      ExistentialQuantification
   Main-is:         shell.hs
   Hs-Source-Dirs:  hs-src
-  Other-Modules:   Scheme.Core
-                   Scheme.Types
-                   Scheme.Variables
-                   Scheme.Macro
-                   Scheme.Numerical
-                   Scheme.Parser
+  Other-Modules:   Language.Scheme.Core
+                   Language.Scheme.Types
+                   Language.Scheme.Variables
+                   Language.Scheme.Macro
+                   Language.Scheme.Numerical
+                   Language.Scheme.Parser

@@ -29,12 +29,12 @@
  -    in the output.
  -
  - -}
-module Scheme.Macro 
+module Language.Scheme.Macro 
     (
       macroEval
     ) where
-import Scheme.Types
-import Scheme.Variables
+import Language.Scheme.Types
+import Language.Scheme.Variables
 import Control.Monad.Error
 --import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 

@@ -12,9 +12,9 @@
 
 module Main where
 import Paths_husk_scheme
-import Scheme.Core      -- Scheme Interpreter
-import Scheme.Types     -- Scheme data types
-import Scheme.Variables -- Scheme variable operations
+import Language.Scheme.Core      -- Scheme Interpreter
+import Language.Scheme.Types     -- Scheme data types
+import Language.Scheme.Variables -- Scheme variable operations
 import Control.Monad.Error
 import IO hiding (try)
 import System.Environment
