@@ -55,8 +55,8 @@ API
 
 A Haskell API is also provided to allow you to embed a Scheme interpreter within a Haskell program. The key API modules are:
 
-- Scheme.Core - Contains functions to evaluate (execute) Scheme code.
-- Scheme.Types - Contains Haskell data types used to represent Scheme primitives.
+- Language.Scheme.Core - Contains functions to evaluate (execute) Scheme code.
+- Language.Scheme.Types - Contains Haskell data types used to represent Scheme primitives.
 
 For more information, run `make doc` to generate API documentation from the source code. Also, see `shell.hs` for a quick example of how you might get started.
 
