@@ -62,19 +62,22 @@
 (set-cdr! x 4)
 (assert/equal x 
               '(a . 4))
-; TODO:
+
+;
 ; Looks like all of below fail because (define y x) 
 ; is assigning to to the evaluated value of x instead of the symbol x.
 ;
-;
-; Not sure if we can resolve this or if it is just a fundamental problem
-; since we wrote the interpreter in Haskell.
-;
+; Not sure if we can resolve this or if it is really just a fundamental problem
+; since we wrote the interpreter in Haskell. For now the code stands as-is and
+; this is listed as a compatibility issue in the husk wiki.
 ;
 ;;(assert/equal (eqv? x y) #t)
 ;;(assert/equal y '(a . 4))
 ;;(assert/equal (list? y) #f)
+;;
 ; End test failures
+
+
 (set-cdr! x x)
 (assert/equal (list? x)  #f)
 
@@ -159,14 +162,14 @@
 
 (assert/equal (and (= 2 2) (> 2 1))   #t)
 (assert/equal (and (= 2 2) (< 2 1))   #f)
-;TODO: test from spec
+;FUTURE: Issue #6 - test from spec fails
 ;(assert/equal (and 1 2 'c '(f g))     '(f g))
 (assert/equal (and)                   #t)
 
 (assert/equal (or (= 2 2) (> 2 1))   #t)
 (assert/equal (or (= 2 2) (< 2 1))   #t)
 (assert/equal (or #f #f #f)          #f)
-; TODO: test from spec
+;FUTURE: Issue #6 - test from spec fails
 ;(assert/equal (or (memq 'b '(a b c)) 
 ;                  (/ 3 0)) 
 ;              '(b c))
@@ -222,7 +225,7 @@
 (assert/equal (memq 'a '(a b c)) '(a b c))
 (assert/equal (memq 'b '(a b c)) '(b c))
 (assert/equal (memq 'a '(b c d)) #f)
-;TODO: (assert/equal (memq (list 'a) '(b (a) c))) #f)
+;Not currently supported due to husk memory model: (assert/equal (memq (list 'a) '(b (a) c))) #f)
 (assert/equal (member (list 'a) '(b (a) c)) '((a) c))
 (assert/equal (memv 101 '(100 101 102)) '(101 102))
 
@@ -233,7 +236,7 @@
                         '(b 2))
 (assert/equal (assq 'd e)
                          #f)
-;TODO: (assert/equal (assq (list 'a) '(((a)) ((b)) ((c)))))
+;Not currently supported due to husk memory model: (assert/equal (assq (list 'a) '(((a)) ((b)) ((c)))))
 ;                         #f)
 (assert/equal (assoc (list 'a) '(((a)) ((b)) ((c))))   
                         '((a)))
