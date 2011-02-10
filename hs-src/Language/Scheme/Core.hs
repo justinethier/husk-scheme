@@ -246,19 +246,31 @@ eval env cont (List (Atom "cond" : clauses)) =
          List (Atom "else" : _) -> eval env (makeCPSWArgs env cont cpsResult clauses) $ Bool True
          List (cond : _) -> eval env (makeCPSWArgs env cont cpsResult clauses) cond
          badType -> throwError $ TypeMismatch "clause" badType 
-  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+  where
+        -- If a condition is true, evalue that condition's expressions.
+        -- Otherwise just pick up at the next condition...
+        cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsResult e cnt result (Just (c:cs)) = 
             case result of
               Bool True -> evalCond e cnt c
               _ -> eval env cnt $ List $ (Atom "cond" : cs)
         cpsResult _ _ _ _ = throwError $ Default "Unexpected error in cond"
-        cpsAlt :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsAlt e c expr (Just test) = apply c expr test
+
         -- Helper function for evaluating 'cond'
         evalCond :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
         evalCond e c (List [_, expr]) = eval e c expr
         evalCond e c (List (_ : expr)) = eval e c $ List (Atom "begin" : expr)
         evalCond _ _ badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
+
+        -- Alternate "=>" form: expr was evaluated, now eval test
+        cpsAlt :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsAlt e c expr (Just [test]) = eval e (makeCPSWArgs e c cpsAltEvaled [expr]) test
+        cpsAlt _ _ _ _ = throwError $ Default "Unexpected error in cond"
+
+        -- Alternate "=>" form: both test/expr are evaluated, now eval the form itself
+        cpsAltEvaled :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsAltEvaled _ c test (Just [expr]) = apply c expr [test]
+        cpsAltEvaled _ _ _ _ = throwError $ Default "Unexpected error in cond"
 
 eval env cont (List (Atom "begin" : funcs)) = 
   if length funcs == 0
