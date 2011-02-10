@@ -1,4 +1,9 @@
-; Simple program to calculate the factorial of a number
+;;; 
+;;; Justin Ethier
+;;; husk-scheme
+;;;
+;;; Simple program to calculate the factorial of a number
+;;;
 (define factorial
   (lambda (n)
     (if (= n 0) 1
