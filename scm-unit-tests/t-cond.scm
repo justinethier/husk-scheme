@@ -14,7 +14,8 @@
 			  'equal)
 
 ; TODO: => special form
-;(cond ((assv 'b '((a 1) (b 2))) => cadr)
-;                        (else #f))                 ===>  2
+(assert/equal (cond ((assv 'b '((a 1) (b 2))) => cadr)
+                    (else #f))
+              2)
 
 (unit-test-handler-results)
