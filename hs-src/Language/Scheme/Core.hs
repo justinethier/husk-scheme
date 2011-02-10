@@ -242,6 +242,7 @@ eval env cont (List (Atom "cond" : clauses)) =
    then throwError $ BadSpecialForm "No matching clause" $ String "cond"
    else do
        case (clauses !! 0) of
+         List [test, Atom "=>", expr] -> eval env (makeCPSWArgs env cont cpsAlt [test]) expr
          List (Atom "else" : _) -> eval env (makeCPSWArgs env cont cpsResult clauses) $ Bool True
          List (cond : _) -> eval env (makeCPSWArgs env cont cpsResult clauses) cond
          badType -> throwError $ TypeMismatch "clause" badType 
@@ -251,6 +252,8 @@ eval env cont (List (Atom "cond" : clauses)) =
               Bool True -> evalCond e cnt c
               _ -> eval env cnt $ List $ (Atom "cond" : cs)
         cpsResult _ _ _ _ = throwError $ Default "Unexpected error in cond"
+        cpsAlt :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsAlt e c expr (Just test) = apply c expr test
         -- Helper function for evaluating 'cond'
         evalCond :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
         evalCond e c (List [_, expr]) = eval e c expr
