@@ -204,8 +204,10 @@ checkLocal _ _ _ (String pattern) (String input) = return $ Bool $ pattern == in
 checkLocal _ _ _ (Char pattern) (Char input) = return $ Bool $ pattern == input
 checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
   if hasEllipsis
-     -- FUTURE: can simplify both cases below by using a lambda function to store
-     --         up the 'save' action
+     -- FUTURE: may be able to simplify both cases below by using a 
+     --         lambda function to store the 'save' actions
+     --
+ 
              -- Var is part of a 0-to-many match, store up in a list...
      then do isDefined <- liftIO $ isBound localEnv pattern
              -- 
