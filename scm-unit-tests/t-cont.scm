@@ -8,8 +8,6 @@
 ;
 (load "skim-unit.scm")
 
-; TODO: consider examples from http://en.wikipedia.org/wiki/Call-with-current-continuation - although most may be better as example programs rather than test cases
-
 (define (f return)
     (return 2)
       3)
