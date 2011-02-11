@@ -58,7 +58,7 @@ evalAndPrint env expr = evalString env expr >>= putStrLn
 
 -- |Evaluate lisp code that has already been loaded into haskell
 --
---  TODO: code example for this, via ghci and/or a custom Haskell program.
+--  FUTURE: code example for this, via ghci and/or a custom Haskell program.
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = macroEval env lisp >>= (eval env (makeNullContinuation env))
 
