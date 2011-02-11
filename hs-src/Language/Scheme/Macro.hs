@@ -204,35 +204,34 @@ checkLocal _ _ _ (String pattern) (String input) = return $ Bool $ pattern == in
 checkLocal _ _ _ (Char pattern) (Char input) = return $ Bool $ pattern == input
 checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
   if hasEllipsis
-     -- Var is part of a 0-to-many match, store up in a list...
+     -- FUTURE: can simplify both cases below by using a lambda function to store
+     --         up the 'save' action
+             -- Var is part of a 0-to-many match, store up in a list...
      then do isDefined <- liftIO $ isBound localEnv pattern
-             -- If pattern is a literal identifier, then just pass it along as-is
+             -- 
+             -- If pattern is a literal identifier, need to ensure
+             -- input matches that literal, or that (in this case)
+             -- the literal is missing from the input (0 match)
              --
-             --
-             -- TODO: Need to compare literal identifier as we are
-             --       doing below in the 'else do', and need a test case.
-             --
-             --       Perhaps a test along the lines of:
-             --
-             --       else ...
-             --
-             --       Where identifier is optionally matched n times
-             --       Need to test w/csi or equivalent
-             --
-             --
-             found <- findAtom (Atom pattern) identifiers
-             let val = case found of
-                         (Bool True) -> Atom pattern
-                         _ -> input
-             -- Set variable in the local environment
-             if isDefined
-                then do v <- getVar localEnv pattern
-                        case v of
-                          (List vs) -> setVar localEnv pattern (List $ vs ++ [val])
-                          _ -> throwError $ Default "Unexpected error in checkLocal (Atom)"
-                else defineVar localEnv pattern (List [val])
-             return $ Bool True
+             isIdent <- findAtom (Atom pattern) identifiers
+             case isIdent of
+                Bool True -> do
+                    case input of
+                        Atom inpt -> do
+                            if (pattern == inpt)
+                               then do
+                                 -- Set variable in the local environment
+                                 addPatternVar isDefined $ Atom pattern
+                                 return $ Bool True
+                               else return $ Bool False
+                        -- Pattern/Input cannot match because input is not an atom
+                        _ -> return $ Bool False
+                -- No literal identifier, just load up the var
+                _ -> do addPatternVar isDefined input
+                        return $ Bool True
+     -- 
      -- Simple var, try to load up into macro env
+     --
      else do
          isIdent <- findAtom (Atom pattern) identifiers
          case isIdent of
@@ -251,6 +250,14 @@ checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
             -- No literal identifier, just load up the var
             _ -> do defineVar localEnv pattern input
                     return $ Bool True
+    where
+      addPatternVar isDefined val = do
+             if isDefined
+                then do v <- getVar localEnv pattern
+                        case v of
+                          (List vs) -> setVar localEnv pattern (List $ vs ++ [val])
+                          _ -> throwError $ Default "Unexpected error in checkLocal (Atom)"
+                else defineVar localEnv pattern (List [val])
 
 -- FUTURE: Issue #4 - vector support. And what the heck are these next two lines doing here? :)
 --
