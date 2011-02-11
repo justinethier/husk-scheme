@@ -120,6 +120,16 @@
                  (cons (car numbers) neg)))))
  '((6 1 3) (-5 -2)))
 
+; Allow having a literal identifier specified 0-or-more times
+;
+(define-syntax my-test
+  (syntax-rules (a)
+    ((_ a ... b)
+     (list '(b)))))
+(assert/equal (my-test 2) '((2)))
+(assert/equal (my-test a 2) '((2)))
+(assert/equal (my-test a a a a a 2) '((2)))
+
 
 ; FUTURE: support, test cases for
 ; let-syntax and letrec-syntax
