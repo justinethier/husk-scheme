@@ -13,7 +13,7 @@
 (assert/equal (complex? 3) #t)
 (assert/equal (real? 3) #t)
 (assert/equal (real? -2.5+0.0i) #t)
-;(assert/equal (real? #e1e103) #t)
+;Issue #14: (assert/equal (real? #e1e103) #t)
 (assert/equal (rational? 6/10) #t)
 (assert/equal (rational? 6/3) #t)
 (assert/equal (integer? 3+0i) #t)
@@ -29,9 +29,9 @@
 
 (assert/equal (+ 3 4)     7)
 (assert/equal (+ 3)       3)
-;(assert/equal (+)         0)
+(assert/equal (+)         0)
 (assert/equal (* 4)       4)
-;(assert/equal (*)         1)
+(assert/equal (*)         1)
 
 (assert/equal (- 3 4)       -1)
 (assert/equal (- 3 4 5)     -6)

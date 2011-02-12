@@ -38,7 +38,7 @@ foldl1M _ _ = error "Unexpected error in foldl1M"
 
 
 numAdd, numSub, numMul, numDiv :: [LispVal] -> ThrowsError LispVal
-numAdd [] = throwError $ NumArgs 1 [] 
+numAdd [] = return $ Number 0
 numAdd aparams = do
   foldl1M (\a b -> doAdd =<< (numCast [a, b])) aparams
   where doAdd (List [(Number a), (Number b)]) = return $ Number $ a + b
@@ -58,7 +58,7 @@ numSub aparams = do
         doSub (List [(Rational a), (Rational b)]) = return $ Rational $ a - b
         doSub (List [(Complex a), (Complex b)]) = return $ Complex $ a - b
         doSub _ = throwError $ Default "Unexpected error in -"
-numMul [] = throwError $ NumArgs 1 [] 
+numMul [] = return $ Number 1 
 numMul aparams = do 
   foldl1M (\a b -> doMul =<< (numCast [a, b])) aparams
   where doMul (List [(Number a), (Number b)]) = return $ Number $ a * b
