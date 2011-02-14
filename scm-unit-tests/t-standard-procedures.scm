@@ -84,16 +84,17 @@
 
 ; Many tests that do not meet spec
 (assert/equal (eq? 'a 'a) #t)
-;(eq? '(a) '(a))                         ===>  unspecified
+(assert/equal (eq? '(a) '(a)) #t)
 ;(assert/equal (eq? (list 'a) (list 'a))  #f)
-;(eq? "a" "a")                           ===>  unspecified
-;(eq? "" "")                             ===>  unspecified
+(assert/equal (eq? "a" "a") #t)
+(assert/equal (eq? "" "") #t)
 (assert/equal (eq? '() '())              #t)
-;(eq? 2 2)                               ===>  unspecified
-;(eq? #\A #\A)         ===>  unspecified
+(assert/equal (eq? 2 2) #t)
+(assert/equal (eq? #\A #\A) #t)
 ;(assert/equal (eq? car car)              #t)
-;(let ((n (+ 2 3)))
-;    (eq? n n))              ===>  unspecified
+(assert/equal (let ((n (+ 2 3)))
+                   (eq? n n))
+              #t) ;  ===>  unspecified
 (assert/equal (let ((x '(a)))
     (eq? x x))              #t)
 (assert/equal (let ((x '#()))
@@ -109,8 +110,9 @@
 (assert/equal (equal? 2 2)               #t)
 (assert/equal (equal? (make-vector 5 'a)
                 (make-vector 5 'a))      #t)
-;(equal? (lambda (x) x)
-;                (lambda (y) y))          ===>  unspecified
+(assert/equal (equal? (lambda (x) x)
+                      (lambda (y) y))
+               #f) ; ===>  unspecified
 
 (assert/equal (not #t)         #f)
 (assert/equal (not 3)          #f)
