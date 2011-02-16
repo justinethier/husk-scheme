@@ -1,10 +1,22 @@
+;;;
+;;; husk-scheme
+;;; http://github.com/justinethier/husk-scheme
+;;;
+;;; Written by Justin Ethier
+;;;
+;;; Test cases from:
+;;; http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_chap_6
+;;;
+;;;
+;;; NOTE: many test cases are commented-out as they fail due to differences between
+;;;       the (Haskell) memory model we are using and the memory model the spec
+;;;       assumes. This may be addressed at some point, but is not currently a 
+;;;       priority item.
+;;;
+;;;       For more information: https://github.com/justinethier/husk-scheme/wiki/Compatibility
+;;;
 (load "skim-unit.scm")
 
-; Adding test cases from:
-; http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_chap_6
-;
-; TODO: commented-out test cases denote conditions that husk does not currently
-;       support from the spec. Tickets will be written for 
 (assert/equal
     (eqv? 'a 'a)
     #t)
