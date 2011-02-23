@@ -141,6 +141,7 @@ data LispVal = Atom String
                         -- FUTURE: stack (for dynamic wind)
                        }
          -- ^Continuation
+ 	| EOF
  	| Nil String
          -- ^Internal use only; do not use this type directly.
 
@@ -214,6 +215,7 @@ instance Eq LispVal where
 -- |Create a textual description of a 'LispVal'
 showVal :: LispVal -> String
 showVal (Nil _) = ""
+showVal (EOF) = "#!EOF"
 showVal (String contents) = "\"" ++ contents ++ "\""
 showVal (Char chr) = [chr]
 showVal (Atom name) = name
