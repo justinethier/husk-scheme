@@ -30,6 +30,7 @@ import Maybe
 import List
 import IO hiding (try)
 import System.Directory (doesFileExist)
+import System.IO.Error
 --import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
@@ -626,7 +627,14 @@ closePort _ = return $ Bool False
 
 readProc :: [LispVal] -> IOThrowsError LispVal
 readProc [] = readProc [Port stdin]
-readProc [Port port] = (liftIO $ hGetLine port) >>= liftThrows . readExpr
+readProc [Port port] = do
+    input <-  liftIO $ try (liftIO $ hGetLine port)
+    case input of
+        Left e -> if isEOFError e
+                     then return $ Atom "#EOF" -- TODO: return a new EOF type
+                     else throwError $ Default "I/O error reading from port" -- TODO: ioError e
+        Right inpStr -> do 
+            liftThrows $ readExpr inpStr 
 readProc args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 
 writeProc :: [LispVal] -> IOThrowsError LispVal
