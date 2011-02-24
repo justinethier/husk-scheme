@@ -2,15 +2,22 @@
 ;;; Justin Ethier
 ;;; husk scheme
 ;;;
-;;; Sample program for file I/O
-;;; still needs work
+;;; Sample program for file I/O.
 ;;;
-;;; TODO: do something interesting like summing up all integers in a file
+;;; Opens a sample file containing one number per line, and outputs their sum.
 ;;;
-(define a (open-input-file "examples/simple-file-io.txt"))
-(write (read a))
-(write (read a)) ; TODO: need to return EOF to program instead of crashing...
-(write (eof-object? (read a)))
-;See (eof-object? obj) in the spec - a new object of this type must be returned when EOF is detected
+;;; Usage: run from the main husk directory -
+;;;        ./huski examples/simple-file-io.scm
+;;;
+(load "stdlib.scm")
 
-(close-input-port a)
+(define *input-file* "examples/simple-file-io.txt")
+(define (sum-from-file acc fp)
+  (let ((data (read fp)))
+      (if (eof-object? data)
+        (begin
+          (close-input-port fp)
+          (write acc))
+        (sum-from-file (+ acc data) fp))))
+
+(sum-from-file 0 (open-input-file *input-file*))
