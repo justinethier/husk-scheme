@@ -631,7 +631,7 @@ readProc [Port port] = do
     input <-  liftIO $ try (liftIO $ hGetLine port)
     case input of
         Left e -> if isEOFError e
-                     then return $ Atom "#EOF" -- TODO: return a new EOF type
+                     then return $ EOF
                      else throwError $ Default "I/O error reading from port" -- TODO: ioError e
         Right inpStr -> do 
             liftThrows $ readExpr inpStr 
@@ -737,6 +737,7 @@ primitives = [("+", numAdd),
               ("integer?", isInteger),
               ("list?", unaryOp isList),
               ("null?", isNull),
+              ("eof-object?", isEOFObject),
               ("symbol?", isSymbol),
               ("symbol->string", symbol2String),
               ("string->symbol", string2Symbol),
@@ -1057,6 +1058,10 @@ isList _        = return $ Bool False
 isNull :: [LispVal] -> ThrowsError LispVal
 isNull ([List []]) = return $ Bool True
 isNull _ = return $ Bool False
+
+isEOFObject :: [LispVal] -> ThrowsError LispVal
+isEOFObject ([EOF]) = return $ Bool True
+isEOFObject _ = return $ Bool False
 
 isSymbol :: [LispVal] -> ThrowsError LispVal
 isSymbol ([Atom _]) = return $ Bool True

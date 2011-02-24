@@ -10,7 +10,7 @@
 (define a (open-input-file "examples/simple-file-io.txt"))
 (write (read a))
 (write (read a)) ; TODO: need to return EOF to program instead of crashing...
-
+(write (eof-object? (read a)))
 ;See (eof-object? obj) in the spec - a new object of this type must be returned when EOF is detected
 
 (close-input-port a)
