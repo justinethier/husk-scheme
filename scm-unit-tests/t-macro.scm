@@ -296,8 +296,14 @@
 
 (define-syntax vector-test
   (syntax-rules ()
-    ((_ #(1)) 
-(assert/equal (vector-test #(1)) '#(1))
+    ((_ #(1 2)) 
+     (quote #(1 2)))))
+(assert/equal (vector-test #(1 2)) '#(1 2))
+(define-syntax vector-test2
+  (syntax-rules ()
+    ((_ #(x)) 
+     (quote #(x)))))
+(assert/equal (vector-test2 #(3)) '#(3))
 ;
 ; end vector test cases
 ;
