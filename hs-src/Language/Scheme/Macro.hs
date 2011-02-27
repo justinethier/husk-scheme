@@ -36,6 +36,7 @@ module Language.Scheme.Macro
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
+import Data.Array
 --import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 -- Nice FAQ regarding macro's, points out some of the limitations of current implementation
@@ -147,7 +148,11 @@ loadLocal :: Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsErr
 loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do 
   case (pattern, input) of
 
-       -- Future: vector
+       -- Issue #4:
+       -- TODO: Vector trans is almost like list trans, except pairs are not allowed within a vector...
+       --  let's just try that quick-and-dirty way initially...
+       ((Vector p), (Vector i)) -> do
+         loadLocal localEnv identifiers (List $ elems p) (List $ elems i) False outerHasEllipsis
 
        ((DottedList ps p), (DottedList is i)) -> do
          result <- loadLocal localEnv  identifiers (List ps) (List is) False outerHasEllipsis
@@ -266,11 +271,9 @@ checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
                           _ -> throwError $ Default "Unexpected error in checkLocal (Atom)"
                 else defineVar localEnv pattern (List [val])
 
--- FUTURE: Issue #4 - vector support. And what the heck are these next two lines doing here? :)
---
--- , load into localEnv in some (all?) cases?: eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
--- : eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
---
+checkLocal localEnv identifiers hasEllipsis pattern@(Vector _) input@(Vector _) = 
+  loadLocal localEnv identifiers pattern input False hasEllipsis
+
 checkLocal localEnv identifiers hasEllipsis pattern@(DottedList _ _) input@(DottedList _ _) = 
   loadLocal localEnv identifiers pattern input False hasEllipsis
 --  throwError $ BadSpecialForm "Test" input
@@ -330,7 +333,38 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                   _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisIndex]
 
 -- FUTURE: issue #4 - vector transform (and taking vectors into account in other cases as well???)
-
+transformRule localEnv ellipsisIndex (List result) transform@(List ((Vector v) : ts)) (List ellipsisList) = do
+-- TODO: ellipsis within a vector...
+{-  if macroElementMatchesMany transform
+     then do 
+     -- Idea here is that we need to handle case where you have (pair ...) - EG: ((var . step) ...)
+             curT <- transformDottedList localEnv (ellipsisIndex + 1) (List []) (List [dl]) (List result)
+             case curT of
+               Nil _ -> if ellipsisIndex == 0
+                                -- First time through and no match ("zero" case). Use tail to move past the "..."
+                           then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
+                                -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
+                           else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
+               -- This case is here because we need to process individual components of the pair to determine
+               -- whether we are done with the match. It is similar to above but not exact...
+               List [Nil _, List _] -> if ellipsisIndex == 0
+                                -- First time through and no match ("zero" case). Use tail to move past the "..."
+                           then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
+                                -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
+                           else transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])
+               List t -> transformRule localEnv (ellipsisIndex + 1) (List $ result ++ t) transform (List ellipsisList)
+               _ -> throwError $ Default "Unexpected error in transformRule"
+     else do lst <- transformDottedList localEnv ellipsisIndex (List []) (List [dl]) (List ellipsisList)
+       -}
+     lst <- transformRule localEnv ellipsisIndex (List []) (List [List $ elems v]) (List ellipsisList)
+     case lst of
+          List [Nil _, List _] -> return lst -- TODO: ?
+          List [List l] -> do
+-- TODO: (?)          List l -> do
+            let lAsVector = (Vector $ (listArray (0, length l - 1)) l) -- TODO: this should be a common function, see listToVector in core
+            transformRule localEnv ellipsisIndex (List $ result ++ [lAsVector]) (List ts) (List ellipsisList)
+          Nil _ -> return lst --TODO: ?
+          _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [(List ellipsisList), lst, (List [Vector v]), Number $ toInteger ellipsisIndex]
 
 transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedList _ _) : ts)) (List ellipsisList) = do
   if macroElementMatchesMany transform
@@ -463,7 +497,9 @@ initializePatternVars localEnv src identifiers (DottedList ps p) = do
     initializePatternVars localEnv src identifiers $ List ps
     initializePatternVars localEnv src identifiers p
 
--- FUTURE: Issue #4: vector
+-- FUTURE: Issue #4: vector - not sure this is required...
+initializePatternVars localEnv src identifiers (Vector v) = do
+    initializePatternVars localEnv src identifiers $ List $ elems v
 
 initializePatternVars localEnv src identifiers (Atom pattern) =  
        -- FUTURE:
@@ -502,7 +538,9 @@ lookupPatternVarSrc localEnv (DottedList ps p) = do
         Bool False -> lookupPatternVarSrc localEnv p
         _ -> return result
 
--- FUTURE: Issue #4: vector
+-- FUTURE: Issue #4: vector - not sure this is required...
+lookupPatternVarSrc localEnv (Vector v) = do
+    lookupPatternVarSrc localEnv $ List $ elems v
 
 lookupPatternVarSrc localEnv (Atom pattern) =  
     do isDefined <- liftIO $ isNamespacedBound localEnv "src" pattern
