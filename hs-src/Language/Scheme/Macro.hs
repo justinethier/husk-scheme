@@ -67,16 +67,14 @@ macroEval env (List (x@(List _) : xs)) = do
   rest <- mapM (macroEval env) xs
   return $ List $ first : rest
 
---
--- TODO: Issue #4
--- equivalent matches/transforms for vectors, and what about dotted lists?
---
--- macroEval env (Vector v) = do
--- macroEval env (DottedList ls l) = do
---
--- but first, need to confirm such syntax is even allowed
-
 -- Inspect code for macro's
+--
+-- Only a list form is required because a pattern may only consist
+-- of a list here. From the spec:
+--
+-- "The <pattern> in a <syntax rule> is a list <pattern> that 
+--  begins with the keyword for the macro."
+--
 macroEval env lisp@(List (Atom x : xs)) = do
   isDefined <- liftIO $ isNamespacedBound env macroNamespace x
   if isDefined
