@@ -291,9 +291,8 @@
 ;
 
 ;
-; Issue #4: once those work, test cases for vector transforms
+; Test cases for vector transforms
 ;
-
 (define-syntax vector-test
   (syntax-rules ()
     ((_ #(1 2)) 
