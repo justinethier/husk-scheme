@@ -334,17 +334,16 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
 
 -- FUTURE: issue #4 - vector transform (and taking vectors into account in other cases as well???)
 transformRule localEnv ellipsisIndex (List result) transform@(List ((Vector v) : ts)) (List ellipsisList) = do
--- TODO: ellipsis within a vector...
-{-  if macroElementMatchesMany transform
+  if macroElementMatchesMany transform
      then do 
-     -- Idea here is that we need to handle case where you have (pair ...) - EG: ((var . step) ...)
-             curT <- transformDottedList localEnv (ellipsisIndex + 1) (List []) (List [dl]) (List result)
+             -- Idea here is that we need to handle case where you have (vector ...) - EG: (#(var step) ...)
+             curT <- transformRule localEnv (ellipsisIndex + 1) (List []) (List [List $ elems v]) (List result)
              case curT of
                Nil _ -> if ellipsisIndex == 0
                                 -- First time through and no match ("zero" case). Use tail to move past the "..."
                            then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
                                 -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
-                           else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
+                           else transformRule localEnv 0 (List $ ellipsisList ++ [asVector result]) (List $ tail ts) (List [])
                -- This case is here because we need to process individual components of the pair to determine
                -- whether we are done with the match. It is similar to above but not exact...
                List [Nil _, List _] -> if ellipsisIndex == 0
@@ -352,19 +351,20 @@ transformRule localEnv ellipsisIndex (List result) transform@(List ((Vector v) :
                            then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
                                 -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
                            else transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])
+
+                             -- TODO below - asVector t instead of t??? may also need to say List [List t]...
                List t -> transformRule localEnv (ellipsisIndex + 1) (List $ result ++ t) transform (List ellipsisList)
                _ -> throwError $ Default "Unexpected error in transformRule"
-     else do lst <- transformDottedList localEnv ellipsisIndex (List []) (List [dl]) (List ellipsisList)
-       -}
-     lst <- transformRule localEnv ellipsisIndex (List []) (List [List $ elems v]) (List ellipsisList)
-     case lst of
-          List [Nil _, List _] -> return lst -- TODO: ?
-          List [List l] -> do
+     else do lst <- transformRule localEnv ellipsisIndex (List []) (List [List $ elems v]) (List ellipsisList)
+             case lst of
+                  List [Nil _, List _] -> return lst -- TODO: ?
+                  List [List l] -> do
 -- TODO: (?)          List l -> do
-            let lAsVector = (Vector $ (listArray (0, length l - 1)) l) -- TODO: this should be a common function, see listToVector in core
-            transformRule localEnv ellipsisIndex (List $ result ++ [lAsVector]) (List ts) (List ellipsisList)
-          Nil _ -> return lst --TODO: ?
-          _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [(List ellipsisList), lst, (List [Vector v]), Number $ toInteger ellipsisIndex]
+                      transformRule localEnv ellipsisIndex (List $ result ++ [asVector l]) (List ts) (List ellipsisList)
+                  Nil _ -> return lst --TODO: ?
+                  _     -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [(List ellipsisList), lst, (List [Vector v]), Number $ toInteger ellipsisIndex]
+
+ where asVector lst = (Vector $ (listArray (0, length lst - 1)) lst)
 
 transformRule localEnv ellipsisIndex (List result) transform@(List (dl@(DottedList _ _) : ts)) (List ellipsisList) = do
   if macroElementMatchesMany transform
