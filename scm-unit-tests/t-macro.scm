@@ -319,12 +319,18 @@
   (syntax-rules ()
     ((_ #(x) ...)
      (quote (#(x) ...)))))
-;    ((_ #(x y ...) ...) 
-;     (quote #(x y ...) ...))))
-(assert/equal (vector-test5 #(4)) '#(4))
 (assert/equal (vector-test5 #(1) #(4)) '(#(1) #(4)))
 (assert/equal (vector-test5 #(1) #(2) #(4)) '(#(1) #(2) #(4)))
 (assert/equal (vector-test5) '())
+(assert/equal (vector-test5 #(4)) '(#(4)))
+(define-syntax vector-test6
+  (syntax-rules ()
+    ((_ #(x y ...) ...) 
+     (quote (#(x y ...) ...)))))
+(assert/equal (vector-test6 #(4)) '(#(4)))
+(assert/equal (vector-test6 #(1) #(4)) '(#(1) #(4)))
+(assert/equal (vector-test6) '())
+(assert/equal (vector-test6 #(1 2 3 4)) '(#(1 2 3 4)))
 ;
 ; end vector test cases
 ;
