@@ -323,6 +323,8 @@
 ;     (quote #(x y ...) ...))))
 (assert/equal (vector-test5 #(4)) '#(4))
 (assert/equal (vector-test5 #(1) #(4)) '(#(1) #(4)))
+(assert/equal (vector-test5 #(1) #(2) #(4)) '(#(1) #(2) #(4)))
+(assert/equal (vector-test5) '())
 ;
 ; end vector test cases
 ;

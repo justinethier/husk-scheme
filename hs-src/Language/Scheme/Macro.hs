@@ -337,27 +337,17 @@ transformRule localEnv ellipsisIndex (List result) transform@(List ((Vector v) :
   if macroElementMatchesMany transform
      then do 
              -- Idea here is that we need to handle case where you have (vector ...) - EG: (#(var step) ...)
-             curT <- transformRule localEnv (ellipsisIndex + 1) (List []) (List [List $ elems v]) (List result)
+             curT <- transformRule localEnv (ellipsisIndex + 1) (List []) (List $ elems v) (List result)
              case curT of
                Nil _ -> if ellipsisIndex == 0
                                 -- First time through and no match ("zero" case). Use tail to move past the "..."
                            then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
                                 -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
-                           else transformRule localEnv 0 (List $ ellipsisList ++ [asVector result]) (List $ tail ts) (List [])
-               -- This case is here because we need to process individual components of the pair to determine
-               -- whether we are done with the match. It is similar to above but not exact...
-               List [Nil _, List _] -> if ellipsisIndex == 0
-                                -- First time through and no match ("zero" case). Use tail to move past the "..."
-                           then transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])  
-                                -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
-                           else transformRule localEnv 0 (List $ result) (List $ tail ts) (List [])
-
-                             -- TODO below - asVector t instead of t??? may also need to say List [List t]...
-               List t -> transformRule localEnv (ellipsisIndex + 1) (List $ result ++ t) transform (List ellipsisList)
+                           else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
+               List t -> transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [asVector t]) transform (List ellipsisList)
                _ -> throwError $ Default "Unexpected error in transformRule"
      else do lst <- transformRule localEnv ellipsisIndex (List []) (List [List $ elems v]) (List ellipsisList)
              case lst of
-                  List [Nil _, List _] -> return lst -- TODO: ?
                   List [List l] -> do
 -- TODO: (?)          List l -> do
                       transformRule localEnv ellipsisIndex (List $ result ++ [asVector l]) (List ts) (List ellipsisList)
