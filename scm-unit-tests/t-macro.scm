@@ -315,6 +315,14 @@
      (quote #(x y ...)))))
 (assert/equal (vector-test4 #(4 5 6 7 8)) '#(4 5 6 7 8))
 (assert/equal (vector-test4 #(4)) '#(4))
+(define-syntax vector-test5
+  (syntax-rules ()
+    ((_ #(x) ...)
+     (quote (#(x) ...)))))
+;    ((_ #(x y ...) ...) 
+;     (quote #(x y ...) ...))))
+(assert/equal (vector-test5 #(4)) '#(4))
+(assert/equal (vector-test5 #(1) #(4)) '(#(1) #(4)))
 ;
 ; end vector test cases
 ;
