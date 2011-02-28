@@ -68,7 +68,7 @@ macroEval env (List (x@(List _) : xs)) = do
   return $ List $ first : rest
 
 --
--- FUTURE: Issue #4
+-- TODO: Issue #4
 -- equivalent matches/transforms for vectors, and what about dotted lists?
 --
 -- macroEval env (Vector v) = do
@@ -148,9 +148,9 @@ loadLocal :: Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsErr
 loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do 
   case (pattern, input) of
 
-       -- Issue #4:
-       -- TODO: Vector trans is almost like list trans, except pairs are not allowed within a vector...
-       --  let's just try that quick-and-dirty way initially...
+       -- For vectors, just use list match for now, since vector input matching just requires a
+       -- subset of that behavior. Should be OK since parser would catch problems with trying
+       -- to add pair syntax to a vector declaration.
        ((Vector p), (Vector i)) -> do
          loadLocal localEnv identifiers (List $ elems p) (List $ elems i) False outerHasEllipsis
 
@@ -332,7 +332,6 @@ transformRule localEnv ellipsisIndex (List result) transform@(List(List l : ts))
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisIndex]
 
--- FUTURE: issue #4 - vector transform (and taking vectors into account in other cases as well???)
 transformRule localEnv ellipsisIndex (List result) transform@(List ((Vector v) : ts)) (List ellipsisList) = do
   if macroElementMatchesMany transform
      then do 
@@ -346,12 +345,11 @@ transformRule localEnv ellipsisIndex (List result) transform@(List ((Vector v) :
                            else transformRule localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
                List t -> transformRule localEnv (ellipsisIndex + 1) (List $ result ++ [asVector t]) transform (List ellipsisList)
                _ -> throwError $ Default "Unexpected error in transformRule"
-     else do lst <- transformRule localEnv ellipsisIndex (List []) (List [List $ elems v]) (List ellipsisList)
+     else do lst <- transformRule localEnv ellipsisIndex (List []) (List $ elems v) (List ellipsisList)
              case lst of
-                  List [List l] -> do
--- TODO: (?)          List l -> do
+                  List l -> do
                       transformRule localEnv ellipsisIndex (List $ result ++ [asVector l]) (List ts) (List ellipsisList)
-                  Nil _ -> return lst --TODO: ?
+                  Nil _ -> return lst
                   _     -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [(List ellipsisList), lst, (List [Vector v]), Number $ toInteger ellipsisIndex]
 
  where asVector lst = (Vector $ (listArray (0, length lst - 1)) lst)
@@ -487,7 +485,6 @@ initializePatternVars localEnv src identifiers (DottedList ps p) = do
     initializePatternVars localEnv src identifiers $ List ps
     initializePatternVars localEnv src identifiers p
 
--- FUTURE: Issue #4: vector - not sure this is required...
 initializePatternVars localEnv src identifiers (Vector v) = do
     initializePatternVars localEnv src identifiers $ List $ elems v
 
@@ -528,7 +525,6 @@ lookupPatternVarSrc localEnv (DottedList ps p) = do
         Bool False -> lookupPatternVarSrc localEnv p
         _ -> return result
 
--- FUTURE: Issue #4: vector - not sure this is required...
 lookupPatternVarSrc localEnv (Vector v) = do
     lookupPatternVarSrc localEnv $ List $ elems v
 
