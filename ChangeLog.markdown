@@ -1,3 +1,7 @@
+v2.2
+----
+- Added vector support to macros
+
 v2.1
 ----
 - Moved all Haskell code from the 'Scheme' namespace to the 'Language/Scheme'
