@@ -1,6 +1,7 @@
 v2.2
 ----
 - Added vector support to macros
+- Added an example program to demonstrate file I/O: examples/simple-file-io.scm
 
 v2.1
 ----
