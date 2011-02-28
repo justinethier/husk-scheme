@@ -639,7 +639,11 @@ readProc args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 
 writeProc :: [LispVal] -> IOThrowsError LispVal
 writeProc [obj] = writeProc [obj, Port stdout]
-writeProc [obj, Port port] = liftIO $ hPrint port obj >> (return $ Nil "")
+writeProc [obj, Port port] = do
+    output <- liftIO $ try (liftIO $ hPrint port obj)
+    case output of
+        Left e -> throwError $ Default "I/O error writing to port"
+        Right _ -> return $ Nil ""
 writeProc other = if length other == 2
                      then throwError $ TypeMismatch "(value port)" $ List other 
                      else throwError $ NumArgs 2 other
