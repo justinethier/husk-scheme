@@ -632,7 +632,7 @@ readProc [Port port] = do
     case input of
         Left e -> if isEOFError e
                      then return $ EOF
-                     else throwError $ Default "I/O error reading from port" -- TODO: ioError e
+                     else throwError $ Default "I/O error reading from port" -- FUTURE: ioError e
         Right inpStr -> do 
             liftThrows $ readExpr inpStr 
 readProc args@(_ : _) = throwError $ BadSpecialForm "" $ List args
