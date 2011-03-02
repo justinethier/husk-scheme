@@ -13,7 +13,6 @@
 ;;;  ./huski examples/gcd-w-cmd-line-args.scm 42 4
 ;;;  2
 ;;;
-(load "stdlib.scm")
 
 (define (gcd a b)
   (if (= b 0)

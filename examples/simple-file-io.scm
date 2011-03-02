@@ -10,7 +10,6 @@
 ;;; Usage: run from the main husk directory -
 ;;;        ./huski examples/simple-file-io.scm
 ;;;
-(load "stdlib.scm")
 
 (define *input-file* "examples/simple-file-io.txt")
 (define *output-file* "examples/simple-file-io.out")

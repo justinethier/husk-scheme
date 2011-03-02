@@ -3,7 +3,6 @@
            ;(write "n = 1")
            ;(write org)
            ;(write steps))
-(load "../stdlib.scm")
 (define (collatz n org steps)
     (cond ((= n 1) (+ 1 1)) 
           ((even? n) (collatz (/ n 2) org (+ steps 1)))

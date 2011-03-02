@@ -3,8 +3,6 @@
 ;
 ;;; A naive queue for thread scheduling.
 ;;; It holds a list of continuations "waiting to run".
-(load "../stdlib.scm")
-
 
 (define *queue* '())
 
