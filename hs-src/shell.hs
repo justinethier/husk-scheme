@@ -32,7 +32,9 @@ flushStr str = putStr str >> hFlush stdout
 
 runOne :: [String] -> IO ()
 runOne args = do
+  stdlib <- getDataFileName "stdlib.scm"
   env <- primitiveBindings >>= flip extendEnv [((varNamespace, "args"), List $ map String $ drop 1 args)]
+  evalString env $ "(load \"" ++ stdlib ++ "\")" -- Load standard library
   (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
      >>= hPutStrLn stderr  -- echo this or not??
 
