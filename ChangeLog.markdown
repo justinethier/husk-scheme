@@ -1,3 +1,8 @@
+v2.3
+----
+- Automatically load the scheme standard library when running .scm files
+- Suppress excess output when running a program by piping it to /dev/null
+
 v2.2
 ----
 - Added vector support to macros
