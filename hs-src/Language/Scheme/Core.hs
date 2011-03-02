@@ -642,7 +642,7 @@ writeProc [obj] = writeProc [obj, Port stdout]
 writeProc [obj, Port port] = do
     output <- liftIO $ try (liftIO $ hPrint port obj)
     case output of
-        Left e -> throwError $ Default "I/O error writing to port"
+        Left _ -> throwError $ Default "I/O error writing to port"
         Right _ -> return $ Nil ""
 writeProc other = if length other == 2
                      then throwError $ TypeMismatch "(value port)" $ List other 
