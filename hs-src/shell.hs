@@ -32,11 +32,16 @@ flushStr str = putStr str >> hFlush stdout
 
 runOne :: [String] -> IO ()
 runOne args = do
+  -- Use this to suppress unwanted output.
+  -- Makes this unix-specific, but as of now
+  -- everything else is anyway, so...
+  nullIO <- openFile "/dev/null" WriteMode
+
   stdlib <- getDataFileName "stdlib.scm"
   env <- primitiveBindings >>= flip extendEnv [((varNamespace, "args"), List $ map String $ drop 1 args)]
   evalString env $ "(load \"" ++ stdlib ++ "\")" -- Load standard library
   (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
-     >>= hPutStrLn stderr  -- echo this or not??
+     >>= hPutStrLn nullIO
 
   -- Call into (main) if it exists...
   alreadyDefined <- liftIO $ isBound env "main"
