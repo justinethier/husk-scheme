@@ -23,9 +23,9 @@ husk includes the following features from R<sup>5</sup>RS:
 - Basic IO functions
 - Standard library of Scheme functions
 - Read-Eval-Print-Loop (REPL) interpreter, with input driven by Haskeline to provide a rich user experience
-- <b>Full numeric tower</b>: includes support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types and other constraints from the R<sup>5</sup>RS specification.
-- <b>Continuations</b>: call/cc and first-class continuations.
-- <b>Hygienic Macros</b>: High-level macros via define-syntax - *Note this is still somewhat of a work in progress* and while it works well enough that many derived forms are implemented in our standard library, you may still run into problems when defining your own macros.
+- Full numeric tower: includes support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types and other constraints from the R<sup>5</sup>RS specification.
+- Continuations: call/cc and first-class continuations.
+- Hygienic Macros: High-level macros via define-syntax - *Note this is still somewhat of a work in progress* and while it works well enough that many derived forms are implemented in our standard library, you may still run into problems when defining your own macros.
 
 As well as the following approved extensions:
 
