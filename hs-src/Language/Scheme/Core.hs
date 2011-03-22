@@ -248,7 +248,7 @@ eval env cont (List (Atom "cond" : clauses)) =
          List (cond : _) -> eval env (makeCPSWArgs env cont cpsResult clauses) cond
          badType -> throwError $ TypeMismatch "clause" badType 
   where
-        -- If a condition is true, evalue that condition's expressions.
+        -- If a condition is true, evaluate that condition's expressions.
         -- Otherwise just pick up at the next condition...
         cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsResult e cnt result (Just (c:cs)) = 
