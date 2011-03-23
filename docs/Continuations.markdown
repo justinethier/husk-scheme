@@ -1,22 +1,46 @@
+
+When implementing husk one of the most difficult concepts to wrap my head around was continuations. After a fair amount of research, trial, error, and  hacking I was finally able to put together a working implementation in husk while doing quite a bit of learning along the way. This article takes that learning process - and the code that came out of it - to introduce the basics of continuations and explains in depth how they are implemented in husk.
+
 ## Introduction
-When implementing husk, one of the most difficult concepts to wrap my head around was continuations. For a first-timer, the [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following overview of continuations:
+As Scheme eschews minimalism, the language does not provide many common control constructs such as return, continue, try/catch, or even goto. Instead Scheme provides the more powerful concept of continuations, which may be used to build any specific type of control construct. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following background:
 
->A common use of call-with-current-continuation is for structured, non-local exits from loops or procedure bodies, but in fact call-with-current-continuation is extremely useful for implementing a wide variety of advanced control structures.
->
 >Whenever a Scheme expression is evaluated there is a continuation wanting the result of the expression. The continuation represents an entire (default) future for the computation. If the expression is evaluated at top level, for example, then the continuation might take the result, print it on the screen, prompt for the next input, evaluate it, and so on forever. Most of the time the continuation includes actions specified by user code, as in a continuation that will take the result, multiply it by the value stored in a local variable, add seven, and give the answer to the top level continuation to be printed. Normally these ubiquitous continuations are hidden behind the scenes and programmers do not think much about them. On rare occasions, however, a programmer may need to deal with continuations explicitly. Call-with-current-continuation allows Scheme programmers to do that by creating a procedure that acts just like the current continuation.
->
->Most programming languages incorporate one or more special-purpose escape constructs with names like exit, return, or even goto. In 1965, however, Peter Landin [16] invented a general purpose escape operator called the J-operator. John Reynolds [24] described a simpler but equally powerful construct in 1972. The catch special form described by Sussman and Steele in the 1975 report on Scheme is exactly the same as Reynolds's construct, though its name came from a less general construct in MacLisp. Several Scheme implementors noticed that the full power of the catch construct could be provided by a procedure instead of by a special syntactic construct, and the name call-with-current-continuation was coined in 1982. This name is descriptive, but opinions differ on the merits of such a long name, and some people use the name call/cc instead.
 
-For me it is much easier to understand continuations now after having implemented support for them in husk. In fact, one of the best ways to really understand why continuations are such a general purpose concept is to look at them not only from the perspective of the application programmer, but rather from the perspective of how they are implemented in the Scheme runtime itself.
+Which is all well and good, but just how do you use these things? Fortunately they also provided some example code - for instance, here is how you can implement return in Scheme:
 
-The [Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) page provides several possible approaches for implementing continuations. Looking back, it is obvious to use CPS to implement them in husk, as Haskell supports higher order functions.
+    (call-with-current-continuation
+      (lambda (return)
+        (for-each (lambda (x)
+                (if (negative? x)
+                    (return x)))
+              '(54 0 37 -3 245 19))
+    #t))                                ===>  -3
 
-## Examples
+Let's break this down. As the spec describes, call-with-current-continuation (or call/cc for short) expects a single function as its only argument. When Scheme executes call/cc, it takes the current continuation and passes it to this function as an argument. At any time, this continuation can be called into just like a function - at which point Scheme will abandon whatever continuation is in effect and will resume execution using the previous continuation.
 
-- return example
-- arg example from here: http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
+So in the code above, `return` is a continuation object. As the code loops over the list of numbers, it finds a negative number and calls into the `return` continuation. So execution jumps back to where (call-with-current-continuation) left off, and the function is done.
+
+
+
+
+
+TODO - arg example from here: http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
+
+(define handle #f)
+(+ 2 (call/cc (lambda (k) (set! handle k) 2)))
+ -> 4
+(handle 6)
+ -> 8
+(handle 20)
+ -> 22
+
+
 
 ## Continuation Passing Style
+The [Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) page provides several possible approaches for implementing continuations. Looking back, it is obvious to use continuation passing style (CPS) to implement them in husk, as Haskell supports higher order functions.
+
+(javascript example of using CPS for jQuery callback)
+
  - Need to rethink below and come up with a clear, top-level design approach. Some starting points
  - for this are:
 
@@ -215,7 +239,8 @@ trampoline env val = do
  -    of body. 
  -  * To continue above point, where is eval'd value returned to? May want to refer to R5RS section that describes call/cc:
 
-
+## Conclusion
+For me it is much easier to understand continuations now after having implemented support for them in husk. In fact, one of the best ways to really understand why continuations are such a general purpose concept is to look at them not only from the perspective of the application programmer, but rather from the perspective of how they are implemented in the Scheme runtime itself.
 
 ## References
 
