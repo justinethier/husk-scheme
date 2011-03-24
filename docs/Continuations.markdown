@@ -1,11 +1,11 @@
 When implementing husk one of the most difficult concepts to wrap my head around was continuations. After a fair amount of research, trial, error, and  hacking I was finally able to put together a working implementation in husk while doing quite a bit of learning along the way. This article takes that learning process - and the code that came out of it - to introduce the basics of continuations and explains in depth how they are implemented in husk.
 
 ## Introduction
-Scheme is a minimalistic language and does not provide many common control constructs such as return, try/catch, or even goto. Instead Scheme provides the more powerful concept of continuations, which may be used to build any specific type of control construct. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following background information:
+Scheme is a minimalistic language and does not provide many common control constructs such as return, try/catch, or even goto. Instead Scheme provides continuations - a more powerful, general-purpose construct which may be used to build any number of specific control structures. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following background information:
 
 >Whenever a Scheme expression is evaluated there is a continuation wanting the result of the expression. The continuation represents an entire (default) future for the computation. If the expression is evaluated at top level, for example, then the continuation might take the result, print it on the screen, prompt for the next input, evaluate it, and so on forever. Most of the time the continuation includes actions specified by user code, as in a continuation that will take the result, multiply it by the value stored in a local variable, add seven, and give the answer to the top level continuation to be printed. Normally these ubiquitous continuations are hidden behind the scenes and programmers do not think much about them. On rare occasions, however, a programmer may need to deal with continuations explicitly. Call-with-current-continuation allows Scheme programmers to do that by creating a procedure that acts just like the current continuation.
 
-Which is all well and good, but just how do you use these things? Fortunately they also provided some example code - for instance, here is how you can implement return in Scheme:
+Which is all well and good, but just how do you use these things? Fortunately R<sup>5</sup>RS also provides some example code - for instance, here is how you might implement `return` in Scheme:
 
     (call-with-current-continuation
       (lambda (return)
@@ -13,15 +13,14 @@ Which is all well and good, but just how do you use these things? Fortunately th
                 (if (negative? x)
                     (return x)))
               '(54 0 37 -3 245 19))
-    #t))                                ===>  -3
+        #t))
+        -> -3
 
 Let's break this down. As the spec describes, call-with-current-continuation (or call/cc for short) expects a single function as its only argument. When Scheme executes call-with-current-continuation above, it takes the current continuation and passes it to this function as the `return` argument. At any time, this continuation can be called into just like a function - at which point Scheme will abandon whatever continuation is in effect and will resume execution using the previous continuation.
 
 So as the code above loops over the list of numbers, it finds a negative number and calls into the `return` continuation. So execution immediately jumps back to where (call-with-current-continuation) left off.
 
-
-
-
+In Scheme, continuations are first-class objects (can be assigned to vars)
 TODO - arg example from here: http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
 
 (define handle #f)
