@@ -59,41 +59,39 @@ Here we use the `makeCPS` helper function to pack up `cps` as a continuation tha
 
 >If your program evaluator/interpreter is implemented using ContinuationPassingStyle you get call-with-current-continuation for free. CALL/CC is then a very natural operation since every function is called with the current continuation anyway.
 
+
+Note: is this quote from  -  http://c2.com/cgi/wiki?CallWithCurrentContinuation (the link to this book may be helpful as well: http://c2.com/cgi/wiki?EssentialsOfProgrammingLanguages - apparently if the interpreter is written using CPS, then call/cc is free)???
+
+
 So CPS is a very natural way to implement continuations, if you are fortunate enough to be using a language that can take advantage of this pattern.
 
-While researching CPS, one thing that really threw me for a loop was the quote [http://c2.com/cgi/wiki?ContinuationPassingStyle]("CPS is a programming style where no function is ever allowed to return"). Of course this is not quite right, eventually eval has to return *something*, right? Well, yes, but since Haskell is a functional language we can call through as many CPS functions as necessary. But eventually `eval` will evaluate to a value and return to its caller.
+In order to make CPS work, a new `cont` parameter had to be added to `eval`, and threaded through each call. This was a big change as there are so many calls to `eval` with the core husk code. The change itself is straightforward to the point of almost being mechanical.
 
- - Need to rethink below and come up with a clear, top-level design approach. Some starting points
- - for this are:
- -
- - ALSO, consider the following quote: 
- -  
- - So, this would mean that when evaluating a simple integer, string, etc eval should call into
- - the continuation instead of just returning.
- - Need to think about how this will be handled, how functions will be called using CPS, and what
- - the continuation data type needs to contain.
-
- -  http://c2.com/cgi/wiki?CallWithCurrentContinuation (the link to this book may be helpful as well: http://c2.com/cgi/wiki?EssentialsOfProgrammingLanguages - apparently if the interpreter is written using CPS, then call/cc is free)
-
+While researching CPS, one thing that really threw me for a loop was the quote ["CPS is a programming style where no function is ever allowed to return"](http://c2.com/cgi/wiki?ContinuationPassingStyle]). Of course this is not quite right, eventually eval has to return *something*, right? Well, yes, but since Haskell support proper tail recursion we can call through as many CPS functions as necessary. But eventually `eval` will evaluate to a value and return to its caller.
 
 
 ## Implementation
+Overview of how continuations are implemented in husk.
+
+
+Notes:
 what are they, what do they do
 - overview of code:
  - 2 approaches
  - code for each
  - actual continuation code
 
-Data type:
 
-	| Continuation {  closure :: Env    -- Environment of the continuation
+###Data type
+This data type is somewhat complicated because husk uses CPS to implement continuations, but to evaluate a Scheme function husk passes the function body to the continuation. The function body is then executed one line at a time. In a way we are still using CPS, but by passing around Scheme code instead of Haskell higher-order functions. Anyway, here is the definition:
+
+	Continuation {  closure :: Env    -- Environment of the continuation
                         , body :: [LispVal] -- Code in the body of the continuation
                         , continuation :: LispVal    -- Code to resume after body of cont
                         , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to a higher-order function 
                         , continuationFunction :: (Maybe (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal))
-                        -- FUTURE: stack (for dynamic wind)
 
-Helper functions:
+###Helper functions
 
     -- Make an "empty" continuation that does not contain any code
     makeNullContinuation :: Env -> LispVal
@@ -107,7 +105,8 @@ Helper functions:
     makeCPSWArgs :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) -> [LispVal] -> LispVal
     makeCPSWArgs env cont cps args = Continuation env [] cont (Just args) (Just cps)
     
-Eval helper function:
+###Eval helper function
+(The continueEval function is used to pick up execution of the continuation after eval has finished)
 
     {- continueEval is a support function for eval, below.
      -
@@ -143,7 +142,9 @@ Eval helper function:
             (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing) (lv)
     continueEval _ _ _ = throwError $ Default "Internal error in continueEval"
     
-Implementation within apply:
+###Apply
+Apply is used to execute a Scheme function; it needs to know both how to call a function as well as how to execute a continuation.
+
     -- Call into a Scheme function
     apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
     apply _ c@(Continuation env _ _ _ _) args = do
@@ -193,7 +194,9 @@ Implementation within apply:
               Nothing -> return env
     apply _ func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List (func : args)
     
-Implementation of call/cc:
+###call/cc
+Here is the implementation of call/cc. Since husk uses CPS, the code is actually quite simple:
+
     eval env cont (List (Atom "call-with-current-continuation" : args)) = 
       eval env cont (List (Atom "call/cc" : args))
     eval _ _ (List [Atom "call/cc"]) = throwError $ Default "Procedure not specified"
@@ -214,17 +217,13 @@ Implementation of call/cc:
             other -> throwError $ TypeMismatch "procedure" other
     
 
-
-
-    
-
-
-
-
 ## Lessons Learned
- - trampolines (not necessary due to haskell)
+Initially I thought that we might have to use a lower-level construct to implement continuations. One such construct is a trampoline, which is used by many C implementations.
 
-{- Did not need this function, since we are using Haskell
+TODO: link to what trampolines are, C example, etc...
+
+{- Possible implementation in haskell (not sure how complete it is??) 
+  Did not need this function, since we are using Haskell
 trampoline :: Env -> LispVal -> IOThrowsError LispVal
 trampoline env val = do
   result <- eval env val
