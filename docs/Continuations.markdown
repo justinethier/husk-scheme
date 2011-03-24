@@ -5,7 +5,7 @@ Scheme is a minimalistic language and does not provide many common control const
 
 >Whenever a Scheme expression is evaluated there is a continuation wanting the result of the expression. The continuation represents an entire (default) future for the computation. If the expression is evaluated at top level, for example, then the continuation might take the result, print it on the screen, prompt for the next input, evaluate it, and so on forever. Most of the time the continuation includes actions specified by user code, as in a continuation that will take the result, multiply it by the value stored in a local variable, add seven, and give the answer to the top level continuation to be printed. Normally these ubiquitous continuations are hidden behind the scenes and programmers do not think much about them. On rare occasions, however, a programmer may need to deal with continuations explicitly. Call-with-current-continuation allows Scheme programmers to do that by creating a procedure that acts just like the current continuation.
 
-Which is all well and good, but just how do you use these things? Fortunately R<sup>5</sup>RS also provides some example code - for instance, here is how you might implement `return` in Scheme:
+Which is all well and good, but just how do you use these things? Fortunately R<sup>5</sup>RS also provides more details and some example code. To see how this works, we can walk through an implementation of `return` using Scheme:
 
     (call-with-current-continuation
       (lambda (return)
@@ -16,9 +16,9 @@ Which is all well and good, but just how do you use these things? Fortunately R<
         #t))
         -> -3
 
-Let's break this down. As the spec describes, call-with-current-continuation (or call/cc for short) expects a single function as its only argument. When Scheme executes call-with-current-continuation above, it takes the current continuation and passes it to this function as the `return` argument. At any time, this continuation can be called into just like a function - at which point Scheme will abandon whatever continuation is in effect and will resume execution using the previous continuation.
+Let's break this down. As the spec describes, call-with-current-continuation (or call/cc for short) expects a single function as its only argument. When Scheme executes call-with-current-continuation above, it takes the current continuation and passes it to this function as the `return` argument. At any time, this continuation can be called just like a function - at which point Scheme will abandon whatever continuation is in effect and will resume execution at the previous continuation.
 
-So as the code above loops over the list of numbers, it finds a negative number and calls into the `return` continuation. So execution immediately jumps back to where (call-with-current-continuation) left off.
+So as the code above loops over the list of numbers, it finds a negative number and calls into the `return` continuation. Execution immediately jumps back to where `call-with-current-continuation` left off, and the whole construct evaluates to `-3`.
 
 Scheme continuations are first-class objects, which means they ca be assigned to variables, passed to functions, etc just like any other data type. To give you an idea how this might be useful, here is a quick example from [Phillip Wright - Tech](http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/): 
 
