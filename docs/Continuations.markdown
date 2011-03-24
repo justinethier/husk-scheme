@@ -16,11 +16,11 @@ Which is all well and good, but just how do you use these things? Fortunately R<
         #t))
         -> -3
 
-Let's break this down. As the spec describes, call-with-current-continuation (or call/cc for short) expects a single function as its only argument. When Scheme executes call-with-current-continuation above, it takes the current continuation and passes it to this function as the `return` argument. At any time, this continuation can be called just like a function - at which point Scheme will abandon whatever continuation is in effect and will resume execution at the previous continuation.
+Let's break this down. As the spec describes, call-with-current-continuation (or call/cc for short) expects a single function as its only argument. When Scheme executes call-with-current-continuation above, it packs up the current continuation and passes it in as the `return` argument. At any time, this continuation can be called just like a function - at which point Scheme will abandon whatever continuation is in effect and will resume execution at this previous continuation.
 
 So as the code above loops over the list of numbers, it finds a negative number and calls into the `return` continuation. Execution immediately jumps back to where `call-with-current-continuation` left off, and the whole construct evaluates to `-3`.
 
-Scheme continuations are first-class objects, which means they ca be assigned to variables, passed to functions, etc just like any other data type. To give you an idea how this might be useful, here is a quick example from [Phillip Wright - Tech](http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/): 
+Scheme continuations are first-class objects, which means they can be assigned to variables, passed to functions, etc just like any other data type. To give you an idea how this might be useful, here is a quick example from [Phillip Wright - Tech](http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/): 
 
 	(define handle #f)
 	(+ 2 (call/cc (lambda (k) (set! handle k) 2)))
@@ -30,7 +30,7 @@ Scheme continuations are first-class objects, which means they ca be assigned to
 	(handle 20)
 	 -> 22
 
-Simple enough - handle is assigned to the continuation that occurs immediately before evaluating `+`. We can then use that object to revisit this computation at any time. The article itself is short and I recommend reading through the article for a more detailed explanation.
+This is simple enough: `handle` is assigned to the continuation that occurs immediately before evaluating `+`. By storing the continuation up in a variable, we can use it later on in the program to revisit this computation. This also demonstrates an important point - a continuation may be captured at any point in the code, even in the middle of evaluating part of a larger expression. The linked article is short and I recommend reading through for a more detailed explanation.
 
 ## Continuation Passing Style
 The [Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) page provides several possible approaches for implementing continuations. Looking back, it seems obvious to use continuation passing style (CPS) to implement continuations in husk, as Haskell supports higher order functions.
