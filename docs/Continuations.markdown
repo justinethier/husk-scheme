@@ -20,33 +20,33 @@ Let's break this down. As the spec describes, call-with-current-continuation (or
 
 So as the code above loops over the list of numbers, it finds a negative number and calls into the `return` continuation. So execution immediately jumps back to where (call-with-current-continuation) left off.
 
-In Scheme, continuations are first-class objects (can be assigned to vars)
-TODO - arg example from here: http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
+Scheme continuations are first-class objects, which means they ca be assigned to variables, passed to functions, etc just like any other data type. To give you an idea how this might be useful, here is a quick example from [Phillip Wright - Tech](http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/): 
 
-(define handle #f)
-(+ 2 (call/cc (lambda (k) (set! handle k) 2)))
- -> 4
-(handle 6)
- -> 8
-(handle 20)
- -> 22
+	(define handle #f)
+	(+ 2 (call/cc (lambda (k) (set! handle k) 2)))
+	 -> 4
+	(handle 6)
+	 -> 8
+	(handle 20)
+	 -> 22
 
-
+Simple enough - handle is assigned to the continuation that occurs immediately before evaluating `+`. We can then use that object to revisit this computation at any time. The article itself is short and I recommend reading through the article for a more detailed explanation.
 
 ## Continuation Passing Style
-The [Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) page provides several possible approaches for implementing continuations. Looking back, it seems obvious to use continuation passing style (CPS) to implement them in husk, as Haskell supports higher order functions.
+The [Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) page provides several possible approaches for implementing continuations. Looking back, it seems obvious to use continuation passing style (CPS) to implement continuations in husk, as Haskell supports higher order functions.
 
-In CPS , a function is 
-( example of using CPS for jQuery callback)
+In CPS, a function (b) is passed as a parameter to another function (a), with the intent that when (a) is finished it will pass control to (b). So (b) in essence becomes a default future computation of (a). This is used extensively in modern programming - for instance, the node.js JavaScript framework allows one to pass a callback to an asynchronous function. The callback is then executed once the asynchronous operation completes.
 
-Original code in direct (non-CPS) style:
+Here is an example of husk code written in its original direct style:
+
     eval env (List [Atom "if", pred, conseq, alt]) =
         do result <- eval env pred
            case result of
              Bool False -> eval env alt
              otherwise -> eval env conseq
 
-Sample code using CPS in the evaluator:
+And the same code written in CPS:
+
     eval env cont (List [Atom "if", predic, conseq, alt]) = do
       eval env (makeCPS env cont cps) (predic)
       where   cps :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -55,22 +55,26 @@ Sample code using CPS in the evaluator:
                   Bool False -> eval e c alt
                   _ -> eval e c conseq
 
+Here we use the `makeCPS` helper function to pack up `cps` as a continuation that is passed into `eval`. The evaluator can then call back into `cps` when it is ready - but now `cps` is also available to be packaged up as a continuation!
+
+>If your program evaluator/interpreter is implemented using ContinuationPassingStyle you get call-with-current-continuation for free. CALL/CC is then a very natural operation since every function is called with the current continuation anyway.
+
+So CPS is a very natural way to implement continuations, if you are fortunate enough to be using a language that can take advantage of this pattern.
+
+While researching CPS, one thing that really threw me for a loop was the quote [http://c2.com/cgi/wiki?ContinuationPassingStyle]("CPS is a programming style where no function is ever allowed to return"). Of course this is not quite right, eventually eval has to return *something*, right? Well, yes, but since Haskell is a functional language we can call through as many CPS functions as necessary. But eventually `eval` will evaluate to a value and return to its caller.
 
  - Need to rethink below and come up with a clear, top-level design approach. Some starting points
  - for this are:
-
  -
  - ALSO, consider the following quote: 
- -  [http://c2.com/cgi/wiki?ContinuationPassingStyle]("CPS is a programming style where no function is ever allowed to return.") - of course this is not quite right, eventually eval has to return *something*
+ -  
  - So, this would mean that when evaluating a simple integer, string, etc eval should call into
  - the continuation instead of just returning.
  - Need to think about how this will be handled, how functions will be called using CPS, and what
  - the continuation data type needs to contain.
 
-
-
  -  http://c2.com/cgi/wiki?CallWithCurrentContinuation (the link to this book may be helpful as well: http://c2.com/cgi/wiki?EssentialsOfProgrammingLanguages - apparently if the interpreter is written using CPS, then call/cc is free)
-"If your program evaluator/interpreter is implemented using ContinuationPassingStyle you get call-with-current-continuation for free. CALL/CC is then a very natural operation since every function is called with the current continuation anyway. "
+
 
 
 ## Implementation
