@@ -93,8 +93,9 @@ As we explained, a Scheme function husk passes the function body to the continua
 
 The code is commented, but to help cover the rest of the code, each member warrants a more in-depth explanation:
 
+TODO: see about rewriting data member to use Either (Scheme | Haskell)
 scheme code:
-- closure
+- closure (used in both CPS paths?)
 - body
 - continuation - the next continuation to execute after this
 
