@@ -48,7 +48,7 @@ Here is an example of husk code written in its original direct style:
 
 We have already seen that a continuation may be captured at any point of an expression. But in the above code, `eval` is called twice - once when computing `result` and again after result is inspected. But what would happen if that first `eval` contained a continuation? Eventually, once the continuation was finished, the code would return and control would incorrectly pass to one of the second `eval`'s. Ooops! 
 
-But we already know how to avoid this problem. Observe the same code written in CPS:
+Observe the same code written in CPS:
 
     eval env cont (List [Atom "if", predic, conseq, alt]) = do
       eval env (makeCPS env cont cps) (predic)
@@ -58,21 +58,24 @@ But we already know how to avoid this problem. Observe the same code written in 
                   Bool False -> eval e c alt
                   _ -> eval e c conseq
 
-Here we use the `makeCPS` helper function to pack up `cps` as a continuation object that is passed into `eval`. The evaluator can then call back into `cps` when it is ready - but now the interpreter also has the freedom to call into another continuation instead!
+Here we use the `makeCPS` helper function to pack up `cps` as a continuation object that is passed into `eval`. The evaluator can then call back into `cps` when it is ready. But since the "next step" is being passing in as a function, the interpreter also has the freedom to instead call into another continuation!
+
+The [Call With Current Continuation wiki at c2.com](http://c2.com/cgi/wiki?CallWithCurrentContinuation) offers a keen observation:
 
 >If your program evaluator/interpreter is implemented using ContinuationPassingStyle you get call-with-current-continuation for free. CALL/CC is then a very natural operation since every function is called with the current continuation anyway.
 
+CPS is a very natural way to implement continuations, if you are fortunate enough to be using a language that can take advantage of this pattern. 
+Looking back, it seems obvious to use CPS to implement continuations in husk, as Haskell supports higher order functions (that is, a function can be assigned to a variable just like any other data type).
 
-Note: is this quote from  -  http://c2.com/cgi/wiki?CallWithCurrentContinuation (the link to this book may be helpful as well: http://c2.com/cgi/wiki?EssentialsOfProgrammingLanguages - apparently if the interpreter is written using CPS, then call/cc is free)???
+In order to make CPS work, a new `cont` parameter had to be added to `eval`, and threaded through each call. This was a time consuming change as there are so many calls to `eval` with the core husk code. But each change was straightforward - many to the point of almost being mechanical.
 
+While researching CPS, one thing that really threw me for a loop was the [quote](http://c2.com/cgi/wiki?ContinuationPassingStyle]):
 
-So CPS is a very natural way to implement continuations, if you are fortunate enough to be using a language that can take advantage of this pattern. 
-Looking back, it seems obvious to use CPS to implement continuations in husk, as Haskell supports higher order functions.
+>CPS is a programming style where no function is ever allowed to return
 
-In order to make CPS work, a new `cont` parameter had to be added to `eval`, and threaded through each call. This was a big change as there are so many calls to `eval` with the core husk code. The change itself is straightforward to the point of almost being mechanical.
+But eventually `eval` has to return *something*, right? Well, yes, but since Haskell supports proper tail recursion we can call through as many CPS functions as necessary without fear of overflowing the stack. In husk, eventually `eval` will evaluate to a single value that is returned to its caller. But another program written in CPS might keep calling into functions forever. 
 
-While researching CPS, one thing that really threw me for a loop was the quote ["CPS is a programming style where no function is ever allowed to return"](http://c2.com/cgi/wiki?ContinuationPassingStyle]). Of course this is not quite right, eventually eval has to return *something*, right? Well, yes, but since Haskell support proper tail recursion we can call through as many CPS functions as necessary. But eventually `eval` will evaluate to a value and return to its caller.
-
+Languages that do not support proper tail recursion - such as JavaScript - can support CPS style, but eventually a value must be returned since the stack will keep growing larger with each call into a new function.
 
 ## Implementation
 Overview of how continuations are implemented in husk.
