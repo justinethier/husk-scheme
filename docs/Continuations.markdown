@@ -30,16 +30,13 @@ Scheme continuations are first-class objects, which means they can be assigned t
 	(handle 20)
 	 -> 22
 
-By storing the continuation up in a variable, we can use it later on in the program. In this case, it is used several times to add `2` to arbitrary expressions. This example also demonstrates an important point. To return to a previous point:
-
-> Whenever a Scheme expression is evaluated there is a continuation wanting the result of the expression
-
- - a continuation may be captured at any point in the code, even in the middle of evaluating part of a larger expression. The linked article is short and I recommend reading through for a more detailed explanation.
+This example illustrates many important points. By storing the continuation up in a variable we can use it later on in the program. In this case, it is used several times to add `2` to arbitrary expressions. A proper Scheme implementation allows a continuation to be invoked multiple times. We also see that 
+a continuation may be captured at any point in the code, even while evaluating part of a larger expression. The linked article is brief and I recommend reading through for a more detailed explanation.
 
 ## Continuation Passing Style
-The [Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) page provides several possible approaches for implementing continuations. Looking back, it seems obvious to use continuation passing style (CPS) to implement continuations in husk, as Haskell supports higher order functions.
+The [Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) page provides several possible approaches for implementing continuations. One such approach is to write the Scheme 'runtime' using continuation passing style (CPS).
 
-In CPS, a function (b) is passed as a parameter to another function (a), with the intent that when (a) is finished it will pass control to (b). So (b) in essence becomes a default future computation of (a). This is used extensively in modern programming - for instance, the node.js JavaScript framework allows one to pass a callback to an asynchronous function. The callback is then executed once the asynchronous operation completes.
+In CPS, a function (b) is passed as a parameter to another function (a), with the intent that when (a) is finished it will pass control to (b). So (b) in essence becomes a future computation of (a). This is used extensively in modern programming - for instance, the node.js JavaScript framework allows one to pass a callback to an asynchronous function that is later executed once the asynchronous operation completes.
 
 Here is an example of husk code written in its original direct style:
 
@@ -49,7 +46,9 @@ Here is an example of husk code written in its original direct style:
              Bool False -> eval env alt
              otherwise -> eval env conseq
 
-And the same code written in CPS:
+We have already seen that a continuation may be captured at any point of an expression. But in the above code, `eval` is called twice - once when computing `result` and again after result is inspected. But what would happen if that first `eval` contained a continuation? Eventually, once the continuation was finished, the code would return and control would incorrectly pass to one of the second `eval`'s. Ooops! 
+
+But we already know how to avoid this problem. Observe the same code written in CPS:
 
     eval env cont (List [Atom "if", predic, conseq, alt]) = do
       eval env (makeCPS env cont cps) (predic)
@@ -59,7 +58,7 @@ And the same code written in CPS:
                   Bool False -> eval e c alt
                   _ -> eval e c conseq
 
-Here we use the `makeCPS` helper function to pack up `cps` as a continuation that is passed into `eval`. The evaluator can then call back into `cps` when it is ready - but now `cps` is also available to be packaged up as a continuation!
+Here we use the `makeCPS` helper function to pack up `cps` as a continuation object that is passed into `eval`. The evaluator can then call back into `cps` when it is ready - but now the interpreter also has the freedom to call into another continuation instead!
 
 >If your program evaluator/interpreter is implemented using ContinuationPassingStyle you get call-with-current-continuation for free. CALL/CC is then a very natural operation since every function is called with the current continuation anyway.
 
@@ -67,7 +66,8 @@ Here we use the `makeCPS` helper function to pack up `cps` as a continuation tha
 Note: is this quote from  -  http://c2.com/cgi/wiki?CallWithCurrentContinuation (the link to this book may be helpful as well: http://c2.com/cgi/wiki?EssentialsOfProgrammingLanguages - apparently if the interpreter is written using CPS, then call/cc is free)???
 
 
-So CPS is a very natural way to implement continuations, if you are fortunate enough to be using a language that can take advantage of this pattern.
+So CPS is a very natural way to implement continuations, if you are fortunate enough to be using a language that can take advantage of this pattern. 
+Looking back, it seems obvious to use CPS to implement continuations in husk, as Haskell supports higher order functions.
 
 In order to make CPS work, a new `cont` parameter had to be added to `eval`, and threaded through each call. This was a big change as there are so many calls to `eval` with the core husk code. The change itself is straightforward to the point of almost being mechanical.
 
