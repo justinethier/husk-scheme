@@ -67,8 +67,6 @@ The [Call With Current Continuation wiki at c2.com](http://c2.com/cgi/wiki?CallW
 CPS is a very natural way to implement continuations, if you are fortunate enough to be using a language that can take advantage of this pattern. 
 Looking back, it seems obvious to use CPS to implement continuations in husk, as Haskell supports higher order functions (that is, a function can be assigned to a variable just like any other data type).
 
-In order to make CPS work, a new `cont` parameter had to be added to `eval`, and threaded through each call. This was a time consuming change as there are so many calls to `eval` with the core husk code. But each change was straightforward - many to the point of almost being mechanical.
-
 While researching CPS, one thing that really threw me for a loop was the [quote](http://c2.com/cgi/wiki?ContinuationPassingStyle]):
 
 >CPS is a programming style where no function is ever allowed to return
@@ -78,19 +76,14 @@ But eventually `eval` has to return *something*, right? Well, yes, but since Has
 Languages that do not support proper tail recursion - such as JavaScript - can support CPS style, but eventually a value must be returned since the stack will keep growing larger with each call into a new function.
 
 ## Implementation
-Overview of how continuations are implemented in husk.
+In order to transform the husk evaluator into CPS, a new `cont` parameter had to be added to `eval`, and threaded through each call. This was a time consuming change as there are so many calls to `eval` with the core husk code. But each change was straightforward - many to the point of being mechanical. However, one of the reasons that it took me so long to realize CPS was the right choice was that I was looking at the problem from a different perspective. Although CPS works great for Haskell code, what about all of those Scheme functions that need to be evaluated? Surely they will not be transformed into Haskell functions - so how to handle them?
 
+The original husk implementation for continuations passed around a list of Scheme code to be executed as the body of the function. Each time a line of code is executed, the body is reduced by one line and the evaluator calls into the next one. This works great for supporting a certain class of continuations such as `return`. Anyway, the use of higher-level Haskell functions was incorporated into that code. This complicates the implementation somewhat, although in a sense both approaches are using CPS - in the Scheme case, we are simply passing around a scheme function. In fact, you could think of each line of the function as being its own CPS function.
 
-Notes:
-what are they, what do they do
-- overview of code:
- - 2 approaches
- - code for each
- - actual continuation code
-
+Anyway, talk is cheap. Let's walk through each part of the implementation to get an understanding of how it all works.
 
 ###Data type
-This data type is somewhat complicated because husk uses CPS to implement continuations, but to evaluate a Scheme function husk passes the function body to the continuation. The function body is then executed one line at a time. In a way we are still using CPS, but by passing around Scheme code instead of Haskell higher-order functions. Anyway, here is the definition:
+As we explained, a Scheme function husk passes the function body to the continuation. The function body is then executed one line at a time. In a way we are still using CPS, but by passing around Scheme code instead of Haskell higher-order functions. Anyway, here is the definition:
 
 	Continuation {  closure :: Env    -- Environment of the continuation
                         , body :: [LispVal] -- Code in the body of the continuation
