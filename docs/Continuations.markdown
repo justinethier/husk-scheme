@@ -91,6 +91,18 @@ As we explained, a Scheme function husk passes the function body to the continua
                         , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to a higher-order function 
                         , continuationFunction :: (Maybe (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal))
 
+The code is commented, but to help cover the rest of the code, each member warrants a more in-depth explanation:
+
+scheme code:
+- closure
+- body
+- continuation - the next continuation to execute after this
+
+haskell code:
+
+- args
+- func
+
 ###Helper functions
 
     -- Make an "empty" continuation that does not contain any code
