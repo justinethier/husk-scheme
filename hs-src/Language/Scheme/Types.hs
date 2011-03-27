@@ -133,9 +133,9 @@ data LispVal = Atom String
          -- ^
 	| Port Handle
          -- ^I/O port
-	| Continuation {  closure :: Env                 -- Environment of the continuation
-                        , currentCont :: (Maybe Code)    -- Code of current continuation
-                        , nextCont    :: (Maybe LispVal) -- Code to resume after body of cont
+	| Continuation {  closure :: Env                     -- Environment of the continuation
+                        , currentCont :: (Maybe DeferredCode)-- Code of current continuation
+                        , nextCont    :: (Maybe LispVal)     -- Code to resume after body of cont
                         -- FUTURE: stack (for dynamic wind)
                        }
          -- ^Continuation
@@ -143,12 +143,13 @@ data LispVal = Atom String
  	| Nil String
          -- ^Internal use only; do not use this type directly.
 
-data Code = 
-    SchemeBody [LispVal] | -- Code in the body of the continuation
+-- |Container to hold code that is passed to a continuation for deferred execution 
+data DeferredCode = 
+    SchemeBody [LispVal] | -- ^A block of Scheme code
     HaskellBody {  
        contFunction :: (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal)
-     , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to a higher-order function 
-    }
+     , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to the higher-order function 
+    } -- ^A Haskell function
 
 -- Make an "empty" continuation that does not contain any code
 makeNullContinuation :: Env -> LispVal
