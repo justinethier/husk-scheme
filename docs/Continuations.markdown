@@ -85,11 +85,21 @@ Anyway, talk is cheap. Let's walk through each part of the implementation to get
 ###Data type
 As we explained, a Scheme function husk passes the function body to the continuation. The function body is then executed one line at a time. In a way we are still using CPS, but by passing around Scheme code instead of Haskell higher-order functions. Anyway, here is the definition:
 
-	Continuation {  closure :: Env    -- Environment of the continuation
-                        , body :: [LispVal] -- Code in the body of the continuation
-                        , continuation :: LispVal    -- Code to resume after body of cont
-                        , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to a higher-order function 
-                        , continuationFunction :: (Maybe (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal))
+    Continuation {  closure :: Env                     -- Environment of the continuation
+                  , currentCont :: (Maybe DeferredCode)-- Code of current continuation
+                  , nextCont    :: (Maybe LispVal)     -- Code to resume after body of cont
+                 }
+
+    -- |Container to hold code that is passed to a continuation for deferred execution 
+    data DeferredCode =
+        SchemeBody [LispVal] | -- ^A block of Scheme code
+        HaskellBody {
+           contFunction :: (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal)
+         , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to the higher-order function 
+        } -- ^A Haskell function
+
+
+
 
 The code is commented, but to help cover the rest of the code, each member warrants a more in-depth explanation:
 
