@@ -133,11 +133,9 @@ data LispVal = Atom String
          -- ^
 	| Port Handle
          -- ^I/O port
-	| Continuation {  closure :: Env    -- Environment of the continuation
-                        , body :: [LispVal] -- Code in the body of the continuation
-                        , continuation :: LispVal    -- Code to resume after body of cont
-                        , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to a higher-order function 
-                        , continuationFunction :: (Maybe (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal))
+	| Continuation {  closure :: Env                 -- Environment of the continuation
+                        , currentCont :: (Maybe Code)    -- Code of current continuation
+                        , nextCont    :: (Maybe LispVal) -- Code to resume after body of cont
                         -- FUTURE: stack (for dynamic wind)
                        }
          -- ^Continuation
@@ -145,17 +143,24 @@ data LispVal = Atom String
  	| Nil String
          -- ^Internal use only; do not use this type directly.
 
+data Code = 
+    SchemeBody [LispVal] | -- Code in the body of the continuation
+    HaskellBody {  
+       contFunction :: (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal)
+     , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to a higher-order function 
+    }
+
 -- Make an "empty" continuation that does not contain any code
 makeNullContinuation :: Env -> LispVal
-makeNullContinuation env = Continuation env [] (Nil "") Nothing Nothing 
+makeNullContinuation env = Continuation env Nothing Nothing 
 
 -- Make a continuation that takes a higher-order function (written in Haskell)
 makeCPS :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal]-> IOThrowsError LispVal) -> LispVal
-makeCPS env cont cps = Continuation env [] cont Nothing (Just cps)
+makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont)
 
 -- Make a continuation that stores a higher-order function and arguments to that function
 makeCPSWArgs :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) -> [LispVal] -> LispVal
-makeCPSWArgs env cont cps args = Continuation env [] cont (Just args) (Just cps)
+makeCPSWArgs env cont cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont)
 
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b
@@ -230,7 +235,7 @@ showVal (HashTable _) = "<hash-table>"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showVal t ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
-showVal (Continuation {closure = _, body = _}) = "<continuation>"
+showVal (Continuation _ _ _) = "<continuation>"
 showVal (Func {params = args, vararg = varargs, body = _, closure = _}) = 
   "(lambda (" ++ unwords (map show args) ++
     (case varargs of
