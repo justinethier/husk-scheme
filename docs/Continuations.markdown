@@ -80,15 +80,10 @@ In order to transform the husk evaluator into CPS, a new `cont` parameter had to
 
 The original husk implementation for continuations passed around a list of Scheme code to be executed as the body of the function. Each time a line of code is executed, the body is reduced by one line and the evaluator calls into the next one. This works great for supporting a certain class of continuations such as `return`. Anyway, the use of higher-level Haskell functions was incorporated into that code. This complicates the implementation somewhat, although in a sense both approaches are using CPS - in the Scheme case, we are simply passing around a scheme function. In fact, you could think of each line of the function as being its own CPS function.
 
-Anyway, talk is cheap. Let's walk through each part of the implementation to get an understanding of how it all works.
+Enough talk. Let's walk through each part of the implementation to get an understanding of how it all works.
 
-###Data type
-As we explained, a Scheme function husk passes the function body to the continuation. The function body is then executed one line at a time. In a way we are still using CPS, but by passing around Scheme code instead of Haskell higher-order functions. Anyway, here is the definition:
-
-    Continuation {  closure :: Env                     -- Environment of the continuation
-                  , currentCont :: (Maybe DeferredCode)-- Code of current continuation
-                  , nextCont    :: (Maybe LispVal)     -- Code to resume after body of cont
-                 }
+###Data types
+The following container allows us to pass around either Scheme or Haskell code:
 
     -- |Container to hold code that is passed to a continuation for deferred execution 
     data DeferredCode =
@@ -98,23 +93,19 @@ As we explained, a Scheme function husk passes the function body to the continua
          , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to the higher-order function 
         } -- ^A Haskell function
 
+Since continuations are first-class object, We then extend the `LispVal` data type to include a new `Continuation` member:
 
+    Continuation {  closure :: Env                     -- Environment of the continuation
+                  , currentCont :: (Maybe DeferredCode)-- Code of current continuation
+                  , nextCont    :: (Maybe LispVal)     -- Code to resume after body of cont
+                 }
 
-
-The code is commented, but to help cover the rest of the code, each member warrants a more in-depth explanation:
-
-TODO: see about rewriting data member to use Either (Scheme | Haskell)
-scheme code:
-- closure (used in both CPS paths?)
-- body
-- continuation - the next continuation to execute after this
-
-haskell code:
-
-- args
-- func
+This member contains a closure to capture the state of the program. It also includes a continuation 'chain'. The current continuation will be executed immediately; if present, execution will then pass to the next continuation. If there is no more code to execute, the continuation members may be set to `Nothing` to instruct the evaluator to return its current value. 
 
 ###Helper functions
+The following helper functions are provided as a convenience, but they also serve another purpose. By encapsulating how the `Continuation` object is built, they allow us to change the structure of this member with no impact to the evaluator's code.
+
+TODO: replace with current code
 
     -- Make an "empty" continuation that does not contain any code
     makeNullContinuation :: Env -> LispVal
