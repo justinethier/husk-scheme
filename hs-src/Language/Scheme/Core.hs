@@ -71,13 +71,10 @@ evalLisp env lisp = macroEval env lisp >>= (eval env (makeNullContinuation env))
  - return a result.
  - -}
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+
 -- Passing a higher-order function as the continuation; just evaluate it. This is 
 -- done to enable an 'eval' function to be broken up into multiple sub-functions,
 -- so that any of the sub-functions can be passed around as a continuation.
---
--- This perhaps shows cruft as we also pass cBody (scheme code) as a continuation.
--- We could probably just use higher-order functions instead, but both are used for
--- two different things.
 continueEval _ (Continuation cEnv (Just (HaskellBody func funcArgs)) (Just cCont)) val = func cEnv cCont val funcArgs
 
 -- No higher order function, so:
@@ -88,7 +85,6 @@ continueEval _ (Continuation cEnv (Just (HaskellBody func funcArgs)) (Just cCont
 -- continuation (if there is one), or we just return the result. Yes technically with
 -- CPS you are supposed to keep calling into functions and never return, but eventually
 -- when the computation is complete, you have to return something.
---continueEval _ (Continuation cEnv cBody cCont Nothing Nothing) val = do
 continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont)) val = do
     case cBody of
         [] -> do
@@ -97,7 +93,11 @@ continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont)) val = 
             _ -> return (val)
         [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont)) (lv)
         (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont)) (lv)
+
+-- No current continuation, but a next cont is available; call into it
 continueEval _ (Continuation cEnv Nothing (Just cCont)) val = continueEval cEnv cCont val
+
+-- There is no continuation code, just return value
 continueEval _ (Continuation _ Nothing Nothing) val = return val
 continueEval _ _ _ = throwError $ Default "Internal error in continueEval"
 
