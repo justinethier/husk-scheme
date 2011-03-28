@@ -103,78 +103,72 @@ Since continuations are first-class object, We then extend the `LispVal` data ty
 This member contains a closure to capture the state of the program. It also includes a continuation 'chain'. The current continuation will be executed immediately; if present, execution will then pass to the next continuation. If there is no more code to execute, the continuation members may be set to `Nothing` to instruct the evaluator to return its current value. 
 
 ###Helper functions
-The following helper functions are provided as a convenience, but they also serve another purpose. By encapsulating how the `Continuation` object is built, they allow us to change the structure of this member with no impact to the evaluator's code.
-
-TODO: replace with current code
+The following helper functions are provided as a convenience to package up Haskell functions, but they also serve another purpose. By encapsulating how the `Continuation` object is built they allow us to change its type structure with no impact to the evaluator's code - a wonderful aid for refactoring:
 
     -- Make an "empty" continuation that does not contain any code
     makeNullContinuation :: Env -> LispVal
-    makeNullContinuation env = Continuation env [] (Nil "") Nothing Nothing 
+    makeNullContinuation env = Continuation env Nothing Nothing 
     
     -- Make a continuation that takes a higher-order function (written in Haskell)
     makeCPS :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal]-> IOThrowsError LispVal) -> LispVal
-    makeCPS env cont cps = Continuation env [] cont Nothing (Just cps)
+    makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont)
     
     -- Make a continuation that stores a higher-order function and arguments to that function
     makeCPSWArgs :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) -> [LispVal] -> LispVal
-    makeCPSWArgs env cont cps args = Continuation env [] cont (Just args) (Just cps)
+    makeCPSWArgs env cont cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont)
     
 ###Eval helper function
-(The continueEval function is used to pick up execution of the continuation after eval has finished)
+After the evaluation function is finished with an expression, it calls into `continueEval` to pick up execution of the next continuation:
 
-    {- continueEval is a support function for eval, below.
-     -
-     - Transformed eval section into CPS by calling into this instead of returning from eval.
-     - This function uses the cont argument to determine whether to keep going or to finally
-     - return a result.
-     - -}
     continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-    -- Passing a higher-order function as the continuation; just evaluate it. This is 
-    -- done to enable an 'eval' function to be broken up into multiple sub-functions,
-    -- so that any of the sub-functions can be passed around as a continuation.
-    --
-    -- This perhaps shows cruft as we also pass cBody (scheme code) as a continuation.
-    -- We could probably just use higher-order functions instead, but both are used for
-    -- two different things.
-    continueEval _ (Continuation cEnv _ cCont funcArgs (Just func)) val = func cEnv cCont val funcArgs
-    
-    -- No higher order function, so:
-    --
-    -- If there is Scheme code to evaluate in the function body, we continue to evaluate it.
-    --
-    -- Otherwise, if all code in the function has been executed, we 'unwind' to an outer
-    -- continuation (if there is one), or we just return the result. Yes technically with
-    -- CPS you are supposed to keep calling into functions and never return, but eventually
-    -- when the computation is complete, you have to return something.
-    continueEval _ (Continuation cEnv cBody cCont Nothing Nothing) val = do
+
+There are many versions of `continueEval`, depending upon the input pattern. We will briefly discuss each one in turn. The first one below accepts a higher-order Haskell function, which is just call into it directly:
+
+    continueEval _ (Continuation cEnv (Just (HaskellBody func funcArgs)) (Just cCont)) val = func cEnv cCont val funcArgs
+
+We may also receive a list containing Scheme code. In this case the function sees how much code is left. If the Scheme code is all finished the resultant value is returned; otherwise we keep going:
+
+    continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont)) val = do
         case cBody of
             [] -> do
               case cCont of
-                Continuation nEnv _ _ _ _ -> continueEval nEnv cCont val
+                Continuation nEnv _ _ -> continueEval nEnv cCont val
                 _ -> return (val)
-            [lv] -> eval cEnv (Continuation cEnv [] cCont Nothing Nothing) (lv)
-            (lv : lvs) -> eval cEnv (Continuation cEnv lvs cCont Nothing Nothing) (lv)
-    continueEval _ _ _ = throwError $ Default "Internal error in continueEval"
-    
-###Apply
-Apply is used to execute a Scheme function; it needs to know both how to call a function as well as how to execute a continuation.
+            [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont)) (lv)
+            (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont)) (lv)
 
-    -- Call into a Scheme function
+Finally, there are two edge cases where a current continuation may not be present:
+
+    -- No current continuation, but a next continuation is available; call into it
+    continueEval _ (Continuation cEnv Nothing (Just cCont)) val = continueEval cEnv cCont val
+    
+    -- There is no continuation code, just return value
+    continueEval _ (Continuation _ Nothing Nothing) val = return val
+
+###Apply
+Apply is used to execute a Scheme function; it needs to know both how to call a function as well as how to execute a continuation:
+
     apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
-    apply _ c@(Continuation env _ _ _ _) args = do
+
+There are several patterns to consider. Let's start with the first, which handles function application of a continuation. As of now, husk only supports sending a single argument to a continuation, so there is simple validation for the number of arguments. Once that is complete, we simply call into `continueEval`:
+
+    apply _ c@(Continuation env _ _) args = do
       if (toInteger $ length args) /= 1 
         then throwError $ NumArgs 1 args
         else continueEval env c $ head args
-    apply cont (IOFunc func) args = do
-      result <- func args
-      case cont of
-        Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
-        _ -> return result
+
+A primitive function cannot call into a continuation, so we simply call into it directly, obtain a result, and then call into a continuation if present. The same code is also used to apply primitive IO functions:
+
     apply cont (PrimitiveFunc func) args = do
       result <- liftThrows $ func args
       case cont of
-        Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
+        Continuation cEnv  _ _ -> continueEval cEnv cont result
         _ -> return result
+
+This case is a bit more interesting; here we execute a Scheme function.
+
+TODO: explain this in more detail
+
     apply cont (Func aparams avarargs abody aclosure) args =
       if num aparams /= num args && avarargs == Nothing
          then throwError $ NumArgs (num aparams) args
@@ -194,26 +188,24 @@ Apply is used to execute a Scheme function; it needs to know both how to call a 
             -- See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
             --
             evalBody evBody env = case cont of
-                Continuation _ cBody cCont _ Nothing -> if length cBody == 0
+                Continuation _ (Just (SchemeBody cBody)) (Just cCont) -> if length cBody == 0
                     then continueWCont env (evBody) cCont
                     else continueWCont env (evBody) cont -- Might be a problem, not fully optimizing
                 _ -> continueWCont env (evBody) cont
     
             -- Shortcut for calling continueEval
             continueWCont cwcEnv cwcBody cwcCont = 
-                continueEval cwcEnv (Continuation cwcEnv cwcBody cwcCont Nothing Nothing) $ Nil ""
+                continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont)) $ Nil ""
     
             bindVarArgs arg env = case arg of
               Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
               Nothing -> return env
-    apply _ func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List (func : args)
-    
-###call/cc
-Here is the implementation of call/cc. Since husk uses CPS, the code is actually quite simple:
 
-    eval env cont (List (Atom "call-with-current-continuation" : args)) = 
-      eval env cont (List (Atom "call/cc" : args))
-    eval _ _ (List [Atom "call/cc"]) = throwError $ Default "Procedure not specified"
+###call/cc
+Here is the implementation of `call/cc`. Since husk uses CPS, the code is actually quite simple, though perhaps more verbose than it needs to be:
+
+TODO: can this code be simplified further?
+
     eval e c (List [Atom "call/cc", proc]) = eval e (makeCPS e c cpsEval) proc
      where
        cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -230,22 +222,24 @@ Here is the implementation of call/cc. Since husk uses CPS, the code is actually
                 else throwError $ NumArgs (toInteger $ length aparams) [cont] 
             other -> throwError $ TypeMismatch "procedure" other
     
+TODO: an explanation of what is going on here...
+(Basically the code above )
 
 ## Lessons Learned
 Initially I thought that we might have to use a lower-level construct to implement continuations. One such construct is a trampoline, which is used by many C implementations.
 
 TODO: link to what trampolines are, C example, etc...
 
-{- Possible implementation in haskell (not sure how complete it is??) 
-  Did not need this function, since we are using Haskell
-trampoline :: Env -> LispVal -> IOThrowsError LispVal
-trampoline env val = do
-  result <- eval env val
-  case result of
-       -- If a form is not fully-evaluated to a value, bounce it back onto the trampoline...
-       func@(Func params vararg body closure True) -> trampoline env func -- next iteration, via tail call (?)
-       val -> return val
--}
+    {- Possible implementation in haskell (not sure how complete it is??) 
+      Did not need this function, since we are using Haskell
+    trampoline :: Env -> LispVal -> IOThrowsError LispVal
+    trampoline env val = do
+      result <- eval env val
+      case result of
+           -- If a form is not fully-evaluated to a value, bounce it back onto the trampoline...
+           func@(Func params vararg body closure True) -> trampoline env func -- next iteration, via tail call (?)
+           val -> return val
+    -}
 
  - shift/reset???
 
@@ -265,10 +259,12 @@ trampoline env val = do
  -  * To continue above point, where is eval'd value returned to? May want to refer to R5RS section that describes call/cc:
 
 ## Conclusion
-For me it is much easier to understand continuations now after having implemented support for them in husk. In fact, one of the best ways to really understand why continuations are such a general purpose concept is to look at them not only from the perspective of the application programmer, but rather from the perspective of how they are implemented in the Scheme runtime itself.
+For me it is much easier to understand continuations now after having implemented support for them in husk. To really understand why continuations are such a general purpose concept one must look at them not only from the perspective of the application programmer, but also from the perspective of how they are implemented in the Scheme runtime itself. In a way we took the easy way out in husk, as Haskell provides many constructs required by a Scheme. If husk were implemented in C it would be much more difficult to implement an interpreter of equal complexity. However, the husk code is written to be readable and easy to follow. As such, my goal is to provide a working implementation that is easy to follow. It could be used as a blueprint to implement Scheme in a lower-level form.
+
+It is possible that much of the Haskell code in husk could be written in a more clever, compact form. For example the continuation monad may have been able to be used...
+But this compactness would come at the expense of readability...
 
 ## References
-
 
  -  http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
  -  http://community.schemewiki.org/?call-with-current-continuation
