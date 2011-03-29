@@ -1,3 +1,5 @@
+<img src="https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png" width="250" height="44">
+
 When implementing husk one of the most difficult concepts to wrap my head around was continuations. After a fair amount of research, trial, error, and  hacking I was finally able to put together a working implementation in husk while doing quite a bit of learning along the way. This article takes that learning process - and the code that came out of it - to introduce the basics of continuations and explains in depth how they are implemented in husk.
 
 ## Introduction
