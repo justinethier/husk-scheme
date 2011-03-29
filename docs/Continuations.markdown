@@ -1,6 +1,6 @@
-<img src="https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png" width="250" height="44">
+<img src="https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png" width="250" height="44"> | ##Continuations
 
-When implementing husk one of the most difficult concepts to wrap my head around was continuations. After a fair amount of research, trial, error, and  hacking I was finally able to put together a working implementation in husk while doing quite a bit of learning along the way. This article takes that learning process - and the code that came out of it - to introduce the basics of continuations and explains in depth how they are implemented in husk.
+Coming from a background in structured and object-oriented programming, continuations are quite unlike any language feature I had previously seen. After a fair amount of research, trial, error, and  hacking I was finally able to put together a working implementation in husk while doing quite a bit of learning along the way. This article walks through that learning process - and the code that came out of it - to introduce the basics of continuations and explain in depth how they are implemented in husk.
 
 ## Introduction
 Scheme is a minimalistic language and does not include many common control constructs such as return, try/catch, or even goto. Instead Scheme provides continuations - a powerful, general-purpose construct which may be used to build any number of specific control structures. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following background information:
@@ -32,8 +32,7 @@ Scheme continuations are first-class objects, which means they can be assigned t
 	(handle 20)
 	 -> 22
 
-This example illustrates many important points. By storing the continuation up in a variable we can use it later on in the program. In this case, it is used several times to add `2` to arbitrary expressions. A proper Scheme implementation allows a continuation to be invoked multiple times. We also see that 
-a continuation may be captured at any point in the code, even while evaluating part of a larger expression. The linked article is brief and I recommend reading through for a more detailed explanation.
+This example illustrates many important points. By storing the continuation up in a variable we can use it later on in the program. In this case, it is used several times to add `2` to arbitrary expressions. A proper Scheme implementation allows a continuation to be invoked multiple times. We also see that a continuation may be captured at any point in the code, even while evaluating part of a larger expression. The linked article is brief and I recommend reading through for a more detailed explanation.
 
 ## Continuation Passing Style
 The [Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) page provides several possible approaches for implementing continuations. One such approach is to write the Scheme 'runtime' using continuation passing style (CPS).
@@ -78,11 +77,11 @@ But eventually `eval` has to return *something*, right? Well, yes, but since Has
 Languages that do not support proper tail recursion - such as JavaScript - can support CPS style, but eventually a value must be returned since the stack will keep growing larger with each call into a new function.
 
 ## Implementation
-In order to transform the husk evaluator into CPS, a new `cont` parameter had to be added to `eval`, and threaded through each call. This was a time consuming change as there are so many calls to `eval` with the core husk code. But each change was straightforward - many to the point of being mechanical. However, one of the reasons that it took me so long to realize CPS was the right choice was that I was looking at the problem from a different perspective. Although CPS works great for Haskell code, what about all of those Scheme functions that need to be evaluated? Surely they will not be transformed into Haskell functions - so how to handle them?
+In order to transform the husk evaluator into CPS, a new `cont` parameter had to be added to `eval`, and threaded through each call. This was a time consuming change as there are perhaps a hundred calls to `eval` with the core husk code. But each change was straightforward - many to the point of almost being mechanical. However, one of the reasons it took me so long to consider an approach using CPS was that I originally looked at the problem from a different perspective. Although CPS works great for Haskell code, what about all of those Scheme functions that need to be evaluated? Surely they will not be transformed into Haskell functions - so how to handle them?
 
-The original husk implementation for continuations passed around a list of Scheme code to be executed as the body of the function. Each time a line of code is executed, the body is reduced by one line and the evaluator calls into the next one. This works great for supporting a certain class of continuations such as `return`. Anyway, the use of higher-level Haskell functions was incorporated into that code. This complicates the implementation somewhat, although in a sense both approaches are using CPS - in the Scheme case, we are simply passing around a scheme function. In fact, you could think of each line of the function as being its own CPS function.
+In order to support these Scheme functions, the original husk implementation of continuations passed around a list of Scheme code to be executed as the body of the function. Each time a line of code is executed, the body is reduced by one line and the evaluator calls into the next line. This works great for supporting a certain class of continuations such as `return`, but cannot handle special forms built into the core evaluator such as `if`, `begin`, etc. So over time the use of higher-level Haskell functions was incorporated into that code. Although this complicates the implementation somewhat, in a sense both approaches are using CPS. In the Scheme case, you can think of each line of the function as being its owncontinuation.
 
-Enough talk. Let's walk through each part of the implementation to get an understanding of how it all works.
+Let's walk through each part of the implementation to get an understanding of how it all works.
 
 ###Data types
 The following container allows us to pass around either Scheme or Haskell code:
@@ -192,7 +191,7 @@ TODO: explain this in more detail
             evalBody evBody env = case cont of
                 Continuation _ (Just (SchemeBody cBody)) (Just cCont) -> if length cBody == 0
                     then continueWCont env (evBody) cCont
-                    else continueWCont env (evBody) cont -- Might be a problem, not fully optimizing
+                    else continueWCont env (evBody) cont
                 _ -> continueWCont env (evBody) cont
     
             -- Shortcut for calling continueEval
@@ -202,6 +201,8 @@ TODO: explain this in more detail
             bindVarArgs arg env = case arg of
               Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
               Nothing -> return env
+
+TODO: An important consideration is the tail call optimization, but I feel comments here do not tell the whole story
 
 ###call/cc
 Here is the implementation of `call/cc`. Since husk uses CPS, the code is actually quite simple, though perhaps more verbose than it needs to be:
@@ -228,7 +229,7 @@ TODO: an explanation of what is going on here...
 (Basically the code above )
 
 ## Lessons Learned
-Initially I thought that we might have to use a lower-level construct to implement continuations. One such construct is a trampoline, which is used by many C implementations.
+Initially I thought that we might have to use a lower-level construct to implement continuations, such as a trampoline, which is used by many Schemes written in C.
 
 TODO: link to what trampolines are, C example, etc...
 
@@ -243,22 +244,9 @@ TODO: link to what trampolines are, C example, etc...
            val -> return val
     -}
 
- - shift/reset???
+TODO: - shift/reset???
 
 
- - Some of my notes:
- - as simple as using CPS to evaluate lists of "lines" (body)? Then could pass the next part of the CPS as the cont arg to eval. Or is this too simple to work? need to think about this - http://en.wikipedia.org/wiki/Continuation-passing_style
- -
- - Possible design approach:
- -
- -  * thread cont through eval
- -  * instead of returning, call into next eval using CPS style, with the cont parameter.
- -    this replaces code in evalBody (possibly other places?) that uses local CPS to execute a function
- -  * parameter will consist of a lisp function
- -  * eval will call into another function to deal with details of manipulating the cont prior to next call
- -    need to work out details of exactly how that would work, but could for example just go to the next line
- -    of body. 
- -  * To continue above point, where is eval'd value returned to? May want to refer to R5RS section that describes call/cc:
 
 ## Conclusion
 For me it is much easier to understand continuations now after having implemented support for them in husk. To really understand why continuations are such a general purpose concept one must look at them not only from the perspective of the application programmer, but also from the perspective of how they are implemented in the Scheme runtime itself. In a way we took the easy way out in husk, as Haskell provides many constructs required by a Scheme. If husk were implemented in C it would be much more difficult to implement an interpreter of equal complexity. However, the husk code is written to be readable and easy to follow. As such, my goal is to provide a working implementation that is easy to follow. It could be used as a blueprint to implement Scheme in a lower-level form.
