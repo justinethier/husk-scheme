@@ -1,6 +1,6 @@
 <img src="https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png" width="250" height="44">
 
-Coming from a background in structured and object-oriented programming, continuations are quite unlike any language feature I had previously seen. After a fair amount of research, trial, error, and  hacking I was finally able to put together a working implementation in husk while doing quite a bit of learning along the way. This article walks through that learning process - and the code that came out of it - to introduce the basics of continuations and explain in depth how they are implemented in husk.
+Coming from a background in structured and object-oriented programming, continuations are quite unlike any language feature I had previously seen. Nevertheless, after a fair amount of research, trial, error, and  hacking I was finally able to put together a working implementation in husk, while doing quite a bit of learning along the way. This article walks through that learning process to introduce the basics of continuations and explain in depth how they are implemented in husk.
 
 ## Introduction
 Scheme is a minimalistic language and does not include many common control constructs such as return, try/catch, or even goto. Instead Scheme provides continuations - a powerful, general-purpose construct which may be used to build any number of specific control structures. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following background information:
