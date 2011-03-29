@@ -1,4 +1,4 @@
-##Continuations | <img src="https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png" width="250" height="44">
+<img src="https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png" width="250" height="44">
 
 Coming from a background in structured and object-oriented programming, continuations are quite unlike any language feature I had previously seen. After a fair amount of research, trial, error, and  hacking I was finally able to put together a working implementation in husk while doing quite a bit of learning along the way. This article walks through that learning process - and the code that came out of it - to introduce the basics of continuations and explain in depth how they are implemented in husk.
 
