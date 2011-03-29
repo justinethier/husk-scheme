@@ -40,7 +40,7 @@ Scheme continuations are first-class objects, which means they can be assigned t
 This example illustrates many important points. By storing the continuation up in a variable we can use it later on in the program. In this case, it is used several times to add `2` to arbitrary expressions. A proper Scheme implementation allows a continuation to be invoked multiple times. We also see that a continuation may be captured at any point in the code, even while evaluating part of a larger expression. The linked article is brief and I recommend reading through for a more detailed explanation.
 
 ## Continuation Passing Style
-The [Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) page provides several possible approaches for implementing continuations. One such approach is to write the Scheme 'runtime' using continuation passing style (CPS).
+The [Portland Pattern Repository's Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) page provides several possible approaches for implementing continuations. One such approach is to write the Scheme 'runtime' using continuation passing style (CPS).
 
 In CPS, a function (b) is passed as a parameter to another function (a), with the intent that when (a) is finished it will pass control to (b). So (b) in essence becomes a future computation of (a). This is used extensively in modern programming - for instance, the node.js JavaScript framework allows one to pass a callback to an asynchronous function that is later executed once the asynchronous operation completes.
 
@@ -261,6 +261,7 @@ But this compactness would come at the expense of readability...
 
 ## References
 
- -  http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
- -  http://community.schemewiki.org/?call-with-current-continuation
+- http://c2.com/cgi/wiki?ContinuationImplementation
+-  http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
+-  http://community.schemewiki.org/?call-with-current-continuation
 
