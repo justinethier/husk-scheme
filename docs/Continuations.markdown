@@ -227,30 +227,20 @@ Here is the implementation of `call/cc`. Since husk uses CPS, the code is actual
 Since `call/cc` accepts a single function as an argument, we simply call into that function, passing the current continuation as the only argument. There are two cases since a primitive function may be called directly.
 
 ## Lessons Learned
-Initially I thought that we might have to use a lower-level construct to implement continuations, such as a trampoline, which is used by many Schemes written in C.
+Initially I thought that we might have to use a lower-level construct to implement continuations and proper tail recursion, such as a trampoline, which is used by many Schemes written in C. From [Cheney on the M.T.A.](http://home.pipeline.com/~hbaker1/CheneyMTA.html):
 
-TODO: link to what trampolines are, C example, etc...
+>A popular method for achieving proper tail recursion in a non-tail-recursive C implementation is a trampoline.[2] A trampoline is an outer function which iteratively calls an inner function. The inner function returns the address of another function to call, and the outer function then calls this new function. In other words, when an inner function wishes to call another inner function tail-recursively, it returns the address of the function it wants to call back to the trampoline, which then calls the returned function. By returning before calling, the stack is first popped so that it does not grow without bound on a simple iteration. Unfortunately, the cost of such a trampoline function call is 2-3 times slower than a normal C call, and it requires that arguments be passed in global variables [Tarditi92].
+>
+>Appel's unpublished suggestion for achieving proper tail recursion in C uses a much larger fixed-size stack, continuation-passing style, and also does not put any arguments or data on the C stack. When the stack is about to overflow, the address of the next function to call is longjmp'ed (or return'ed) to a trampoline. Appel's method avoids making a large number of small trampoline bounces by occasionally jumping off the Empire State Building.
 
-    {- Possible implementation in haskell (not sure how complete it is??) 
-      Did not need this function, since we are using Haskell
-    trampoline :: Env -> LispVal -> IOThrowsError LispVal
-    trampoline env val = do
-      result <- eval env val
-      case result of
-           -- If a form is not fully-evaluated to a value, bounce it back onto the trampoline...
-           func@(Func params vararg body closure True) -> trampoline env func -- next iteration, via tail call (?)
-           val -> return val
-    -}
-
-TODO: - shift/reset???
-
-
+But of course, since Haskell is a modern Lisp variant, it already supports proper tail recursion. This allows us to use higher order functions and CPS directly to implement our continuations.
 
 ## Conclusion
 For me it is much easier to understand continuations now after having implemented support for them in husk. To really understand why continuations are such a general purpose concept one must look at them not only from the perspective of the application programmer, but also from the perspective of how they are implemented in the Scheme runtime itself. In a way we took the easy way out in husk, as Haskell provides many constructs required by a Scheme. If husk were implemented in C it would be much more difficult to implement an interpreter of equal complexity. However, the husk code is written to be readable and easy to follow. As such, my goal is to provide a working implementation that is easy to follow. It could be used as a blueprint to implement Scheme in a lower-level form.
 
-It is possible that much of the Haskell code in husk could be written in a more clever, compact form. For example the continuation monad may have been able to be used...
-But this compactness would come at the expense of readability...
+TODO: need to clean this up:
+
+It is possible that the husk's continuation could have be written in a more clever, compact form. For example we may have been able to leverage the continuation monad as part of this implementation. But any compactness gains would come at the expense of readability. One of the main goals of this implementation is as a learning project, so it is undesirable to make the code *too* clever.
 
 ## References
 
@@ -258,4 +248,5 @@ But this compactness would come at the expense of readability...
 - http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
 - http://community.schemewiki.org/?call-with-current-continuation
 - http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_73.html#SEC80
+- http://home.pipeline.com/~hbaker1/CheneyMTA.html
 
