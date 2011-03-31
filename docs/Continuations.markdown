@@ -1,7 +1,7 @@
 <img src="https://github.com/justinethier/husk-scheme/raw/master/docs/design-notes-husk-scheme.png" width="500" height="44">
 
 # Continuations
-Coming from a background in structured and object-oriented programming, continuations are quite unlike any language feature I had previously encountered. It took some time to wrap my head around the concept and to extrapolate that into a working implementation. Part of my trouble was certainly a lack of functional programming experience prior to this project. Nothing that is covered below is particularly difficult, the trouble (at least for me) was connecting enough dots to see the "big picture" of how it all fits together into working code. Nevertheless, after a fair amount of research, trial, error, and  hacking I was finally able to add continuation support to husk, while doing quite a bit of learning along the way. This article walks through that learning process to introduce the basics of continuations and explain in depth how they are implemented in husk. I hope it may be of benefit to anyone interested in learning more about functional programming, Scheme, and related areas such as language design.
+Coming from a background in structured and object-oriented programming, continuations are unlike any language feature I've previously encountered. It took some time to wrap my head around the concept and to extrapolate that into a working implementation. Part of my trouble was certainly a lack of functional programming experience prior to this project. Nothing covered below is a particularly difficult concept, the trouble (at least for me) was connecting enough dots to see the "big picture" of how it all fits together into working code. Nevertheless, after a fair amount of research, trial, error, and  hacking I was finally able to add continuation support to husk, while doing quite a bit of learning along the way. This article walks through that learning process to introduce the basics of continuations and explain in depth how they are implemented in husk. I hope it may be of benefit to anyone interested in learning more about functional programming, Scheme, and related areas such as language design.
 
 Time permitting, this will be the first in a series of articles covering the husk implementation. 
 
@@ -158,12 +158,16 @@ Apply is used to execute a Scheme function; it needs to know both how to call a 
 
 There are several patterns to consider. Let's start with the first, which handles function application of a continuation. As of now, husk only supports sending a single argument to a continuation, so there is simple validation for the number of arguments. Once that is complete, we simply call into `continueEval`:
 
+TODO: explain why calling into continueEval works
+
     apply _ c@(Continuation env _ _) args = do
       if (toInteger $ length args) /= 1 
         then throwError $ NumArgs 1 args
         else continueEval env c $ head args
 
-A primitive function cannot call into a continuation, so we simply call into it directly, obtain a result, and then call into a continuation if present. The same code is also used to apply primitive IO functions:
+A primitive function cannot call into a continuation, so call into it directly, obtain a result, and then call into a continuation if present. The same code is also used to apply primitive IO functions:
+
+TODO: how come a primitive func cannot call into a cont?
 
     apply cont (PrimitiveFunc func) args = do
       result <- liftThrows $ func args
