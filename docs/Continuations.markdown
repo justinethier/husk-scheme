@@ -171,9 +171,7 @@ A primitive function cannot call into a continuation, so we simply call into it 
         Continuation cEnv  _ _ -> continueEval cEnv cont result
         _ -> return result
 
-This case is a bit more interesting; here we execute a Scheme function.
-
-TODO: explain this in more detail
+This case is a bit more interesting; here we execute a Scheme function:
 
     apply cont (Func aparams avarargs abody aclosure) args =
       if num aparams /= num args && avarargs == Nothing
@@ -182,16 +180,7 @@ TODO: explain this in more detail
       where remainingArgs = drop (length aparams) args
             num = toInteger . length
             --
-            -- Continue evaluation within the body, preserving the outer continuation.
-            --
-            -- This link was helpful for implementing this, and has a *lot* of other useful information:
-            -- http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_73.html#SEC80
-            --
-            -- What we are doing now is simply not saving a continuation for tail calls. For now this may
-            -- be good enough, although it may need to be enhanced in the future in order to properly
-            -- detect all tail calls. 
-            --
-            -- See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
+            -- Continue evaluation within the body, preserving the outer continuation if it still contains code.
             --
             evalBody evBody env = case cont of
                 Continuation _ (Just (SchemeBody cBody)) (Just cCont) -> if length cBody == 0
@@ -202,12 +191,19 @@ TODO: explain this in more detail
             -- Shortcut for calling continueEval
             continueWCont cwcEnv cwcBody cwcCont = 
                 continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont)) $ Nil ""
-    
+   
+            -- Create a new environment and bind arguments to it
             bindVarArgs arg env = case arg of
               Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
               Nothing -> return env
 
-TODO: An important consideration is the tail call optimization, but I feel comments here do not tell the whole story
+This function uses a series of helper functions, organized into a single pipeline:
+
+    (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) 
+        >>= bindVarArgs avarargs 
+        >>= (evalBody abody)
+
+In a nutshell, we create a copy of the function's closure (input environment), bind the function arguments to that copy, and pass the Scheme code to `continueEval` to begin the evaluation process.
 
 ###call/cc
 Here is the implementation of `call/cc`. Since husk uses CPS, the code is actually quite simple, though perhaps more verbose than it needs to be:
@@ -262,6 +258,7 @@ But this compactness would come at the expense of readability...
 ## References
 
 - http://c2.com/cgi/wiki?ContinuationImplementation
--  http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
--  http://community.schemewiki.org/?call-with-current-continuation
+- http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
+- http://community.schemewiki.org/?call-with-current-continuation
+- http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_73.html#SEC80
 
