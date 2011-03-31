@@ -208,8 +208,6 @@ In a nutshell, we create a copy of the function's closure (input environment), b
 ###call/cc
 Here is the implementation of `call/cc`. Since husk uses CPS, the code is actually quite simple, though perhaps more verbose than it needs to be:
 
-TODO: can this code be simplified further?
-
     eval e c (List [Atom "call/cc", proc]) = eval e (makeCPS e c cpsEval) proc
      where
        cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -225,9 +223,8 @@ TODO: can this code be simplified further?
                 then apply cont func [cont] 
                 else throwError $ NumArgs (toInteger $ length aparams) [cont] 
             other -> throwError $ TypeMismatch "procedure" other
-    
-TODO: an explanation of what is going on here...
-(Basically the code above )
+
+Since `call/cc` accepts a single function as an argument, we simply call into that function, passing the current continuation as the only argument. There are two cases since a primitive function may be called directly.
 
 ## Lessons Learned
 Initially I thought that we might have to use a lower-level construct to implement continuations, such as a trampoline, which is used by many Schemes written in C.
