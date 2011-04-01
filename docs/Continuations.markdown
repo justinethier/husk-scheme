@@ -1,3 +1,6 @@
+
+**THIS DOCUMENT IS STILL A WORK IN PROGRESS**
+
 <img src="https://github.com/justinethier/husk-scheme/raw/master/docs/design-notes-husk-scheme.png" width="500" height="44">
 
 # Continuations
