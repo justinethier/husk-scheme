@@ -1,4 +1,3 @@
-
 **THIS DOCUMENT IS STILL A WORK IN PROGRESS**
 
 <img src="https://github.com/justinethier/husk-scheme/raw/master/docs/design-notes-husk-scheme.png" width="500" height="44">
@@ -81,6 +80,8 @@ While researching CPS, one thing that really threw me for a loop was the [quote]
 >CPS is a programming style where no function is ever allowed to return
 
 But eventually `eval` has to return *something*, right? Well, yes, but since Haskell supports proper tail recursion we can call through as many CPS functions as necessary without fear of overflowing the stack. husk's `eval` function will eventually transform an expression into a single value that is returned to its caller. But another program written in CPS might keep calling into functions forever. 
+
+TODO: we do keep calling forever in the sense that the value is then passed into another continuation. look into this; maybe just drop this comment but at least something worth considering...
 
 Languages that do not support proper tail recursion - such as JavaScript - can support CPS style, but eventually a value must be returned since the stack will keep growing larger with each call into a new function.
 
@@ -240,7 +241,7 @@ Initially I thought that we might have to use a lower-level construct to impleme
 >
 >Appel's unpublished suggestion for achieving proper tail recursion in C uses a much larger fixed-size stack, continuation-passing style, and also does not put any arguments or data on the C stack. When the stack is about to overflow, the address of the next function to call is longjmp'ed (or return'ed) to a trampoline. Appel's method avoids making a large number of small trampoline bounces by occasionally jumping off the Empire State Building.
 
-But of course, since Haskell is a modern Lisp variant, it already supports proper tail recursion. This allows us to use higher order functions and CPS directly to implement our continuations.
+Since Haskell is a Lisp variant it already supports proper tail recursion. This allows us to use higher order functions and CPS to implement our continuations directly.
 
 ## Conclusion
 For me it is much easier to understand continuations now after having implemented support for them in husk. To really understand why continuations are such a general purpose concept one must look at them not only from the perspective of the application programmer, but also from the perspective of how they are implemented in the Scheme runtime itself. In a way we took the easy way out in husk, as Haskell provides many constructs required by a Scheme. If husk were implemented in C it would be much more difficult to implement an interpreter of equal complexity. However, the husk code is written to be readable and easy to follow. As such, my goal is to provide a working implementation that is easy to follow. It could be used as a blueprint to implement Scheme in a lower-level form.
