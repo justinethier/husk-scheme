@@ -218,7 +218,17 @@
                          (set! result-ready? #t)
                          result))))))))
 
-; Hash table derived forms
+; End delayed evaluation section
+
+
+;; I/O Section
+(define (newline . port)
+  (if (null? port) 
+      (display #\newline) 
+      (display #\newline port)))
+
+
+;; Hashtable derived forms
 (define hash-table-walk
   (lambda (ht proc)
     (map 
@@ -249,7 +259,6 @@
 ;(define (hash-table-fold hash-table f init-value)
 ;    TBD)
 
-; End delayed evaluation section
 
 ; FUTURE: Issue #10: from numeric section -
 ; gcd

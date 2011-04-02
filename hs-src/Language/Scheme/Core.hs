@@ -631,7 +631,6 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
  -
  - char-ready?
  -
- - newline
  - write-char
  -
  - transcript-on
