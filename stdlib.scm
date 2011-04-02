@@ -220,6 +220,10 @@
 
 ; End delayed evaluation section
 
+; Continuation Section
+(define (values . things)
+    (call-with-current-continuation 
+        (lambda (cont) (apply cont things))))
 
 ;; I/O Section
 (define (newline . port)
