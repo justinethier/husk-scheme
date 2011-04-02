@@ -5,6 +5,7 @@ v2.3
 - Added missing I/O functions, including display, input-port?, output-port?,
 newline, write-char, read-char, peek-char, current-input-port,
 current-output-port, call-with-input-file, and call-with-output-port
+- Added eval
 
 v2.2
 ----

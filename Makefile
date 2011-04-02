@@ -17,6 +17,7 @@ test:
 	cd scm-unit-tests ; ../huski t-cond.scm
 	cd scm-unit-tests ; ../huski t-cont.scm
 	cd scm-unit-tests ; ../huski t-delay.scm
+	cd scm-unit-tests ; ../huski t-eval.scm
 	cd scm-unit-tests ; ../huski t-exec.scm
 	cd scm-unit-tests ; ../huski t-iteration.scm
 	cd scm-unit-tests ; ../huski t-macro.scm

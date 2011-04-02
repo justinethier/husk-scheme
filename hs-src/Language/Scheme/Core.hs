@@ -31,7 +31,7 @@ import List
 import IO hiding (try)
 import System.Directory (doesFileExist)
 import System.IO.Error
---import Debug.Trace
+import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
 
@@ -135,6 +135,23 @@ eval env cont val@(Bool _)      = continueEval env cont val
 eval env cont val@(HashTable _) = continueEval env cont val
 eval env cont val@(Vector _)    = continueEval env cont val
 eval env cont (Atom a)          = continueEval env cont =<< getVar env a
+
+-- Evaluate an expression in the current environment
+--
+-- Calls into eval once to get raw expression, and a second time
+-- to eval *that* expression.
+--
+-- Assumption is any macro transform is already performed
+-- prior to this step.
+--
+-- FUTURE: consider allowing env to be specified, per R5RS
+--
+eval env cont (List [Atom "eval", val]) = do
+  eval env (makeCPS env cont cps) val
+  where cps :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cps e c result _ = eval e c result
+
+-- Quote an expression by simply passing along the value
 eval env cont (List [Atom "quote", val])         = continueEval env cont val
 
 -- Unquote an expression; unquoting is different than quoting in that
