@@ -631,14 +631,13 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
  -
  - char-ready?
  -
- - write-char
- -
  - transcript-on
  - transcript-off
  - -}
 
                 ("read", readProc),
                 ("write", writeProc (\port obj -> hPrint port obj)),
+                ("write-char", writeCharProc),
                 ("display", writeProc (\port obj -> hPutStr port $ show obj)),
                 ("read-contents", readContents),
                 ("read-all", readAll)]
@@ -682,6 +681,17 @@ writeProc func [obj, Port port] = do
         Right _ -> return $ Nil ""
 writeProc _ other = if length other == 2
                      then throwError $ TypeMismatch "(value port)" $ List other 
+                     else throwError $ NumArgs 2 other
+
+writeCharProc :: [LispVal] -> IOThrowsError LispVal
+writeCharProc [obj] = writeCharProc [obj, Port stdout]
+writeCharProc [obj@(Char _), Port port] = do
+    output <- liftIO $ try (liftIO $ (hPutStr port $ show obj))
+    case output of
+        Left _ -> throwError $ Default "I/O error writing to port"
+        Right _ -> return $ Nil ""
+writeCharProc other = if length other == 2
+                     then throwError $ TypeMismatch "(character port)" $ List other 
                      else throwError $ NumArgs 2 other
 
 readContents :: [LispVal] -> IOThrowsError LispVal
