@@ -617,16 +617,17 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("input-port?", isInputPort),
                 ("output-port?", isOutputPort),
 
-{- TODO:
- -
- -  with-input-from-file
- -  with-output-from-file
- -  
- - char-ready?
- -
- - transcript-on
- - transcript-off
- - -}
+               -- The following optional procedures are NOT implemented:
+               -- 
+               --  with-input-from-file
+               --  with-output-from-file
+               --  transcript-on
+               --  transcript-off
+               --
+               --  Consideration may be given in a future release, but keep in mind
+               --  the impact to the other I/O functions.
+
+-- TODO: not currently supported: char-ready?
 
                 ("current-input-port", currentInputPort),
                 ("current-output-port", currentOutputPort),
