@@ -4,7 +4,7 @@ v2.3
 - Suppress excess output when running a program by piping it to /dev/null
 - Added missing I/O functions, including display, input-port?, output-port?,
 newline, write-char, read-char, peek-char, current-input-port,
-current-output-port, call-with-input-file, call-with-output-port
+current-output-port, call-with-input-file, and call-with-output-port
 
 v2.2
 ----
