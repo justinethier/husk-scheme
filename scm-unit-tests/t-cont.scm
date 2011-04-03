@@ -119,8 +119,7 @@
 ; But this value is confirmed by csi so not worried about it...
 (assert/equal test-value #f)
 
-
-; TODO: 
-;(assert/equal (call-with-values (lambda () (values 1)) (lambda (a) a)) 1)
+; Tests for passing one *or more* values to a continuation
+(assert/equal (call-with-values (lambda () (values 1)) (lambda (a) a)) 1)
 
 (unit-test-handler-results)

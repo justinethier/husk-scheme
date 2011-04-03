@@ -505,23 +505,13 @@ eval env cont (List (Atom "apply" : applyArgs)) = do
 --
 --
 
--- TODO: working through implementation of call-with-values
 eval env cont (List [Atom "call-with-values", producer, consumer]) = do
---  -- TODO: consider evaluating args (using CPS), and evaluate both are procs
---  producer <- eval env (makeNullContinuation env) prodcr
---  consumer <- eval env (makeNullContinuation env) consmr
-  continueEval env 
---              (Continuation env (Just (SchemeBody [String "1TODO"])) (Just cont)) 
---              TODO: below does not work because args are not sent to consumer...
-              (Continuation env (Just (SchemeBody [List [consumer]])) (Just cont)) 
-              (List [producer])
---
--- Notes: create a cont using consumer, pass it as cont to producer
---        trick is how to pass multiple values to the newly created 
---        continuation.
---        also is num of params defined when cont is created, or
---        asserted when passing them into the new cont?
---
+  eval env (makeCPS env cont cpsEval) (List [producer])
+ where
+   cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+   cpsEval e c value _ = do
+        -- TODO: assumes only a single value, but what if multiple values are passed?
+        eval e c $ List [consumer , value]
 eval _ _ (List (Atom "call-with-values" : _)) = throwError $ Default "Procedures not specified"
 
 eval env cont (List (Atom "call-with-current-continuation" : args)) = 
