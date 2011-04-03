@@ -614,6 +614,31 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("open-output-file", makePort WriteMode),
                 ("close-input-port", closePort),
                 ("close-output-port", closePort),
+
+{- TODO:
+ -
+ -  call-with-input-file
+ -  call-with-output-file
+ -  input-port?
+ -  output-port?
+ -  current-input-port
+ -  current-output-port
+ -  with-input-from-file
+ -  with-output-from-file
+ -  
+ -  read-char
+ -  peek-char
+ -
+ - char-ready?
+ -
+ - display
+ - newline
+ - write-char
+ -
+ - transcript-on
+ - transcript-off
+ - -}
+
                 ("read", readProc),
                 ("write", writeProc),
                 ("read-contents", readContents),
