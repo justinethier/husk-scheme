@@ -505,6 +505,15 @@ eval env cont (List (Atom "apply" : applyArgs)) = do
 --
 --
 
+-- TODO: call-with-values
+--
+-- TODO: create a cont using consumer, pass it as cont to producer
+--       trick is how to pass multiple values to the newly created 
+--       continuation.
+--       also is num of params defined when cont is created, or
+--       asserted when passing them into the new cont?
+--
+
 eval env cont (List (Atom "call-with-current-continuation" : args)) = 
   eval env cont (List (Atom "call/cc" : args))
 eval _ _ (List [Atom "call/cc"]) = throwError $ Default "Procedure not specified"
