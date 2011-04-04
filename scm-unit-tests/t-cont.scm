@@ -121,5 +121,10 @@
 
 ; Tests for passing one *or more* values to a continuation
 (assert/equal (call-with-values (lambda () (values 1)) (lambda (a) a)) 1)
+;(assert/equal (call-with-values (lambda () (values 4 5))
+;                                (lambda (a b) b))
+;               5)
+(assert/equal (call-with-values * -)
+               -1)
 
 (unit-test-handler-results)
