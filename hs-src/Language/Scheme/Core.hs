@@ -614,13 +614,13 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("open-output-file", makePort WriteMode),
                 ("close-input-port", closePort),
                 ("close-output-port", closePort),
+                ("input-port?", isInputPort),
+                ("output-port?", isOutputPort),
 
 {- TODO:
  -
  -  call-with-input-file
  -  call-with-output-file
- -  input-port?
- -  output-port?
  -  current-input-port
  -  current-output-port
  -  with-input-from-file
@@ -652,6 +652,13 @@ makePort _ args@(_ : _) = throwError $ NumArgs 1 args
 closePort :: [LispVal] -> IOThrowsError LispVal
 closePort [Port port] = liftIO $ hClose port >> (return $ Bool True)
 closePort _ = return $ Bool False
+
+isInputPort, isOutputPort :: [LispVal] -> IOThrowsError LispVal
+isInputPort [Port port] = liftM Bool $ liftIO $ hIsReadable port
+isInputPort _ = return $ Bool False
+
+isOutputPort [Port port] = liftM Bool $ liftIO $ hIsWritable port
+isOutputPort _ = return $ Bool False
 
 readProc :: [LispVal] -> IOThrowsError LispVal
 readProc [] = readProc [Port stdin]

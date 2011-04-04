@@ -18,12 +18,16 @@
   (let ((data (read fp)))
       (if (eof-object? data)
         (begin
+          (write (input-port? fp))
+          (write (output-port? fp))
           (close-input-port fp)
           (write acc)
           acc)
         (sum-from-file (+ acc data) fp))))
 
 (define (write-result result fp)
+  (write (input-port? fp))
+  (write (output-port? fp))
   (write result fp)
   (close-output-port fp))
 
