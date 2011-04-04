@@ -508,6 +508,8 @@ eval env cont (List (Atom "apply" : applyArgs)) = do
 eval env cont (List [Atom "call-with-values", producer, consumer]) = do
 -- TODO: validate that producer and consumer are functions
   eval env
+  -- TODO: problem is that this continuation will not be called into by (values), rather
+  --       one of the conts inside producer will be called instead...
       (Continuation env (Just (HaskellBody cpsEval Nothing)) (Just cont) True) -- Multiple Values
       (List [producer]) -- Call into prod to get values
  where
@@ -587,14 +589,21 @@ makeVarargs = makeFunc . Just . showVal
 -- Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 apply _ c@(Continuation env _ _ multipleValues) args = do
--- TODO: need a way to create a continuation taking multiple args,
---       to support (call-with-values)
   if multipleValues
     then continueEval env c $ List args
     else
       if (toInteger $ length args) /= 1 
         then throwError $ NumArgs 1 args
         else continueEval env c $ head args
+
+-- TODO: Think about wrapping the result into a new LispVal "multipleValues" that
+-- will be returned in len(args) > 1. this var would then only be used by the call-with-values
+-- continuation. otherwise it would eventually throw an error... is that feasible?
+
+{-        -- Hack: just pass all of the args along.
+        -- Assumption is that a multi-value continuation will eventually appear to accept this.
+        -- Really need a better solution, because this breaks other cont code...
+        continueEval env c $ List args -- TODO - testing: head args -}
 apply cont (IOFunc func) args = do
   result <- func args
   case cont of
