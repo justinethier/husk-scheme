@@ -238,7 +238,7 @@ eval env cont (List [Atom "if", predic, conseq]) =
           cpsResult e c result _ = 
             case result of
               Bool True -> eval e c conseq
-              _ -> continueEval e c $ Atom "#unspecified" -- Unspecified return value per R5RS
+              _ -> continueEval e c $ Nil "" -- Unspecified return value per R5RS
 
 -- FUTURE: convert cond to a derived form (scheme macro)
 eval env cont (List (Atom "cond" : clauses)) = 
