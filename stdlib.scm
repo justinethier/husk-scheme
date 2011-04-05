@@ -227,6 +227,20 @@
       (display #\newline) 
       (display #\newline port)))
 
+; TODO: test these forms
+(define (call-with-input-file filename proc)
+  (let ((opened-file (open-input-file filename)))
+    (define result
+           (proc opened-file))
+    (close-input-port opened-file)
+    result))
+; TODO: test
+(define (call-with-output-file filename proc)
+  (let ((opened-file (open-output-file filename)))
+    (define result
+           (proc opened-file))
+    (close-output-port opened-file)
+    result))
 
 ;; Hashtable derived forms
 (define hash-table-walk

@@ -619,8 +619,6 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
 
 {- TODO:
  -
- -  call-with-input-file
- -  call-with-output-file
  -  with-input-from-file
  -  with-output-from-file
  -  
