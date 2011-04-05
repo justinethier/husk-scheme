@@ -626,8 +626,6 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
  -  with-input-from-file
  -  with-output-from-file
  -  
- -  peek-char
- -
  - char-ready?
  -
  - transcript-on
@@ -635,7 +633,8 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
  - -}
 
                 ("read", readProc),
-                ("read-char", readCharProc),
+                ("read-char", readCharProc hGetChar),
+                ("peek-char", readCharProc hLookAhead),
                 ("write", writeProc (\port obj -> hPrint port obj)),
                 ("write-char", writeCharProc),
                 ("display", writeProc (\port obj -> hPutStr port $ show obj)),
@@ -670,17 +669,19 @@ readProc [Port port] = do
             liftThrows $ readExpr inpStr 
 readProc args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 
-readCharProc :: [LispVal] -> IOThrowsError LispVal
-readCharProc [] = readProc [Port stdin]
-readCharProc [Port port] = do
-    input <-  liftIO $ try (liftIO $ hGetChar port)
+readCharProc :: (Handle -> IO Char) -> [LispVal] -> IOThrowsError LispVal
+readCharProc func [] = readCharProc func [Port stdin]
+readCharProc func [Port port] = do
+    liftIO $ hSetBuffering port NoBuffering
+    input <-  liftIO $ try (liftIO $ func port)
+    liftIO $ hSetBuffering port LineBuffering
     case input of
         Left e -> if isEOFError e
                      then return $ EOF
                      else throwError $ Default "I/O error reading from port"
         Right inpChr -> do 
             return $ Char inpChr 
-readCharProc args@(_ : _) = throwError $ BadSpecialForm "" $ List args
+readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 
 writeProc :: forall a (m :: * -> *).
              (MonadIO m, MonadError LispError m) =>
