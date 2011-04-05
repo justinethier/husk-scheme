@@ -621,8 +621,6 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
  -
  -  call-with-input-file
  -  call-with-output-file
- -  current-input-port
- -  current-output-port
  -  with-input-from-file
  -  with-output-from-file
  -  
@@ -632,6 +630,8 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
  - transcript-off
  - -}
 
+                ("current-input-port", currentInputPort),
+                ("current-output-port", currentOutputPort),
                 ("read", readProc),
                 ("read-char", readCharProc hGetChar),
                 ("peek-char", readCharProc hLookAhead),
@@ -649,6 +649,14 @@ makePort _ args@(_ : _) = throwError $ NumArgs 1 args
 closePort :: [LispVal] -> IOThrowsError LispVal
 closePort [Port port] = liftIO $ hClose port >> (return $ Bool True)
 closePort _ = return $ Bool False
+
+currentInputPort, currentOutputPort :: [LispVal] -> IOThrowsError LispVal
+-- FUTURE: For now, these are just hardcoded to the standard i/o ports.
+--         a future implementation that includes with-*put-from-file
+--         would require a more involved implementation here as well as
+--         other I/O functions hooking into these instead of std*
+currentInputPort _ = return $ Port stdin
+currentOutputPort _ = return $ Port stdout
 
 isInputPort, isOutputPort :: [LispVal] -> IOThrowsError LispVal
 isInputPort [Port port] = liftM Bool $ liftIO $ hIsReadable port
