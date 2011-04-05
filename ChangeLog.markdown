@@ -3,7 +3,7 @@ v2.3
 - Automatically load the scheme standard library when running .scm files
 - Suppress excess output when running a program by piping it to /dev/null
 - Added missing I/O functions, including display, input-port?, output-port?,
-newline, write-char, read-char
+newline, write-char, read-char, peek-char
 
 v2.2
 ----
