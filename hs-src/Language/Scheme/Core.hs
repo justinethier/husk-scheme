@@ -572,6 +572,8 @@ makeVarargs = makeFunc . Just . showVal
 -- Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 apply _ c@(Continuation env _ _) args = do
+-- TODO: need a way to create a continuation taking multiple args,
+--       to support (call-with-values)
   if (toInteger $ length args) /= 1 
     then throwError $ NumArgs 1 args
     else continueEval env c $ head args
