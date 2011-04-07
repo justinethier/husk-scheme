@@ -257,4 +257,4 @@ It is possible that the husk's continuation could have be written in a more clev
 - http://community.schemewiki.org/?call-with-current-continuation
 - http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_73.html#SEC80
 - http://home.pipeline.com/~hbaker1/CheneyMTA.html
-
+- http://matt.might.net/articles/cps-conversion/
