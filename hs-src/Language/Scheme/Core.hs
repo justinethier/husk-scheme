@@ -75,7 +75,7 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 -- Passing a higher-order function as the continuation; just evaluate it. This is 
 -- done to enable an 'eval' function to be broken up into multiple sub-functions,
 -- so that any of the sub-functions can be passed around as a continuation.
-continueEval _ (Continuation cEnv (Just (HaskellBody func funcArgs)) (Just cCont)) val = func cEnv cCont val funcArgs
+continueEval _ (Continuation cEnv (Just (HaskellBody func funcArgs)) (Just cCont) _) val = func cEnv cCont val funcArgs
 
 -- No higher order function, so:
 --
@@ -85,20 +85,20 @@ continueEval _ (Continuation cEnv (Just (HaskellBody func funcArgs)) (Just cCont
 -- continuation (if there is one), or we just return the result. Yes technically with
 -- CPS you are supposed to keep calling into functions and never return, but eventually
 -- when the computation is complete, you have to return something.
-continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont)) val = do
+continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) _) val = do
     case cBody of
         [] -> do
           case cCont of
-            Continuation nEnv _ _ -> continueEval nEnv cCont val
+            Continuation nEnv _ _ _ -> continueEval nEnv cCont val
             _ -> return (val)
-        [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont)) (lv)
-        (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont)) (lv)
+        [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) False) (lv)
+        (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) False) (lv)
 
 -- No current continuation, but a next cont is available; call into it
-continueEval _ (Continuation cEnv Nothing (Just cCont)) val = continueEval cEnv cCont val
+continueEval _ (Continuation cEnv Nothing (Just cCont) _) val = continueEval cEnv cCont val
 
 -- There is no continuation code, just return value
-continueEval _ (Continuation _ Nothing Nothing) val = return val
+continueEval _ (Continuation _ Nothing Nothing _) val = return val
 continueEval _ _ _ = throwError $ Default "Internal error in continueEval"
 
 -- |Core eval function
@@ -506,12 +506,18 @@ eval env cont (List (Atom "apply" : applyArgs)) = do
 --
 
 eval env cont (List [Atom "call-with-values", producer, consumer]) = do
-  eval env (makeCPS env cont cpsEval) (List [producer])
+-- TODO: validate that producer and consumer are functions
+  eval env
+      (Continuation env (Just (HaskellBody cpsEval Nothing)) (Just cont) True) -- Multiple Values
+      (List [producer]) -- Call into prod to get values
  where
    cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-   cpsEval e c value _ = do
-        -- TODO: assumes only a single value, but what if multiple values are passed?
-        eval e c $ List [consumer , value]
+   cpsEval e c (List values) _ = do
+        -- should handle if multiple values are passed...
+        eval e c $ List $ [consumer] ++ values --List [consumer , value]
+-- should not need the following case??
+   cpsEval e c value _ = eval e c $ List [consumer, value]
+    --throwError $ Default $ "Unexpected error in call-with-values, value = " ++ show value
 eval _ _ (List (Atom "call-with-values" : _)) = throwError $ Default "Procedures not specified"
 
 eval env cont (List (Atom "call-with-current-continuation" : args)) = 
@@ -525,7 +531,7 @@ eval e c (List [Atom "call/cc", proc]) = eval e (makeCPS e c cpsEval) proc
         PrimitiveFunc f -> do
             result <- liftThrows $ f [cont]
             case cont of 
-                Continuation cEnv _ _ -> continueEval cEnv cont result
+                Continuation cEnv _ _ _ -> continueEval cEnv cont result
                 _ -> return result
         Func aparams _ _ _ ->
           if (toInteger $ length aparams) == 1 
@@ -580,21 +586,24 @@ makeVarargs = makeFunc . Just . showVal
 
 -- Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
-apply _ c@(Continuation env _ _) args = do
+apply _ c@(Continuation env _ _ multipleValues) args = do
 -- TODO: need a way to create a continuation taking multiple args,
 --       to support (call-with-values)
-  if (toInteger $ length args) /= 1 
-    then throwError $ NumArgs 1 args
-    else continueEval env c $ head args
+  if multipleValues
+    then continueEval env c $ List args
+    else
+      if (toInteger $ length args) /= 1 
+        then throwError $ NumArgs 1 args
+        else continueEval env c $ head args
 apply cont (IOFunc func) args = do
   result <- func args
   case cont of
-    Continuation cEnv _ _ -> continueEval cEnv cont result
+    Continuation cEnv _ _ _ -> continueEval cEnv cont result
     _ -> return result
 apply cont (PrimitiveFunc func) args = do
   result <- liftThrows $ func args
   case cont of
-    Continuation cEnv  _ _ -> continueEval cEnv cont result
+    Continuation cEnv _  _ _ -> continueEval cEnv cont result
     _ -> return result
 apply cont (Func aparams avarargs abody aclosure) args =
   if num aparams /= num args && avarargs == Nothing
@@ -615,14 +624,14 @@ apply cont (Func aparams avarargs abody aclosure) args =
         -- See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
         --
         evalBody evBody env = case cont of
-            Continuation _ (Just (SchemeBody cBody)) (Just cCont) -> if length cBody == 0
+            Continuation _ (Just (SchemeBody cBody)) (Just cCont) _ -> if length cBody == 0
                 then continueWCont env (evBody) cCont
                 else continueWCont env (evBody) cont -- Might be a problem, not fully optimizing
             _ -> continueWCont env (evBody) cont
 
         -- Shortcut for calling continueEval
         continueWCont cwcEnv cwcBody cwcCont = 
-            continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont)) $ Nil ""
+            continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) False) $ Nil ""
 
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
@@ -1141,7 +1150,7 @@ isDottedList ([List _]) = return $ Bool True
 isDottedList _ = return $  Bool False
 
 isProcedure :: [LispVal] -> ThrowsError LispVal
-isProcedure ([Continuation _ _ _]) = return $ Bool True
+isProcedure ([Continuation _ _ _ _]) = return $ Bool True
 isProcedure ([PrimitiveFunc _]) = return $ Bool True
 isProcedure ([Func _ _ _ _]) = return $ Bool True
 isProcedure ([IOFunc _]) = return $ Bool True
