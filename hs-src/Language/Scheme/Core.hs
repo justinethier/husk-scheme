@@ -736,9 +736,9 @@ readCharProc func [Port port] = do
             return $ Char inpChr 
 readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 
-writeProc :: forall a (m :: * -> *).
+{-writeProc :: --forall a (m :: * -> *).
              (MonadIO m, MonadError LispError m) =>
-             (Handle -> LispVal -> IO a) -> [LispVal] -> m LispVal
+             (Handle -> LispVal -> IO a) -> [LispVal] -> m LispVal -}
 writeProc func [obj] = writeProc func [obj, Port stdout]
 writeProc func [obj, Port port] = do
     output <- liftIO $ try (liftIO $ func port obj)
