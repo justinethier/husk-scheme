@@ -6,6 +6,8 @@ v2.3
 newline, write-char, read-char, peek-char, current-input-port,
 current-output-port, call-with-input-file, and call-with-output-port
 - Added eval
+- Added a limited version of (call-with-values) that currently only accepts
+one argument
 
 v2.2
 ----
