@@ -136,7 +136,7 @@ data LispVal = Atom String
 	| Continuation {  closure :: Env                     -- Environment of the continuation
                         , currentCont :: (Maybe DeferredCode)-- Code of current continuation
                         , nextCont    :: (Maybe LispVal)     -- Code to resume after body of cont
-                        , multipleArgs :: Bool
+                        , extraReturnArgs :: (Maybe [LispVal]) -- Extra return arguments, to support (values) and (call-with-values)
                         -- FUTURE: stack (for dynamic wind)
                        }
          -- ^Continuation
@@ -154,15 +154,15 @@ data DeferredCode =
 
 -- Make an "empty" continuation that does not contain any code
 makeNullContinuation :: Env -> LispVal
-makeNullContinuation env = Continuation env Nothing Nothing False
+makeNullContinuation env = Continuation env Nothing Nothing Nothing 
 
 -- Make a continuation that takes a higher-order function (written in Haskell)
 makeCPS :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal]-> IOThrowsError LispVal) -> LispVal
-makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) False
+makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing
 
 -- Make a continuation that stores a higher-order function and arguments to that function
 makeCPSWArgs :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) -> [LispVal] -> LispVal
-makeCPSWArgs env cont cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont) False
+makeCPSWArgs env cont cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont) Nothing
 
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b

@@ -31,7 +31,7 @@ import List
 import IO hiding (try)
 import System.Directory (doesFileExist)
 import System.IO.Error
---import Debug.Trace
+import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
 
@@ -75,7 +75,7 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 -- Passing a higher-order function as the continuation; just evaluate it. This is 
 -- done to enable an 'eval' function to be broken up into multiple sub-functions,
 -- so that any of the sub-functions can be passed around as a continuation.
-continueEval _ (Continuation cEnv (Just (HaskellBody func funcArgs)) (Just cCont) _) val = func cEnv cCont val funcArgs
+continueEval _ (Continuation cEnv (Just (HaskellBody func funcArgs)) (Just cCont) xargs) val = func cEnv cCont val funcArgs
 
 -- No higher order function, so:
 --
@@ -85,14 +85,14 @@ continueEval _ (Continuation cEnv (Just (HaskellBody func funcArgs)) (Just cCont
 -- continuation (if there is one), or we just return the result. Yes technically with
 -- CPS you are supposed to keep calling into functions and never return, but eventually
 -- when the computation is complete, you have to return something.
-continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) _) val = do
+continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs) val = do
     case cBody of
         [] -> do
           case cCont of
-            Continuation nEnv _ _ _ -> continueEval nEnv cCont val
+            Continuation nEnv ncCont nnCont _ -> continueEval nEnv (Continuation nEnv ncCont nnCont extraArgs) (trace ("xargs = " ++ show extraArgs) val) -- Pass extra args along if last expression of a function
             _ -> return (val)
-        [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) False) (lv)
-        (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) False) (lv)
+        [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) Nothing) (lv)
+        (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing) (lv)
 
 -- No current continuation, but a next cont is available; call into it
 continueEval _ (Continuation cEnv Nothing (Just cCont) _) val = continueEval cEnv cCont val
@@ -510,16 +510,12 @@ eval env cont (List [Atom "call-with-values", producer, consumer]) = do
   eval env
   -- TODO: problem is that this continuation will not be called into by (values), rather
   --       one of the conts inside producer will be called instead...
-      (Continuation env (Just (HaskellBody cpsEval Nothing)) (Just cont) True) -- Multiple Values
+      (Continuation env (Just (HaskellBody cpsEval Nothing)) (Just cont) Nothing) -- TODO: use makeCPS function for this
       (List [producer]) -- Call into prod to get values
  where
    cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-   cpsEval e c (List values) _ = do
-        -- should handle if multiple values are passed...
-        eval e c $ List $ [consumer] ++ values --List [consumer , value]
--- should not need the following case??
+   cpsEval e c@(Continuation _ _ _ (Just xargs)) value _ = eval e c $ List (consumer : value : xargs)
    cpsEval e c value _ = eval e c $ List [consumer, value]
-    --throwError $ Default $ "Unexpected error in call-with-values, value = " ++ show value
 eval _ _ (List (Atom "call-with-values" : _)) = throwError $ Default "Procedures not specified"
 
 eval env cont (List (Atom "call-with-current-continuation" : args)) = 
@@ -588,12 +584,9 @@ makeVarargs = makeFunc . Just . showVal
 
 -- Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
-apply _ c@(Continuation env _ _ multipleValues) args = do
-  if multipleValues
-    then continueEval env c $ List args
-    else
+apply _ c@(Continuation env ccont ncont _) args = do
       if (toInteger $ length args) /= 1 
-        then throwError $ NumArgs 1 args
+        then continueEval env (Continuation env ccont ncont (Just $ tail args)) $ head args 
         else continueEval env c $ head args
 
 -- TODO: Think about wrapping the result into a new LispVal "multipleValues" that
@@ -640,7 +633,7 @@ apply cont (Func aparams avarargs abody aclosure) args =
 
         -- Shortcut for calling continueEval
         continueWCont cwcEnv cwcBody cwcCont = 
-            continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) False) $ Nil ""
+            continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing) $ Nil ""
 
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
