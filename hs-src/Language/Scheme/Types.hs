@@ -133,9 +133,9 @@ data LispVal = Atom String
          -- ^
 	| Port Handle
          -- ^I/O port
-	| Continuation {  closure :: Env                     -- Environment of the continuation
-                        , currentCont :: (Maybe DeferredCode)-- Code of current continuation
-                        , nextCont    :: (Maybe LispVal)     -- Code to resume after body of cont
+	| Continuation {  closure :: Env                       -- Environment of the continuation
+                        , currentCont :: (Maybe DeferredCode)  -- Code of current continuation
+                        , nextCont    :: (Maybe LispVal)       -- Code to resume after body of cont
                         , extraReturnArgs :: (Maybe [LispVal]) -- Extra return arguments, to support (values) and (call-with-values)
                         -- FUTURE: stack (for dynamic wind)
                        }
