@@ -31,7 +31,7 @@ import List
 import IO hiding (try)
 import System.Directory (doesFileExist)
 import System.IO.Error
-import Debug.Trace
+--import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
 
@@ -75,7 +75,9 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 -- Passing a higher-order function as the continuation; just evaluate it. This is 
 -- done to enable an 'eval' function to be broken up into multiple sub-functions,
 -- so that any of the sub-functions can be passed around as a continuation.
-continueEval _ (Continuation cEnv (Just (HaskellBody func funcArgs)) (Just cCont) xargs) val = func cEnv cCont val funcArgs
+--
+-- Carry extra args from the current continuation into the next, to support (call-with-values)
+continueEval _ (Continuation cEnv (Just (HaskellBody func funcArgs)) (Just (Continuation cce cnc ccc _)) xargs) val = func cEnv (Continuation cce cnc ccc xargs) val funcArgs
 
 -- No higher order function, so:
 --
@@ -89,7 +91,9 @@ continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraAr
     case cBody of
         [] -> do
           case cCont of
-            Continuation nEnv ncCont nnCont _ -> continueEval nEnv (Continuation nEnv ncCont nnCont extraArgs) (trace ("xargs = " ++ show extraArgs) val) -- Pass extra args along if last expression of a function
+            Continuation nEnv ncCont nnCont _ -> 
+              -- Pass extra args along if last expression of a function, to support (call-with-values)
+              continueEval nEnv (Continuation nEnv ncCont nnCont extraArgs) val 
             _ -> return (val)
         [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) Nothing) (lv)
         (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing) (lv)
@@ -508,9 +512,8 @@ eval env cont (List (Atom "apply" : applyArgs)) = do
 eval env cont (List [Atom "call-with-values", producer, consumer]) = do
 -- TODO: validate that producer and consumer are functions
   eval env
-  -- TODO: problem is that this continuation will not be called into by (values), rather
-  --       one of the conts inside producer will be called instead...
-      (Continuation env (Just (HaskellBody cpsEval Nothing)) (Just cont) Nothing) -- TODO: use makeCPS function for this
+      (makeCPS env cont cpsEval)
+      --(Continuation env (Just (HaskellBody cpsEval Nothing)) (Just cont) Nothing) -- TODO: use makeCPS function for this
       (List [producer]) -- Call into prod to get values
  where
    cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
