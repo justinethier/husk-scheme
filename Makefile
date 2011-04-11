@@ -14,6 +14,7 @@ doc:
 test:
 	cd scm-unit-tests ; ../huski t-backquote.scm
 	cd scm-unit-tests ; ../huski t-case.scm
+	cd scm-unit-tests ; ../huski t-closure.scm
 	cd scm-unit-tests ; ../huski t-cond.scm
 	cd scm-unit-tests ; ../huski t-cont.scm
 	cd scm-unit-tests ; ../huski t-delay.scm
