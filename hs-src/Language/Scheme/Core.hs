@@ -77,7 +77,11 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 -- so that any of the sub-functions can be passed around as a continuation.
 --
 -- Carry extra args from the current continuation into the next, to support (call-with-values)
-continueEval _ (Continuation cEnv (Just (HaskellBody func funcArgs)) (Just (Continuation cce cnc ccc _)) xargs) val = func cEnv (Continuation cce cnc ccc xargs) val funcArgs
+continueEval _
+            (Continuation cEnv (Just (HaskellBody func funcArgs)) 
+                               (Just (Continuation cce cnc ccc _)) 
+                                xargs) 
+             val = func cEnv (Continuation cce cnc ccc xargs) val funcArgs
 
 -- No higher order function, so:
 --
@@ -589,17 +593,9 @@ makeVarargs = makeFunc . Just . showVal
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 apply _ c@(Continuation env ccont ncont _) args = do
       if (toInteger $ length args) /= 1 
-        then continueEval env (Continuation env ccont ncont (Just $ tail args)) $ head args 
+        then -- Pass along additional arguments, so they are available to (call-with-values)
+             continueEval env (Continuation env ccont ncont (Just $ tail args)) $ head args 
         else continueEval env c $ head args
-
--- TODO: Think about wrapping the result into a new LispVal "multipleValues" that
--- will be returned in len(args) > 1. this var would then only be used by the call-with-values
--- continuation. otherwise it would eventually throw an error... is that feasible?
-
-{-        -- Hack: just pass all of the args along.
-        -- Assumption is that a multi-value continuation will eventually appear to accept this.
-        -- Really need a better solution, because this breaks other cont code...
-        continueEval env c $ List args -- TODO - testing: head args -}
 apply cont (IOFunc func) args = do
   result <- func args
   case cont of
