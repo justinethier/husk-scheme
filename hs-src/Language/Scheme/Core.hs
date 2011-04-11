@@ -299,11 +299,6 @@ eval env cont (List (Atom "begin" : funcs)) =
             Nothing -> throwError $ Default "Unexpected error in begin"
 
 
-eval env cont (List [Atom "load", String filename]) = do
-     result <- load filename >>= liftM last . mapM (evaluate env (makeNullContinuation env))
-     continueEval env cont result
-	 where evaluate env2 cont2 val2 = macroEval env2 val2 >>= eval env2 cont2
-
 
 eval env cont (List [Atom "set!", Atom var, form]) = do 
   eval env (makeCPS env cont cpsResult) form
@@ -624,13 +619,21 @@ primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrim
 --
 evalFunctions :: [(String, [LispVal] -> IOThrowsError LispVal)]
 evalFunctions = [
-                    ("eval", evalfuncEval)
+                    ("load", evalfuncLoad)
+                  , ("eval", evalfuncEval)
                   , ("call-with-current-continuation", evalfuncCallCC)
 -- 
 -- TODO: all of the following should be relocated from eval to here:
--- apply, call-with-values, load, string / vector / hash table primitives                 
+-- apply, call-with-values, set-cdr!, (set-car!), string / vector / hash table primitives                 
 --
                 ]
+evalfuncEval, evalfuncLoad, evalfuncCallCC :: [LispVal] -> IOThrowsError LispVal
+evalfuncLoad [cont@(Continuation env _ _ _), String filename] = do
+     result <- load filename >>= liftM last . mapM (evaluate env (makeNullContinuation env))
+     continueEval env cont result
+	 where evaluate env2 cont2 val2 = macroEval env2 val2 >>= eval env2 cont2
+evalfuncLoad (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
+evalfuncLoad _ = throwError $ NumArgs 1 []
 
 -- Evaluate an expression in the current environment
 --
@@ -639,12 +642,10 @@ evalFunctions = [
 --
 -- FUTURE: consider allowing env to be specified, per R5RS
 --
-evalfuncEval :: [LispVal] -> IOThrowsError LispVal
 evalfuncEval [cont@(Continuation env _ _ _), val] = eval env cont val
 evalfuncEval (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncEval _ = throwError $ NumArgs 1 []
 
-evalfuncCallCC :: [LispVal] -> IOThrowsError LispVal
 evalfuncCallCC [cont@(Continuation _ _ _ _), func] = do
    case func of
      PrimitiveFunc f -> do
