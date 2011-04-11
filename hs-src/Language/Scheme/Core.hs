@@ -144,21 +144,6 @@ eval env cont val@(HashTable _) = continueEval env cont val
 eval env cont val@(Vector _)    = continueEval env cont val
 eval env cont (Atom a)          = continueEval env cont =<< getVar env a
 
--- Evaluate an expression in the current environment
---
--- Calls into eval once to get raw expression, and a second time
--- to eval *that* expression.
---
--- Assumption is any macro transform is already performed
--- prior to this step.
---
--- FUTURE: consider allowing env to be specified, per R5RS
---
-eval env cont (List [Atom "eval", val]) = do
-  eval env (makeCPS env cont cps) val
-  where cps :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cps e c result _ = eval e c result
-
 -- Quote an expression by simply passing along the value
 eval env cont (List [Atom "quote", val])         = continueEval env cont val
 
@@ -601,6 +586,10 @@ apply cont (IOFunc func) args = do
   case cont of
     Continuation cEnv _ _ _ -> continueEval cEnv cont result
     _ -> return result
+apply cont (EvalFunc func) args = do
+    -- An EvalFunc extends the evaluator so it needs access to the current continuation;
+    -- pass it as the first argument.
+    func (cont : args)
 apply cont (PrimitiveFunc func) args = do
   result <- liftThrows $ func args
   case cont of
@@ -644,9 +633,33 @@ apply _ func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List
 --  in the standard library which must be pulled into the environment using (load).
 primitiveBindings :: IO Env
 primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrimitives
-                                              ++ map (domakeFunc PrimitiveFunc) primitives)
+                                               ++ map (domakeFunc EvalFunc) evalFunctions
+                                               ++ map (domakeFunc PrimitiveFunc) primitives)
   where domakeFunc constructor (var, func) = ((varNamespace, var), constructor func)
 
+-- Functions that extend the core evaluator, but that are defined separately.
+--
+-- These functions have access to the current environment and continuation, via
+-- the current continuation which is passed in as the first LispVal argument.
+--
+evalFunctions :: [(String, [LispVal] -> IOThrowsError LispVal)]
+evalFunctions = [
+                  ("eval", evalfuncEval)
+                 ]
+-- Evaluate an expression in the current environment
+--
+-- Assumption is any macro transform is already performed
+-- prior to this step.
+--
+-- FUTURE: consider allowing env to be specified, per R5RS
+--
+evalfuncEval :: [LispVal] -> IOThrowsError LispVal
+evalfuncEval [cont@(Continuation env _ _ _), val] = eval env cont val
+evalfuncEval (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
+evalfuncEval _ = throwError $ NumArgs 1 []
+
+-- I/O primitives
+-- Primitive functions that execute within the IO monad
 ioPrimitives :: [(String, [LispVal] -> IOThrowsError LispVal)]
 ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("open-output-file", makePort WriteMode),
