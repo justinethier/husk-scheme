@@ -122,7 +122,7 @@ data LispVal = Atom String
 	| Bool Bool
           -- ^Boolean
 	| PrimitiveFunc ([LispVal] -> ThrowsError LispVal)
-          -- ^
+          -- ^Primitive function
 	| Func {params :: [String], 
  	        vararg :: (Maybe String),
 	        body :: [LispVal], 
@@ -130,7 +130,10 @@ data LispVal = Atom String
  	       }
           -- ^Function
 	| IOFunc ([LispVal] -> IOThrowsError LispVal)
-         -- ^
+         -- ^Primitive function within the IO monad
+	| EvalFunc ([LispVal] -> IOThrowsError LispVal)
+         -- ^Function within the IO monad with access to 
+         --  the current environment and continuation.
 	| Port Handle
          -- ^I/O port
 	| Continuation {  closure :: Env                       -- Environment of the continuation
@@ -245,6 +248,7 @@ showVal (Func {params = args, vararg = varargs, body = _, closure = _}) =
       Just arg -> " . " ++ arg) ++ ") ...)"
 showVal (Port _) = "<IO port>"
 showVal (IOFunc _) = "<IO primitive>"
+showVal (EvalFunc _) = "<procedure>"
 
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map showVal
