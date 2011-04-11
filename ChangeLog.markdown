@@ -1,5 +1,12 @@
 v2.4
 ----
+- Simplified the core evaluator by moving core functions out of eval.
+Practically, this means that these core functions are now first-class objects.
+They can now be called directly, assigned to variables, etc just like any
+other first-class value. 
+
+TODO: list of affected functions
+
 - (call-with-values) now accepts multiple return values from the producer function.
 - If (values) is called with multiple arguments and is not part of an
 enclosing (call-with-values), the first value is returned to the interpreter
