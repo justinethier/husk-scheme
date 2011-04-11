@@ -1,18 +1,25 @@
+v2.4
+----
+- (call-with-values) now accepts multiple return values from the producer function.
+- If (values) is called with multiple arguments and is not part of an
+enclosing (call-with-values), the first value is returned to the interpreter
+instead of generating an error.
+
 v2.3
 ----
-- Automatically load the scheme standard library when running .scm files
-- Suppress excess output when running a program by piping it to /dev/null
+- Automatically load the scheme standard library when running .scm files.
+- Suppress excess output when running a program by piping it to /dev/null.
 - Added missing I/O functions, including display, input-port?, output-port?,
 newline, write-char, read-char, peek-char, current-input-port,
-current-output-port, call-with-input-file, and call-with-output-port
-- Added eval
+current-output-port, call-with-input-file, and call-with-output-port.
+- Added eval.
 - Added a limited version of (call-with-values) that currently only accepts
-one argument
+one argument.
 
 v2.2
 ----
-- Added vector support to macros
-- Added an example program to demonstrate file I/O: examples/simple-file-io.scm
+- Added vector support to macros.
+- Added an example program to demonstrate file I/O: examples/simple-file-io.scm.
 
 v2.1
 ----
