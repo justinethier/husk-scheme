@@ -502,7 +502,6 @@ eval env cont (List [Atom "call-with-values", producer, consumer]) = do
 -- TODO: validate that producer and consumer are functions
   eval env
       (makeCPS env cont cpsEval)
-      --(Continuation env (Just (HaskellBody cpsEval Nothing)) (Just cont) Nothing) -- TODO: use makeCPS function for this
       (List [producer]) -- Call into prod to get values
  where
    cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -510,25 +509,6 @@ eval env cont (List [Atom "call-with-values", producer, consumer]) = do
    cpsEval e c value _ = eval e c $ List [consumer, value]
 eval _ _ (List (Atom "call-with-values" : _)) = throwError $ Default "Procedures not specified"
 
-eval env cont (List (Atom "call-with-current-continuation" : args)) = 
-  eval env cont (List (Atom "call/cc" : args))
-eval _ _ (List [Atom "call/cc"]) = throwError $ Default "Procedure not specified"
-eval e c (List [Atom "call/cc", proc]) = eval e (makeCPS e c cpsEval) proc
- where
-   cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-   cpsEval _ cont func _ = 
-      case func of
-        PrimitiveFunc f -> do
-            result <- liftThrows $ f [cont]
-            case cont of 
-                Continuation cEnv _ _ _ -> continueEval cEnv cont result
-                _ -> return result
-        Func aparams _ _ _ ->
-          if (toInteger $ length aparams) == 1 
-            then apply cont func [cont] 
-            else throwError $ NumArgs (toInteger $ length aparams) [cont] 
-        other -> throwError $ TypeMismatch "procedure" other
-     
 -- Call a function by evaluating its arguments and then 
 -- executing it via 'apply'.
 eval env cont (List (function : functionArgs)) = do 
@@ -644,8 +624,14 @@ primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrim
 --
 evalFunctions :: [(String, [LispVal] -> IOThrowsError LispVal)]
 evalFunctions = [
-                  ("eval", evalfuncEval)
-                 ]
+                    ("eval", evalfuncEval)
+                  , ("call-with-current-continuation", evalfuncCallCC)
+-- 
+-- TODO: all of the following should be relocated from eval to here:
+-- apply, call-with-values, load, string / vector / hash table primitives                 
+--
+                ]
+
 -- Evaluate an expression in the current environment
 --
 -- Assumption is any macro transform is already performed
@@ -657,6 +643,22 @@ evalfuncEval :: [LispVal] -> IOThrowsError LispVal
 evalfuncEval [cont@(Continuation env _ _ _), val] = eval env cont val
 evalfuncEval (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncEval _ = throwError $ NumArgs 1 []
+
+evalfuncCallCC :: [LispVal] -> IOThrowsError LispVal
+evalfuncCallCC [cont@(Continuation _ _ _ _), func] = do
+   case func of
+     PrimitiveFunc f -> do
+         result <- liftThrows $ f [cont]
+         case cont of 
+             Continuation cEnv _ _ _ -> continueEval cEnv cont result
+             _ -> return result
+     Func aparams _ _ _ ->
+       if (toInteger $ length aparams) == 1 
+         then apply cont func [cont] 
+         else throwError $ NumArgs (toInteger $ length aparams) [cont] 
+     other -> throwError $ TypeMismatch "procedure" other
+evalfuncCallCC (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
+evalfuncCallCC _ = throwError $ NumArgs 1 []
 
 -- I/O primitives
 -- Primitive functions that execute within the IO monad

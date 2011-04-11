@@ -6,6 +6,8 @@
 ;
 ; Standard library of scheme functions
 ;
+(define call/cc call-with-current-continuation)
+
 (define (caar pair) (car (car pair)))
 (define (cadr pair) (car (cdr pair)))
 (define (cdar pair) (cdr (car pair)))
