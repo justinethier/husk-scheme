@@ -222,6 +222,13 @@
 
 ; End delayed evaluation section
 
+; String Section
+(define-syntax string-fill!
+  (syntax-rules ()
+    ((_ _str _chr)
+     (set! _str
+           (make-string (string-length _str) _chr)))))
+
 ; Continuation Section
 (define (values . things)
     (call-with-current-continuation 
