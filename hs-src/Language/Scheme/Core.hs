@@ -455,37 +455,6 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
 
-
-eval _ _ (List [Atom "apply"]) = throwError $ BadSpecialForm "apply" $ String "Function not specified"
-eval _ _ (List [Atom "apply", _]) = throwError $ BadSpecialForm "apply" $ String "Arguments not specified"
-eval env cont (List (Atom "apply" : applyArgs)) = do
-  eval env (makeCPSWArgs env cont cpsLast $ [List applyArgs]) $ head applyArgs
-  where cpsLast :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsLast e c proc (Just [List args]) = 
-          eval e (makeCPSWArgs e c cpsArgs $ [proc, List $ tail $ reverse $ tail $ reverse args]) $ head $ reverse args 
-        cpsLast _ _ _ _ = throwError $ InternalError "Invalid arguments to cpsLast"
-
-        cpsArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsArgs e c lst (Just [proc, List args]) =
-          case args of
-            [] -> cpsApply c (Just [proc, lst, List args])
-            _ -> eval e (makeCPSWArgs e c cpsEvalArgs $ [proc, lst, List $ tail args, List []]) $ head args
-        cpsArgs _ _ _ _ = throwError $ InternalError "Invalid arguments to cpsArgs"
-
-        cpsEvalArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsEvalArgs e c result (Just [proc, lst, List args, List evaledArgs]) =
-          case args of
-            [] -> cpsApply c (Just [proc, lst, List (evaledArgs ++ [result])])
-            (x:xs) -> eval e (makeCPSWArgs e c cpsEvalArgs $ [proc, lst, List xs, List (evaledArgs ++ [result])]) x
-        cpsEvalArgs _ _ _ _ = throwError $ InternalError "Invalid arguments to cpsEvalArgs"
-
-        cpsApply :: LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsApply c (Just [proc, lst, List argVals]) = do 
-          case lst of
-            List l -> apply c proc (argVals ++ l)
-            other -> throwError $ TypeMismatch "list" other
-        cpsApply _ _ = throwError $ InternalError "Invalid arguments to cpsApply"
-
 -- 
 --
 -- FUTURE: Issue #2: support for other continuation-related functions, such as
@@ -620,14 +589,19 @@ primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrim
 evalFunctions :: [(String, [LispVal] -> IOThrowsError LispVal)]
 evalFunctions = [
                     ("load", evalfuncLoad)
+                  , ("apply", evalfuncApply)
                   , ("eval", evalfuncEval)
                   , ("call-with-current-continuation", evalfuncCallCC)
 -- 
 -- TODO: all of the following should be relocated from eval to here:
--- apply, call-with-values, set-cdr!, (set-car!), string / vector / hash table primitives                 
+-- call-with-values, set-cdr!, (set-car!), string / vector / hash table primitives                 
 --
                 ]
-evalfuncEval, evalfuncLoad, evalfuncCallCC :: [LispVal] -> IOThrowsError LispVal
+evalfuncApply, evalfuncEval, evalfuncLoad, evalfuncCallCC :: [LispVal] -> IOThrowsError LispVal
+evalfuncApply [cont@(Continuation _ _ _ _), func, List args] = apply cont func args
+evalfuncApply (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
+evalfuncApply _ = throwError $ NumArgs 2 []
+
 evalfuncLoad [cont@(Continuation env _ _ _), String filename] = do
      result <- load filename >>= liftM last . mapM (evaluate env (makeNullContinuation env))
      continueEval env cont result
