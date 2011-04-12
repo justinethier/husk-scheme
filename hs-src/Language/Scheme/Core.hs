@@ -309,6 +309,8 @@ eval env cont (List [Atom "set!", Atom var, form]) = do
   eval env (makeCPS env cont cpsResult) form
  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsResult e c result _ = setVar e var result >>= continueEval e c
+eval _ _ (List [Atom "set!", nonvar, _]) = throwError $ TypeMismatch "variable" nonvar 
+eval _ _ (List (Atom "set!" : args)) = throwError $ NumArgs 2 args
 
 eval env cont (List [Atom "define", Atom var, form]) = do 
   eval env (makeCPS env cont cpsResult) form
