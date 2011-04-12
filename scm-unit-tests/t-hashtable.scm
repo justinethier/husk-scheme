@@ -1,12 +1,13 @@
-;
-; husk-scheme
-; http://github.com/justinethier/husk-scheme
-;
-; Written by Justin Ethier
-;
-; Test cases for hash tables 
-;
+;;
+;; husk-scheme
+;; http://github.com/justinethier/husk-scheme
+;;
+;; Written by Justin Ethier
+;;
+;; Test cases for hash tables 
+;;
 (load "skim-unit.scm")
+(unit-test-start "hash tables")
 
 (define ht (make-hash-table))
 (hash-table-set! ht 1 1)

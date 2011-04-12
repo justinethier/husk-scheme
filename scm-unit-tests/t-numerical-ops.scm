@@ -7,6 +7,7 @@
 ;;; Test cases for built-in numerical functions 
 ;;;
 (load "skim-unit.scm")
+(unit-test-start "numerical operations")
 
 (assert/equal (complex? 3+4i) #t)
 (assert/equal (complex? 3) #t)

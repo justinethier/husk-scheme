@@ -1,12 +1,13 @@
-;
-; husk-scheme
-; http://github.com/justinethier/husk-scheme
-;
-; Written by Justin Ethier
-;
-; Test cases for do form
-;
+;;
+;; husk-scheme
+;; http://github.com/justinethier/husk-scheme
+;;
+;; Written by Justin Ethier
+;;
+;; Test cases for do form
+;;
 (load "skim-unit.scm")
+(unit-test-start "iteration")
 
 (assert/equal 
                 (do ((vec (make-vector 5) vec)

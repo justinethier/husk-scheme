@@ -1,12 +1,13 @@
-;
-; husk-scheme
-; http://github.com/justinethier/husk-scheme
-;
-; Written by Justin Ethier
-;
-; Test cases for macros
-;
+;;
+;; husk-scheme
+;; http://github.com/justinethier/husk-scheme
+;;
+;; Written by Justin Ethier
+;;
+;; Test cases for macros
+;;
 (load "skim-unit.scm")
+(unit-test-start "macros")
 
 (define-syntax my-let 
   (syntax-rules ()

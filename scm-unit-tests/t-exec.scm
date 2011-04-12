@@ -1,12 +1,14 @@
-;
-; husk-scheme
-; http://github.com/justinethier/husk-scheme
-;
-; Written by Justin Ethier
-;
-; Test cases for execution-related forms 
-;
+;;
+;; husk-scheme
+;; http://github.com/justinethier/husk-scheme
+;;
+;; Written by Justin Ethier
+;;
+;; Test cases for execution-related forms 
+;;
 (load "skim-unit.scm")
+(unit-test-start "apply")
+
 (assert/equal (apply + (list 3 4)) 7) 
 
 (define compose

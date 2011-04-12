@@ -1,12 +1,13 @@
-;
-; husk-scheme
-; http://github.com/justinethier/husk-scheme
-;
-; Written by Justin Ethier
-;
-; Test cases for continuations
-;
+;;
+;; husk-scheme
+;; http://github.com/justinethier/husk-scheme
+;;
+;; Written by Justin Ethier
+;;
+;; Test cases for continuations
+;;
 (load "skim-unit.scm")
+(unit-test-start "continuations")
 
 (define (f return)
     (return 2)

@@ -16,6 +16,7 @@
 ;;;       For more information: https://github.com/justinethier/husk-scheme/wiki/Compatibility
 ;;;
 (load "skim-unit.scm")
+(unit-test-start "standard procedures")
 
 (assert/equal
     (eqv? 'a 'a)

@@ -1,12 +1,13 @@
-;
-; husk-scheme
-; http://github.com/justinethier/husk-scheme
-;
-; Written by Justin Ethier
-;
-; Test cases for delay-related built in forms 
-;
+;;
+;; husk-scheme
+;; http://github.com/justinethier/husk-scheme
+;;
+;; Written by Justin Ethier
+;;
+;; Test cases for delay-related built in forms 
+;;
 (load "skim-unit.scm")
+(unit-test-start "delayed evaluation")
 
 (assert/equal (force (delay 1))
 			  1)

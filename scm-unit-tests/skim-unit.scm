@@ -28,8 +28,19 @@
 (define (assert/equal test expected)
      (unit-test-handler expected ((lambda () test))))
 
+(define (unit-test-start name)
+  (display "Testing ")
+  (display name)
+  (display "... ")
+  (newline))
+
 (define (unit-test-handler-results)
-  (write `("Test Complete" Passed: ,pass-count Failed: ,fail-count))
+;  (display "Test complete!")
+  (display " Passed: ")
+  (display pass-count)
+  (display " Failed: ")
+  (display fail-count)
+  (newline)
 
   (define total-pass 0)
   (define total-fail 0)
