@@ -272,11 +272,9 @@
   1
   (test2)
   (null? '())
-    2
-      (write (+ 1 2 3))
-        4
-          (write (+ 4 5 6))
-            #f)
+  2
+  4
+  #f)
 (assert/equal (if (test) 'true 'false) 'false)
 
 (unit-test-handler-results)

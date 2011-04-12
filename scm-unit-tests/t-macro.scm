@@ -277,9 +277,9 @@
       (list (quote (var . step))))))
 
 ; Issue #9: question, is the output of these correct, or should it be a dotted list?
-(write (my-pair-test/06 (1 . 3)))
+;(write (my-pair-test/06 (1 . 3)))
 ; outputs: ((1 3))
-(write (my-pair-test/06 (1 2)))
+;(write (my-pair-test/06 (1 2)))
 ; outputs: ((1 2))
 ; 
 ; According to csi, with macro defined as (test):
