@@ -408,24 +408,8 @@ eval env cont (List [Atom "vector-set!", Atom var, i, object]) = do
         updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
         updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec//[(fromInteger idx, obj)]
         updateVector v _ _ = throwError $ TypeMismatch "vector" v
-
-eval env cont (List [Atom "vector-fill!", Atom var, object]) = do 
-  eval env (makeCPS env cont cpsVec) object
-  where
-        cpsVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsVec e c obj _ = eval e (makeCPSWArgs e c cpsFillVec $ [obj]) =<< getVar e var
-
-        cpsFillVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsFillVec e c vec (Just [obj]) = 
-            fillVector vec obj >>= setVar e var >>= continueEval e c 
-        cpsFillVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsFillVec" 
-
-        fillVector :: LispVal -> LispVal -> IOThrowsError LispVal
-        fillVector (Vector vec) obj = do
-          let l = replicate (lenVector vec) obj
-          return $ Vector $ (listArray (0, length l - 1)) l
-        fillVector v _ = throwError $ TypeMismatch "vector" v
-        lenVector v = length (elems v)
+eval _ _ (List [Atom "vector-set!" , nonvar , _ , _]) = throwError $ TypeMismatch "variable" nonvar 
+eval _ _ (List (Atom "vector-set!" : args)) = throwError $ NumArgs 3 args
 
 eval env cont (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do 
   eval env (makeCPS env cont cpsValue) rkey

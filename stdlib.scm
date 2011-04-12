@@ -229,6 +229,13 @@
      (set! _str
            (make-string (string-length _str) _chr)))))
 
+; Vector Section
+(define-syntax vector-fill!
+  (syntax-rules ()
+    ((_ _vec _fill)
+     (set! _vec
+           (make-vector (vector-length _vec) _fill)))))
+
 ; Continuation Section
 (define (values . things)
     (call-with-current-continuation 
