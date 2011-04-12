@@ -428,6 +428,8 @@ eval env cont (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
                   setVar env var (HashTable $ Data.Map.insert key value ht) >>= eval e c
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
+eval _ _ (List [Atom "hash-table-set!" , nonvar , _ , _]) = throwError $ TypeMismatch "variable" nonvar 
+eval _ _ (List (Atom "hash-table-set!" : args)) = throwError $ NumArgs 3 args
 
 eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do 
   eval env (makeCPS env cont cpsH) rkey
@@ -442,6 +444,8 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
                   setVar env var (HashTable $ Data.Map.delete key ht) >>= eval e c
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
+eval _ _ (List [Atom "hash-table-delete!" , nonvar , _]) = throwError $ TypeMismatch "variable" nonvar 
+eval _ _ (List (Atom "hash-table-delete!" : args)) = throwError $ NumArgs 2 args
 
 -- 
 --
