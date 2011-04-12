@@ -31,7 +31,7 @@ import List
 import IO hiding (try)
 import System.Directory (doesFileExist)
 import System.IO.Error
---import Debug.Trace
+import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
 
@@ -462,17 +462,6 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 --
 --
 
-eval env cont (List [Atom "call-with-values", producer, consumer]) = do
--- TODO: validate that producer and consumer are functions
-  eval env
-      (makeCPS env cont cpsEval)
-      (List [producer]) -- Call into prod to get values
- where
-   cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-   cpsEval e c@(Continuation _ _ _ (Just xargs)) value _ = eval e c $ List (consumer : value : xargs)
-   cpsEval e c value _ = eval e c $ List [consumer, value]
-eval _ _ (List (Atom "call-with-values" : _)) = throwError $ Default "Procedures not specified"
-
 -- Call a function by evaluating its arguments and then 
 -- executing it via 'apply'.
 eval env cont (List (function : functionArgs)) = do 
@@ -588,16 +577,27 @@ primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrim
 --
 evalFunctions :: [(String, [LispVal] -> IOThrowsError LispVal)]
 evalFunctions = [
-                    ("load", evalfuncLoad)
-                  , ("apply", evalfuncApply)
-                  , ("eval", evalfuncEval)
+                    ("apply", evalfuncApply)
                   , ("call-with-current-continuation", evalfuncCallCC)
+                  , ("call-with-values", evalfuncCallWValues)
+                  , ("eval", evalfuncEval)
+                  , ("load", evalfuncLoad)
 -- 
 -- TODO: all of the following should be relocated from eval to here:
--- call-with-values, set-cdr!, (set-car!), string / vector / hash table primitives                 
+-- set-cdr!, (set-car!), string / vector / hash table primitives                 
 --
                 ]
-evalfuncApply, evalfuncEval, evalfuncLoad, evalfuncCallCC :: [LispVal] -> IOThrowsError LispVal
+evalfuncApply, evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
+
+evalfuncCallWValues [cont@(Continuation env _ _ _), producer, consumer] = do 
+  apply (makeCPS env cont cpsEval) producer [] -- Call into prod to get values
+ where
+   cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+   cpsEval _ c@(Continuation _ _ _ (Just xargs)) value _ = apply (trace "Calling into apply" c) consumer (value : xargs)
+   cpsEval _ c value _ = apply c consumer [value]
+evalfuncCallWValues (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
+evalfuncCallWValues _ = throwError $ NumArgs 2 []
+
 evalfuncApply [cont@(Continuation _ _ _ _), func, List args] = apply cont func args
 evalfuncApply (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
 evalfuncApply _ = throwError $ NumArgs 2 []
