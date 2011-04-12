@@ -670,7 +670,9 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("peek-char", readCharProc hLookAhead),
                 ("write", writeProc (\port obj -> hPrint port obj)),
                 ("write-char", writeCharProc),
-                ("display", writeProc (\port obj -> hPutStr port $ show obj)),
+                ("display", writeProc (\port obj -> case obj of
+                                                        String str -> hPutStr port str
+                                                        _ -> hPutStr port $ show obj)),
                 ("read-contents", readContents),
                 ("read-all", readAll)]
 
