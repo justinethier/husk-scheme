@@ -510,10 +510,11 @@ makeVarargs = makeFunc . Just . showVal
 -- Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 apply _ c@(Continuation env ccont ncont _) args = do
-      if (toInteger $ length args) /= 1 
-        then -- Pass along additional arguments, so they are available to (call-with-values)
+      case (toInteger $ length args) of 
+        0 -> throwError $ NumArgs 1 [] 
+        1 -> continueEval env c $ head args
+        _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
              continueEval env (Continuation env ccont ncont (Just $ tail args)) $ head args 
-        else continueEval env c $ head args
 apply cont (IOFunc func) args = do
   result <- func args
   case cont of
