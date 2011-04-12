@@ -14,8 +14,13 @@ module Language.Scheme.Core
     , evalLisp
     , evalString
     , evalAndPrint
-    , primitiveBindings -- FUTURE: this may be a bad idea...
-                        -- but there should be an interface to inject custom functions written in Haskell
+    , primitiveBindings -- FUTURE: this is a bad idea.
+                        -- There should be an interface to inject custom functions written in Haskell.
+                        --
+                        -- Probably any new func should be added as an EvalFunc or IOFunc
+                        --
+                        -- If so, need to ensure that apply handles them properly, and that continuations are
+                        -- captured properly.
     ) where
 import Language.Scheme.Macro
 import Language.Scheme.Numerical
