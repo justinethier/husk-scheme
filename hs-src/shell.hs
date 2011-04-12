@@ -41,14 +41,14 @@ runOne args = do
   env <- primitiveBindings >>= flip extendEnv [((varNamespace, "args"), List $ map String $ drop 1 args)]
   evalString env $ "(load \"" ++ stdlib ++ "\")" -- Load standard library
   (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
-     >>= hPutStrLn nullIO
+     >>= hPutStr nullIO
 
   -- Call into (main) if it exists...
   alreadyDefined <- liftIO $ isBound env "main"
   let argv = List $ map String $ args
   if alreadyDefined
-     then (runIOThrows $ liftM show $ evalLisp env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStrLn stderr
-     else (runIOThrows $ liftM show $ evalLisp env (Nil "")) >>= hPutStrLn stderr
+     then (runIOThrows $ liftM show $ evalLisp env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStr stderr
+     else (runIOThrows $ liftM show $ evalLisp env (Nil "")) >>= hPutStr stderr
 
 showBanner :: IO ()
 showBanner = do
