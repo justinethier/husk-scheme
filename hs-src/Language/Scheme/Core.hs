@@ -1171,6 +1171,7 @@ isProcedure ([Continuation _ _ _ _]) = return $ Bool True
 isProcedure ([PrimitiveFunc _]) = return $ Bool True
 isProcedure ([Func _ _ _ _]) = return $ Bool True
 isProcedure ([IOFunc _]) = return $ Bool True
+isProcedure ([EvalFunc _]) = return $ Bool True
 isProcedure _ = return $ Bool False
 
 isVector, isList :: LispVal -> ThrowsError LispVal
