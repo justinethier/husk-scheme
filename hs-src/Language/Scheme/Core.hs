@@ -36,7 +36,7 @@ import List
 import IO hiding (try)
 import System.Directory (doesFileExist)
 import System.IO.Error
-import Debug.Trace
+--import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
 
@@ -599,7 +599,7 @@ evalfuncCallWValues [cont@(Continuation env _ _ _), producer, consumer] = do
   apply (makeCPS env cont cpsEval) producer [] -- Call into prod to get values
  where
    cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-   cpsEval _ c@(Continuation _ _ _ (Just xargs)) value _ = apply (trace "Calling into apply" c) consumer (value : xargs)
+   cpsEval _ c@(Continuation _ _ _ (Just xargs)) value _ = apply c consumer (value : xargs)
    cpsEval _ c value _ = apply c consumer [value]
 evalfuncCallWValues (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
 evalfuncCallWValues _ = throwError $ NumArgs 2 []
