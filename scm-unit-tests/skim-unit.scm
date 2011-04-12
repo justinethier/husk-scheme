@@ -11,6 +11,7 @@
                        ; than to work around the fact that building via 'make' does not
                        ; allow huski to know the exact location of 'stdlib.scm'.
 
+(define *file-with-counts* "scm-unit.tmp")
 (define pass-count 0)
 (define fail-count 0)
 
@@ -28,4 +29,31 @@
      (unit-test-handler expected ((lambda () test))))
 
 (define (unit-test-handler-results)
-  (write `("Test Complete" Passed: ,pass-count Failed: ,fail-count)))
+  (write `("Test Complete" Passed: ,pass-count Failed: ,fail-count))
+
+  (define total-pass 0)
+  (define total-fail 0)
+  (let ((inf (open-input-file *file-with-counts*)))
+      (set! total-pass (read inf))
+      (set! total-fail (read inf))
+      (close-input-port inf))
+  
+  (let ((outf (open-output-file *file-with-counts*)))
+      (write (+ total-pass pass-count) outf)
+      (write (+ total-fail fail-count) outf)
+      (close-output-port outf)))
+
+(define (summarize-results)
+  (define total-pass 0)
+  (define total-fail 0)
+  (let ((inf (open-input-file *file-with-counts*)))
+      (set! total-pass (read inf))
+      (set! total-fail (read inf))
+      (close-input-port inf))
+  (write "------------------------------------------")
+  (display "All tests complete")
+  (display "Total Passed: ")
+  (display total-pass)
+  (display " Total Failed: ")
+  (display total-fail)
+  (write ""))
