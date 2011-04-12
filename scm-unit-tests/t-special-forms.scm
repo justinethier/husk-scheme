@@ -4,6 +4,11 @@
 (assert/equal (procedure? 1) #f)
 (assert/equal (procedure? "procedure") #f)
 
+(assert/equal (procedure? load) #t)
+(assert/equal (procedure? apply) #t)
+(assert/equal (procedure? eval) #t)
+(assert/equal (procedure? call-with-current-continuation) #t)
+
 ;(assert/equal (string '())) "")
 (assert/equal (list->string '(#\a)) "a")
 (assert/equal (list->string '(#\s #\k #\i #\m)) "skim")
