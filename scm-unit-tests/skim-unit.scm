@@ -41,6 +41,7 @@
   (display " Failed: ")
   (display fail-count)
   (newline)
+  (newline)
 
   (define total-pass 0)
   (define total-fail 0)
@@ -61,7 +62,6 @@
       (set! total-pass (read inf))
       (set! total-fail (read inf))
       (close-input-port inf))
-  (newline)
   (display "------------------------------------------")
   (newline)
   (display "All tests complete! ")
