@@ -64,6 +64,14 @@
 (assert/equal x 
               '(a . 4))
 
+(define f '(1 2 3 4))
+(set-car! f 8)
+(assert/equal f '(8 2 3 4))
+
+(define f '(1 . 2))
+(set-car! f "a")
+(assert/equal f '("a" . 2))
+
 ;
 ; Looks like all of below fail because (define y x) 
 ; is assigning to to the evaluated value of x instead of the symbol x.

@@ -356,23 +356,21 @@ eval env cont (List [Atom "string-set!", Atom var, i, character]) = do
 eval _ _ (List [Atom "string-set!" , nonvar , _ , _ ]) = throwError $ TypeMismatch "variable" nonvar 
 eval _ _ (List (Atom "string-set!" : args)) = throwError $ NumArgs 3 args
 
-{- TODO: set-car!
 eval env cont (List [Atom "set-car!", Atom var, argObj]) = do
   continueEval env (makeCPS env cont cpsObj) =<< getVar env var
   where 
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsObj _ _ obj@(List []) _ = throwError $ TypeMismatch "pair" pair 
-        cpsObj e c obj@(List (_:_)) _ = eval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
-        cpsObj e c obj@(DottedList _ _) _ = eval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
-        cpsObj _ _ obj _ = throwError $ TypeMismatch "pair" pair 
+        cpsObj _ _ obj@(List []) _ = throwError $ TypeMismatch "pair" obj
+        cpsObj e c obj@(List (_:_)) _ = eval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
+        cpsObj e c obj@(DottedList _ _) _ = eval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
+        cpsObj _ _ obj _ = throwError $ TypeMismatch "pair" obj 
 
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsSet e c obj (Just [List (l : _)]) = setVar e var (DottedList [l] obj) >>= continueEval e c
-        cpsSet e c obj (Just [DottedList (l : _) _]) = setVar e var (DottedList [l] obj) >>= continueEval e c
+        cpsSet e c obj (Just [List (_ : ls)]) = setVar e var (List (obj : ls)) >>= continueEval e c -- Wrong constructor? Should it be DottedList?
+        cpsSet e c obj (Just [DottedList (_ : ls) l]) = setVar e var (DottedList (obj : ls) l) >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet" 
 eval _ _ (List [Atom "set-car!" , nonvar , _ ]) = throwError $ TypeMismatch "variable" nonvar 
 eval _ _ (List (Atom "set-car!" : args)) = throwError $ NumArgs 2 args
--}
 
 eval env cont (List [Atom "set-cdr!", Atom var, argObj]) = do
   continueEval env (makeCPS env cont cpsObj) =<< getVar env var
