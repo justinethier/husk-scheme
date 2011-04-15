@@ -571,10 +571,21 @@ evalFunctions = [
                     ("apply", evalfuncApply)
                   , ("call-with-current-continuation", evalfuncCallCC)
                   , ("call-with-values", evalfuncCallWValues)
+                  , ("dynamic-wind", evalfuncDynamicWind)
                   , ("eval", evalfuncEval)
                   , ("load", evalfuncLoad)
                 ]
-evalfuncApply, evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
+evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
+
+-- A simplified version of dynamic-wind that was not (immediately) intended to take all rules into account
+evalfuncDynamicWind [cont@(Continuation env _ _ _), before, thunk, after] = do 
+  apply (makeCPS env cont cpsThunk) before []
+ where
+   cpsThunk, cpsAfter :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+   cpsThunk e c _ _ = apply (makeCPS e c cpsAfter) thunk []
+   cpsAfter _ c _ _ = apply c after []
+evalfuncDynamicWind (_ : args) = throwError $ NumArgs 3 args -- Skip over continuation argument
+evalfuncDynamicWind _ = throwError $ NumArgs 3 []
 
 evalfuncCallWValues [cont@(Continuation env _ _ _), producer, consumer] = do 
   apply (makeCPS env cont cpsEval) producer [] -- Call into prod to get values
