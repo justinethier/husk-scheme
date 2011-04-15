@@ -7,7 +7,21 @@
 ;; Test cases for execution-related forms 
 ;;
 (load "skim-unit.scm")
-(unit-test-start "apply")
+(unit-test-start "control features")
+
+(assert/equal (procedure? car) #t)
+(assert/equal (procedure? 'car) #f)
+(assert/equal (procedure? (lambda (x) (* x x))) #t)
+(assert/equal (procedure? '(lambda (x) (* x x)))  #f)
+(assert/equal (call-with-current-continuation procedure?) #t)
+
+(assert/equal
+  (let ((v (make-vector 5)))
+    (for-each (lambda (i)
+                (vector-set! v i (* i i)))
+              '(0 1 2 3 4))
+     v)
+  #(0 1 4 9 16))
 
 (assert/equal (apply + (list 3 4)) 7) 
 
