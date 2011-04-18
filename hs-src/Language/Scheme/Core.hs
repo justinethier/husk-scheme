@@ -84,9 +84,9 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 -- Carry extra args from the current continuation into the next, to support (call-with-values)
 continueEval _
             (Continuation cEnv (Just (HaskellBody func funcArgs)) 
-                               (Just (Continuation cce cnc ccc _)) 
-                                xargs) 
-             val = func cEnv (Continuation cce cnc ccc xargs) val funcArgs
+                               (Just (Continuation cce cnc ccc _ cdynwind)) 
+                                xargs _) 
+             val = func cEnv (Continuation cce cnc ccc xargs cdynwind) val funcArgs
 
 -- No higher order function, so:
 --
@@ -96,22 +96,22 @@ continueEval _
 -- continuation (if there is one), or we just return the result. Yes technically with
 -- CPS you are supposed to keep calling into functions and never return, but eventually
 -- when the computation is complete, you have to return something.
-continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs) val = do
+continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs dynWind) val = do
     case cBody of
         [] -> do
           case cCont of
-            Continuation nEnv ncCont nnCont _ -> 
+            Continuation nEnv ncCont nnCont _ nDynWind -> 
               -- Pass extra args along if last expression of a function, to support (call-with-values)
-              continueEval nEnv (Continuation nEnv ncCont nnCont extraArgs) val 
+              continueEval nEnv (Continuation nEnv ncCont nnCont extraArgs nDynWind) val 
             _ -> return (val)
-        [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) Nothing) (lv)
-        (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing) (lv)
+        [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) Nothing dynWind) (lv)
+        (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing dynWind) (lv)
 
 -- No current continuation, but a next cont is available; call into it
-continueEval _ (Continuation cEnv Nothing (Just cCont) _) val = continueEval cEnv cCont val
+continueEval _ (Continuation cEnv Nothing (Just cCont) _ _) val = continueEval cEnv cCont val
 
 -- There is no continuation code, just return value
-continueEval _ (Continuation _ Nothing Nothing _) val = return val
+continueEval _ (Continuation _ Nothing Nothing _ _) val = return val
 continueEval _ _ _ = throwError $ Default "Internal error in continueEval"
 
 -- |Core eval function
@@ -445,13 +445,6 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 eval _ _ (List [Atom "hash-table-delete!" , nonvar , _]) = throwError $ TypeMismatch "variable" nonvar 
 eval _ _ (List (Atom "hash-table-delete!" : args)) = throwError $ NumArgs 2 args
 
--- 
---
--- FUTURE: Issue #2: support for other continuation-related functions, such as
--- (dynamic-wind)
---
---
-
 -- Call a function by evaluating its arguments and then 
 -- executing it via 'apply'.
 eval env cont (List (function : functionArgs)) = do 
@@ -499,16 +492,19 @@ makeVarargs = makeFunc . Just . showVal
 
 -- Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
-apply _ c@(Continuation env ccont ncont _) args = do
+apply _ c@(Continuation env ccont ncont _ ndynwind) args = do
+      -- 
+      -- TODO: call into dynWind.before if it exists...
+      --
       case (toInteger $ length args) of 
         0 -> throwError $ NumArgs 1 [] 
         1 -> continueEval env c $ head args
         _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
-             continueEval env (Continuation env ccont ncont (Just $ tail args)) $ head args 
+             continueEval env (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args 
 apply cont (IOFunc func) args = do
   result <- func args
   case cont of
-    Continuation cEnv _ _ _ -> continueEval cEnv cont result
+    Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
 apply cont (EvalFunc func) args = do
     -- An EvalFunc extends the evaluator so it needs access to the current continuation;
@@ -517,7 +513,7 @@ apply cont (EvalFunc func) args = do
 apply cont (PrimitiveFunc func) args = do
   result <- liftThrows $ func args
   case cont of
-    Continuation cEnv _  _ _ -> continueEval cEnv cont result
+    Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
 apply cont (Func aparams avarargs abody aclosure) args =
   if num aparams /= num args && avarargs == Nothing
@@ -538,14 +534,14 @@ apply cont (Func aparams avarargs abody aclosure) args =
         -- See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
         --
         evalBody evBody env = case cont of
-            Continuation _ (Just (SchemeBody cBody)) (Just cCont) _ -> if length cBody == 0
-                then continueWCont env (evBody) cCont
-                else continueWCont env (evBody) cont -- Might be a problem, not fully optimizing
-            _ -> continueWCont env (evBody) cont
+            Continuation _ (Just (SchemeBody cBody)) (Just cCont) _ cDynWind -> if length cBody == 0
+                then continueWCont env (evBody) cCont cDynWind
+                else continueWCont env (evBody) cont cDynWind -- Might be a problem, not fully optimizing
+            _ -> continueWCont env (evBody) cont Nothing
 
         -- Shortcut for calling continueEval
-        continueWCont cwcEnv cwcBody cwcCont = 
-            continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing) $ Nil ""
+        continueWCont cwcEnv cwcBody cwcCont cwcDynWind = 
+            continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing cwcDynWind) $ Nil ""
 
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
@@ -589,29 +585,34 @@ evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, 
 -- Basically (before) must be called either when thunk is called into, or when a continuation captured during (thunk) is called into.
 -- And (after) must be called either when thunk returns *or* a continuation is called into during (thunk)
 --
-evalfuncDynamicWind [cont@(Continuation env _ _ _), before, thunk, after] = do 
-  apply (makeCPS env cont cpsThunk) before []
+evalfuncDynamicWind [cont@(Continuation env _ _ _ _), beforeFunc, thunkFunc, afterFunc] = do 
+  apply (makeCPS env cont cpsThunk) beforeFunc []
  where
    cpsThunk, cpsAfter :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-   cpsThunk e c _ _ = apply (makeCPS e c cpsAfter) thunk []
-   cpsAfter _ c _ _ = apply c after []
+   cpsThunk e c _ _ = apply --(makeCPS e c cpsAfter) 
+                              (Continuation e (Just (HaskellBody cpsAfter Nothing)) 
+                                                    (Just c) 
+                                                    Nothing 
+                                                    (Just (DynamicWind $ [beforeFunc])))
+                               thunkFunc []
+   cpsAfter _ c _ _ = apply c afterFunc []
 evalfuncDynamicWind (_ : args) = throwError $ NumArgs 3 args -- Skip over continuation argument
 evalfuncDynamicWind _ = throwError $ NumArgs 3 []
 
-evalfuncCallWValues [cont@(Continuation env _ _ _), producer, consumer] = do 
+evalfuncCallWValues [cont@(Continuation env _ _ _ _), producer, consumer] = do 
   apply (makeCPS env cont cpsEval) producer [] -- Call into prod to get values
  where
    cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-   cpsEval _ c@(Continuation _ _ _ (Just xargs)) value _ = apply c consumer (value : xargs)
+   cpsEval _ c@(Continuation _ _ _ (Just xargs) _) value _ = apply c consumer (value : xargs)
    cpsEval _ c value _ = apply c consumer [value]
 evalfuncCallWValues (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
 evalfuncCallWValues _ = throwError $ NumArgs 2 []
 
-evalfuncApply [cont@(Continuation _ _ _ _), func, List args] = apply cont func args
+evalfuncApply [cont@(Continuation _ _ _ _ _), func, List args] = apply cont func args
 evalfuncApply (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
 evalfuncApply _ = throwError $ NumArgs 2 []
 
-evalfuncLoad [cont@(Continuation env _ _ _), String filename] = do
+evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
      result <- load filename >>= liftM last . mapM (evaluate env (makeNullContinuation env))
      continueEval env cont result
 	 where evaluate env2 cont2 val2 = macroEval env2 val2 >>= eval env2 cont2
@@ -625,16 +626,16 @@ evalfuncLoad _ = throwError $ NumArgs 1 []
 --
 -- FUTURE: consider allowing env to be specified, per R5RS
 --
-evalfuncEval [cont@(Continuation env _ _ _), val] = eval env cont val
+evalfuncEval [cont@(Continuation env _ _ _ _), val] = eval env cont val
 evalfuncEval (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncEval _ = throwError $ NumArgs 1 []
 
-evalfuncCallCC [cont@(Continuation _ _ _ _), func] = do
+evalfuncCallCC [cont@(Continuation _ _ _ _ _), func] = do
    case func of
      PrimitiveFunc f -> do
          result <- liftThrows $ f [cont]
          case cont of 
-             Continuation cEnv _ _ _ -> continueEval cEnv cont result
+             Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
              _ -> return result
      Func aparams _ _ _ ->
        if (toInteger $ length aparams) == 1 
@@ -1152,7 +1153,7 @@ isDottedList ([List _]) = return $ Bool True
 isDottedList _ = return $  Bool False
 
 isProcedure :: [LispVal] -> ThrowsError LispVal
-isProcedure ([Continuation _ _ _ _]) = return $ Bool True
+isProcedure ([Continuation _ _ _ _ _]) = return $ Bool True
 isProcedure ([PrimitiveFunc _]) = return $ Bool True
 isProcedure ([Func _ _ _ _]) = return $ Bool True
 isProcedure ([IOFunc _]) = return $ Bool True
