@@ -141,6 +141,8 @@ data LispVal = Atom String
                         , nextCont    :: (Maybe LispVal)       -- Code to resume after body of cont
                         , extraReturnArgs :: (Maybe [LispVal]) -- Extra return arguments, to support (values) and (call-with-values)
                         -- FUTURE: stack (for dynamic wind)
+                        -- TODO: dynamicWind :: (Maybe DynamicWind) -- Idea here - if Nothing, then a dynamic-wind is not in effect.
+                        -- I think this approach will work, just need to think through it, and code points to hook all this up...
                        }
          -- ^Continuation
  	| EOF
@@ -154,6 +156,12 @@ data DeferredCode =
        contFunction :: (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal)
      , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to the higher-order function 
     } -- ^A Haskell function
+
+-- TODO:
+-- |Store information for a dynamic-wind
+--DynamicWind {
+--  before :: [LispVal] -- ^A stack of functions to execute when resuming the continuation (within extend of dynamic-wind)
+--}
 
 -- Make an "empty" continuation that does not contain any code
 makeNullContinuation :: Env -> LispVal
