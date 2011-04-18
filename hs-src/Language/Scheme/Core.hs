@@ -578,6 +578,17 @@ evalFunctions = [
 evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
 
 -- A simplified version of dynamic-wind that was not (immediately) intended to take all rules into account
+--
+-- The implementation must take these 4 rules into account:
+--
+-- 1) The dynamic extent is entered when execution of the body of the called procedure begins.
+-- 2) The dynamic extent is also entered when execution is not within the dynamic extent and a continuation is invoked that was captured (using call-with-current-continuation) during the dynamic extent.
+-- 3) It is exited when the called procedure returns.
+-- 4) It is also exited when execution is within the dynamic extent and a continuation is invoked that was captured while not within the dynamic extent.
+--
+-- Basically (before) must be called either when thunk is called into, or when a continuation captured during (thunk) is called into.
+-- And (after) must be called either when thunk returns *or* a continuation is called into during (thunk)
+--
 evalfuncDynamicWind [cont@(Continuation env _ _ _), before, thunk, after] = do 
   apply (makeCPS env cont cpsThunk) before []
  where
