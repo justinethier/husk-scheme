@@ -492,15 +492,20 @@ makeVarargs = makeFunc . Just . showVal
 
 -- Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
-apply _ c@(Continuation env ccont ncont _ ndynwind) args = do
-      -- 
-      -- TODO: call into dynWind.before if it exists...
-      --
+apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
+  case ndynwind of
+    -- Call into dynWind.before if it exists...
+    Just (DynamicWind [beforeFunc]) -> apply (makeCPS env cont cpsApply) beforeFunc []
+    _ -> doApply env cont
+ where
+   cpsApply :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+   cpsApply e c _ _ = doApply e c
+   doApply e c = 
       case (toInteger $ length args) of 
         0 -> throwError $ NumArgs 1 [] 
-        1 -> continueEval env c $ head args
+        1 -> continueEval e c $ head args
         _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
-             continueEval env (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args 
+             continueEval e (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args 
 apply cont (IOFunc func) args = do
   result <- func args
   case cont of
