@@ -590,15 +590,16 @@ evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, 
 -- Basically (before) must be called either when thunk is called into, or when a continuation captured during (thunk) is called into.
 -- And (after) must be called either when thunk returns *or* a continuation is called into during (thunk)
 --
+-- TODO: so far only (1) and (3) are handled.
+--
 evalfuncDynamicWind [cont@(Continuation env _ _ _ _), beforeFunc, thunkFunc, afterFunc] = do 
   apply (makeCPS env cont cpsThunk) beforeFunc []
  where
    cpsThunk, cpsAfter :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-   cpsThunk e c _ _ = apply --(makeCPS e c cpsAfter) 
-                              (Continuation e (Just (HaskellBody cpsAfter Nothing)) 
-                                                    (Just c) 
-                                                    Nothing 
-                                                    (Just (DynamicWind $ [beforeFunc])))
+   cpsThunk e c _ _ = apply (Continuation e (Just (HaskellBody cpsAfter Nothing)) 
+                                            (Just c) 
+                                             Nothing 
+                                            (Just (DynamicWind $ [beforeFunc])))
                                thunkFunc []
    cpsAfter _ c _ _ = apply c afterFunc []
 evalfuncDynamicWind (_ : args) = throwError $ NumArgs 3 args -- Skip over continuation argument
