@@ -140,9 +140,8 @@ data LispVal = Atom String
                         , currentCont :: (Maybe DeferredCode)  -- Code of current continuation
                         , nextCont    :: (Maybe LispVal)       -- Code to resume after body of cont
                         , extraReturnArgs :: (Maybe [LispVal]) -- Extra return arguments, to support (values) and (call-with-values)
-                        -- FUTURE: stack (for dynamic wind)
-                        , dynamicWind :: (Maybe DynamicWind) -- Idea here - if Nothing, then a dynamic-wind is not in effect.
-                                                           -- I think this approach will work, just need to think through it, and code points to hook all this up...
+                        -- Stack for dynamic wind
+                        , dynamicWind :: (Maybe [DynamicWinders]) 
                        }
          -- ^Continuation
  	| EOF
@@ -158,8 +157,9 @@ data DeferredCode =
     } -- ^A Haskell function
 
 -- |Store information for a dynamic-wind
-data DynamicWind = DynamicWind {
-  before :: [LispVal] -- ^A stack of functions to execute when resuming the continuation (within extend of dynamic-wind)
+data DynamicWinders = DynamicWinders {
+  before :: LispVal -- ^Function to execute when resuming continuation within extent of dynamic-wind
+  ,after :: LispVal -- ^Function to execute when leaving extent of dynamic-wind
 }
 
 -- Make an "empty" continuation that does not contain any code

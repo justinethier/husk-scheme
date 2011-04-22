@@ -493,10 +493,10 @@ makeVarargs = makeFunc . Just . showVal
 -- Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
-  case ndynwind of
+{-  case ndynwind of
     -- Call into dynWind.before if it exists...
     Just (DynamicWind [beforeFunc]) -> apply (makeCPS env cont cpsApply) beforeFunc []
-    _ -> doApply env cont
+    _ -> -} doApply env cont
  where
    cpsApply :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
    cpsApply e c _ _ = doApply e c
@@ -599,7 +599,7 @@ evalfuncDynamicWind [cont@(Continuation env _ _ _ _), beforeFunc, thunkFunc, aft
    cpsThunk e c _ _ = apply (Continuation e (Just (HaskellBody cpsAfter Nothing)) 
                                             (Just c) 
                                              Nothing 
-                                            (Just (DynamicWind $ [beforeFunc])))
+                                            (Just ([DynamicWinders beforeFunc afterFunc])))
                                thunkFunc []
    cpsAfter _ c _ _ = apply c afterFunc []
 evalfuncDynamicWind (_ : args) = throwError $ NumArgs 3 args -- Skip over continuation argument
