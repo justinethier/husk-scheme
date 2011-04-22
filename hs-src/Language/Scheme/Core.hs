@@ -85,7 +85,8 @@ continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 continueEval _
             (Continuation cEnv (Just (HaskellBody func funcArgs)) 
                                (Just (Continuation cce cnc ccc _ cdynwind)) 
-                                xargs _) 
+                                xargs _) -- TODO: this is so sloppy, 
+                                         --   need to refactor code so this is not necessary
              val = func cEnv (Continuation cce cnc ccc xargs cdynwind) val funcArgs
 
 -- No higher order function, so:
@@ -97,7 +98,7 @@ continueEval _
 -- CPS you are supposed to keep calling into functions and never return, but eventually
 -- when the computation is complete, you have to return something.
 continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs dynWind) val = do
-    case cBody of
+    case cBody of  TODO: trace dynwind, need to see lifetime of the obj...
         [] -> do
           case cCont of
             Continuation nEnv ncCont nnCont _ nDynWind -> 
@@ -493,10 +494,10 @@ makeVarargs = makeFunc . Just . showVal
 -- Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
-{-  case ndynwind of
+  case ndynwind of
     -- Call into dynWind.before if it exists...
-    Just (DynamicWind [beforeFunc]) -> apply (makeCPS env cont cpsApply) beforeFunc []
-    _ -> -} doApply env cont
+    Just ([DynamicWinders beforeFunc afterFunc]) -> apply (makeCPS env cont cpsApply) beforeFunc []
+    _ ->  doApply env cont
  where
    cpsApply :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
    cpsApply e c _ _ = doApply e c
@@ -596,12 +597,13 @@ evalfuncDynamicWind [cont@(Continuation env _ _ _ _), beforeFunc, thunkFunc, aft
   apply (makeCPS env cont cpsThunk) beforeFunc []
  where
    cpsThunk, cpsAfter :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-   cpsThunk e c _ _ = apply (Continuation e (Just (HaskellBody cpsAfter Nothing)) 
-                                            (Just c) 
+   cpsThunk e (Continuation ce cc cnc ca cwindrz) _ _ = apply (Continuation e (Just (HaskellBody cpsAfter Nothing)) 
+                                            (Just (Continuation ce cc cnc ca
+                                                                (Just ([DynamicWinders beforeFunc afterFunc])))) -- TODO: append if existing winders
                                              Nothing 
-                                            (Just ([DynamicWinders beforeFunc afterFunc])))
+                                             Nothing) 
                                thunkFunc []
-   cpsAfter _ c _ _ = apply c afterFunc []
+   cpsAfter _ c _ _ = apply c afterFunc [] -- TODO: remove dynamicWinder from above from the list
 evalfuncDynamicWind (_ : args) = throwError $ NumArgs 3 args -- Skip over continuation argument
 evalfuncDynamicWind _ = throwError $ NumArgs 3 []
 
