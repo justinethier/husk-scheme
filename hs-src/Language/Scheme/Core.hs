@@ -36,7 +36,7 @@ import List
 import IO hiding (try)
 import System.Directory (doesFileExist)
 import System.IO.Error
---import Debug.Trace
+import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
 
@@ -95,10 +95,11 @@ continueEval _
 --
 -- Otherwise, if all code in the function has been executed, we 'unwind' to an outer
 -- continuation (if there is one), or we just return the result. Yes technically with
--- CPS you are supposed to keep calling into functions and never return, but eventually
+-- CPS you are supposed to keep calling into functions and never return, but in this case
 -- when the computation is complete, you have to return something.
 continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs dynWind) val = do
-    case cBody of -- TODO: trace dynwind, need to see lifetime of the obj...
+--    case cBody of -- TODO: trace dynwind, need to see lifetime of the obj...
+    case (trace ("cBody = " ++ show cBody ++ " dynWind = " ++ show dynWind) cBody) of -- TODO: trace dynwind, need to see lifetime of the obj...
         [] -> do
           case cCont of
             Continuation nEnv ncCont nnCont _ nDynWind -> 
@@ -448,12 +449,21 @@ eval _ _ (List (Atom "hash-table-delete!" : args)) = throwError $ NumArgs 2 args
 
 -- Call a function by evaluating its arguments and then 
 -- executing it via 'apply'.
-eval env cont (List (function : functionArgs)) = do 
+eval env cont (List (function : functionArgs)) = do
+--
+--TODO: makeCPS* functions create continuations w/out a dynamic wind parameter
+--      this could be a problem, but still need to evaluate it...
+--
+-- think on this more, because if the continuation passed to call/cc does not have its
+-- dynamic-wind member set, then that explains why the subsequent call to c does not
+-- invoke the 'before' member. after is called, but that is only because the dyn-wind
+-- member is not being cleaned up properly.
+--
   eval env (makeCPSWArgs env cont cpsPrepArgs $ functionArgs) function
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsPrepArgs e c func (Just args) = 
---          case (trace ("prep eval of args: " ++ show args) args) of
-          case (args) of
+          case (trace ("prep eval of args: " ++ show args) args) of
+--          case (args) of
             [] -> apply c func [] -- No args, immediately apply the function
             [a] -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List []]) a
             (a:as) -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List as]) a
@@ -494,7 +504,7 @@ makeVarargs = makeFunc . Just . showVal
 -- Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
-  case ndynwind of
+  case (trace ("calling into continuation. dynWind = " ++ show ndynwind) ndynwind) of
     -- Call into dynWind.before if it exists...
     Just ([DynamicWinders beforeFunc afterFunc]) -> apply (makeCPS env cont cpsApply) beforeFunc []
     _ ->  doApply env cont
@@ -542,8 +552,9 @@ apply cont (Func aparams avarargs abody aclosure) args =
         evalBody evBody env = case cont of
             Continuation _ (Just (SchemeBody cBody)) (Just cCont) _ cDynWind -> if length cBody == 0
                 then continueWCont env (evBody) cCont cDynWind
-                else continueWCont env (evBody) cont cDynWind -- Might be a problem, not fully optimizing
-            _ -> continueWCont env (evBody) cont Nothing
+                else continueWCont env (evBody) cont (trace ("cDynWind = " ++ show cDynWind) cDynWind) -- Might be a problem, not fully optimizing
+            Continuation a b c d cDynWind -> continueWCont env (evBody) (trace ("continuing w/dyn wind = " ++ show cDynWind) cont) cDynWind
+            _ -> continueWCont env (evBody) cont Nothing -- (trace "continuing w/out dyn wind" cont) Nothing
 
         -- Shortcut for calling continueEval
         continueWCont cwcEnv cwcBody cwcCont cwcDynWind = 
@@ -599,9 +610,9 @@ evalfuncDynamicWind [cont@(Continuation env _ _ _ _), beforeFunc, thunkFunc, aft
    cpsThunk, cpsAfter :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
    cpsThunk e (Continuation ce cc cnc ca cwindrz) _ _ = apply (Continuation e (Just (HaskellBody cpsAfter Nothing)) 
                                             (Just (Continuation ce cc cnc ca
-                                                                (Just ([DynamicWinders beforeFunc afterFunc])))) -- TODO: append if existing winders
+                                                                Nothing)) -- TODO: append if existing winders
                                              Nothing 
-                                             Nothing) 
+                                             (Just ([DynamicWinders beforeFunc afterFunc]))) 
                                thunkFunc []
    cpsAfter _ c _ _ = apply c afterFunc [] -- TODO: remove dynamicWinder from above from the list
 evalfuncDynamicWind (_ : args) = throwError $ NumArgs 3 args -- Skip over continuation argument
