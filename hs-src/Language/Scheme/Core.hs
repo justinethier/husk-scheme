@@ -98,7 +98,7 @@ continueEval _
 -- CPS you are supposed to keep calling into functions and never return, but eventually
 -- when the computation is complete, you have to return something.
 continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs dynWind) val = do
-    case cBody of  TODO: trace dynwind, need to see lifetime of the obj...
+    case cBody of -- TODO: trace dynwind, need to see lifetime of the obj...
         [] -> do
           case cCont of
             Continuation nEnv ncCont nnCont _ nDynWind -> 

@@ -162,6 +162,11 @@ data DynamicWinders = DynamicWinders {
   ,after :: LispVal -- ^Function to execute when leaving extent of dynamic-wind
 }
 
+showDWVal :: DynamicWinders -> String
+showDWVal (DynamicWinders b a) = "(" ++ (show b) ++ " . " ++ (show a) ++ ")"
+
+instance Show DynamicWinders where show = showDWVal
+
 -- Make an "empty" continuation that does not contain any code
 makeNullContinuation :: Env -> LispVal
 makeNullContinuation env = Continuation env Nothing Nothing Nothing Nothing 
