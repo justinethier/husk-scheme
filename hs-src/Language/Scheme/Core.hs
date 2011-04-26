@@ -459,6 +459,13 @@ eval env cont (List (function : functionArgs)) = do
 -- invoke the 'before' member. after is called, but that is only because the dyn-wind
 -- member is not being cleaned up properly.
 --
+--
+--
+--TODO: regarding above comment block.
+--   dynamic-wind works well enough now to pass all tests, although I am not convinced the implementation
+--   is 100% correct since a stack is not directly used to hold the winders. I think there must still be edge
+--   cases that are not handled properly...
+--
   eval env (makeCPSWArgs env cont cpsPrepArgs $ functionArgs) function
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsPrepArgs e c func (Just args) = 
@@ -687,7 +694,7 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                --  Consideration may be given in a future release, but keep in mind
                --  the impact to the other I/O functions.
 
--- TODO: not currently supported: char-ready?
+-- FUTURE: not currently supported: char-ready?
 
                 ("current-input-port", currentInputPort),
                 ("current-output-port", currentOutputPort),
