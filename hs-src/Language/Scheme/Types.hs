@@ -173,11 +173,13 @@ makeNullContinuation env = Continuation env Nothing Nothing Nothing Nothing
 
 -- Make a continuation that takes a higher-order function (written in Haskell)
 makeCPS :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal]-> IOThrowsError LispVal) -> LispVal
-makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing Nothing
+makeCPS env cont@(Continuation _ _ _ _ dynWind) cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing dynWind
+makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing Nothing -- This overload just here for completeness; it should never be used 
 
 -- Make a continuation that stores a higher-order function and arguments to that function
 makeCPSWArgs :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) -> [LispVal] -> LispVal
-makeCPSWArgs env cont cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont) Nothing Nothing
+makeCPSWArgs env cont@(Continuation _ _ _ _ dynWind) cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont) Nothing dynWind
+makeCPSWArgs env cont cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont) Nothing Nothing -- This overload just here for completeness; it should never be used 
 
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b
