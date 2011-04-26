@@ -11,6 +11,7 @@ enclosing (call-with-values), the first value is returned to the interpreter
 instead of generating an error.
 - Added additional error handling for set! (and related functions), when these
 functions are called with the wrong number or type of arguments.
+- Added limited support for (dynamic-wind)
 
 v2.3
 ----
