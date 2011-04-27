@@ -75,7 +75,9 @@ numDiv aparams = do -- FUTURE: for Number type, consider casting results to Rati
   foldl1M (\a b -> doDiv =<< (numCast [a, b])) aparams
   where doDiv (List [(Number a), (Number b)]) = if b == 0 
                                                    then throwError $ DivideByZero 
-                                                   else return $ Number $ div a b
+                                                   else if (mod a b) == 0 
+                                                           then return $ Number $ div a b
+                                                           else return $ Rational $ (fromInteger a) / (fromInteger b)
         doDiv (List [(Float a), (Float b)]) = if b == 0.0 
                                                    then throwError $ DivideByZero 
                                                    else return $ Float $ a / b

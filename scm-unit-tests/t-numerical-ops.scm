@@ -36,7 +36,7 @@
 (assert/equal (- 3 4)       -1)
 (assert/equal (- 3 4 5)     -6)
 (assert/equal (- 3)         -3)
-;FUTURE: Issue #16 - (assert/equal (/ 3 4 5)     3/20)
+(assert/equal (/ 3 4 5)     3/20)
 (assert/equal (/ 3)         1/3)
 
 (assert/equal (abs -7)            7)
@@ -50,7 +50,7 @@
 (assert/equal (* 8/4 6/2) 24/4)
 (assert/equal (* 3 1+1i) 3+3i)
 (assert/equal (/ 2 1) 2)
-(assert/equal (/ 1 2) 0)
+(assert/equal (/ 1 2) 1/2)
 (assert/equal (/ 1.0 2) 0.5)
 (assert/equal (/ 1/1 2/1) 1/2)
 (assert/equal (modulo 8 2) 0)
@@ -63,9 +63,9 @@
 (assert/equal (remainder -13 -4) -1)
 ;FUTURE: - support for inexact - (remainder -13 -4.0)            ===>  -1.0  ; inexact
 
-;FUTURE: Issue #16
-;(assert/equal (numerator (/ 6 4))        3)
-;(assert/equal (denominator (/ 6 4))      2)
+(assert/equal (numerator (/ 6 4))        3)
+(assert/equal (denominator (/ 6 4))      2)
+;TODO: Issue #16
 ;(assert/equal (denominator
 ;    (exact->inexact (/ 6 4)))           2.0)
 
@@ -97,7 +97,8 @@
 
 (assert/equal (make-rectangular 1 2) 1+2i)
 (assert/equal (make-rectangular 1 2.0) 1+2.0i)
-;FUTURE: Issue #16: (assert/equal (make-rectangular 1/3 2) 1/3+2i)
+;FUTURE: Issue #16: 
+;(assert/equal (make-rectangular 1/3 2) 1/3+2i)
 
 ; FUTURE: Issue #10
 ;(gcd 32 -36)                    ===>  4
