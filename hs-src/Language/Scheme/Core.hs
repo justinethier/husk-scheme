@@ -599,9 +599,9 @@ evalFunctions = [
                 ]
 evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
 
--- A simplified version of dynamic-wind that was not (immediately) intended to take all rules into account
+-- A (somewhat) simplified version of dynamic-wind that was not immediately intended to take all rules into account
 --
--- The implementation must take these 4 rules into account:
+-- The implementation must obey these 4 rules:
 --
 -- 1) The dynamic extent is entered when execution of the body of the called procedure begins.
 -- 2) The dynamic extent is also entered when execution is not within the dynamic extent and a continuation is invoked that was captured (using call-with-current-continuation) during the dynamic extent.
@@ -611,20 +611,20 @@ evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, 
 -- Basically (before) must be called either when thunk is called into, or when a continuation captured during (thunk) is called into.
 -- And (after) must be called either when thunk returns *or* a continuation is called into during (thunk)
 --
--- TODO: so far only (1) and (3) are handled.
+-- TODO: so far only (1) and (3) are handled completely correct.
 --
 evalfuncDynamicWind [cont@(Continuation env _ _ _ _), beforeFunc, thunkFunc, afterFunc] = do 
-  apply (makeCPS env cont cpsThunk) beforeFunc [] -- TODO: pass winders in here...
+  apply (makeCPS env cont cpsThunk) beforeFunc []
  where
    cpsThunk, cpsAfter :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-   cpsThunk e (Continuation ce cc cnc ca cwindrz) _ _ = apply (Continuation e (Just (HaskellBody cpsAfter Nothing)) 
+   cpsThunk e (Continuation ce cc cnc ca _ {- TODO: cwindrz -} ) _ _ = apply (Continuation e (Just (HaskellBody cpsAfter Nothing)) 
                                             (Just (Continuation ce cc cnc ca
-                                                                Nothing)) -- TODO: append if existing winders
+                                                                Nothing)) 
                                              Nothing 
-                                             (Just ([DynamicWinders beforeFunc afterFunc]))) 
+                                             (Just ([DynamicWinders beforeFunc afterFunc]))) -- TODO: append if existing winders
                                thunkFunc []
    cpsThunk _ _ _ _ = throwError $ Default "Unexpected error in cpsThunk during (dynamic-wind)" 
-   cpsAfter _ c _ _ = apply c afterFunc [] -- TODO: remove dynamicWinder from above from the list
+   cpsAfter _ c _ _ = apply c afterFunc [] -- TODO: remove dynamicWinder from above from the list before calling after
 evalfuncDynamicWind (_ : args) = throwError $ NumArgs 3 args -- Skip over continuation argument
 evalfuncDynamicWind _ = throwError $ NumArgs 3 []
 
