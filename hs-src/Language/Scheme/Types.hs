@@ -140,8 +140,7 @@ data LispVal = Atom String
                         , currentCont :: (Maybe DeferredCode)  -- Code of current continuation
                         , nextCont    :: (Maybe LispVal)       -- Code to resume after body of cont
                         , extraReturnArgs :: (Maybe [LispVal]) -- Extra return arguments, to support (values) and (call-with-values)
-                        -- Stack for dynamic wind
-                        , dynamicWind :: (Maybe [DynamicWinders]) 
+                        , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind) 
                        }
          -- ^Continuation
  	| EOF
@@ -156,10 +155,10 @@ data DeferredCode =
      , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to the higher-order function 
     } -- ^A Haskell function
 
--- |Store information for a dynamic-wind
+-- |Container to store information from a dynamic-wind
 data DynamicWinders = DynamicWinders {
-  before :: LispVal -- ^Function to execute when resuming continuation within extent of dynamic-wind
-  ,after :: LispVal -- ^Function to execute when leaving extent of dynamic-wind
+    before :: LispVal -- ^Function to execute when resuming continuation within extent of dynamic-wind
+  , after :: LispVal -- ^Function to execute when leaving extent of dynamic-wind
 }
 
 showDWVal :: DynamicWinders -> String

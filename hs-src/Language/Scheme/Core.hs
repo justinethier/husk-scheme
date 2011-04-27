@@ -98,7 +98,6 @@ continueEval _
 -- CPS you are supposed to keep calling into functions and never return, but in this case
 -- when the computation is complete, you have to return something.
 continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs dynWind) val = do
---    case (trace ("cBody = " ++ show cBody ++ " dynWind = " ++ show dynWind) cBody) of -- TODO: trace dynwind, need to see lifetime of the obj...
     case cBody of
         [] -> do
           case cCont of
@@ -450,22 +449,6 @@ eval _ _ (List (Atom "hash-table-delete!" : args)) = throwError $ NumArgs 2 args
 -- Call a function by evaluating its arguments and then 
 -- executing it via 'apply'.
 eval env cont (List (function : functionArgs)) = do
---
---TODO: makeCPS* functions create continuations w/out a dynamic wind parameter
---      this could be a problem, but still need to evaluate it...
---
--- think on this more, because if the continuation passed to call/cc does not have its
--- dynamic-wind member set, then that explains why the subsequent call to c does not
--- invoke the 'before' member. after is called, but that is only because the dyn-wind
--- member is not being cleaned up properly.
---
---
---
---TODO: regarding above comment block.
---   dynamic-wind works well enough now to pass all tests, although I am not convinced the implementation
---   is 100% correct since a stack is not directly used to hold the winders. I think there must still be edge
---   cases that are not handled properly...
---
   eval env (makeCPSWArgs env cont cpsPrepArgs $ functionArgs) function
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsPrepArgs e c func (Just args) = 
@@ -599,7 +582,7 @@ evalFunctions = [
                 ]
 evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
 
--- A (somewhat) simplified version of dynamic-wind that was not immediately intended to take all rules into account
+-- A (somewhat) simplified implementation of dynamic-wind
 --
 -- The implementation must obey these 4 rules:
 --
@@ -608,10 +591,14 @@ evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, 
 -- 3) It is exited when the called procedure returns.
 -- 4) It is also exited when execution is within the dynamic extent and a continuation is invoked that was captured while not within the dynamic extent.
 --
--- Basically (before) must be called either when thunk is called into, or when a continuation captured during (thunk) is called into.
--- And (after) must be called either when thunk returns *or* a continuation is called into during (thunk)
+-- Basically (before) must be called either when thunk is called into, or when a continuation captured 
+-- during (thunk) is called into.
+-- And (after) must be called either when thunk returns *or* a continuation is called into during (thunk).
 --
--- TODO: so far only (1) and (3) are handled completely correct.
+-- TODO:
+-- A this point dynamic-wind works well enough now to pass all tests, although I am not convinced the implementation
+-- is 100% correct since a stack is not directly used to hold the winders. I think there must still be edge
+-- cases that are not handled properly...
 --
 evalfuncDynamicWind [cont@(Continuation env _ _ _ _), beforeFunc, thunkFunc, afterFunc] = do 
   apply (makeCPS env cont cpsThunk) beforeFunc []
