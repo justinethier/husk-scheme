@@ -71,12 +71,13 @@ numDiv [Number n] = return $ Rational $ 1 / (fromInteger n)
 numDiv [Float n] = return $ Float $ 1.0 / n
 numDiv [Rational n] = return $ Rational $ 1 / n
 numDiv [Complex n] = return $ Complex $ 1 / n
-numDiv aparams = do -- FUTURE: for Number type, consider casting results to Rational, per R5RS spec 
+numDiv aparams = do 
   foldl1M (\a b -> doDiv =<< (numCast [a, b])) aparams
   where doDiv (List [(Number a), (Number b)]) = if b == 0 
                                                    then throwError $ DivideByZero 
                                                    else if (mod a b) == 0 
                                                            then return $ Number $ div a b
+                                                           -- Convert to a rational if the result is not an integer
                                                            else return $ Rational $ (fromInteger a) / (fromInteger b)
         doDiv (List [(Float a), (Float b)]) = if b == 0.0 
                                                    then throwError $ DivideByZero 
