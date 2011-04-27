@@ -65,7 +65,7 @@
 
 (assert/equal (numerator (/ 6 4))        3)
 (assert/equal (denominator (/ 6 4))      2)
-;TODO: Issue #16
+;TODO: Issue #26 - numerator and denominator do not handle real numbers:
 ;(assert/equal (denominator
 ;    (exact->inexact (/ 6 4)))           2.0)
 
