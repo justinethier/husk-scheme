@@ -86,7 +86,7 @@
 (assert/equal (round 7/2)       4)    ; exact
 (assert/equal (round 7)         7)
 
-;FUTURE: Issue #16
+;FUTURE: Issue #25 - implement rationalize
 ;(assert/equal (rationalize
 ;    (inexact->exact .3) 1/10)        1/3)    ; exact
 ;(assert/equal (rationalize .3 1/10)                #i1/3)  ; inexact
@@ -97,8 +97,8 @@
 
 (assert/equal (make-rectangular 1 2) 1+2i)
 (assert/equal (make-rectangular 1 2.0) 1+2.0i)
-;FUTURE: Issue #16: 
-;(assert/equal (make-rectangular 1/3 2) 1/3+2i)
+(assert/equal (make-rectangular 1/3 2) 1/3+2i)
+(assert/equal (make-rectangular 1/3 2/3) 1/3+2/3i)
 
 ; FUTURE: Issue #10
 ;(gcd 32 -36)                    ===>  4
