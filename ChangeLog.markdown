@@ -1,18 +1,19 @@
 v2.4
 ----
 - Simplified the core evaluator by moving several functions out of eval.
-Practically, this means that these core functions are now first-class objects:
+Practically, this means that the following functions are now first-class objects:
 apply, call-with-current-continuation, call-with-values, eval, and load. 
-They can now be called directly, assigned to variables, etc just like any
+They can be called directly, assigned to variables, etc just like any
 other first-class value. 
 - (call-with-values) now accepts multiple return values from the producer function.
 - If (values) is called with multiple arguments and is not part of an
 enclosing (call-with-values), the first value is returned to the interpreter
 instead of generating an error.
-- Added additional error handling for set! (and related functions), when these
+- Added additional error handling for set! - and related functions - when these
 functions are called with the wrong number or type of arguments.
 - Added limited support for (dynamic-wind).
-- Parse rational number components of a complex number.
+- The parser now recognizes rational number components of a complex number.
+For example: 1/2+3/4i
 
 v2.3
 ----
