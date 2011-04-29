@@ -14,12 +14,10 @@ import Data.IORef
 
 -- |Extend given environment by binding a series of values to a new environment.
 extendEnv :: Env -> [((String, String), LispVal)] -> IO Env
-extendEnv envRef bindings = do bindinglist <- mapM (\((namespace, name), val) ->
-                                                    do ref <- newIORef val
-                                                       return ((namespace, name), ref)) bindings
-                                              >>= newIORef
-                               return $ Environment (Just envRef) bindinglist
-
+extendEnv envRef abindings = do bindinglist <- mapM addBinding abindings >>= newIORef
+                                return $ Environment (Just envRef) bindinglist
+ where addBinding ((namespace, name), val) = do ref <- newIORef val
+                                                return ((namespace, name), ref)
 {-
 -- Old implementation, left for the moment for reference purposes only:
 --
