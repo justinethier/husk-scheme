@@ -10,13 +10,11 @@ Prior to working on husk, most of my development experience involved working wit
 I hope it will be helpful to anyone trying to understand how husk works, as well as anyone interested in learning more about functional programming, Scheme, and related areas such as language design.
 
 ## Introduction
-Scheme is a minimalistic language that does not include many common control constructs such as return, try/catch, or even goto. Instead Scheme provides continuations - a powerful, general-purpose construct which may be used to build any number of more specific control structures. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following background information:
+Scheme is a minimalistic language that does not include many common control constructs such as return, try/catch, or even goto. Instead Scheme provides continuations - a powerful, general-purpose construct which may be used to build any number of more specific control structures. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following summary:
 
 >Whenever a Scheme expression is evaluated there is a continuation wanting the result of the expression. The continuation represents an entire (default) future for the computation. If the expression is evaluated at top level, for example, then the continuation might take the result, print it on the screen, prompt for the next input, evaluate it, and so on forever. Most of the time the continuation includes actions specified by user code, as in a continuation that will take the result, multiply it by the value stored in a local variable, add seven, and give the answer to the top level continuation to be printed. Normally these ubiquitous continuations are hidden behind the scenes and programmers do not think much about them. On rare occasions, however, a programmer may need to deal with continuations explicitly. Call-with-current-continuation allows Scheme programmers to do that by creating a procedure that acts just like the current continuation.
 
-TODO: summarize, explain what a 'continuation' is in more depth
-
-To see how this works, we can walk through an implementation of `return` using Scheme:
+To see how this works in practice, we can walk through an implementation of `return` using Scheme:
 
     > (call-with-current-continuation
         (lambda (return)
@@ -31,7 +29,7 @@ Let's break this down. As the spec describes, `call-with-current-continuation` (
 
 As the code above loops over the list of numbers, it finds a negative number and calls into the `return` continuation. Execution immediately jumps back to where `call-with-current-continuation` left off, and the whole construct evaluates to `-3`.
 
-Scheme continuations are first-class objects, which means they can be assigned to variables, passed to functions, etc, just like any other data type. To give you an idea how this might be useful, here is a quick example from [Phillip Wright - Tech](http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/): 
+In addition, continuations are first-class objects, which means they can be assigned to variables, passed to functions, etc, just like any other data type. [Phillip Wright](http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/) wrote an excellent article about this in which he presented the following code snippet: 
 
     > (define handle #f)
     > (+ 2 (call/cc (lambda (k) (set! handle k) 2)))
@@ -56,7 +54,7 @@ The original husk `eval` functions were written in direct style, like this:
              Bool False -> eval env alt
              otherwise -> eval env conseq
 
-We have already seen that a Scheme continuation may be captured at any point within an expression. But in the above code, `eval` is called twice - once when computing `result` and again after `result` is inspected. But what would happen if that first `eval` contained a continuation? Eventually, once the continuation finished execution, the code would return and control would *incorrectly* pass to one of the second `eval`'s. Ooops! 
+We have already seen that a Scheme continuation may be captured at any point within an expression. But in the above code, `eval` is always called twice - once when computing `result` and again after `result` is inspected. What would happen if that first `eval` contained a continuation? Eventually, once the continuation finished executing, the code would return and control would *incorrectly* pass to one of the second `eval`'s. Ooops! 
 
 Consider the same code written in CPS:
 
