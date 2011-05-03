@@ -3,7 +3,7 @@
 <img src="https://github.com/justinethier/husk-scheme/raw/master/docs/design-notes-husk-scheme.png" width="500" height="44">
 
 # Continuations
-Prior to working on husk, most of my development experience involved working with structured and object-oriented programming. So continuations are unlike any language feature I had previously encountered. It took awhile for me to wrap my head around the concept and move from there to a working implementation. Part of my trouble was certainly the lack of functional programming experience. Nothing covered below is a particularly difficult concept, the trouble - at least for me - was learning and understanding enough to see the "big picture" of how it all fits together. This article walks through that learning process to introduce the basics of continuations and explain in depth how they are implemented in husk.
+Prior to working on husk, most of my development experience involved working with structured and object-oriented programming. So continuations are unlike any language feature I had previously encountered. It took awhile for me to wrap my head around the concept and move from there to a working implementation. Nothing covered below is a particularly difficult concept, the trouble - at least for me - was learning and understanding enough to see the "big picture" of how it all fits together. This article walks through that learning process to introduce the basics of continuations and explain in depth how they are implemented in husk.
 
 I hope it will be helpful to anyone trying to understand how husk works, as well as anyone interested in learning more about functional programming, Scheme, and related areas such as language design.
 
