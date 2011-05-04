@@ -81,12 +81,14 @@ While researching CPS, one thing that really threw me for a loop was the [quote]
 
 But eventually `eval` has to return *something*, right? Well, yes, but since Haskell supports proper tail recursion we can call through as many CPS functions as necessary without fear of overflowing the stack. husk's `eval` function will eventually transform an expression into a single value that is returned to its caller. But that is just our application; another program written in CPS might keep calling into functions forever. 
 
-Languages that do not support proper tail recursion - such as JavaScript - can support CPS style, but eventually a value must be returned since the stack will keep growing larger with each call into a new function.
+TODO: OK to say that haskell supports proper tail recursion?
+
+Languages that do not optimize tail calls - such as JavaScript - can support CPS style, but eventually a value must be returned since the stack will keep growing larger with each call into a new function.
 
 ## Implementation
-In order to transform the husk evaluator into CPS, a new `cont` parameter had to be added to `eval`, and threaded through each call. This was a time consuming change as there are perhaps a hundred calls to `eval` with the core husk code, but each change by itself was straightforward. One of the reasons it took me so long to realize an approach using CPS was that I originally looked at the problem from a different perspective. Although CPS works great for Haskell code, what about all of those Scheme functions that need to be evaluated? Surely they will not be transformed into Haskell functions - so how to handle them?
+In order to transform the husk evaluator into CPS, a new `cont` parameter had to be added to `eval`, and threaded through each call. This was a time consuming change as there were perhaps a hundred calls to `eval` within the core husk code, but each change by itself was straightforward. One of the reasons it took me so long to realize an approach using CPS was that I originally looked at the problem from a different perspective. Although CPS works great for Haskell code, what about all of those Scheme functions that need to be evaluated? Surely they will not be transformed into Haskell functions - so how do we handle them?
 
-In order to support these Scheme functions, the original husk implementation of continuations passed around a list of Scheme code to be executed as the body of the function. Each time a line of code is executed, the body is reduced by one line and the evaluator calls into the next line. This works great for supporting a certain class of continuations such as `return`, but cannot handle special forms built into the core evaluator such as `if`, `begin`, etc. So over time the use of higher-level Haskell functions was incorporated into that code. Although this complicates the implementation somewhat, both approaches still use CPS. Just in the Scheme case, you can think of each expression within the function as being its own continuation.
+In order to support Scheme functions, the original husk implementation of continuations passed around a list of Scheme code to be executed as the body of the function. Each time a line of code is executed, the body is reduced by one line and the evaluator calls into the next line. This works great for supporting a certain class of continuations such as `return`, but cannot handle special forms built into the core evaluator such as `if`, `begin`, etc. So over time the use of higher-level Haskell functions was incorporated as well. Although this complicates the implementation somewhat, both approaches still use CPS. Just in the Scheme case, you can think of each expression within the function as being its own continuation.
 
 Let's walk through each part of the implementation to get an understanding of how it all works.
 
@@ -103,29 +105,40 @@ The following container allows us to pass around either Scheme or Haskell code:
 
 Since continuations are first-class object, We then extend the `LispVal` data type to include a new `Continuation` member:
 
-    Continuation {  closure :: Env                     -- Environment of the continuation
-                  , currentCont :: (Maybe DeferredCode)-- Code of current continuation
-                  , nextCont    :: (Maybe LispVal)     -- Code to resume after body of cont
+    Continuation {  closure :: Env                          -- Environment of the continuation
+                  , currentCont     :: (Maybe DeferredCode) -- Code of current continuation
+                  , nextCont        :: (Maybe LispVal)      -- Code to resume after body of cont
+                  , extraReturnArgs :: (Maybe [LispVal])    -- Extra return arguments, to support (values) and (call-with-values)
+                  , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind) 
                  }
-^ TODO: dynamic wind (and below as well)
 
-This member contains a closure to capture the state of the program. It also includes a continuation 'chain'. The current continuation will be executed immediately; if present, execution will then pass to the next continuation. If there is no more code to execute, the continuation members may be set to `Nothing` to instruct the evaluator to return its current value. 
+This member contains a closure to capture the state of the program, a continuation chain, and auxillary data. The current continuation will be executed immediately; if present, execution will then pass to the next continuation. If there is no more code to execute, the continuation members may be set to `Nothing` to instruct the evaluator to return its current value. 
+
+The auxillary data members allow a continuation to keep track of data for special cases. Multiple return values may be stored to support `call-with-values`. And `DynamicWinders` supports `dynamic-wind` by storing pairs of `before` and `after` functions:
+
+    -- |Container to store information from a dynamic-wind
+    data DynamicWinders = DynamicWinders {
+        before :: LispVal -- ^Function to execute when resuming continuation within extent of dynamic-wind
+      , after :: LispVal  -- ^Function to execute when leaving extent of dynamic-wind
+    }
 
 ###Helper functions
 The following helper functions are provided as a convenience to package up Haskell functions, but they also serve another purpose. By encapsulating how the `Continuation` object is built they allow us to change its type structure with no impact to the evaluator's code - a wonderful aid for refactoring:
 
     -- Make an "empty" continuation that does not contain any code
     makeNullContinuation :: Env -> LispVal
-    makeNullContinuation env = Continuation env Nothing Nothing 
+    makeNullContinuation env = Continuation env Nothing Nothing Nothing Nothing 
     
     -- Make a continuation that takes a higher-order function (written in Haskell)
     makeCPS :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal]-> IOThrowsError LispVal) -> LispVal
-    makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont)
+    makeCPS env cont@(Continuation _ _ _ _ dynWind) cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing dynWind
+    makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing Nothing -- This overload just here for completeness; it should never be used 
     
     -- Make a continuation that stores a higher-order function and arguments to that function
     makeCPSWArgs :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) -> [LispVal] -> LispVal
-    makeCPSWArgs env cont cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont)
-    
+    makeCPSWArgs env cont@(Continuation _ _ _ _ dynWind) cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont) Nothing dynWind
+    makeCPSWArgs env cont cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont) Nothing Nothing -- This overload just here for completeness; it should never be used 
+
 ###Eval helper function
 After the evaluation function is finished with an expression, it calls into `continueEval` to pick up execution of the next continuation:
 
@@ -135,29 +148,51 @@ There are many versions of `continueEval`, depending upon the input pattern. We 
 
     continueEval _ (Continuation cEnv (Just (HaskellBody func funcArgs)) (Just cCont)) val = func cEnv cCont val funcArgs
 
+TODO: the code is actually as follows, but I think I need to consider cleaning up xargs, or at least addressing the concern:
+
+-- Passing a higher-order function as the continuation; just evaluate it. This is 
+-- done to enable an 'eval' function to be broken up into multiple sub-functions,
+-- so that any of the sub-functions can be passed around as a continuation.
+--
+-- Carry extra args from the current continuation into the next, to support (call-with-values)
+continueEval _
+            (Continuation cEnv (Just (HaskellBody func funcArgs)) 
+                               (Just (Continuation cce cnc ccc _ cdynwind)) 
+                                xargs _) -- rather sloppy, should refactor code so this is not necessary
+             val = func cEnv (Continuation cce cnc ccc xargs cdynwind) val funcArgs
+
+
 We may also receive a list containing Scheme code. In this case the function sees how much code is left. If the Scheme code is all finished the resultant value is returned; otherwise we keep going:
 
-    continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont)) val = do
+
+TODO: may want to explain extra (values) and (dyn-wind) related code:
+
+
+    continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs dynWind) val = do
         case cBody of
             [] -> do
               case cCont of
-                Continuation nEnv _ _ -> continueEval nEnv cCont val
+                Continuation nEnv ncCont nnCont _ nDynWind -> 
+                  -- Pass extra args along if last expression of a function, to support (call-with-values)
+                  continueEval nEnv (Continuation nEnv ncCont nnCont extraArgs nDynWind) val 
                 _ -> return (val)
-            [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont)) (lv)
-            (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont)) (lv)
+            [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) Nothing dynWind) (lv)
+            (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing dynWind) (lv)
 
 Finally, there are two edge cases where a current continuation may not be present:
 
-    -- No current continuation, but a next continuation is available; call into it
-    continueEval _ (Continuation cEnv Nothing (Just cCont)) val = continueEval cEnv cCont val
+    -- No current continuation, but a next cont is available; call into it
+    continueEval _ (Continuation cEnv Nothing (Just cCont) _ _) val = continueEval cEnv cCont val
     
     -- There is no continuation code, just return value
-    continueEval _ (Continuation _ Nothing Nothing) val = return val
+    continueEval _ (Continuation _ Nothing Nothing _ _) val = return val
 
 ###Apply
 Apply is used to execute a Scheme function; it needs to know both how to call a function as well as how to execute a continuation:
 
     apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
+
+TODO: pick back up here, need to integrate new code...
 
 There are several patterns to consider. Let's start with the first, which handles function application of a continuation. As of now, husk only supports sending a single argument to a continuation, so there is simple validation for the number of arguments. Once that is complete, we simply call into `continueEval`:
 
