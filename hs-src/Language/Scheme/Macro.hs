@@ -11,39 +11,28 @@ husk scheme interpreter
 
 A lightweight dialect of R5RS scheme.
 
-This module ...
+This module contains code for hygienic macros.
+
+During transformation, the following components are considered:
+ - Pattern (part of a rule that matches input)
+ - Transform (what the macro "expands" into)
+ - Input (the actual code in the user's program)
+
+At a high level, macro transformation is broken down into the following steps:
+
+ 1) Search for a rule that matches the input.
+    During this process, any variables in the input are loaded into a temporary environment
+ 2) If a rule matches,
+ 3) Transform by walking the transform, inserting variables as needed
+
+Remaining Work:
+
+* Dotted lists are not 100% correctly implemented. In particular, the transformation should
+  take into account whether the input was presented as a list or a pair, and replicate that
+   in the output.
+
 -}
-{- 
- - husk scheme
- - Macro
- - @author Justin Ethier
- -
- - Purpose:
- -
- - This file contains code for hygienic macros.
- -
- - During transformation, the following components are considered:
- -  - Pattern (part of a rule that matches input)
- -  - Transform (what the macro "expands" into)
- -  - Input (the actual code in the user's program)
- -
- - At a high level, macro transformation is broken down into the following steps:
- -
- -  1) Search for a rule that matches the input.
- -     During this process, any variables in the input are loaded into a temporary environment
- -  2) If a rule matches,
- -  3) Transform by walking the transform, inserting variables as needed
- -
- -
- - Remaining Work:
- -
- - * Vectors are currently not supported
- -
- - * Dotted lists are not 100% correctly implemented. In particular, the transformation should
- -   take into account whether the input was presented as a list or a pair, and replicate that
- -    in the output.
- -
- - -}
+
 module Language.Scheme.Macro 
     (
       macroEval
