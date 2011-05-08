@@ -3,9 +3,10 @@
 <img src="https://github.com/justinethier/husk-scheme/raw/master/docs/design-notes-husk-scheme.png" width="500" height="44">
 
 # Continuations
-Prior to working on husk, most of my development experience involved working with structured and object-oriented programming. So continuations are unlike any language feature I had previously encountered. It took awhile for me to wrap my head around the concept and move from there to a working implementation. Nothing covered below is a particularly difficult concept, the trouble - at least for me - was learning and understanding enough to see the "big picture" of how it all fits together. This article walks through that learning process to introduce the basics of continuations and explain in depth how they are implemented in husk.
 
-I hope it will be helpful to anyone trying to understand how husk works, as well as anyone interested in learning more about functional programming, Scheme, and related areas such as language design.
+Husk was written based on the code from Write a Scheme in 48 hours (TODO: link to article). Although that book is a great starting point, there are several fundamental features that are not included in their interpreter, such as continuations. To add support to husk, I had to learn what continuations are and how to fit them into the husk code base. This article explains how husk's implementation works by walking through the current code. Nothing covered below is a particularly difficult concept; the trouble - at least for me during development - was getting the "big picture" of how it all fits together. 
+
+(TODO: Perhaps this article can be of some help to you as well!)
 
 ## Introduction
 Scheme is a minimalistic language that does not include many common control constructs such as return, try/catch, or even goto. Instead Scheme provides continuations - a powerful, general-purpose construct which may be used to build any number of more specific control structures. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following summary:
@@ -178,26 +179,27 @@ Apply is used to execute a Scheme function; it needs to know both how to call a 
 
     apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 
-TODO: pick back up here, need to integrate new code...
-
 There are several patterns to consider. Let's start with the first, which handles function application of a continuation:
 
-apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
-  case ndynwind of
-    -- Call into dynWind.before if it exists...
-    Just ([DynamicWinders beforeFunc _]) -> apply (makeCPS env cont cpsApply) beforeFunc []
-    _ ->  doApply env cont
- where
-   cpsApply :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-   cpsApply e c _ _ = doApply e c
-   doApply e c = 
-      case (toInteger $ length args) of 
-        0 -> throwError $ NumArgs 1 [] 
-        1 -> continueEval e c $ head args
-        _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
-             continueEval e (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args 
+    apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
+      case ndynwind of
+        -- Call into dynWind.before if it exists...
+        Just ([DynamicWinders beforeFunc _]) -> apply (makeCPS env cont cpsApply) beforeFunc []
+        _ ->  doApply env cont
+     where
+       cpsApply :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+       cpsApply e c _ _ = doApply e c
+       doApply e c = 
+          case (toInteger $ length args) of 
+            0 -> throwError $ NumArgs 1 [] 
+            1 -> continueEval e c $ head args
+            _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
+                 continueEval e (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args 
 
 We first check to see if there is a `before` function stored in the continuation from a previous `dynamic-wind` operation. Such a function is guaranteed to execute each time the continuation is called, so we execute it if present. Then husk checks the number of arguments to the continuation, and hands them - along with the continuation itself - to `continueEval` to resume execution at the new continuation. We have just replaced the current continuation!
+
+TODO: call this out somehow??
+Please note that the implementation of `dynamic-wind` as-is is not completely correct; the implementation needs to take into account a *stack* of before (and after) functions. A future version of husk will have a more complete solution.
 
 A primitive function such as `+`, `-`, etc cannot call into a continuation. So husk just calls a primitive directly, obtains a result, and then calls into a continuation if present. The same code is also used to apply primitive IO functions:
 
@@ -209,39 +211,39 @@ A primitive function such as `+`, `-`, etc cannot call into a continuation. So h
 
 This case is a bit more interesting; here we execute a Scheme function:
 
-apply cont (Func aparams avarargs abody aclosure) args =
-  if num aparams /= num args && avarargs == Nothing
-     then throwError $ NumArgs (num aparams) args
-     else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
-  where remainingArgs = drop (length aparams) args
-        num = toInteger . length
-        --
-        -- Continue evaluation within the body, preserving the outer continuation.
-        --
-        -- This link was helpful for implementing this, and has a *lot* of other useful information:
-        -- http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_73.html#SEC80
-        --
-        -- What we are doing now is simply not saving a continuation for tail calls. For now this may
-        -- be good enough, although it may need to be enhanced in the future in order to properly
-        -- detect all tail calls. 
-        --
-        -- See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
-        --
-        evalBody evBody env = case cont of
-            Continuation _ (Just (SchemeBody cBody)) (Just cCont) _ cDynWind -> if length cBody == 0
-                then continueWCont env (evBody) cCont cDynWind
---                else continueWCont env (evBody) cont (trace ("cDynWind = " ++ show cDynWind) cDynWind) -- Might be a problem, not fully optimizing
-                else continueWCont env (evBody) cont cDynWind -- Might be a problem, not fully optimizing
-            Continuation _ _ _ _ cDynWind -> continueWCont env (evBody) cont cDynWind
-            _ -> continueWCont env (evBody) cont Nothing 
-
-        -- Shortcut for calling continueEval
-        continueWCont cwcEnv cwcBody cwcCont cwcDynWind = 
-            continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing cwcDynWind) $ Nil ""
-
-        bindVarArgs arg env = case arg of
-          Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
-          Nothing -> return env
+    apply cont (Func aparams avarargs abody aclosure) args =
+      if num aparams /= num args && avarargs == Nothing
+         then throwError $ NumArgs (num aparams) args
+         else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
+      where remainingArgs = drop (length aparams) args
+            num = toInteger . length
+            --
+            -- Continue evaluation within the body, preserving the outer continuation.
+            --
+            -- This link was helpful for implementing this, and has a *lot* of other useful information:
+            -- http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_73.html#SEC80
+            --
+            -- What we are doing now is simply not saving a continuation for tail calls. For now this may
+            -- be good enough, although it may need to be enhanced in the future in order to properly
+            -- detect all tail calls. 
+            --
+            -- See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
+            --
+            evalBody evBody env = case cont of
+                Continuation _ (Just (SchemeBody cBody)) (Just cCont) _ cDynWind -> if length cBody == 0
+                    then continueWCont env (evBody) cCont cDynWind
+    --                else continueWCont env (evBody) cont (trace ("cDynWind = " ++ show cDynWind) cDynWind) -- Might be a problem, not fully optimizing
+                    else continueWCont env (evBody) cont cDynWind -- Might be a problem, not fully optimizing
+                Continuation _ _ _ _ cDynWind -> continueWCont env (evBody) cont cDynWind
+                _ -> continueWCont env (evBody) cont Nothing 
+    
+            -- Shortcut for calling continueEval
+            continueWCont cwcEnv cwcBody cwcCont cwcDynWind = 
+                continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing cwcDynWind) $ Nil ""
+    
+            bindVarArgs arg env = case arg of
+              Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
+              Nothing -> return env
 
 This function uses a series of helper functions, organized into a single pipeline:
 
@@ -254,20 +256,20 @@ In a nutshell, we create a copy of the function's closure (input environment), b
 ###call/cc
 Here is the implementation of `call/cc`. Since husk uses CPS, the code is actually quite simple:
 
-evalfuncCallCC [cont@(Continuation _ _ _ _ _), func] = do
-   case func of
-     PrimitiveFunc f -> do
-         result <- liftThrows $ f [cont]
-         case cont of 
-             Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
-             _ -> return result
-     Func aparams _ _ _ ->
-       if (toInteger $ length aparams) == 1 
-         then apply cont func [cont] 
-         else throwError $ NumArgs (toInteger $ length aparams) [cont] 
-     other -> throwError $ TypeMismatch "procedure" other
-evalfuncCallCC (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
-evalfuncCallCC _ = throwError $ NumArgs 1 []
+    evalfuncCallCC [cont@(Continuation _ _ _ _ _), func] = do
+       case func of
+         PrimitiveFunc f -> do
+             result <- liftThrows $ f [cont]
+             case cont of 
+                 Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
+                 _ -> return result
+         Func aparams _ _ _ ->
+           if (toInteger $ length aparams) == 1 
+             then apply cont func [cont] 
+             else throwError $ NumArgs (toInteger $ length aparams) [cont] 
+         other -> throwError $ TypeMismatch "procedure" other
+    evalfuncCallCC (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
+    evalfuncCallCC _ = throwError $ NumArgs 1 []
 
 Since `call/cc` accepts a single function as an argument, we simply call into that function, passing the current continuation as the only argument. There are two cases since a primitive function may be called directly.
 
