@@ -5,7 +5,7 @@ Licence     : MIT (see LICENSE in the distribution)
 
 Maintainer  : github.com/justinethier
 Stability   : experimental
-Portability : portable
+Portability : non-portable (GHC API)
 
 husk scheme interpreter
 
