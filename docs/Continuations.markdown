@@ -4,12 +4,21 @@
 
 # Continuations
 
-Husk was written based on the code from Write a Scheme in 48 hours (TODO: link to article). Although that book is a great starting point, there are several fundamental features that are not included in their interpreter, such as continuations. To add support to husk, I had to learn what continuations are and how to fit them into the husk code base. This article explains how husk's implementation works by walking through the current code. Nothing covered below is a particularly difficult concept; the trouble - at least for me during development - was getting the "big picture" of how it all fits together. 
+The original husk code was based on the code from the tutorial [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) by Jonathan Tang. Although that book is a great starting point for writing a Scheme, there are several fundamental features that are not included in their interpreter, such as continuations. This article provides a brief overview of Scheme continuations and walks through the husk code to show how we have implemented them.
+
+TODO:
+This article will be most helpful for anyone (beginner, intermediate) (with some scheme experience??) that would like to learn about continuations ... ?
+
+previous experience assumed - previous programming experience, some functional programming experience (or willingness to google if you come across a term you do not recognize), at least a skim of the john tang article
+
+Nothing covered below is a particularly difficult concept
+
+; the trouble - at least for me during development - was getting the "big picture" of how it all fits together. 
 
 (TODO: Perhaps this article can be of some help to you as well!)
 
 ## Introduction
-Scheme is a minimalistic language that does not include many common control constructs such as return, try/catch, or even goto. Instead Scheme provides continuations - a powerful, general-purpose construct which may be used to build any number of more specific control structures. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following summary:
+Scheme is a minimalistic language that does not include many common control constructs such as return, try/catch, or even goto. Instead Scheme provides continuations - a powerful, general-purpose construct which may be used to build more specific control structures. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following summary:
 
 >Whenever a Scheme expression is evaluated there is a continuation wanting the result of the expression. The continuation represents an entire (default) future for the computation. If the expression is evaluated at top level, for example, then the continuation might take the result, print it on the screen, prompt for the next input, evaluate it, and so on forever. Most of the time the continuation includes actions specified by user code, as in a continuation that will take the result, multiply it by the value stored in a local variable, add seven, and give the answer to the top level continuation to be printed. Normally these ubiquitous continuations are hidden behind the scenes and programmers do not think much about them. On rare occasions, however, a programmer may need to deal with continuations explicitly. Call-with-current-continuation allows Scheme programmers to do that by creating a procedure that acts just like the current continuation.
 
@@ -24,11 +33,11 @@ To see how this works in practice, we can walk through an implementation of `ret
         #t))
     -3
 
-Let's break this down. As the spec describes, `call-with-current-continuation` (or `call/cc` for short) expects a single function as its only argument - an anonymous `lambda` function in this example. When Scheme executes `call-with-current-continuation`, it packs up the current continuation and passes it in as the `return` argument. This continuation can be called just like a function, at which point Scheme will abandon whatever continuation is in effect and will resume execution at this previous continuation.
+Let's break this down. As the R<sup>5</sup>RS spec describes, `call-with-current-continuation` (or `call/cc` for short) expects a single function as its only argument - an anonymous `lambda` function in this example. When Scheme executes `call-with-current-continuation`, it packs up the current continuation and passes it in as the `return` argument. This continuation can be called just like a function, at which point Scheme will abandon whatever continuation is in effect and will resume execution at this previous continuation.
 
 As the code above loops over the list of numbers, it finds a negative number and calls into the `return` continuation. Execution immediately jumps back to where `call-with-current-continuation` left off, and the whole construct evaluates to `-3`.
 
-In addition, continuations are first-class objects, which means they can be assigned to variables, passed to functions, etc, just like any other data type. [Phillip Wright](http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/) wrote an excellent article about this in which he presented the following code snippet: 
+Continuations are first-class objects, which means they can be assigned to variables, passed to functions, etc, just like any other data type. [Phillip Wright](http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/) wrote an excellent article about this in which he presented the following code snippet: 
 
     > (define handle #f)
     > (+ 2 (call/cc (lambda (k) (set! handle k) 2)))
@@ -38,14 +47,14 @@ In addition, continuations are first-class objects, which means they can be assi
     > (handle 20)
     22
 
-This example illustrates many important points. By storing the continuation up in a variable we can use it later on in the program. In this case, it is used several times to add `2` to arbitrary expressions. A proper Scheme implementation allows a continuation to be invoked multiple times. We also see that a continuation may be captured at any point in the code, even while evaluating part of a larger expression. The linked article is brief and I recommend reading through for a more detailed explanation.
+This example illustrates many important points. By storing the continuation up in a variable we can use it later on in the program: in this case, it is used several times to add `2` to arbitrary expressions. A proper Scheme implementation allows a continuation to be invoked like this multiple times. We can also see that a continuation may be captured at any point in the code, even while evaluating part of a larger expression. The linked article is brief and I recommend reading through for a more detailed explanation.
 
 ## Continuation Passing Style
-The [Portland Pattern Repository's Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) wiki page provides several possible approaches for implementing continuations. One such approach is to write the Scheme runtime using continuation passing style (CPS). This is also what Jonathan Tang recommends in the Wiki book [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours/Conclusion), which the original husk code was based on. 
+The [Portland Pattern Repository's Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) wiki page provides several possible approaches for implementing continuations. In particular, the Scheme runtime can use continuation passing style (CPS). This is also what Jonathan Tang recommends in [his tutorial](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours/Conclusion). 
 
 In CPS, a function (b) is passed as a parameter to another function (a), with the intent that when (a) is finished it will pass control to (b). So (b) in essence becomes a future computation of (a). This pattern is used extensively in modern programming - for instance, the node.js JavaScript framework allows one to pass a callback to an asynchronous function that is later executed once the asynchronous operation completes.
 
-The original husk `eval` functions were written in direct style, like this:
+An example may be helpful. The original husk `eval` functions were written in direct style, like this:
 
     eval env (List [Atom "if", pred, conseq, alt]) =
         do result <- eval env pred
@@ -53,9 +62,9 @@ The original husk `eval` functions were written in direct style, like this:
              Bool False -> eval env alt
              otherwise -> eval env conseq
 
-We have already seen that a Scheme continuation may be captured at any point within an expression. But in the above code, `eval` is always called twice - once when computing `result` and again after `result` is inspected. What would happen if that first `eval` contained a continuation? Eventually, once the continuation finished executing, the code would return and control would *incorrectly* pass to one of the second `eval`'s. Ooops! 
+We have already seen that a Scheme continuation may be captured at any point within an expression. But in the above code, `eval` is always called twice - once when computing `result` and again after `result` is inspected. What would happen if that first `eval` contained a continuation? Eventually, once the continuation finished executing, the code would return and control would *incorrectly* pass to one of the second `eval`'s. Oops! 
 
-Consider the same code written in CPS:
+Consider the same code written using CPS:
 
     eval env cont (List [Atom "if", predic, conseq, alt]) = do
       eval env (makeCPS env cont cps) (predic)
@@ -65,14 +74,13 @@ Consider the same code written in CPS:
                   Bool False -> eval e c alt
                   _ -> eval e c conseq
 
-Here we use the `makeCPS` helper function to pack up `cps` as a continuation object that is passed into `eval`. The evaluator will then call back into `cps` when it is ready. But since this "next step" is being passing in as a function, the interpreter also has the freedom to call into another continuation instead!
+Here we use the `makeCPS` helper function to pack up `cps` as a continuation object that is passed into `eval`. The evaluator will then call back into `cps` when it is ready. But since `cps` is being passing in as a function, the interpreter also has the freedom to call into another continuation instead!
 
 The [Call With Current Continuation](http://c2.com/cgi/wiki?CallWithCurrentContinuation) wiki offers a keen observation:
 
 >If your program evaluator/interpreter is implemented using Continuation Passing Style you get call-with-current-continuation for free. CALL/CC is then a very natural operation since every function is called with the current continuation anyway.
 
-CPS is a very natural way to implement continuations, if you are fortunate enough to be using a language that can take advantage of this pattern. 
-Looking back, it seems obvious to use CPS to implement continuations in husk, as Haskell supports higher order functions (that is, a function can be assigned to a variable just like any other data type).
+So CPS is a very natural way to implement continuations, if you are fortunate enough to be using a language that can take advantage of this pattern. Looking back, it seems obvious to use CPS to implement continuations in husk, as Haskell supports both first-class functions and tail call optimization.
 
 While researching CPS, one thing that really threw me for a loop was the [quote](http://c2.com/cgi/wiki?ContinuationPassingStyle]):
 
@@ -80,16 +88,14 @@ While researching CPS, one thing that really threw me for a loop was the [quote]
 
 But eventually `eval` has to return *something*, right? Well, yes, but since Haskell supports proper tail recursion we can call through as many CPS functions as necessary without fear of overflowing the stack. husk's `eval` function will eventually transform an expression into a single value that is returned to its caller. But that is just our application; another program written in CPS might keep calling into functions forever. 
 
-TODO: OK to say that haskell supports proper tail recursion?
-
 Languages that do not optimize tail calls - such as JavaScript - can support CPS style, but eventually a value must be returned since the stack will keep growing larger with each call into a new function.
 
 ## Implementation
-In order to transform the husk evaluator into CPS, a new `cont` parameter had to be added to `eval`, and threaded through each call. This was a time consuming change as there were perhaps a hundred calls to `eval` within the core husk code, but each change by itself was straightforward. One of the reasons it took me so long to realize an approach using CPS was that I originally looked at the problem from a different perspective. Although CPS works great for Haskell code, what about all of those Scheme functions that need to be evaluated? Surely they will not be transformed into Haskell functions - so how do we handle them?
+In order to transform the husk evaluator into CPS, a new `cont` (continuation) parameter had to be added to `eval`, and threaded through each call. This was a time consuming change as there were perhaps a hundred calls to `eval` within the core husk code, but each change by itself was straightforward. One of the reasons it took me so long to realize an approach using CPS was that I originally looked at the problem from a different perspective. Although CPS works great for Haskell code, what about all of those Scheme functions that need to be evaluated? Surely they will not be transformed into Haskell functions - so how do we handle them?
 
-In order to support Scheme functions, the original husk implementation of continuations passed around a list of Scheme code to be executed as the body of the function. Each time a line of code is executed, the body is reduced by one line and the evaluator calls into the next line. This works great for supporting a certain class of continuations such as `return`, but cannot handle special forms built into the core evaluator such as `if`, `begin`, etc. So over time the use of higher-level Haskell functions was incorporated as well. Although this complicates the implementation somewhat, both approaches still use CPS. Just in the Scheme case, you can think of each expression within the function as being its own continuation.
+In order to support Scheme functions, the original husk implementation of continuations passed around a list of Scheme code to be executed as the body of the function. Each time a line of code is executed, the body is reduced by one line and the evaluator calls into the next line. This works great for supporting a certain class of continuations such as `return`, but cannot handle special forms built into the core evaluator such as `if`, `begin`, etc. So over time the use of higher-level Haskell functions was incorporated as well. Although this complicates the implementation somewhat, both approaches still use CPS - just in the Scheme case, you can think of each expression within the function as being its own continuation.
 
-Let's walk through each part of the implementation to get an understanding of how it all works.
+Let's walk through each part of the implementation to get an understanding of how it all fits together.
 
 ###Data types
 The following container allows us to pass around either Scheme or Haskell code:
@@ -102,7 +108,7 @@ The following container allows us to pass around either Scheme or Haskell code:
          , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to the higher-order function 
         } -- ^A Haskell function
 
-Since continuations are first-class object, We then extend the `LispVal` data type to include a new `Continuation` member:
+Since continuations are first-class objects, the `LispVal` data type was extended to include a new `Continuation` member:
 
     Continuation {  closure :: Env                          -- Environment of the continuation
                   , currentCont     :: (Maybe DeferredCode) -- Code of current continuation
@@ -111,9 +117,9 @@ Since continuations are first-class object, We then extend the `LispVal` data ty
                   , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind) 
                  }
 
-This member contains a closure to capture the state of the program, a continuation chain, and auxillary data. The current continuation will be executed immediately; if present, execution will then pass to the next continuation. If there is no more code to execute, the continuation members may be set to `Nothing` to instruct the evaluator to return its current value. 
+This member contains a closure to capture the state of the program, a continuation chain, and auxillary data. The current continuation will be executed immediately. Execution then passes to the next continuation if it is present. If there is no more code to execute, the continuation members may be set to `Nothing` to instruct the evaluator to return its current value. 
 
-The auxillary data members allow a continuation to keep track of data for special cases. Multiple return values may be stored to support `call-with-values`. And `DynamicWinders` supports `dynamic-wind` by storing pairs of `before` and `after` functions:
+The auxillary data members allow a continuation to keep track of data for special cases. Multiple return values may be stored to support `call-with-values`. `DynamicWinders` was added to store pairs of `before` and `after` functions to support `dynamic-wind`:
 
     -- |Container to store information from a dynamic-wind
     data DynamicWinders = DynamicWinders {
@@ -145,15 +151,14 @@ After the evaluation function is finished with an expression, it calls into `con
 
 There are many versions of `continueEval`, depending upon the input pattern. We will briefly discuss each one in turn. The first one below accepts a higher-order Haskell function, which is just call into it directly:
 
-TODO:
--- Carry extra args from the current continuation into the next, to support (call-with-values)
-    continueEval _  (Continuation cEnv (Just (HaskellBody func funcArgs)) 
-                               (Just (Continuation cce cnc ccc _ cdynwind)) 
-                                xargs _) -- rather sloppy, should refactor code so this is not necessary
+    continueEval _  (Continuation cEnv 
+                                 (Just (HaskellBody func funcArgs)) 
+                                 (Just (Continuation cce cnc ccc _ cdynwind)) 
+                                  xargs 
+                                  _)
              val = func cEnv (Continuation cce cnc ccc xargs cdynwind) val funcArgs
 
-
-We may also receive a list containing Scheme code. In this case the function sees how much code is left. If the Scheme code is all finished the resultant value is returned; otherwise we keep going:
+We may also receive a list containing Scheme code. In this case the function checks how much code is left. If the Scheme code is all finished the resultant value is returned; otherwise we keep going:
 
     continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs dynWind) val = do
         case cBody of
@@ -196,12 +201,13 @@ There are several patterns to consider. Let's start with the first, which handle
             _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
                  continueEval e (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args 
 
+TODO: need to revise this paragraph, especially the end
 We first check to see if there is a `before` function stored in the continuation from a previous `dynamic-wind` operation. Such a function is guaranteed to execute each time the continuation is called, so we execute it if present. Then husk checks the number of arguments to the continuation, and hands them - along with the continuation itself - to `continueEval` to resume execution at the new continuation. We have just replaced the current continuation!
 
 TODO: call this out somehow??
 Please note that the implementation of `dynamic-wind` as-is is not completely correct; the implementation needs to take into account a *stack* of before (and after) functions. A future version of husk will have a more complete solution.
 
-A primitive function such as `+`, `-`, etc cannot call into a continuation. So husk just calls a primitive directly, obtains a result, and then calls into a continuation if present. The same code is also used to apply primitive IO functions:
+A primitive function such as `+`, `-`, etc cannot call into a continuation. (TODO: why? They just execute internal code that processes the arguments and returns a value) So husk just calls a primitive directly, obtains a result, and then calls into a continuation if present. The same code is also used to apply primitive IO functions:
 
     apply cont (PrimitiveFunc func) args = do
       result <- liftThrows $ func args
@@ -253,8 +259,10 @@ This function uses a series of helper functions, organized into a single pipelin
 
 In a nutshell, we create a copy of the function's closure (input environment), bind the function arguments to that copy, and pass the Scheme code to `continueEval` to begin the evaluation process.
 
+TODO: do we need to break this down a bit more?
+
 ###call/cc
-Here is the implementation of `call/cc`. Since husk uses CPS, the code is actually quite simple:
+Here is the implementation of `call/cc`. Husk uses CPS, so the code is actually quite simple:
 
     evalfuncCallCC [cont@(Continuation _ _ _ _ _), func] = do
        case func of
