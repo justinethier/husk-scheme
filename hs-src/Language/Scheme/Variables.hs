@@ -1,12 +1,20 @@
-{-
- - husk scheme
- - Variables
- -
- - This file contains code for working with Scheme variables
- -
- - @author Justin Ethier
- -
- - -}
+{- | 
+Module      : Language.Scheme.Variables
+Copyright   : Justin Ethier
+Licence     : MIT (see LICENSE in the distribution)
+
+Maintainer  : github.com/justinethier
+Stability   : experimental
+Portability : portable
+
+husk scheme interpreter
+
+A lightweight dialect of R5RS scheme.
+
+This module contains code for working with Scheme variables.
+
+-}
+
 module Language.Scheme.Variables where
 import Language.Scheme.Types
 import Control.Monad.Error
