@@ -1,12 +1,18 @@
-{-
- - husk scheme interpreter
- -
- - A lightweight dialect of R5RS scheme.
- - Numerical tower functionality
- -
- - @author Justin Ethier
- - 
- - -}
+{- | 
+Module      : Language.Scheme.Numerical
+Copyright   : Justin Ethier
+Licence     : MIT (see LICENSE in the distribution)
+
+Maintainer  : github.com/justinethier
+Stability   : experimental
+Portability : portable
+
+husk scheme interpreter
+
+A lightweight dialect of R5RS scheme.
+
+This module implements the numerical tower.
+-}
 
 module Language.Scheme.Numerical where
 import Language.Scheme.Types
