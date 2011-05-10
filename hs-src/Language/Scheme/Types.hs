@@ -1,14 +1,22 @@
-{--
- - husk scheme
- - Types
- -
- - This file contains top-level data type definitions and their associated functions, including:
- -  - Scheme data types
- -  - Scheme errors
- -
- - @author Justin Ethier
- -
- - -}
+{- | 
+Module      : Language.Scheme.Types
+Copyright   : Justin Ethier
+Licence     : MIT (see LICENSE in the distribution)
+
+Maintainer  : github.com/justinethier
+Stability   : experimental
+Portability : portable
+
+husk scheme interpreter
+
+A lightweight dialect of R5RS scheme.
+
+This module contains top-level data type definitions and their associated functions, including:
+ - Scheme data types
+ - Scheme errors
+
+-}
+
 module Language.Scheme.Types where
 import Complex
 import Control.Monad.Error
