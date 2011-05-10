@@ -1,12 +1,18 @@
-{-
- - husk scheme interpreter
- -
- - A lightweight dialect of R5RS scheme.
- - This file contains Core functionality, primarily Scheme expression evaluation.
- -
- - @author Justin Ethier
- -
- - -}
+{- | 
+Module      : Language.Scheme.Core 
+Copyright   : Justin Ethier
+Licence     : MIT (see LICENSE in the distribution)
+
+Maintainer  : github.com/justinethier
+Stability   : experimental
+Portability : portable
+
+husk scheme interpreter
+
+A lightweight dialect of R5RS scheme.
+
+This module contains Core functionality, primarily Scheme expression evaluation.
+-}
 
 module Language.Scheme.Core 
     (
