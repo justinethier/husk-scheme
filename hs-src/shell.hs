@@ -1,14 +1,19 @@
-{-
- - husk scheme interpreter
- -
- - A lightweight dialect of R5RS scheme.
- -
- - This file implements a REPL "shell" to host the interpreter, and also
- - allows execution of stand-alone files containing Scheme code.
- -
- - @author Justin Ethier
- -
- - -}
+{- | 
+Module      : Main
+Copyright   : Justin Ethier
+Licence     : MIT (see LICENSE in the distribution)
+
+Maintainer  : github.com/justinethier
+Stability   : experimental
+Portability : portable
+
+husk scheme interpreter
+
+A lightweight dialect of R5RS scheme.
+
+This file implements a REPL "shell" to host the interpreter, and also
+allows execution of stand-alone files containing Scheme code.
+-}
 
 module Main where
 import Paths_husk_scheme
