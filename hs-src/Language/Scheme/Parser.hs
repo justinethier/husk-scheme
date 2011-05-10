@@ -1,12 +1,19 @@
-{-
- - husk scheme
- - Parser
- -
- - This file contains the code for parsing scheme
- -
- - @author Justin Ethier
- -
- - -}
+{- | 
+Module      : Language.Scheme.Parser
+Copyright   : Justin Ethier
+Licence     : MIT (see LICENSE in the distribution)
+
+Maintainer  : github.com/justinethier
+Stability   : experimental
+Portability : portable
+
+husk scheme interpreter
+
+A lightweight dialect of R5RS scheme.
+
+This module implements parsing of Scheme code.
+-}
+
 module Language.Scheme.Parser where
 import Language.Scheme.Types
 import Control.Monad.Error
