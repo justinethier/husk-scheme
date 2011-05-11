@@ -658,6 +658,11 @@ evalfuncLoad _ = throwError $ NumArgs 1 []
 -- and
 --  http://www.bluishcoder.co.nz/2008/11/dynamic-compilation-and-loading-of.html
 --
+--
+-- TODO: pass a list of functions to import. Need to make sure this is done in an efficient way
+--       (IE, result as a list that can be processed)
+--
+--
 evalfuncLoadFFI [cont@(Continuation env _ _ _ _), String target, String moduleName, String funcName] = do
   result <- liftIO $ defaultRunGhc $ do
     dynflags <- GHC.getSessionDynFlags
