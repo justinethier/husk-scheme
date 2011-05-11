@@ -11,7 +11,7 @@ doc:
 	runhaskell Setup.hs haddock 
 
 # Run all unit tests
-test:
+test: husk stdlib.scm
 	@echo "0" > scm-unit-tests/scm-unit.tmp
 	@echo "0" >> scm-unit-tests/scm-unit.tmp
 	@cd scm-unit-tests ; ../huski t-backquote.scm
