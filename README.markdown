@@ -77,6 +77,10 @@ From the previous example, once `cpu-time:precision` is loaded, it may be called
 
     (cpu-time:precision)
 
+Any Haskell function loaded via the FFI must be of the following type:
+
+    [LispVal] -> IOThrowsError LispVal
+
 See husk's `Language.Scheme.Plugins.CPUTime` module for an example of how to use the husk FFI.
 
 Development
