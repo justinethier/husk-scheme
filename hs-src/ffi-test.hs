@@ -5,7 +5,6 @@
 module Test where
 
 import Language.Scheme.Types
---import Language.Scheme.Variables
 import Control.Monad.Error
 
 test :: [LispVal] -> IOThrowsError LispVal
