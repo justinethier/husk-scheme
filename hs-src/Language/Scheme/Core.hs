@@ -42,6 +42,8 @@ import List
 import IO hiding (try)
 import System.Directory (doesFileExist)
 import System.IO.Error
+
+import qualified System.Plugins
 --import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
@@ -584,6 +586,7 @@ evalFunctions = [
                   , ("dynamic-wind", evalfuncDynamicWind)
                   , ("eval", evalfuncEval)
                   , ("load", evalfuncLoad)
+                  , ("loadffi", evalfuncTEST)
                 ]
 evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
 
@@ -639,6 +642,15 @@ evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
 	 where evaluate env2 cont2 val2 = macroEval env2 val2 >>= eval env2 cont2
 evalfuncLoad (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncLoad _ = throwError $ NumArgs 1 []
+
+evalfuncTEST :: [LispVal] -> IOThrowsError LispVal 
+evalfuncTEST args = do
+--  putStrLn "Loading"
+  mv <- liftIO $ System.Plugins.dynload "ffi-test.o" [] [] "test"   -- also try 'load' here
+--  putStrLn "Loaded"
+  case mv of
+    System.Plugins.LoadFailure msgs -> throwError $ Default "load failure" --putStrLn "fail" >> print msgs
+    System.Plugins.LoadSuccess _ v -> (v args) --print (v::Integer)
 
 -- Evaluate an expression in the current environment
 --
