@@ -8,4 +8,4 @@ import Language.Scheme.Types
 import Control.Monad.Error
 
 test :: [LispVal] -> IOThrowsError LispVal
-test _ = throwError $ Default "test method"
+test _ = return $ String "test" --throwError $ Default "test method"
