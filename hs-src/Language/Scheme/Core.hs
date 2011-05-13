@@ -43,7 +43,7 @@ import IO hiding (try)
 import System.Directory (doesFileExist)
 import System.IO.Error
 
-import qualified System.Plugins
+-- FFI: import qualified System.Plugins
 --import Debug.Trace
 
 {-| Evaluate a string containing Scheme code.
@@ -586,7 +586,7 @@ evalFunctions = [
                   , ("dynamic-wind", evalfuncDynamicWind)
                   , ("eval", evalfuncEval)
                   , ("load", evalfuncLoad)
-                  , ("loadffi", evalfuncTEST)
+-- FFI:                  , ("loadffi", evalfuncTEST)
                 ]
 evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
 
@@ -643,6 +643,7 @@ evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
 evalfuncLoad (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncLoad _ = throwError $ NumArgs 1 []
 
+{- FFI:
 evalfuncTEST :: [LispVal] -> IOThrowsError LispVal 
 evalfuncTEST args = do
 --  putStrLn "Loading"
@@ -651,6 +652,7 @@ evalfuncTEST args = do
   case mv of
     System.Plugins.LoadFailure msgs -> throwError $ Default "load failure" --putStrLn "fail" >> print msgs
     System.Plugins.LoadSuccess _ v -> (v args) --print (v::Integer)
+-}
 
 -- Evaluate an expression in the current environment
 --
