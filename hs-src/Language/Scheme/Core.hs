@@ -80,24 +80,26 @@ evalLisp env lisp = macroEval env lisp >>= (eval env (makeNullContinuation env))
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 
 {- Passing a higher-order function as the continuation; just evaluate it. This is
-done to enable an 'eval' function to be broken up into multiple sub-functions,
-so that any of the sub-functions can be passed around as a continuation. -}
---
--- Carry extra args from the current continuation into the next, to support (call-with-values)
+ - done to enable an 'eval' function to be broken up into multiple sub-functions,
+ - so that any of the sub-functions can be passed around as a continuation. 
+ -
+ - Carry extra args from the current continuation into the next, to support (call-with-values)
+ -}
 continueEval _
             (Continuation cEnv (Just (HaskellBody func funcArgs))
                                (Just (Continuation cce cnc ccc _ cdynwind))
                                 xargs _) -- rather sloppy, should refactor code so this is not necessary
              val = func cEnv (Continuation cce cnc ccc xargs cdynwind) val funcArgs
-
--- No higher order function, so:
---
--- If there is Scheme code to evaluate in the function body, we continue to evaluate it.
---
-{- Otherwise, if all code in the function has been executed, we 'unwind' to an outer
-continuation (if there is one), or we just return the result. Yes technically with
-CPS you are supposed to keep calling into functions and never return, but in this case
-when the computation is complete, you have to return something. -}
+{-
+ - No higher order function, so:
+ -
+ - If there is Scheme code to evaluate in the function body, we continue to evaluate it.
+ -
+ - Otherwise, if all code in the function has been executed, we 'unwind' to an outer
+ - continuation (if there is one), or we just return the result. Yes technically with
+ - CPS you are supposed to keep calling into functions and never return, but in this case
+ - when the computation is complete, you have to return something. 
+ -}
 continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs dynWind) val = do
     case cBody of
         [] -> do
@@ -123,20 +125,20 @@ NOTE:  This function does not include macro support and should not be called dir
 --
 -- Implementation Notes:
 --
-{- Internally, this function is written in continuation passing style (CPS) to allow the Scheme language
-itself to support first-class continuations. That is, at any point in the evaluation, call/cc may
-be used to capture the current continuation. Thus this code must call into the next continuation point, eg: -}
+-- Internally, this function is written in continuation passing style (CPS) to allow the Scheme language
+-- itself to support first-class continuations. That is, at any point in the evaluation, call/cc may
+-- be used to capture the current continuation. Thus this code must call into the next continuation point, eg: 
 --
--- eval ... (makeCPS ...)
+--  eval ... (makeCPS ...)
 --
 -- Instead of calling eval directly from within the same function, eg:
 --
-{- eval ...
-eval ... -}
+--  eval ...
+--  eval ...
 --
-{- This can make the code harder to follow, however some coding conventions have been established to make the
-code easier to follow. Whenever a single function has been broken into multiple ones for the purpose of CPS,
-those additional functions are defined locally using 'where', and each has been given a 'cps' prefix. -}
+-- This can make the code harder to follow, however some coding conventions have been established to make the
+-- code easier to follow. Whenever a single function has been broken into multiple ones for the purpose of CPS,
+-- those additional functions are defined locally using 'where', and each has been given a 'cps' prefix.
 --
 eval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 eval env cont val@(Nil _) = continueEval env cont val
@@ -584,24 +586,24 @@ evalFunctions = [
                 ]
 evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncLoadFFI, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
 
--- A (somewhat) simplified implementation of dynamic-wind
---
--- The implementation must obey these 4 rules:
---
-{- 1) The dynamic extent is entered when execution of the body of the called procedure begins.
-2) The dynamic extent is also entered when execution is not within the dynamic extent and a continuation is invoked that was captured (using call-with-current-continuation) during the dynamic extent.
-3) It is exited when the called procedure returns.
-4) It is also exited when execution is within the dynamic extent and a continuation is invoked that was captured while not within the dynamic extent. -}
---
-{- Basically (before) must be called either when thunk is called into, or when a continuation captured
-during (thunk) is called into.
-And (after) must be called either when thunk returns *or* a continuation is called into during (thunk). -}
---
-{- FUTURE:
-A this point dynamic-wind works well enough now to pass all tests, although I am not convinced the implementation
-is 100% correct since a stack is not directly used to hold the winders. I think there must still be edge
-cases that are not handled properly... -}
---
+{-
+ - A (somewhat) simplified implementation of dynamic-wind
+ -
+ - The implementation must obey these 4 rules:
+ -
+ - 1) The dynamic extent is entered when execution of the body of the called procedure begins.
+ - 2) The dynamic extent is also entered when execution is not within the dynamic extent and a continuation is invoked that was captured (using call-with-current-continuation) during the dynamic extent.
+ - 3) It is exited when the called procedure returns.
+ - 4) It is also exited when execution is within the dynamic extent and a continuation is invoked that was captured while not within the dynamic extent.
+ -
+ - Basically (before) must be called either when thunk is called into, or when a continuation captured
+ - during (thunk) is called into.
+ - And (after) must be called either when thunk returns *or* a continuation is called into during (thunk).
+ - FUTURE:
+ -   At this point dynamic-wind works well enough now to pass all tests, although I am not convinced the implementation
+ -   is 100% correct since a stack is not directly used to hold the winders. I think there must still be edge
+ -   cases that are not handled properly...
+ -}
 evalfuncDynamicWind [cont@(Continuation env _ _ _ _), beforeFunc, thunkFunc, afterFunc] = do
   apply (makeCPS env cont cpsThunk) beforeFunc []
  where
@@ -637,20 +639,19 @@ evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
 evalfuncLoad (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncLoad _ = throwError $ NumArgs 1 []
 
---
--- |Load a Haskell function into husk using the foreign function inteface (FFI)
---
--- Based on example code from:
---
-{- http://stackoverflow.com/questions/5521129/importing-a-known-function-from-an-already-compiled-binary-using-ghcs-api-or-hi
-and
-http://www.bluishcoder.co.nz/2008/11/dynamic-compilation-and-loading-of.html -}
---
---
-{- TODO: pass a list of functions to import. Need to make sure this is done in an efficient way
-(IE, result as a list that can be processed) -}
---
---
+{-
+ - |Load a Haskell function into husk using the foreign function inteface (FFI)
+ -
+ - Based on example code from:
+ -
+ - http://stackoverflow.com/questions/5521129/importing-a-known-function-from-an-already-compiled-binary-using-ghcs-api-or-hi
+ - and
+ - http://www.bluishcoder.co.nz/2008/11/dynamic-compilation-and-loading-of.html
+ -
+ -
+ - TODO: pass a list of functions to import. Need to make sure this is done in an efficient way
+ - (IE, result as a list that can be processed) 
+ -}
 evalfuncLoadFFI [cont@(Continuation env _ _ _ _), String targetSrcFile,
                                                   String moduleName,
                                                   String externalFuncName,
@@ -694,8 +695,8 @@ defaultRunGhc = GHC.defaultErrorHandler DynFlags.defaultDynFlags . GHC.runGhc (J
 
 -- Evaluate an expression in the current environment
 --
-{- Assumption is any macro transform is already performed
-prior to this step. -}
+-- Assumption is any macro transform is already performed
+-- prior to this step.
 --
 -- FUTURE: consider allowing env to be specified, per R5RS
 --

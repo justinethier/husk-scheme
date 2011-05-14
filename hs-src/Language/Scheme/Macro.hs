@@ -53,15 +53,12 @@ macroEval :: Env -> LispVal -> IOThrowsError LispVal
 
 -- Special case, just load up the syntax rules
 macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List _ : _)))]) = do
-  --
-  --
-  --
-  {- FUTURE: Issue #15: there really ought to be some error checking of the syntax rules, since they could be malformed...
-  As it stands now, there is no checking until the code attempts to perform a macro transformation.
-  At a minimum, should check identifiers to make sure each is an atom (see findAtom) -}
-  --
-  --
-  --
+  {-
+   - FUTURE: Issue #15: there really ought to be some error checking of the syntax rules, 
+   -                    since they could be malformed...
+  - As it stands now, there is no checking until the code attempts to perform a macro transformation.
+  - At a minimum, should check identifiers to make sure each is an atom (see findAtom) 
+  -}
   _ <- defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
 
@@ -71,14 +68,15 @@ macroEval env (List (x@(List _) : xs)) = do
   rest <- mapM (macroEval env) xs
   return $ List $ first : rest
 
--- Inspect code for macro's
---
-{- Only a list form is required because a pattern may only consist
-of a list here. From the spec: -}
---
-{- "The <pattern> in a <syntax rule> is a list <pattern> that
-begins with the keyword for the macro." -}
---
+{- Inspect code for macros
+ -
+ - Only a list form is required because a pattern may only consist
+ - of a list here. From the spec:
+ -
+ - "The <pattern> in a <syntax rule> is a list <pattern> that
+begins with the keyword for the macro." 
+ -
+ -}
 macroEval env lisp@(List (Atom x : xs)) = do
   isDefined <- liftIO $ isNamespacedBound env macroNamespace x
   if isDefined
@@ -93,15 +91,18 @@ macroEval env lisp@(List (Atom x : xs)) = do
 -- No macro to process, just return code as it is...
 macroEval _ lisp@(_) = return lisp
 
--- Given input and syntax-rules, determine if any rule is a match and transform it.
---
--- FUTURE: validate that the pattern's template and pattern are consistent (IE: no vars in transform that do not appear in matching pattern - csi "stmt1" case)
---
-{- Parameters:
-env - Higher level LISP environment
-identifiers - Literal identifiers - IE, atoms that should not be transformed
-rules - pattern/transform pairs to compare to input
-input - Code from the scheme application -}
+{-
+ - Given input and syntax-rules, determine if any rule is a match and transform it.
+ -
+ - FUTURE: validate that the pattern's template and pattern are consistent 
+ - (IE: no vars in transform that do not appear in matching pattern - csi "stmt1" case)
+ -
+ - Parameters:
+ -  env - Higher level LISP environment
+ -  identifiers - Literal identifiers - IE, atoms that should not be transformed
+ -  rules - pattern/transform pairs to compare to input
+ -  input - Code from the scheme application 
+ -}
 macroTransform :: Env -> LispVal -> [LispVal] -> LispVal -> IOThrowsError LispVal
 macroTransform env identifiers (rule@(List _) : rs) input = do
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
@@ -143,7 +144,6 @@ matchRule _ identifiers localEnv (List [pattern, template]) (List inputVar) = do
 matchRule _ _ _ rule input = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
 
---
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 in preparation for macro transformation. -}
 loadLocal :: Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
@@ -201,13 +201,14 @@ loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do
        -- Check input against pattern (both should be single var)
        (_, _) -> checkLocal localEnv identifiers (hasEllipsis || outerHasEllipsis) pattern input
 
--- Check pattern against input to determine if there is a match
---
-{- @param localEnv - Local variables for the macro, used during transform
-@param hasEllipsis - Determine whether we are in a zero-or-many match.
-Used for loading local vars and NOT for purposes of matching.
-@param pattern - Pattern to match
-@param input - Input to be matched -}
+{- Check pattern against input to determine if there is a match
+ -
+ - @param localEnv - Local variables for the macro, used during transform
+ - @param hasEllipsis - Determine whether we are in a zero-or-many match.
+ -                      Used for loading local vars and NOT for purposes of matching.
+ - @param pattern - Pattern to match
+ - @param input - Input to be matched
+ -}
 checkLocal :: Env -> LispVal -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
 checkLocal _ _ _ (Bool pattern) (Bool input) = return $ Bool $ pattern == input
 checkLocal _ _ _ (Number pattern) (Number input) = return $ Bool $ pattern == input
@@ -218,14 +219,13 @@ checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
   if hasEllipsis
      {- FUTURE: may be able to simplify both cases below by using a
      lambda function to store the 'save' actions -}
-     --
 
              -- Var is part of a 0-to-many match, store up in a list...
      then do isDefined <- liftIO $ isBound localEnv pattern
              --
-             {- If pattern is a literal identifier, need to ensure
-             input matches that literal, or that (in this case)
-             the literal is missing from the input (0 match) -}
+             -- If pattern is a literal identifier, need to ensure
+             -- input matches that literal, or that (in this case)
+             -- the literal is missing from the input (0 match)
              --
              isIdent <- findAtom (Atom pattern) identifiers
              case isIdent of
@@ -296,18 +296,19 @@ checkLocal _ _ _ _ _ = return $ Bool False
 with the same form, replacing identifiers in the tranform with those bound in localEnv -}
 transformRule :: Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
 
--- Recursively transform a list
---
--- Parameters:
---
-{- localEnv - Local variable environment
-ellipsisIndex - Zero-or-more match variables are stored as a list.
-This is the index into the current value to read from list
-result - Resultant value, must be a parameter as it mutates with each function call, so we pass it using CPS
-transform - The macro transformation, we read it out one atom at a time, and rewrite it into result
-ellipsisList - Temporarily holds value of the "outer" result while we process the
-zero-or-more match. Once that is complete we swap this value back into it's rightful place -}
---
+{-
+ - Recursively transform a list
+ -
+ - Parameters:
+ -
+ - localEnv - Local variable environment
+ - ellipsisIndex - Zero-or-more match variables are stored as a list.
+ -     This is the index into the current value to read from list
+ - result - Resultant value, must be a parameter as it mutates with each function call, so we pass it using CPS
+ - transform - The macro transformation, we read it out one atom at a time, and rewrite it into result
+ - ellipsisList - Temporarily holds value of the "outer" result while we process the
+ -     zero-or-more match. Once that is complete we swap this value back into it's rightful place 
+ -}
 transformRule localEnv ellipsisIndex (List result) transform@(List (List l : ts)) (List ellipsisList) = do
   if macroElementMatchesMany transform
      then do
@@ -467,14 +468,15 @@ findAtom _ (List (badtype : _)) = throwError $ TypeMismatch "symbol" badtype
 findAtom _ _ = return $ Bool False
 
 {- Initialize any pattern variables as an empty list.
-That way a zero-match case can be identified later during transformation. -}
---
-{- Input:
-localEnv - Local environment that contains variables
-src - Input source, required because a pair in the pattern may be matched by either a list or a pair,
-and the transform needs to know this...
-identifiers - Literal identifiers that are transformed as themselves
-pattern - Pattern portion of the syntax rule -}
+ - That way a zero-match case can be identified later during transformation.
+ -
+ - Input:
+ -  localEnv - Local environment that contains variables
+ -  src - Input source, required because a pair in the pattern may be matched by either a list or a pair,
+ -        and the transform needs to know this...
+ -  identifiers - Literal identifiers that are transformed as themselves
+ -  pattern - Pattern portion of the syntax rule 
+ -}
 initializePatternVars :: Env -> String -> LispVal -> LispVal -> IOThrowsError LispVal
 initializePatternVars localEnv src identifiers pattern@(List _) = do
     case pattern of
