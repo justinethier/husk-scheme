@@ -645,7 +645,7 @@ evalfuncLoad _ = throwError $ NumArgs 1 []
 evalfuncTEST :: [LispVal] -> IOThrowsError LispVal 
 evalfuncTEST args = do
 --  putStrLn "Loading"
-  mv <- liftIO $ System.Plugins.load "ffi-test.o" [] [] "test"   -- also try 'load' here
+  mv <- liftIO $ System.Plugins.load "ffi-test.o" [".", "hs-src"] [] "test"   -- also try 'load' here
 --  putStrLn "Loaded"
   case mv of
     System.Plugins.LoadFailure msgs -> throwError $ Default "load failure" --putStrLn "fail" >> print msgs
