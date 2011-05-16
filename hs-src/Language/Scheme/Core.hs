@@ -650,8 +650,12 @@ evalfuncLoad (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation 
 evalfuncLoad _ = throwError $ NumArgs 1 []
 
 --
--- Attempting to use example code from:
+-- Based on example code from:
+--
 -- http://stackoverflow.com/questions/5521129/importing-a-known-function-from-an-already-compiled-binary-using-ghcs-api-or-hi
+-- and
+-- http://www.bluishcoder.co.nz/2008/11/dynamic-compilation-and-loading-of.html
+--
 evalfuncTEST :: [LispVal] -> IOThrowsError LispVal 
 evalfuncTEST [cont@(Continuation env _ _ _ _)] = do
   result <- liftIO $ defaultRunGhc $ do
@@ -662,13 +666,14 @@ evalfuncTEST [cont@(Continuation env _ _ _ _)] = do
     target <- GHC.guessTarget "hs-src/Test.hs" Nothing
     GHC.addTarget target
     r <- GHC.load GHC.LoadAllTargets
--- TODO: case r of...
--- see: http://www.bluishcoder.co.nz/2008/11/dynamic-compilation-and-loading-of.html
-    m <- GHC.findModule (GHC.mkModuleName "Test") Nothing
-    --setContext [] [(m, Nothing)] -- Use setContext [] [m] for GHC<7.
-    GHC.setContext [] [m] 
-    fetched <- GHC.compileExpr ("Test.test")
-    return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> ThrowsError LispVal)
+    case r of
+       GHC.Failed -> error "Compilation failed"
+       GHC.Succeeded -> do
+           m <- GHC.findModule (GHC.mkModuleName "Test") Nothing
+           --setContext [] [(m, Nothing)] -- Use setContext [] [m] for GHC<7.
+           GHC.setContext [] [m] 
+           fetched <- GHC.compileExpr ("Test.test")
+           return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> ThrowsError LispVal)
   defineVar env "test" (PrimitiveFunc result) >>= continueEval env cont
 evalfuncTEST _ = throwError $ NumArgs 1 []
 

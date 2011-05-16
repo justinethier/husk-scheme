@@ -9,5 +9,5 @@ import Control.Monad.Error
 
 test :: [LispVal] -> ThrowsError LispVal -- TODO: future - IOThrowsError, but would require externalizing continueEval
 test [String s] = return $ String "Test from a function" --return $ String "test" --throwError $ Default "test method"
-test [Number n] = return $ Number (n + 1)
+test [Number n] = return $ Number (n + 2)
 test _ = throwError $ Default "unknown args passed to test method"
