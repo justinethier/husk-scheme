@@ -42,8 +42,15 @@ import List
 import IO hiding (try)
 import System.Directory (doesFileExist)
 import System.IO.Error
-import qualified System.Plugins
+
+import qualified GHC
+import qualified GHC.Paths (libdir)
+import qualified DynFlags
+import qualified Unsafe.Coerce (unsafeCoerce)
 --import Debug.Trace
+
+defaultRunGhc :: GHC.Ghc a -> IO a
+defaultRunGhc = GHC.defaultErrorHandler DynFlags.defaultDynFlags . GHC.runGhc (Just GHC.Paths.libdir)
 
 {-| Evaluate a string containing Scheme code.
 
@@ -642,14 +649,36 @@ evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
 evalfuncLoad (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncLoad _ = throwError $ NumArgs 1 []
 
+--
+-- Attempting to use example code from:
+-- http://stackoverflow.com/questions/5521129/importing-a-known-function-from-an-already-compiled-binary-using-ghcs-api-or-hi
 evalfuncTEST :: [LispVal] -> IOThrowsError LispVal 
-evalfuncTEST args = do
---  putStrLn "Loading"
+evalfuncTEST [cont@(Continuation env _ _ _ _)] = do
+  result <- liftIO $ defaultRunGhc $ do
+    dynflags <- GHC.getSessionDynFlags
+    GHC.setSessionDynFlags dynflags
+    --let m = GHC.mkModule (GHC.thisPackage dynflags) (GHC.mkModuleName "Test")
+
+    target <- GHC.guessTarget "hs-src/Test.hs" Nothing
+    GHC.addTarget target
+    r <- GHC.load GHC.LoadAllTargets
+-- TODO: case r of...
+-- see: http://www.bluishcoder.co.nz/2008/11/dynamic-compilation-and-loading-of.html
+    m <- GHC.findModule (GHC.mkModuleName "Test") Nothing
+    --setContext [] [(m, Nothing)] -- Use setContext [] [m] for GHC<7.
+    GHC.setContext [] [m] 
+    fetched <- GHC.compileExpr ("Test.test")
+    return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> ThrowsError LispVal)
+  defineVar env "test" (PrimitiveFunc result) >>= continueEval env cont
+evalfuncTEST _ = throwError $ NumArgs 1 []
+
+{- --  putStrLn "Loading"
   mv <- liftIO $ System.Plugins.load "ffi-test.o" [] [] "test"   -- also try 'load' here
 --  putStrLn "Loaded"
   case mv of
     System.Plugins.LoadFailure msgs -> throwError $ Default "load failure" --putStrLn "fail" >> print msgs
     System.Plugins.LoadSuccess _ v -> (v args) --print (v::Integer)
+-}
 
 -- Evaluate an expression in the current environment
 --
