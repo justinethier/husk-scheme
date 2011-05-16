@@ -672,14 +672,6 @@ evalfuncTEST [cont@(Continuation env _ _ _ _)] = do
   defineVar env "test" (PrimitiveFunc result) >>= continueEval env cont
 evalfuncTEST _ = throwError $ NumArgs 1 []
 
-{- --  putStrLn "Loading"
-  mv <- liftIO $ System.Plugins.load "ffi-test.o" [] [] "test"   -- also try 'load' here
---  putStrLn "Loaded"
-  case mv of
-    System.Plugins.LoadFailure msgs -> throwError $ Default "load failure" --putStrLn "fail" >> print msgs
-    System.Plugins.LoadSuccess _ v -> (v args) --print (v::Integer)
--}
-
 -- Evaluate an expression in the current environment
 --
 -- Assumption is any macro transform is already performed
