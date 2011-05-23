@@ -592,9 +592,9 @@ evalFunctions = [
                   , ("dynamic-wind", evalfuncDynamicWind)
                   , ("eval", evalfuncEval)
                   , ("load", evalfuncLoad)
-                  , ("loadffi", evalfuncTEST)
+                  , ("load-ffi", evalfuncLoadFFI) -- Non-standard extension
                 ]
-evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
+evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalFuncLoadFFI, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
 
 -- A (somewhat) simplified implementation of dynamic-wind
 --
@@ -650,14 +650,15 @@ evalfuncLoad (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation 
 evalfuncLoad _ = throwError $ NumArgs 1 []
 
 --
--- Based on example code from:
+-- |Load a Haskell function into husk using the foreign function inteface (FFI)
 --
--- http://stackoverflow.com/questions/5521129/importing-a-known-function-from-an-already-compiled-binary-using-ghcs-api-or-hi
+--  Based on example code from:
+--
+--  http://stackoverflow.com/questions/5521129/importing-a-known-function-from-an-already-compiled-binary-using-ghcs-api-or-hi
 -- and
--- http://www.bluishcoder.co.nz/2008/11/dynamic-compilation-and-loading-of.html
+--  http://www.bluishcoder.co.nz/2008/11/dynamic-compilation-and-loading-of.html
 --
-evalfuncTEST :: [LispVal] -> IOThrowsError LispVal 
-evalfuncTEST [cont@(Continuation env _ _ _ _)] = do
+evalfuncLoadFFI [cont@(Continuation env _ _ _ _)] = do
   result <- liftIO $ defaultRunGhc $ do
     dynflags <- GHC.getSessionDynFlags
     GHC.setSessionDynFlags dynflags
@@ -675,7 +676,7 @@ evalfuncTEST [cont@(Continuation env _ _ _ _)] = do
            fetched <- GHC.compileExpr ("Test.test")
            return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> ThrowsError LispVal)
   defineVar env "test" (PrimitiveFunc result) >>= continueEval env cont
-evalfuncTEST _ = throwError $ NumArgs 1 []
+evalfuncLoadFFI _ = throwError $ NumArgs 1 []
 
 -- Evaluate an expression in the current environment
 --

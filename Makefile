@@ -4,7 +4,7 @@ husk: hs-src/shell.hs hs-src/Language/Scheme/Core.hs hs-src/Language/Scheme/Macr
 
 # TODO: need to pass additional options that are used for husk?
 plugin-test:
-	ghc -fglasgow-exts -c hs-src/Test.hs
+	ghc -fglasgow-exts -c hs-src/Language/Scheme/Plugins/Examples.hs
 
 # Create files for distribution
 dist:
@@ -44,9 +44,11 @@ clean:
 	rm -f hs-src/*.o
 	rm -f hs-src/Language/*.o
 	rm -f hs-src/Language/Scheme/*.o
+	rm -f hs-src/Language/Scheme/Plugins/*.o
 	rm -f *.hi
 	rm -f hs-src/*.hi
 	rm -f hs-src/Language/*.hi
 	rm -f hs-src/Language/Scheme/*.hi
+	rm -f hs-src/Language/Scheme/Plugins/*.hi
 	rm -f huski
 	rm -rf dist
