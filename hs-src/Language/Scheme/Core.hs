@@ -594,7 +594,7 @@ evalFunctions = [
                   , ("load", evalfuncLoad)
                   , ("load-ffi", evalfuncLoadFFI) -- Non-standard extension
                 ]
-evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalFuncLoadFFI, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
+evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncLoadFFI, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
 
 -- A (somewhat) simplified implementation of dynamic-wind
 --
@@ -658,25 +658,25 @@ evalfuncLoad _ = throwError $ NumArgs 1 []
 -- and
 --  http://www.bluishcoder.co.nz/2008/11/dynamic-compilation-and-loading-of.html
 --
-evalfuncLoadFFI [cont@(Continuation env _ _ _ _)] = do
+evalfuncLoadFFI [cont@(Continuation env _ _ _ _), String target, String moduleName, String funcName] = do
   result <- liftIO $ defaultRunGhc $ do
     dynflags <- GHC.getSessionDynFlags
     GHC.setSessionDynFlags dynflags
     --let m = GHC.mkModule (GHC.thisPackage dynflags) (GHC.mkModuleName "Test")
 
-    target <- GHC.guessTarget "hs-src/Test.hs" Nothing
+    target <- GHC.guessTarget target Nothing -- "hs-src/Language/Scheme/Plugins/Examples.hs" Nothing
     GHC.addTarget target
     r <- GHC.load GHC.LoadAllTargets
     case r of
        GHC.Failed -> error "Compilation failed"
        GHC.Succeeded -> do
-           m <- GHC.findModule (GHC.mkModuleName "Test") Nothing
+           m <- GHC.findModule (GHC.mkModuleName moduleName) Nothing --"Language.Scheme.Plugins.Examples") Nothing
            --setContext [] [(m, Nothing)] -- Use setContext [] [m] for GHC<7.
            GHC.setContext [] [m] 
-           fetched <- GHC.compileExpr ("Test.test")
+           fetched <- GHC.compileExpr (moduleName ++ "." ++ funcName) -- ("Language.Scheme.Plugins.Examples.test")
            return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> ThrowsError LispVal)
-  defineVar env "test" (PrimitiveFunc result) >>= continueEval env cont
-evalfuncLoadFFI _ = throwError $ NumArgs 1 []
+  defineVar env funcName {-"test"-} (PrimitiveFunc result) >>= continueEval env cont
+evalfuncLoadFFI _ = throwError $ NumArgs 4 []
 
 -- Evaluate an expression in the current environment
 --
