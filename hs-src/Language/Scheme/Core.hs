@@ -664,6 +664,19 @@ evalfuncLoadFFI [cont@(Continuation env _ _ _ _), String target, String moduleNa
     GHC.setSessionDynFlags dynflags
     --let m = GHC.mkModule (GHC.thisPackage dynflags) (GHC.mkModuleName "Test")
 
+--
+-- TODO: this code allows a plugin to be loaded from file, but that should be optional
+--       if not provided, should be able to just load plugin from a compiled module
+--
+-- ideal is to provide an overload of this function that leaves this out, and migrate
+-- existing code into helper functions to drive everything
+--
+--
+-- TODO: if this is optional, need to add module to cabal file
+-- TODO: should be able to load multiple functions in one shot (?). ideal is to 
+--       push function definition (name) to the module (hs code) instead of requring 
+--       it defined in the scheme code
+--
     target <- GHC.guessTarget target Nothing -- "hs-src/Language/Scheme/Plugins/Examples.hs" Nothing
     GHC.addTarget target
     r <- GHC.load GHC.LoadAllTargets
