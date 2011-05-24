@@ -49,9 +49,6 @@ import qualified DynFlags
 import qualified Unsafe.Coerce (unsafeCoerce)
 --import Debug.Trace
 
-defaultRunGhc :: GHC.Ghc a -> IO a
-defaultRunGhc = GHC.defaultErrorHandler DynFlags.defaultDynFlags . GHC.runGhc (Just GHC.Paths.libdir)
-
 {-| Evaluate a string containing Scheme code.
 
     For example:
@@ -663,38 +660,46 @@ evalfuncLoad _ = throwError $ NumArgs 1 []
 --       (IE, result as a list that can be processed)
 --
 --
-evalfuncLoadFFI [cont@(Continuation env _ _ _ _), String target, String moduleName, String funcName] = do
+evalfuncLoadFFI [cont@(Continuation env _ _ _ _), String targetSrcFile, 
+                                                  String moduleName, 
+                                                  String externalFuncName, 
+                                                  String internalFuncName] = do
   result <- liftIO $ defaultRunGhc $ do
     dynflags <- GHC.getSessionDynFlags
-    GHC.setSessionDynFlags dynflags
+    _ <- GHC.setSessionDynFlags dynflags
     --let m = GHC.mkModule (GHC.thisPackage dynflags) (GHC.mkModuleName "Test")
 
 --
--- TODO: this code allows a plugin to be loaded from file, but that should be optional
---       if not provided, should be able to just load plugin from a compiled module
+-- TODO: migrate duplicate code into helper functions to drive everything
+-- FUTURE: should be able to load multiple functions in one shot (?).
 --
--- ideal is to provide an overload of this function that leaves this out, and migrate
--- existing code into helper functions to drive everything
---
---
--- TODO: if this is optional, need to add module to cabal file
--- TODO: should be able to load multiple functions in one shot (?). ideal is to 
---       push function definition (name) to the module (hs code) instead of requring 
---       it defined in the scheme code
---
-    target <- GHC.guessTarget target Nothing -- "hs-src/Language/Scheme/Plugins/Examples.hs" Nothing
+    target <- GHC.guessTarget targetSrcFile Nothing
     GHC.addTarget target
     r <- GHC.load GHC.LoadAllTargets
     case r of
        GHC.Failed -> error "Compilation failed"
        GHC.Succeeded -> do
-           m <- GHC.findModule (GHC.mkModuleName moduleName) Nothing --"Language.Scheme.Plugins.Examples") Nothing
-           --setContext [] [(m, Nothing)] -- Use setContext [] [m] for GHC<7.
-           GHC.setContext [] [m] 
-           fetched <- GHC.compileExpr (moduleName ++ "." ++ funcName) -- ("Language.Scheme.Plugins.Examples.test")
+           m <- GHC.findModule (GHC.mkModuleName moduleName) Nothing
+           GHC.setContext [] [m]  --setContext [] [(m, Nothing)] -- Use setContext [] [m] for GHC<7.
+           fetched <- GHC.compileExpr (moduleName ++ "." ++ externalFuncName)
            return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> ThrowsError LispVal)
-  defineVar env funcName {-"test"-} (PrimitiveFunc result) >>= continueEval env cont
-evalfuncLoadFFI _ = throwError $ NumArgs 4 []
+  defineVar env internalFuncName (PrimitiveFunc result) >>= continueEval env cont
+
+-- Overload that loads code from a compiled module
+evalfuncLoadFFI [cont@(Continuation env _ _ _ _), String moduleName, String externalFuncName, String internalFuncName] = do
+  result <- liftIO $ defaultRunGhc $ do
+    dynflags <- GHC.getSessionDynFlags
+    _ <- GHC.setSessionDynFlags dynflags
+    m <- GHC.findModule (GHC.mkModuleName moduleName) Nothing
+    GHC.setContext [] [m]  --setContext [] [(m, Nothing)] -- Use setContext [] [m] for GHC<7.
+    fetched <- GHC.compileExpr (moduleName ++ "." ++ externalFuncName)
+    return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> ThrowsError LispVal)
+  defineVar env internalFuncName (PrimitiveFunc result) >>= continueEval env cont
+
+evalfuncLoadFFI _ = throwError $ NumArgs 3 []
+
+defaultRunGhc :: GHC.Ghc a -> IO a
+defaultRunGhc = GHC.defaultErrorHandler DynFlags.defaultDynFlags . GHC.runGhc (Just GHC.Paths.libdir)
 
 -- Evaluate an expression in the current environment
 --
