@@ -24,6 +24,7 @@ Library
   Exposed-Modules: Language.Scheme.Core
                    Language.Scheme.Types
                    Language.Scheme.Variables
+                   Language.Scheme.Plugins.CPUTime
   Other-Modules:   Language.Scheme.Macro
                    Language.Scheme.Numerical
                    Language.Scheme.Parser
