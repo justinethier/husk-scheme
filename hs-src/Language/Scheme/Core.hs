@@ -682,8 +682,8 @@ evalfuncLoadFFI [cont@(Continuation env _ _ _ _), String targetSrcFile,
            m <- GHC.findModule (GHC.mkModuleName moduleName) Nothing
            GHC.setContext [] [m]  --setContext [] [(m, Nothing)] -- Use setContext [] [m] for GHC<7.
            fetched <- GHC.compileExpr (moduleName ++ "." ++ externalFuncName)
-           return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> ThrowsError LispVal)
-  defineVar env internalFuncName (PrimitiveFunc result) >>= continueEval env cont
+           return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> IOThrowsError LispVal)
+  defineVar env internalFuncName (IOFunc result) >>= continueEval env cont
 
 -- Overload that loads code from a compiled module
 evalfuncLoadFFI [cont@(Continuation env _ _ _ _), String moduleName, String externalFuncName, String internalFuncName] = do
@@ -693,8 +693,8 @@ evalfuncLoadFFI [cont@(Continuation env _ _ _ _), String moduleName, String exte
     m <- GHC.findModule (GHC.mkModuleName moduleName) Nothing
     GHC.setContext [] [m]  --setContext [] [(m, Nothing)] -- Use setContext [] [m] for GHC<7.
     fetched <- GHC.compileExpr (moduleName ++ "." ++ externalFuncName)
-    return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> ThrowsError LispVal)
-  defineVar env internalFuncName (PrimitiveFunc result) >>= continueEval env cont
+    return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> IOThrowsError LispVal)
+  defineVar env internalFuncName (IOFunc result) >>= continueEval env cont
 
 evalfuncLoadFFI _ = throwError $ NumArgs 3 []
 
