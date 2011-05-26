@@ -90,7 +90,7 @@ The following packages are required to build husk scheme:
 
 The `scm-unit-tests` directory contains unit tests for much of the scheme code. All tests may be executed via `make test` command.
 
-The examples directory contains example scheme programs.
+The `examples` directory contains example scheme programs.
 
 Patches are welcome; please send via pull request on github.
 
