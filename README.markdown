@@ -88,9 +88,9 @@ Development
 
 The following packages are required to build husk scheme:
 
-- [GHC](http://www.haskell.org/ghc/) - Or at the very least, no other compiler has been tested.
+- [GHC](http://www.haskell.org/ghc/)
 - [cabal-install](http://hackage.haskell.org/trac/hackage/wiki/CabalInstall) may be used to build, deploy, and generate packages for husk.
-- Haskeline - which may be installed using cabal: `cabal install haskeline`
+- [Haskeline](http://trac.haskell.org/haskeline) - which may be installed using cabal: `cabal install haskeline`
 
 The `scm-unit-tests` directory contains unit tests for much of the scheme code. All tests may be executed via `make test` command.
 
