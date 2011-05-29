@@ -1,3 +1,7 @@
+v3.0
+----
+- Added a foreign function interface (FFI) to allow husk to call directly into Haskell code.
+
 v2.4
 ----
 - Simplified the core evaluator by moving several functions out of eval.
