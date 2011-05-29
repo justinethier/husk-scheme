@@ -62,7 +62,7 @@ macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom
   --
   --
   --
-  defineNamespacedVar env macroNamespace keyword syntaxRules
+  _ <- defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
 
 -- Inspect a list of code, and transform as necessary
@@ -190,7 +190,7 @@ loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do
        (List (_:ps), List []) -> do
                                  -- Ensure any patterns that are not present in the input still
                                  -- have their variables initialized so they are ready during trans.
-                                 initializePatternVars localEnv "list" identifiers pattern
+                                 _ <- initializePatternVars localEnv "list" identifiers pattern
                                  if (macroElementMatchesMany pattern) && ((length ps) == 1) 
                                            then return $ Bool True
                                            else return $ Bool False
@@ -235,13 +235,13 @@ checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
                             if (pattern == inpt)
                                then do
                                  -- Set variable in the local environment
-                                 addPatternVar isDefined $ Atom pattern
+                                 _ <- addPatternVar isDefined $ Atom pattern
                                  return $ Bool True
                                else return $ Bool False
                         -- Pattern/Input cannot match because input is not an atom
                         _ -> return $ Bool False
                 -- No literal identifier, just load up the var
-                _ -> do addPatternVar isDefined input
+                _ -> do _ <- addPatternVar isDefined input
                         return $ Bool True
      -- 
      -- Simple var, try to load up into macro env
@@ -255,14 +255,14 @@ checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
                     Atom inpt -> do
                         -- Pattern/Input are atoms; both must match
                         if (pattern == inpt)
-                           then do defineVar localEnv pattern input
+                           then do _ <- defineVar localEnv pattern input
                                    return $ Bool True
                            else return $ (Bool False)
                     -- Pattern/Input cannot match because input is not an atom
                     _ -> return $ (Bool False)
 
             -- No literal identifier, just load up the var
-            _ -> do defineVar localEnv pattern input
+            _ -> do _ <- defineVar localEnv pattern input
                     return $ Bool True
     where
       addPatternVar isDefined val = do
@@ -478,13 +478,13 @@ findAtom _ _ = return $ Bool False
 initializePatternVars :: Env -> String -> LispVal -> LispVal -> IOThrowsError LispVal
 initializePatternVars localEnv src identifiers pattern@(List _) = do
     case pattern of
-        List (p:ps) -> do initializePatternVars localEnv src identifiers p
+        List (p:ps) -> do _ <- initializePatternVars localEnv src identifiers p
                           initializePatternVars localEnv src identifiers $ List ps
         List [] -> return $ Bool True
         _ -> return $ Bool True
 
 initializePatternVars localEnv src identifiers (DottedList ps p) = do
-    initializePatternVars localEnv src identifiers $ List ps
+    _ <- initializePatternVars localEnv src identifiers $ List ps
     initializePatternVars localEnv src identifiers p
 
 initializePatternVars localEnv src identifiers (Vector v) = do
@@ -495,7 +495,7 @@ initializePatternVars localEnv src identifiers (Atom pattern) =
        -- there is code to attempt to flag "src" here, but it is not
        -- wire up correctly. In fact, the whole design here probably
        -- needs to be rethinked.
-    do defineNamespacedVar localEnv "src" pattern $ String src
+    do _ <- defineNamespacedVar localEnv "src" pattern $ String src
        isDefined <- liftIO $ isBound localEnv pattern
        found <- findAtom (Atom pattern) identifiers
        case found of
