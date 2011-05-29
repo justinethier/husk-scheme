@@ -44,7 +44,7 @@ runOne args = do
 
   stdlib <- getDataFileName "stdlib.scm"
   env <- primitiveBindings >>= flip extendEnv [((varNamespace, "args"), List $ map String $ drop 1 args)]
-  evalString env $ "(load \"" ++ stdlib ++ "\")" -- Load standard library
+  _ <- evalString env $ "(load \"" ++ stdlib ++ "\")" -- Load standard library
   (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
      >>= hPutStr nullIO
 
@@ -72,7 +72,7 @@ runRepl :: IO ()
 runRepl = do
     stdlib <- getDataFileName "stdlib.scm"
     env <- primitiveBindings
-    evalString env $ "(load \"" ++ stdlib ++ "\")" -- Load standard library into the REPL
+    _ <- evalString env $ "(load \"" ++ stdlib ++ "\")" -- Load standard library into the REPL
     runInputT defaultSettings (loop env) 
     where 
         loop :: Env -> InputT IO ()

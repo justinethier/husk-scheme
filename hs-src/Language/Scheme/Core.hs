@@ -31,8 +31,6 @@ import Control.Monad.Error
 import Char
 import Data.Array
 import qualified Data.Map
-import Maybe
-import List
 import IO hiding (try)
 import System.Directory (doesFileExist)
 import System.IO.Error
