@@ -40,7 +40,7 @@ parseAtom = do
            else return $ Atom atom
 
 parseBool :: Parser LispVal
-parseBool = do string "#"
+parseBool = do _ <- string "#"
                x <- oneOf "tf"
                return $ case x of
                           't' -> Bool True
@@ -49,7 +49,7 @@ parseBool = do string "#"
 
 parseChar :: Parser LispVal
 parseChar = do
-  try (string "#\\")
+  _ <- try (string "#\\")
   c <- anyChar 
   r <- many(letter)
   let pchr = c:r
@@ -60,7 +60,7 @@ parseChar = do
 
 parseOctalNumber :: Parser LispVal
 parseOctalNumber = do
-  try (string "#o")
+  _ <- try (string "#o")
   sign <- many (oneOf "-")
   num <- many1(oneOf "01234567")
   case (length sign) of
@@ -70,7 +70,7 @@ parseOctalNumber = do
 
 parseBinaryNumber :: Parser LispVal
 parseBinaryNumber = do
-  try (string "#b")
+  _ <- try (string "#b")
   sign <- many (oneOf "-")
   num <- many1(oneOf "01")
   case (length sign) of
@@ -80,7 +80,7 @@ parseBinaryNumber = do
 
 parseHexNumber :: Parser LispVal
 parseHexNumber = do
-  try (string "#x")
+  _ <- try (string "#x")
   sign <- many (oneOf "-")
   num <- many1(digit <|> oneOf "abcdefABCDEF")
   case (length sign) of
@@ -91,7 +91,7 @@ parseHexNumber = do
 -- |Parser for Integer, base 10
 parseDecimalNumber :: Parser LispVal
 parseDecimalNumber = do
-  try (many(string "#d"))
+  _ <- try (many(string "#d"))
   sign <- many (oneOf "-")
   num <- many1 (digit)
   if (length sign) > 1
@@ -111,7 +111,7 @@ parseRealNumber :: Parser LispVal
 parseRealNumber = do 
   sign <- many (oneOf "-")
   num <- many1(digit)
-  char '.'
+  _ <- char '.'
   frac <- many1(digit)
   let dec = num ++ "." ++ frac
   case (length sign) of
@@ -135,7 +135,7 @@ parseRationalNumber = do
   pnumerator <- parseDecimalNumber
   case pnumerator of 
     Number n -> do
-      char '/'
+      _ <- char '/'
       sign <- many (oneOf "-")
       num <- many1 (digit)
       if (length sign) > 1
@@ -151,20 +151,20 @@ parseComplexNumber = do
                   Rational r -> fromRational r
                   Float f -> f
                   _ -> 0
-  char '+'
+  _ <- char '+'
   lispimag <- (try(parseRealNumber) <|> try(parseRationalNumber) <|> parseDecimalNumber)
   let imag = case lispimag of
                   Number n -> fromInteger n
                   Rational r -> fromRational r
                   Float f -> f
                   _ -> 0 -- Case should never be reached
-  char 'i'
+  _ <- char 'i'
   return $ Complex $ real :+ imag
 
 parseEscapedChar :: forall st.
                     GenParser Char st Char
 parseEscapedChar = do 
-  char '\\'
+  _ <- char '\\'
   c <- anyChar
   return $ case c of
     'n' -> '\n'
@@ -174,9 +174,9 @@ parseEscapedChar = do
 
 parseString :: Parser LispVal
 parseString = do
-	char '"'
+	_ <- char '"'
 	x <- many (parseEscapedChar <|> noneOf("\""))
-	char '"'
+	_ <- char '"'
 	return $ String x
 
 parseVector :: Parser LispVal
@@ -195,25 +195,25 @@ parseDottedList = do
 
 parseQuoted :: Parser LispVal
 parseQuoted = do
-  char '\''
+  _ <- char '\''
   x <- parseExpr
   return $ List [Atom "quote", x]
 
 parseQuasiQuoted :: Parser LispVal
 parseQuasiQuoted = do
-  char '`'
+  _ <- char '`'
   x <- parseExpr
   return $ List [Atom "quasiquote", x]
 
 parseUnquoted :: Parser LispVal
 parseUnquoted = do
-  try (char ',')
+  _ <- try (char ',')
   x <- parseExpr
   return $ List [Atom "unquote", x]
 
 parseUnquoteSpliced :: Parser LispVal
 parseUnquoteSpliced = do
-  try (string ",@")
+  _ <- try (string ",@")
   x <- parseExpr
   return $ List [Atom "unquote-splicing", x]
 
@@ -224,8 +224,8 @@ parseUnquoteSpliced = do
 --         parser instead; need to investigate eventually.
 parseComment :: Parser LispVal
 parseComment = do
-  char ';'
-  many (noneOf ("\n"))
+  _ <- char ';'
+  _ <- many (noneOf ("\n"))
   return $ Nil ""
 
 
@@ -238,9 +238,9 @@ parseExpr =
   <|> try(parseNumber)
   <|> parseChar
   <|> parseUnquoteSpliced
-  <|> do try (string "#(")
+  <|> do _ <- try (string "#(")
          x <- parseVector
-         char ')'
+         _ <- char ')'
          return x
   <|> try (parseAtom)
   <|> parseString 
@@ -248,9 +248,9 @@ parseExpr =
   <|> parseQuoted
   <|> parseQuasiQuoted
   <|> parseUnquoted
-  <|> do char '('
+  <|> do _ <- char '('
          x <- try parseList <|> parseDottedList
-         char ')'
+         _ <- char ')'
          return x
   <?> "Expression"
 
