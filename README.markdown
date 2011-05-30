@@ -63,14 +63,14 @@ For more information, run `make doc` to generate API documentation from the sour
 Foreign Function Interface
 --------------------------
 
-A foreign function interface (FFI) is provided to allow husk to call into arbitrary Haskell code. Using the FFI, we may call into new Haskell code without having to modify husk itself. The interface is currently available via the `load-ffi` function:
+A foreign function interface (FFI) is provided to allow husk to call into arbitrary Haskell code. The interface is currently available via the `load-ffi` function:
 
     (load-ffi "Language.Scheme.Plugins.CPUTime" "precision" "cpu-time:precision")
 
 `load-ffi` accepts the following string arguments:
 
 - Name of a Haskell module to dynamically load
-- Function to load from that module
+- Haskell function to load from that module
 - Name to use for the function after it is loaded into husk
 
 From the previous example, once `cpu-time:precision` is loaded, it may be called directly from husk just like a regular Scheme function:
