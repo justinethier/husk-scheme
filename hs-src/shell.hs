@@ -1,4 +1,4 @@
-{- | 
+{- |
 Module      : Main
 Copyright   : Justin Ethier
 Licence     : MIT (see LICENSE in the distribution)
@@ -37,13 +37,15 @@ flushStr str = putStr str >> hFlush stdout
 
 runOne :: [String] -> IO ()
 runOne args = do
-  -- Use this to suppress unwanted output.
-  -- Makes this unix-specific, but as of now
-  -- everything else is anyway, so...
+  {- Use this to suppress unwanted output.
+     Makes this unix-specific, but as of now
+     everything else is anyway, so... -}
   nullIO <- openFile "/dev/null" WriteMode
 
   stdlib <- getDataFileName "stdlib.scm"
-  env <- primitiveBindings >>= flip extendEnv [((varNamespace, "args"), List $ map String $ drop 1 args)]
+  env <- primitiveBindings >>= flip extendEnv
+                                   [((varNamespace, "args"),
+                                    List $ map String $ drop 1 args)]
   _ <- evalString env $ "(load \"" ++ stdlib ++ "\")" -- Load standard library
   (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
      >>= hPutStr nullIO
@@ -52,12 +54,13 @@ runOne args = do
   alreadyDefined <- liftIO $ isBound env "main"
   let argv = List $ map String $ args
   if alreadyDefined
-     then (runIOThrows $ liftM show $ evalLisp env (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStr stderr
+     then (runIOThrows $ liftM show $ evalLisp env
+            (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStr stderr
      else (runIOThrows $ liftM show $ evalLisp env (Nil "")) >>= hPutStr stderr
 
 showBanner :: IO ()
 showBanner = do
-  putStrLn "  _               _        __                 _                          " 
+  putStrLn "  _               _        __                 _                          "
   putStrLn " | |             | |       \\\\\\               | |                         "
   putStrLn " | |__  _   _ ___| | __     \\\\\\      ___  ___| |__   ___ _ __ ___   ___  "
   putStrLn " | '_ \\| | | / __| |/ /    //\\\\\\    / __|/ __| '_ \\ / _ \\ '_ ` _ \\ / _ \\ "
@@ -73,8 +76,8 @@ runRepl = do
     stdlib <- getDataFileName "stdlib.scm"
     env <- primitiveBindings
     _ <- evalString env $ "(load \"" ++ stdlib ++ "\")" -- Load standard library into the REPL
-    runInputT defaultSettings (loop env) 
-    where 
+    runInputT defaultSettings (loop env)
+    where
         loop :: Env -> InputT IO ()
         loop env = do
             minput <- getInputLine "huski> "
@@ -91,8 +94,8 @@ runRepl = do
 
 -- Begin Util section, of generic functions
 
--- Remove leading/trailing white space from a string; based on corresponding Python function
--- Code taken from: http://gimbo.org.uk/blog/2007/04/20/splitting-a-string-in-haskell/
+{- Remove leading/trailing white space from a string; based on corresponding Python function
+   Code taken from: http://gimbo.org.uk/blog/2007/04/20/splitting-a-string-in-haskell/ -}
 strip :: String -> String
 strip s = dropWhile ws $ reverse $ dropWhile ws $ reverse s
     where ws = (`elem` [' ', '\n', '\t', '\r'])
