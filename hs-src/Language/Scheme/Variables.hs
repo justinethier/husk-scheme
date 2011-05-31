@@ -1,4 +1,4 @@
-{- | 
+{- |
 Module      : Language.Scheme.Variables
 Copyright   : Justin Ethier
 Licence     : MIT (see LICENSE in the distribution)
@@ -71,11 +71,11 @@ defineVar envRef var value = defineNamespacedVar envRef varNamespace var value
 
 -- |Set a variable in a given namespace
 setNamespacedVar :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
-setNamespacedVar envRef 
+setNamespacedVar envRef
                  namespace
                  var value = do env <- liftIO $ readIORef $ bindings envRef
                                 case lookup (namespace, var) env of
-                                  (Just a) -> do --vprime <- liftIO $ readIORef a
+                                  (Just a) -> do -- vprime <- liftIO $ readIORef a
                                                  liftIO $ writeIORef a value
                                                  return value
                                   Nothing -> case parentEnv envRef of
@@ -84,8 +84,8 @@ setNamespacedVar envRef
 
 -- |Bind a variable in the given namespace
 defineNamespacedVar :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
-defineNamespacedVar envRef 
-                    namespace 
+defineNamespacedVar envRef
+                    namespace
                     var value = do
   alreadyDefined <- liftIO $ isNamespacedBound envRef namespace var
   if alreadyDefined
