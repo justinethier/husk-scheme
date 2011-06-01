@@ -1,4 +1,4 @@
-{- | 
+{- |
 Module      : Language.Scheme.Plugins.CPUTime
 Copyright   : Justin Ethier
 Licence     : MIT (see LICENSE in the distribution)
@@ -28,12 +28,12 @@ import Control.Monad.Error
 
 get, precision :: [LispVal] -> IOThrowsError LispVal
 
-{- |Wrapper for CPUTime.getCPUTime -}
+-- |Wrapper for CPUTime.getCPUTime
 get [] = do
   t <- liftIO $ System.CPUTime.getCPUTime
   return $ Number t
 get badArgList = throwError $ NumArgs 0 badArgList
 
-{- |Wrapper for CPUTime.cpuTimePrecision -}
-precision [] = return $ Number $ System.CPUTime.cpuTimePrecision 
+-- |Wrapper for CPUTime.cpuTimePrecision
+precision [] = return $ Number $ System.CPUTime.cpuTimePrecision
 precision badArgList = throwError $ NumArgs 0 badArgList

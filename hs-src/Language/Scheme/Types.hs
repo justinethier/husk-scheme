@@ -1,4 +1,4 @@
-{- | 
+{- |
 Module      : Language.Scheme.Types
 Copyright   : Justin Ethier
 Licence     : MIT (see LICENSE in the distribution)
@@ -27,7 +27,7 @@ import IO hiding (try)
 import Ratio
 import Text.ParserCombinators.Parsec hiding (spaces)
 
-{-  Environment management -}
+-- Environment management
 
 -- |A Scheme environment containing variable bindings of form @(namespaceName, variableName), variableValue@
 data Env = Environment {parentEnv :: (Maybe Env), bindings :: (IORef [((String, String), IORef LispVal)])} -- lookup via: (namespace, variable)
@@ -54,8 +54,8 @@ data LispError = NumArgs Integer [LispVal] -- ^Invalid number of function argume
   | UnboundVar String String
   | DivideByZero -- ^Divide by Zero error
   | NotImplemented String
-  | InternalError String -- ^An internal error within husk; in theory user (Scheme) code
-                         --  should never allow one of these errors to be triggered.
+  | InternalError String {- ^An internal error within husk; in theory user (Scheme) code
+                         should never allow one of these errors to be triggered. -}
   | Default String -- ^Default error
 
 -- |Create a textual description for a 'LispError'
@@ -82,7 +82,7 @@ type ThrowsError = Either LispError
 
 trapError :: -- forall (m :: * -> *) e.
             (MonadError e m, Show e) =>
-             m String -> m String 
+             m String -> m String
 trapError action = catchError action (return . show)
 
 extractValue :: ThrowsError a -> a
@@ -108,17 +108,17 @@ data LispVal = Atom String
  | Vector (Array Int LispVal)
  -- ^Vector
  | HashTable (Data.Map.Map LispVal LispVal)
- -- ^Hash table. 
- --  Technically this could be a derived data type instead of being built-in to the 
- --  interpreter. And perhaps in the future it will be. But for now, a hash table 
- --  is too important of a data type to not be included.
+ {- ^Hash table.
+ Technically this could be a derived data type instead of being built-in to the
+ interpreter. And perhaps in the future it will be. But for now, a hash table
+ is too important of a data type to not be included. -}
  --
  -- Map is technically the wrong structure to use for a hash table since it is based on a binary tree and hence operations tend to be O(log n) instead of O(1). However, according to <http://www.opensubscriber.com/message/haskell-cafe@haskell.org/10779624.html> Map has good performance characteristics compared to the alternatives. So it stays for the moment...
  --
- | Number Integer -- FUTURE: rename this to "Integer" (or "WholeNumber" or something else more meaningful)
- -- ^Integer
- | Float Double -- FUTURE: rename this "Real" instead of "Float"...
- -- ^Floating point
+ | Number Integer {- FUTURE: rename this to "Integer" (or "WholeNumber" or something else more meaningful)
+ Integer -}
+ | Float Double {- FUTURE: rename this "Real" instead of "Float"...
+ Floating point -}
  | Complex (Complex Double)
  -- ^Complex number
  | Rational Rational
@@ -131,36 +131,36 @@ data LispVal = Atom String
  -- ^Boolean
  | PrimitiveFunc ([LispVal] -> ThrowsError LispVal)
  -- ^Primitive function
- | Func {params :: [String], 
+ | Func {params :: [String],
          vararg :: (Maybe String),
-         body :: [LispVal], 
+         body :: [LispVal],
          closure :: Env
         }
  -- ^Function
  | IOFunc ([LispVal] -> IOThrowsError LispVal)
  -- ^Primitive function within the IO monad
  | EvalFunc ([LispVal] -> IOThrowsError LispVal)
- -- ^Function within the IO monad with access to 
- --  the current environment and continuation.
+ {- ^Function within the IO monad with access to
+ the current environment and continuation. -}
  | Port Handle
  -- ^I/O port
- | Continuation {  closure :: Env                       -- Environment of the continuation
+ | Continuation { closure :: Env                       -- Environment of the continuation
                  , currentCont :: (Maybe DeferredCode)  -- Code of current continuation
-                 , nextCont    :: (Maybe LispVal)       -- Code to resume after body of cont
+                 , nextCont :: (Maybe LispVal)       -- Code to resume after body of cont
                  , extraReturnArgs :: (Maybe [LispVal]) -- Extra return arguments, to support (values) and (call-with-values)
-                        , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind) 
+                        , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind)
                 }
  -- ^Continuation
  | EOF
  | Nil String
  -- ^Internal use only; do not use this type directly.
 
--- |Container to hold code that is passed to a continuation for deferred execution 
-data DeferredCode = 
+-- |Container to hold code that is passed to a continuation for deferred execution
+data DeferredCode =
     SchemeBody [LispVal] | -- ^A block of Scheme code
-    HaskellBody {  
+    HaskellBody {
        contFunction :: (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal)
-     , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to the higher-order function 
+     , contFunctionArgs :: (Maybe [LispVal]) -- Arguments to the higher-order function
     } -- ^A Haskell function
 
 -- |Container to store information from a dynamic-wind
@@ -176,17 +176,17 @@ instance Show DynamicWinders where show = showDWVal
 
 -- Make an "empty" continuation that does not contain any code
 makeNullContinuation :: Env -> LispVal
-makeNullContinuation env = Continuation env Nothing Nothing Nothing Nothing 
+makeNullContinuation env = Continuation env Nothing Nothing Nothing Nothing
 
 -- Make a continuation that takes a higher-order function (written in Haskell)
-makeCPS :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal]-> IOThrowsError LispVal) -> LispVal
+makeCPS :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) -> LispVal
 makeCPS env cont@(Continuation _ _ _ _ dynWind) cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing dynWind
-makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing Nothing -- This overload just here for completeness; it should never be used 
+makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing Nothing -- This overload just here for completeness; it should never be used
 
 -- Make a continuation that stores a higher-order function and arguments to that function
 makeCPSWArgs :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) -> [LispVal] -> LispVal
 makeCPSWArgs env cont@(Continuation _ _ _ _ dynWind) cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont) Nothing dynWind
-makeCPSWArgs env cont cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont) Nothing Nothing -- This overload just here for completeness; it should never be used 
+makeCPSWArgs env cont cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont) Nothing Nothing -- This overload just here for completeness; it should never be used
 
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b
@@ -196,12 +196,12 @@ instance Ord LispVal where
   compare (String a) (String b) = compare a b
   compare (Char a) (Char b) = compare a b
   compare (Atom a) (Atom b) = compare a b
---  compare (DottedList xs x) (DottedList xs x) = compare a b
--- Vector
--- HashTable
--- List
--- Func
--- Others?
+{- compare (DottedList xs x) (DottedList xs x) = compare a b
+Vector
+HashTable
+List
+Func
+Others? -}
   compare a b = compare (show a) (show b) -- Hack (??): sort alphabetically when types differ or have no handlers
 
 -- |Compare two 'LispVal' instances
@@ -215,16 +215,16 @@ eqv [(String arg1), (String arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
-eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)] 
-eqv [(HashTable arg1), (HashTable arg2)] = 
-  eqv [List $ (map (\(x, y) -> List [x, y]) $ Data.Map.toAscList arg1), 
-       List $ (map (\(x, y) -> List [x, y]) $ Data.Map.toAscList arg2)] 
+eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)]
+eqv [(HashTable arg1), (HashTable arg2)] =
+  eqv [List $ (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg1),
+       List $ (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg2)]
 eqv [l1@(List _), l2@(List _)] = eqvList eqv [l1, l2]
 eqv [_, _] = return $ Bool False
 eqv badArgList = throwError $ NumArgs 2 badArgList
 
 eqvList :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
-eqvList eqvFunc [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) && 
+eqvList eqvFunc [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) &&
                                                     (all eqvPair $ zip arg1 arg2)
     where eqvPair (x1, x2) = case eqvFunc [x1, x2] of
                                Left _ -> False
@@ -262,7 +262,7 @@ showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showVal t ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
 showVal (Continuation _ _ _ _ _) = "<continuation>"
-showVal (Func {params = args, vararg = varargs, body = _, closure = _}) = 
+showVal (Func {params = args, vararg = varargs, body = _, closure = _}) =
   "(lambda (" ++ unwords (map show args) ++
     (case varargs of
       Nothing -> ""

@@ -25,7 +25,7 @@ import Ratio
 import Text.ParserCombinators.Parsec hiding (spaces)
 
 symbol :: Parser Char
-symbol = oneOf "!$%&|*+-/:<=>?@^_~" 
+symbol = oneOf "!$%&|*+-/:<=>?@^_~"
 
 spaces :: Parser ()
 spaces = skipMany1 space
@@ -34,7 +34,7 @@ parseAtom :: Parser LispVal
 parseAtom = do
   first <- letter <|> symbol <|> (oneOf ".")
   rest <- many (letter <|> digit <|> symbol <|> (oneOf "."))
-  let atom = first:rest
+  let atom = first : rest
   if atom == "."
      then pzero -- Do not match this form
      else return $ Atom atom
@@ -50,19 +50,19 @@ parseBool = do _ <- string "#"
 parseChar :: Parser LispVal
 parseChar = do
   _ <- try (string "#\\")
-  c <- anyChar 
-  r <- many(letter)
-  let pchr = c:r
+  c <- anyChar
+  r <- many (letter)
+  let pchr = c : r
   return $ case pchr of
-    "space"   -> Char ' '
+    "space" -> Char ' '
     "newline" -> Char '\n'
-    _         -> Char c 
+    _ -> Char c
 
 parseOctalNumber :: Parser LispVal
 parseOctalNumber = do
   _ <- try (string "#o")
   sign <- many (oneOf "-")
-  num <- many1(oneOf "01234567")
+  num <- many1 (oneOf "01234567")
   case (length sign) of
      0 -> return $ Number $ fst $ Numeric.readOct num !! 0
      1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ Numeric.readOct num !! 0
@@ -72,7 +72,7 @@ parseBinaryNumber :: Parser LispVal
 parseBinaryNumber = do
   _ <- try (string "#b")
   sign <- many (oneOf "-")
-  num <- many1(oneOf "01")
+  num <- many1 (oneOf "01")
   case (length sign) of
      0 -> return $ Number $ fst $ Numeric.readInt 2 (`elem` "01") Char.digitToInt num !! 0
      1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ Numeric.readInt 2 (`elem` "01") Char.digitToInt num !! 0
@@ -82,16 +82,16 @@ parseHexNumber :: Parser LispVal
 parseHexNumber = do
   _ <- try (string "#x")
   sign <- many (oneOf "-")
-  num <- many1(digit <|> oneOf "abcdefABCDEF")
+  num <- many1 (digit <|> oneOf "abcdefABCDEF")
   case (length sign) of
-     0 -> return $ Number $ fst $ Numeric.readHex num !! 0 
+     0 -> return $ Number $ fst $ Numeric.readHex num !! 0
      1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ Numeric.readHex num !! 0
      _ -> pzero
 
 -- |Parser for Integer, base 10
 parseDecimalNumber :: Parser LispVal
 parseDecimalNumber = do
-  _ <- try (many(string "#d"))
+  _ <- try (many (string "#d"))
   sign <- many (oneOf "-")
   num <- many1 (digit)
   if (length sign) > 1
@@ -99,25 +99,25 @@ parseDecimalNumber = do
      else return $ (Number . read) $ sign ++ num
 
 parseNumber :: Parser LispVal
-parseNumber = parseDecimalNumber <|> 
-              parseHexNumber     <|> 
-              parseBinaryNumber  <|> 
-              parseOctalNumber   <?> 
+parseNumber = parseDecimalNumber <|>
+              parseHexNumber <|>
+              parseBinaryNumber <|>
+              parseOctalNumber <?>
               "Unable to parse number"
 
-{- Parser for floating points 
+{- Parser for floating points
  - -}
 parseRealNumber :: Parser LispVal
-parseRealNumber = do 
+parseRealNumber = do
   sign <- many (oneOf "-")
-  num <- many1(digit)
+  num <- many1 (digit)
   _ <- char '.'
-  frac <- many1(digit)
+  frac <- many1 (digit)
   let dec = num ++ "." ++ frac
   case (length sign) of
      0 -> do
               let numbr = fst $ Numeric.readFloat dec !! 0
---              expnt <- try (char 'e')
+-- expnt <- try (char 'e')
               return $ Float $ numbr
 {- FUTURE: Issue #14: parse numbers in format #e1e10
  -
@@ -125,15 +125,14 @@ parseRealNumber = do
               case expnt of
 --                'e' -> return $ Float $ numbr
                 _ -> return $ Float $ numbr
--}
---             return $ Float $ fst $ Numeric.readFloat dec !! 0
+return $ Float $ fst $ Numeric.readFloat dec !! 0 -}
      1 -> return $ Float $ (*) (-1.0) $ fst $ Numeric.readFloat dec !! 0
      _ -> pzero
 
 parseRationalNumber :: Parser LispVal
 parseRationalNumber = do
   pnumerator <- parseDecimalNumber
-  case pnumerator of 
+  case pnumerator of
     Number n -> do
       _ <- char '/'
       sign <- many (oneOf "-")
@@ -145,14 +144,14 @@ parseRationalNumber = do
 
 parseComplexNumber :: Parser LispVal
 parseComplexNumber = do
-  lispreal <- (try (parseRealNumber) <|> try(parseRationalNumber) <|> parseDecimalNumber)
+  lispreal <- (try (parseRealNumber) <|> try (parseRationalNumber) <|> parseDecimalNumber)
   let real = case lispreal of
                   Number n -> fromInteger n
                   Rational r -> fromRational r
                   Float f -> f
                   _ -> 0
   _ <- char '+'
-  lispimag <- (try(parseRealNumber) <|> try(parseRationalNumber) <|> parseDecimalNumber)
+  lispimag <- (try (parseRealNumber) <|> try (parseRationalNumber) <|> parseDecimalNumber)
   let imag = case lispimag of
                   Number n -> fromInteger n
                   Rational r -> fromRational r
@@ -161,21 +160,21 @@ parseComplexNumber = do
   _ <- char 'i'
   return $ Complex $ real :+ imag
 
-parseEscapedChar :: forall st.
+parseEscapedChar :: forall st .
                     GenParser Char st Char
-parseEscapedChar = do 
+parseEscapedChar = do
   _ <- char '\\'
   c <- anyChar
   return $ case c of
     'n' -> '\n'
     't' -> '\t'
     'r' -> '\r'
-    _   -> c
+    _ -> c
 
 parseString :: Parser LispVal
 parseString = do
   _ <- char '"'
-  x <- many (parseEscapedChar <|> noneOf("\""))
+  x <- many (parseEscapedChar <|> noneOf ("\""))
   _ <- char '"'
   return $ String x
 
@@ -218,10 +217,10 @@ parseUnquoteSpliced = do
   return $ List [Atom "unquote-splicing", x]
 
 
--- Comment parser
--- FUTURE: this is a hack, it should really not return anything...
---         a better solution might be to use a tokenizer as a
---         parser instead; need to investigate eventually.
+{- Comment parser
+FUTURE: this is a hack, it should really not return anything...
+a better solution might be to use a tokenizer as a
+parser instead; need to investigate eventually. -}
 parseComment :: Parser LispVal
 parseComment = do
   _ <- char ';'
@@ -230,12 +229,12 @@ parseComment = do
 
 
 parseExpr :: Parser LispVal
-parseExpr = 
-      try(parseComplexNumber)
-  <|> try(parseRationalNumber)
+parseExpr =
+      try (parseComplexNumber)
+  <|> try (parseRationalNumber)
   <|> parseComment
-  <|> try(parseRealNumber)
-  <|> try(parseNumber)
+  <|> try (parseRealNumber)
+  <|> try (parseNumber)
   <|> parseChar
   <|> parseUnquoteSpliced
   <|> do _ <- try (string "#(")
@@ -243,7 +242,7 @@ parseExpr =
          _ <- char ')'
          return x
   <|> try (parseAtom)
-  <|> parseString 
+  <|> parseString
   <|> parseBool
   <|> parseQuoted
   <|> parseQuasiQuoted
@@ -264,4 +263,3 @@ readExpr = readOrThrow parseExpr
 
 readExprList :: String -> ThrowsError [LispVal]
 readExprList = readOrThrow (endBy parseExpr spaces)
-
