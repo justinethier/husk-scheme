@@ -1,4 +1,4 @@
-{- | 
+{- |
 Module      : Language.Scheme.Parser
 Copyright   : Justin Ethier
 Licence     : MIT (see LICENSE in the distribution)
@@ -32,12 +32,12 @@ spaces = skipMany1 space
 
 parseAtom :: Parser LispVal
 parseAtom = do
-	first <- letter <|> symbol <|> (oneOf ".")
-	rest <- many (letter <|> digit <|> symbol <|> (oneOf "."))
-	let atom = first:rest
-	if atom == "."
-           then pzero -- Do not match this form
-           else return $ Atom atom
+  first <- letter <|> symbol <|> (oneOf ".")
+  rest <- many (letter <|> digit <|> symbol <|> (oneOf "."))
+  let atom = first:rest
+  if atom == "."
+     then pzero -- Do not match this form
+     else return $ Atom atom
 
 parseBool :: Parser LispVal
 parseBool = do _ <- string "#"
@@ -174,10 +174,10 @@ parseEscapedChar = do
 
 parseString :: Parser LispVal
 parseString = do
-	_ <- char '"'
-	x <- many (parseEscapedChar <|> noneOf("\""))
-	_ <- char '"'
-	return $ String x
+  _ <- char '"'
+  x <- many (parseEscapedChar <|> noneOf("\""))
+  _ <- char '"'
+  return $ String x
 
 parseVector :: Parser LispVal
 parseVector = do
@@ -256,8 +256,8 @@ parseExpr =
 
 readOrThrow :: Parser a -> String -> ThrowsError a
 readOrThrow parser input = case parse parser "lisp" input of
-	Left err -> throwError $ Parser err
-	Right val -> return val
+  Left err -> throwError $ Parser err
+  Right val -> return val
 
 readExpr :: String -> ThrowsError LispVal
 readExpr = readOrThrow parseExpr
