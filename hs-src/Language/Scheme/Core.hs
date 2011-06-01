@@ -1,5 +1,5 @@
-{- | 
-Module      : Language.Scheme.Core 
+{- |
+Module      : Language.Scheme.Core
 Copyright   : Justin Ethier
 Licence     : MIT (see LICENSE in the distribution)
 
@@ -14,7 +14,7 @@ A lightweight dialect of R5RS scheme.
 This module contains Core functionality, primarily Scheme expression evaluation.
 -}
 
-module Language.Scheme.Core 
+module Language.Scheme.Core
     (
       eval
     , evalLisp
@@ -39,9 +39,9 @@ import qualified GHC
 import qualified GHC.Paths (libdir)
 import qualified DynFlags
 import qualified Unsafe.Coerce (unsafeCoerce)
---import Debug.Trace
+-- import Debug.Trace
 
-{-| Evaluate a string containing Scheme code.
+{- |Evaluate a string containing Scheme code.
 
     For example:
 
@@ -54,7 +54,7 @@ evalString env "(+ x x x)"
 evalString env "(+ x x x (* 3 9))"
 "30"
 
-evalString env "(* 3 9)"            
+evalString env "(* 3 9)" 
 "27"
 @
 -}
@@ -66,8 +66,7 @@ evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn
 
 -- |Evaluate lisp code that has already been loaded into haskell
---
---  FUTURE: code example for this, via ghci and/or a custom Haskell program.
+-- FUTURE: code example for this, via ghci and/or a custom Haskell program.
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = macroEval env lisp >>= (eval env (makeNullContinuation env))
 
@@ -80,14 +79,14 @@ evalLisp env lisp = macroEval env lisp >>= (eval env (makeNullContinuation env))
  - -}
 continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 
--- Passing a higher-order function as the continuation; just evaluate it. This is 
+-- Passing a higher-order function as the continuation; just evaluate it. This is
 -- done to enable an 'eval' function to be broken up into multiple sub-functions,
 -- so that any of the sub-functions can be passed around as a continuation.
 --
 -- Carry extra args from the current continuation into the next, to support (call-with-values)
 continueEval _
-            (Continuation cEnv (Just (HaskellBody func funcArgs)) 
-                               (Just (Continuation cce cnc ccc _ cdynwind)) 
+            (Continuation cEnv (Just (HaskellBody func funcArgs))
+                               (Just (Continuation cce cnc ccc _ cdynwind))
                                 xargs _) -- rather sloppy, should refactor code so this is not necessary
              val = func cEnv (Continuation cce cnc ccc xargs cdynwind) val funcArgs
 
@@ -162,10 +161,10 @@ eval env cont (List [Atom "quote", val])         = continueEval env cont val
 -- FUTURE: Issue #8 - https://github.com/justinethier/husk-scheme/issues/#issue/8
 --   need to take nesting of ` into account, as per spec:
 -- 
--- * Quasiquote forms may be nested. 
--- * Substitutions are made only for unquoted components appearing at the 
+-- - Quasiquote forms may be nested. 
+-- - Substitutions are made only for unquoted components appearing at the 
 --   same nesting level as the outermost backquote. 
--- * The nesting level increases by one inside each successive quasiquotation, 
+-- - The nesting level increases by one inside each successive quasiquotation, 
 --   and decreases by one inside each unquotation.
 --
 -- So the upshoot is that a new nesting level var needs to be threaded through,
@@ -212,7 +211,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
 
         -- Front-end to cpsUnquoteList, to encapsulate default values in the call
         doCpsUnquoteList :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-        doCpsUnquoteList e c (List (x:xs)) = cpsUnquoteList e c x $ Just ([List xs, List []])
+        doCpsUnquoteList e c (List (x : xs)) = cpsUnquoteList e c x $ Just ([List xs, List []])
         doCpsUnquoteList _ _ _ = throwError $ InternalError "Unexpected parameters to doCpsUnquoteList"
 
         -- Unquote a list
@@ -272,7 +271,7 @@ eval env cont (List (Atom "cond" : clauses)) =
         -- If a condition is true, evaluate that condition's expressions.
         -- Otherwise just pick up at the next condition...
         cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsResult e cnt result (Just (c:cs)) = 
+        cpsResult e cnt result (Just (c : cs)) = 
             case result of
               Bool True -> evalCond e cnt c
               _ -> eval env cnt $ List $ (Atom "cond" : cs)
@@ -346,7 +345,7 @@ eval env cont (List [Atom "string-set!", Atom var, i, character]) = do
 
         cpsSubStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsSubStr e c str (Just [idx]) = 
-            substr(str, character, idx) >>= setVar e var >>= continueEval e c
+            substr (str, character, idx) >>= setVar e var >>= continueEval e c
         cpsSubStr _ _ _ _ = throwError $ InternalError "Invalid argument to cpsSubStr" 
 
         substr (String str, Char char, Number ii) = do
@@ -364,7 +363,7 @@ eval env cont (List [Atom "set-car!", Atom var, argObj]) = do
   where 
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsObj _ _ obj@(List []) _ = throwError $ TypeMismatch "pair" obj
-        cpsObj e c obj@(List (_:_)) _ = eval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
+        cpsObj e c obj@(List (_ : _)) _ = eval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
         cpsObj e c obj@(DottedList _ _) _ = eval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
         cpsObj _ _ obj _ = throwError $ TypeMismatch "pair" obj 
 
@@ -380,7 +379,7 @@ eval env cont (List [Atom "set-cdr!", Atom var, argObj]) = do
   where 
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsObj _ _ pair@(List []) _ = throwError $ TypeMismatch "pair" pair 
-        cpsObj e c pair@(List (_:_)) _ = eval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
+        cpsObj e c pair@(List (_ : _)) _ = eval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
         cpsObj e c pair@(DottedList _ _) _ = eval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
         cpsObj _ _ pair _ = throwError $ TypeMismatch "pair" pair 
 
@@ -407,7 +406,7 @@ eval env cont (List [Atom "vector-set!", Atom var, i, object]) = do
         cpsUpdateVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateVec"
 
         updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
-        updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec//[(fromInteger idx, obj)]
+        updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec // [(fromInteger idx, obj)]
         updateVector v _ _ = throwError $ TypeMismatch "vector" v
 eval _ _ (List [Atom "vector-set!" , nonvar , _ , _]) = throwError $ TypeMismatch "variable" nonvar 
 eval _ _ (List (Atom "vector-set!" : args)) = throwError $ NumArgs 3 args
@@ -458,7 +457,7 @@ eval env cont (List (function : functionArgs)) = do
           case (args) of
             [] -> apply c func [] -- No args, immediately apply the function
             [a] -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List []]) a
-            (a:as) -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List as]) a
+            (a : as) -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List as]) a
        cpsPrepArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (1)"
         -- Store value of previous argument, evaluate the next arg until all are done
         -- parg - Previous argument that has now been evaluated
@@ -471,7 +470,7 @@ eval env cont (List (function : functionArgs)) = do
           case argsRemaining of
             [] -> apply c func (argsEvaled ++ [evaledArg])
             [a] -> eval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List []]) a
-            (a:as) -> eval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List as]) a
+            (a : as) -> eval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List as]) a
 
        cpsEvalArgs _ _ _ (Just _) = throwError $ Default "Unexpected error in function application (1)"
        cpsEvalArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (2)"
@@ -634,7 +633,7 @@ evalfuncApply _ = throwError $ NumArgs 2 []
 evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
      result <- load filename >>= liftM last . mapM (evaluate env (makeNullContinuation env))
      continueEval env cont result
-	 where evaluate env2 cont2 val2 = macroEval env2 val2 >>= eval env2 cont2
+  where evaluate env2 cont2 val2 = macroEval env2 val2 >>= eval env2 cont2
 evalfuncLoad (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncLoad _ = throwError $ NumArgs 1 []
 
@@ -746,9 +745,9 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("read", readProc),
                 ("read-char", readCharProc hGetChar),
                 ("peek-char", readCharProc hLookAhead),
-                ("write", writeProc (\port obj -> hPrint port obj)),
+                ("write", writeProc (\ port obj -> hPrint port obj)),
                 ("write-char", writeCharProc),
-                ("display", writeProc (\port obj -> case obj of
+                ("display", writeProc (\ port obj -> case obj of
                                                         String str -> hPutStr port str
                                                         _ -> hPutStr port $ show obj)),
                 ("read-contents", readContents),
@@ -1039,8 +1038,8 @@ makeVector [(Number n), a] = do
 makeVector [badType] = throwError $ TypeMismatch "integer" badType 
 makeVector badArgList = throwError $ NumArgs 1 badArgList
 
-buildVector (o:os) = do
-  let lst = o:os
+buildVector (o : os) = do
+  let lst = o : os
   return $ Vector $ (listArray (0, length lst - 1)) lst
 buildVector badArgList = throwError $ NumArgs 1 badArgList
 
@@ -1063,7 +1062,7 @@ listToVector badArgList = throwError $ NumArgs 1 badArgList
 -------------- Hash Table Primitives --------------
 
 -- Future: support (equal?), (hash) parameters
-hashTblMake, isHashTbl, hashTblExists, hashTblRef, hashTblSize, hashTbl2List, hashTblKeys, hashTblValues, hashTblCopy:: [LispVal] -> ThrowsError LispVal
+hashTblMake, isHashTbl, hashTblExists, hashTblRef, hashTblSize, hashTbl2List, hashTblKeys, hashTblValues, hashTblCopy :: [LispVal] -> ThrowsError LispVal
 hashTblMake _ = return $ HashTable $ Data.Map.fromList []
 
 isHashTbl [(HashTable _)] = return $ Bool True
@@ -1094,17 +1093,17 @@ hashTblSize [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblSize badArgList = throwError $ NumArgs 1 badArgList
 
 hashTbl2List [(HashTable ht)] = do
-  return $ List $ map (\(k, v) -> List [k, v]) $ Data.Map.toList ht
+  return $ List $ map (\ (k, v) -> List [k, v]) $ Data.Map.toList ht
 hashTbl2List [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTbl2List badArgList = throwError $ NumArgs 1 badArgList
 
 hashTblKeys [(HashTable ht)] = do
-  return $ List $ map (\(k, _) -> k) $ Data.Map.toList ht
+  return $ List $ map (\ (k, _) -> k) $ Data.Map.toList ht
 hashTblKeys [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblKeys badArgList = throwError $ NumArgs 1 badArgList
 
 hashTblValues [(HashTable ht)] = do
-  return $ List $ map (\(_, v) -> v) $ Data.Map.toList ht
+  return $ List $ map (\ (_, v) -> v) $ Data.Map.toList ht
 hashTblValues [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblValues badArgList = throwError $ NumArgs 1 badArgList
 
@@ -1117,7 +1116,7 @@ hashTblCopy badArgList = throwError $ NumArgs 1 badArgList
 
 buildString :: [LispVal] -> ThrowsError LispVal
 buildString [(Char c)] = return $ String [c]
-buildString (Char c:rest) = do
+buildString (Char c : rest) = do
   cs <- buildString rest
   case cs of
     String s -> return $ String $ [c] ++ s
@@ -1130,14 +1129,14 @@ makeString [(Number n)] = return $ doMakeString n ' ' ""
 makeString [(Number n), (Char c)] = return $ doMakeString n c ""
 makeString badArgList = throwError $ NumArgs 1 badArgList
 
-doMakeString :: forall a.(Num a) => a -> Char -> String -> LispVal
+doMakeString :: forall a . (Num a) => a -> Char -> String -> LispVal
 doMakeString n char s = 
     if n == 0 
        then String s
        else doMakeString (n - 1) char (s ++ [char])
 
 stringLength :: [LispVal] -> ThrowsError LispVal
-stringLength [String s] = return $ Number $ foldr (const (+1)) 0 s -- Could probably do 'length s' instead...
+stringLength [String s] = return $ Number $ foldr (const (+ 1)) 0 s -- Could probably do 'length s' instead...
 stringLength [badType] = throwError $ TypeMismatch "string" badType
 stringLength badArgList = throwError $ NumArgs 1 badArgList
 
@@ -1175,7 +1174,7 @@ stringCIBoolBinop _ badArgList = throwError $ NumArgs 2 badArgList
 
 stringAppend :: [LispVal] -> ThrowsError LispVal
 stringAppend [(String s)] = return $ String s -- Needed for "last" string value
-stringAppend (String st:sts) = do
+stringAppend (String st : sts) = do
   rest <- stringAppend sts
   case rest of
     String s -> return $ String $ st ++ s
