@@ -100,60 +100,60 @@ runIOThrows action = runErrorT (trapError action) >>= return . extractValue
 
 -- |Scheme data types
 data LispVal = Atom String
-          -- ^Symbol
-	| List [LispVal]
-          -- ^List
-	| DottedList [LispVal] LispVal
-          -- ^Pair
-	| Vector (Array Int LispVal)
-          -- ^Vector
-	| HashTable (Data.Map.Map LispVal LispVal)
-	-- ^Hash table. 
-        --  Technically this could be a derived data type instead of being built-in to the 
-        --  interpreter. And perhaps in the future it will be. But for now, a hash table 
-        --  is too important of a data type to not be included.
-        --
-        -- Map is technically the wrong structure to use for a hash table since it is based on a binary tree and hence operations tend to be O(log n) instead of O(1). However, according to <http://www.opensubscriber.com/message/haskell-cafe@haskell.org/10779624.html> Map has good performance characteristics compared to the alternatives. So it stays for the moment...
-        --
-	| Number Integer -- FUTURE: rename this to "Integer" (or "WholeNumber" or something else more meaningful)
-          -- ^Integer
-	| Float Double -- FUTURE: rename this "Real" instead of "Float"...
-          -- ^Floating point
-	| Complex (Complex Double)
-          -- ^Complex number
-	| Rational Rational
-          -- ^Rational number
- 	| String String
-          -- ^String
-	| Char Char
-          -- ^Character
-	| Bool Bool
-          -- ^Boolean
-	| PrimitiveFunc ([LispVal] -> ThrowsError LispVal)
-          -- ^Primitive function
-	| Func {params :: [String], 
- 	        vararg :: (Maybe String),
-	        body :: [LispVal], 
- 	        closure :: Env
- 	       }
-          -- ^Function
-	| IOFunc ([LispVal] -> IOThrowsError LispVal)
-         -- ^Primitive function within the IO monad
-	| EvalFunc ([LispVal] -> IOThrowsError LispVal)
-         -- ^Function within the IO monad with access to 
-         --  the current environment and continuation.
-	| Port Handle
-         -- ^I/O port
-	| Continuation {  closure :: Env                       -- Environment of the continuation
-                        , currentCont :: (Maybe DeferredCode)  -- Code of current continuation
-                        , nextCont    :: (Maybe LispVal)       -- Code to resume after body of cont
-                        , extraReturnArgs :: (Maybe [LispVal]) -- Extra return arguments, to support (values) and (call-with-values)
+ -- ^Symbol
+ | List [LispVal]
+ -- ^List
+ | DottedList [LispVal] LispVal
+ -- ^Pair
+ | Vector (Array Int LispVal)
+ -- ^Vector
+ | HashTable (Data.Map.Map LispVal LispVal)
+ -- ^Hash table. 
+ --  Technically this could be a derived data type instead of being built-in to the 
+ --  interpreter. And perhaps in the future it will be. But for now, a hash table 
+ --  is too important of a data type to not be included.
+ --
+ -- Map is technically the wrong structure to use for a hash table since it is based on a binary tree and hence operations tend to be O(log n) instead of O(1). However, according to <http://www.opensubscriber.com/message/haskell-cafe@haskell.org/10779624.html> Map has good performance characteristics compared to the alternatives. So it stays for the moment...
+ --
+ | Number Integer -- FUTURE: rename this to "Integer" (or "WholeNumber" or something else more meaningful)
+ -- ^Integer
+ | Float Double -- FUTURE: rename this "Real" instead of "Float"...
+ -- ^Floating point
+ | Complex (Complex Double)
+ -- ^Complex number
+ | Rational Rational
+ -- ^Rational number
+ | String String
+ -- ^String
+ | Char Char
+ -- ^Character
+ | Bool Bool
+ -- ^Boolean
+ | PrimitiveFunc ([LispVal] -> ThrowsError LispVal)
+ -- ^Primitive function
+ | Func {params :: [String], 
+         vararg :: (Maybe String),
+         body :: [LispVal], 
+         closure :: Env
+        }
+ -- ^Function
+ | IOFunc ([LispVal] -> IOThrowsError LispVal)
+ -- ^Primitive function within the IO monad
+ | EvalFunc ([LispVal] -> IOThrowsError LispVal)
+ -- ^Function within the IO monad with access to 
+ --  the current environment and continuation.
+ | Port Handle
+ -- ^I/O port
+ | Continuation {  closure :: Env                       -- Environment of the continuation
+                 , currentCont :: (Maybe DeferredCode)  -- Code of current continuation
+                 , nextCont    :: (Maybe LispVal)       -- Code to resume after body of cont
+                 , extraReturnArgs :: (Maybe [LispVal]) -- Extra return arguments, to support (values) and (call-with-values)
                         , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind) 
-                       }
-         -- ^Continuation
- 	| EOF
- 	| Nil String
-         -- ^Internal use only; do not use this type directly.
+                }
+ -- ^Continuation
+ | EOF
+ | Nil String
+ -- ^Internal use only; do not use this type directly.
 
 -- |Container to hold code that is passed to a continuation for deferred execution 
 data DeferredCode = 
