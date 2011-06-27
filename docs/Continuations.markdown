@@ -40,6 +40,8 @@ Continuations are first-class objects, which means they can be assigned to varia
 
 This example illustrates many important points. By storing the continuation up in a variable we can use it later on in the program: in this case, it is used several times to add `2` to arbitrary expressions. A proper Scheme implementation allows a continuation to be invoked like this multiple times. We can also see that a continuation may be captured at any point in the code, even while evaluating part of a larger expression. The linked article is brief and I recommend reading through for a more detailed explanation.
 
+TODO: are above examples too advanced? Is there a way to better explain them, or introduce the reader more gently to continuations?
+
 ## Continuation Passing Style
 The [Portland Pattern Repository's Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) wiki page provides several possible approaches for implementing continuations. In particular, the Scheme runtime can use continuation passing style (CPS). This is also what Jonathan recommends at the end of his [tutorial](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours/Conclusion). 
 
