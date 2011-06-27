@@ -289,7 +289,7 @@ For me it is much easier to understand continuations now after having implemente
 
 Husk was my first major Haskell project, so please do not be too critical of the code presented here. It could probably be prettied up a bit and made more concise. But for the purposes of this project I tried to keep things as simple as possible.
 
-Anyway, I hope this article helped you understand a bit more about what continuations and how they work. If you would like to suggest any corrections or improvements - or if you just enjoyed reading - please drop me a line. 
+Anyway, I hope this article helped you understand a bit more about what continuations are and how they work. If you would like to suggest any corrections or improvements - or if you just enjoyed reading - please drop me a line. 
 
 Thanks!
 
