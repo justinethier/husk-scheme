@@ -4,9 +4,9 @@
 
 # Continuations
 
-The original husk code was based on the code from the tutorial [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) by Jonathan Tang. Although that book is a great starting point for writing a Scheme, their interpreter does not include many of features required by R<sup>5</sup>RS Scheme such as continuations. This article provides a brief overview of Scheme continuations and presents the corresponding husk code to show how they could be implemented.
+The original husk code was based on the code from the tutorial [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) by Jonathan Tang. Although that book is a great starting point for writing a Scheme, its interpreter does not include many of features required by R<sup>5</sup>RS Scheme such as continuations. This article provides a brief overview of Scheme continuations and presents the corresponding code from husk to show how they could be implemented.
 
-This article is intended as a beginner article for continuations, although it will be most helpful to someone with some previous experience with Lisp and/or functional programming. It would also be helpful to at least skim through Jonathan Tang's book to get a basic understanding of the Haskell interpreter.
+This article is intended as a beginner article for continuations, although it will be most helpful to someone with previous experience with Lisp and/or functional programming. It would also be helpful to at least skim through Jonathan Tang's book to get a basic understanding of the Haskell interpreter.
 
 ## Introduction
 Scheme is a minimalistic language that does not include many common control constructs such as return, try/catch, or even goto. Instead Scheme provides continuations - a powerful, general-purpose construct which may be used to build more specific control structures. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following summary:
