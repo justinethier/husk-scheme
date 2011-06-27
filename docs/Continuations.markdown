@@ -4,18 +4,9 @@
 
 # Continuations
 
-The original husk code was based on the code from the tutorial [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) by Jonathan Tang. Although that book is a great starting point for writing a Scheme, there are several fundamental features that are not included in their interpreter, such as continuations. This article provides a brief overview of Scheme continuations and walks through the husk code to show how we have implemented them.
+The original husk code was based on the code from the tutorial [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) by Jonathan Tang. Although that book is a great starting point for writing a Scheme, their interpreter does not include many of features required by R<sup>5</sup>RS Scheme such as continuations. This article provides a brief overview of Scheme continuations and presents the corresponding husk code to show how they could be implemented.
 
-TODO:
-This article will be most helpful for anyone (beginner, intermediate) (with some scheme experience??) that would like to learn about continuations ... ?
-
-previous experience assumed - previous programming experience, some functional programming experience (or willingness to google if you come across a term you do not recognize), at least a skim of the john tang article
-
-Nothing covered below is a particularly difficult concept
-
-; the trouble - at least for me during development - was getting the "big picture" of how it all fits together. 
-
-(TODO: Perhaps this article can be of some help to you as well!)
+This article is intended as a beginner article for continuations, although it will be most helpful to someone with some previous experience with Lisp and/or functional programming. It would also be helpful to at least skim through Jonathan Tang's book to get a basic understanding of the Haskell interpreter.
 
 ## Introduction
 Scheme is a minimalistic language that does not include many common control constructs such as return, try/catch, or even goto. Instead Scheme provides continuations - a powerful, general-purpose construct which may be used to build more specific control structures. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following summary:
@@ -50,7 +41,7 @@ Continuations are first-class objects, which means they can be assigned to varia
 This example illustrates many important points. By storing the continuation up in a variable we can use it later on in the program: in this case, it is used several times to add `2` to arbitrary expressions. A proper Scheme implementation allows a continuation to be invoked like this multiple times. We can also see that a continuation may be captured at any point in the code, even while evaluating part of a larger expression. The linked article is brief and I recommend reading through for a more detailed explanation.
 
 ## Continuation Passing Style
-The [Portland Pattern Repository's Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) wiki page provides several possible approaches for implementing continuations. In particular, the Scheme runtime can use continuation passing style (CPS). This is also what Jonathan Tang recommends in [his tutorial](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours/Conclusion). 
+The [Portland Pattern Repository's Continuation Implementation](http://c2.com/cgi/wiki?ContinuationImplementation) wiki page provides several possible approaches for implementing continuations. In particular, the Scheme runtime can use continuation passing style (CPS). This is also what Jonathan recommends at the end of his [tutorial](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours/Conclusion). 
 
 In CPS, a function (b) is passed as a parameter to another function (a), with the intent that when (a) is finished it will pass control to (b). So (b) in essence becomes a future computation of (a). This pattern is used extensively in modern programming - for instance, the node.js JavaScript framework allows one to pass a callback to an asynchronous function that is later executed once the asynchronous operation completes.
 
@@ -80,7 +71,7 @@ The [Call With Current Continuation](http://c2.com/cgi/wiki?CallWithCurrentConti
 
 >If your program evaluator/interpreter is implemented using Continuation Passing Style you get call-with-current-continuation for free. CALL/CC is then a very natural operation since every function is called with the current continuation anyway.
 
-So CPS is a very natural way to implement continuations, if you are fortunate enough to be using a language that can take advantage of this pattern. Looking back, it seems obvious to use CPS to implement continuations in husk, as Haskell supports both first-class functions and tail call optimization.
+So CPS is a very natural way to implement continuations if you are fortunate enough to be using a language that can take advantage of this pattern. Looking back, it seems obvious to use CPS to implement continuations in husk, as Haskell supports both first-class functions and tail call optimization.
 
 While researching CPS, one thing that really threw me for a loop was the [quote](http://c2.com/cgi/wiki?ContinuationPassingStyle]):
 
@@ -201,13 +192,11 @@ There are several patterns to consider. Let's start with the first, which handle
             _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
                  continueEval e (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args 
 
-TODO: need to revise this paragraph, especially the end
 We first check to see if there is a `before` function stored in the continuation from a previous `dynamic-wind` operation. Such a function is guaranteed to execute each time the continuation is called, so we execute it if present. Then husk checks the number of arguments to the continuation, and hands them - along with the continuation itself - to `continueEval` to resume execution at the new continuation. We have just replaced the current continuation!
 
-TODO: call this out somehow??
-Please note that the implementation of `dynamic-wind` as-is is not completely correct; the implementation needs to take into account a *stack* of before (and after) functions. A future version of husk will have a more complete solution.
+_Please note that the implementation of `dynamic-wind` as-is is not completely correct; the implementation needs to take into account a *stack* of before (and after) functions. A future version of husk will have a more complete solution._
 
-A primitive function such as `+`, `-`, etc cannot call into a continuation. (TODO: why? They just execute internal code that processes the arguments and returns a value) So husk just calls a primitive directly, obtains a result, and then calls into a continuation if present. The same code is also used to apply primitive IO functions:
+A primitive function such as `+`, `-`, etc cannot call into a continuation because primitives just execute "pure" code that processes their arguments and returns a value. So husk just calls a primitive directly:
 
     apply cont (PrimitiveFunc func) args = do
       result <- liftThrows $ func args
@@ -215,7 +204,9 @@ A primitive function such as `+`, `-`, etc cannot call into a continuation. (TOD
         Continuation cEnv  _ _ _ _ -> continueEval cEnv cont result
         _ -> return result
 
-This case is a bit more interesting; here we execute a Scheme function:
+The same code is also used to apply primitive IO functions.
+
+The following case is a bit more interesting; here we execute a Scheme function:
 
     apply cont (Func aparams avarargs abody aclosure) args =
       if num aparams /= num args && avarargs == Nothing
@@ -288,19 +279,19 @@ Initially I thought a lower-level construct might be required to implement conti
 >
 >Appel's unpublished suggestion for achieving proper tail recursion in C uses a much larger fixed-size stack, continuation-passing style, and also does not put any arguments or data on the C stack. When the stack is about to overflow, the address of the next function to call is longjmp'ed (or return'ed) to a trampoline. Appel's method avoids making a large number of small trampoline bounces by occasionally jumping off the Empire State Building.
 
-But it turns out this is not necessary since Haskell already supports proper tail recursion. So husk can just use higher order functions and CPS to implement continuations directly. If husk were implemented in C it would be much more difficult to implement an interpreter of equal complexity. 
+But it turns out this is not necessary since Haskell already supports proper tail recursion. So as explained earlier, husk can just use higher order functions and CPS to implement continuations directly. If husk were implemented in C it would be much more difficult to implement an interpreter of equal complexity. 
 
 It is possible that husk's continuation could have be written in a more clever, compact form. For example we may have been able to leverage the continuation monad as part of this implementation. But any compactness gains would come at the expense of readability. One of the main goals of this implementation is as a learning project, so it is undesirable to make the code *too* clever. As such it could always be used as a blueprint to implement Scheme in a lower-level form.
 
 ## Conclusion
 
-TODO:
+For me it is much easier to understand continuations now after having implemented support for them in husk. To really understand why continuations are such a general purpose concept it helps to look at them not only from the perspective of the application programmer, but to also consider how they are implemented in the Scheme runtime itself. 
 
-(For me it is much easier to understand continuations now after having implemented support for them in husk.)
+Husk was my first major Haskell project, so please do not be too critical of the code presented here. It could probably be prettied up a bit and made more concise. But for the purposes of this project I tried to keep things as simple as possible.
 
-To really understand why continuations are such a general purpose concept one must look at them not only from the perspective of the application programmer, but also from the perspective of how they are implemented in the Scheme runtime itself. 
+Anyway, I hope this article helped you understand a bit more about what continuations and how they work. If you would like to suggest any corrections or improvements - or if you just enjoyed reading - please drop me a line. 
 
-Time permitting, this will be the first of a series of articles covering the husk implementation.
+Thanks!
 
 ## References
 
