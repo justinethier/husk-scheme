@@ -243,18 +243,24 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
             _ -> cpsUnquoteList e c (head unEvaled) (Just [List (tail unEvaled), List $ acc ++ [val] ])
         cpsUnquoteFld _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteFld"
 
-eval env cont (List [Atom "if", predic, conseq, alt]) = do
-  eval env (makeCPS env cont cps) (predic)
-  where cps :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cps e c result _ =
+eval env cont args@(List [Atom "if", predic, conseq, alt]) = do
+ bound <- liftIO $ isBound env "if"
+ if bound
+  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
+  else eval env (makeCPS env cont cps) (predic)
+ where cps :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+       cps e c result _ =
             case (result) of
               Bool False -> eval e c alt
               _ -> eval e c conseq
 
-eval env cont (List [Atom "if", predic, conseq]) =
-    eval env (makeCPS env cont cpsResult) predic
-    where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-          cpsResult e c result _ =
+eval env cont args@(List [Atom "if", predic, conseq]) = do
+ bound <- liftIO $ isBound env "if"
+ if bound
+  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
+  else eval env (makeCPS env cont cpsResult) predic
+ where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+       cpsResult e c result _ =
             case result of
               Bool True -> eval e c conseq
               _ -> continueEval e c $ Nil "" -- Unspecified return value per R5RS
@@ -449,9 +455,12 @@ eval env cont (List [Atom "hash-table-delete!", Atom var, rkey]) = do
 eval _ _ (List [Atom "hash-table-delete!" , nonvar , _]) = throwError $ TypeMismatch "variable" nonvar
 eval _ _ (List (Atom "hash-table-delete!" : args)) = throwError $ NumArgs 2 args
 
+eval env cont args@(List (_ : _)) = prepareApply env cont args
+eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
+
 {- Call a function by evaluating its arguments and then
 executing it via 'apply'. -}
-eval env cont (List (function : functionArgs)) = do
+prepareApply env cont (List (function : functionArgs)) = do
   eval env (makeCPSWArgs env cont cpsPrepArgs $ functionArgs) function
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsPrepArgs e c func (Just args) =
@@ -476,8 +485,7 @@ eval env cont (List (function : functionArgs)) = do
 
        cpsEvalArgs _ _ _ (Just _) = throwError $ Default "Unexpected error in function application (1)"
        cpsEvalArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (2)"
-
-eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
+prepareApply _ _ _ = throwError $ Default "Unexpected error in prepareApply"
 
 makeFunc :: -- forall (m :: * -> *).
             (Monad m) =>
