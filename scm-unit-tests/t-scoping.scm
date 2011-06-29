@@ -19,4 +19,8 @@
 ;(assert/equal (let ((define +)) (define 1 2 3)) 6)
 ;(assert/equal (let ((lambda +)) (lambda 1 2 3)) 6)
 
+(define x 1)
+(assert/equal (let ((x +)) (x 1 2 3)) 6)
+(assert/equal (let () (define x *) (x 1 2 3)) 6)
+
 (unit-test-handler-results)
