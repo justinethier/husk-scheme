@@ -88,6 +88,51 @@
 (define (length lst)    (fold (lambda (x y) (+ x 1)) 0 lst))
 (define (reverse lst)   (fold (flip cons) '() lst))
 
+; cond
+; 
+; Based on version from:
+; http://www.cs.cmu.edu/Groups/AI/html/r4rs/r4rs_12.html
+(define-syntax cond
+  (syntax-rules (else =>)
+    ((cond (else result1 result2 ...))
+     (begin result1 result2 ...))
+    ((cond (test => result))
+     (let ((temp test))
+       (if temp (result temp))))
+    ((cond (test => result) clause1 clause2 ...)
+     (let ((temp test))
+       (if temp
+           (result temp)
+           (cond clause1 clause2 ...))))
+    ((cond (test)) test)
+    ((cond (test) clause1 clause2 ...)
+     (or test (cond clause1 clause2 ...)))
+    ((cond (test result1 result2 ...))
+     (if test (begin result1 result2 ...)))
+    ((cond (test result1 result2 ...)
+           clause1 clause2 ...)
+     (if test
+         (begin result1 result2 ...)
+         (cond clause1 clause2 ...)))))
+
+; Case
+;
+; Based loosely on implementation from:
+; http://blog.jcoglan.com/2009/02/25/announcing-heist-a-new-scheme-implementation-written-in-ruby/
+(define-syntax case
+  (syntax-rules (else)
+    ((_ key) ((lambda () #f)))
+    ((_ key (else expr1 expr2 ...))
+     (begin expr1 expr2 ...))
+    ((_ key (() expr ...) clause ...)
+     (case key clause ...))
+    ((_ key
+           ((datum1 datum2 ...) expr1 expr2 ...)
+           clause ...)
+     (if (eqv? #f (memv key '(datum1 datum2 ...)))
+          (case key clause ...)
+          (begin expr1 expr2 ...)))))
+
 (define (my-mem-helper obj lst cmp-proc)
  (cond 
    ((null? lst) #f)
@@ -161,25 +206,6 @@
        (let* ((vars vals) ...)
 		     body)))))
 
-; FUTURE: cond
-
-; Case
-;
-; Based loosely on implementation from:
-; http://blog.jcoglan.com/2009/02/25/announcing-heist-a-new-scheme-implementation-written-in-ruby/
-(define-syntax case
-  (syntax-rules (else)
-    ((_ key) ((lambda () #f)))
-    ((_ key (else expr1 expr2 ...))
-     (begin expr1 expr2 ...))
-    ((_ key (() expr ...) clause ...)
-     (case key clause ...))
-    ((_ key
-           ((datum1 datum2 ...) expr1 expr2 ...)
-           clause ...)
-     (if (eqv? #f (memv key '(datum1 datum2 ...)))
-          (case key clause ...)
-          (begin expr1 expr2 ...)))))
 
 ; Iteration - do
 (define-syntax do
