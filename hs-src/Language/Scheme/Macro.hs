@@ -41,7 +41,7 @@ import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
 import Data.Array
--- import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 http://community.schemewiki.org/?scheme-faq-macros -}
@@ -126,7 +126,7 @@ macroElementMatchesMany _ = False
 {- Given input, determine if that input matches any rules
 @return Transformed code, or Nil if no rules match -}
 matchRule :: Env -> LispVal -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
-matchRule _ identifiers localEnv (List [pattern, template]) (List inputVar) = do
+matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVar) = do
    let is = tail inputVar
    let p = case pattern of
               DottedList ds d -> case ds of
@@ -135,7 +135,7 @@ matchRule _ identifiers localEnv (List [pattern, template]) (List inputVar) = do
               _ -> pattern
    case p of
       List (Atom _ : ps) -> do
-        match <- loadLocal localEnv identifiers (List ps) (List is) False False
+        match <- loadLocal outerEnv localEnv identifiers (List ps) (List is) False False
         case match of
            Bool False -> return $ Nil ""
            _ -> transformRule localEnv 0 (List []) template (List [])
@@ -146,20 +146,20 @@ matchRule _ _ _ rule input = do
 
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 in preparation for macro transformation. -}
-loadLocal :: Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
-loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do
+loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
+loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do
   case (pattern, input) of
 
        {- For vectors, just use list match for now, since vector input matching just requires a
        subset of that behavior. Should be OK since parser would catch problems with trying
        to add pair syntax to a vector declaration. -}
        ((Vector p), (Vector i)) -> do
-         loadLocal localEnv identifiers (List $ elems p) (List $ elems i) False outerHasEllipsis
+         loadLocal outerEnv localEnv identifiers (List $ elems p) (List $ elems i) False outerHasEllipsis
 
        ((DottedList ps p), (DottedList is i)) -> do
-         result <- loadLocal localEnv identifiers (List ps) (List is) False outerHasEllipsis
+         result <- loadLocal outerEnv localEnv identifiers (List ps) (List is) False outerHasEllipsis
          case result of
-            Bool True -> loadLocal localEnv identifiers p i False outerHasEllipsis
+            Bool True -> loadLocal outerEnv localEnv identifiers p i False outerHasEllipsis
             _ -> return $ Bool False
 
        (List (p : ps), List (i : is)) -> do -- check first input against first pattern, recurse...
@@ -169,19 +169,19 @@ loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do
          {- FUTURE: error if ... detected when there is an outer ... ????
          no, this should (eventually) be allowed. See scheme-faq-macros -}
 
-         status <- checkLocal localEnv identifiers (localHasEllipsis || outerHasEllipsis) p i
+         status <- checkLocal outerEnv localEnv identifiers (localHasEllipsis || outerHasEllipsis) p i
          case status of
               -- No match
               Bool False -> if localHasEllipsis
                                 {- No match, must be finished with ...
                                 Move past it, but keep the same input. -}
                                 then do
-                                        loadLocal localEnv identifiers (List $ tail ps) (List (i : is)) False outerHasEllipsis
+                                        loadLocal outerEnv localEnv identifiers (List $ tail ps) (List (i : is)) False outerHasEllipsis
                                 else return $ Bool False
               -- There was a match
               _ -> if localHasEllipsis
-                      then loadLocal localEnv identifiers pattern (List is) True outerHasEllipsis
-                      else loadLocal localEnv identifiers (List ps) (List is) False outerHasEllipsis
+                      then loadLocal outerEnv localEnv identifiers pattern (List is) True outerHasEllipsis
+                      else loadLocal outerEnv localEnv identifiers (List ps) (List is) False outerHasEllipsis
 
        -- Base case - All data processed
        (List [], List []) -> return $ Bool True
@@ -199,7 +199,7 @@ loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do
        (List [], _) -> return $ Bool False
 
        -- Check input against pattern (both should be single var)
-       (_, _) -> checkLocal localEnv identifiers (hasEllipsis || outerHasEllipsis) pattern input
+       (_, _) -> checkLocal outerEnv localEnv identifiers (hasEllipsis || outerHasEllipsis) pattern input
 
 {- Check pattern against input to determine if there is a match
  -
@@ -209,19 +209,20 @@ loadLocal localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do
  - @param pattern - Pattern to match
  - @param input - Input to be matched
  -}
-checkLocal :: Env -> LispVal -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
-checkLocal _ _ _ (Bool pattern) (Bool input) = return $ Bool $ pattern == input
-checkLocal _ _ _ (Number pattern) (Number input) = return $ Bool $ pattern == input
-checkLocal _ _ _ (Float pattern) (Float input) = return $ Bool $ pattern == input
-checkLocal _ _ _ (String pattern) (String input) = return $ Bool $ pattern == input
-checkLocal _ _ _ (Char pattern) (Char input) = return $ Bool $ pattern == input
-checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
+checkLocal :: Env -> Env -> LispVal -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
+checkLocal _ _ _ _ (Bool pattern) (Bool input) = return $ Bool $ pattern == input
+checkLocal _ _ _ _ (Number pattern) (Number input) = return $ Bool $ pattern == input
+checkLocal _ _ _ _ (Float pattern) (Float input) = return $ Bool $ pattern == input
+checkLocal _ _ _ _ (String pattern) (String input) = return $ Bool $ pattern == input
+checkLocal _ _ _ _ (Char pattern) (Char input) = return $ Bool $ pattern == input
+checkLocal outerEnv localEnv identifiers hasEllipsis (Atom pattern) input = do
   if hasEllipsis
      {- FUTURE: may be able to simplify both cases below by using a
      lambda function to store the 'save' actions -}
 
              -- Var is part of a 0-to-many match, store up in a list...
      then do isDefined <- liftIO $ isBound localEnv pattern
+             isLexicallyDefinedVar <- liftIO $ isBound outerEnv pattern
              --
              -- If pattern is a literal identifier, need to ensure
              -- input matches that literal, or that (in this case)
@@ -232,11 +233,20 @@ checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
                 Bool True -> do
                     case input of
                         Atom inpt -> do
-                            if (pattern == inpt)
-                               then do
-                                 -- Set variable in the local environment
-                                 _ <- addPatternVar isDefined $ Atom pattern
-                                 return $ Bool True
+                            if (pattern == inpt)  
+                               then if (True) --isLexicallyDefinedVar == False 
+                                       -- Var is not bound in outer code; proceed
+                                       then do
+                                         -- Set variable in the local environment
+                                         _ <- addPatternVar isDefined $ Atom pattern
+                                         return $ Bool True
+                                       -- Var already bound in enclosing environment prior to evaluating macro.
+                                       -- So... do not match it here.
+                                       --
+                                       -- See section 4.3.2 of R5RS, in particular:
+                                       -- " If a literal identifier is inserted as a bound identifier then it is 
+                                       --   in effect renamed to prevent inadvertent captures of free identifiers "
+                                       else return $ Bool False
                                else return $ Bool False
                         -- Pattern/Input cannot match because input is not an atom
                         _ -> return $ Bool False
@@ -248,13 +258,19 @@ checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
      --
      else do
          isIdent <- findAtom (Atom pattern) identifiers
-         case isIdent of
+         isLexicallyDefinedPatternVar <- liftIO $ isBound outerEnv pattern -- Var defined in scope outside macro
+         case (isIdent) of
             -- Fail the match if pattern is a literal identifier and input does not match
             Bool True -> do
                 case input of
                     Atom inpt -> do
                         -- Pattern/Input are atoms; both must match
-                        if (pattern == inpt)
+-- 
+-- TODO: this is broken because we call macroEval only *once* before evaluating a tree of expressions.
+-- macroEval needs to be called each time prior to eval
+-- need to consider the performance implications of this...
+--
+                        if (pattern == inpt && (not isLexicallyDefinedPatternVar)) -- TODO: Need to test this after macro code is reorganized
                            then do _ <- defineVar localEnv pattern input
                                    return $ Bool True
                            else return $ (Bool False)
@@ -273,24 +289,24 @@ checkLocal localEnv identifiers hasEllipsis (Atom pattern) input = do
                           _ -> throwError $ Default "Unexpected error in checkLocal (Atom)"
                 else defineVar localEnv pattern (List [val])
 
-checkLocal localEnv identifiers hasEllipsis pattern@(Vector _) input@(Vector _) =
-  loadLocal localEnv identifiers pattern input False hasEllipsis
+checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(Vector _) input@(Vector _) =
+  loadLocal outerEnv localEnv identifiers pattern input False hasEllipsis
 
-checkLocal localEnv identifiers hasEllipsis pattern@(DottedList _ _) input@(DottedList _ _) =
-  loadLocal localEnv identifiers pattern input False hasEllipsis
+checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(DottedList _ _) input@(DottedList _ _) =
+  loadLocal outerEnv localEnv identifiers pattern input False hasEllipsis
 -- throwError $ BadSpecialForm "Test" input
-checkLocal localEnv identifiers hasEllipsis pattern@(DottedList ps p) input@(List (i : is)) = do
+checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(DottedList ps p) input@(List (i : is)) = do
   if (length ps) == (length is)
           {- Lists are same length, implying elements in both should be the same.
           Cast pair to a List for further processing -}
-     then loadLocal localEnv identifiers (List $ ps ++ [p]) input False hasEllipsis
+     then loadLocal outerEnv localEnv identifiers (List $ ps ++ [p]) input False hasEllipsis
           {- Idea here is that if we have a dotted list, the last component does not have to be provided
           in the input. So in that case just fill in an empty list for the missing component. -}
-     else loadLocal localEnv identifiers pattern (DottedList (i : is) (List [])) False hasEllipsis
-checkLocal localEnv identifiers hasEllipsis pattern@(List _) input@(List _) =
-  loadLocal localEnv identifiers pattern input False hasEllipsis
+     else loadLocal outerEnv localEnv identifiers pattern (DottedList (i : is) (List [])) False hasEllipsis
+checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(List _) input@(List _) =
+  loadLocal outerEnv localEnv identifiers pattern input False hasEllipsis
 
-checkLocal _ _ _ _ _ = return $ Bool False
+checkLocal _ _ _ _ _ _ = return $ Bool False
 
 {- Transform input by walking the tranform structure and creating a new structure
 with the same form, replacing identifiers in the tranform with those bound in localEnv -}
