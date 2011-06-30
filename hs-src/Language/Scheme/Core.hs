@@ -265,16 +265,21 @@ eval env cont args@(List [Atom "if", predic, conseq]) = do
               Bool True -> eval e c conseq
               _ -> continueEval e c $ Nil "" -- Unspecified return value per R5RS
 
--- FUTURE: convert cond to a derived form (scheme macro)
-eval env cont (List (Atom "cond" : clauses)) =
-  if length clauses == 0
-   then throwError $ BadSpecialForm "No matching clause" $ String "cond"
-   else do
-       case (clauses !! 0) of
-         List [test, Atom "=>", expr] -> eval env (makeCPSWArgs env cont cpsAlt [test]) expr
-         List (Atom "else" : _) -> eval env (makeCPSWArgs env cont cpsResult clauses) $ Bool True
-         List (cond : _) -> eval env (makeCPSWArgs env cont cpsResult clauses) cond
-         badType -> throwError $ TypeMismatch "clause" badType
+-- TODO: convert cond to a derived form (scheme macro)
+-- TODO: is the 'bound' code below good enough? need to test w/else redefined.
+--       if not good enough, may just need to go all the way and rewrite all of this as a macro!
+eval env cont args@(List (Atom "cond" : clauses)) = do
+ bound <- liftIO $ isBound env "cond"
+ if bound
+  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
+  else if length clauses == 0
+          then throwError $ BadSpecialForm "No matching clause" $ String "cond"
+          else do
+              case (clauses !! 0) of
+                List [test, Atom "=>", expr] -> eval env (makeCPSWArgs env cont cpsAlt [test]) expr
+                List (Atom "else" : _) -> eval env (makeCPSWArgs env cont cpsResult clauses) $ Bool True
+                List (cond : _) -> eval env (makeCPSWArgs env cont cpsResult clauses) cond
+                badType -> throwError $ TypeMismatch "clause" badType
   where
         {- If a condition is true, evaluate that condition's expressions.
         Otherwise just pick up at the next condition... -}
@@ -301,24 +306,33 @@ eval env cont (List (Atom "cond" : clauses)) =
         cpsAltEvaled _ c test (Just [expr]) = apply c expr [test]
         cpsAltEvaled _ _ _ _ = throwError $ Default "Unexpected error in cond"
 
-eval env cont (List (Atom "begin" : funcs)) =
-  if length funcs == 0
-     then eval env cont $ Nil ""
-     else if length funcs == 1
-             then eval env cont (head funcs)
-             else eval env (makeCPSWArgs env cont cpsRest $ tail funcs) (head funcs)
+eval env cont fargs@(List (Atom "begin" : funcs)) = do
+ bound <- liftIO $ isBound env "begin"
+ if bound
+  then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
+  else if length funcs == 0
+          then eval env cont $ Nil ""
+          else if length funcs == 1
+                  then eval env cont (head funcs)
+                  else eval env (makeCPSWArgs env cont cpsRest $ tail funcs) (head funcs)
   where cpsRest :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsRest e c _ args =
           case args of
             Just fArgs -> eval e c $ List (Atom "begin" : fArgs)
             Nothing -> throwError $ Default "Unexpected error in begin"
 
-eval env cont (List [Atom "set!", Atom var, form]) = do
-  eval env (makeCPS env cont cpsResult) form
+eval env cont args@(List [Atom "set!", Atom var, form]) = do
+ bound <- liftIO $ isBound env "set!"
+ if bound
+  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
+  else eval env (makeCPS env cont cpsResult) form
  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsResult e c result _ = setVar e var result >>= continueEval e c
-eval _ _ (List [Atom "set!", nonvar, _]) = throwError $ TypeMismatch "variable" nonvar
-eval _ _ (List (Atom "set!" : args)) = throwError $ NumArgs 2 args
+-- TODO: we want these functions, but they need to incorporate the isBound logic above, so...
+--       it would be nice to find a way to have both without having to repeat the same code all over the place.
+-- TODO: same issue with lambda and define below...
+--eval _ _ (List [Atom "set!", nonvar, _]) = throwError $ TypeMismatch "variable" nonvar
+--eval _ _ (List (Atom "set!" : args)) = throwError $ NumArgs 2 args
 
 eval env cont (List [Atom "define", Atom var, form]) = do
   eval env (makeCPS env cont cpsResult) form
@@ -458,8 +472,9 @@ eval _ _ (List (Atom "hash-table-delete!" : args)) = throwError $ NumArgs 2 args
 eval env cont args@(List (_ : _)) = prepareApply env cont args
 eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
-{- Call a function by evaluating its arguments and then
-executing it via 'apply'. -}
+{- Prepare for apply by evaluating each function argument,
+   and then execute the function via 'apply' -}
+prepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 prepareApply env cont (List (function : functionArgs)) = do
   eval env (makeCPSWArgs env cont cpsPrepArgs $ functionArgs) function
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
