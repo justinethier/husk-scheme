@@ -80,16 +80,15 @@ begins with the keyword for the macro."
  -
  -}
 macroEval env lisp@(List (Atom x : _)) = do
-  -- TODO: what if a var is defined w/the same name? who wins?
   isDefined <- liftIO $ isNamespacedRecBound env macroNamespace x
-  if isDefined --(trace (show "mEval [" ++ show lisp ++ ", " ++ show x ++ "]: " ++ show isDefined) isDefined)
+  isDefinedAsVar <- liftIO $ isBound env x -- TODO: Not entirely correct; for example if a macro and var 
+                                           -- are defined in same env with same name, which one should be selected?
+  if isDefined && not isDefinedAsVar --(trace (show "mEval [" ++ show lisp ++ ", " ++ show x ++ "]: " ++ show isDefined) isDefined)
      then do
        (List (Atom "syntax-rules" : (List identifiers : rules))) <- getNamespacedVar env macroNamespace x
        -- Transform the input and then call macroEval again, since a macro may be contained within...
        macroEval env =<< macroTransform env (List identifiers) rules lisp
-     else return lisp --do
-       --rest <- mapM (macroEval env) xs
-       --return $ List $ (Atom x) : rest
+     else return lisp
 
 -- No macro to process, just return code as it is...
 macroEval _ lisp@(_) = return lisp
