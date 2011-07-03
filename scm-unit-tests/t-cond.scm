@@ -22,7 +22,8 @@
 ; From http://www.cs.cmu.edu/Groups/AI/html/r4rs/r4rs_12.html
 ; This test case (when it passes) proves that the macro subsystem
 ; rewrites variables to prevent collisions with top-level identifiers.
-(assert/equal (let ((=> #f)) (cond (#t => 'ok)))
-              'ok)
+; TODO: (assert/equal (let ((=> #f)) (cond (#t => 'ok)))
+;              'ok)
+(assert/equal #t #f) ; Left this here as a reminder for the above test case
 
 (unit-test-handler-results)
