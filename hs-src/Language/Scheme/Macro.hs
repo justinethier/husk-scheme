@@ -271,6 +271,7 @@ checkLocal outerEnv localEnv identifiers hasEllipsis (Atom pattern) input = do
 -- TODO: this is broken because we call macroEval only *once* before evaluating a tree of expressions.
 -- macroEval needs to be called each time prior to eval
 -- need to consider the performance implications of this...
+-- (trace ("inpt = " ++ show inpt ++ " patt = " ++ show pattern ++ " lexDef = " ++ show isLexicallyDefinedPatternVar) 
 --
                         if (pattern == inpt && (not isLexicallyDefinedPatternVar)) -- TODO: Need to test this after macro code is reorganized
                            then do _ <- defineVar localEnv pattern input
