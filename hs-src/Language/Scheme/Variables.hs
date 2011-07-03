@@ -26,18 +26,16 @@ extendEnv envRef abindings = do bindinglist <- mapM addBinding abindings >>= new
                                 return $ Environment (Just envRef) bindinglist
  where addBinding ((namespace, name), val) = do ref <- newIORef val
                                                 return ((namespace, name), ref)
-{-
--- Old implementation, left for the moment for reference purposes only:
---
--- |Bind a series of values to the given environment.
---
--- Input is of form: @(namespaceName, variableName), variableValue@
-bindVars :: Env -> [((String, String), LispVal)] -> IO Env
-bindVars envRef abindings = (readIORef $ bindings envRef) >>= myExtendEnv abindings >>= newIORef
-  where myExtendEnv bindings env = liftM  (++ env) (mapM addBinding bindings)
-        addBinding (var, value) = do ref <- newIORef value
-                                     return (var, ref)
--}
+
+-- Recursively search environments to find one that contains var
+findNamespacedEnv :: Env -> String -> String -> IO (Maybe Env)
+findNamespacedEnv envRef namespace var = do
+  found <- liftIO $ isNamespacedBound envRef namespace var
+  if found
+     then return (Just envRef)
+     else case parentEnv envRef of
+               (Just par) -> findNamespacedEnv par namespace var
+               Nothing -> return Nothing
 
 -- |Determine if a variable is bound in the default namespace
 isBound :: Env -> String -> IO Bool
@@ -46,6 +44,14 @@ isBound envRef var = isNamespacedBound envRef varNamespace var
 -- |Determine if a variable is bound in a given namespace
 isNamespacedBound :: Env -> String -> String -> IO Bool
 isNamespacedBound envRef namespace var = (readIORef $ bindings envRef) >>= return . maybe False (const True) . lookup (namespace, var)
+
+-- TODO: should isNamespacedBound be replaced with this? Probably, but one step at a time...
+isNamespacedRecBound :: Env -> String -> String -> IO Bool
+isNamespacedRecBound envRef namespace var = do
+  env <- findNamespacedEnv envRef namespace var
+  case env of
+    (Just e) -> isNamespacedBound e namespace var
+    Nothing -> return False
 
 -- |Retrieve the value of a variable defined in the default namespace
 getVar :: Env -> String -> IOThrowsError LispVal
@@ -61,6 +67,7 @@ getNamespacedVar envRef
                             Nothing -> case parentEnv envRef of
                                          (Just par) -> getNamespacedVar par namespace var
                                          Nothing -> (throwError $ UnboundVar "Getting an unbound variable" var)
+
 
 -- |Set a variable in the default namespace
 setVar, defineVar :: Env -> String -> LispVal -> IOThrowsError LispVal
