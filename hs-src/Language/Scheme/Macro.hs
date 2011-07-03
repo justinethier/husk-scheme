@@ -46,6 +46,13 @@ import Data.Array
 {- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 http://community.schemewiki.org/?scheme-faq-macros -}
 
+
+{- Consider high-level ideas from these articles (of all places):
+ -
+ -  http://en.wikipedia.org/wiki/Scheme_(programming_language)#Hygienic_macros
+ -  http://en.wikipedia.org/wiki/Hygienic_macro
+ - -}
+
 {- |macroEval
 Search for macro's in the AST, and transform any that are found.
 There is also a special case (define-syntax) that loads new rules. -}
