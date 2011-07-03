@@ -62,11 +62,13 @@ macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom
   _ <- defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
 
+{-
 -- Inspect a list of code, and transform as necessary
 macroEval env (List (x@(List _) : xs)) = do
   first <- macroEval env x
   rest <- mapM (macroEval env) xs
   return $ List $ first : rest
+-}
 
 {- Inspect code for macros
  -
@@ -78,15 +80,15 @@ begins with the keyword for the macro."
  -
  -}
 macroEval env lisp@(List (Atom x : xs)) = do
-  isDefined <- liftIO $ isNamespacedBound env macroNamespace x
-  if isDefined
+  isDefined <- liftIO $ isNamespacedRecBound env macroNamespace x
+  if isDefined --(trace (show "mEval [" ++ show lisp ++ ", " ++ show x ++ "]: " ++ show isDefined) isDefined)
      then do
        (List (Atom "syntax-rules" : (List identifiers : rules))) <- getNamespacedVar env macroNamespace x
        -- Transform the input and then call macroEval again, since a macro may be contained within...
        macroEval env =<< macroTransform env (List identifiers) rules lisp
-     else do
-       rest <- mapM (macroEval env) xs
-       return $ List $ (Atom x) : rest
+     else return lisp --do
+       --rest <- mapM (macroEval env) xs
+       --return $ List $ (Atom x) : rest
 
 -- No macro to process, just return code as it is...
 macroEval _ lisp@(_) = return lisp
