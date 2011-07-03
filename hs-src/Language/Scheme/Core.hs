@@ -39,7 +39,7 @@ import qualified GHC
 import qualified GHC.Paths (libdir)
 import qualified DynFlags
 import qualified Unsafe.Coerce (unsafeCoerce)
--- import Debug.Trace
+import Debug.Trace
 
 {- |Evaluate a string containing Scheme code.
 
@@ -108,8 +108,8 @@ continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraAr
               -- Pass extra args along if last expression of a function, to support (call-with-values)
               continueEval nEnv (Continuation nEnv ncCont nnCont extraArgs nDynWind) val
             _ -> return (val)
-        [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) Nothing dynWind) (lv)
-        (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing dynWind) (lv)
+        [lv] -> macroEval cEnv lv >>= eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) Nothing dynWind)
+        (lv : lvs) -> macroEval cEnv lv >>= eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing dynWind)
 
 -- No current continuation, but a next cont is available; call into it
 continueEval _ (Continuation cEnv Nothing (Just cCont) _ _) val = continueEval cEnv cCont val
@@ -176,7 +176,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
   where cpsUnquote :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUnquote e c val _ = do
           case val of
-            List [Atom "unquote", vval] -> eval e c vval
+            List [Atom "unquote", vval] -> macroEval e vval >>= eval e c
             List (_ : _) -> doCpsUnquoteList e c val
             DottedList xs x -> do
               doCpsUnquoteList e (makeCPSWArgs e c cpsUnquotePair $ [x] ) $ List xs
@@ -185,7 +185,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
               if len > 0
                  then doCpsUnquoteList e (makeCPS e c cpsUnquoteVector) $ List $ elems vec
                  else continueEval e c $ Vector $ listArray (0, -1) []
-            _ -> eval e c (List [Atom "quote", val]) -- Behave like quote if there is nothing to "unquote"...
+            _ -> macroEval e (List [Atom "quote", val]) >>= eval e c  -- Behave like quote if there is nothing to "unquote"...
 
         {- Unquote a pair
         This must be started by unquoting the "left" hand side of the pair,
@@ -221,7 +221,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
         cpsUnquoteList e c val (Just ([List unEvaled, List acc])) = do
             case val of
                 List [Atom "unquote-splicing", vvar] -> do
-                    eval e (makeCPSWArgs e c cpsUnquoteSplicing $ [List unEvaled, List acc]) vvar
+                    macroEval e vvar >>= eval e (makeCPSWArgs e c cpsUnquoteSplicing $ [List unEvaled, List acc]) 
                 _ -> cpsUnquote e (makeCPSWArgs e c cpsUnquoteFld $ [List unEvaled, List acc]) val Nothing
         cpsUnquoteList _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteList"
 
@@ -247,22 +247,22 @@ eval env cont args@(List [Atom "if", predic, conseq, alt]) = do
  bound <- liftIO $ isBound env "if"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else eval env (makeCPS env cont cps) (predic)
+  else macroEval env predic >>= eval env (makeCPS env cont cps)
  where cps :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cps e c result _ =
             case (result) of
-              Bool False -> eval e c alt
-              _ -> eval e c conseq
+              Bool False -> macroEval e alt >>= eval e c
+              _ -> macroEval e conseq >>= eval e c
 
 eval env cont args@(List [Atom "if", predic, conseq]) = do
  bound <- liftIO $ isBound env "if"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else eval env (makeCPS env cont cpsResult) predic
+  else macroEval env predic >>= eval env (makeCPS env cont cpsResult)
  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsResult e c result _ =
             case result of
-              Bool True -> eval e c conseq
+              Bool True -> macroEval e conseq >>= eval e c
               _ -> continueEval e c $ Nil "" -- Unspecified return value per R5RS
 
 {- OBSOLETE:
@@ -313,21 +313,21 @@ eval env cont fargs@(List (Atom "begin" : funcs)) = do
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else if length funcs == 0
-          then eval env cont $ Nil ""
+          then macroEval env (Nil "") >>= eval env cont
           else if length funcs == 1
-                  then eval env cont (head funcs)
-                  else eval env (makeCPSWArgs env cont cpsRest $ tail funcs) (head funcs)
+                  then macroEval env (head funcs) >>= eval env cont 
+                  else macroEval env (head funcs) >>= eval env (makeCPSWArgs env cont cpsRest $ tail funcs)
   where cpsRest :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsRest e c _ args =
           case args of
-            Just fArgs -> eval e c $ List (Atom "begin" : fArgs)
+            Just fArgs -> macroEval e (List (Atom "begin" : fArgs)) >>= eval e c 
             Nothing -> throwError $ Default "Unexpected error in begin"
 
 eval env cont args@(List [Atom "set!", Atom var, form]) = do
  bound <- liftIO $ isBound env "set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else eval env (makeCPS env cont cpsResult) form
+  else macroEval env form >>= eval env (makeCPS env cont cpsResult)
  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsResult e c result _ = setVar e var result >>= continueEval e c
 eval env cont args@(List [Atom "set!", nonvar, _]) = do 
@@ -345,7 +345,7 @@ eval env cont args@(List [Atom "define", Atom var, form]) = do
  bound <- liftIO $ isBound env "define"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else eval env (makeCPS env cont cpsResult) form
+  else macroEval env form >>= eval env (makeCPS env cont cpsResult)
  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsResult e c result _ = defineVar e var result >>= continueEval e c
 
@@ -388,10 +388,10 @@ eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
  bound <- liftIO $ isBound env "string-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else eval env (makeCPS env cont cpsStr) i
+  else macroEval env i >>= eval env (makeCPS env cont cpsStr)
  where
         cpsStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsStr e c idx _ = eval e (makeCPSWArgs e c cpsSubStr $ [idx]) =<< getVar e var
+        cpsStr e c idx _ = (macroEval e =<< getVar e var) >>= eval e (makeCPSWArgs e c cpsSubStr $ [idx])
 
         cpsSubStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsSubStr e c str (Just [idx]) =
@@ -424,8 +424,8 @@ eval env cont args@(List [Atom "set-car!", Atom var, argObj]) = do
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsObj _ _ obj@(List []) _ = throwError $ TypeMismatch "pair" obj
-        cpsObj e c obj@(List (_ : _)) _ = eval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
-        cpsObj e c obj@(DottedList _ _) _ = eval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
+        cpsObj e c obj@(List (_ : _)) _ = macroEval e argObj >>= eval e (makeCPSWArgs e c cpsSet $ [obj])
+        cpsObj e c obj@(DottedList _ _) _ =  macroEval e argObj >>= eval e (makeCPSWArgs e c cpsSet $ [obj]) 
         cpsObj _ _ obj _ = throwError $ TypeMismatch "pair" obj
 
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -451,8 +451,8 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsObj _ _ pair@(List []) _ = throwError $ TypeMismatch "pair" pair
-        cpsObj e c pair@(List (_ : _)) _ = eval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
-        cpsObj e c pair@(DottedList _ _) _ = eval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
+        cpsObj e c pair@(List (_ : _)) _ = macroEval e argObj >>= eval e (makeCPSWArgs e c cpsSet $ [pair])
+        cpsObj e c pair@(DottedList _ _) _ = macroEval e argObj >>= eval e (makeCPSWArgs e c cpsSet $ [pair])
         cpsObj _ _ pair _ = throwError $ TypeMismatch "pair" pair
 
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -474,13 +474,13 @@ eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
  bound <- liftIO $ isBound env "vector-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else eval env (makeCPS env cont cpsObj) i
+  else macroEval env i >>= eval env (makeCPS env cont cpsObj)
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsObj e c idx _ = eval e (makeCPSWArgs e c cpsVec $ [idx]) object
+        cpsObj e c idx _ = macroEval e object >>= eval e (makeCPSWArgs e c cpsVec $ [idx])
 
         cpsVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsVec e c obj (Just [idx]) = eval e (makeCPSWArgs e c cpsUpdateVec $ [idx, obj]) =<< getVar e var
+        cpsVec e c obj (Just [idx]) = (macroEval e =<< getVar e var) >>= eval e (makeCPSWArgs e c cpsUpdateVec $ [idx, obj])
         cpsVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsVec"
 
         cpsUpdateVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -506,20 +506,20 @@ eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
  bound <- liftIO $ isBound env "hash-table-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else eval env (makeCPS env cont cpsValue) rkey
+  else macroEval env rkey >>= eval env (makeCPS env cont cpsValue)
  where
         cpsValue :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsValue e c key _ = eval e (makeCPSWArgs e c cpsH $ [key]) rvalue
+        cpsValue e c key _ = macroEval e rvalue >>= eval e (makeCPSWArgs e c cpsH $ [key]) 
 
         cpsH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsH e c value (Just [key]) = eval e (makeCPSWArgs e c cpsEvalH $ [key, value]) =<< getVar e var
+        cpsH e c value (Just [key]) = (macroEval e  =<< getVar e var) >>= eval e (makeCPSWArgs e c cpsEvalH $ [key, value])
         cpsH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsH"
 
         cpsEvalH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsEvalH e c h (Just [key, value]) = do
             case h of
                 HashTable ht -> do
-                  setVar env var (HashTable $ Data.Map.insert key value ht) >>= eval e c
+                  setVar env var (HashTable $ Data.Map.insert key value ht) >>= macroEval e >>= eval e c
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
 eval env cont args@(List [Atom "hash-table-set!" , nonvar , _ , _]) = do
@@ -537,16 +537,16 @@ eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
  bound <- liftIO $ isBound env "hash-table-delete!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else eval env (makeCPS env cont cpsH) rkey
+  else macroEval env rkey >>= eval env (makeCPS env cont cpsH)
  where
         cpsH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsH e c key _ = eval e (makeCPSWArgs e c cpsEvalH $ [key]) =<< getVar e var
+        cpsH e c key _ = (macroEval e =<< getVar e var) >>= eval e (makeCPSWArgs e c cpsEvalH $ [key])
 
         cpsEvalH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsEvalH e c h (Just [key]) = do
             case h of
                 HashTable ht -> do
-                  setVar env var (HashTable $ Data.Map.delete key ht) >>= eval e c
+                  setVar env var (HashTable $ Data.Map.delete key ht) >>= macroEval e >>= eval e c
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
 eval env cont args@(List [Atom "hash-table-delete!" , nonvar , _]) = do
@@ -560,7 +560,7 @@ eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 2 args
 
-eval env cont args@(List (_ : _)) = prepareApply env cont args
+eval env cont args@(List (_ : _)) = macroEval env args >>= prepareApply env cont
 eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 {- Prepare for apply by evaluating each function argument,
@@ -573,8 +573,8 @@ prepareApply env cont (List (function : functionArgs)) = do
 -- case (trace ("prep eval of args: " ++ show args) args) of
           case (args) of
             [] -> apply c func [] -- No args, immediately apply the function
-            [a] -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List []]) a
-            (a : as) -> eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List as]) a
+            [a] -> macroEval env a >>= eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List []])
+            (a : as) -> macroEval env a >>= eval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List as])
        cpsPrepArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (1)"
         {- Store value of previous argument, evaluate the next arg until all are done
         parg - Previous argument that has now been evaluated
@@ -586,8 +586,8 @@ prepareApply env cont (List (function : functionArgs)) = do
        cpsEvalArgs e c evaledArg (Just [func, List argsEvaled, List argsRemaining]) =
           case argsRemaining of
             [] -> apply c func (argsEvaled ++ [evaledArg])
-            [a] -> eval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List []]) a
-            (a : as) -> eval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List as]) a
+            [a] -> macroEval e a >>= eval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List []])
+            (a : as) -> macroEval e a >>= eval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List as])
 
        cpsEvalArgs _ _ _ (Just _) = throwError $ Default "Unexpected error in function application (1)"
        cpsEvalArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (2)"
@@ -814,7 +814,7 @@ defaultRunGhc = GHC.defaultErrorHandler DynFlags.defaultDynFlags . GHC.runGhc (J
 --
 -- FUTURE: consider allowing env to be specified, per R5RS
 --
-evalfuncEval [cont@(Continuation env _ _ _ _), val] = eval env cont val
+evalfuncEval [cont@(Continuation env _ _ _ _), val] = macroEval env val >>= eval env cont
 evalfuncEval (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncEval _ = throwError $ NumArgs 1 []
 
