@@ -147,11 +147,24 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
         match <- loadLocal outerEnv localEnv identifiers (List ps) (List is) False False
         case match of
            Bool False -> return $ Nil ""
-           _ -> transformRule outerEnv localEnv 0 (List []) template (List [])
+           _ -> do
+ --               _ <- findBindings localEnv pattern
+                transformRule outerEnv localEnv 0 (List []) template (List [])
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
 
 matchRule _ _ _ rule input = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
+
+{-------------------------
+-- Just some test code, this needs to be more sophisticated than simply finding a list of them.
+-- because we probably need to know the context - IE, (begin ... (lambda ...) (define ...) x) - x should
+-- not be rewritten if it is the name of one of the lambda arguments
+findBindings :: Env -> LispVal -> IOThrowsError LispVal
+findBindings localEnv pattern@(_ : ps) = searchForBindings localEnv ps [] 
+
+searchForBindings env pattern@(p : ps) bindings = 
+searchForBindings _ _ bindings = return bindings
+-------------------------}
 
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 in preparation for macro transformation. -}
