@@ -29,6 +29,7 @@ Library
   Other-Modules:   Language.Scheme.Macro
                    Language.Scheme.Numerical
                    Language.Scheme.Parser
+                   Language.Scheme.Primitives
 
 Executable         huski
   Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, haskell98, mtl, parsec, directory, ghc, ghc-paths
@@ -41,3 +42,4 @@ Executable         huski
                    Language.Scheme.Macro
                    Language.Scheme.Numerical
                    Language.Scheme.Parser
+                   Language.Scheme.Primitives

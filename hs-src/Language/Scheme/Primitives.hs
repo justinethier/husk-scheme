@@ -21,12 +21,16 @@ import Language.Scheme.Types
 import Control.Monad.Error
 import Char
 import Data.Array
+import Data.Unique
 import qualified Data.Map
 import IO hiding (try)
 import System.Directory (doesFileExist)
 import System.IO.Error
 
+---------------------------------------------------
 -- I/O Primitives
+-- These primitives all execute within the IO monad
+---------------------------------------------------
 makePort :: IOMode -> [LispVal] -> IOThrowsError LispVal
 makePort mode [String filename] = liftM Port $ liftIO $ openFile filename mode
 makePort _ [] = throwError $ NumArgs 1 []
@@ -118,49 +122,22 @@ readAll [String filename] = liftM List $ load filename
 readAll [] = throwError $ NumArgs 1 []
 readAll args@(_ : _) = throwError $ NumArgs 1 args
 
+-- Version of gensym that can be conveniently called from Haskell
+_gensym :: String -> IOThrowsError LispVal
+_gensym prefix = do
+    u <- liftIO $ newUnique
+    return $ Atom $ prefix ++ (show $ Number $ toInteger $ hashUnique u)
+
+-- Non-standard function, generate a (reasonably) unique symbol given an optional prefix
 gensym :: [LispVal] -> IOThrowsError LispVal
-gensym [String prefix] = return $ String "TODO: Implement" 
-gensym [] = return $ String "TODO: Implement" 
+gensym [String prefix] = _gensym prefix
+gensym [] = _gensym " g"
 gensym args@(_ : _) = throwError $ NumArgs 1 args
 
--- Utility functions
-data Unpacker = forall a . Eq a => AnyUnpacker (LispVal -> ThrowsError a)
 
-unpackEquals :: LispVal -> LispVal -> Unpacker -> ThrowsError Bool
-unpackEquals arg1 arg2 (AnyUnpacker unpacker) =
-  do unpacked1 <- unpacker arg1
-     unpacked2 <- unpacker arg2
-     return $ unpacked1 == unpacked2
-  `catchError` (const $ return False)
-
-boolBinop :: (LispVal -> ThrowsError a) -> (a -> a -> Bool) -> [LispVal] -> ThrowsError LispVal
-boolBinop unpacker op args = if length args /= 2
-                             then throwError $ NumArgs 2 args
-                             else do left <- unpacker $ args !! 0
-                                     right <- unpacker $ args !! 1
-                                     return $ Bool $ left `op` right
-
-unaryOp :: (LispVal -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
-unaryOp f [v] = f v
-unaryOp _ [] = throwError $ NumArgs 1 []
-unaryOp _ args@(_ : _) = throwError $ NumArgs 1 args
-
-{- numBoolBinop :: (Integer -> Integer -> Bool) -> [LispVal] -> ThrowsError LispVal
-numBoolBinop = boolBinop unpackNum -}
-strBoolBinop :: (String -> String -> Bool) -> [LispVal] -> ThrowsError LispVal
-strBoolBinop = boolBinop unpackStr
-boolBoolBinop :: (Bool -> Bool -> Bool) -> [LispVal] -> ThrowsError LispVal
-boolBoolBinop = boolBinop unpackBool
-
-unpackStr :: LispVal -> ThrowsError String
-unpackStr (String s) = return s
-unpackStr (Number s) = return $ show s
-unpackStr (Bool s) = return $ show s
-unpackStr notString = throwError $ TypeMismatch "string" notString
-
-unpackBool :: LispVal -> ThrowsError Bool
-unpackBool (Bool b) = return b
-unpackBool notBool = throwError $ TypeMismatch "boolean" notBool
+---------------------------------------------------
+-- "Pure" primitives
+---------------------------------------------------
 
 -- List primitives
 car :: [LispVal] -> ThrowsError LispVal
@@ -440,3 +417,43 @@ isString _ = return $ Bool False
 isBoolean :: [LispVal] -> ThrowsError LispVal
 isBoolean ([Bool _]) = return $ Bool True
 isBoolean _ = return $ Bool False
+
+
+-- Utility functions
+data Unpacker = forall a . Eq a => AnyUnpacker (LispVal -> ThrowsError a)
+
+unpackEquals :: LispVal -> LispVal -> Unpacker -> ThrowsError Bool
+unpackEquals arg1 arg2 (AnyUnpacker unpacker) =
+  do unpacked1 <- unpacker arg1
+     unpacked2 <- unpacker arg2
+     return $ unpacked1 == unpacked2
+  `catchError` (const $ return False)
+
+boolBinop :: (LispVal -> ThrowsError a) -> (a -> a -> Bool) -> [LispVal] -> ThrowsError LispVal
+boolBinop unpacker op args = if length args /= 2
+                             then throwError $ NumArgs 2 args
+                             else do left <- unpacker $ args !! 0
+                                     right <- unpacker $ args !! 1
+                                     return $ Bool $ left `op` right
+
+unaryOp :: (LispVal -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
+unaryOp f [v] = f v
+unaryOp _ [] = throwError $ NumArgs 1 []
+unaryOp _ args@(_ : _) = throwError $ NumArgs 1 args
+
+{- numBoolBinop :: (Integer -> Integer -> Bool) -> [LispVal] -> ThrowsError LispVal
+numBoolBinop = boolBinop unpackNum -}
+strBoolBinop :: (String -> String -> Bool) -> [LispVal] -> ThrowsError LispVal
+strBoolBinop = boolBinop unpackStr
+boolBoolBinop :: (Bool -> Bool -> Bool) -> [LispVal] -> ThrowsError LispVal
+boolBoolBinop = boolBinop unpackBool
+
+unpackStr :: LispVal -> ThrowsError String
+unpackStr (String s) = return s
+unpackStr (Number s) = return $ show s
+unpackStr (Bool s) = return $ show s
+unpackStr notString = throwError $ TypeMismatch "string" notString
+
+unpackBool :: LispVal -> ThrowsError Bool
+unpackBool (Bool b) = return b
+unpackBool notBool = throwError $ TypeMismatch "boolean" notBool
