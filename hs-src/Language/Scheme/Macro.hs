@@ -79,7 +79,7 @@ macroEval env (List (x@(List _) : xs)) = do
 begins with the keyword for the macro." 
  -
  -}
-macroEval env lisp@(List (Atom x : xs)) = do
+macroEval env lisp@(List (Atom x : _)) = do
   -- TODO: what if a var is defined w/the same name? who wins?
   isDefined <- liftIO $ isNamespacedRecBound env macroNamespace x
   if isDefined --(trace (show "mEval [" ++ show lisp ++ ", " ++ show x ++ "]: " ++ show isDefined) isDefined)
@@ -278,7 +278,13 @@ checkLocal outerEnv localEnv identifiers hasEllipsis (Atom pattern) input = do
             -- No literal identifier, just load up the var
             _ -> do _ <- defineVar localEnv pattern input
                     return $ Bool True
-{- TODO:            _ -> case input of
+{- TODO:
+ the issue with this is that sometimes the var needs to be preserved and not have its value directly inserted.
+ the real fix is to rename any identifiers bound in the macro transform. for example, (let ((temp ...)) ...) should
+ have the variable renamed to temp-1 (for example)
+
+
+            _ -> case input of
                     Atom inpt -> do
                        isLexicallyDefinedInput <- liftIO $ isBound outerEnv inpt -- Var defined in scope outside macro
                        if isLexicallyDefinedInput
