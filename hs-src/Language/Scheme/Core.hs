@@ -39,7 +39,7 @@ import qualified GHC
 import qualified GHC.Paths (libdir)
 import qualified DynFlags
 import qualified Unsafe.Coerce (unsafeCoerce)
-import Debug.Trace
+--import Debug.Trace
 
 {- |Evaluate a string containing Scheme code.
 
