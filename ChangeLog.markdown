@@ -6,6 +6,8 @@ set-cdr!, string-set!, vector-set!, and hash-table-set! - For example:
 
     (let ((if +)) (if 1 2 3)) => was 2 instead of 6. Now it eval's to 6
 
+- Marked macro support as non-hygienic since hygiene is not fully supported at present.
+
 v3.0
 ----
 - Added a foreign function interface (FFI) to allow husk to call directly into Haskell code.
