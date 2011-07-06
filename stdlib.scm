@@ -71,6 +71,26 @@
 (define (and . lst)     (fold && #t lst))
 (define (or . lst)      (fold || #f lst))
 
+; TODO, forms from R5RS:
+
+;(define-syntax and
+;  (syntax-rules ()
+;    ((and) #t)
+;    ((and test) test)
+;    ((and test1 test2 ...)
+;     (if test1 (and test2 ...) #f))))
+;
+;
+;(define-syntax or
+;  (syntax-rules ()
+;    ((or) #f)
+;    ((or test) test)
+;    ((or test1 test2 ...)
+;     (let ((x test1))
+;       (if x x (or test2 ...))))))
+
+
+
 (define (abs num)
   (if (negative? num)
       (* num -1)
@@ -89,9 +109,7 @@
 (define (reverse lst)   (fold (flip cons) '() lst))
 
 ; cond
-; 
-; Based on version from:
-; http://www.cs.cmu.edu/Groups/AI/html/r4rs/r4rs_12.html
+; Form from R5RS:
 (define-syntax cond
   (syntax-rules (else =>)
     ((cond (else result1 result2 ...))
@@ -106,7 +124,10 @@
            (cond clause1 clause2 ...))))
     ((cond (test)) test)
     ((cond (test) clause1 clause2 ...)
-     (or test (cond clause1 clause2 ...)))
+     (let ((temp test))
+       (if temp
+           temp
+           (cond clause1 clause2 ...))))
     ((cond (test result1 result2 ...))
      (if test (begin result1 result2 ...)))
     ((cond (test result1 result2 ...)
@@ -114,8 +135,28 @@
      (if test
          (begin result1 result2 ...)
          (cond clause1 clause2 ...)))))
-
 ; Case
+;
+; TODO: form from R5RS:
+;(define-syntax case
+;  (syntax-rules (else)
+;    ((case (key ...)
+;       clauses ...)
+;     (let ((atom-key (key ...)))
+;       (case atom-key clauses ...)))
+;    ((case key
+;       (else result1 result2 ...))
+;     (begin result1 result2 ...))
+;    ((case key
+;       ((atoms ...) result1 result2 ...))
+;     (if (memv key '(atoms ...))
+;         (begin result1 result2 ...)))
+;    ((case key
+;       ((atoms ...) result1 result2 ...)
+;       clause clauses ...)
+;     (if (memv key '(atoms ...))
+;         (begin result1 result2 ...)
+;         (case key clause clauses ...)))))
 ;
 ; Based loosely on implementation from:
 ; http://blog.jcoglan.com/2009/02/25/announcing-heist-a-new-scheme-implementation-written-in-ruby/
