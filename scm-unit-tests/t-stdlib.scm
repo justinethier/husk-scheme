@@ -171,17 +171,15 @@
 
 (assert/equal (and (= 2 2) (> 2 1))   #t)
 (assert/equal (and (= 2 2) (< 2 1))   #f)
-;FUTURE: Issue #6 - test from spec fails
-;(assert/equal (and 1 2 'c '(f g))     '(f g))
+(assert/equal (and 1 2 'c '(f g))     '(f g))
 (assert/equal (and)                   #t)
 
 (assert/equal (or (= 2 2) (> 2 1))   #t)
 (assert/equal (or (= 2 2) (< 2 1))   #t)
 (assert/equal (or #f #f #f)          #f)
-;FUTURE: Issue #6 - test from spec fails
-;(assert/equal (or (memq 'b '(a b c)) 
-;                  (/ 3 0)) 
-;              '(b c))
+(assert/equal (or (memq 'b '(a b c)) 
+                  (/ 3 0)) 
+              '(b c))
 
 (assert/equal 
     (let ((x 2) (y 3))
