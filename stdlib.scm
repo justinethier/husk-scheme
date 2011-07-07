@@ -69,42 +69,21 @@
 (define (sum . lst)     (fold + 0 lst))
 (define (product . lst) (fold * 1 lst))
 
+; Forms from R5RS for and/or
 (define-syntax and
   (syntax-rules ()
-    ((and) (begin #t))
-    ((and test) (begin test))
+    ((and) #t)
+    ((and test) test)
     ((and test1 test2 ...)
      (if test1 (and test2 ...) #f))))
 
 (define-syntax or
   (syntax-rules ()
-    ((or) (begin #f))
-    ((or test) (begin test))
+    ((or) #f)
+    ((or test) test)
     ((or test1 test2 ...)
      (let ((x test1))
        (if x x (or test2 ...))))))
-
-; Issue #6
-; TODO, these are the actual forms from R5RS, and the ones we want to (eventually) use:
-; Issue is the macro code expects the pattern is a list, see above forms currently in use
-;
-;(define-syntax and
-;  (syntax-rules ()
-;    ((and) #t)
-;    ((and test) test)
-;    ((and test1 test2 ...)
-;     (if test1 (and test2 ...) #f))))
-;
-;
-;(define-syntax or
-;  (syntax-rules ()
-;    ((or) #f)
-;    ((or test) test)
-;    ((or test1 test2 ...)
-;     (let ((x test1))
-;       (if x x (or test2 ...))))))
-
-
 
 (define (abs num)
   (if (negative? num)
