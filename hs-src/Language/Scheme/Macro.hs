@@ -470,8 +470,15 @@ transformRule outerEnv localEnv ellipsisIndex (List result) (List (t : ts)) (Lis
 transformRule _ _ _ result@(List _) (List []) _ = do
   return result
 
-transformRule _ _ ellipsisIndex result transform unused = do
-  throwError $ BadSpecialForm "An error occurred during macro transform" $ List [(Number $ toInteger ellipsisIndex), result, transform, unused]
+-- Transform is a single var, just look it up.
+transformRule _ localEnv _ _ (Atom transform) _ = do
+  v <- getVar localEnv transform
+  return v
+
+-- If transforming into a scalar, just return the transform directly...
+-- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
+transformRule _ _ _ _ transform _ = do -- OLD CODE: result transform unused = do
+  return transform -- OLD CODE:  throwError $ BadSpecialForm "An error occurred during macro transform" $ List [(Number $ toInteger ellipsisIndex), result, transform, unused]
 
 transformDottedList :: Env -> Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
 transformDottedList outerEnv localEnv ellipsisIndex (List result) (List (DottedList ds d : ts)) (List ellipsisList) = do
