@@ -118,6 +118,11 @@ readAll [String filename] = liftM List $ load filename
 readAll [] = throwError $ NumArgs 1 []
 readAll args@(_ : _) = throwError $ NumArgs 1 args
 
+gensym :: [LispVal] -> IOThrowsError LispVal
+gensym [String prefix] = return $ String "TODO: Implement" 
+gensym [] = return $ String "TODO: Implement" 
+gensym args@(_ : _) = throwError $ NumArgs 1 args
+
 -- Utility functions
 data Unpacker = forall a . Eq a => AnyUnpacker (LispVal -> ThrowsError a)
 

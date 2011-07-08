@@ -865,7 +865,8 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                                                         String str -> hPutStr port str
                                                         _ -> hPutStr port $ show obj)),
                 ("read-contents", readContents),
-                ("read-all", readAll)]
+                ("read-all", readAll),
+                ("gensym", gensym)]
 
 {- "Pure" primitive functions -}
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
