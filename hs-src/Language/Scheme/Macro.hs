@@ -41,7 +41,7 @@ import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
 import Data.Array
---import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 http://community.schemewiki.org/?scheme-faq-macros -}
@@ -148,22 +148,31 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
         case match of
            Bool False -> return $ Nil ""
            _ -> do
- --               _ <- findBindings localEnv pattern
+--                bindings <- findBindings localEnv pattern
+--                transformRule outerEnv (trace ("bindings = " ++ show bindings) localEnv) 0 (List []) template (List [])
                 transformRule outerEnv localEnv 0 (List []) template (List [])
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
 
 matchRule _ _ _ rule input = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
 
+-- Issue #30
 {-------------------------
 -- Just some test code, this needs to be more sophisticated than simply finding a list of them.
 -- because we probably need to know the context - IE, (begin ... (lambda ...) (define ...) x) - x should
 -- not be rewritten if it is the name of one of the lambda arguments
 findBindings :: Env -> LispVal -> IOThrowsError LispVal
-findBindings localEnv pattern@(_ : ps) = searchForBindings localEnv ps [] 
+findBindings localEnv pattern@(List (_ : ps)) = searchForBindings localEnv (List ps) [] 
 
-searchForBindings env pattern@(p : ps) bindings = 
-searchForBindings _ _ bindings = return bindings
+searchForBindings :: Env -> LispVal -> [LispVal] -> IOThrowsError LispVal
+--env pattern@(List (List (Atom "lambda" : List bs : _) : ps)) bindings = searchForBindings env (List ps) (bindings ++ bs) 
+--searchForBindings env pattern@(List (List (Atom "lambda" : List bs : _) : ps)) bindings = searchForBindings env (List ps) (bindings ++ bs) 
+searchForBindings env pattern@(List (p : ps)) bindings = do
+  newBindings <- searchForBindings env (List [p]) []
+  case newBindings of
+    List n -> searchForBindings env (List ps) (bindings ++ n)
+    _ -> throwError $ Default "Unexpected error in searchForBindings" 
+searchForBindings _ _ bindings = return $ List bindings
 -------------------------}
 
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
