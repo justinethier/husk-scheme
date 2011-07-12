@@ -148,32 +148,35 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
         case match of
            Bool False -> return $ Nil ""
            _ -> do
---                bindings <- findBindings localEnv pattern
---                transformRule outerEnv (trace ("bindings = " ++ show bindings) localEnv) 0 (List []) template (List [])
-                transformRule outerEnv localEnv 0 (List []) template (List [])
+                bindings <- findBindings localEnv template
+                transformRule outerEnv (trace ("bindings = " ++ show bindings) localEnv) 0 (List []) template (List [])
+--                transformRule outerEnv localEnv 0 (List []) template (List [])
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
 
 matchRule _ _ _ rule input = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
 
 -- Issue #30
-{-------------------------
+-------------------------
 -- Just some test code, this needs to be more sophisticated than simply finding a list of them.
 -- because we probably need to know the context - IE, (begin ... (lambda ...) (define ...) x) - x should
 -- not be rewritten if it is the name of one of the lambda arguments
+--
+-- TODO: does this have to take identifiers into account?
+--
 findBindings :: Env -> LispVal -> IOThrowsError LispVal
-findBindings localEnv pattern@(List (_ : ps)) = searchForBindings localEnv (List ps) [] 
+findBindings localEnv (List pattern) = searchForBindings localEnv (List (trace ("pat = " ++ show pattern) pattern)) [] 
 
 searchForBindings :: Env -> LispVal -> [LispVal] -> IOThrowsError LispVal
 --env pattern@(List (List (Atom "lambda" : List bs : _) : ps)) bindings = searchForBindings env (List ps) (bindings ++ bs) 
---searchForBindings env pattern@(List (List (Atom "lambda" : List bs : _) : ps)) bindings = searchForBindings env (List ps) (bindings ++ bs) 
+searchForBindings env pattern@(List (Atom "lambda" : List bs : _)) bindings = return $ List (bindings ++ bs) --searchForBindings env (List ps) (bindings ++ bs) 
 searchForBindings env pattern@(List (p : ps)) bindings = do
-  newBindings <- searchForBindings env (List [p]) []
+  newBindings <- searchForBindings env p []
   case newBindings of
-    List n -> searchForBindings env (List ps) (bindings ++ n)
+    List n -> searchForBindings env (List (ps)) (bindings ++ n)
     _ -> throwError $ Default "Unexpected error in searchForBindings" 
 searchForBindings _ _ bindings = return $ List bindings
--------------------------}
+-------------------------
 
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 in preparation for macro transformation. -}
