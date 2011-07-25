@@ -108,7 +108,11 @@ Since continuations are first-class objects, the `LispVal` data type was extende
                   , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind) 
                  }
 
-This member contains a closure to capture the state of the program, a continuation chain, and auxillary data. The current continuation will be executed immediately. Execution then passes to the next continuation if it is present. If there is no more code to execute, the continuation members may be set to `Nothing` to instruct the evaluator to return its current value. 
+This member contains a closure to capture the state of the program, a continuation chain, and auxillary data. It is used by the husk evaluator as follows:
+
+- The current continuation will be executed immediately. 
+- Execution then passes to the next continuation if it is present. 
+- If there is no more code to execute, the continuation members may be set to `Nothing` to instruct the evaluator to return its current value. 
 
 The auxillary data members allow a continuation to keep track of data for special cases. Multiple return values may be stored to support `call-with-values`. `DynamicWinders` was added to store pairs of `before` and `after` functions to support `dynamic-wind`:
 
@@ -277,7 +281,7 @@ To understand why continuations are such a general purpose concept, it helps to 
 
 Husk was my first major Haskell project, so please do not be too critical of the code presented here. It could probably be prettied up a bit and made more concise. But for the purposes of this project I tried to keep things as simple as possible.
 
-Anyway, I hope this article helped you understand a bit more about what continuations are and how they work. If you would like to suggest any corrections or improvements - or if you just enjoyed reading - please drop me a line. 
+Anyway, I hope this article helped you understand a bit more about what continuations are and how they work. If you would like to suggest any corrections or improvements - or if you just enjoyed reading - please send me a message on github. 
 
 Thanks!
 
