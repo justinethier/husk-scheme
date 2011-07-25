@@ -31,8 +31,6 @@ As well as the following approved extensions:
 
 - Hash tables, as specified by [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html)
 
-husk scheme is available under the [MIT license](http://www.opensource.org/licenses/mit-license.php).
-
 Installation
 ------------
 husk may be easily installed using [cabal](http://www.haskell.org/cabal/) - just run the following command:
@@ -97,6 +95,11 @@ The `scm-unit-tests` directory contains unit tests for much of the scheme code. 
 The `examples` directory contains example scheme programs.
 
 Patches are welcome; please send via pull request on github.
+
+License
+-------
+
+husk scheme is available under the [MIT license](http://www.opensource.org/licenses/mit-license.php).
 
 Credits
 -------
