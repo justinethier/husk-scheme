@@ -23,6 +23,30 @@ import Data.Array
 import Numeric
 import Ratio
 import Text.ParserCombinators.Parsec hiding (spaces)
+import Text.Parsec.Language
+import qualified Text.Parsec.Token as P
+
+lispDef 
+  = emptyDef    
+  { P.commentStart   = ";"
+  , P.commentEnd     = ""
+  , P.commentLine    = ""
+  , P.nestedComments = True
+  , P.identStart     = letter <|> symbol <|> (oneOf ".") --letter <|> char '_'
+  , P.identLetter    = letter <|> digit <|> symbol <|> (oneOf ".") --alphaNum <|> oneOf "_'"
+  , P.opStart        = P.opLetter emptyDef
+  , P.opLetter       = oneOf ":!#$%&*+./<=>?@\\^|-~"
+  , P.reservedOpNames= []
+  , P.reservedNames  = []
+  , P.caseSensitive  = True
+  } 
+
+lexer = P.makeTokenParser lispDef
+parens = P.parens lexer
+braces = P.braces lexer
+identifier = P.identifier lexer
+reserved = P.reserved lexer
+whiteSpace = P.whiteSpace lexer
 
 symbol :: Parser Char
 symbol = oneOf "!$%&|*+-/:<=>?@^_~"
@@ -184,7 +208,7 @@ parseVector = do
   return $ Vector (listArray (0, (length vals - 1)) vals)
 
 parseList :: Parser LispVal
-parseList = liftM List $ sepBy parseExpr spaces
+parseList = liftM List $ sepBy parseExpr whiteSpace --spaces
 
 parseDottedList :: Parser LispVal
 parseDottedList = do
@@ -247,9 +271,10 @@ parseExpr =
   <|> parseQuoted
   <|> parseQuasiQuoted
   <|> parseUnquoted
-  <|> do _ <- char '('
-         x <- try parseList <|> parseDottedList
-         _ <- char ')'
+  <|> do x <- parens (try parseList <|> parseDottedList)
+   --_ <- char '('
+         --x <- try parseList <|> parseDottedList
+         --_ <- char ')'
          return x
   <?> "Expression"
 
