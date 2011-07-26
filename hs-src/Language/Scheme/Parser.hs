@@ -26,19 +26,6 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 import Text.Parsec.Language
 import qualified Text.Parsec.Token as P
 
-{-
- TODO:
- forms that pass now:
-
-  (+ 1 2 #| commenting, la, la, la|# 3)
-
-
- forms that still do not work:
-   1 ; note a space before the 1
-  ( + 1 2 )
-  space at start of a file
--}
-
 lispDef 
   = emptyDef    
   { P.commentStart   = "#|"
@@ -67,8 +54,8 @@ whiteSpace = P.whiteSpace lexer
 symbol :: Parser Char
 symbol = oneOf "!$%&|*+-/:<=>?@^_~"
 
-spaces :: Parser ()
-spaces = skipMany1 space
+--spaces :: Parser ()
+--spaces = skipMany1 space
 
 parseAtom :: Parser LispVal
 parseAtom = do
@@ -218,16 +205,19 @@ parseString = do
 
 parseVector :: Parser LispVal
 parseVector = do
-  vals <- sepBy parseExpr spaces
+  vals <- sepBy parseExpr whiteSpace --spaces
   return $ Vector (listArray (0, (length vals - 1)) vals)
 
 parseList :: Parser LispVal
-parseList = liftM List $ sepBy parseExpr whiteSpace --OLD: spaces
+parseList = liftM List $ endBy parseExpr whiteSpace
 
+-- TODO: this parser no longer works...
 parseDottedList :: Parser LispVal
 parseDottedList = do
-  phead <- endBy parseExpr spaces
-  ptail <- char '.' >> spaces >> parseExpr
+  phead <- endBy parseExpr whiteSpace --spaces
+  ptail <- char '.' >> whiteSpace {-spaces-} >> parseExpr
+--  phead <- endBy parseExpr spaces
+--  ptail <- char '.' >> spaces >> parseExpr
   return $ DottedList phead ptail
 
 parseQuoted :: Parser LispVal
@@ -256,7 +246,7 @@ parseUnquoteSpliced = do
 
 
 parseExpr :: Parser LispVal
-parseExpr =
+parseExpr = do
       try (parseComplexNumber)
   <|> try (parseRationalNumber)
   <|> try (parseRealNumber)
@@ -274,11 +264,13 @@ parseExpr =
   <|> parseQuasiQuoted
   <|> parseUnquoted
   <|> do x <- parens (try parseList <|> parseDottedList)
-   --_ <- char '('
-         --x <- try parseList <|> parseDottedList
-         --_ <- char ')'
          return x
   <?> "Expression"
+
+mainParser :: Parser LispVal
+mainParser = do
+    _ <- whiteSpace
+    parseExpr
 
 readOrThrow :: Parser a -> String -> ThrowsError a
 readOrThrow parser input = case parse parser "lisp" input of
@@ -286,7 +278,7 @@ readOrThrow parser input = case parse parser "lisp" input of
   Right val -> return val
 
 readExpr :: String -> ThrowsError LispVal
-readExpr = readOrThrow parseExpr
+readExpr = readOrThrow mainParser
 
 readExprList :: String -> ThrowsError [LispVal]
-readExprList = readOrThrow (endBy parseExpr spaces)
+readExprList = readOrThrow (endBy mainParser whiteSpace)
