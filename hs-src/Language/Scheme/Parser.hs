@@ -26,15 +26,28 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 import Text.Parsec.Language
 import qualified Text.Parsec.Token as P
 
+{-
+ TODO:
+ forms that pass now:
+
+  (+ 1 2 #| commenting, la, la, la|# 3)
+
+
+ forms that still do not work:
+   1 ; note a space before the 1
+  ( + 1 2 )
+  space at start of a file
+-}
+
 lispDef 
   = emptyDef    
-  { P.commentStart   = ";"
-  , P.commentEnd     = ""
-  , P.commentLine    = ""
+  { P.commentStart   = "#|"
+  , P.commentEnd     = "|#"
+  , P.commentLine    = ";"
   , P.nestedComments = True
   , P.identStart     = letter <|> symbol <|> (oneOf ".") --letter <|> char '_'
   , P.identLetter    = letter <|> digit <|> symbol <|> (oneOf ".") --alphaNum <|> oneOf "_'"
-  , P.opStart        = P.opLetter emptyDef
+  , P.opStart        = P.opLetter emptyDef -- TODO: should these 2 be the same as ident*??
   , P.opLetter       = oneOf ":!#$%&*+./<=>?@\\^|-~"
   , P.reservedOpNames= []
   , P.reservedNames  = []
@@ -47,6 +60,9 @@ braces = P.braces lexer
 identifier = P.identifier lexer
 reserved = P.reserved lexer
 whiteSpace = P.whiteSpace lexer
+-- TODO: other lexer function defs req'd? see parsec docs
+-- probably need to define more, and then use them all throughout parseExpr
+
 
 symbol :: Parser Char
 symbol = oneOf "!$%&|*+-/:<=>?@^_~"
@@ -56,9 +72,7 @@ spaces = skipMany1 space
 
 parseAtom :: Parser LispVal
 parseAtom = do
-  first <- letter <|> symbol <|> (oneOf ".")
-  rest <- many (letter <|> digit <|> symbol <|> (oneOf "."))
-  let atom = first : rest
+  atom <- identifier
   if atom == "."
      then pzero -- Do not match this form
      else return $ Atom atom
@@ -208,7 +222,7 @@ parseVector = do
   return $ Vector (listArray (0, (length vals - 1)) vals)
 
 parseList :: Parser LispVal
-parseList = liftM List $ sepBy parseExpr whiteSpace --spaces
+parseList = liftM List $ sepBy parseExpr whiteSpace --OLD: spaces
 
 parseDottedList :: Parser LispVal
 parseDottedList = do
@@ -241,22 +255,10 @@ parseUnquoteSpliced = do
   return $ List [Atom "unquote-splicing", x]
 
 
-{- Comment parser
-FUTURE: this is a hack, it should really not return anything...
-a better solution might be to use a tokenizer as a
-parser instead; need to investigate eventually. -}
-parseComment :: Parser LispVal
-parseComment = do
-  _ <- char ';'
-  _ <- many (noneOf ("\n"))
-  return $ Nil ""
-
-
 parseExpr :: Parser LispVal
 parseExpr =
       try (parseComplexNumber)
   <|> try (parseRationalNumber)
-  <|> parseComment
   <|> try (parseRealNumber)
   <|> try (parseNumber)
   <|> parseChar
