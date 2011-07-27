@@ -61,7 +61,11 @@ symbol = oneOf "!$%&|*+-/:<=>?@^_~"
 
 parseAtom :: Parser LispVal
 parseAtom = do
-  atom <- identifier
+  first <- letter <|> symbol <|> (oneOf ".")
+  rest <- many (letter <|> digit <|> symbol <|> (oneOf "."))
+  let atom = first : rest
+
+--  atom <- identifier
   if atom == "."
      then pzero -- Do not match this form
      else return $ Atom atom
@@ -217,8 +221,8 @@ parseList = liftM List $ sepBy parseExpr whiteSpace
 parseDottedList :: Parser LispVal
 parseDottedList = do
   phead <- endBy parseExpr whiteSpace
-  ptail <- dot >> parseExpr
---  ptail <- char '.' >> spaces >> parseExpr
+--  ptail <- dot >> parseExpr
+  ptail <- char '.' >> whiteSpace >> parseExpr
   return $ DottedList phead ptail
 
 parseQuoted :: Parser LispVal
