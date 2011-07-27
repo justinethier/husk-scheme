@@ -42,11 +42,13 @@ lispDef
   } 
 
 lexer = P.makeTokenParser lispDef
+dot = P.dot lexer
 parens = P.parens lexer
 braces = P.braces lexer
 identifier = P.identifier lexer
 reserved = P.reserved lexer
 whiteSpace = P.whiteSpace lexer
+lexeme = P.lexeme lexer
 -- TODO: other lexer function defs req'd? see parsec docs
 -- probably need to define more, and then use them all throughout parseExpr
 
@@ -205,18 +207,17 @@ parseString = do
 
 parseVector :: Parser LispVal
 parseVector = do
-  vals <- sepBy parseExpr whiteSpace --spaces
+  vals <- sepBy parseExpr whiteSpace
   return $ Vector (listArray (0, (length vals - 1)) vals)
 
 parseList :: Parser LispVal
-parseList = liftM List $ endBy parseExpr whiteSpace
+parseList = liftM List $ sepBy parseExpr whiteSpace
+-- TODO: wanted to use endBy (or a variant) above, but it causes an error such that dotted lists are not parsed
 
--- TODO: this parser no longer works...
 parseDottedList :: Parser LispVal
 parseDottedList = do
-  phead <- endBy parseExpr whiteSpace --spaces
-  ptail <- char '.' >> whiteSpace {-spaces-} >> parseExpr
---  phead <- endBy parseExpr spaces
+  phead <- endBy parseExpr whiteSpace
+  ptail <- dot >> parseExpr
 --  ptail <- char '.' >> spaces >> parseExpr
   return $ DottedList phead ptail
 
@@ -244,9 +245,8 @@ parseUnquoteSpliced = do
   x <- parseExpr
   return $ List [Atom "unquote-splicing", x]
 
-
 parseExpr :: Parser LispVal
-parseExpr = do
+parseExpr =
       try (parseComplexNumber)
   <|> try (parseRationalNumber)
   <|> try (parseRealNumber)
@@ -282,3 +282,5 @@ readExpr = readOrThrow mainParser
 
 readExprList :: String -> ThrowsError [LispVal]
 readExprList = readOrThrow (endBy mainParser whiteSpace)
+
+

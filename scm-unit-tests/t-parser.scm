@@ -20,8 +20,12 @@
 (write (+ 1 2))
 (write ( + 1 2))
 ; TODO: 
-(write (+ 1 2 ))
-(write ( + 1 2 ))
-
+;(write (+ 1 2 ))
+;(write ( + 1 2 ))
+(write '(a 4))
+(write '(a . 4))
+(write ;assert/equal x
+                            '(a . 4)
+                            )
 
 ;(unit-test-handler-results)
