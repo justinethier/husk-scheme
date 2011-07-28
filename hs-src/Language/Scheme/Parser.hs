@@ -32,12 +32,12 @@ lispDef
   , P.commentEnd     = "|#"
   , P.commentLine    = ";"
   , P.nestedComments = True
-  , P.identStart     = letter <|> symbol <|> (oneOf ".") --letter <|> char '_'
-  , P.identLetter    = letter <|> digit <|> symbol <|> (oneOf ".") --alphaNum <|> oneOf "_'"
-  , P.opStart        = P.opLetter emptyDef -- TODO: should these 2 be the same as ident*??
-  , P.opLetter       = oneOf ":!#$%&*+./<=>?@\\^|-~"
-  , P.reservedOpNames= []
-  , P.reservedNames  = []
+  , P.identStart     = letter <|> symbol --letter <|> char '_'
+  , P.identLetter    = letter <|> digit <|> symbol --alphaNum <|> oneOf "_'"
+--  , P.opStart        = P.opLetter emptyDef -- TODO: should these 2 be the same as ident*??
+--  , P.opLetter       = oneOf ":!#$%&*+./<=>?@\\^|-~"
+--  , P.reservedOpNames= []
+  , P.reservedNames  = ["."]
   , P.caseSensitive  = True
   } 
 
@@ -54,18 +54,22 @@ lexeme = P.lexeme lexer
 
 
 symbol :: Parser Char
-symbol = oneOf "!$%&|*+-/:<=>?@^_~"
+symbol = oneOf "!$%&|*+-/:<=>?@^_~."
 
 --spaces :: Parser ()
 --spaces = skipMany1 space
 
 parseAtom :: Parser LispVal
 parseAtom = do
-  first <- letter <|> symbol <|> (oneOf ".")
-  rest <- many (letter <|> digit <|> symbol <|> (oneOf "."))
-  let atom = first : rest
+-- TODO: form (a . 1) does not parse if identifier combinator is used below.
+--   perhaps this is because that lexeme eats up trailing whitespace, which
+--   conflicts with the sepBy used to parse a list. esp since (1 . a) parses
+--   just fine...
 
---  atom <- identifier
+{-  first <- letter <|> symbol -- <|> (oneOf ".")
+  rest <- many (letter <|> digit <|> symbol) -- <|> (oneOf "."))
+  let atom = first : rest-}
+  atom <- identifier
   if atom == "."
      then pzero -- Do not match this form
      else return $ Atom atom
@@ -274,7 +278,9 @@ parseExpr =
 mainParser :: Parser LispVal
 mainParser = do
     _ <- whiteSpace
-    parseExpr
+    x <- parseExpr
+    eof
+    return x
 
 readOrThrow :: Parser a -> String -> ThrowsError a
 readOrThrow parser input = case parse parser "lisp" input of
