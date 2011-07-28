@@ -37,7 +37,7 @@ lispDef
 --  , P.opStart        = P.opLetter emptyDef -- TODO: should these 2 be the same as ident*??
 --  , P.opLetter       = oneOf ":!#$%&*+./<=>?@\\^|-~"
 --  , P.reservedOpNames= []
-  , P.reservedNames  = ["."]
+  , P.reservedNames  = []
   , P.caseSensitive  = True
   } 
 
@@ -225,61 +225,65 @@ parseList = liftM List $ sepBy parseExpr whiteSpace
 parseDottedList :: Parser LispVal
 parseDottedList = do
   phead <- endBy parseExpr whiteSpace
---  ptail <- dot >> parseExpr
-  ptail <- char '.' >> whiteSpace >> parseExpr
+  ptail <- dot >> parseExpr --char '.' >> whiteSpace >> parseExpr
   return $ DottedList phead ptail
 
 parseQuoted :: Parser LispVal
 parseQuoted = do
-  _ <- char '\''
+  _ <- lexeme $ char '\''
   x <- parseExpr
   return $ List [Atom "quote", x]
 
 parseQuasiQuoted :: Parser LispVal
 parseQuasiQuoted = do
-  _ <- char '`'
+  _ <- lexeme $ char '`'
   x <- parseExpr
   return $ List [Atom "quasiquote", x]
 
 parseUnquoted :: Parser LispVal
 parseUnquoted = do
-  _ <- try (char ',')
+  _ <- try (lexeme $ char ',')
   x <- parseExpr
   return $ List [Atom "unquote", x]
 
 parseUnquoteSpliced :: Parser LispVal
 parseUnquoteSpliced = do
-  _ <- try (string ",@")
+  _ <- try (lexeme $ string ",@")
   x <- parseExpr
   return $ List [Atom "unquote-splicing", x]
 
 parseExpr :: Parser LispVal
 parseExpr =
-      try (parseComplexNumber)
-  <|> try (parseRationalNumber)
-  <|> try (parseRealNumber)
-  <|> try (parseNumber)
-  <|> parseChar
+      try (lexeme parseComplexNumber)
+  <|> try (lexeme parseRationalNumber)
+  <|> try (lexeme parseRealNumber)
+  <|> try (lexeme parseNumber)
+  <|> lexeme parseChar
   <|> parseUnquoteSpliced
-  <|> do _ <- try (string "#(")
+  <|> do _ <- try (lexeme $ string "#(")
          x <- parseVector
-         _ <- char ')'
+         _ <- lexeme $ char ')'
          return x
   <|> try (parseAtom)
-  <|> parseString
-  <|> parseBool
+  <|> lexeme parseString
+  <|> lexeme parseBool
   <|> parseQuoted
   <|> parseQuasiQuoted
   <|> parseUnquoted
-  <|> do x <- parens (try parseList <|> parseDottedList)
-         return x
+  <|> try (parens parseList)
+  <|> parens parseDottedList
+--  <|> do x <- parens (try (parseList <|> parseDottedList))
+{-  <|> do _ <- lexeme $ char '('
+         x <- try (parseList <|> parseDottedList)
+         _ <- lexeme $ char ')'
+         return x-}
   <?> "Expression"
 
 mainParser :: Parser LispVal
 mainParser = do
     _ <- whiteSpace
     x <- parseExpr
-    eof
+-- FUTURE? (seemed to break test cases, but is supposed to be best practice?)    eof
     return x
 
 readOrThrow :: Parser a -> String -> ThrowsError a

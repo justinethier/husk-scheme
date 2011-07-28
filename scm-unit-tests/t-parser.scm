@@ -22,9 +22,8 @@ a
 
 (write (+ 1 2))
 (write ( + 1 2))
-; TODO: 
-;(write (+ 1 2 ))
-;(write ( + 1 2 ))
+(write (+ 1 2 ))
+(write ( + 1 2 ))
 (write '(a 4))
 (write '(2 4))
 (write '(2 . 4))
