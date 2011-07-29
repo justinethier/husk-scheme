@@ -148,7 +148,11 @@ eval env cont val@(Rational _) = continueEval env cont val
 eval env cont val@(Number _) = continueEval env cont val
 eval env cont val@(Bool _) = continueEval env cont val
 eval env cont val@(HashTable _) = continueEval env cont val
-eval env cont val@(Vector _) = continueEval env cont val
+eval env cont val@(Vector _) = do
+    -- TODO: Issue #35 - not good enough to just return, need to ensure only constants (?) are part
+    --       of the vector
+    continueEval env cont val
+--    throwError $ Default $ "Illegal expression (should be quoted): " ++ show val
 eval env cont (Atom a) = continueEval env cont =<< getVar env a
 
 -- Quote an expression by simply passing along the value
@@ -262,49 +266,6 @@ eval env cont args@(List [Atom "if", predic, conseq]) = do
             case result of
               Bool True -> macroEval e conseq >>= eval e c
               _ -> continueEval e c $ Nil "" -- Unspecified return value per R5RS
-
-{- OBSOLETE:
--- TODO: convert cond to a derived form (scheme macro)
--- TODO: is the 'bound' code below good enough? need to test w/else redefined.
---       if not good enough, may just need to go all the way and rewrite all of this as a macro!
-eval env cont args@(List (Atom "cond" : clauses)) = do
- bound <- liftIO $ isBound env "cond"
- if bound
-  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else if length clauses == 0
-          then throwError $ BadSpecialForm "No matching clause" $ String "cond"
-          else do
-              case (clauses !! 0) of
-                List [test, Atom "=>", expr] -> eval env (makeCPSWArgs env cont cpsAlt [test]) expr
-                List (Atom "else" : _) -> eval env (makeCPSWArgs env cont cpsResult clauses) $ Bool True
-                List (cond : _) -> eval env (makeCPSWArgs env cont cpsResult clauses) cond
-                badType -> throwError $ TypeMismatch "clause" badType
-  where
-        { - If a condition is true, evaluate that condition's expressions.
-        Otherwise just pick up at the next condition... - }
-        cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsResult e cnt result (Just (c : cs)) =
-            case result of
-              Bool True -> evalCond e cnt c
-              _ -> eval env cnt $ List $ (Atom "cond" : cs)
-        cpsResult _ _ _ _ = throwError $ Default "Unexpected error in cond"
-
-        -- Helper function for evaluating 'cond'
-        evalCond :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-        evalCond e c (List [_, expr]) = eval e c expr
-        evalCond e c (List (_ : expr)) = eval e c $ List (Atom "begin" : expr)
-        evalCond _ _ badForm = throwError $ BadSpecialForm "evalCond: Unrecognized special form" badForm
-
-        -- Alternate "=>" form: expr was evaluated, now eval test
-        cpsAlt :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsAlt e c expr (Just [test]) = eval e (makeCPSWArgs e c cpsAltEvaled [expr]) test
-        cpsAlt _ _ _ _ = throwError $ Default "Unexpected error in cond"
-
-        -- Alternate "=>" form: both test/expr are evaluated, now eval the form itself
-        cpsAltEvaled :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsAltEvaled _ c test (Just [expr]) = apply c expr [test]
-        cpsAltEvaled _ _ _ _ = throwError $ Default "Unexpected error in cond"
--}
 
 eval env cont fargs@(List (Atom "begin" : funcs)) = do
  bound <- liftIO $ isBound env "begin"
