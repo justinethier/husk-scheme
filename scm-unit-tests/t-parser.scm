@@ -1,4 +1,5 @@
 
+#|
 ;;
 ;; husk-scheme
 ;; http://github.com/justinethier/husk-scheme
@@ -7,6 +8,9 @@
 ;;
 ;; Test cases to validate husk's scheme parser
 ;;
+;;
+;; #| a nested block comment |#
+|#
 
 (load "skim-unit.scm")
 (unit-test-start "parser")
