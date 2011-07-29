@@ -21,7 +21,7 @@
                 (vector-set! v i (* i i)))
               '(0 1 2 3 4))
      v)
-  #(0 1 4 9 16))
+  '#(0 1 4 9 16))
 
 (assert/equal (apply + (list 3 4)) 7) 
 
