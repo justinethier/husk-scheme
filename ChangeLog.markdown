@@ -1,7 +1,7 @@
 v3.2
 ----
 - Significant improvements to the parser, including proper handling of whitespace and comments.
-- Support for multiline comments (TODO: reference R7RS spec)
+- Added support for nested block comments using `#|` and `|#`, per the R<sup>7</sup>RS draft.
 
 v3.1
 ----
