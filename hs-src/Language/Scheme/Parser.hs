@@ -26,17 +26,15 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 import Text.Parsec.Language
 import qualified Text.Parsec.Token as P
 
+lispDef :: LanguageDef ()
 lispDef 
   = emptyDef    
   { P.commentStart   = "#|"
   , P.commentEnd     = "|#"
   , P.commentLine    = ";"
   , P.nestedComments = True
-  , P.identStart     = letter <|> symbol --letter <|> char '_'
-  , P.identLetter    = letter <|> digit <|> symbol --alphaNum <|> oneOf "_'"
---  , P.opStart        = P.opLetter emptyDef -- TODO: should these 2 be the same as ident*??
---  , P.opLetter       = oneOf ":!#$%&*+./<=>?@\\^|-~"
---  , P.reservedOpNames= []
+  , P.identStart     = letter <|> symbol
+  , P.identLetter    = letter <|> digit <|> symbol
   , P.reservedNames  = []
   , P.caseSensitive  = True
   } 
@@ -44,31 +42,16 @@ lispDef
 lexer = P.makeTokenParser lispDef
 dot = P.dot lexer
 parens = P.parens lexer
-braces = P.braces lexer
 identifier = P.identifier lexer
-reserved = P.reserved lexer
+-- TODO: typedef. starting point was: whiteSpace :: CharParser ()
 whiteSpace = P.whiteSpace lexer
 lexeme = P.lexeme lexer
--- TODO: other lexer function defs req'd? see parsec docs
--- probably need to define more, and then use them all throughout parseExpr
-
 
 symbol :: Parser Char
 symbol = oneOf "!$%&|*+-/:<=>?@^_~."
 
---spaces :: Parser ()
---spaces = skipMany1 space
-
 parseAtom :: Parser LispVal
 parseAtom = do
--- TODO: form (a . 1) does not parse if identifier combinator is used below.
---   perhaps this is because that lexeme eats up trailing whitespace, which
---   conflicts with the sepBy used to parse a list. esp since (1 . a) parses
---   just fine...
-
-{-  first <- letter <|> symbol -- <|> (oneOf ".")
-  rest <- many (letter <|> digit <|> symbol) -- <|> (oneOf "."))
-  let atom = first : rest-}
   atom <- identifier
   if atom == "."
      then pzero -- Do not match this form
@@ -272,11 +255,6 @@ parseExpr =
   <|> parseUnquoted
   <|> try (parens parseList)
   <|> parens parseDottedList
---  <|> do x <- parens (try (parseList <|> parseDottedList))
-{-  <|> do _ <- lexeme $ char '('
-         x <- try (parseList <|> parseDottedList)
-         _ <- lexeme $ char ')'
-         return x-}
   <?> "Expression"
 
 mainParser :: Parser LispVal
@@ -296,5 +274,4 @@ readExpr = readOrThrow mainParser
 
 readExprList :: String -> ThrowsError [LispVal]
 readExprList = readOrThrow (endBy mainParser whiteSpace)
-
 
