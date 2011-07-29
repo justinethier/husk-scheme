@@ -31,6 +31,10 @@ As well as the following approved extensions:
 
 - Hash tables, as specified by [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html)
 
+And the following R<sup>7</sup>RS draft features:
+
+- Nested block comments using `#|` and `|#`
+
 Installation
 ------------
 husk may be easily installed using [cabal](http://www.haskell.org/cabal/) - just run the following command:
