@@ -1,3 +1,8 @@
+v3.2
+----
+- Significant improvements to the parser, including proper handling of whitespace and comments.
+- Support for multiline comments (TODO: reference R7RS spec)
+
 v3.1
 ----
 - Fixed issues with lexical scope, where proper scope was not observed for
