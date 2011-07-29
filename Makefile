@@ -39,12 +39,13 @@ test: husk stdlib.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-macro.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-numerical-ops.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-hashtable.scm
+	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-scoping.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-special-forms.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-standard-procedures.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-stdlib.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-string.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-vector.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-scoping.scm
+	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-parser.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) summarize.scm
 	@rm -f $(UNIT_TEST_DIR)/scm-unit.tmp
 
