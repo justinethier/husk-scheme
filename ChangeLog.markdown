@@ -10,7 +10,7 @@ v3.1
 special forms, including: if, cond, set!, begin, define, lambda, set-car!,
 set-cdr!, string-set!, vector-set!, and hash-table-set! - For example: 
 
-    (let ((if +)) (if 1 2 3)) => was 2 instead of 6. Now it eval's to 6
+`(let ((if +)) (if 1 2 3))` was 2 instead of 6. Now it eval's to 6
 
 - `cond`, `and`, and `or` are now defined using the corresponding macros from R<sup>5</sup>RS,
   to give them the expected semantics.
