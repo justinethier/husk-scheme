@@ -1,6 +1,6 @@
 v3.2
 ----
-- Significant improvements to the parser, including proper handling of whitespace and comments.
+- Significant improvements to the parser, including proper handling of whitespace and comments. This represents a critical upgrade from the previous releases.
 - Added support for nested block comments using `#|` and `|#`, per the R<sup>7</sup>RS draft.
 - Added `hash-table-fold`
 
