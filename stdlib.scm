@@ -327,7 +327,7 @@
 (define hash-table-walk
   (lambda (ht proc)
     (map 
-      (lambda (kv) (proc (car kv) (cdr kv)))
+      (lambda (kv) (proc (car kv) (car (reverse kv))))
       (hash-table->alist ht)))) 
 
 (define (hash-table-update! hash-table key function)
@@ -349,10 +349,11 @@
              lst)
    ht))
 
-
-; FUTURE: Issue #11: hash-table-fold
-;(define (hash-table-fold hash-table f init-value)
-;    TBD)
+(define (hash-table-fold hash-table f acc-in)
+  (let ((acc acc-in))
+    (hash-table-walk hash-table 
+             (lambda (key value) (set! acc (f key value acc))))
+      acc))
 
 
 ; FUTURE: Issue #10: from numeric section -
