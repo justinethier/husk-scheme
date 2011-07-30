@@ -127,7 +127,7 @@ parseNumber = parseDecimalNumber <|>
  - -}
 parseRealNumber :: Parser LispVal
 parseRealNumber = do
-  sign <- many (oneOf "-")
+  sign <- many (oneOf "-+")
   num <- many1 (digit)
   _ <- char '.'
   frac <- many1 (digit)
@@ -144,7 +144,12 @@ parseRealNumber = do
 --                'e' -> return $ Float $ numbr
                 _ -> return $ Float $ numbr
 return $ Float $ fst $ Numeric.readFloat dec !! 0 -}
-     1 -> return $ Float $ (*) (-1.0) $ fst $ Numeric.readFloat dec !! 0
+
+-- TODO: this is a hack, but need to support the + sign as well as the minus.
+
+     1 -> if sign == "-" 
+             then return $ Float $ (*) (-1.0) $ fst $ Numeric.readFloat dec !! 0
+             else return $ Float $ fst $ Numeric.readFloat dec !! 0
      _ -> pzero
 
 parseRationalNumber :: Parser LispVal
