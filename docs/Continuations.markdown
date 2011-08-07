@@ -278,9 +278,9 @@ I hope this article helped you understand a bit more about what continuations ar
 
 On a side note, husk was my first Haskell project, so please do not be too critical of the code presented here. For the purposes of this project I tried to keep things as simple as possible.
 
-Thanks for reading!
+Thanks for reading,
 
-- Justin
+Justin
 
 ## References
 
