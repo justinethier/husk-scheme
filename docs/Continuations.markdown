@@ -160,7 +160,7 @@ Finally, there are two edge cases where a current continuation may not be presen
     continueEval _ (Continuation _ Nothing Nothing _ _) val = return val
 
 ###Apply
-Apply is used to execute a Scheme function; it needs to know both how to call a function as well as how to execute a continuation:
+[Apply](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) is used to execute a Scheme function; it needs to know both how to call a function as well as how to execute a continuation:
 
     apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 
