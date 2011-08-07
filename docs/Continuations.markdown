@@ -131,12 +131,14 @@ After the evaluation function is finished with an expression, it calls into `con
 
 There are many versions of `continueEval`, depending upon the input pattern. We will briefly discuss each one in turn. The first one below accepts a higher-order Haskell function and calls into it directly:
 
-    continueEval _  (Continuation cEnv 
-                                 (Just (HaskellBody func funcArgs)) 
-                                 (Just (Continuation cce cnc ccc _ cdynwind)) 
-                                  xargs 
-                                  _)
-             val = func cEnv (Continuation cce cnc ccc xargs cdynwind) val funcArgs
+    continueEval _  
+                (Continuation cEnv 
+                             (Just (HaskellBody func funcArgs)) 
+                             (Just (Continuation cce cnc ccc _ cdynwind)) 
+                              xargs 
+                              _)
+                 val =
+        func cEnv (Continuation cce cnc ccc xargs cdynwind) val funcArgs
 
 We may also receive a list containing Scheme code. In this case the function checks how much code is left. If the Scheme code is all finished the resultant value is returned; otherwise we keep going:
 
