@@ -227,7 +227,7 @@ This function uses a series of helper functions, organized into a single pipelin
         >>= bindVarArgs avarargs 
         >>= (evalBody abody)
 
-In a nutshell, we create a copy of the function's closure (input environment), bind the function arguments to that copy, and pass the Scheme code to `continueEval` to begin the evaluation process.
+In a nutshell, we create a copy of the function's closure (input environment), bind the function arguments to that copy, and pass the Scheme code to `continueEval` to evaluate the function body.
 
 ###call/cc
 Here is the implementation of `call/cc`. Since husk uses CPS, the code is actually quite simple:
