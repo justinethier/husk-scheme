@@ -249,7 +249,7 @@ Here is the implementation of `call/cc`. Since husk uses CPS, the code is actual
 
 `call/cc` accepts a single function as an argument, so we simply call into that function, passing in the current continuation. There are two cases since a primitive function may be called directly.
 
-The [Call With Current Continuation](http://c2.com/cgi/wiki?CallWithCurrentContinuation) wiki offers a particularly keen and relevant observation:
+The [Call With Current Continuation](http://c2.com/cgi/wiki?CallWithCurrentContinuation) wiki page offers a particularly keen and relevant observation:
 
 >If your program evaluator/interpreter is implemented using Continuation Passing Style you get call-with-current-continuation for free. CALL/CC is then a very natural operation since every function is called with the current continuation anyway.
 
