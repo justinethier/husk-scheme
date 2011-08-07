@@ -260,9 +260,7 @@ While researching CPS, one thing that threw me for a loop was the [quote](http:/
 
 >CPS is a programming style where no function is ever allowed to return
 
-But eventually `eval` has to return *something*, right? Well, yes, but since Haskell supports proper tail recursion we can call through as many CPS functions as necessary without fear of overflowing the stack. husk's `eval` function will eventually transform an expression into a single value that is returned to its caller. But that is just our application; another program written in CPS might keep calling into functions forever. 
-
-Languages that do not optimize tail calls - such as JavaScript - can support CPS style, but eventually a value must be returned since the stack will keep growing larger with each call into a new function.
+But eventually `eval` has to return *something*, right? Well, yes, but since Haskell supports proper tail recursion we can call through as many CPS functions as necessary without fear of overflowing the stack. husk's `eval` function will eventually transform an expression into a single value that is returned to its caller. But that is just our application; another Haskell program written in CPS might keep calling into functions forever. Which brings up a key point - languages that do not optimize tail calls - such as JavaScript - can support CPS style, but eventually a value must be returned since the stack will keep growing larger with each call into a new function.
 
 Initially I thought a lower-level construct might be required to implement continuations and proper tail recursion. For example, many [Schemes written in C use a trampoline](http://home.pipeline.com/~hbaker1/CheneyMTA.html):
 
