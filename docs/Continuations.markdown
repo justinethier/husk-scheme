@@ -4,7 +4,7 @@
 
 # Continuations
 
-Husk is a Scheme interpreter which was originally based on the code from the tutorial [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) by Jonathan Tang. Although that book is a great starting point for writing a Scheme, its interpreter does not include many of features required by R<sup>5</sup>RS Scheme such as continuations. This article provides a brief overview of Scheme continuations and presents the corresponding code from husk to show how they can be implemented.
+Husk is a Scheme interpreter based on code from the tutorial [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) by Jonathan Tang. Although that book is a great starting point for writing a Scheme, its interpreter does not include many of features required by R<sup>5</sup>RS Scheme such as continuations. This article provides a brief overview of Scheme continuations and presents the corresponding code from husk to show how they can be implemented.
 
 This article is intended as an introductory article for continuations. It will be most helpful to a reader with previous experience with Lisp and/or functional programming. In addition, you may want to at least skim through Jonathan Tang's book to get a basic understanding of the Haskell interpreter.
 
