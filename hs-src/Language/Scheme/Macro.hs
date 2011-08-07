@@ -336,6 +336,10 @@ checkLocal outerEnv localEnv identifiers hasEllipsis (Atom pattern) input = do
 checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(Vector _) input@(Vector _) =
   loadLocal outerEnv localEnv identifiers pattern input False hasEllipsis
 
+--
+-- TODO: both of the below patterns are handled incorrectly; see Issue #34.
+--  basically a pattern in the dotted tail position can match multiple times, similar (same?) as if an ellipsis was at the end of a list
+--
 checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(DottedList _ _) input@(DottedList _ _) =
   loadLocal outerEnv localEnv identifiers pattern input False hasEllipsis
 -- throwError $ BadSpecialForm "Test" input
