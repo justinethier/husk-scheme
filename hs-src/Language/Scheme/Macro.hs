@@ -351,6 +351,7 @@ checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(DottedList ps p) i
           {- Idea here is that if we have a dotted list, the last component does not have to be provided
           in the input. So in that case just fill in an empty list for the missing component. -}
      else loadLocal outerEnv localEnv identifiers pattern (DottedList (i : is) (List [])) False hasEllipsis
+-- Issue #34 TODO: possible prototype code for this section -     else loadLocal outerEnv localEnv identifiers (List $ ps ++ [p] ++ Atom "...") input False hasEllipsis
 checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(List _) input@(List _) =
   loadLocal outerEnv localEnv identifiers pattern input False hasEllipsis
 
