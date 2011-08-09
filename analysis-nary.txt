@@ -1,0 +1,19 @@
+Analysis for implementing nary macros
+
+checkLoad
+---------
+TBD: what about input to loadLocal? Do we keep as a list or cast to a dotted list? Keep in mind that CSI remembers whether the original input is a list or pair, and transforms appropriately.
+
+loadLocal
+---------
+This function needs to be extended to handle loading of an nary macro:
+loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do
+
+Basically for a dotted list we:
+- match all elements of ps with the first elements of is (of the same length as is)
+- match remaining elements of is (and i) against p. This match needs to set a variable such as hasEllipsis (or a new one) to indicate that an atom in the pattern will be loaded up as a variable to unload during transformation
+
+
+transform
+---------
+TBD
