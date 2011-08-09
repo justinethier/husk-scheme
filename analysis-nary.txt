@@ -33,4 +33,8 @@ The second part of this match could either iterate over remaining i members, or 
 
 transform
 ---------
-TBD
+Still a work in progress. There is a lot going on here :)
+
+Can transformDottedList be extended to do this? Or are there more downstream impacts? Need to have a look at the code in transformRule to assess whether it needs to change as well
+
+As a bonus, we should be able to address Issue #9 as part of this change
