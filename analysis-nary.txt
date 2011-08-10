@@ -1,5 +1,11 @@
 Analysis for changes required to implement nary macros
 
+common
+------
+Common function to break apart a list into a first part (n, same len as dotted list), and a second part with the remaining items
+
+
+
 checkLoad
 ---------
 There are two cases here where the pattern is a dotted list. I suggest both just pass the pattern/input to loadLocal for detailed processing
@@ -35,13 +41,12 @@ transform
 ---------
 Still a work in progress. There is a lot going on here :)
 
-Can transformDottedList be extended to do this? Or are there more downstream impacts? Need to have a look at the code in transformRule to assess whether it needs to change as well
-
 As a bonus, we should be able to address Issue #9 as part of this change
 
 Analysis, at a minimum:
 
 transformDottedList - when transforming ds, only need to transform the first n items in the input list, where n is the length of ds. The remaining items are dealt with later.
 
-When handling the case statement, need to add a case for this n match. Somehow need to keep matching d until either all remaining input items are read or there is a mismatch (error). Not quite sure how this code will be structured yet - perhaps we could call a function to take care of this work?
+When handling the case statement, need to add a case for this n match. Somehow need to keep matching d until either all remaining input items are read or there is a mismatch (error). Not quite sure how this code will be structured yet - perhaps we could call a function to take care of this work.
 
+Tricky part is to tell the other code (specifically - or maybe just - transformAtom) that we are in a 0-n match case.
