@@ -187,10 +187,32 @@ loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllips
        ((Vector p), (Vector i)) -> do
          loadLocal outerEnv localEnv identifiers (List $ elems p) (List $ elems i) False outerHasEllipsis
 
-       ((DottedList ps p), (DottedList is i)) -> do
+--  TODO:
+--       ((DottedList ps p), (List (i : is))) -> do
+
+       ((DottedList ps p), (DottedList isRaw iRaw)) -> do
+         
+         -- Split input into two sections: 
+         --   is - required inputs that must be present
+         --   i  - variable length inputs to each compare against p 
+         let isSplit = splitAt (length ps) isRaw
+         let is = fst isSplit
+         let i = (snd isSplit) ++ [iRaw]
+
          result <- loadLocal outerEnv localEnv identifiers (List ps) (List is) False outerHasEllipsis
          case result of
-            Bool True -> loadLocal outerEnv localEnv identifiers p i False outerHasEllipsis
+            Bool True -> --loadLocal outerEnv localEnv identifiers p i False outerHasEllipsis
+
+-- TODO: this is broken, there is a stack overflow when running example/when.scm
+
+                         -- TODO: first-cut of this
+                         --  idea is that by matching on an elipsis we will force the code to match p
+                         --  against all elements in i. In theory should work fine but I am not sure
+                         --  if this will introduce any subtle issues...
+                         loadLocal outerEnv localEnv identifiers 
+                                  (List $ [p] ++ [Atom "..."]) 
+                                  (List i)
+                                   False outerHasEllipsis
             _ -> return $ Bool False
 
        (List (p : ps), List (i : is)) -> do -- check first input against first pattern, recurse...
@@ -344,6 +366,8 @@ checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(DottedList _ _) in
   loadLocal outerEnv localEnv identifiers pattern input False hasEllipsis
 -- throwError $ BadSpecialForm "Test" input
 checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(DottedList ps p) input@(List (i : is)) = do
+  loadLocal outerEnv localEnv identifiers pattern input False hasEllipsis
+-- TODO: { - OBSOLETE:
   if (length ps) == (length is)
           {- Lists are same length, implying elements in both should be the same.
           Cast pair to a List for further processing -}
@@ -351,6 +375,7 @@ checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(DottedList ps p) i
           {- Idea here is that if we have a dotted list, the last component does not have to be provided
           in the input. So in that case just fill in an empty list for the missing component. -}
      else loadLocal outerEnv localEnv identifiers pattern (DottedList (i : is) (List [])) False hasEllipsis
+--         - }
 -- Issue #34 TODO: possible prototype code for this section -     else loadLocal outerEnv localEnv identifiers (List $ ps ++ [p] ++ Atom "...") input False hasEllipsis
 checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(List _) input@(List _) =
   loadLocal outerEnv localEnv identifiers pattern input False hasEllipsis
