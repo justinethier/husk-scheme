@@ -41,7 +41,7 @@ import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
 import Data.Array
---import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 http://community.schemewiki.org/?scheme-faq-macros -}
@@ -179,7 +179,7 @@ searchForBindings _ _ bindings = return $ List bindings
 in preparation for macro transformation. -}
 loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
 loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do
-  case (pattern, input) of
+  case ((trace ("p = " ++ show pattern ++ ", i = " ++ show input) pattern), input) of
 
        {- For vectors, just use list match for now, since vector input matching just requires a
        subset of that behavior. Should be OK since parser would catch problems with trying
@@ -187,8 +187,29 @@ loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllips
        ((Vector p), (Vector i)) -> do
          loadLocal outerEnv localEnv identifiers (List $ elems p) (List $ elems i) False outerHasEllipsis
 
---  TODO:
---       ((DottedList ps p), (List (i : is))) -> do
+-- TODO: store somewhere whether input was a list or pair? Not quite sure how to make that happen, or if we
+--       even need to per R5RS. See Issue 9
+-- TODO: below should have a lot in common with pair/pair - roll common parts into a single function before we are finished
+       ((DottedList ps p), (List (iRaw : isRaw))) -> do
+         -- Split input into two sections: 
+         --   is - required inputs that must be present
+         --   i  - variable length inputs to each compare against p 
+         let isSplit = splitAt (length ps) (iRaw : isRaw)
+         let is = fst isSplit
+         let i = (snd isSplit)
+
+         result <- loadLocal outerEnv localEnv identifiers (List ps) (List is) False outerHasEllipsis
+         case result of
+            Bool True -> --loadLocal outerEnv localEnv identifiers p i False outerHasEllipsis
+                         -- TODO: first-cut of this
+                         --  idea is that by matching on an elipsis we will force the code to match p
+                         --  against all elements in i. In theory should work fine but I am not sure
+                         --  if this will introduce any subtle issues...
+                         loadLocal outerEnv localEnv identifiers 
+                                  (List $ [p] ++ [Atom "..."]) 
+                                  (List i)
+                                   False outerHasEllipsis
+            _ -> return $ Bool False
 
        ((DottedList ps p), (DottedList isRaw iRaw)) -> do
          
@@ -202,9 +223,6 @@ loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllips
          result <- loadLocal outerEnv localEnv identifiers (List ps) (List is) False outerHasEllipsis
          case result of
             Bool True -> --loadLocal outerEnv localEnv identifiers p i False outerHasEllipsis
-
--- TODO: this is broken, there is a stack overflow when running example/when.scm
-
                          -- TODO: first-cut of this
                          --  idea is that by matching on an elipsis we will force the code to match p
                          --  against all elements in i. In theory should work fine but I am not sure
@@ -358,25 +376,12 @@ checkLocal outerEnv localEnv identifiers hasEllipsis (Atom pattern) input = do
 checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(Vector _) input@(Vector _) =
   loadLocal outerEnv localEnv identifiers pattern input False hasEllipsis
 
---
--- TODO: both of the below patterns are handled incorrectly; see Issue #34.
---  basically a pattern in the dotted tail position can match multiple times, similar (same?) as if an ellipsis was at the end of a list
---
 checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(DottedList _ _) input@(DottedList _ _) =
   loadLocal outerEnv localEnv identifiers pattern input False hasEllipsis
--- throwError $ BadSpecialForm "Test" input
-checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(DottedList ps p) input@(List (i : is)) = do
+
+checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(DottedList _ _) input@(List (_ : _)) = do
   loadLocal outerEnv localEnv identifiers pattern input False hasEllipsis
--- TODO: { - OBSOLETE:
-  if (length ps) == (length is)
-          {- Lists are same length, implying elements in both should be the same.
-          Cast pair to a List for further processing -}
-     then loadLocal outerEnv localEnv identifiers (List $ ps ++ [p]) input False hasEllipsis
-          {- Idea here is that if we have a dotted list, the last component does not have to be provided
-          in the input. So in that case just fill in an empty list for the missing component. -}
-     else loadLocal outerEnv localEnv identifiers pattern (DottedList (i : is) (List [])) False hasEllipsis
---         - }
--- Issue #34 TODO: possible prototype code for this section -     else loadLocal outerEnv localEnv identifiers (List $ ps ++ [p] ++ Atom "...") input False hasEllipsis
+
 checkLocal outerEnv localEnv identifiers hasEllipsis pattern@(List _) input@(List _) =
   loadLocal outerEnv localEnv identifiers pattern input False hasEllipsis
 
@@ -544,10 +549,13 @@ transformDottedList outerEnv localEnv ellipsisIndex (List result) (List (DottedL
           lsto <- transformRule outerEnv localEnv ellipsisIndex (List []) (List ds) (List ellipsisList)
           case lsto of
             List lst -> do
-                           r <- transformRule outerEnv localEnv ellipsisIndex (List []) (List [d]) (List ellipsisList)
-                           case r of
+-- TODO: d is an n-ary match, per Issue #34
+                           r <- transformRule outerEnv localEnv ellipsisIndex (List []) (List [d, Atom "..."]) (List ellipsisList)
+                           case (trace ("r = " ++ show r) r) of
                                 -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
-                                List [List []] -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) (List ellipsisList)
+                                List [List []] -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) (List ellipsisList) -- TODO: is this form still applicable, post Issue #34?
+
+                                List [] -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) (List ellipsisList)
                                 --
                                 -- FUTURE: Issue #9 - the transform needs to be as follows:
                                 --
@@ -560,11 +568,16 @@ transformDottedList outerEnv localEnv ellipsisIndex (List result) (List (DottedL
                                 --
 {- List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList)
 List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) -}
+
+-- TODO: both cases below do not take issue #9 into account
                                 List [rst] -> do
                                                  src <- lookupPatternVarSrc localEnv $ List ds
                                                  case src of
                                                     String "pair" -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList)
                                                     _ -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList)
+                                List rst -> do
+                                    transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List $ lst ++ rst]) (List ts) (List ellipsisList)
+
                                 _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
             Nil _ -> return $ List [Nil "", List ellipsisList]
             _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
