@@ -1,0 +1,52 @@
+Analysis for changes required to implement nary macros
+
+common
+------
+Common function to break apart a list into a first part (n, same len as dotted list), and a second part with the remaining items
+
+
+
+checkLoad
+---------
+There are two cases here where the pattern is a dotted list. I suggest both just pass the pattern/input to loadLocal for detailed processing
+
+loadLocal
+---------
+This function needs to be extended to handle loading of an nary macro:
+loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do
+
+There are two cases:
+
+DottedList / List
+-----------------
+
+Match case would be:
+       ((DottedList ps p), (List (i : is)) -> do
+
+In order to match, we need to compare ps (of length n) with the first n elements of i:is. If they match, we then need to compare the remaining elements of i:is (of length nn) with a list containing nn copies of p. This code would probably be the same as in the below case, and I think a common function could be used.
+
+TBD: how to record that input is a list or a pair? We should be able to check whether p is an atom, and if so, store a new variable named p in a new namespace (say, "nary") to indicate the input form.
+       
+DottedList / DottedList
+-----------------------
+
+Basically for a dotted list we:
+- match all elements of ps with the first elements of is (of the same length as is)
+- match remaining elements of is (and i) against p. This match needs to set a variable such as hasEllipsis (or a new one) to indicate that an atom in the pattern will be loaded up as a variable to unload during transformation
+
+The second part of this match could either iterate over remaining i members, or it could construct a list of i members as well as a corresponding list of the same length (0 to n) but each member is p. Then could just use loadLocal to process both lists (TBD: I *think* this would work)
+
+
+transform
+---------
+Still a work in progress. There is a lot going on here :)
+
+As a bonus, we should be able to address Issue #9 as part of this change
+
+Analysis, at a minimum:
+
+transformDottedList - when transforming ds, only need to transform the first n items in the input list, where n is the length of ds. The remaining items are dealt with later.
+
+When handling the case statement, need to add a case for this n match. Somehow need to keep matching d until either all remaining input items are read or there is a mismatch (error). Not quite sure how this code will be structured yet - perhaps we could call a function to take care of this work.
+
+Tricky part is to tell the other code (specifically - or maybe just - transformAtom) that we are in a 0-n match case.
