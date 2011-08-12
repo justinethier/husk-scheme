@@ -13,10 +13,10 @@
       (list (quote (a b . c))))))
 
 (write 
-(test (1 2)))
-
-(write 
 (test (1 2 3 . 3)))
 
+(write 
+(test (1 2)))
+
 (write
-(test (1 2 3)))
+(test (1 2 . 3)))
