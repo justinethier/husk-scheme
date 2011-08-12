@@ -41,7 +41,7 @@ import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
 import Data.Array
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+--import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 http://community.schemewiki.org/?scheme-faq-macros -}
@@ -179,7 +179,8 @@ searchForBindings _ _ bindings = return $ List bindings
 in preparation for macro transformation. -}
 loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
 loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do
-  case ((trace ("p = " ++ show pattern ++ ", i = " ++ show input) pattern), input) of
+-- TODO: remove this debug line:  case ((trace ("p = " ++ show pattern ++ ", i = " ++ show input) pattern), input) of
+  case (pattern, input) of
 
        {- For vectors, just use list match for now, since vector input matching just requires a
        subset of that behavior. Should be OK since parser would catch problems with trying
@@ -551,7 +552,7 @@ transformDottedList outerEnv localEnv ellipsisIndex (List result) (List (DottedL
             List lst -> do
 -- TODO: d is an n-ary match, per Issue #34
                            r <- transformRule outerEnv localEnv ellipsisIndex (List []) (List [d, Atom "..."]) (List ellipsisList)
-                           case (trace ("r = " ++ show r) r) of
+                           case (r) of
                                 -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
                                 List [List []] -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) (List ellipsisList) -- TODO: is this form still applicable, post Issue #34?
 
