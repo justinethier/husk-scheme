@@ -17,6 +17,22 @@ TBD: how to store data at each level. Is there a separate environment (and list)
 
 TBD: how to track nesting levels?? How practical is this, and what is involved?
 
+loadLocal
+---------
+nesting level is incremented when True is passed as hasEllipsis (one place during list/list case)
+also need to keep in mind that when localHasEllipse is set, then the ellipse level must be incremented by one as well.
+
+level decremented by one when this function moves past an ellipsis (see: "must be finished with ..."). I think this is the only place...?
+
+checkLocal
+----------
+We need to pass the nesting level to this function, instead of a boolean. The nesting level is 0 if there is no ellipsis in play. Otherwise it
+is an integer from 1 - n.
+
+The numeric input will be used in the Atom match, to store data accordingly, depending upon the depth level.
+
+The other functions (vector, list, pair) that use 'hasEllipsis' will now pass the depth level instead.
+
 ----------------------------------------------------------------
 Problem: n-ary macros
 Analysis for changes required to implement nary macros
