@@ -13,12 +13,33 @@ Variables are not captured properly when matches occur at multiple depth levels.
 Here, the macro actually crashes husk v3.2 because we do not properly account for the nesting levels.
 In order to do so, we need to keep track of the ellipsis nesting level, both during pattern matching and transformation.
 
-TBD: how to store data at each level. Is there a separate environment (and list) at each level? Do we try to put everything into one list???
+Storage of data for variable-length inputs (IE, variables captured by a ...)
+----------------------------------------------------------------------------
 
-TBD: how to track nesting levels?? How practical is this, and what is involved?
+Data will be stored as a list at each depth level. Note: non-zero_or_many vars could be stored in a list as well to generalize storage, but this is not necessary
+
+How to track depth level of each var? We could use a different namespace for each depth, but that makes it harder to figure out if a var name is already taken in another namespace. Instead, we can just have a separate namespace that keeps track of the depth level for each variable.
+
+What does the data look like at each depth level? It should be a jagged array of up to n-by-n. Here are some examples:
+
+ 0 - (a b)
+ 1 - ((a b) (c d) (e))
+ 2 - (((a b) (c d)) ((e)))
+ etc...
+
+Earlier notes:
+  TBD: how to store data at each level. Is there a separate environment (and list) at each level? Do we try to put everything into one list???
+
+The data structure discussed here must be populated during pattern matching (in the Atom function), and must be read by the transformation code (again, in the transformRule's Atom function). I believe logic will be isolated to those two functions, although they will require new inputs (see below)
 
 loadLocal
 ---------
+Need a new variable:
+
+- ellipsisLevel - integer - used to track the current ellipsis depth level
+
+This variable will be used to let the atom storage level know how to store each variable. A separate ellipsisIndex is not required here because we just append to the existing list; the index is implicit with the length of the list
+
 nesting level is incremented when True is passed as hasEllipsis (one place during list/list case)
 also need to keep in mind that when localHasEllipse is set, then the ellipse level must be incremented by one as well.
 
@@ -36,12 +57,19 @@ The other functions (vector, list, pair) that use 'hasEllipsis' will now pass th
 transformRule
 -------------
 
-Need to change how ellipsisIndex is used:
+Instead of ellipsisIndex we need 2 new variables:
 
-Can we just increment ellipsisIndex when we say (ellipsisIndex + 1) throughout the code? is it really that simple?
-Assume ellipsisIndex would need to be decremented when the code says we are moving past the "..."
+ - ellisisIndex - List of integers - serves same purpose as current var, but will keep track of the current ellipsis index at each depth level
+ - ellipsisLevel - integer - Ellipsis depth level, 0-n - Used to track current depth level
 
-TBD: assume transforming of Atoms will mimic the logic in Atom pattern match, where data will be loaded from a new data structure
+TBD: how to maintain values of both vars
+
+Earlier notes: 
+       (Can we just increment ellipsisIndex when we say (ellipsisIndex + 1) throughout the code? is it really that simple?
+        Assume ellipsisIndex would need to be decremented when the code says we are moving past the "...")
+
+
+
 
 ----------------------------------------------------------------
 Problem: n-ary macros
