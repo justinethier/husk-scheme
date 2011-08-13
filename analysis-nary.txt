@@ -1,3 +1,24 @@
+This document covers the analysis of various development tasks occurring on this branch.
+
+----------------------------------------------------------------
+Problem: nesting of zero-or-many matches
+Variables are not captured properly when matches occur at multiple depth levels. For example, consider the following example:
+
+(define-syntax nesting-test
+  (syntax-rules ()
+    ((test a b (c d (e f ...) ...) ...)
+     (quote ((e f ...) ...) ...))))
+(write (nesting-test 1 2 (3 4 (5 6 7 8 9 10))))
+
+Here, the macro actually crashes husk v3.2 because we do not properly account for the nesting levels.
+In order to do so, we need to keep track of the ellipsis nesting level, both during pattern matching and transformation.
+
+TBD: how to store data at each level. Is there a separate environment (and list) at each level? Do we try to put everything into one list???
+
+TBD: how to track nesting levels?? How practical is this, and what is involved?
+
+----------------------------------------------------------------
+Problem: n-ary macros
 Analysis for changes required to implement nary macros
 
 common
