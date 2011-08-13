@@ -33,6 +33,16 @@ The numeric input will be used in the Atom match, to store data accordingly, dep
 
 The other functions (vector, list, pair) that use 'hasEllipsis' will now pass the depth level instead.
 
+transformRule
+-------------
+
+Need to change how ellipsisIndex is used:
+
+Can we just increment ellipsisIndex when we say (ellipsisIndex + 1) throughout the code? is it really that simple?
+Assume ellipsisIndex would need to be decremented when the code says we are moving past the "..."
+
+TBD: assume transforming of Atoms will mimic the logic in Atom pattern match, where data will be loaded from a new data structure
+
 ----------------------------------------------------------------
 Problem: n-ary macros
 Analysis for changes required to implement nary macros
