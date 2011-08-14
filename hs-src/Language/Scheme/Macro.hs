@@ -144,7 +144,7 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
               _ -> pattern
    case p of
       List (Atom _ : ps) -> do
-        match <- loadLocal outerEnv localEnv identifiers (List ps) (List is) False False
+        match <- loadLocal outerEnv localEnv identifiers (List ps) (List is) 0 
         case match of
            Bool False -> return $ Nil ""
            _ -> do
@@ -177,8 +177,8 @@ searchForBindings _ _ bindings = return $ List bindings
 
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 in preparation for macro transformation. -}
-loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Bool -> Bool -> IOThrowsError LispVal
-loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do
+loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Integer -> IOThrowsError LispVal
+loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel = do
 -- TODO: remove this debug line:  case ((trace ("p = " ++ show pattern ++ ", i = " ++ show input) pattern), input) of
   case (pattern, input) of
 
@@ -186,7 +186,7 @@ loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllips
        subset of that behavior. Should be OK since parser would catch problems with trying
        to add pair syntax to a vector declaration. -}
        ((Vector p), (Vector i)) -> do
-         loadLocal outerEnv localEnv identifiers (List $ elems p) (List $ elems i) False outerHasEllipsis
+         loadLocal outerEnv localEnv identifiers (List $ elems p) (List $ elems i) ellipsisLevel 
 
 -- TODO: store somewhere whether input was a list or pair? Not quite sure how to make that happen, or if we
 --       even need to per R5RS. See Issue 9
@@ -199,7 +199,7 @@ loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllips
          let is = fst isSplit
          let i = (snd isSplit)
 
-         result <- loadLocal outerEnv localEnv identifiers (List ps) (List is) False outerHasEllipsis
+         result <- loadLocal outerEnv localEnv identifiers (List ps) (List is) ellipsisLevel
          case result of
             Bool True -> --loadLocal outerEnv localEnv identifiers p i False outerHasEllipsis
                          -- TODO: first-cut of this
@@ -209,7 +209,7 @@ loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllips
                          loadLocal outerEnv localEnv identifiers 
                                   (List $ [p] ++ [Atom "..."]) 
                                   (List i)
-                                   False outerHasEllipsis
+                                  (ellipsisLevel + 1)
             _ -> return $ Bool False
 
        ((DottedList ps p), (DottedList isRaw iRaw)) -> do
@@ -221,7 +221,7 @@ loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllips
          let is = fst isSplit
          let i = (snd isSplit) ++ [iRaw]
 
-         result <- loadLocal outerEnv localEnv identifiers (List ps) (List is) False outerHasEllipsis
+         result <- loadLocal outerEnv localEnv identifiers (List ps) (List is) ellipsisLevel
          case result of
             Bool True -> --loadLocal outerEnv localEnv identifiers p i False outerHasEllipsis
                          -- TODO: first-cut of this
@@ -231,29 +231,32 @@ loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllips
                          loadLocal outerEnv localEnv identifiers 
                                   (List $ [p] ++ [Atom "..."]) 
                                   (List i)
-                                   False outerHasEllipsis
+                                  (ellipsisLevel + 1)
             _ -> return $ Bool False
 
        (List (p : ps), List (i : is)) -> do -- check first input against first pattern, recurse...
 
          let localHasEllipsis = macroElementMatchesMany pattern
 
+-- TODO: where to increment ellipsisLevel for standard macros?? can we do it below?
+-- need to think this through
+
          {- FUTURE: error if ... detected when there is an outer ... ????
          no, this should (eventually) be allowed. See scheme-faq-macros -}
 
-         status <- checkLocal outerEnv localEnv identifiers (localHasEllipsis || outerHasEllipsis) p i
+         status <- checkLocal outerEnv localEnv identifiers ellipsisLevel p i
          case status of
               -- No match
               Bool False -> if localHasEllipsis
                                 {- No match, must be finished with ...
                                 Move past it, but keep the same input. -}
                                 then do
-                                        loadLocal outerEnv localEnv identifiers (List $ tail ps) (List (i : is)) False outerHasEllipsis
+                                        loadLocal outerEnv localEnv identifiers (List $ tail ps) (List (i : is)) ellipsisLevel
                                 else return $ Bool False
               -- There was a match
               _ -> if localHasEllipsis
-                      then loadLocal outerEnv localEnv identifiers pattern (List is) True outerHasEllipsis
-                      else loadLocal outerEnv localEnv identifiers (List ps) (List is) False outerHasEllipsis
+                      then loadLocal outerEnv localEnv identifiers pattern (List is) ellipsisLevel
+                      else loadLocal outerEnv localEnv identifiers (List ps) (List is) ellipsisLevel
 
        -- Base case - All data processed
        (List [], List []) -> return $ Bool True
@@ -271,17 +274,18 @@ loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllips
        (List [], _) -> return $ Bool False
 
        -- Check input against pattern (both should be single var)
-       (_, _) -> checkLocal outerEnv localEnv identifiers (hasEllipsis || outerHasEllipsis) pattern input
+       (_, _) -> checkLocal outerEnv localEnv identifiers ellipsisLevel pattern input
 
 {- Check pattern against input to determine if there is a match
  -
+ - @param outerEnv - Local variables in play outside the macro
  - @param localEnv - Local variables for the macro, used during transform
- - @param hasEllipsis - Determine whether we are in a zero-or-many match.
- -                      Used for loading local vars and NOT for purposes of matching.
+ - @param identifiers  - List of identifiers passed into the macro
+ - @param ellipsisLevel - Determine nesting level of the zero-or-many match, if there is any
  - @param pattern - Pattern to match
  - @param input - Input to be matched
  -}
-checkLocal :: Env -> Env -> LispVal -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
+checkLocal :: Env -> Env -> LispVal -> Integer -> LispVal -> LispVal -> IOThrowsError LispVal
 checkLocal _ _ _ _ (Bool pattern) (Bool input) = return $ Bool $ pattern == input
 checkLocal _ _ _ _ (Number pattern) (Number input) = return $ Bool $ pattern == input
 checkLocal _ _ _ _ (Float pattern) (Float input) = return $ Bool $ pattern == input

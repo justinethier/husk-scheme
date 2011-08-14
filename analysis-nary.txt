@@ -44,6 +44,9 @@ nesting level is incremented when True is passed as hasEllipsis (one place durin
 also need to keep in mind that when localHasEllipse is set, then the ellipse level must be incremented by one as well.
 
 level decremented by one when this function moves past an ellipsis (see: "must be finished with ..."). I think this is the only place...?
+UPDATE - does that make sense? Maybe we don't need to decrement at all, since when a (+1) function returns, it will automatically set level back... will that work???
+
+TODO: need to read http://community.schemewiki.org/?scheme-faq-macros and make sure it aligns with this design approach
 
 checkLocal
 ----------
