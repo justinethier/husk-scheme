@@ -283,7 +283,7 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel = do
  - @param pattern - Pattern to match
  - @param input - Input to be matched
  -}
-checkLocal :: Env -> Env -> LispVal -> Integer -> LispVal -> LispVal -> IOThrowsError LispVal
+checkLocal :: Env -> Env -> LispVal -> Integer -> [Integer] -> LispVal -> LispVal -> IOThrowsError LispVal
 checkLocal _ _ _ _ (Bool pattern) (Bool input) = return $ Bool $ pattern == input
 checkLocal _ _ _ _ (Number pattern) (Number input) = return $ Bool $ pattern == input
 checkLocal _ _ _ _ (Float pattern) (Float input) = return $ Bool $ pattern == input
@@ -369,8 +369,9 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
 -}                            
     where
       addPatternVar isDefined ellipLevel ellipIndex pat val = do
-      -- TODO: need to use ellipLevel to store data in appropriate format
-      -- TODO: need ellipsisIndex to figure out where to store val
+      -- TODO: need to use ellipLevel to store data in appropriate format.
+      --       actually is this only used to store? not entirely, can be used when allocating initial list
+      -- TODO: need ellipsisIndex to figure out where to store val. otherwise how do I know which list to append value to, right?
 {-
 What does the data look like at each depth level? Here are some examples:
 
@@ -385,6 +386,9 @@ What does the data look like at each depth level? Here are some examples:
                           (List vs) -> setVar localEnv pat (List $ vs ++ [val])
                           _ -> throwError $ Default "Unexpected error in checkLocal (Atom)"
                 else defineVar localEnv pat (List [val])
+
+    -- TODO (above): need to flag the ellipsisLevel of this variable.
+    --               also, it is an error if, for an existing var, ellipsisLevel input does not match the var's stored level
 
 checkLocal outerEnv localEnv identifiers ellipsisLevel pattern@(Vector _) input@(Vector _) =
   loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel
