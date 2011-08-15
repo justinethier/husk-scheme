@@ -177,8 +177,8 @@ searchForBindings _ _ bindings = return $ List bindings
 
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 in preparation for macro transformation. -}
-loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Integer -> IOThrowsError LispVal
-loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel = do
+loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> [Bool] -> Integer -> IOThrowsError LispVal
+loadLocal outerEnv localEnv identifiers pattern input inEllipsis ellipsisLevel = do
 -- TODO: remove this debug line:  case ((trace ("p = " ++ show pattern ++ ", i = " ++ show input) pattern), input) of
   case (pattern, input) of
 
@@ -236,7 +236,7 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel = do
 
        (List (p : ps), List (i : is)) -> do -- check first input against first pattern, recurse...
 
-         let localHasEllipsis = macroElementMatchesMany pattern
+         let nextHasEllipsis = macroElementMatchesMany pattern
 
 -- TODO: where to increment ellipsisLevel for standard macros?? can we do it below?
 -- need to think this through
@@ -247,15 +247,21 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel = do
          status <- checkLocal outerEnv localEnv identifiers ellipsisLevel p i
          case status of
               -- No match
-              Bool False -> if localHasEllipsis
+              Bool False -> if nextHasEllipsis
                                 {- No match, must be finished with ...
                                 Move past it, but keep the same input. -}
                                 then do
                                         loadLocal outerEnv localEnv identifiers (List $ tail ps) (List (i : is)) ellipsisLevel
                                 else return $ Bool False
               -- There was a match
-              _ -> if localHasEllipsis
-                      then loadLocal outerEnv localEnv identifiers pattern (List is) ellipsisLevel
+              _ -> if nextHasEllipsis
+-- TODO: next has a level of (index+1), but only for the first item that matches; if there is more than one we still want to stay at the
+--  same ellipsis level
+                      then 
+-- TODO: if !inEllipsis (at level+1) - TODO: data type for this? is [bool] necessary? can an integer (level) be used, or is that insufficient?
+--          then inEllipsis(level+1)=>true, ellipsisLevel+1
+--          else keep both vars fixed (pass current values)
+                           loadLocal outerEnv localEnv identifiers pattern (List is) ellipsisLevel
                       else loadLocal outerEnv localEnv identifiers (List ps) (List is) ellipsisLevel
 
        -- Base case - All data processed
