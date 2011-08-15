@@ -379,6 +379,9 @@ What does the data look like at each depth level? Here are some examples:
  2 - ((a b) (c d) (e))
  3 - (((a b) (c d)) ((e)))
 
+TODO: for building (and later reading) of this data structure, I suggest creating a small set of stand-alone haskell
+      functions that can be independently tested. That way we know that this is being built on a solid foundation.
+
  -}
              if isDefined
                 then do v <- getVar localEnv pat
