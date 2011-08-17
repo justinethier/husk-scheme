@@ -61,7 +61,7 @@ setData :: LispVal -- ^ The nested list to modify
                    --   (EG: [1, 2] means add to the second top-most list, at its 3rd position)
         -> LispVal -- ^ Value to insert 
         -> LispVal -- ^ Resulant list
-setData (List lData) ellipsisIndex@(i:is) val = do
+setData (List lData) (i:is) val = do
   -- Fill "holes" as long as they are not at the leaves.
   --
   -- This is because, when a match occurs it happens 0 or more times.
@@ -95,6 +95,7 @@ setData (List lData) ellipsisIndex@(i:is) val = do
                    else List $ (fst content) ++ [setData c is val] ++ (cs) 
 
 -- |Compare actual input with expected
+cmp :: LispVal -> LispVal -> IO ()
 cmp input expected = do
   putStrLn $ show input
   putStrLn $ show $ assert (eqVal expected input) input
