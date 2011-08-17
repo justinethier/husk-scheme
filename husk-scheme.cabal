@@ -27,10 +27,10 @@ Library
                    Language.Scheme.Variables
                    Language.Scheme.Plugins.CPUTime
   Other-Modules:   Language.Scheme.Macro
+                   Language.Scheme.Macro.Matches
                    Language.Scheme.Numerical
                    Language.Scheme.Parser
                    Language.Scheme.Primitives
-                   Language.Scheme.Utilities
 
 Executable         huski
   Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, haskell98, mtl, parsec, directory, ghc, ghc-paths
@@ -41,7 +41,7 @@ Executable         huski
                    Language.Scheme.Types
                    Language.Scheme.Variables
                    Language.Scheme.Macro
+                   Language.Scheme.Macro.Matches
                    Language.Scheme.Numerical
                    Language.Scheme.Parser
                    Language.Scheme.Primitives
-                   Language.Scheme.Utilities
