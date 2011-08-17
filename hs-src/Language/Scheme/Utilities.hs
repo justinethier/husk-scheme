@@ -1,5 +1,5 @@
 {- |
-Module      : Language.Scheme.Utilities
+Module      : Language.Scheme.Macro.Matches
 Copyright   : Justin Ethier
 Licence     : MIT (see LICENSE in the distribution)
 
@@ -11,9 +11,10 @@ husk scheme interpreter
 
 A lightweight dialect of R5RS scheme.
 
-This module contains utility functions, primarily used to support macro processing.
+This module contains utility functions used to support macro processing,
+by storing and/or manipulating data involving 0-or-many matches.
 -}
-module Language.Scheme.Utilities (getData, setData) where
+module Language.Scheme.Macro.Matches (getData, setData) where
 import Language.Scheme.Types
 import Control.Exception
 --import Debug.Trace
@@ -61,7 +62,21 @@ setData :: LispVal -- ^ The nested list to modify
         -> LispVal -- ^ Value to insert 
         -> LispVal -- ^ Resulant list
 setData (List lData) ellipsisIndex@(i:is) val = do
-  if length is > 0 && length lData < i + 1 -- Fill "holes" as long as they are not at the leaves
+  -- Fill "holes" as long as they are not at the leaves.
+  --
+  -- This is because, when a match occurs it happens 0 or more times.
+  -- Therefore it is not possible (at the leaves) for a match to occur where that match is not
+  -- placed at the end of the list. For example, if the pattern is:
+  --
+  -- a ...
+  --
+  -- And the input is:
+  --
+  -- 1 2 3
+  --
+  -- Then we always store the first match in position 0, second in 1, etc. There are no holes
+  -- in this case because there is never a reason to skip any of these positions.
+  if length is > 0 && length lData < i + 1 
      then set $ fill lData $ i + 1
      else set lData
 
@@ -111,6 +126,14 @@ test = do
 
   let c = setData b [0, 1] $ Atom "test2"
   cmp c (List [List [Atom "test", Atom "test2"]])
+
+
+-- An invalid test case because it attempts to initialize a leaf by adding at a non-zero leaf position.
+--cmp (setData (List []) [0, 1, 2] $ Atom "test") 
+--               (List [List[List [], List[List [], List[], Atom "test"]]])
+--   A correct test is below:
+  cmp (setData (List []) [0, 1, 0] $ Atom "test") 
+               (List [List[List [], List[Atom "test"]]])
 
   -- Illustrates an important point, that if we are adding into 
   -- a 'hole', we need to create a list there first
