@@ -1,11 +1,22 @@
-{- A temporary file to test out ideas for building the data structure required by Macro.hs 
+{- |
+Module      : Language.Scheme.Utilities
+Copyright   : Justin Ethier
+Licence     : MIT (see LICENSE in the distribution)
 
- test via: ghci test.hs
+Maintainer  : github.com/justinethier
+Stability   : experimental
+Portability : portable
+
+husk scheme interpreter
+
+A lightweight dialect of R5RS scheme.
+
+This module contains utility functions, primarily used to support macro processing.
 -}
-module Test (setData) where
+module Language.Scheme.Utilities (getData, setData) where
 import Language.Scheme.Types
 import Control.Exception
-import Debug.Trace
+--import Debug.Trace
 
 -- |Create a nested list
 create :: Int     -- ^ Number of nesting levels
@@ -29,6 +40,12 @@ fill l len
   | length l < len  = fill (l ++ [List []]) len
   | otherwise       = l
 
+-- |Get an element at given location in the nested list
+getData :: LispVal -- ^ The nested list to read from
+        -> [Int]   -- ^ Location to read an element from, all numbers are 0-based
+        -> LispVal -- ^ Value read, or "Nil" if none
+getData _ _ = Nil "" -- TODO: implement
+
 -- |Add an element to the given nested list
 setData :: LispVal -- ^ The nested list to modify
         -> [Int]   -- ^ Location to insert the new element, from top-most -> leaf 
@@ -41,6 +58,7 @@ setData (List lData) ellipsisIndex@(i:is) val = do
      else set lData
 
  where 
+
 --  set listData = case (snd (trace ("content = " ++ show content) content)) of
   set listData = do
     let content = splitAt i listData
@@ -58,7 +76,7 @@ cmp input expected = do
   putStrLn $ show input
   putStrLn $ show $ assert (eqVal expected input) input
 
--- |Run this method to test the above code
+-- |Run this function to test the above code
 test :: IO ()
 test = do
   cmp (setData (List [Number 1, Number 2, Number 3, Number 4]) [4] (Number 5)) 
@@ -96,5 +114,8 @@ test = do
 
   let cc3 = setData b [4, 0] $ Atom "test2"
   cmp cc3 (List [List [Atom "test"], List [], List [], List [], List [Atom "test2"]])
+
+  cmp (setData (List []) [4, 0] (Number 5)) 
+               (List [List [], List [], List [], List [], List [Number 5]])
 
 
