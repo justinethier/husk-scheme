@@ -420,6 +420,13 @@ transformRule :: Env        -- ^ Outer, enclosing environment
                             -- ^ Must be a parameter as it mutates with each transform call
               -> LispVal    -- ^ The macro transformation, read out one atom at a time and rewritten to result
               -> LispVal    -- ^ TODO: is this still needed?
+-- Yes, but I think it needs to become [LispVal] so we can have a stack of intermediate data, one per ellipsisLevel.
+-- This is necessary since the transform code only works on one list of data at a time.
+-- I think this approach is work-able, but need to think about it some more before going with it.
+
+-- TODO: re-arrange above parameters so they make more sense. Right now everything seems a little
+-- too much like it is just thrown together.
+
               -> IOThrowsError LispVal
 
 {-
