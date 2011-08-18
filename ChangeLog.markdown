@@ -1,7 +1,6 @@
 v3.2.1
 ------
-- Added a conditional compilation check to allow husk to build on GHC 6 and
-GHC 7.
+- Added a conditional compilation check to allow husk to build on GHC 6 and GHC 7.
 
 v3.2
 ----
