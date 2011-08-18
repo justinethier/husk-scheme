@@ -1,3 +1,8 @@
+v3.2.1
+------
+- Added a conditional compilation check to allow husk to build on GHC 6 and
+GHC 7.
+
 v3.2
 ----
 - Significant improvements to the parser, including proper handling of whitespace and comments. This represents a critical upgrade from the previous releases.
