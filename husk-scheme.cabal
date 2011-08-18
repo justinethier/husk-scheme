@@ -20,7 +20,7 @@ Data-Files:          stdlib.scm
 
 Library
   Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, haskell98, mtl, parsec, directory, ghc, ghc-paths
-  Extensions:      ExistentialQuantification
+  Extensions:      ExistentialQuantification CPP CPP
   Hs-Source-Dirs:  hs-src
   Exposed-Modules: Language.Scheme.Core
                    Language.Scheme.Types
@@ -33,7 +33,7 @@ Library
 
 Executable         huski
   Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, haskell98, mtl, parsec, directory, ghc, ghc-paths
-  Extensions:      ExistentialQuantification
+  Extensions:      ExistentialQuantification CPP CPP
   Main-is:         shell.hs
   Hs-Source-Dirs:  hs-src
   Other-Modules:   Language.Scheme.Core
