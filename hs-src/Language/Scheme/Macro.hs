@@ -420,19 +420,25 @@ transformRule :: Env        -- ^ Outer, enclosing environment
               -> LispVal    -- ^ Resultant (transformed) value. 
                             -- ^ Must be a parameter as it mutates with each transform call
               -> LispVal    -- ^ The macro transformation, read out one atom at a time and rewritten to result
-              -> [LispVal]  -- ^ A stack of the transformed code so far, one list for each "pushed" macro level 
-                            -- Notes:
-                            -- This param became type [LispVal] so we can have a stack of intermediate data, one per ellipsisLevel.
-                            -- This is necessary since the transform code only works on one list of data at a time.
-                            -- I think this approach is work-able, but need to think about it some more before going with it.
 -- FUTURE: re-arrange above parameters so they make more sense. Right now everything seems a little
 -- too much like it is just thrown together.
               -> IOThrowsError LispVal
+{- Notes
+ -
+ - the more I think about it, the more ellipsisList seems unnecessary. When transforming a zero-or-many
+ - match the code can just start with an empty list and can append the transformed code to the result at
+ - the current level. I think that will take care of everything
+ -
+ - simple example:
+ -
+ - ((list a ...) ...)
+ -
+ - -}
 
 {-
  - Recursively transform a list
  -
- - Parameters:
+ - OLD Parameters:
  -
  - localEnv - Local variable environment
  - ellipsisIndex - Zero-or-more match variables are stored as a list.
@@ -452,12 +458,14 @@ transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List (Lis
                            then transformRule outerEnv localEnv 0 (List $ result) (List $ tail ts) (List [])
                                 -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
                            else transformRule outerEnv localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
+{- TODO: refactor this code once list transformation works                               
                -- Dotted list transform returned during processing...
                List [Nil _, List _] -> if ellipsisIndex == 0
                                 -- First time through and no match ("zero" case). Use tail to move past the "..."
                            then transformRule outerEnv localEnv 0 (List $ result) (List $ tail ts) (List [])
                                 -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
                           else transformRule outerEnv localEnv 0 (List $ result) (List $ tail ts) (List [])
+-}
                List _ -> transformRule outerEnv localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform (List ellipsisList)
                _ -> throwError $ Default "Unexpected error"
      else do
@@ -468,6 +476,7 @@ transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List (Lis
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisIndex]
 
+{- TODO: refactor the 2 functions below once the 'new' transform works for lists
 transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List ((Vector v) : ts)) (List ellipsisList) = do
   if macroElementMatchesMany transform
      then do
@@ -516,7 +525,7 @@ transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List (dl@
                   List l -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ l) (List ts) (List ellipsisList)
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [(List ellipsisList), lst, (List [dl]), Number $ toInteger ellipsisIndex]
-
+-}
 
 -- Transform an atom by attempting to look it up as a var...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) unused = do
@@ -543,6 +552,7 @@ pseudocode:
                                                    v <- getVar outerEnv input
                                                    return v
                                _ -> if ellipsisIndex > 0
+                                       -- TODO: need to handle using new getData logic
                                        then do case var of
                                                  List v -> if (length v) > (ellipsisIndex - 1)
                                                               then return $ v !! (ellipsisIndex - 1)
