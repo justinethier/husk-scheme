@@ -42,7 +42,7 @@ import Language.Scheme.Variables
 import qualified Language.Scheme.Macro.Matches as Matches
 import Control.Monad.Error
 import Data.Array
---import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 http://community.schemewiki.org/?scheme-faq-macros -}
@@ -451,7 +451,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex
-  if nextHasEllipsis
+  if (trace ("trList - lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " l = " ++ show l) nextHasEllipsis)
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
              case curT of
@@ -541,10 +541,10 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                                Nil input -> do v <- getVar outerEnv input
                                                return v
                                _ -> if ellipsisLevel > 0
-                                       then do case var of
+                                       then do case (trace ("a = " ++ show a ++ " var = " ++ show var) var) of
                                                  List v -> return $ Matches.getData var $ init ellipsisIndex -- Take all elements, instead of one-at-a-time 
                                                  _ -> throwError $ Default "Unexpected error in transformRule"
-                                       else return var
+                                       else return var -- TODO: really? think we always need to use getData now
                     else return $ Atom a
             case t of
                Nil _ -> return t
@@ -562,7 +562,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                       List v -> do let a = Matches.getData var ellipsisIndex
                                    case a of
                                      List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
-                                     _ -> throwError $ Default "Unexpected error transforming list"
+                                     _ -> throwError $ Default "Unexpected error transforming list" -- TODO: is this because pattern was not loaded properly?
 {- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
 --
 -- TODO: this could be a problem, because we need to signal the end of the ... and do not want an infinite loop.
@@ -743,9 +743,12 @@ calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex =
     if nextHasEllipsis 
        then if (length ellipsisIndex == ellipsisLevel)
                -- This is not the first match, increment existing index
-               then do
-                 let l = splitAt (ellipsisLevel - 1) ellipsisIndex
-                 (fst l) ++ [(head (snd l)) + 1]
-               -- First input element that matches pattern; start at 0
+               then case ellipsisLevel of
+                         0 -> [0]
+                         1 -> do let l = head ellipsisIndex
+                                 [l + 1]
+                         _ -> do let l = splitAt (ellipsisLevel - 1) ellipsisIndex
+                                 (fst l) ++ [(head (snd l)) + 1]
+                               -- First input element that matches pattern; start at 0
                else ellipsisIndex ++ [0]
        else ellipsisIndex
