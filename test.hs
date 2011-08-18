@@ -15,14 +15,19 @@ create level
     | level == 1    = List []
     | otherwise = List [create $ level - 1]
 
--- TODO: how to handle case when requested insertion leaves "holes".
---  for example, in a 2-level nested list: ((1)) we have data as pos 0 but have none at pos 1.
---  if the code then tries to add an element 2 at pos 2 we should end up with:
+-- |Fill any empty "holes" in a list from the beginning to the given length
+--
+-- The problem here is how to handle case when a requested insertion leaves "holes".
+--
+-- For example, in a 2-level nested list: ((1)) we have data as pos 0 but have none at pos 1.
+-- If the code then tries to add an element 2 at pos 2 we should end up with:
 --
 --    ((1) () (2))
 --
---  The current code is not this smart, but it needs to be becuase that is exactly how macros
---  work.
+fill :: [LispVal] -> Int -> [LispVal]
+fill l len 
+  | length l < len  = fill (l ++ [List []]) len
+  | otherwise       = l
 
 -- |Add an element to the given nested list
 setData :: LispVal -- ^ The nested list to modify
@@ -30,17 +35,23 @@ setData :: LispVal -- ^ The nested list to modify
                    --   (EG: [1, 2] means add to the second top-most list, at its 3rd position)
         -> LispVal -- ^ Value to insert 
         -> LispVal -- ^ Resulant list
-setData (List dStruct) ellipsisIndex@(i:is) val = do
-  let content = splitAt i dStruct
---  case (snd (trace ("content = " ++ show content) content)) of
-  case (snd content) of
-    [] -> List $ dStruct ++ [val]
-    [c] ->    if length is < 1
-                 then List $ (fst content) ++ [val] ++ [c] -- Base case - Requested pos must be one less than c
-                 else List $ (fst content) ++ [setData c is val]
-    (c:cs) -> if length is < 1
-                 then List $ (fst content) ++ [val] ++ [c] ++ (cs) -- Base case - Requested pos must be one less than c
-                 else List $ (fst content) ++ [setData c is val] ++ (cs) 
+setData (List lData) ellipsisIndex@(i:is) val = do
+  if length is > 0 && length lData < i + 1 -- Fill "holes" as long as they are not at the leaves
+     then set $ fill lData $ i + 1
+     else set lData
+
+ where 
+--  set listData = case (snd (trace ("content = " ++ show content) content)) of
+  set listData = do
+    let content = splitAt i listData
+    case (snd content) of
+      [] -> List $ listData ++ [val]
+      [c] ->    if length is < 1
+                   then List $ (fst content) ++ [val] ++ [c] -- Base case - Requested pos must be one less than c
+                   else List $ (fst content) ++ [setData c is val]
+      (c:cs) -> if length is < 1
+                   then List $ (fst content) ++ [val] ++ [c] ++ (cs) -- Base case - Requested pos must be one less than c
+                   else List $ (fst content) ++ [setData c is val] ++ (cs) 
 
 -- |Compare actual input with expected
 cmp input expected = do
@@ -75,8 +86,15 @@ test = do
   let c = setData b [0, 1] $ Atom "test2"
   cmp c (List [List [Atom "test", Atom "test2"]])
 
--- TODO: Illustrates an important point, that if we are adding into a 'hole', we need to create a list there first
+  -- Illustrates an important point, that if we are adding into 
+  -- a 'hole', we need to create a list there first
   let cc = setData b [1, 0] $ Atom "test2"
   cmp cc (List [List [Atom "test"], List [Atom "test2"]])
+
+  let cc2 = setData b [1, 4] $ Atom "test2"
+  cmp cc2 (List [List [Atom "test"], List [Atom "test2"]])
+
+  let cc3 = setData b [4, 0] $ Atom "test2"
+  cmp cc3 (List [List [Atom "test"], List [], List [], List [], List [Atom "test2"]])
 
 
