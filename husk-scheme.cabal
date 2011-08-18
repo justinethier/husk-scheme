@@ -30,6 +30,7 @@ Library
                    Language.Scheme.Numerical
                    Language.Scheme.Parser
                    Language.Scheme.Primitives
+                   Language.Scheme.Utilities
 
 Executable         huski
   Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, haskell98, mtl, parsec, directory, ghc, ghc-paths
@@ -43,3 +44,4 @@ Executable         huski
                    Language.Scheme.Numerical
                    Language.Scheme.Parser
                    Language.Scheme.Primitives
+                   Language.Scheme.Utilities

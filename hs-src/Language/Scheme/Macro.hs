@@ -39,6 +39,7 @@ module Language.Scheme.Macro
     ) where
 import Language.Scheme.Types
 import Language.Scheme.Variables
+-- TODO: import qualified Language.Scheme.Utilities as LispData
 import Control.Monad.Error
 import Data.Array
 --import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
