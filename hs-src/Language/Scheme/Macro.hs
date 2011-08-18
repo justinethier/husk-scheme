@@ -559,8 +559,10 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                     -- ensure it is a list
                     case var of
                       -- add all elements of the list into result
-                      List v -> do let a = Matches.getData var ellipsisIndex -- TODO
-                                   transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ a) (List $ tail ts)
+                      List v -> do let a = Matches.getData var ellipsisIndex
+                                   case a of
+                                     List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
+                                     _ -> throwError $ Default "Unexpected error transforming list"
 {- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
 --
 -- TODO: this could be a problem, because we need to signal the end of the ... and do not want an infinite loop.
@@ -605,6 +607,7 @@ transformRule _ localEnv _ _ _ (Atom transform) = do
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
 transformRule _ _ _ _ _ transform = return transform
 
+{- TODO: code is temporarily commented-out while reworking transformRule
 transformDottedList :: Env -> Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
 transformDottedList outerEnv localEnv ellipsisIndex (List result) (List (DottedList ds d : ts)) (List ellipsisList) = do
           lsto <- transformRule outerEnv localEnv ellipsisIndex (List []) (List ds) (List ellipsisList)
@@ -620,15 +623,15 @@ transformDottedList outerEnv localEnv ellipsisIndex (List result) (List (DottedL
                                 --
                                 -- FUTURE: Issue #9 - the transform needs to be as follows:
                                 --
-                                {- - transform into a list if original input was a list - code is below but commented-out
-                                - transform into a dotted list if original input was a dotted list -}
+                                -- - transform into a list if original input was a list - code is below but commented-out
+                                - transform into a dotted list if original input was a dotted list 
                                 --
-                                {- Could implement this by calling a new function on input (ds?) that goes through it and
-                                looks up each atom that it finds, looking for its src. The src (or Nil?) would then be returned
-                                and used here to determine what type of transform is used. -}
+                                -- Could implement this by calling a new function on input (ds?) that goes through it and
+                                -- looks up each atom that it finds, looking for its src. The src (or Nil?) would then be returned
+                                -- and used here to determine what type of transform is used. 
                                 --
-{- List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList)
-List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) -}
+-- List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList)
+--List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
 
 -- TODO: both cases below do not take issue #9 into account
                                 List [rst] -> do
@@ -644,6 +647,7 @@ List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList
             _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
 
 transformDottedList _ _ _ _ _ _ = throwError $ Default "Unexpected error in transformDottedList"
+-}
 
 -- Find an atom in a list; non-recursive (IE, a sub-list will not be inspected)
 findAtom :: LispVal -> LispVal -> IOThrowsError LispVal
