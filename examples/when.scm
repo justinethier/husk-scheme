@@ -33,4 +33,5 @@
   (syntax-rules ()
     ((test a b (c d (e f ...) ...) ...)
      (quote ((e f ...) ...) ...))))
+(write (nesting-test 1 2 ))
 (write (nesting-test 1 2 (3 4 (5 6 7 8 9 10))))

@@ -410,9 +410,17 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(Li
 
 checkLocal _ _ _ _ _ _ _ = return $ Bool False
 
-{- Transform input by walking the tranform structure and creating a new structure
-with the same form, replacing identifiers in the tranform with those bound in localEnv -}
-transformRule :: Env -> Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
+{- |Transform input by walking the tranform structure and creating a new structure
+    with the same form, replacing identifiers in the tranform with those bound in localEnv -}
+transformRule :: Env        -- ^ Outer, enclosing environment
+              -> Env        -- ^ Environment local to the macro
+              -> Int        -- ^ TODO: ellipsisLevel (?)
+              -> [Int]      -- ^ TODO: ellipsisIndex (?)
+              -> LispVal    -- ^ Resultant (transformed) value. 
+                            -- ^ Must be a parameter as it mutates with each transform call
+              -> LispVal    -- ^ The macro transformation, read out one atom at a time and rewritten to result
+              -> LispVal    -- ^ TODO: is this still needed?
+              -> IOThrowsError LispVal
 
 {-
  - Recursively transform a list
