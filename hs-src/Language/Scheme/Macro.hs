@@ -150,8 +150,7 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
            Bool False -> return $ Nil ""
            _ -> do
 --                bindings <- findBindings localEnv pattern
---                transformRule outerEnv (trace ("bindings = " ++ show bindings) localEnv) 0 (List []) template (List [])
-                transformRule outerEnv localEnv 0 (List []) template []
+                transformRule outerEnv localEnv 0 [] (List []) template
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
 
 matchRule _ _ _ rule input = do
@@ -448,16 +447,16 @@ transformRule :: Env        -- ^ Outer, enclosing environment
  - ellipsisList - Temporarily holds value of the "outer" result while we process the
  -     zero-or-more match. Once that is complete we swap this value back into it's rightful place 
  -}
-transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List (List l : ts)) (List ellipsisList) = do
-  if macroElementMatchesMany transform
+transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (List l : ts)) = do
+  let nextHasEllipsis = macroElementMatchesMany transform
+  let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
+  let idx = calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex
+  if nextHasEllipsis
      then do
-             curT <- transformRule outerEnv localEnv (ellipsisIndex + 1) (List []) (List l) (List result)
+             curT <- transformRule outerEnv localEnv level idx (List []) (List l)
              case curT of
-               Nil _ -> if ellipsisIndex == 0
-                                -- First time through and no match ("zero" case). Use tail to move past the "..."
-                           then transformRule outerEnv localEnv 0 (List $ result) (List $ tail ts) (List [])
-                                -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
-                           else transformRule outerEnv localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
+               Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
+                        transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ tail ts)
 {- TODO: refactor this code once list transformation works                               
                -- Dotted list transform returned during processing...
                List [Nil _, List _] -> if ellipsisIndex == 0
@@ -466,15 +465,18 @@ transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List (Lis
                                 -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
                           else transformRule outerEnv localEnv 0 (List $ result) (List $ tail ts) (List [])
 -}
-               List _ -> transformRule outerEnv localEnv (ellipsisIndex + 1) (List $ result ++ [curT]) transform (List ellipsisList)
+               List _ -> transformRule outerEnv localEnv 
+                           ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
+                           idx -- Must keep index since it is incremented each time
+                           (List $ result ++ [curT]) transform
                _ -> throwError $ Default "Unexpected error"
      else do
-             lst <- transformRule outerEnv localEnv ellipsisIndex (List []) (List l) (List ellipsisList)
+             lst <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List l)
              case lst of
-                  List [Nil _, _] -> return lst
-                  List _ -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [lst]) (List ts) (List ellipsisList)
+-- OBSOLETE?                  List [Nil _, _] -> return lst
+                  List _ -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [lst]) (List ts)
                   Nil _ -> return lst
-                  _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisIndex]
+                  _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisLevel]
 
 {- TODO: refactor the 2 functions below once the 'new' transform works for lists
 transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List ((Vector v) : ts)) (List ellipsisList) = do
@@ -526,6 +528,8 @@ transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List (dl@
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [(List ellipsisList), lst, (List [dl]), Number $ toInteger ellipsisIndex]
 -}
+
+TODO: left off here on 8/22. may want to review above to make sure it looks good before proceeding
 
 -- Transform an atom by attempting to look it up as a var...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) unused = do
@@ -746,3 +750,22 @@ lookupPatternVarSrc localEnv (Atom pattern) =
 
 lookupPatternVarSrc _ _ =
     return $ Bool False
+
+-- |Increment ellipsis level based on whether a new ellipsis is present
+calcEllipsisLevel :: Bool -> Int -> Int
+calcEllipsisLevel  nextHasEllipsis ellipsisLevel =
+    if nextHasEllipsis then ellipsisLevel + 1
+                       else ellipsisLevel
+
+-- |Increment ellipsis index information based on given parameters
+calcEllipsisIndex :: Bool -> Int -> [Int] -> [Int]
+calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex =
+    if nextHasEllipsis 
+       then if (length ellipsisIndex == ellipsisLevel)
+               -- This is not the first match, increment existing index
+               then do
+                 let l = splitAt (ellipsisLevel - 1) ellipsisIndex
+                 (fst l) ++ [(head (snd l)) + 1]
+               -- First input element that matches pattern; start at 0
+               else ellipsisIndex ++ [0]
+       else ellipsisIndex
