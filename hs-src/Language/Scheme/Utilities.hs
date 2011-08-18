@@ -44,7 +44,15 @@ fill l len
 getData :: LispVal -- ^ The nested list to read from
         -> [Int]   -- ^ Location to read an element from, all numbers are 0-based
         -> LispVal -- ^ Value read, or "Nil" if none
-getData _ _ = Nil "" -- TODO: implement
+getData (List lData) (i:is) = do
+  if length lData < i
+     then Nil "" -- Error: there are not enough elements in the list
+     else do
+       let lst = drop i lData
+       if length lst > 0
+          then getData (head lst) is
+          else Nil "" -- Error: not enough elements in list
+getData val [] = val -- Base case: we have found the requested element
 
 -- |Add an element to the given nested list
 setData :: LispVal -- ^ The nested list to modify
@@ -118,4 +126,11 @@ test = do
   cmp (setData (List []) [4, 0] (Number 5)) 
                (List [List [], List [], List [], List [], List [Number 5]])
 
+  cmp (getData (List [List [List [], List [Number 1, Number 2, Number 3, Number 4]]]) [0, 1, 2]) 
+               (Number 3)
 
+--  cmp (getData (List [List [List [], List [Number 1, Number 2, Number 3, Number 4]]]) [0, 1, 20]) 
+--               (Nil "")
+
+  cmp (getData (List [List [List [], List [Atom "1", Number 2, Number 3, Number 4]]]) [0, 1, 0]) 
+               (Atom "1")
