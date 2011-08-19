@@ -538,30 +538,12 @@ transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List (dl@
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
   isDefined <- liftIO $ isBound localEnv a
   if hasEllipsis
-    then ellipsisHere hasEllipsis isDefined
-    else do t <- if isDefined
-                    then do
-                             var <- getVar localEnv a
-                             case var of
-                               Nil input -> do v <- getVar outerEnv input
-                                               return v
-                               _ -> case (trace ("a = " ++ show a ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " var = " ++ show var) var) of
-                                    List v -> do
-                                         if ellipsisLevel > 0
-                                                 then return $ (trace ("returning " ++ show (Matches.getData var ellipsisIndex)) Matches.getData var ellipsisIndex) -- Take all elements, instead of one-at-a-time 
-                                                 else if length v > 0 
-                                                         then return var -- Just return the elements directly, so all can be appended
-                                                         else return $ Nil "" -- A 0 match case, flag it to calling code
-                                    _ -> if ellipsisLevel > 0
-                                            then throwError $ Default "Unexpected error processing data in transformRule" -- List req'd for 0-or-n match
-                                            else return var
-                    else return $ Atom a
-            case t of
-               Nil _ -> return t -- TODO: is this correct? don't we need to keep going, a-la: continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
-               _ -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [t]) (List ts)
+    then ellipsisHere isDefined
+    else noEllipsis isDefined
+
   where
     hasEllipsis = macroElementMatchesMany transform
-    ellipsisHere hasEllipsis isDefined = do
+    ellipsisHere isDefined = do
         if isDefined
              then do 
                     -- get var
@@ -586,21 +568,28 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
              else -- Matched 0 times, skip it
                   transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ tail ts)
 
-
--- TODO: another concern, can we skip the ellipsis in this function, if we are in a nested match?
---       need to inspect this code and determine how that is handled, because this list cannot be lost because
---       the next iteration(s) of the higher-level match will need to process it...
-
--- Need to figure out the top-level algorithm for transforming, then figure out where each part fits in.
-{-
-Can we mimic the pattern matching algorithm, and recurse when an ellipsis is found?
-need to consider how the result is stored. if we use full CPS when we can just pass it around. This may be the best bet, but
-need to consider how ellipses are handled in that case...
-
-Questions/Notes:
- - right now, the code returns (nil, list) to return intermediate results. should we just use pure CPS to avoid having to pass
-   back code like this?
--}
+    noEllipsis isDefined = do
+      t <- if isDefined
+              then do
+                   var <- getVar localEnv a
+                   case var of
+                     Nil input -> do v <- getVar outerEnv input
+                                     return v
+--                     _ -> case (trace ("a = " ++ show a ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " var = " ++ show var) var) of
+                     _ -> case (var) of
+                          List v -> do
+                               if ellipsisLevel > 0
+                                       then return $ (trace ("returning " ++ show (Matches.getData var ellipsisIndex)) Matches.getData var ellipsisIndex) -- Take all elements, instead of one-at-a-time 
+                                       else if length v > 0 
+                                               then return var -- Just return the elements directly, so all can be appended
+                                               else return $ Nil "" -- A 0 match case, flag it to calling code
+                          _ -> if ellipsisLevel > 0
+                                  then throwError $ Default "Unexpected error processing data in transformRule" -- List req'd for 0-or-n match
+                                  else return var
+              else return $ Atom a
+      case t of
+         Nil _ -> return t -- TODO: is this correct? don't we need to keep going, a-la: continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
+         _ -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [t]) (List ts)
 
 -- Transform anything else as itself...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List (t : ts)) = do
