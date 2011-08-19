@@ -43,7 +43,7 @@
 (define (list . objs)  objs)
 (define (id obj)       obj)
 
-(define (flip func)    (lambda (arg1 arg2) (func arg2 arg1)))
+(define (flip func)    (lambda (arg1 arg2) (func arg1 arg2)))
 
 (define (curry func arg1)  (lambda (arg) (apply func (cons arg1 (list arg)))))
 (define (compose f g)      (lambda (arg) (f (apply g arg))))
@@ -56,7 +56,7 @@
 (define (foldl func accum lst)
   (if (null? lst)
 	  accum
-	  (foldl func (func accum (car lst)) (cdr lst))))
+	  (foldl func (func (car lst) accum) (cdr lst))))
 
 (define fold foldl)
 (define reduce fold)
@@ -99,7 +99,7 @@
 (define (odd? num)   (= (modulo num 2) 1))
 (define (even? num)  (= (modulo num 2) 0))
 
-(define (length lst)    (fold (lambda (x y) (+ x 1)) 0 lst))
+(define (length lst)    (fold (lambda (x y) (+ y 1)) 0 lst))
 (define (reverse lst)   (fold (flip cons) '() lst))
 
 ; cond
@@ -177,7 +177,7 @@
 (define (memv obj lst) (my-mem-helper obj lst eqv?))
 (define (member obj lst) (my-mem-helper obj lst equal?))
 
-(define (mem-helper pred op)  (lambda (acc next) (if (and (not acc) (pred (op next))) next acc)))
+(define (mem-helper pred op)  (lambda (next acc) (if (and (not acc) (pred (op next))) next acc)))
 (define (assq obj alist)      (fold (mem-helper (curry eq? obj) car) #f alist))
 (define (assv obj alist)      (fold (mem-helper (curry eqv? obj) car) #f alist))
 (define (assoc obj alist)     (fold (mem-helper (curry equal? obj) car) #f alist))
@@ -278,7 +278,6 @@
     ((do "step" x)
      x)
     ((do "step" x y)
-     y)))
 |#
 ; Delayed evaluation functions
 (define force
