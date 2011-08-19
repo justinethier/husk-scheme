@@ -269,6 +269,7 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                            loadLocal outerEnv localEnv identifiers pattern (List is)
                             ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                             idx -- Must keep index since it is incremented each time
+TODO: is above correct, or must this increment the level for nested cases? See last couple of tests in examples/when.scm                            
                       else loadLocal outerEnv localEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex
 
        -- Base case - All data processed
@@ -305,7 +306,7 @@ checkLocal _ _ _ _ _ (Float pattern) (Float input) = return $ Bool $ pattern == 
 checkLocal _ _ _ _ _ (String pattern) (String input) = return $ Bool $ pattern == input
 checkLocal _ _ _ _ _ (Char pattern) (Char input) = return $ Bool $ pattern == input
 checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom pattern) input = do
-  if ellipsisLevel > 0
+  if (trace ("pat = " ++ show pattern ++ " level = " ++ show ellipsisLevel) ellipsisLevel) > 0
      {- FUTURE: may be able to simplify both cases below by using a
      lambda function to store the 'save' actions -}
 
@@ -392,7 +393,7 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
       addPatternVar isDefined ellipLevel ellipIndex pat val = do
              if isDefined
                 then do v <- getVar localEnv pat
-                        setVar localEnv pat (Matches.setData v ellipIndex val)
+                        setVar localEnv pat (trace ("Setting " ++ show pat ++ " to " ++ show (Matches.setData v ellipIndex val)) (Matches.setData v ellipIndex val))
                 else defineVar localEnv pat (Matches.setData (List []) ellipIndex val)
 
 checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(Vector _) input@(Vector _) =
