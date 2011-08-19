@@ -450,13 +450,18 @@ transformRule :: Env        -- ^ Outer, enclosing environment
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (List l : ts)) = do
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
-  let idx = calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex
+  let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
   if (trace ("trList - hasE = " ++ show nextHasEllipsis ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " l = " ++ show l ++ " ts = " ++ show ts) nextHasEllipsis)
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
              case (trace ("curT = " ++ show curT) curT) of
-               Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
-                        transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ tail ts)
+               Nil _ -> do
+                        -- No match ("zero" case). Use tail to move past the "..."
+                        let remaining = tail ts
+                        if not (null remaining)
+                           then transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ remaining)
+                           else return $ Nil "" -- Nothing remains, no match
+
 {- TODO: refactor this code once list transformation works                               
                -- Dotted list transform returned during processing...
                List [Nil _, List _] -> if ellipsisIndex == 0
@@ -540,11 +545,14 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                              case var of
                                Nil input -> do v <- getVar outerEnv input
                                                return v
-                               _ -> if ellipsisLevel > 0
-                                       then do case (trace ("a = " ++ show a ++ " idx = " ++ show ellipsisIndex ++ " var = " ++ show var) var) of
-                                                 List v -> return $ (trace ("returning " ++ show (Matches.getData var $ init ellipsisIndex)) Matches.getData var $ init ellipsisIndex) -- Take all elements, instead of one-at-a-time 
-                                                 _ -> throwError $ Default "Unexpected error in transformRule"
-                                       else return var -- TODO: really? think we always need to use getData now
+                               _ -> case (trace ("a = " ++ show a ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " var = " ++ show var) var) of
+                                    List v -> do
+                                         if ellipsisLevel > 0
+                                                 then return $ (trace ("returning " ++ show (Matches.getData var $ init ellipsisIndex)) Matches.getData var $ init ellipsisIndex) -- Take all elements, instead of one-at-a-time 
+                                                 else if length v > 0 
+                                                         then return var -- Just return the elements directly, so all can be appended
+                                                         else return $ Nil "" -- A 0 match case, flag it to calling code
+                                    _ -> throwError $ Default "Unexpected error processing data in transformRule"
                     else return $ Atom a
             case t of
                Nil _ -> return t
@@ -746,12 +754,9 @@ calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex =
     if nextHasEllipsis 
        then if (length ellipsisIndex == ellipsisLevel)
                -- This is not the first match, increment existing index
-               then case ellipsisLevel of
-                         0 -> [0]
-                         1 -> do let l = head ellipsisIndex
-                                 [l + 1]
-                         _ -> do let l = splitAt (ellipsisLevel - 1) ellipsisIndex
-                                 (fst l) ++ [(head (snd l)) + 1]
-                               -- First input element that matches pattern; start at 0
+               then do
+                 let l = splitAt (ellipsisLevel - 1) ellipsisIndex
+                 (fst l) ++ [(head (snd l)) + 1]
+               -- First input element that matches pattern; start at 0
                else ellipsisIndex ++ [0]
        else ellipsisIndex
