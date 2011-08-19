@@ -209,10 +209,8 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                          loadLocal outerEnv localEnv identifiers 
                                   (List $ [p] ++ [Atom "..."]) 
                                   (List i)
-                                  (ellipsisLevel) -- This is accounted for in the list/list match below: + 1)
-                                  -- TODO: ellipsisIndex
-                                  -- TODO: here and everywhere, we need to build up ellipsisIndex.
-                                  --  ideally this would contain the data necessary to feed Matches.setData
+                                   ellipsisLevel -- This is accounted for in the list/list match below: + 1)
+                                   ellipsisIndex
             _ -> return $ Bool False
 
        ((DottedList ps p), (DottedList isRaw iRaw)) -> do
@@ -234,8 +232,8 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                          loadLocal outerEnv localEnv identifiers 
                                   (List $ [p] ++ [Atom "..."]) 
                                   (List i)
-                                  (ellipsisLevel) -- This is accounted for in the list/list match below: + 1)
-                                  -- TODO: ellipsisIndex
+                                   ellipsisLevel -- This is accounted for in the list/list match below: + 1)
+                                   ellipsisIndex
             _ -> return $ Bool False
 
        (List (p : ps), List (i : is)) -> do -- check first input against first pattern, recurse...
@@ -243,9 +241,18 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
          let nextHasEllipsis = macroElementMatchesMany pattern
          let level = if nextHasEllipsis then ellipsisLevel + 1
                                         else ellipsisLevel
+         let idx = if nextHasEllipsis 
+                      then if (length ellipsisIndex == level)
+                              -- This is not the first match, increment existing index
+                              then do
+                                let l = splitAt (level - 1) ellipsisIndex
+                                (fst l) ++ [(head (snd l)) + 1]
+                              -- First input element that matches pattern; start at 0
+                              else ellipsisIndex ++ [0]
+                      else ellipsisIndex
 
          -- At this point we know if the input is part of an ellipsis, so set the level accordingly 
-         status <- checkLocal outerEnv localEnv identifiers level {-TODO: ellipIndex -} p i 
+         status <- checkLocal outerEnv localEnv identifiers level idx p i 
          case status of
               -- No match
               Bool False -> if nextHasEllipsis
@@ -256,8 +263,10 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                                 else return $ Bool False
               -- There was a match
               _ -> if nextHasEllipsis
-                      then -- Do not increment level, just want until the next go-round when it will be incremented above
-                           loadLocal outerEnv localEnv identifiers pattern (List is) ellipsisLevel ellipsisIndex
+                      then 
+                           loadLocal outerEnv localEnv identifiers pattern (List is)
+                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
+                            idx -- Must keep index since it is incremented each time
                       else loadLocal outerEnv localEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex
 
        -- Base case - All data processed
@@ -372,25 +381,17 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
                             return $ Bool True
 -}                            
     where
+      -- Store pattern variable in a nested list
+      -- TODO: ellipsisLevel should probably be used here for validation.
+      -- 
+      --  some notes: TODO (above): need to flag the ellipsisLevel of this variable.
+      --              also, it is an error if, for an existing var, ellipsisLevel input does not match the var's stored level
+      --
       addPatternVar isDefined ellipLevel ellipIndex pat val = do
-      -- TODO: need to use ellipLevel to store data in appropriate format.
-      --       actually is this only used to store? not entirely, can be used when allocating initial list
-      -- TODO: need ellipsisIndex to figure out where to store val. otherwise how do I know which list to append value to, right?
-{-
-What does the data look like at each depth level? Here are some examples:
-
- 1 - (a b)
- 2 - ((a b) (c d) (e))
- 3 - (((a b) (c d)) ((e)))
- -}
- -- TODO: ellipsisLevel should probably be used here for validation.
              if isDefined
                 then do v <- getVar localEnv pat
                         setVar localEnv pat (Matches.setData v ellipIndex val)
                 else defineVar localEnv pat (Matches.setData (List []) ellipIndex val)
-
-    -- TODO (above): need to flag the ellipsisLevel of this variable.
-    --               also, it is an error if, for an existing var, ellipsisLevel input does not match the var's stored level
 
 checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(Vector _) input@(Vector _) =
   loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex
