@@ -54,6 +54,15 @@
 (assert/equal (vector-test6 #(1 2 3 4)) '(#(1 2 3 4)))
 
 
+; New, nested test cases. Keep all of these!
+
+(define-syntax vector-test7
+  (syntax-rules ()
+    ((_ #(x y ...)) 
+     (quote (#(x y ...))))))
+(assert/equal (vector-test7 #(4)) '(#(4)))
+(assert/equal (vector-test7 #(1 2 3 4)) '(#(1 2 3 4)))
+
 (define-syntax list-test4
   (syntax-rules ()
     ((_ ((x)) ...)
@@ -64,6 +73,12 @@
     ((_ ((x) ...) ...)
      (quote (((x) ...) ...)))))
 (assert/equal (list-test5) '())
+
+(define-syntax list-test6
+  (syntax-rules ()
+    ((_ ((x) ...) 1 ...)
+     (quote (((x) ...) 1 ...)))))
+(assert/equal (list-test6 (())) '())
 
 (define-syntax nesting-test-simple
   (syntax-rules ()
@@ -83,5 +98,6 @@
              '(1 2))
 (assert/equal (nesting-test 1 2 (3 4 (5 6 7 8 9 10)))
              '(1 2 ((5 6 7 8 9 10))))
+
 (unit-test-handler-results)
 

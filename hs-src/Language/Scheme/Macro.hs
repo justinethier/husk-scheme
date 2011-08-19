@@ -457,7 +457,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
              case (trace ("curT = " ++ show curT) curT) of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
-                        continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
+                        continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
 
 {- TODO: refactor this code once list transformation works                               
                -- Dotted list transform returned during processing...
@@ -478,6 +478,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 -- OBSOLETE?                  List [Nil _, _] -> return lst
                   List _ -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [lst]) (List ts)
                   Nil _ -> return lst
+-- TODO? seemed like a good idea but second-guessing this now:
+--                  Nil _ -> --return (trace ("RETURNING NULL " ++ show transform ++ " , " ++ show lst) lst) -- TODO: seems wrong in some cases
+--                           continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex (result ++ [List []]) (trace ("cont, ts = " ++ show ts ++ " lvl = " ++ show ellipsisLevel) ts)
                   _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisLevel]
 
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List ((Vector v) : ts)) = do
@@ -491,7 +494,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
              case (trace ("curT = " ++ show curT) curT) of
 --             case curT of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
-                        continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
+                        continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
                List t -> transformRule outerEnv localEnv 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
@@ -500,7 +503,10 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
      else do lst <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List $ elems v)
              case lst of
                   List l -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [asVector l]) (List ts)
-                  Nil _ -> return lst -- TODO: seems wrong in some cases
+                  Nil _ -> return lst
+-- TODO? seemed like a good idea but second-guessing this now:
+--                  Nil _ -> return (trace ("RETURNING NULL " ++ show transform ++ " , " ++ show v) lst) -- TODO: seems wrong in some cases
+--                           --continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [Vector v]), Number $ toInteger ellipsisLevel]
 
  where asVector lst = (Vector $ (listArray (0, length lst - 1)) lst)
@@ -555,7 +561,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                                    case a of
                                      List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
                                      _ -> -- No matches for var
-                                          continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
+                                          continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
 
 {- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
 --
@@ -650,11 +656,9 @@ transformDottedList outerEnv localEnv ellipsisIndex (List result) (List (DottedL
 transformDottedList _ _ _ _ _ _ = throwError $ Default "Unexpected error in transformDottedList"
 -}
 
--- |Continue transforming after a zero-or-many match (ellipsis) has ended 
+-- |Continue transforming after a preceding match has ended 
 continueTransform :: Env -> Env -> Int -> [Int] -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
-continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts = do
-    -- No match ("zero" case). Use tail to move past the "..."
-    let remaining = tail ts
+continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result remaining = do
     if not (null remaining)
        then transformRule outerEnv 
                           localEnv 
