@@ -213,6 +213,9 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                                    ellipsisIndex
             _ -> return $ Bool False
 
+-- TODO: something is wrong here, since one of the examples causes a hang. But I'm not seeing it at the moment...
+-- detailed debugging is required
+
        ((DottedList ps p), (DottedList isRaw iRaw)) -> do
          
          -- Split input into two sections: 
