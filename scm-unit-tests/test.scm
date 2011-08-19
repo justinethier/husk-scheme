@@ -8,7 +8,7 @@
 ;;
 (load "skim-unit.scm")
 (unit-test-start "macros")
-#|
+
 ; TODO:
 ; Temporarily added vector tests from the regular macro suite, to make sure
 ; they pass, as a baseline. Once these pass, remove them and add some nested
@@ -43,17 +43,17 @@
 (assert/equal (vector-test5 #(1) #(2) #(4)) '(#(1) #(2) #(4)))
 (assert/equal (vector-test5) '())
 (assert/equal (vector-test5 #(4)) '(#(4)))
-|#
+
 (define-syntax vector-test6
   (syntax-rules ()
     ((_ #(x y ...) ...) 
      (quote (#(x y ...) ...)))))
 (assert/equal (vector-test6 #(4)) '(#(4)))
 (assert/equal (vector-test6 #(1) #(4)) '(#(1) #(4)))
-;(assert/equal (vector-test6) '())
-;(assert/equal (vector-test6 #(1 2 3 4)) '(#(1 2 3 4)))
+(assert/equal (vector-test6) '())
+(assert/equal (vector-test6 #(1 2 3 4)) '(#(1 2 3 4)))
 
-#|
+
 (define-syntax list-test4
   (syntax-rules ()
     ((_ ((x)) ...)
@@ -83,5 +83,5 @@
              '(1 2))
 (assert/equal (nesting-test 1 2 (3 4 (5 6 7 8 9 10)))
              '(1 2 ((5 6 7 8 9 10))))
-|#
 (unit-test-handler-results)
+

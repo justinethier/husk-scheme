@@ -456,16 +456,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
              case (trace ("curT = " ++ show curT) curT) of
-               Nil _ -> do
-                        -- No match ("zero" case). Use tail to move past the "..."
-                        let remaining = tail ts
-                        if not (null remaining)
-                           then transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ remaining)
-                           else if length result > 0 
-                                   then return $ List result
-                                   else if ellipsisLevel > 0 
-                                           then return $ Nil "" -- Nothing remains, no match
-                                           else return $ List [] -- Nothing remains, return empty list
+               Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
+                        continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
 
 {- TODO: refactor this code once list transformation works                               
                -- Dotted list transform returned during processing...
@@ -496,17 +488,10 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
      then do
              -- Idea here is that we need to handle case where you have (vector ...) - EG: (#(var step) ...)
              curT <- transformRule outerEnv localEnv level idx (List []) (List $ elems v)
-             case curT of
-               Nil _ -> do
-                        -- No match ("zero" case). Use tail to move past the "..."
-                        let remaining = tail ts
-                        if not (null remaining)
-                           then transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ remaining)
-                           else if length result > 0 
-                                   then return $ List result
-                                   else if ellipsisLevel > 0 
-                                           then return $ Nil "" -- Nothing remains, no match
-                                           else return $ List [] -- Nothing remains, return empty list
+             case (trace ("curT = " ++ show curT) curT) of
+--             case curT of
+               Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
+                        continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
                List t -> transformRule outerEnv localEnv 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
@@ -515,7 +500,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
      else do lst <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List $ elems v)
              case lst of
                   List l -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [asVector l]) (List ts)
-                  Nil _ -> return lst
+                  Nil _ -> return lst -- TODO: seems wrong in some cases
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [Vector v]), Number $ toInteger ellipsisLevel]
 
  where asVector lst = (Vector $ (listArray (0, length lst - 1)) lst)
@@ -572,7 +557,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                                             else return var
                     else return $ Atom a
             case t of
-               Nil _ -> return t
+               Nil _ -> return t -- TODO: is this correct? don't we need to keep going, a-la: continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
                _ -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [t]) (List ts)
   where
     hasEllipsis = macroElementMatchesMany transform
@@ -587,7 +572,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                       List v -> do let a = Matches.getData var ellipsisIndex
                                    case a of
                                      List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
-                                     _ -> return $ Nil "" -- No matches for var
+                                     _ -> -- No matches for var
+                                          continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
 
 {- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
 --
@@ -674,6 +660,24 @@ transformDottedList outerEnv localEnv ellipsisIndex (List result) (List (DottedL
 
 transformDottedList _ _ _ _ _ _ = throwError $ Default "Unexpected error in transformDottedList"
 -}
+
+-- |Continue transforming after a zero-or-many match (ellipsis) has ended 
+continueTransform :: Env -> Env -> Int -> [Int] -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
+continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts = do
+    -- No match ("zero" case). Use tail to move past the "..."
+    let remaining = tail ts
+    if not (null remaining)
+       then transformRule outerEnv 
+                          localEnv 
+                          ellipsisLevel 
+                          ellipsisIndex 
+                         (List result) 
+                         (List $ remaining)
+       else if length result > 0 
+               then return $ List result
+               else if ellipsisLevel > 0 
+                       then return $ Nil ""  -- Nothing remains, no match
+                       else return $ List [] -- Nothing remains, return empty list
 
 -- Find an atom in a list; non-recursive (IE, a sub-list will not be inspected)
 findAtom :: LispVal -> LispVal -> IOThrowsError LispVal
