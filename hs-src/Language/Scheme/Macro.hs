@@ -121,7 +121,7 @@ macroTransform env identifiers (rule@(List _) : rs) input = do
     Nil _ -> macroTransform env identifiers rs input
     _ -> return result
 -- Ran out of rules to match...
-macroTransform _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
+macroTransform _ _ rules input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
 
 -- Determine if the next element in a list matches 0-to-n times due to an ellipsis
 macroElementMatchesMany :: LispVal -> Bool
@@ -460,7 +460,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                         let remaining = tail ts
                         if not (null remaining)
                            then transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ remaining)
-                           else return $ Nil "" -- Nothing remains, no match
+                           else if length result > 0 
+                                   then return $ List result
+                                   else return $ Nil "" -- Nothing remains, no match
 
 {- TODO: refactor this code once list transformation works                               
                -- Dotted list transform returned during processing...
