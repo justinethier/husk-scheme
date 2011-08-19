@@ -463,7 +463,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                            then transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ remaining)
                            else if length result > 0 
                                    then return $ List result
-                                   else return $ Nil "" -- Nothing remains, no match
+                                   else if ellipsisLevel > 0 
+                                           then return $ Nil "" -- Nothing remains, no match
+                                           else return $ List [] -- Nothing remains, return empty list
 
 {- TODO: refactor this code once list transformation works                               
                -- Dotted list transform returned during processing...
@@ -502,7 +504,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                            then transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ remaining)
                            else if length result > 0 
                                    then return $ List result
-                                   else return $ Nil "" -- Nothing remains, no match
+                                   else if ellipsisLevel > 0 
+                                           then return $ Nil "" -- Nothing remains, no match
+                                           else return $ List [] -- Nothing remains, return empty list
                List t -> transformRule outerEnv localEnv 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
