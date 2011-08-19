@@ -21,6 +21,11 @@
 (write
 (test (1 2 . 3)))
 
+(define-syntax nesting-test2
+  (syntax-rules ()
+    ((test a b ...)
+     (quote (a b ...)))))
+(write (nesting-test2 1 2 5 6 7 8 9 10))
 ; This macro demonstrates multi-level nesting of macros
 ; It actually crashes v3.2 husk because that version does not properly
 ; handle nesting
