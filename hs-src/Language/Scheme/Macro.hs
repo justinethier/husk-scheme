@@ -151,7 +151,7 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
            _ -> do
 --                bindings <- findBindings localEnv pattern
 --                transformRule outerEnv (trace ("bindings = " ++ show bindings) localEnv) 0 (List []) template (List [])
-                transformRule outerEnv localEnv 0 (List []) template (List [])
+                transformRule outerEnv localEnv 0 (List []) template []
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
 
 matchRule _ _ _ rule input = do
@@ -414,19 +414,19 @@ checkLocal _ _ _ _ _ _ _ = return $ Bool False
     with the same form, replacing identifiers in the tranform with those bound in localEnv -}
 transformRule :: Env        -- ^ Outer, enclosing environment
               -> Env        -- ^ Environment local to the macro
-              -> Int        -- ^ TODO: ellipsisLevel (?)
-              -> [Int]      -- ^ TODO: ellipsisIndex (?)
+              -> Int        -- ^ ellipsisLevel - Nesting level of the zero-to-many match, or 0 if none
+              -> [Int]      -- ^ ellipsisIndex - The index at each ellipsisLevel. This is used to read data stored in
+                            --                   pattern variables.
               -> LispVal    -- ^ Resultant (transformed) value. 
                             -- ^ Must be a parameter as it mutates with each transform call
               -> LispVal    -- ^ The macro transformation, read out one atom at a time and rewritten to result
-              -> LispVal    -- ^ TODO: is this still needed?
--- Yes, but I think it needs to become [LispVal] so we can have a stack of intermediate data, one per ellipsisLevel.
--- This is necessary since the transform code only works on one list of data at a time.
--- I think this approach is work-able, but need to think about it some more before going with it.
-
--- TODO: re-arrange above parameters so they make more sense. Right now everything seems a little
+              -> [LispVal]  -- ^ A stack of the transformed code so far, one list for each "pushed" macro level 
+                            -- Notes:
+                            -- This param became type [LispVal] so we can have a stack of intermediate data, one per ellipsisLevel.
+                            -- This is necessary since the transform code only works on one list of data at a time.
+                            -- I think this approach is work-able, but need to think about it some more before going with it.
+-- FUTURE: re-arrange above parameters so they make more sense. Right now everything seems a little
 -- too much like it is just thrown together.
-
               -> IOThrowsError LispVal
 
 {-
@@ -519,7 +519,10 @@ transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List (dl@
 
 
 -- Transform an atom by attempting to look it up as a var...
-transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List (Atom a : ts)) unused = do
+transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) unused = do
+
+TODO: wire up ellipsisIndex (level?) and Matches module
+
   let hasEllipsis = macroElementMatchesMany transform
   isDefined <- liftIO $ isBound localEnv a
 --  if (trace ("isDefined [" ++ show a ++ "]: " ++ show isDefined) hasEllipsis)
@@ -579,8 +582,7 @@ transformRule _ localEnv _ _ (Atom transform) _ = do
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
-transformRule _ _ _ _ transform _ = do -- OLD CODE: result transform unused = do
-  return transform -- OLD CODE:  throwError $ BadSpecialForm "An error occurred during macro transform" $ List [(Number $ toInteger ellipsisIndex), result, transform, unused]
+transformRule _ _ _ _ transform _ = return transform
 
 transformDottedList :: Env -> Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
 transformDottedList outerEnv localEnv ellipsisIndex (List result) (List (DottedList ds d : ts)) (List ellipsisList) = do
