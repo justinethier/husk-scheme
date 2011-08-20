@@ -531,28 +531,10 @@ pseudocode:
 
 
 
-  let hasEllipsis = macroElementMatchesMany transform
   isDefined <- liftIO $ isBound localEnv a
+  if hasEllipsis || ellipsisLevel > 0
+    then zeroOrManyMatch hasEllipsis isDefined
 --  if (trace ("isDefined [" ++ show a ++ "]: " ++ show isDefined) hasEllipsis)
-  if (hasEllipsis)
-     then if isDefined
-             then do 
-                    -- get var
-                    var <- getVar localEnv a
-                    -- ensure it is a list
-                    case var of
-                      -- add all elements of the list into result
-                      List v -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ v) (List $ tail ts) unused
-{- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
---
--- TODO: this could be a problem, because we need to signal the end of the ... and do not want an infinite loop.
---       but we want the lexical value as well. need to think about this in more detail to get a truly workable solution
---
-                                  v <- getVar outerEnv input
-                                  transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused -}
-                      v@(_) -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused
-             else -- Matched 0 times, skip it
-                  transformRule outerEnv localEnv ellipsisIndex (List result) (List $ tail ts) unused
      else do t <- if isDefined
                      then do
                              var <- getVar localEnv a
@@ -571,7 +553,40 @@ pseudocode:
              case t of
                Nil _ -> return t
                _ -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [t]) (List ts) unused
+  where
+    hasEllipsis = macroElementMatchesMany transform
+    zeroOrManyMatch hasEllipsis isDefined = do
+      if hasEllipsis
+         -- An ellipsis is present at this level
+         -- TODO: this is just a copy of the existing logic, but the code needs to change to use getData
 
+-- TODO: another concern, can we skip the ellipsis in this function, if we are in a nested match?
+--       need to inspect this code and determine how that is handled, because this list cannot be lost because
+--       the next iteration(s) of the higher-level match will need to process it...
+
+         then if isDefined
+                 then do 
+                        -- get var
+                        var <- getVar localEnv a
+                        -- ensure it is a list
+                        case var of
+                          -- add all elements of the list into result
+                          List v -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ v) (List $ tail ts) unused
+    {- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
+    --
+    -- TODO: this could be a problem, because we need to signal the end of the ... and do not want an infinite loop.
+    --       but we want the lexical value as well. need to think about this in more detail to get a truly workable solution
+    --
+                                      v <- getVar outerEnv input
+                                      transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused -}
+                          v@(_) -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused
+                 else -- Matched 0 times, skip it
+                      transformRule outerEnv localEnv ellipsisIndex (List result) (List $ tail ts) unused
+
+         -- No ellipsis at this level, but one is present at a higher level, 
+         -- so we are in the middle of a (nested) zero-or-more match
+         else 
+           TODO
 -- Transform anything else as itself...
 transformRule outerEnv localEnv ellipsisIndex (List result) (List (t : ts)) (List ellipsisList) = do
   transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [t]) (List ts) (List ellipsisList)
