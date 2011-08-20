@@ -522,6 +522,14 @@ transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List (dl@
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) unused = do
 
 TODO: wire up ellipsisIndex (level?) and Matches module
+pseudocode:
+
+ if (hasEllipsis or ellipsisLevel > 0)
+    then 0-or-many match
+         ...
+    else just an atom
+
+
 
   let hasEllipsis = macroElementMatchesMany transform
   isDefined <- liftIO $ isBound localEnv a
@@ -548,13 +556,11 @@ TODO: wire up ellipsisIndex (level?) and Matches module
      else do t <- if isDefined
                      then do
                              var <- getVar localEnv a
---                             if ellipsisIndex > 0--(trace ("var = " ++ show a ++ " lex = " ++ isLexicallyDefinedVar) ellipsisIndex) > 0
---                             case (trace ("var = " ++ show var) var) of
                              case (var) of
                                Nil input -> do
                                                    v <- getVar outerEnv input
                                                    return v
-                               _ -> if ellipsisIndex > 0--(trace ("var = " ++ show a) ellipsisIndex) > 0
+                               _ -> if ellipsisIndex > 0
                                        then do case var of
                                                  List v -> if (length v) > (ellipsisIndex - 1)
                                                               then return $ v !! (ellipsisIndex - 1)
@@ -562,7 +568,6 @@ TODO: wire up ellipsisIndex (level?) and Matches module
                                                  _ -> throwError $ Default "Unexpected error in transformRule"
                                        else return var
                      else return $ Atom a
---             case (trace ("t = " ++ show t) t) of
              case t of
                Nil _ -> return t
                _ -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [t]) (List ts) unused
