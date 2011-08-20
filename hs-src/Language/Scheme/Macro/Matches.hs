@@ -158,3 +158,7 @@ test = do
 
   cmp (getData (List [List [List [], List [Atom "1", Number 2, Number 3, Number 4]]]) [0, 1, 0]) 
                (Atom "1")
+
+  -- Real world case, we would like to take the list (all leaves) at [0, 1]
+  cmp (getData (List [List [List [], List [Atom "1", Number 2, Number 3, Number 4]]]) [0, 1]) 
+               (List [Atom "1", Number 2, Number 3, Number 4])
