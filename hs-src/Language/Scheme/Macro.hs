@@ -564,6 +564,17 @@ pseudocode:
 --       need to inspect this code and determine how that is handled, because this list cannot be lost because
 --       the next iteration(s) of the higher-level match will need to process it...
 
+-- Need to figure out the top-level algorithm for transforming, then figure out where each part fits in.
+{-
+Can we mimic the pattern matching algorithm, and recurse when an ellipsis is found?
+need to consider how the result is stored. if we use full CPS when we can just pass it around. This may be the best bet, but
+need to consider how ellipses are handled in that case...
+
+Questions/Notes:
+ - right now, the code returns (nil, list) to return intermediate results. should we just use pure CPS to avoid having to pass
+   back code like this?
+-}
+
          then if isDefined
                  then do 
                         -- get var
