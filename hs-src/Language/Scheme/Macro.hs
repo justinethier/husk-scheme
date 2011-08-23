@@ -529,50 +529,49 @@ transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List (dl@
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [(List ellipsisList), lst, (List [dl]), Number $ toInteger ellipsisIndex]
 -}
 
-TODO: left off here on 8/22. may want to review above to make sure it looks good before proceeding
-
 -- Transform an atom by attempting to look it up as a var...
-transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) unused = do
-
-TODO: wire up ellipsisIndex (level?) and Matches module
-pseudocode:
-
- if (hasEllipsis or ellipsisLevel > 0)
-    then 0-or-many match
-         ...
-    else just an atom
-
-
-
+transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
   isDefined <- liftIO $ isBound localEnv a
-  if hasEllipsis || ellipsisLevel > 0
-    then zeroOrManyMatch hasEllipsis isDefined
---  if (trace ("isDefined [" ++ show a ++ "]: " ++ show isDefined) hasEllipsis)
-     else do t <- if isDefined
+  if hasEllipsis
+    then ellipsisHere hasEllipsis isDefined
+    else do t <- if isDefined
                      then do
                              var <- getVar localEnv a
                              case (var) of
-                               Nil input -> do
-                                                   v <- getVar outerEnv input
-                                                   return v
-                               _ -> if ellipsisIndex > 0
-                                       -- TODO: need to handle using new getData logic
+                               Nil input -> do v <- getVar outerEnv input
+                                               return v
+                               _ -> if ellipsisLevel > 0
                                        then do case var of
-                                                 List v -> if (length v) > (ellipsisIndex - 1)
-                                                              then return $ v !! (ellipsisIndex - 1)
-                                                              else return $ Nil ""
+                                                 List v -> Matches.getData var $ init ellipsisIndex -- Take all elements, instead of one-at-a-time 
                                                  _ -> throwError $ Default "Unexpected error in transformRule"
                                        else return var
                      else return $ Atom a
              case t of
                Nil _ -> return t
-               _ -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [t]) (List ts) unused
+               _ -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [t]) (List ts)
   where
     hasEllipsis = macroElementMatchesMany transform
-    zeroOrManyMatch hasEllipsis isDefined = do
-      if hasEllipsis
-         -- An ellipsis is present at this level
-         -- TODO: this is just a copy of the existing logic, but the code needs to change to use getData
+    ellipsisHere hasEllipsis isDefined = do
+        if isDefined
+             then do 
+                    -- get var
+                    var <- getVar localEnv a
+                    -- ensure it is a list
+                    case var of
+                      -- add all elements of the list into result
+                      List v -> do a <- Matches.getData var ellipsisIndex
+                                   transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ a) (List $ tail ts)
+{- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
+--
+-- TODO: this could be a problem, because we need to signal the end of the ... and do not want an infinite loop.
+--       but we want the lexical value as well. need to think about this in more detail to get a truly workable solution
+--
+                                  v <- getVar outerEnv input
+                                  transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused -}
+                      v@(_) -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [v]) (List $ tail ts)
+             else -- Matched 0 times, skip it
+                  transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ tail ts)
+
 
 -- TODO: another concern, can we skip the ellipsis in this function, if we are in a nested match?
 --       need to inspect this code and determine how that is handled, because this list cannot be lost because
@@ -589,45 +588,22 @@ Questions/Notes:
    back code like this?
 -}
 
-         then if isDefined
-                 then do 
-                        -- get var
-                        var <- getVar localEnv a
-                        -- ensure it is a list
-                        case var of
-                          -- add all elements of the list into result
-                          List v -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ v) (List $ tail ts) unused
-    {- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
-    --
-    -- TODO: this could be a problem, because we need to signal the end of the ... and do not want an infinite loop.
-    --       but we want the lexical value as well. need to think about this in more detail to get a truly workable solution
-    --
-                                      v <- getVar outerEnv input
-                                      transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused -}
-                          v@(_) -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused
-                 else -- Matched 0 times, skip it
-                      transformRule outerEnv localEnv ellipsisIndex (List result) (List $ tail ts) unused
-
-         -- No ellipsis at this level, but one is present at a higher level, 
-         -- so we are in the middle of a (nested) zero-or-more match
-         else 
-           TODO
 -- Transform anything else as itself...
-transformRule outerEnv localEnv ellipsisIndex (List result) (List (t : ts)) (List ellipsisList) = do
-  transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [t]) (List ts) (List ellipsisList)
+transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List (t : ts)) = do
+  transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [t]) (List ts) 
 
 -- Base case - empty transform
-transformRule _ _ _ result@(List _) (List []) _ = do
+transformRule _ _ _ _ result@(List _) (List []) = do
   return result
 
 -- Transform is a single var, just look it up.
-transformRule _ localEnv _ _ (Atom transform) _ = do
+transformRule _ localEnv _ _ _ (Atom transform) = do
   v <- getVar localEnv transform
   return v
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
-transformRule _ _ _ _ transform _ = return transform
+transformRule _ _ _ _ _ transform = return transform
 
 transformDottedList :: Env -> Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
 transformDottedList outerEnv localEnv ellipsisIndex (List result) (List (DottedList ds d : ts)) (List ellipsisList) = do
