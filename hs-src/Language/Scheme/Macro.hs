@@ -535,18 +535,18 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   if hasEllipsis
     then ellipsisHere hasEllipsis isDefined
     else do t <- if isDefined
-                     then do
+                    then do
                              var <- getVar localEnv a
-                             case (var) of
+                             case var of
                                Nil input -> do v <- getVar outerEnv input
                                                return v
                                _ -> if ellipsisLevel > 0
                                        then do case var of
-                                                 List v -> Matches.getData var $ init ellipsisIndex -- Take all elements, instead of one-at-a-time 
+                                                 List v -> return $ Matches.getData var $ init ellipsisIndex -- Take all elements, instead of one-at-a-time 
                                                  _ -> throwError $ Default "Unexpected error in transformRule"
                                        else return var
-                     else return $ Atom a
-             case t of
+                    else return $ Atom a
+            case t of
                Nil _ -> return t
                _ -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [t]) (List ts)
   where
@@ -559,7 +559,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                     -- ensure it is a list
                     case var of
                       -- add all elements of the list into result
-                      List v -> do a <- Matches.getData var ellipsisIndex
+                      List v -> do let a = Matches.getData var ellipsisIndex -- TODO
                                    transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ a) (List $ tail ts)
 {- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
 --
