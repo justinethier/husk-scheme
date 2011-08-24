@@ -254,8 +254,8 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                       else ellipsisIndex
 
          -- At this point we know if the input is part of an ellipsis, so set the level accordingly 
-         status <- checkLocal outerEnv localEnv identifiers level idx p i 
-         case status of
+         status <- checkLocal outerEnv (trace ("chkLocal i = " ++ show i ++ " lvl = " ++ show level ++ " idx = " ++ show idx ++ " p = " ++ show p) localEnv) identifiers level idx p i
+         case (trace "status" status) of
               -- No match
               Bool False -> if nextHasEllipsis
                                 {- No match, must be finished with ...
@@ -269,7 +269,6 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                            loadLocal outerEnv localEnv identifiers pattern (List is)
                             ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                             idx -- Must keep index since it is incremented each time
-TODO: is above correct, or must this increment the level for nested cases? See last couple of tests in examples/when.scm                            
                       else loadLocal outerEnv localEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex
 
        -- Base case - All data processed
@@ -393,7 +392,7 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
       addPatternVar isDefined ellipLevel ellipIndex pat val = do
              if isDefined
                 then do v <- getVar localEnv pat
-                        setVar localEnv pat (trace ("Setting " ++ show pat ++ " to " ++ show (Matches.setData v ellipIndex val)) (Matches.setData v ellipIndex val))
+                        setVar localEnv pat (trace ("Setting " ++ show pat ++ " at lvl = " ++ show ellipLevel ++ " idx = " ++ show ellipIndex ++ " to " ++ show (Matches.setData v ellipIndex val)) (Matches.setData v ellipIndex val))
                 else defineVar localEnv pat (Matches.setData (List []) ellipIndex val)
 
 checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(Vector _) input@(Vector _) =
@@ -452,10 +451,10 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex
-  if (trace ("trList - lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " l = " ++ show l) nextHasEllipsis)
+  if (trace ("trList - hasE = " ++ show nextHasEllipsis ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " l = " ++ show l ++ " ts = " ++ show ts) nextHasEllipsis)
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
-             case curT of
+             case (trace ("curT = " ++ show curT) curT) of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
                         transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ tail ts)
 {- TODO: refactor this code once list transformation works                               
@@ -542,8 +541,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                                Nil input -> do v <- getVar outerEnv input
                                                return v
                                _ -> if ellipsisLevel > 0
-                                       then do case (trace ("a = " ++ show a ++ " var = " ++ show var) var) of
-                                                 List v -> return $ Matches.getData var $ init ellipsisIndex -- Take all elements, instead of one-at-a-time 
+                                       then do case (trace ("a = " ++ show a ++ " idx = " ++ show ellipsisIndex ++ " var = " ++ show var) var) of
+                                                 List v -> return $ (trace ("returning " ++ show (Matches.getData var $ init ellipsisIndex)) Matches.getData var $ init ellipsisIndex) -- Take all elements, instead of one-at-a-time 
                                                  _ -> throwError $ Default "Unexpected error in transformRule"
                                        else return var -- TODO: really? think we always need to use getData now
                     else return $ Atom a
@@ -563,7 +562,10 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                       List v -> do let a = Matches.getData var ellipsisIndex
                                    case a of
                                      List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
-                                     _ -> throwError $ Default "Unexpected error transforming list" -- TODO: is this because pattern was not loaded properly?
+                                     _ -> return $ Nil "" -- No matches for var
+                                     -- TODO: probably just delete this code - throwError $ Default "Unexpected error transforming list" -- TODO: is this because pattern was not loaded properly?
+
+
 {- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
 --
 -- TODO: this could be a problem, because we need to signal the end of the ... and do not want an infinite loop.
