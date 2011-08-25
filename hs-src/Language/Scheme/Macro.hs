@@ -550,12 +550,12 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                                _ -> case (trace ("a = " ++ show a ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " var = " ++ show var) var) of
                                     List v -> do
                                          if ellipsisLevel > 0
-                                                 then return $ (trace ("returning " ++ show (Matches.getData var $ init ellipsisIndex)) Matches.getData var $ init ellipsisIndex) -- Take all elements, instead of one-at-a-time 
+                                                 then return $ (trace ("returning " ++ show (Matches.getData var ellipsisIndex)) Matches.getData var ellipsisIndex) -- Take all elements, instead of one-at-a-time 
                                                  else if length v > 0 
                                                          then return var -- Just return the elements directly, so all can be appended
                                                          else return $ Nil "" -- A 0 match case, flag it to calling code
                                     _ -> if ellipsisLevel > 0
-                                            then throwError $ Default "Unexpected error processing data in transformRule"
+                                            then throwError $ Default "Unexpected error processing data in transformRule" -- List req'd for 0-or-n match
                                             else return var
                     else return $ Atom a
             case t of
