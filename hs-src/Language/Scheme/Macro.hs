@@ -554,7 +554,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                                                  else if length v > 0 
                                                          then return var -- Just return the elements directly, so all can be appended
                                                          else return $ Nil "" -- A 0 match case, flag it to calling code
-                                    _ -> throwError $ Default "Unexpected error processing data in transformRule"
+                                    _ -> if ellipsisLevel > 0
+                                            then throwError $ Default "Unexpected error processing data in transformRule"
+                                            else return var
                     else return $ Atom a
             case t of
                Nil _ -> return t
