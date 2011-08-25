@@ -451,7 +451,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
-  if (trace ("trList - hasE = " ++ show nextHasEllipsis ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " l = " ++ show l ++ " ts = " ++ show ts) nextHasEllipsis)
+--  if (trace ("trList - hasE = " ++ show nextHasEllipsis ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " l = " ++ show l ++ " ts = " ++ show ts) nextHasEllipsis)
+  if nextHasEllipsis
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
              case (trace ("curT = " ++ show curT) curT) of
@@ -485,29 +486,37 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisLevel]
 
-{- TODO: refactor the 2 functions below once the 'new' transform works for lists
-transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List ((Vector v) : ts)) (List ellipsisList) = do
-  if macroElementMatchesMany transform
+transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List ((Vector v) : ts)) = do
+  let nextHasEllipsis = macroElementMatchesMany transform
+  let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
+  let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
+  if nextHasEllipsis
      then do
              -- Idea here is that we need to handle case where you have (vector ...) - EG: (#(var step) ...)
-             curT <- transformRule outerEnv localEnv (ellipsisIndex + 1) (List []) (List $ elems v) (List result)
+             curT <- transformRule outerEnv localEnv level idx (List []) (List $ elems v)
              case curT of
-               Nil _ -> if ellipsisIndex == 0
-                                -- First time through and no match ("zero" case). Use tail to move past the "..."
-                           then transformRule outerEnv localEnv 0 (List $ result) (List $ tail ts) (List [])
-                                -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
-                           else transformRule outerEnv localEnv 0 (List $ ellipsisList ++ result) (List $ tail ts) (List [])
-               List t -> transformRule outerEnv localEnv (ellipsisIndex + 1) (List $ result ++ [asVector t]) transform (List ellipsisList)
+               Nil _ -> do
+                        -- No match ("zero" case). Use tail to move past the "..."
+                        let remaining = tail ts
+                        if not (null remaining)
+                           then transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ remaining)
+                           else if length result > 0 
+                                   then return $ List result
+                                   else return $ Nil "" -- Nothing remains, no match
+               List t -> transformRule outerEnv localEnv 
+                           ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
+                           idx -- Must keep index since it is incremented each time
+                           (List $ result ++ [asVector t]) transform
                _ -> throwError $ Default "Unexpected error in transformRule"
-     else do lst <- transformRule outerEnv localEnv ellipsisIndex (List []) (List $ elems v) (List ellipsisList)
+     else do lst <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List $ elems v)
              case lst of
-                  List l -> do
-                      transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [asVector l]) (List ts) (List ellipsisList)
+                  List l -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [asVector l]) (List ts)
                   Nil _ -> return lst
-                  _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [(List ellipsisList), lst, (List [Vector v]), Number $ toInteger ellipsisIndex]
+                  _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [Vector v]), Number $ toInteger ellipsisLevel]
 
  where asVector lst = (Vector $ (listArray (0, length lst - 1)) lst)
 
+{- TODO: refactor the function below once the 'new' transform works for lists
 transformRule outerEnv localEnv ellipsisIndex (List result) transform@(List (dl@(DottedList _ _) : ts)) (List ellipsisList) = do
   if macroElementMatchesMany transform
      then do
@@ -575,8 +584,6 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                                    case a of
                                      List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
                                      _ -> return $ Nil "" -- No matches for var
-                                     -- TODO: probably just delete this code - throwError $ Default "Unexpected error transforming list" -- TODO: is this because pattern was not loaded properly?
-
 
 {- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
 --
