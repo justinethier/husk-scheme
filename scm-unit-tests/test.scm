@@ -1,11 +1,20 @@
-; TODO: this will become another set of macro test cases, but for now I
-; just want to get it into git... we'll pretty it up later
+;;
+;; husk-scheme
+;; http://github.com/justinethier/husk-scheme
+;;
+;; Written by Justin Ethier
+;;
+;; More test cases for macros, used to test nested matching
+;;
+(load "skim-unit.scm")
+(unit-test-start "macros")
 
-;(define-syntax nesting-test2
-;  (syntax-rules ()
-;    ((test a b ...)
-;     (quote (a b ...)))))
-;(write (nesting-test2 1 2 5 6 7 8 9 10))
+(define-syntax nesting-test-simple
+  (syntax-rules ()
+    ((test a b ...)
+     (quote (a b ...)))))
+(assert/equal (nesting-test-simple 1 2 5 6 7 8 9 10)
+             '(1 2 5 6 7 8 9 10))
 
 ; This macro demonstrates multi-level nesting of macros
 ; It actually crashes v3.2 husk because that version does not properly
@@ -14,5 +23,9 @@
   (syntax-rules ()
     ((test a b (c d (e f ...) ...) ...)
      '(a b ((e f ...) ...) ...))))
-(write (nesting-test 1 2 ))
-(write (nesting-test 1 2 (3 4 (5 6 7 8 9 10))))
+(assert/equal (nesting-test 1 2 )
+             '(1 2))
+(assert/equal (nesting-test 1 2 (3 4 (5 6 7 8 9 10)))
+             '(1 2 ((5 6 7 8 9 10))))
+
+(unit-test-handler-results)
