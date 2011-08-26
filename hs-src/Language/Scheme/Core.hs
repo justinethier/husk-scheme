@@ -696,8 +696,11 @@ evalfuncApply (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation
 evalfuncApply _ = throwError $ NumArgs 2 []
 
 evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
-     result <- load filename >>= liftM last . mapM (evaluate env (makeNullContinuation env))
-     continueEval env cont result
+    results <- load filename >>= mapM (evaluate env (makeNullContinuation env))
+    if not (null results)
+       then do result <- return . last $ results
+               continueEval env cont result
+       else return $ Nil "" -- Empty, unspecified value
   where evaluate env2 cont2 val2 = macroEval env2 val2 >>= eval env2 cont2
 evalfuncLoad (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncLoad _ = throwError $ NumArgs 1 []
