@@ -4,11 +4,11 @@
   (syntax-rules ()
      ((_ (a b . c))
       (quote (a b . c)))))
-
-(write (pair-test (1 2 3)))
-;(1 2 3)
 (write (pair-test (1 2 . 3)))
 ;(1 2 . 3)
+#|
+(write (pair-test (1 2 3)))
+;(1 2 3)
 (write (pair-test (1 2 3 . 4)))
 ;(1 2 3 . 4)
 (write (pair-test (1 2)))
@@ -52,4 +52,4 @@
 
 (write (pair-test-01 (1 2)))
 ;((1 2 ()))
-
+|#
