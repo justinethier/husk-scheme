@@ -1,4 +1,6 @@
 
+(write "TODO: the following are not transformed correctly by husk:")
+
 ; A simple example of a pair in the pattern and transform
 (define-syntax pair-test
   (syntax-rules ()
