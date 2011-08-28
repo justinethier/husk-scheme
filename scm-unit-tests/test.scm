@@ -15,6 +15,16 @@
 (write (pair-test (1 2 3 4 5 6)))
 ;(1 2 3 4 5 6)
 
+(define-syntax pair-test-2
+  (syntax-rules ()
+     ((_ ((a) (b) . (c)))
+      (quote ((a) (b) . (c))))))
+(write (pair-test ((1) (2) . (3))))
+(write (pair-test ((1) (2) (3))))
+(write (pair-test ((1) (2) (3) . (4))))
+(write (pair-test ((1) (2))))
+(write (pair-test ((1) (2) (3) (4) (5) (6))))
+
 (define-syntax pair-test-nested
   (syntax-rules ()
      ((_ (a b . c) ...)
