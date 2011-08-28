@@ -624,7 +624,7 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
           lsto <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List ds)
           case lsto of
             List lst -> do
--- TODO: d is an n-ary match, per Issue #34
+                           -- TODO: d is an n-ary match, per Issue #34
                            r <- transformRule outerEnv localEnv 
                                               ellipsisLevel -- OK not to increment here, this is accounted for later on
                                               ellipsisIndex -- Same as above 
@@ -634,7 +634,10 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
                                 -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
 --                                List [List []] -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts) -- TODO: is this form still applicable, post Issue #34?
 
-                                List [] -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
+                                List [] ->
+                                    transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
+                                Nil _ ->  -- Same as above, no match for d, so skip it 
+                                    transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
                                 {--
                                 -- FUTURE: Issue #9 - the transform needs to be as follows:
                                 --
@@ -659,7 +662,6 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
                                                     -}
                                 List rst -> do
                                     transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List $ lst ++ rst]) (List ts)
--- TODO: does there have to be a Nil case here?
                                 _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
             Nil _ -> return $ Nil ""
             _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
