@@ -738,7 +738,11 @@ FUTURE: should be able to load multiple functions in one shot (?). -}
        GHC.Failed -> error "Compilation failed"
        GHC.Succeeded -> do
            m <- GHC.findModule (GHC.mkModuleName moduleName) Nothing
-           GHC.setContext [] [m]  -- setContext [] [(m, Nothing)] -- Use setContext [] [m] for GHC<7.
+#if __GLASGOW_HASKELL__ < 700
+           GHC.setContext [] [m]
+#else
+           GHC.setContext [] [(m, Nothing)]
+#endif
            fetched <- GHC.compileExpr (moduleName ++ "." ++ externalFuncName)
            return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> IOThrowsError LispVal)
   defineVar env internalFuncName (IOFunc result) >>= continueEval env cont
@@ -749,7 +753,11 @@ evalfuncLoadFFI [cont@(Continuation env _ _ _ _), String moduleName, String exte
     dynflags <- GHC.getSessionDynFlags
     _ <- GHC.setSessionDynFlags dynflags
     m <- GHC.findModule (GHC.mkModuleName moduleName) Nothing
-    GHC.setContext [] [m]  -- setContext [] [(m, Nothing)] -- Use setContext [] [m] for GHC<7.
+#if __GLASGOW_HASKELL__ < 700
+    GHC.setContext [] [m]
+#else
+    GHC.setContext [] [(m, Nothing)]
+#endif
     fetched <- GHC.compileExpr (moduleName ++ "." ++ externalFuncName)
     return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> IOThrowsError LispVal)
   defineVar env internalFuncName (IOFunc result) >>= continueEval env cont
