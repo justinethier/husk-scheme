@@ -6,7 +6,6 @@
       (quote (a b . c)))))
 (write (pair-test (1 2 . 3)))
 ;(1 2 . 3)
-#|
 (write (pair-test (1 2 3)))
 ;(1 2 3)
 (write (pair-test (1 2 3 . 4)))
@@ -16,6 +15,7 @@
 (write (pair-test (1 2 3 4 5 6)))
 ;(1 2 3 4 5 6)
 
+#|
 ; Would be surprized if this worked in husk at the moment...
 ;(write (pair-test (1 2 . )))
 ;;(1 2)

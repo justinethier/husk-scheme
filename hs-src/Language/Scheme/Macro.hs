@@ -518,7 +518,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   if nextHasEllipsis
      then do
              -- Idea here is that we need to handle case where you have (pair ...) - EG: ((var . step) ...)
-             curT <- transformDottedList outerEnv localEnv (ellipsisIndex + 1) (List []) (List [dl]) (List result)
+             curT <- transformDottedList outerEnv localEnv level idx (List []) (List [dl])
              case curT of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts 
@@ -616,20 +616,23 @@ transformRule _ localEnv _ _ _ (Atom transform) = do
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
 transformRule _ _ _ _ _ transform = return transform
 
-{- TODO: code is temporarily commented-out while reworking transformRule
-transformDottedList :: Env -> Env -> Int -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
-transformDottedList outerEnv localEnv ellipsisIndex (List result) (List (DottedList ds d : ts)) (List ellipsisList) = do
-          lsto <- transformRule outerEnv localEnv ellipsisIndex (List []) (List ds) (List ellipsisList)
+transformDottedList :: Env -> Env -> Int -> [Int] -> LispVal -> LispVal -> IOThrowsError LispVal
+transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List (DottedList ds d : ts)) = do
+          lsto <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List ds)
           case lsto of
             List lst -> do
 -- TODO: d is an n-ary match, per Issue #34
-                           r <- transformRule outerEnv localEnv ellipsisIndex (List []) (List [d, Atom "..."]) (List ellipsisList)
+                           r <- transformRule outerEnv localEnv 
+                                              ellipsisLevel -- OK not to increment here, this is accounted for later on
+                                              ellipsisIndex -- Same as above 
+                                              (List []) 
+                                              (List [d, Atom "..."])
                            case (r) of
                                 -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
-                                List [List []] -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) (List ellipsisList) -- TODO: is this form still applicable, post Issue #34?
+--                                List [List []] -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts) -- TODO: is this form still applicable, post Issue #34?
 
-                                List [] -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List lst]) (List ts) (List ellipsisList)
-                                --
+                                List [] -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
+                                {--
                                 -- FUTURE: Issue #9 - the transform needs to be as follows:
                                 --
                                 -- - transform into a list if original input was a list - code is below but commented-out
@@ -641,22 +644,24 @@ transformDottedList outerEnv localEnv ellipsisIndex (List result) (List (DottedL
                                 --
 -- List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList)
 --List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
-
+-}
 -- TODO: both cases below do not take issue #9 into account
-                                List [rst] -> do
+                                List [rst] -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts)
+                                {- TODO: OBSOLETE CODE:
+                                   This method is broken, need to have more sophisticated pair/list processing
                                                  src <- lookupPatternVarSrc localEnv $ List ds
                                                  case src of
                                                     String "pair" -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList)
                                                     _ -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList)
+                                                    -}
                                 List rst -> do
-                                    transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List $ lst ++ rst]) (List ts) (List ellipsisList)
-
+                                    transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List $ lst ++ rst]) (List ts)
+-- TODO: does there have to be a Nil case here?
                                 _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
-            Nil _ -> return $ List [Nil "", List ellipsisList]
+            Nil _ -> return $ Nil ""
             _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
 
 transformDottedList _ _ _ _ _ _ = throwError $ Default "Unexpected error in transformDottedList"
--}
 
 -- |Continue transforming after a preceding match has ended 
 continueTransform :: Env -> Env -> Int -> [Int] -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
@@ -712,7 +717,7 @@ initializePatternVars localEnv src identifiers (Atom pattern) =
        {- FUTURE:
        there is code to attempt to flag "src" here, but it is not
        wire up correctly. In fact, the whole design here probably
-       needs to be rethinked. -}
+       needs to be rethought. -}
     do _ <- defineNamespacedVar localEnv "src" pattern $ String src
        isDefined <- liftIO $ isBound localEnv pattern
        found <- findAtom (Atom pattern) identifiers
