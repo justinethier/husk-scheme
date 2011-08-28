@@ -214,7 +214,18 @@ parseDottedList :: Parser LispVal
 parseDottedList = do
   phead <- endBy parseExpr whiteSpace
   ptail <- dot >> parseExpr --char '.' >> whiteSpace >> parseExpr
-  return $ DottedList phead ptail
+--  return $ DottedList phead ptail
+  case ptail of
+    DottedList ls l -> return $ DottedList (phead ++ ls) l 
+    -- TODO: Issue #41 - List l -> return $ List $ phead ++ l
+    {- Regarding above, see http://community.schemewiki.org/?scheme-faq-language#dottedapp
+     
+       Note, however, that most Schemes expand literal lists occurring in function applications, 
+       e.g. (foo bar . (1 2 3)) is expanded into (foo bar 1 2 3) by the reader. It is not entirely 
+       clear whether this is a consequence of the standard - the notation is not part of the R5RS 
+       grammar but there is strong evidence to suggest a Scheme implementation cannot comply with 
+       all of R5RS without performing this transformation. -}
+    _ -> return $ DottedList phead ptail
 
 parseQuoted :: Parser LispVal
 parseQuoted = do
