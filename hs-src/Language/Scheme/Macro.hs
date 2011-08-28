@@ -624,6 +624,15 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
           lsto <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List ds)
           case lsto of
             List lst -> do
+
+ -- TODO below: perhaps similar logic to the parser needs to be applied here, where
+ --      the results are transformed into either a list or pair depending upon whether
+ --      they form a proper list or not. think about this, I think this is what is supposed
+ --      to happen, but the input in the pattern analysis step will need to change to 
+ --      capture whether the input was a proper or improper list. hopefully the data stored to the
+ --      input var can be altered to indicate this...
+ --
+
                            -- TODO: d is an n-ary match, per Issue #34
                            r <- transformRule outerEnv localEnv 
                                               ellipsisLevel -- OK not to increment here, this is accounted for later on
