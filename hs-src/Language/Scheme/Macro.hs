@@ -42,7 +42,7 @@ import Language.Scheme.Variables
 import qualified Language.Scheme.Macro.Matches as Matches
 import Control.Monad.Error
 import Data.Array
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+--import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 http://community.schemewiki.org/?scheme-faq-macros -}
@@ -254,8 +254,9 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                       else ellipsisIndex
 
          -- At this point we know if the input is part of an ellipsis, so set the level accordingly 
-         status <- checkLocal outerEnv (trace ("chkLocal i = " ++ show i ++ " lvl = " ++ show level ++ " idx = " ++ show idx ++ " p = " ++ show p) localEnv) identifiers level idx p i
-         case (trace "status" status) of
+--         status <- checkLocal outerEnv (trace ("chkLocal i = " ++ show i ++ " lvl = " ++ show level ++ " idx = " ++ show idx ++ " p = " ++ show p) localEnv) identifiers level idx p i
+         status <- checkLocal outerEnv (localEnv) identifiers level idx p i
+         case (status) of
               -- No match
               Bool False -> if nextHasEllipsis
                                 {- No match, must be finished with ...
@@ -305,7 +306,7 @@ checkLocal _ _ _ _ _ (Float pattern) (Float input) = return $ Bool $ pattern == 
 checkLocal _ _ _ _ _ (String pattern) (String input) = return $ Bool $ pattern == input
 checkLocal _ _ _ _ _ (Char pattern) (Char input) = return $ Bool $ pattern == input
 checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom pattern) input = do
-  if (trace ("pat = " ++ show pattern ++ " level = " ++ show ellipsisLevel) ellipsisLevel) > 0
+  if (ellipsisLevel) > 0
      {- FUTURE: may be able to simplify both cases below by using a
      lambda function to store the 'save' actions -}
 
@@ -374,7 +375,7 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
                     Atom inpt -> do
                        isLexicallyDefinedInput <- liftIO $ isBound outerEnv inpt -- Var defined in scope outside macro
                        if isLexicallyDefinedInput
-                           then do _ <- defineVar localEnv pattern (trace ("sec 4.3.2 for: " ++ inpt) (Nil inpt)) -- Var defined outside macro, flag as such for transform code
+                           then do _ <- defineVar localEnv pattern ((Nil inpt)) -- Var defined outside macro, flag as such for transform code
 -- TODO: flag as such from the above ellipsis code as well            
                                    return $ Bool True
                            else do _ <- defineVar localEnv pattern input
@@ -392,7 +393,7 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
       addPatternVar isDefined ellipLevel ellipIndex pat val = do
              if isDefined
                 then do v <- getVar localEnv pat
-                        setVar localEnv pat (trace ("Setting " ++ show pat ++ " at lvl = " ++ show ellipLevel ++ " idx = " ++ show ellipIndex ++ " to " ++ show (Matches.setData v ellipIndex val)) (Matches.setData v ellipIndex val))
+                        setVar localEnv pat (Matches.setData v ellipIndex val)
                 else defineVar localEnv pat (Matches.setData (List []) ellipIndex val)
 
 checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(Vector _) input@(Vector _) =
@@ -455,7 +456,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   if nextHasEllipsis
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
-             case (trace ("curT = " ++ show curT) curT) of
+--             case (trace ("curT = " ++ show curT) curT) of
+             case (curT) of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
 
@@ -491,8 +493,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
      then do
              -- Idea here is that we need to handle case where you have (vector ...) - EG: (#(var step) ...)
              curT <- transformRule outerEnv localEnv level idx (List []) (List $ elems v)
-             case (trace ("curT = " ++ show curT) curT) of
---             case curT of
+--             case (trace ("curT = " ++ show curT) curT) of
+             case curT of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
                List t -> transformRule outerEnv localEnv 
@@ -587,7 +589,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                      _ -> case (var) of
                           List v -> do
                                if ellipsisLevel > 0
-                                       then return $ (trace ("returning " ++ show (Matches.getData var ellipsisIndex)) Matches.getData var ellipsisIndex) -- Take all elements, instead of one-at-a-time 
+--                                       then return $ (trace ("returning " ++ show (Matches.getData var ellipsisIndex)) Matches.getData var ellipsisIndex) -- Take all elements, instead of one-at-a-time 
+                                       then return $ (Matches.getData var ellipsisIndex) -- Take all elements, instead of one-at-a-time 
                                        else if length v > 0 
                                                then return var -- Just return the elements directly, so all can be appended
                                                else return $ Nil "" -- A 0 match case, flag it to calling code
