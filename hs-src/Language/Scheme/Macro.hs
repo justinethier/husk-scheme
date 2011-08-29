@@ -639,7 +639,7 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
                                               ellipsisIndex -- Same as above 
                                               (List []) 
                                               (List [d, Atom "..."])
-                           case (r) of
+                           case r of
                                 -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
 --                                List [List []] -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts) -- TODO: is this form still applicable, post Issue #34?
 
@@ -661,7 +661,10 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
 --List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
 -}
 -- TODO: both cases below do not take issue #9 into account
-                                List [rst] -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts)
+{-                                List [rst] -> do
+                                    transformedCode <- buildTransformedCode result lst rst
+                                    transformRule outerEnv localEnv ellipsisLevel ellipsisIndex 
+                                                 (List transformedCode {-$ result ++ [DottedList lst rst]-}) (List ts)-}
                                 {- TODO: OBSOLETE CODE:
                                    This method is broken, need to have more sophisticated pair/list processing
                                                  src <- lookupPatternVarSrc localEnv $ List ds
@@ -670,10 +673,24 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
                                                     _ -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList)
                                                     -}
                                 List rst -> do
-                                    transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List $ lst ++ rst]) (List ts)
+                                    let transformedCode = buildTransformedCode result lst rst
+                                    transformRule outerEnv localEnv ellipsisLevel ellipsisIndex 
+                                                 (buildTransformedCode result lst rst) (List ts)
+                                     -- OLD:(List $ result ++ [List $ lst ++ rst]) (List ts)
                                 _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
             Nil _ -> return $ Nil ""
             _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
+ where 
+   -- Build code from the transformer, it may be either a proper or improper list depending upon the data
+   buildTransformedCode results ps p = do 
+     case p of
+        [l] -> List $ results ++ [DottedList ps l]
+        ls -> do
+            -- A crude method of 'cons'-ing everything together...
+            case tail ls of
+              [List []] -> List $ results ++ [List $ ps ++ init ls]
+              [t] -> List $ results ++ [DottedList (ps ++ init ls) (t)]
+
 
 transformDottedList _ _ _ _ _ _ = throwError $ Default "Unexpected error in transformDottedList"
 
