@@ -1,3 +1,4 @@
+(load "../stdlib.scm")
 
 ;; TODO: the problem here is that these cases have an improper list in the pattern and a proper list in the transform
 ;; the passing cases had improper lists in both.

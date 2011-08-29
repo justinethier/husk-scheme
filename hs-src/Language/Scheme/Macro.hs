@@ -200,15 +200,12 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
 
          result <- loadLocal outerEnv localEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex listFlags
          case result of
-            Bool True -> --loadLocal outerEnv localEnv identifiers p i False outerHasEllipsis
-                         -- TODO: first-cut of this
-                         --  idea is that by matching on an elipsis we will force the code to match p
-                         --  against all elements in i. In theory should work fine but I am not sure
-                         --  if this will introduce any subtle issues...
+            Bool True -> --  By matching on an elipsis we force the code 
+                         --  to match pagainst all elements in i. 
                          loadLocal outerEnv localEnv identifiers 
                                   (List $ [p] ++ [Atom "..."]) 
                                   (List i)
-                                   ellipsisLevel -- This is accounted for in the list/list match below: + 1
+                                   ellipsisLevel -- Incremented in the list/list match below
                                    ellipsisIndex
                                    (flagDottedLists listFlags (True, False) $ length ellipsisIndex)
             _ -> return $ Bool False
@@ -227,15 +224,12 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
 
          result <- loadLocal outerEnv localEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex listFlags
          case result of
-            Bool True -> --loadLocal outerEnv localEnv identifiers p i False outerHasEllipsis
-                         -- TODO: first-cut of this
-                         --  idea is that by matching on an elipsis we will force the code to match p
-                         --  against all elements in i. In theory should work fine but I am not sure
-                         --  if this will introduce any subtle issues...
+            Bool True -> --  By matching on an elipsis we force the code 
+                         --  to match pagainst all elements in i. 
                          loadLocal outerEnv localEnv identifiers 
                                   (List $ [p] ++ [Atom "..."]) 
                                   (List i)
-                                   ellipsisLevel -- This is accounted for in the list/list match below: + 1)
+                                   ellipsisLevel -- Incremented in the list/list match below
                                    ellipsisIndex
                                    (flagDottedLists listFlags (True, True) $ length ellipsisIndex)
             _ -> return $ Bool False
@@ -567,35 +561,38 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 -- Transform an atom by attempting to look it up as a var...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
   isDefined <- liftIO $ isBound localEnv a
-TODO: not good enough, I think it is always defined, need to Get it instead of look if defined
-  isImproperPattern <- liftIO $ isNamespacedBound localEnv a "improper pattern"
-  isImproperInput <- liftIO $ isNamespacedBound localEnv a "improper input"
   if hasEllipsis
-    then ellipsisHere isDefined isImproperPattern isImproperInput
-    else noEllipsis isDefined isImproperPattern isImproperInput
+    then ellipsisHere isDefined
+    else noEllipsis isDefined
 
   where
     -- A temporary function to use input flags to append a '() to a list if necessary
     -- I think we need to use a dotted list flag on the transform side to do this correctly,
     -- but this will be a quick proof-of-concept
-    appendNil var d isImproperPattern isImproperInput =
+    appendNil var d (Bool isImproperPattern) (Bool isImproperInput) =
       case d of
          List lst -> if isImproperPattern && not isImproperInput
                         then List $ lst ++ [List []]
                         else List lst
          _ -> d
+    loadNamespacedBool namespc = do
+        isDef <- liftIO $ isNamespacedBound localEnv namespc a
+        if isDef
+           then getNamespacedVar localEnv namespc a
+           else return $ Bool False
 
     hasEllipsis = macroElementMatchesMany transform
-    ellipsisHere isDefined isImproperPattern isImproperInput = do
+    ellipsisHere isDefined = do
         if isDefined
              then do 
+                    isImproperPattern <- loadNamespacedBool "improper pattern"
+                    isImproperInput <- loadNamespacedBool "improper input"
                     -- get var
                     var <- getVar localEnv a
                     -- ensure it is a list
                     case var of
                       -- add all elements of the list into result
-                      List v -> do let a = appendNil var (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput
-                                   case a of
+                      List v -> do case (appendNil var (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput) of
                                      List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
                                      _ -> -- No matches for var
                                           continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
@@ -611,9 +608,11 @@ TODO: not good enough, I think it is always defined, need to Get it instead of l
              else -- Matched 0 times, skip it
                   transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ tail ts)
 
-    noEllipsis isDefined isImproperPattern isImproperInput = do
+    noEllipsis isDefined = do
       t <- if isDefined
               then do
+                   isImproperPattern <- loadNamespacedBool "improper pattern"
+                   isImproperInput <- loadNamespacedBool "improper input"
                    var <- getVar localEnv a
                    case var of
                      Nil input -> do v <- getVar outerEnv input
