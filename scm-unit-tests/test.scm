@@ -54,3 +54,10 @@
 
 (write (pair-test-01 (1 2)))
 ;((1 2 ()))
+;
+; TODO: test with this macro:
+;
+;(define-syntax pair-test-00
+;  (syntax-rules ()
+;     ((_ (a b . ((c))))
+;      (quote (a b c)))))

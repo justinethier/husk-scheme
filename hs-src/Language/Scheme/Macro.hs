@@ -177,8 +177,9 @@ searchForBindings _ _ bindings = return $ List bindings
 
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 in preparation for macro transformation. -}
-loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> IOThrowsError LispVal
-loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex = do
+loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> [Bool] -> IOThrowsError LispVal
+TODO: use the flag to figure out if input was in improper/proper list form. use it to flag macro variables when an Atom is encountered in Pattern
+loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex isPartOfDottedList = do
   case (pattern, input) of
 
        {- For vectors, just use list match for now, since vector input matching just requires a
@@ -236,6 +237,7 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                                   (List i)
                                    ellipsisLevel -- This is accounted for in the list/list match below: + 1)
                                    ellipsisIndex
+                                   (addDottedListFlag isPartOfDottedList $ length ellipsisIndex)
             _ -> return $ Bool False
 
        (List (p : ps), List (i : is)) -> do -- check first input against first pattern, recurse...
@@ -289,6 +291,15 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
 
        -- Check input against pattern (both should be single var)
        (_, _) -> checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern input
+
+
+{- 
+ - Utility function to insert a True flag to the proper trailing position of the DottedList indicator list 
+ - -}
+addDottedListFlag :: [Bool] -> Int -> [Bool]
+addDottedListFlag flagList lengthOfEllipsisIndex
+ | length flagList == lengthOfEllipsisIndex = flagList ++ [True]
+ | otherwise = flagList ++ (replicate ((lengthOfEllipsisIndex) - (length flagList)) False) ++ [True]
 
 {- Check pattern against input to determine if there is a match
  -
