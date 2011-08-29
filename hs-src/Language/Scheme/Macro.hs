@@ -466,11 +466,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
---  if (trace ("trList - hasE = " ++ show nextHasEllipsis ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " l = " ++ show l ++ " ts = " ++ show ts) nextHasEllipsis)
   if nextHasEllipsis
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
---             case (trace ("curT = " ++ show curT) curT) of
              case (curT) of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
@@ -567,8 +565,6 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 
   where
     -- A temporary function to use input flags to append a '() to a list if necessary
-    -- I think we need to use a dotted list flag on the transform side to do this correctly,
-    -- but this will be a quick proof-of-concept
     appendNil var d (Bool isImproperPattern) (Bool isImproperInput) =
       case d of
          List lst -> if isImproperPattern && not isImproperInput
@@ -614,7 +610,18 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                    isImproperPattern <- loadNamespacedBool "improper pattern"
                    isImproperInput <- loadNamespacedBool "improper input"
                    var <- getVar localEnv a
-                   case var of
+                   case (trace ("var = " ++ show var) var) of
+--                   case (var) of
+
+TODO: issue here is that we can have the case where a var was part of a dotted list in the pattern, so
+it is a list, but when transforming it here the transform should be lifted out of that list...
+it is a simple as saying if ts is empty, var is "List v", and dotted pattern flag is set then 
+add it directly - IE, result ++ t below?
+some questions:
+- What if the transform is (a b c 1) or such? is this handled correctly? (maybe due to how pattern flag is set, not sure)
+-
+Good news is that everything is in this one function to deal with the problem... I think
+
                      Nil input -> do v <- getVar outerEnv input
                                      return v
 --                     _ -> case (trace ("a = " ++ show a ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " var = " ++ show var) var) of
