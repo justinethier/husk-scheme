@@ -178,7 +178,10 @@ searchForBindings _ _ bindings = return $ List bindings
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 in preparation for macro transformation. -}
 loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> [Bool] -> IOThrowsError LispVal
+
 TODO: use the flag to figure out if input was in improper/proper list form. use it to flag macro variables when an Atom is encountered in Pattern
+TODO: is one flag enough per level? We probably need two flags, one for the pattern and one for the input. consider the unit tests
+
 loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex isPartOfDottedList = do
   case (pattern, input) of
 
@@ -237,7 +240,7 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                                   (List i)
                                    ellipsisLevel -- This is accounted for in the list/list match below: + 1)
                                    ellipsisIndex
-                                   (addDottedListFlag isPartOfDottedList $ length ellipsisIndex)
+                                   (addDottedListFlag isPartOfDottedList $ length ellipsisIndex) TODO: need to flag above instance as well
             _ -> return $ Bool False
 
        (List (p : ps), List (i : is)) -> do -- check first input against first pattern, recurse...
