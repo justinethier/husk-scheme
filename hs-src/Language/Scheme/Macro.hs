@@ -276,9 +276,15 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
        (List (_ : ps), List []) -> do
                                  {- Ensure any patterns that are not present in the input still
                                  have their variables initialized so they are ready during trans. -}
-                                 if (macroElementMatchesMany pattern) && ((length ps) == 1)
+                                 if (macroElementMatchesMany pattern) && ((length (trace ("no more input, pat = " ++ show pattern) ps)) == 1)
                                            then return $ Bool True
                                            else return $ Bool False
+TODO: returning a boolean is not sufficient; need to go through the remaining pattern and flag any vars as nil (?) if they are not defined
+-- Consider output code from the simple let* example (pat is the remaining pattern, but in general case it could be anything):
+--
+-- no more input, pat = ((vars vals) ...)
+-- a = "let"isDefined = False
+--
 
        -- Pattern ran out, but there is still input. No match.
        (List [], _) -> return $ Bool False
@@ -466,12 +472,12 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
---  if (trace ("trans List: " ++ show transform ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
-  if (nextHasEllipsis)
+  if (trace ("trans List: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
+--  if (nextHasEllipsis)
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
---             case (trace ("curT = " ++ show curT) curT) of
-             case (curT) of
+             case (trace ("curT = " ++ show curT) curT) of
+--             case (curT) of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
 
@@ -614,8 +620,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
     noEllipsis isDefined = do
       isImproperPattern <- loadNamespacedBool "improper pattern"
       isImproperInput <- loadNamespacedBool "improper input"
---      t <- if (trace ("a = " ++ show a ++ "isDefined = " ++ show isDefined) isDefined)
-      t <- if (isDefined)
+      t <- if (trace ("a = " ++ show a ++ "isDefined = " ++ show isDefined) isDefined)
+--      t <- if (isDefined)
               then do
                    var <- getVar localEnv a
 --                   case (trace ("var = " ++ show var) var) of
@@ -643,9 +649,13 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                 -- once we can flag it, we could return a special nil here such as "Continue" and could use that
                 -- to signal to the code below to simply skip over this atom (just like how the 0-match case is
                 -- handled above)
-                if ellipsisLevel > 0
-                   then return $ Nil "" -- No match, signal to the outer code... 
-                   else return $ Atom a
+--                if ellipsisLevel > 0
+--                   then return $ Nil "" -- No match, signal to the outer code... 
+--                   else return $ Atom a
+-- simple test cases:
+-- (letrec ((x 1)) x)
+-- (let* ((x 1)) x)
+                  return $ Atom a
       case t of
          Nil _ -> return t -- TODO: is this correct? don't we need to keep going, a-la: continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
          List l -> do
