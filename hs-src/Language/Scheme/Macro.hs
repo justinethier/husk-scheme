@@ -207,7 +207,7 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                          --  if this will introduce any subtle issues...
                          loadLocal outerEnv localEnv identifiers 
                                   (List $ [p] ++ [Atom "..."]) 
-                                  (List i)
+                                  (List $ i ++ [List []]) --  TODO: append '() to the end of the input, since it is a proper list (as opposed to the improper list in the pair/pair case). This will be used to transform appropriately later on in that step
                                    ellipsisLevel -- This is accounted for in the list/list match below: + 1)
                                    ellipsisIndex
             _ -> return $ Bool False
