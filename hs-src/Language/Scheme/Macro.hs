@@ -42,7 +42,7 @@ import Language.Scheme.Variables
 import qualified Language.Scheme.Macro.Matches as Matches
 import Control.Monad.Error
 import Data.Array
---import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 http://community.schemewiki.org/?scheme-faq-macros -}
@@ -684,12 +684,13 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
    -- Build code from the transformer, it may be either a proper or improper list depending upon the data
    buildTransformedCode results ps p = do 
      case p of
+        [List []] -> List $ results ++ [List ps]
         [l] -> List $ results ++ [DottedList ps l]
         ls -> do
             -- A crude method of 'cons'-ing everything together...
-            case tail ls of
-              [List []] -> List $ results ++ [List $ ps ++ init ls]
-              [t] -> List $ results ++ [DottedList (ps ++ init ls) (t)]
+            case last ls of
+              List [] -> List $ results ++ [List $ ps ++ init ls]
+              t -> List $ results ++ [DottedList (ps ++ init ls) t]
 
 
 transformDottedList _ _ _ _ _ _ = throwError $ Default "Unexpected error in transformDottedList"
