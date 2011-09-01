@@ -11,6 +11,17 @@
 ;(write (pair-test (1 2 . )))
 ;;(1 2)
 
+#| TODO: output from csi:
+(1 2 3)
+(1 2 (3))
+(1 2 (3 4))
+(1 2 ())
+(1 2 (3 4 5 . 6))
+((1 2 3))
+((1 2 (3)))
+((1 2 ()))
+|#
+
 ; A macro taking a pair in the pattern and transforming into a list
 (define-syntax pair-test-00
   (syntax-rules ()
