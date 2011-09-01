@@ -54,6 +54,7 @@ test: husk stdlib.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-string.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-vector.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-parser.scm
+	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-macro-lists.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) summarize.scm
 	@rm -f $(UNIT_TEST_DIR)/scm-unit.tmp
 
