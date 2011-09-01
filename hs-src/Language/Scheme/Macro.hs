@@ -681,15 +681,19 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
             Nil _ -> return $ Nil ""
             _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
  where 
-   -- Build code from the transformer, it may be either a proper or improper list depending upon the data
+   -- Transform code as either a proper or improper list depending upon the data
+   -- These are rather crude methods of 'cons'-ing everything together... are all cases accounted for?
    buildTransformedCode results ps p = do 
      case p of
-        [List []] -> List $ results ++ [List ps]
+        [List []] -> List $ results ++ [List ps]         -- Proper list has null list at the end
+        [List ls] -> List $ results ++ [List $ ps ++ ls] -- Again, convert to proper list because a proper list is at end
         [l] -> List $ results ++ [DottedList ps l]
         ls -> do
-            -- A crude method of 'cons'-ing everything together...
+            -- Same concepts as above, but here we check the last entry of a list of elements
+            -- TODO: should be able to use a common function to encapsulate logic above and below
             case last ls of
               List [] -> List $ results ++ [List $ ps ++ init ls]
+              List lls -> List $ results ++ [List $ ps ++ (init ls) ++ lls]
               t -> List $ results ++ [DottedList (ps ++ init ls) t]
 
 
