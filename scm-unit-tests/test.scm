@@ -1,4 +1,10 @@
 
+;; TODO: the problem here is that these cases have an improper list in the pattern and a proper list in the transform
+;; the passing cases had improper lists in both.
+;;
+;; The only issue here is that we are currently appending '() to the lists in the pattern. this is going to be 
+;; problematic, may need to consider using an external data structure to store a boolean flag, rather than 
+;; appending the data to the pattern/input data
 (write "TODO: the following are not transformed correctly by husk:")
 
 ; Would be surprized if this worked in husk at the moment...
