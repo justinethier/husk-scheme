@@ -207,7 +207,7 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                          --  if this will introduce any subtle issues...
                          loadLocal outerEnv localEnv identifiers 
                                   (List $ [p] ++ [Atom "..."]) 
-                                  (List $ i ++ [List []]) --  TODO: this was only a stopgap, remove the List [] once dotted list flagging is setup and tested 
+                                  (List i)
                                    ellipsisLevel -- This is accounted for in the list/list match below: + 1
                                    ellipsisIndex
                                    (flagDottedLists listFlags (True, False) $ length ellipsisIndex)
@@ -567,13 +567,26 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 -- Transform an atom by attempting to look it up as a var...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
   isDefined <- liftIO $ isBound localEnv a
+  isImproperPattern <- liftIO $ isNamespacedBound localEnv a "improper pattern"
+  isImproperInput <- liftIO $ isNamespacedBound localEnv a "improper input"
   if hasEllipsis
-    then ellipsisHere isDefined
-    else noEllipsis isDefined
+    then ellipsisHere isDefined isImproperPattern isImproperInput
+    else noEllipsis isDefined isImproperPattern isImproperInput
 
   where
+  TODO: test code here
+    -- A temporary function to use input flags to append a '() to a list if necessary
+    -- I think we need to use a dotted list flag on the transform side to do this correctly,
+    -- but this will be a quick proof-of-concept
+    appendNil var d isImproperPattern isImproperInput =
+      case d of
+         List lst -> if isImproperPattern && not isImproperInput
+                        then List $ lst ++ [List []]
+                        else List lst
+         _ -> d
+
     hasEllipsis = macroElementMatchesMany transform
-    ellipsisHere isDefined = do
+    ellipsisHere isDefined isImproperPattern isImproperInput = do
         if isDefined
              then do 
                     -- get var
@@ -581,7 +594,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                     -- ensure it is a list
                     case var of
                       -- add all elements of the list into result
-                      List v -> do let a = Matches.getData var ellipsisIndex
+                      List v -> do let a = appendNil var (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput
                                    case a of
                                      List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
                                      _ -> -- No matches for var
@@ -598,7 +611,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
              else -- Matched 0 times, skip it
                   transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ tail ts)
 
-    noEllipsis isDefined = do
+    noEllipsis isDefined isImproperPattern isImproperInput = do
       t <- if isDefined
               then do
                    var <- getVar localEnv a
@@ -610,7 +623,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                           List v -> do
                                if ellipsisLevel > 0
 --                                       then return $ (trace ("returning " ++ show (Matches.getData var ellipsisIndex)) Matches.getData var ellipsisIndex) -- Take all elements, instead of one-at-a-time 
-                                       then return $ (Matches.getData var ellipsisIndex) -- Take all elements, instead of one-at-a-time 
+                                       then return $ appendNil var (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput -- Take all elements, instead of one-at-a-time 
                                        else if length v > 0 
                                                then return var -- Just return the elements directly, so all can be appended
                                                else return $ Nil "" -- A 0 match case, flag it to calling code
