@@ -567,6 +567,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 -- Transform an atom by attempting to look it up as a var...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
   isDefined <- liftIO $ isBound localEnv a
+TODO: not good enough, I think it is always defined, need to Get it instead of look if defined
   isImproperPattern <- liftIO $ isNamespacedBound localEnv a "improper pattern"
   isImproperInput <- liftIO $ isNamespacedBound localEnv a "improper input"
   if hasEllipsis
@@ -574,7 +575,6 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
     else noEllipsis isDefined isImproperPattern isImproperInput
 
   where
-  TODO: test code here
     -- A temporary function to use input flags to append a '() to a list if necessary
     -- I think we need to use a dotted list flag on the transform side to do this correctly,
     -- but this will be a quick proof-of-concept
