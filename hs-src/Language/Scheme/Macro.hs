@@ -208,7 +208,7 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                          loadLocal outerEnv localEnv identifiers 
                                   (List $ [p] ++ [Atom "..."]) 
                                   (List $ i ++ [List []]) --  TODO: this was only a stopgap, remove the List [] once dotted list flagging is setup and tested 
-                                   ellipsisLevel -- This is accounted for in the list/list match below: + 1)
+                                   ellipsisLevel -- This is accounted for in the list/list match below: + 1
                                    ellipsisIndex
                                    (flagDottedLists listFlags (True, False) $ length ellipsisIndex)
             _ -> return $ Bool False
@@ -282,7 +282,6 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
        (List (_ : ps), List []) -> do
                                  {- Ensure any patterns that are not present in the input still
                                  have their variables initialized so they are ready during trans. -}
-                                 _ <- initializePatternVars localEnv "list" identifiers pattern
                                  if (macroElementMatchesMany pattern) && ((length ps) == 1)
                                            then return $ Bool True
                                            else return $ Bool False
@@ -404,11 +403,18 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
       --  some notes: TODO (above): need to flag the ellipsisLevel of this variable.
       --              also, it is an error if, for an existing var, ellipsisLevel input does not match the var's stored level
       --
-      addPatternVar isDefined ellipLevel ellipIndex pat val = do
-             if isDefined
-                then do v <- getVar localEnv pat
-                        setVar localEnv pat (Matches.setData v ellipIndex val)
-                else defineVar localEnv pat (Matches.setData (List []) ellipIndex val)
+      addPatternVar isDefined ellipLevel ellipIndex pat val
+        | isDefined = do v <- getVar localEnv pat
+                         setVar localEnv pat (Matches.setData v ellipIndex val)
+        | otherwise = do
+                  let flags = getListFlags ellipIndex listFlags 
+                  _ <- defineVar localEnv pat (Matches.setData (List []) ellipIndex val)
+                  _ <- defineNamespacedVar localEnv "improper pattern" pat $ Bool $ fst flags
+                  defineNamespacedVar localEnv "improper input" pat $ Bool $ snd flags
+      -- Get pair of list flags that are at depth of ellipIndex, or False if flags do not exist (means improper not flagged)
+      getListFlags elIndices flags 
+        | length flags >= length elIndices = flags !! ((length elIndices) - 1)
+        | otherwise = (False, False)
 
 checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(Vector _) input@(Vector _) flags =
   loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
@@ -687,7 +693,6 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
                                                     _ -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList)
                                                     -}
                                 List rst -> do
-                                    let transformedCode = buildTransformedCode result lst rst
                                     transformRule outerEnv localEnv ellipsisLevel ellipsisIndex 
                                                  (buildTransformedCode result lst rst) (List ts)
                                      -- OLD:(List $ result ++ [List $ lst ++ rst]) (List ts)
@@ -747,7 +752,7 @@ findAtom _ _ = return $ Bool False
  -        and the transform needs to know this...
  -  identifiers - Literal identifiers that are transformed as themselves
  -  pattern - Pattern portion of the syntax rule 
- -}
+ -
 initializePatternVars :: Env -> String -> LispVal -> LispVal -> IOThrowsError LispVal
 initializePatternVars localEnv src identifiers pattern@(List _) = do
     case pattern of
@@ -810,7 +815,7 @@ lookupPatternVarSrc localEnv (Atom pattern) =
 
 lookupPatternVarSrc _ _ =
     return $ Bool False
-
+-}
 -- |Increment ellipsis level based on whether a new ellipsis is present
 calcEllipsisLevel :: Bool -> Int -> Int
 calcEllipsisLevel  nextHasEllipsis ellipsisLevel =
