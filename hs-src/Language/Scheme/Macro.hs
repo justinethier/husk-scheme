@@ -565,6 +565,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 
   where
     -- A temporary function to use input flags to append a '() to a list if necessary
+-- TODO: only makes sense if the *transform* is a dotted list
     appendNil var d (Bool isImproperPattern) (Bool isImproperInput) =
       case d of
          List lst -> if isImproperPattern && not isImproperInput
@@ -605,30 +606,18 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                   transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ tail ts)
 
     noEllipsis isDefined = do
+      isImproperPattern <- loadNamespacedBool "improper pattern"
+      isImproperInput <- loadNamespacedBool "improper input"
       t <- if isDefined
               then do
-                   isImproperPattern <- loadNamespacedBool "improper pattern"
-                   isImproperInput <- loadNamespacedBool "improper input"
                    var <- getVar localEnv a
-                   case (trace ("var = " ++ show var) var) of
---                   case (var) of
-
-TODO: issue here is that we can have the case where a var was part of a dotted list in the pattern, so
-it is a list, but when transforming it here the transform should be lifted out of that list...
-it is a simple as saying if ts is empty, var is "List v", and dotted pattern flag is set then 
-add it directly - IE, result ++ t below?
-some questions:
-- What if the transform is (a b c 1) or such? is this handled correctly? (maybe due to how pattern flag is set, not sure)
--
-Good news is that everything is in this one function to deal with the problem... I think
-
+--                   case (trace ("var = " ++ show var) var) of
+                   case (var) of
                      Nil input -> do v <- getVar outerEnv input
                                      return v
---                     _ -> case (trace ("a = " ++ show a ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " var = " ++ show var) var) of
                      _ -> case (var) of
                           List v -> do
                                if ellipsisLevel > 0
---                                       then return $ (trace ("returning " ++ show (Matches.getData var ellipsisIndex)) Matches.getData var ellipsisIndex) -- Take all elements, instead of one-at-a-time 
                                        then return $ appendNil var (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput -- Take all elements, instead of one-at-a-time 
                                        else if length v > 0 
                                                then return var -- Just return the elements directly, so all can be appended
@@ -639,7 +628,28 @@ Good news is that everything is in this one function to deal with the problem...
               else return $ Atom a
       case t of
          Nil _ -> return t -- TODO: is this correct? don't we need to keep going, a-la: continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
-         _ -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [t]) (List ts)
+         List l -> do
+        {- What's going on here is that if the pattern was a dotted list but the transform is not, we
+           need to "lift" the input up out of a list.
+TODO:
+some questions:
+- What if the transform is (a b c 1) or such? is this handled correctly? (maybe due to how pattern flag is set, not sure)
+- The list could be part of an ellipsis, right? I think similar logic probably needs to be above in the ellipsis case as well.
+  that complicates things because we would need to distinguish between an ellipsis and a dotted list in the transform, in
+  order to be able to figure out what to do...
+-}
+            if (eqVal isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
+              then continueTransformWith $ result ++ l
+              else continueTransformWith $ result ++ [t]
+         _ -> continueTransformWith $ result ++ [t]
+
+    continueTransformWith results = 
+      transformRule outerEnv 
+                    localEnv 
+                    ellipsisLevel 
+                    ellipsisIndex 
+                   (List $ results)
+                   (List ts)
 
 -- Transform anything else as itself...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List (t : ts)) = do
