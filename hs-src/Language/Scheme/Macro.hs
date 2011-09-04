@@ -625,7 +625,15 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                           _ -> if ellipsisLevel > 0
                                   then throwError $ Default "Unexpected error processing data in transformRule" -- List req'd for 0-or-n match
                                   else return var
-              else return $ Atom a
+              else do
+                -- TODO: need to determine if atom was within an nary-match in the pattern
+                -- the problem is that the pattern matching code will simply skip the pattern since input ends
+                -- will probably need to add code up there in order to flag it correctly down here
+                --
+                -- once we can flag it, we could return a special nil here such as "Continue" and could use that
+                -- to signal to the code below to simply skip over this atom (just like how the 0-match case is
+                -- handled above)
+                return $ Atom a
       case t of
          Nil _ -> return t -- TODO: is this correct? don't we need to keep going, a-la: continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
          List l -> do
