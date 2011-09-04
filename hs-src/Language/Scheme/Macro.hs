@@ -279,6 +279,9 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                                  if (macroElementMatchesMany pattern) && ((length ps) == 1)
                                            then return $ Bool True
                                            else return $ Bool False
+TODO: does above handle an ellipsis (TEST?) assume not since that's how pairs work.
+anyway, need to understand how above works and then get it working correctly, since
+this logic appears to be not working in test.scm
 
        -- Pattern ran out, but there is still input. No match.
        (List [], _) -> return $ Bool False
