@@ -30,6 +30,11 @@ dist:
 doc:
 	runhaskell Setup.hs haddock 
 
+# TODO:
+# Build an RPM
+#rpm:
+#	rpmbuild
+
 # Run all unit tests
 test: husk stdlib.scm
 	@echo "0" > $(UNIT_TEST_DIR)/scm-unit.tmp
