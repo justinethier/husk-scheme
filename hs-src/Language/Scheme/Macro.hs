@@ -639,10 +639,16 @@ some questions:
   order to be able to figure out what to do...
 -}
             if (eqVal isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
-              then continueTransformWith $ result ++ l
+              then continueTransformWith $ result ++ (buildImproperList l)
               else continueTransformWith $ result ++ [t]
          _ -> continueTransformWith $ result ++ [t]
 
+    -- Transformed code should be an improper list, but may need to "promote" it to a proper list
+    buildImproperList lst 
+      | length lst > 1 = [DottedList (init lst) (last lst)]
+      | otherwise      = lst
+
+    -- Continue calling into transformRule
     continueTransformWith results = 
       transformRule outerEnv 
                     localEnv 
@@ -772,79 +778,6 @@ findAtom (Atom target) (List (Atom a : as)) = do
 findAtom _ (List (badtype : _)) = throwError $ TypeMismatch "symbol" badtype
 findAtom _ _ = return $ Bool False
 
-{- Initialize any pattern variables as an empty list.
- - That way a zero-match case can be identified later during transformation.
- -
- - Input:
- -  localEnv - Local environment that contains variables
- -  src - Input source, required because a pair in the pattern may be matched by either a list or a pair,
- -        and the transform needs to know this...
- -  identifiers - Literal identifiers that are transformed as themselves
- -  pattern - Pattern portion of the syntax rule 
- -
-initializePatternVars :: Env -> String -> LispVal -> LispVal -> IOThrowsError LispVal
-initializePatternVars localEnv src identifiers pattern@(List _) = do
-    case pattern of
-        List (p : ps) -> do _ <- initializePatternVars localEnv src identifiers p
-                            initializePatternVars localEnv src identifiers $ List ps
-        List [] -> return $ Bool True
-        _ -> return $ Bool True
-
-initializePatternVars localEnv src identifiers (DottedList ps p) = do
-    _ <- initializePatternVars localEnv src identifiers $ List ps
-    initializePatternVars localEnv src identifiers p
-
-initializePatternVars localEnv src identifiers (Vector v) = do
-    initializePatternVars localEnv src identifiers $ List $ elems v
-
-initializePatternVars localEnv src identifiers (Atom pattern) =
-       {- FUTURE:
-       there is code to attempt to flag "src" here, but it is not
-       wire up correctly. In fact, the whole design here probably
-       needs to be rethought. -}
-    do _ <- defineNamespacedVar localEnv "src" pattern $ String src
-       isDefined <- liftIO $ isBound localEnv pattern
-       found <- findAtom (Atom pattern) identifiers
-       case found of
-            (Bool False) -> if not isDefined -- Set variable in the local environment
-                               then do
-                                        defineVar localEnv pattern (List [])
-                               else do
-                                        return $ Bool True
-             -- Ignore identifiers since they are just passed along as-is
-            _ -> return $ Bool True
-
-initializePatternVars _ _ _ _ =
-    return $ Bool True
-
--- Find the first pattern var that reports being from a src, or False if none
-lookupPatternVarSrc :: Env -> LispVal -> IOThrowsError LispVal
-lookupPatternVarSrc localEnv pattern@(List _) = do
-    case pattern of
-        List (p : ps) -> do result <- lookupPatternVarSrc localEnv p
-                            case result of
-                              Bool False -> lookupPatternVarSrc localEnv $ List ps
-                              _ -> return result
-        List [] -> return $ Bool False
-        _ -> return $ Bool False
-
-lookupPatternVarSrc localEnv (DottedList ps p) = do
-    result <- lookupPatternVarSrc localEnv $ List ps
-    case result of
-        Bool False -> lookupPatternVarSrc localEnv p
-        _ -> return result
-
-lookupPatternVarSrc localEnv (Vector v) = do
-    lookupPatternVarSrc localEnv $ List $ elems v
-
-lookupPatternVarSrc localEnv (Atom pattern) =
-    do isDefined <- liftIO $ isNamespacedBound localEnv "src" pattern
-       if isDefined then getNamespacedVar localEnv "src" pattern
-                    else return $ Bool False
-
-lookupPatternVarSrc _ _ =
-    return $ Bool False
--}
 -- |Increment ellipsis level based on whether a new ellipsis is present
 calcEllipsisLevel :: Bool -> Int -> Int
 calcEllipsisLevel  nextHasEllipsis ellipsisLevel =

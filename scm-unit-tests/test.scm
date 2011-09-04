@@ -39,6 +39,7 @@
 (write (pair-test-00 (1 2)))
 ;(1 2 ())
 (write (pair-test-00 (1 2 3 4 5 . 6)))
+(write (pair-test-00 (1 2 3 . 6)))
 ;(1 2 (3 4 5 . 6))
 
 ; Same as previous macro, but packaged using (list) - any real difference here?
