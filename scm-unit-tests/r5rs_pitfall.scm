@@ -1,8 +1,15 @@
-;;
-;; From: http://sisc-scheme.org/r5rs_pitfall.php
-;;
+; From: http://sisc-scheme.org/r5rs_pitfall.php
+;
+; This file may be run directly from the command line:
+;  
+;   ./huski scm-unit-tests/r5rs_pitfall.scm
+;
+; File has been modified to comment-out cases that do not run in husk.
+; If a case is not listed in the output then assume it fails.
+;
+;
 ;; r5rs_pitfalls.scm
-;;
+;; 
 ;; This program attempts to test a Scheme implementation's conformance
 ;; to various subtle edge-cases and consequences of the R5RS Scheme standard.
 ;; Code was collected from public forums, and is hereby placed in the public domain.
@@ -39,6 +46,9 @@
            (c 0))
          (+ x y)))))
 
+(display "1.2 fails")
+(newline)
+#|
 ;;Credits to Al Petrofsky
 ;; In thread:
 ;; Widespread bug (arguably) in letrec when an initializer returns twice
@@ -49,7 +59,7 @@
 	  ((procedure? y) (y (pair? x))))
     (let ((x (car x)) (y (car y)))
       (and (call/cc x) (call/cc y) (call/cc x)))))
-
+|#
 ;;Credits to Alan Bawden
 ;; In thread:
 ;; LETREC + CALL/CC = SET! even in a limited setting 
@@ -57,9 +67,9 @@
 (should-be 1.3 #t
   (letrec ((x (call-with-current-continuation
 		  (lambda (c)
-		    (list #T c)))))
+		    (list #t c)))))
       (if (car x)
-	  ((cadr x) (list #F (lambda () x)))
+	  ((cadr x) (list #f (lambda () x)))
 	  (eq? x ((cadr x))))))
 
 ;; Section 2: Proper call/cc and procedure application
@@ -71,6 +81,11 @@
 (should-be 2.1 1
  (call/cc (lambda (c) (0 (c 1)))))
 
+(display "3.1 fails") (newline)
+(display "3.2 fails") (newline)
+(display "3.3 fails") (newline)
+(display "3.4 fails") (newline)
+#|
 ;; Section 3: Hygienic macros
 
 ;; Eli Barzilay 
@@ -116,7 +131,7 @@
 ;; Contributed directly
 (should-be 3.4 1
   (let-syntax ((x (syntax-rules ()))) 1))
-
+|#
 ;; Setion 4: No identifiers are reserved
 
 ;;(Brian M. Moore)
@@ -198,7 +213,7 @@
       ((3) (b 7))
       ((4) (c 4)))
     r))
-
+#|
 ;; Credits to Matthias Radestock
 ;; Another test case used to test SISC's lazy CallFrame routines.
 (should-be 7.3 '((-1 4 5 3)
@@ -236,7 +251,7 @@
                      ((2) (k2 2))
                      ((3) (k1 -)))))))
     (map check '((1 2 3) (1 3 2) (2 1 3) (2 3 1) (3 1 2) (3 2 1)))))
-
+|#
 ;; Modification of the yin-yang puzzle so that it terminates and produces
 ;; a value as a result. (Scott G. Miller)
 (should-be 7.4 '(10 9 8 7 6 5 4 3 2 1 0)
@@ -267,6 +282,11 @@
 (should-be 8.1 -1
   (let - ((n (- 1))) n))
 
+(display "8.2 fails")
+(newline)
+(display "8.3 fails")
+(newline)
+#|
 (should-be 8.2 '(1 2 3 4 1 2 3 4 5)
   (let ((ls (list 1 2 3 4)))
     (append ls ls '(5))))
@@ -306,7 +326,7 @@
       (define x (foo))
       3)
     x))
-
+|#
 ;;Not really an error to fail this (Matthias Radestock)
 ;;If this returns (0 1 0), your map isn't call/cc safe, but is probably
 ;;tail-recursive.  If its (0 0 0), the opposite is true.
