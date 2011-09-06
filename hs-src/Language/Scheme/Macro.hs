@@ -466,9 +466,11 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
-  if nextHasEllipsis
+--  if (trace ("trans List: " ++ show transform ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
+  if (nextHasEllipsis)
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
+--             case (trace ("curT = " ++ show curT) curT) of
              case (curT) of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
@@ -559,6 +561,10 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 -- Transform an atom by attempting to look it up as a var...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
   isDefined <- liftIO $ isBound localEnv a
+
+
+--TODO: is this really what we want? Do we handle case where we are in a 0-to-many match but not at this level?
+--  if (trace ("trans Atom: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " hasEllip = " ++ show hasEllipsis) hasEllipsis)
   if hasEllipsis
     then ellipsisHere isDefined
     else noEllipsis isDefined
@@ -608,13 +614,17 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
     noEllipsis isDefined = do
       isImproperPattern <- loadNamespacedBool "improper pattern"
       isImproperInput <- loadNamespacedBool "improper input"
-      t <- if isDefined
+--      t <- if (trace ("a = " ++ show a ++ "isDefined = " ++ show isDefined) isDefined)
+      t <- if (isDefined)
               then do
                    var <- getVar localEnv a
 --                   case (trace ("var = " ++ show var) var) of
                    case (var) of
                      Nil input -> do v <- getVar outerEnv input
                                      return v
+--                     _ -> case (trace ("a = " ++ show a ++ " var = " ++ show var) var) of
+-- TODO: why the hell is there another 'case' here when it is the same as the above one?
+-- fix this up before the next release
                      _ -> case (var) of
                           List v -> do
                                if ellipsisLevel > 0
@@ -633,7 +643,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                 -- once we can flag it, we could return a special nil here such as "Continue" and could use that
                 -- to signal to the code below to simply skip over this atom (just like how the 0-match case is
                 -- handled above)
-                return $ Atom a
+                if ellipsisLevel > 0
+                   then return $ Nil "" -- No match, signal to the outer code... 
+                   else return $ Atom a
       case t of
          Nil _ -> return t -- TODO: is this correct? don't we need to keep going, a-la: continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
          List l -> do
