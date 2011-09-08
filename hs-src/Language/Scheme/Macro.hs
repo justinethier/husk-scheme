@@ -179,7 +179,8 @@ searchForBindings _ _ bindings = return $ List bindings
 in preparation for macro transformation. -}
 loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> [(Bool, Bool)] -> IOThrowsError LispVal
 loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex listFlags = do
-  case (pattern, input) of
+  case ((trace ("loadLocal pattern = " ++ show pattern ++ " input = " ++ show input) pattern), input) of
+--  case (pattern, input) of
 
        {- For vectors, just use list match for now, since vector input matching just requires a
        subset of that behavior. Should be OK since parser would catch problems with trying
@@ -250,15 +251,16 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                       else ellipsisIndex
 
          -- At this point we know if the input is part of an ellipsis, so set the level accordingly 
---         status <- checkLocal outerEnv (trace ("chkLocal i = " ++ show i ++ " lvl = " ++ show level ++ " idx = " ++ show idx ++ " p = " ++ show p) localEnv) identifiers level idx p i
-         status <- checkLocal outerEnv (localEnv) identifiers level idx p i listFlags
-         case (status) of
+         status <- checkLocal outerEnv (trace ("chkLocal i = " ++ show i ++ " lvl = " ++ show level ++ " idx = " ++ show idx ++ " p = " ++ show p ++ " ps = " ++ show ps ++ " nextHas = " ++ show nextHasEllipsis) localEnv) identifiers level idx p i listFlags
+--         status <- checkLocal outerEnv (localEnv) identifiers level idx p i listFlags
+         case (trace ("status = " ++ show status) status) of
+--         case (status) of
               -- No match
               Bool False -> if nextHasEllipsis
                                 {- No match, must be finished with ...
                                 Move past it, but keep the same input. -}
                                 then do
-                                        loadLocal outerEnv localEnv identifiers (List $ tail ps) (List (i : is)) ellipsisLevel ellipsisIndex listFlags
+                                        loadLocal outerEnv localEnv identifiers (List $ tail (trace ("moving past ... pattern = " ++ show pattern ++ " input = " ++ show input) ps)) (List (i : is)) ellipsisLevel ellipsisIndex listFlags
                                 else return $ Bool False
               -- There was a match
               _ -> if nextHasEllipsis
@@ -445,8 +447,8 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
       --
       addPatternVar isDefined ellipLevel ellipIndex pat val
         | isDefined = do v <- getVar localEnv pat
-                         case v of
-                            Nil _ -> return $ Bool True
+                         case (trace ("addPV pat = " ++ show pat ++ " v = " ++ show v) v) of
+                            Nil _ -> return $ Bool False
 -- TODO: in the iteration test, we need to flag that an unused var in the pattern (level 1) is skipped when processing pattern (level 0)... need to debug this more to figure out the right solution                            
                             _ -> do setVar localEnv pat (trace ("pat = " ++ show pat ++ " setData: " ++ show v ++ ", " ++ show ellipIndex ++ ", " ++ show val) (Matches.setData v ellipIndex val))
                                     return $ Bool True
