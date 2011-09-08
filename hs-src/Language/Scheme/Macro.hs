@@ -276,7 +276,8 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
        (List (_ : _), List []) -> do
                                  {- Ensure any patterns that are not present in the input still
                                  have their variables initialized so they are ready during trans. -}
-                                 if (trace ("m = " ++ show (Bool $ macroElementMatchesMany pattern)) (macroElementMatchesMany pattern)) -- TODO: is prev good enough? && ((length (trace ("no more input, pat = " ++ show pattern) ps)) == 1)
+                                 if (macroElementMatchesMany pattern)
+--                                 if (trace ("m = " ++ show (Bool $ macroElementMatchesMany pattern)) (macroElementMatchesMany pattern)) -- TODO: is prev good enough? && ((length (trace ("no more input, pat = " ++ show pattern) ps)) == 1)
                                            then flagUnmatchedVars outerEnv localEnv identifiers pattern 
                                            else return $ Bool False
 --TODO: returning a boolean is not sufficient; need to go through the remaining pattern and flag any vars as nil (?) if they are not defined
@@ -299,20 +300,19 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
  -}
 flagUnmatchedVars :: Env -> Env -> LispVal -> LispVal -> IOThrowsError LispVal 
 
--- Base cases:
-flagUnmatchedVars _ _ _ (List [Atom "..."]) = return $ Bool True 
-flagUnmatchedVars _ _ _ (List []) = return $ Bool True 
-
 flagUnmatchedVars outerEnv localEnv identifiers (DottedList ps p) = do
   flagUnmatchedVars outerEnv localEnv identifiers $ List $ ps ++ [p]
 
 flagUnmatchedVars outerEnv localEnv identifiers (Vector p) = do
   flagUnmatchedVars outerEnv localEnv identifiers $ List $ elems p
 
+flagUnmatchedVars _ _ _ (List []) = return $ Bool True 
+
 flagUnmatchedVars outerEnv localEnv identifiers (List (p : ps)) = do
   _ <- flagUnmatchedVars outerEnv localEnv identifiers p
   flagUnmatchedVars outerEnv localEnv identifiers $ List ps
 
+flagUnmatchedVars _ _ _ (Atom "...") = return $ Bool True 
 flagUnmatchedVars outerEnv localEnv identifiers (Atom p) = do
   isDefined <- liftIO $ isBound localEnv p
   isLexicallyDefinedVar <- liftIO $ isBound outerEnv p
@@ -328,6 +328,8 @@ flagUnmatchedVars outerEnv localEnv identifiers (Atom p) = do
              _ -> do _ <- flagUnmatchedVar localEnv p 
                      continueFlagging
  where continueFlagging = return $ Bool True 
+
+flagUnmatchedVars _ _ _ _ = return $ Bool True 
 
 flagUnmatchedVar :: Env -> String -> IOThrowsError LispVal
 flagUnmatchedVar localEnv var = do
@@ -512,12 +514,12 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
-  if (trace ("trans List: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
---  if (nextHasEllipsis)
+--  if (trace ("trans List: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
+  if (nextHasEllipsis)
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
-             case (trace ("curT = " ++ show curT) curT) of
---             case (curT) of
+--             case (trace ("curT = " ++ show curT) curT) of
+             case (curT) of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
 
@@ -664,12 +666,12 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
     noEllipsis isDefined = do
       isImproperPattern <- loadNamespacedBool "improper pattern"
       isImproperInput <- loadNamespacedBool "improper input"
-      t <- if (trace ("a = " ++ show a ++ "isDefined = " ++ show isDefined) isDefined)
---      t <- if (isDefined)
+--      t <- if (trace ("a = " ++ show a ++ "isDefined = " ++ show isDefined) isDefined)
+      t <- if (isDefined)
               then do
                    var <- getVar localEnv a
-                   case (trace ("var = " ++ show var) var) of
---                   case (var) of
+--                   case (trace ("var = " ++ show var) var) of
+                   case (var) of
                      Nil "" -> return $ Nil "" -- A 0 match case (input ran out in pattern), flag it to calling code
                      Nil input -> do v <- getVar outerEnv input
                                      return v
