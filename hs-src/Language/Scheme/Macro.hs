@@ -121,7 +121,7 @@ macroTransform env identifiers (rule@(List _) : rs) input = do
     Nil _ -> macroTransform env identifiers rs input
     _ -> return result
 -- Ran out of rules to match...
-macroTransform _ _ rules input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
+macroTransform _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
 
 -- Determine if the next element in a list matches 0-to-n times due to an ellipsis
 macroElementMatchesMany :: LispVal -> Bool
@@ -273,11 +273,10 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
        (List [], List []) -> return $ Bool True
 
        -- Ran out of input to process
-       (List (_ : ps), List []) -> do
+       (List (_ : _), List []) -> do
                                  {- Ensure any patterns that are not present in the input still
                                  have their variables initialized so they are ready during trans. -}
                                  if (trace ("m = " ++ show (Bool $ macroElementMatchesMany pattern)) (macroElementMatchesMany pattern)) -- TODO: is prev good enough? && ((length (trace ("no more input, pat = " ++ show pattern) ps)) == 1)
-Need to test this more then clean everything up!                                   
                                            then flagUnmatchedVars outerEnv localEnv identifiers pattern 
                                            else return $ Bool False
 --TODO: returning a boolean is not sufficient; need to go through the remaining pattern and flag any vars as nil (?) if they are not defined
@@ -304,11 +303,17 @@ flagUnmatchedVars :: Env -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
 flagUnmatchedVars _ _ _ (List [Atom "..."]) = return $ Bool True 
 flagUnmatchedVars _ _ _ (List []) = return $ Bool True 
 
-flagUnmatchedVars outerEnv localEnv identifiers pattern@(List (List p : ps)) = do
-  _ <- flagUnmatchedVars outerEnv localEnv identifiers $ List p
+flagUnmatchedVars outerEnv localEnv identifiers (DottedList ps p) = do
+  flagUnmatchedVars outerEnv localEnv identifiers $ List $ ps ++ [p]
+
+flagUnmatchedVars outerEnv localEnv identifiers (Vector p) = do
+  flagUnmatchedVars outerEnv localEnv identifiers $ List $ elems p
+
+flagUnmatchedVars outerEnv localEnv identifiers (List (p : ps)) = do
+  _ <- flagUnmatchedVars outerEnv localEnv identifiers p
   flagUnmatchedVars outerEnv localEnv identifiers $ List ps
 
-flagUnmatchedVars outerEnv localEnv identifiers pattern@(List (Atom p : ps)) = do
+flagUnmatchedVars outerEnv localEnv identifiers (Atom p) = do
   isDefined <- liftIO $ isBound localEnv p
   isLexicallyDefinedVar <- liftIO $ isBound outerEnv p
   isIdent <- findAtom (Atom p) identifiers
@@ -322,10 +327,9 @@ flagUnmatchedVars outerEnv localEnv identifiers pattern@(List (Atom p : ps)) = d
                                      continueFlagging
              _ -> do _ <- flagUnmatchedVar localEnv p 
                      continueFlagging
- where continueFlagging = flagUnmatchedVars outerEnv localEnv identifiers $ List (trace ("congFlags, ps = " ++ show ps) ps)
+ where continueFlagging = return $ Bool True 
 
--- TODO: dotted list, vector
-
+flagUnmatchedVar :: Env -> String -> IOThrowsError LispVal
 flagUnmatchedVar localEnv var = do
   defineVar localEnv var $ Nil "" -- Empty nil will signify the empty match
 
@@ -614,12 +618,14 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   where
     -- A temporary function to use input flags to append a '() to a list if necessary
 -- TODO: only makes sense if the *transform* is a dotted list
-    appendNil var d (Bool isImproperPattern) (Bool isImproperInput) =
+    appendNil d (Bool isImproperPattern) (Bool isImproperInput) =
       case d of
          List lst -> if isImproperPattern && not isImproperInput
                         then List $ lst ++ [List []]
                         else List lst
          _ -> d
+    -- TODO: appendNil _ _ _ = throwError $ Default "Unexpected error in appendNil"
+
     loadNamespacedBool namespc = do
         isDef <- liftIO $ isNamespacedBound localEnv namespc a
         if isDef
@@ -637,7 +643,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                     -- ensure it is a list
                     case var of
                       -- add all elements of the list into result
-                      List v -> do case (appendNil var (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput) of
+                      List _ -> do case (appendNil (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput) of
                                      List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
                                      _ -> -- No matches for var
                                           continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
@@ -673,7 +679,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                      _ -> case (var) of
                           List v -> do
                                if ellipsisLevel > 0
-                                       then return $ appendNil var (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput -- Take all elements, instead of one-at-a-time 
+                                       then return $ appendNil (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput -- Take all elements, instead of one-at-a-time 
                                        else if length v > 0 
                                                then return var -- Just return the elements directly, so all can be appended
                                                else return $ Nil "" -- A 0 match case, flag it to calling code
