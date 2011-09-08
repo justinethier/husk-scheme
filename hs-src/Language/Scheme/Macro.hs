@@ -383,8 +383,7 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
                                        -- Var is not bound in outer code; proceed
                                        then do
                                          -- Set variable in the local environment
-                                         _ <- addPatternVar isDefined ellipsisLevel ellipsisIndex pattern $ Atom pattern
-                                         return $ Bool True
+                                         addPatternVar isDefined ellipsisLevel ellipsisIndex pattern $ Atom pattern
                                        -- Var already bound in enclosing environment prior to evaluating macro.
                                        -- So... do not match it here.
                                        --
@@ -396,8 +395,7 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
                         -- Pattern/Input cannot match because input is not an atom
                         _ -> return $ Bool False
                 -- No literal identifier, just load up the var
-                _ -> do _ <- addPatternVar isDefined ellipsisLevel ellipsisIndex pattern input
-                        return $ Bool True
+                _ -> addPatternVar isDefined ellipsisLevel ellipsisIndex pattern input
      --
      -- Simple var, try to load up into macro env
      --
@@ -447,12 +445,17 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
       --
       addPatternVar isDefined ellipLevel ellipIndex pat val
         | isDefined = do v <- getVar localEnv pat
-                         setVar localEnv pat (Matches.setData v ellipIndex val)
+                         case v of
+                            Nil _ -> return $ Bool True
+-- TODO: in the iteration test, we need to flag that an unused var in the pattern (level 1) is skipped when processing pattern (level 0)... need to debug this more to figure out the right solution                            
+                            _ -> do setVar localEnv pat (trace ("pat = " ++ show pat ++ " setData: " ++ show v ++ ", " ++ show ellipIndex ++ ", " ++ show val) (Matches.setData v ellipIndex val))
+                                    return $ Bool True
         | otherwise = do
                   let flags = getListFlags ellipIndex listFlags 
-                  _ <- defineVar localEnv pat (Matches.setData (List []) ellipIndex val)
+                  _ <- defineVar localEnv pat (trace ("pat = " ++ show pat ++ " setData: " ++ show ellipIndex ++ ", " ++ show val) (Matches.setData (List []) ellipIndex val))
                   _ <- defineNamespacedVar localEnv "improper pattern" pat $ Bool $ fst flags
                   defineNamespacedVar localEnv "improper input" pat $ Bool $ snd flags
+                  return $ Bool True
       -- Get pair of list flags that are at depth of ellipIndex, or False if flags do not exist (means improper not flagged)
       getListFlags elIndices flags 
         | length flags >= length elIndices = flags !! ((length elIndices) - 1)
