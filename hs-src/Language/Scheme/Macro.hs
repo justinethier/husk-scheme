@@ -179,8 +179,8 @@ searchForBindings _ _ bindings = return $ List bindings
 in preparation for macro transformation. -}
 loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> [(Bool, Bool)] -> IOThrowsError LispVal
 loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex listFlags = do
-  case ((trace ("loadLocal pattern = " ++ show pattern ++ " input = " ++ show input) pattern), input) of
---  case (pattern, input) of
+--  case ((trace ("loadLocal pattern = " ++ show pattern ++ " input = " ++ show input) pattern), input) of
+  case (pattern, input) of
 
        {- For vectors, just use list match for now, since vector input matching just requires a
        subset of that behavior. Should be OK since parser would catch problems with trying
@@ -251,16 +251,19 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                       else ellipsisIndex
 
          -- At this point we know if the input is part of an ellipsis, so set the level accordingly 
-         status <- checkLocal outerEnv (trace ("chkLocal i = " ++ show i ++ " lvl = " ++ show level ++ " idx = " ++ show idx ++ " p = " ++ show p ++ " ps = " ++ show ps ++ " nextHas = " ++ show nextHasEllipsis) localEnv) identifiers level idx p i listFlags
---         status <- checkLocal outerEnv (localEnv) identifiers level idx p i listFlags
-         case (trace ("status = " ++ show status) status) of
---         case (status) of
+--         status <- checkLocal outerEnv (trace ("chkLocal i = " ++ show i ++ " lvl = " ++ show level ++ " idx = " ++ show idx ++ " p = " ++ show p ++ " ps = " ++ show ps ++ " nextHas = " ++ show nextHasEllipsis) localEnv) identifiers level idx p i listFlags
+         status <- checkLocal outerEnv (localEnv) identifiers level idx p i listFlags
+--         case (trace ("status = " ++ show status) status) of
+         case (status) of
               -- No match
               Bool False -> if nextHasEllipsis
                                 {- No match, must be finished with ...
                                 Move past it, but keep the same input. -}
                                 then do
-                                        loadLocal outerEnv localEnv identifiers (List $ tail (trace ("moving past ... pattern = " ++ show pattern ++ " input = " ++ show input) ps)) (List (i : is)) ellipsisLevel ellipsisIndex listFlags
+--                                        loadLocal outerEnv localEnv identifiers (List $ tail (trace ("moving past ... pattern = " ++ show pattern ++ " input = " ++ show input) ps)) (List (i : is)) ellipsisLevel ellipsisIndex listFlags
+                                        case ps of
+                                          [Atom "..."] -> return $ Bool True -- An otherwise empty list, so just let the caller know match is done
+                                          _ -> loadLocal outerEnv localEnv identifiers (List $ tail ps) (List (i : is)) ellipsisLevel ellipsisIndex listFlags
                                 else return $ Bool False
               -- There was a match
               _ -> if nextHasEllipsis
@@ -519,8 +522,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
---  if (trace ("trans List: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
-  if (nextHasEllipsis)
+  if (trace ("trans List: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
+--  if (nextHasEllipsis)
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
 --             case (trace ("curT = " ++ show curT) curT) of
@@ -584,7 +587,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
-  if nextHasEllipsis
+--  if nextHasEllipsis
+  if (trace ("trans Pair: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
      then do
              -- Idea here is that we need to handle case where you have (pair ...) - EG: ((var . step) ...)
              curT <- transformDottedList outerEnv localEnv level idx (List []) (List [dl])
@@ -648,7 +652,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                     -- get var
                     var <- getVar localEnv a
                     -- ensure it is a list
-                    case var of
+--                    case var of
+                    case (trace ("a = " ++ show a ++ " var = " ++ show var) var) of
                       -- add all elements of the list into result
                       List _ -> do case (appendNil (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput) of
                                      List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
@@ -671,12 +676,12 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
     noEllipsis isDefined = do
       isImproperPattern <- loadNamespacedBool "improper pattern"
       isImproperInput <- loadNamespacedBool "improper input"
---      t <- if (trace ("a = " ++ show a ++ "isDefined = " ++ show isDefined) isDefined)
-      t <- if (isDefined)
+      t <- if (trace ("a = " ++ show a ++ "isDefined = " ++ show isDefined) isDefined)
+--      t <- if (isDefined)
               then do
                    var <- getVar localEnv a
---                   case (trace ("var = " ++ show var) var) of
-                   case (var) of
+                   case (trace ("var = " ++ show var) var) of
+--                   case (var) of
                      Nil "" -> return $ Nil "" -- A 0 match case (input ran out in pattern), flag it to calling code
                      Nil input -> do v <- getVar outerEnv input
                                      return v
