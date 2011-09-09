@@ -42,7 +42,7 @@ import Language.Scheme.Variables
 import qualified Language.Scheme.Macro.Matches as Matches
 import Control.Monad.Error
 import Data.Array
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+--import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {- Nice FAQ regarding macro's, points out some of the limitations of current implementation
 http://community.schemewiki.org/?scheme-faq-macros -}
@@ -450,14 +450,15 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
       --
       addPatternVar isDefined ellipLevel ellipIndex pat val
         | isDefined = do v <- getVar localEnv pat
-                         case (trace ("addPV pat = " ++ show pat ++ " v = " ++ show v) v) of
+--                         case (trace ("addPV pat = " ++ show pat ++ " v = " ++ show v) v) of
+                         case (v) of
                             Nil _ -> return $ Bool False
 -- TODO: in the iteration test, we need to flag that an unused var in the pattern (level 1) is skipped when processing pattern (level 0)... need to debug this more to figure out the right solution                            
-                            _ -> do setVar localEnv pat (trace ("pat = " ++ show pat ++ " setData: " ++ show v ++ ", " ++ show ellipIndex ++ ", " ++ show val) (Matches.setData v ellipIndex val))
+                            _ -> do setVar localEnv pat (Matches.setData v ellipIndex val)
                                     return $ Bool True
         | otherwise = do
                   let flags = getListFlags ellipIndex listFlags 
-                  _ <- defineVar localEnv pat (trace ("pat = " ++ show pat ++ " setData: " ++ show ellipIndex ++ ", " ++ show val) (Matches.setData (List []) ellipIndex val))
+                  _ <- defineVar localEnv pat (Matches.setData (List []) ellipIndex val)
                   _ <- defineNamespacedVar localEnv "improper pattern" pat $ Bool $ fst flags
                   defineNamespacedVar localEnv "improper input" pat $ Bool $ snd flags
                   return $ Bool True
@@ -522,8 +523,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
-  if (trace ("trans List: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
---  if (nextHasEllipsis)
+--  if (trace ("trans List: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
+  if (nextHasEllipsis)
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
 --             case (trace ("curT = " ++ show curT) curT) of
@@ -587,8 +588,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
---  if nextHasEllipsis
-  if (trace ("trans Pair: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
+  if nextHasEllipsis
+--  if (trace ("trans Pair: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
      then do
              -- Idea here is that we need to handle case where you have (pair ...) - EG: ((var . step) ...)
              curT <- transformDottedList outerEnv localEnv level idx (List []) (List [dl])
@@ -652,8 +653,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                     -- get var
                     var <- getVar localEnv a
                     -- ensure it is a list
---                    case var of
-                    case (trace ("a = " ++ show a ++ " var = " ++ show var) var) of
+                    case var of
+--                    case (trace ("a = " ++ show a ++ " var = " ++ show var) var) of
                       -- add all elements of the list into result
                       List _ -> do case (appendNil (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput) of
                                      List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
@@ -676,13 +677,13 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
     noEllipsis isDefined = do
       isImproperPattern <- loadNamespacedBool "improper pattern"
       isImproperInput <- loadNamespacedBool "improper input"
-      t <- if (trace ("a = " ++ show a ++ "isDefined = " ++ show isDefined) isDefined)
---      t <- if (isDefined)
+--      t <- if (trace ("a = " ++ show a ++ "isDefined = " ++ show isDefined) isDefined)
+      t <- if (isDefined)
               then do
                    var <- getVar localEnv a
-                   case (trace ("var = " ++ show var) var) of
---                   case (var) of
-                     Nil "" -> return $ Nil "" -- A 0 match case (input ran out in pattern), flag it to calling code
+--                   case (trace ("var = " ++ show var) var) of
+                   case (var) of
+                     Nil "" -> return $ Nil "var not defined in pattern" -- A 0 match case (input ran out in pattern), flag to calling code
                      Nil input -> do v <- getVar outerEnv input
                                      return v
 --                     _ -> case (trace ("a = " ++ show a ++ " var = " ++ show var) var) of
@@ -714,7 +715,11 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 -- (let* ((x 1)) x)
                   return $ Atom a
       case t of
-         Nil _ -> return t -- TODO: is this correct? don't we need to keep going, a-la: continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
+         Nil "var not defined in pattern" -> 
+            if ellipsisLevel > 0
+               then return t
+               else continueTransformWith result -- Was an nary match in the pattern but is used as list here; keep going
+         Nil _ -> return t
          List l -> do
         {- What's going on here is that if the pattern was a dotted list but the transform is not, we
            need to "lift" the input up out of a list.
