@@ -166,7 +166,7 @@
                  '((1 2 3)))
 (assert/equal
                 (my-pair-test/01 (1 2 3))
-                 '((1 2 3)))
+                 '((1 2 (3))))
 (assert/equal
                 (my-pair-test/01 (1 2))
                 '((1 2 ())))  
