@@ -44,15 +44,17 @@ import Control.Monad.Error
 import Data.Array
 --import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
-{- Nice FAQ regarding macro's, points out some of the limitations of current implementation
-http://community.schemewiki.org/?scheme-faq-macros -}
+{-
+ Implementation notes:
 
+ Nice FAQ regarding macro's, points out some of the limitations of current implementation
+ http://community.schemewiki.org/?scheme-faq-macros
 
-{- Consider high-level ideas from these articles (of all places):
- -
+ Consider high-level ideas from these articles (of all places):
+ 
  -  http://en.wikipedia.org/wiki/Scheme_(programming_language)#Hygienic_macros
  -  http://en.wikipedia.org/wiki/Hygienic_macro
- - -}
+ -}
 
 {- |macroEval
 Search for macro's in the AST, and transform any that are found.
@@ -70,28 +72,20 @@ macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom
   _ <- defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
 
-{-
--- Inspect a list of code, and transform as necessary
-macroEval env (List (x@(List _) : xs)) = do
-  first <- macroEval env x
-  rest <- mapM (macroEval env) xs
-  return $ List $ first : rest
--}
-
 {- Inspect code for macros
  -
  - Only a list form is required because a pattern may only consist
  - of a list here. From the spec:
  -
- - "The <pattern> in a <syntax rule> is a list <pattern> that
-begins with the keyword for the macro." 
+ - "The <pattern> in a <syntax rule> is a list <pattern> that 
+ -  begins with the keyword for the macro." 
  -
  -}
 macroEval env lisp@(List (Atom x : _)) = do
   isDefined <- liftIO $ isNamespacedRecBound env macroNamespace x
   isDefinedAsVar <- liftIO $ isBound env x -- TODO: Not entirely correct; for example if a macro and var 
                                            -- are defined in same env with same name, which one should be selected?
-  if isDefined && not isDefinedAsVar --(trace (show "mEval [" ++ show lisp ++ ", " ++ show x ++ "]: " ++ show isDefined) isDefined)
+  if isDefined && not isDefinedAsVar 
      then do
        (List (Atom "syntax-rules" : (List identifiers : rules))) <- getNamespacedVar env macroNamespace x
        -- Transform the input and then call macroEval again, since a macro may be contained within...
@@ -120,6 +114,7 @@ macroTransform env identifiers (rule@(List _) : rs) input = do
   case result of
     Nil _ -> macroTransform env identifiers rs input
     _ -> return result
+
 -- Ran out of rules to match...
 macroTransform _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
 
