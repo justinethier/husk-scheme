@@ -183,34 +183,29 @@
      ((_ (var init . step))
       (list (quote (var init . step))))))
 
-;
-; FUTURE: Issue #9 https://github.com/justinethier/husk-scheme/issues/issue/9
-;       these test cases need to be added back once issues are
-;       resolved with pairs/lists in macro transformations
-;
-;(assert/equal
-;                (my-pair-test/02 (1 2 . 3))
-;                 '((1 2 . 3)))
-;(assert/equal
-;                (my-pair-test/02 (1 2 3))
-;                 '((1 2 . 3)))
-;
-;(assert/equal
-;                (my-pair-test/02 (1 (2 3 4 5) . 4))
-;                '((1 (2 3 4 5) . 4)))
-;
-;(assert/equal
-;                (my-pair-test/03 (1 2 . step))
-;                 '((1 2 . step)))
-;(assert/equal
-;                (my-pair-test/03 (1 (2 3 4 5) . step))
-;                '((1 (2 3 4 5) . step)))
+(assert/equal
+                (my-pair-test/02 (1 2 . 3))
+                 '((1 2 . 3)))
+(assert/equal
+                (my-pair-test/02 (1 2 3))
+                 '((1 2 3)))
+
+(assert/equal
+                (my-pair-test/02 (1 (2 3 4 5) . 4))
+                '((1 (2 3 4 5) . 4)))
+
+(assert/equal
+                (my-pair-test/03 (1 2 . step))
+                 '((1 2 . step)))
+(assert/equal
+                (my-pair-test/03 (1 (2 3 4 5) . step))
+                '((1 (2 3 4 5) . step)))
 
 (define-syntax my-pair-test/04
   (syntax-rules ()
      ((_ (var init . step) ...)
       (quote ((var init . step) ...)))))
-; Issue #9: output for both of the following test cases is so screwed up (!)
+
 (assert/equal
   (my-pair-test/04 (1 2 6) (3 4 5))
   '((1 2 6) (3 4 5)))
@@ -219,7 +214,6 @@
   '((1 2) (3 4 5)))
 
 
-; Issue #9: following test cases will fail, need more work on macro code
 (define-syntax my-pair-test/05
   (syntax-rules ()
      ((_ (var init) ...)
@@ -230,8 +224,9 @@
      ((_ (var . init) ...)
       (quote (((var . init)) ...)))))
 
-;(write
-;  (my-pair-test/05 (1 2) (4 5) (6 7) (8 9)))
+(assert/equal
+   (my-pair-test/05 (1 2) (4 5) (6 7) (8 9))
+  '(((1 2)) ((4 5)) ((6 7)) ((8 9))))
 
 (define-syntax my-do/1
   (syntax-rules ()
@@ -244,13 +239,13 @@
          (begin (begin command ...)
                 (quote (((((((loop 
                       (list var . step))))))) ...))))))))
-; Issue #9:
-;(assert/equal
-;                (my-do/1 ((vec (make-vector 5) vec)
-;                     (i 0 (+ i 1)))
-;                    ((= i 5) vec)
-;                     (vector-set! vec i i))
-; (quote (((((((loop (list vec . vec))))))) ((((((loop (list i . (+ i 1)))))))))))
+
+(assert/equal
+                (my-do/1 ((vec (make-vector 5) vec)
+                     (i 0 (+ i 1)))
+                    ((= i 5) vec)
+                     (vector-set! vec i i))
+ (quote (((((((loop (list vec vec))))))) ((((((loop (list i (+ i 1)))))))))))
 
 (define-syntax my-do/2
   (syntax-rules ()
@@ -263,33 +258,30 @@
          (begin (begin command ...)
                 (quote (loop 
                       (list var . step) ...))))))))
+(assert/equal
+                (my-do/2 ((vec (make-vector 5) vec)
+                     (i 0 (+ i 1)))
+                    ((= i 5) vec)
+                     (vector-set! vec i i))
+ (quote (loop (list vec vec) (list i (+ i 1)))))
+
 ; Issue #9:
-;(assert/equal
-;                (my-do/2 ((vec (make-vector 5) vec)
-;                     (i 0 (+ i 1)))
-;                    ((= i 5) vec)
-;                     (vector-set! vec i i))
-; (quote (loop (list vec . vec) (list i . (+ i 1)))))
-   
-; New test case, had crashed the interpreter!
 (define-syntax my-pair-test/06
   (syntax-rules ()
      ((_ var . step)
       (list (quote (var . step))))))
 
-; Issue #9: question, is the output of these correct, or should it be a dotted list?
-;(write (my-pair-test/06 (1 . 3)))
-; outputs: ((1 3))
-;(write (my-pair-test/06 (1 2)))
-; outputs: ((1 2))
-; 
-; According to csi, with macro defined as (test):
+(assert/equal (my-pair-test/06 (1 . 3))
+             '(((1 . 3))))
+(assert/equal (my-pair-test/06 (1 2))
+             '(((1 2))))
+; WRT above, According to csi, with macro defined as (test):
 ;
 ; #;2> (test (1 . 3))
 ; (((1 . 3)))
 ; #;3> (test (1 2))
 ; (((1 2)))
-;
+
 
 ;
 ; Test cases for vector transforms
