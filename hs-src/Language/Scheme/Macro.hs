@@ -486,8 +486,6 @@ transformRule :: Env        -- ^ Outer, enclosing environment
               -> LispVal    -- ^ Resultant (transformed) value. 
                             -- ^ Must be a parameter as it mutates with each transform call
               -> LispVal    -- ^ The macro transformation, read out one atom at a time and rewritten to result
--- FUTURE: re-arrange above parameters so they make more sense. Right now everything seems a little
--- too much like it is just thrown together.
               -> IOThrowsError LispVal
 {- Notes
  -
