@@ -39,5 +39,7 @@ a
 ; Cases related to issue #41
 (assert/equal '(1 2 . 3) '(1 . (2 . 3)))
 (assert/equal '(1 2 . ()) '(1 . (2 . ())))
+(assert/equal '(1 2 . (3 . ()))
+              '(1 2 3))
 
 (unit-test-handler-results)
