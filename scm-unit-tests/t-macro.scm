@@ -216,6 +216,12 @@
 (assert/equal
   (my-pair-test/04 (1 2 6) (3 4 5))
   '((1 2 6) (3 4 5)))
+
+; TODO: what is going on here is that sometimes step is defined in the input and
+; sometimes it is skipped. I am guessing that the information is either not being recorded
+; for each, and that a Nil recorded in the first case is read for step in the second case,
+; which is why the 5 is skipped. Will need to debug to confirm, though
+;
 (assert/equal
   (my-pair-test/04 (1 2) (3 4 5))
   '((1 2) (3 4 5)))
@@ -278,6 +284,9 @@
      ((_ var . step)
       (list (quote (var . step))))))
 
+;
+; TODO: WTF is there supposed to be an extra set of () in the transformed code?
+;
 (assert/equal (my-pair-test/06 (1 . 3))
              '(((1 . 3))))
 (assert/equal (my-pair-test/06 (1 2))
