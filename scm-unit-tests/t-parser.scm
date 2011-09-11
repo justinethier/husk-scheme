@@ -41,5 +41,7 @@ a
 (assert/equal '(1 2 . ()) '(1 . (2 . ())))
 (assert/equal '(1 2 . (3 . ()))
               '(1 2 3))
+(assert/equal  (list 1 . (1 2 3))
+              '(1 1 2 3))
 
 (unit-test-handler-results)
