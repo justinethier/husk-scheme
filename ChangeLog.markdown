@@ -1,3 +1,7 @@
+v3.3
+----
+- Updated the parser to simplify improper lists; for example the following input: `'(1 2 . (3 . ()))` will now be converted to `(1 2 3)`
+
 v3.2
 ----
 - Significant improvements to the parser, including proper handling of whitespace and comments. This represents a critical upgrade from the previous releases.
