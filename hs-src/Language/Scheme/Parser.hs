@@ -217,7 +217,17 @@ parseDottedList = do
 --  return $ DottedList phead ptail
   case ptail of
     DottedList ls l -> return $ DottedList (phead ++ ls) l 
-    -- TODO: Issue #41 - List l -> return $ List $ phead ++ l
+    -- Issue #41
+    -- Improper lists are tricky because if an improper list ends in a proper list, then it becomes proper as well.
+    -- The following cases handle that, as well as preserving necessary functionality when appropriate, such as for
+    -- unquoting.
+    --
+    -- FUTURE: I am not sure if this is complete, in fact the "unquote" seems like it could either be incorrect or
+    --         one special case among others. Anyway, for the 3.3 release this is good enough to pass all test
+    --         cases. It will be revisited later if necessary.
+    --
+    List (Atom "unquote" : _) -> return $ DottedList phead ptail 
+    List ls -> return $ List $ phead ++ ls
     {- Regarding above, see http://community.schemewiki.org/?scheme-faq-language#dottedapp
      
        Note, however, that most Schemes expand literal lists occurring in function applications, 
