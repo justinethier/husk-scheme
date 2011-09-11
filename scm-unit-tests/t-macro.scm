@@ -222,6 +222,8 @@
 ; for each, and that a Nil recorded in the first case is read for step in the second case,
 ; which is why the 5 is skipped. Will need to debug to confirm, though
 ;
+; This may be deferred to after the 3.3 release...
+;
 (assert/equal
   (my-pair-test/04 (1 2) (3 4 5))
   '((1 2) (3 4 5)))
