@@ -241,22 +241,7 @@
        (let* ((vars vals) ...)
 		     body)))))
 
-
 ; Iteration - do
-(define-syntax do
-  (syntax-rules ()
-     ((_ ((var init . step) ...)
-         (test expr ...) 
-          command ...)
-     (let loop ((var init) ...)
-       (if test
-         (begin expr ...)
-         (begin (begin command ...)
-                (loop 
-                  (if (null? (cdr (list var . step))) 
-                      (car  (list var . step))
-                      (cadr (list var . step))) ...)))))))
-#| TODO: this is the macro from R5RS
 (define-syntax do
   (syntax-rules ()
     ((do ((var init step ...) ...)
@@ -278,7 +263,8 @@
     ((do "step" x)
      x)
     ((do "step" x y)
-|#
+     y)))
+
 ; Delayed evaluation functions
 (define force
     (lambda (object)

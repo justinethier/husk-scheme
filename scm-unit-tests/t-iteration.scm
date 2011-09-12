@@ -16,14 +16,6 @@
                      (vector-set! vec i i))
                 '#(0 1 2 3 4))
 
-(assert/equal #t #f) ;; Adding this as a reminder for below
-#|
-TODO: this case is going into an infinite loop. However, it seems that the
-issue is not with the macro code. Or at least, if it is the problem is within
-named let or let*. Anyway, I am commenting it out for now to focus on getting the
-rest of the code working after the latest macro changes. Once this branch is in
-a better state I will revisit this issue...
-
 ; Per spec, <step> does not have to be specified
 (assert/equal 
                 (do ((vec (make-vector 5))
@@ -32,18 +24,6 @@ a better state I will revisit this issue...
                      (vector-set! vec i i))
                 '#(0 1 2 3 4))
 
-This is the expanded code that hangs:
-
-(let loop ((vec (make-vector 5)) (i 0)) (if (= i 5) (begin vec) (begin (begin (vector-set! vec i i)) (loop (if (null? (cdr (list vec))) (car (list vec)) (cadr (list vec))) (if (null? (cdr (list i))) (car (list i)) (cadr (list i)))))))
-
-
-;(let* ((f (lambda (loop) (lambda (vec i) (if (= i 5) (begin vec) (begin (begin (vector-set! vec i i)) (loop (if (null? (cdr (list vec))) (car (list vec)) (cadr (list vec))) (if (null? (cdr (list i))) (car (list i)) (cadr (list i))))))))) (ff ((lambda (proc) (f (lambda (vec i) ((proc proc) vec i)))) (lambda (proc) (f (lambda (vec i) ((proc proc) vec i))))))) (ff (make-vector 5) 0))
-;
-;
-(let ((f (lambda (loop) (lambda (vec i) (if (= i 5) (begin vec) (begin (begin (vector-set! vec i i)) (loop (if (null? (cdr (list vec))) (car (list vec)) (cadr (list vec))) (if (null? (cdr (list i))) (car (list i)) (cadr (list i)))))))))) (let* ((ff ((lambda (proc) (f (lambda (vec i) ((proc proc) vec i)))) (lambda (proc) (f (lambda (vec i) ((proc proc) vec i))))))) (ff (make-vector 5) 0)))
-
-
-|#
 (assert/equal 
                 (let ((x '(1 3 5 7 9)))
                     (do ((x x (cdr x))
