@@ -35,6 +35,14 @@ a better state I will revisit this issue...
 This is the expanded code that hangs:
 
 (let loop ((vec (make-vector 5)) (i 0)) (if (= i 5) (begin vec) (begin (begin (vector-set! vec i i)) (loop (if (null? (cdr (list vec))) (car (list vec)) (cadr (list vec))) (if (null? (cdr (list i))) (car (list i)) (cadr (list i)))))))
+
+
+;(let* ((f (lambda (loop) (lambda (vec i) (if (= i 5) (begin vec) (begin (begin (vector-set! vec i i)) (loop (if (null? (cdr (list vec))) (car (list vec)) (cadr (list vec))) (if (null? (cdr (list i))) (car (list i)) (cadr (list i))))))))) (ff ((lambda (proc) (f (lambda (vec i) ((proc proc) vec i)))) (lambda (proc) (f (lambda (vec i) ((proc proc) vec i))))))) (ff (make-vector 5) 0))
+;
+;
+(let ((f (lambda (loop) (lambda (vec i) (if (= i 5) (begin vec) (begin (begin (vector-set! vec i i)) (loop (if (null? (cdr (list vec))) (car (list vec)) (cadr (list vec))) (if (null? (cdr (list i))) (car (list i)) (cadr (list i)))))))))) (let* ((ff ((lambda (proc) (f (lambda (vec i) ((proc proc) vec i)))) (lambda (proc) (f (lambda (vec i) ((proc proc) vec i))))))) (ff (make-vector 5) 0)))
+
+
 |#
 (assert/equal 
                 (let ((x '(1 3 5 7 9)))
