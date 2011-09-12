@@ -31,6 +31,10 @@ a better state I will revisit this issue...
                     ((= i 5) vec)
                      (vector-set! vec i i))
                 '#(0 1 2 3 4))
+
+This is the expanded code that hangs:
+
+(let loop ((vec (make-vector 5)) (i 0)) (if (= i 5) (begin vec) (begin (begin (vector-set! vec i i)) (loop (if (null? (cdr (list vec))) (car (list vec)) (cadr (list vec))) (if (null? (cdr (list i))) (car (list i)) (cadr (list i)))))))
 |#
 (assert/equal 
                 (let ((x '(1 3 5 7 9)))
