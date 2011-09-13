@@ -63,7 +63,7 @@
 (define-syntax test
   (syntax-rules ()
      ((_ (a b c ...))
-      (quote (a b c)))))
+      (quote (a b c ...)))))
 (assert/equal (test (1 2)) '(1 2))
 
 ; A macro taking a pair in the pattern and transforming into a list
@@ -80,7 +80,7 @@
 (assert/equal (pair-test-00 (1 2 3 4))
              '(1 2 (3 4)))
 (assert/equal (pair-test-00 (1 2))
-             '(1 2))
+             '(1 2 ()))
 
 (assert/equal (pair-test-00 (1 2 3 4 5 . 6))
              '(1 2 (3 4 5 . 6)))
@@ -100,7 +100,7 @@
              '((1 2 (3))))
 
 (assert/equal (pair-test-01 (1 2))
-             '((1 2)))
+             '((1 2 ())))
 ;
 ; TODO: test with this macro:
 ;
