@@ -1,11 +1,41 @@
 (define-syntax when
 (syntax-rules ()
 ((when condition . body) (if condition (begin . body) #f))))
+;((when condition body ...) (if condition (begin . body) #f))))
 
 (define x -1)
 (when (negative? x)
       (newline)
       (display "bad number: negative"))
+
+#|
+Output when run with original version of above:
+huski> (load "scm-unit-tests/test
+             test.scm   test2.scm
+             huski> (load "scm-unit-tests/test.scm" )
+             loadLocal pattern = ((condition . body)) input = ((negative? x) (newline) (display "bad number: negative"))
+             loadLocal pattern = (condition . body) input = (negative? x)
+             loadLocal pattern = (condition body ...) input = (negative? x)
+             loadLocal pattern = (body ...) input = (x)
+             loadLocal pattern = (body ...) input = ()
+             loadLocal pattern = () input = ((newline) (display "bad number: negative"))
+             Input does not match a macro pattern: (when (negative? x) (newline) (display "bad number: negative"))
+
+Output when using the ... above instead of a pair:
+huski> (load "scm-unit-tests/test.scm" )
+loadLocal pattern = (condition body ...) input = ((negative? x) (newline) (display "bad number: negative"))
+loadLocal pattern = (body ...) input = ((newline) (display "bad number: negative"))
+loadLocal pattern = (body ...) input = ((display "bad number: negative"))
+loadLocal pattern = (body ...) input = ()
+
+"bad number: negative"
+
+Can clearly see from above that the problem is that by the time we get to inserting the ...
+in the pattern, we have already moved too far into the input. Perhaps the pattern matcher
+needs to search for the pattern List[DottedList] instead of searching for dotted lists directly.
+Need to be careful here...
+|#
+
 #|
 (load "../stdlib.scm")
 
