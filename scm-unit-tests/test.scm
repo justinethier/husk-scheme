@@ -1,3 +1,12 @@
+(define-syntax when
+(syntax-rules ()
+((when condition . body) (if condition (begin . body) #f))))
+
+(define x -1)
+(when (negative? x)
+      (newline)
+      (display "bad number: negative"))
+#|
 (load "../stdlib.scm")
 
 ;; TODO: the problem here is that these cases have an improper list in the pattern and a proper list in the transform
@@ -73,3 +82,4 @@
 ;  (syntax-rules ()
 ;     ((_ (a b . ((c))))
 ;      (quote (a b c)))))
+|#
