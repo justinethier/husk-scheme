@@ -183,32 +183,6 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
        ((Vector p), (Vector i)) -> do
          loadLocal outerEnv localEnv identifiers (List $ elems p) (List $ elems i) ellipsisLevel ellipsisIndex listFlags
 
--- TODO: store somewhere whether input was a list or pair? Not quite sure how to make that happen, or if we
---       even need to per R5RS. See Issue 9
--- TODO: below should have a lot in common with pair/pair - roll common parts into a single function before we are finished
-       ((DottedList ps p), (List (iRaw : isRaw))) -> do
-         -- Split input into two sections: 
-         --   is - required inputs that must be present
-         --   i  - variable length inputs to each compare against p 
-         let isSplit = splitAt (length ps) (iRaw : isRaw)
-         let is = fst isSplit
-         let i = (snd isSplit)
-
-         result <- loadLocal outerEnv localEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex listFlags
-         case result of
-            Bool True -> --  By matching on an elipsis we force the code 
-                         --  to match pagainst all elements in i. 
-                         loadLocal outerEnv localEnv identifiers 
-                                  (List $ [p, Atom "..."])
-                                  (List i)
-                                   ellipsisLevel -- Incremented in the list/list match below
-                                   ellipsisIndex
-                                   (flagDottedLists listFlags (True, False) $ length ellipsisIndex)
-            _ -> return $ Bool False
-
--- TODO: something is wrong here, since one of the examples causes a hang. But I'm not seeing it at the moment...
--- detailed debugging is required
-
        ((DottedList ps p), (DottedList isRaw iRaw)) -> do
          
          -- Split input into two sections: 
@@ -483,9 +457,22 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(Ve
 checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(DottedList _ _) input@(DottedList _ _) flags =
   loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
 
-checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(DottedList _ _) input@(List (_ : _)) flags = do
-  loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
-
+checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(DottedList ps p) input@(List (_ : _)) flags = do
+  loadLocal outerEnv localEnv identifiers 
+                                  (List $ ps ++ [p, Atom "..."])
+                                  input
+                                   ellipsisLevel -- Incremented in the list/list match below
+                                   ellipsisIndex
+                                   (flagDottedLists flags (True, False) $ length ellipsisIndex)
+{- TODO: prototype code for issue in test.scm
+checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(List (DottedList ps p : _)) input@(List (_ : _)) flags = do
+  loadLocal outerEnv localEnv identifiers 
+                                  (List $ ps ++ [p, Atom "..."])
+                                  input
+                                   ellipsisLevel -- Incremented in the list/list match below
+                                   ellipsisIndex
+                                   (flagDottedLists flags (True, False) $ length ellipsisIndex)
+-}
 checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(List _) input@(List _) flags =
   loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
 
