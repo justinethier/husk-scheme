@@ -289,6 +289,9 @@
 ;
 ; TODO: WTF is there supposed to be an extra set of () in the transformed code?
 ;
+; Is the issue here that an extra pair of parens needs to be added around an nary match that
+; occurs at the outermost level?
+;
 (assert/equal (my-pair-test/06 (1 . 3))
              '(((1 . 3))))
 (assert/equal (my-pair-test/06 (1 2))
