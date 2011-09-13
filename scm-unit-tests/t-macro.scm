@@ -362,4 +362,16 @@
 
 (assert/equal (orr-debugging 1 1)
               '(let ((temp 1)) (if temp temp 1)))
+
+; TODO: test case for this.... and it does not pass right now
+;(define-syntax when
+;(syntax-rules ()
+;((when condition . body) (if condition (begin . body) #f))))
+;
+;(define x -1)
+;(when (negative? x)
+;      (newline)
+;      (display "bad number: negative"))
+(assert/equal #t #f) ; temp place holder for above
+
 (unit-test-handler-results)
