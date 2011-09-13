@@ -217,13 +217,6 @@
   (my-pair-test/04 (1 2 6) (3 4 5))
   '((1 2 6) (3 4 5)))
 
-; TODO: what is going on here is that sometimes step is defined in the input and
-; sometimes it is skipped. I am guessing that the information is either not being recorded
-; for each, and that a Nil recorded in the first case is read for step in the second case,
-; which is why the 5 is skipped. Will need to debug to confirm, though
-;
-; This may be deferred to after the 3.3 release...
-;
 (assert/equal
   (my-pair-test/04 (1 2) (3 4 5))
   '((1 2) (3 4 5)))
