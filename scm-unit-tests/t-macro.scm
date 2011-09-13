@@ -174,9 +174,10 @@
 ;; part of a dotted list, so we have enough information to be able to make this kind of
 ;; transform:
 ;;
-;(assert/equal
-;                (my-pair-test/01 (1 2))
-;                '((1 2 ())))  
+(assert/equal
+                (my-pair-test/01 (1 2))
+                '((1 2 ())))  
+
 (assert/equal
                 (my-pair-test/01 (1 (2 3 4 5) . 4))
                 '((1 (2 3 4 5) 4)))
@@ -286,6 +287,8 @@
      ((_ var . step)
       (list (quote (var . step))))))
 
+;
+; TODO: should we release with this issue, and write up a new ticket for v3.4 to address it???
 ;
 ; TODO: WTF is there supposed to be an extra set of () in the transformed code?
 ;
