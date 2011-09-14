@@ -42,7 +42,7 @@ import Language.Scheme.Variables
 import qualified Language.Scheme.Macro.Matches as Matches
 import Control.Monad.Error
 import Data.Array
---import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -252,7 +252,10 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                                  have their variables initialized so they are ready during trans. -}
                                  if (macroElementMatchesMany pattern)
 --                                 if (trace ("m = " ++ show (Bool $ macroElementMatchesMany pattern)) (macroElementMatchesMany pattern)) -- TODO: is prev good enough? && ((length (trace ("no more input, pat = " ++ show pattern) ps)) == 1)
-                                           then flagUnmatchedVars outerEnv localEnv identifiers pattern 
+                                           then do
+
+                                            let flags = getListFlags ellipsisIndex listFlags 
+                                            flagUnmatchedVars outerEnv localEnv identifiers pattern -- TODO: (Issue #42) flags 
                                            else return $ Bool False
 --TODO: returning a boolean is not sufficient; need to go through the remaining pattern and flag any vars as nil (?) if they are not defined
 -- Consider output code from the simple let* example (pat is the remaining pattern, but in general case it could be anything):
@@ -272,6 +275,8 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
  - Note that this can only happen if the remaining pattern is part of a zero-or-more match, that matches 0 
  - (or no more) times.
  -}
+
+-- TODO: see Issue #42 - we need to flag whether an unmatched var was part of a nary improper list in the pattern
 flagUnmatchedVars :: Env -> Env -> LispVal -> LispVal -> IOThrowsError LispVal 
 
 flagUnmatchedVars outerEnv localEnv identifiers (DottedList ps p) = do
@@ -287,7 +292,13 @@ flagUnmatchedVars outerEnv localEnv identifiers (List (p : ps)) = do
   flagUnmatchedVars outerEnv localEnv identifiers $ List ps
 
 flagUnmatchedVars _ _ _ (Atom "...") = return $ Bool True 
-flagUnmatchedVars outerEnv localEnv identifiers (Atom p) = do
+flagUnmatchedVars outerEnv localEnv identifiers p@(Atom _) =
+  flagUnmatchedAtom outerEnv localEnv identifiers p False
+
+flagUnmatchedVars _ _ _ _ = return $ Bool True 
+
+flagUnmatchedAtom :: Env -> Env -> LispVal -> LispVal -> Bool -> IOThrowsError LispVal 
+flagUnmatchedAtom outerEnv localEnv identifiers (Atom p) improperListFlag = do
   isDefined <- liftIO $ isBound localEnv p
   isLexicallyDefinedVar <- liftIO $ isBound outerEnv p
   isIdent <- findAtom (Atom p) identifiers
@@ -297,17 +308,16 @@ flagUnmatchedVars outerEnv localEnv identifiers (Atom p) = do
      else case isIdent of
              Bool True -> if isLexicallyDefinedVar   -- Is this good enough?
                              then return $ Bool True
-                             else do _ <- flagUnmatchedVar localEnv p
+                             else do _ <- flagUnmatchedVar localEnv p improperListFlag
                                      continueFlagging
-             _ -> do _ <- flagUnmatchedVar localEnv p 
+             _ -> do _ <- flagUnmatchedVar localEnv p improperListFlag 
                      continueFlagging
  where continueFlagging = return $ Bool True 
 
-flagUnmatchedVars _ _ _ _ = return $ Bool True 
-
-flagUnmatchedVar :: Env -> String -> IOThrowsError LispVal
-flagUnmatchedVar localEnv var = do
+flagUnmatchedVar :: Env -> String -> Bool -> IOThrowsError LispVal
+flagUnmatchedVar localEnv var improperListFlag = do
   defineVar localEnv var $ Nil "" -- Empty nil will signify the empty match
+  defineNamespacedVar (trace ("unmatched pat var: " ++ show var ++ " " ++ show improperListFlag) localEnv) "unmatched nary pattern variable" var $ Bool $ improperListFlag
 
 {- 
  - Utility function to insert a True flag to the proper trailing position of the DottedList indicator list
@@ -318,6 +328,11 @@ flagDottedLists listFlags status lengthOfEllipsisIndex
  | length listFlags == lengthOfEllipsisIndex = listFlags ++ [status]
    -- Pad the original list with False flags, and append our status flags at the end
  | otherwise = listFlags ++ (replicate ((lengthOfEllipsisIndex) - (length listFlags)) (False, False)) ++ [status]
+
+-- Get pair of list flags that are at depth of ellipIndex, or False if flags do not exist (means improper not flagged)
+getListFlags elIndices flags 
+  | length flags >= length elIndices = flags !! ((length elIndices) - 1)
+  | otherwise = (False, False)
 
 {- Check pattern against input to determine if there is a match
  -
@@ -445,11 +460,6 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
         _ <- defineVar localEnv pat (Matches.setData (List []) ellipIndex val)
         _ <- defineNamespacedVar localEnv "improper pattern" pat $ Bool $ fst flags
         defineNamespacedVar localEnv "improper input" pat $ Bool $ snd flags
-
-      -- Get pair of list flags that are at depth of ellipIndex, or False if flags do not exist (means improper not flagged)
-      getListFlags elIndices flags 
-        | length flags >= length elIndices = flags !! ((length elIndices) - 1)
-        | otherwise = (False, False)
 
 checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(Vector _) input@(Vector _) flags =
   loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
@@ -678,7 +688,14 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                    var <- getVar localEnv a
 --                   case (trace ("var = " ++ show var) var) of
                    case (var) of
-                     Nil "" -> return $ Nil "var not defined in pattern" -- A 0 match case (input ran out in pattern), flag to calling code
+                     Nil "" -> do 
+                     {- TODO: initial code for Issue #42:
+                        wasPair <- getNamespacedVar localEnv "unmatched nary pattern variable" a
+                        case wasPair of
+                            Bool True -> return $ Nil "var (pair) not defined in pattern" -- A 0 match case (input ran out in pattern), flag to calling code
+                            _ -> return $ Nil "var not defined in pattern" -- A 0 match case (input ran out in pattern), flag to calling code
+                            -}
+                        return $ Nil "var not defined in pattern" -- A 0 match case (input ran out in pattern), flag to calling code
                      Nil input -> do v <- getVar outerEnv input
                                      return v
 --                     _ -> case (trace ("a = " ++ show a ++ " var = " ++ show var) var) of
@@ -714,6 +731,10 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
             if ellipsisLevel > 0
                then return t
                else continueTransformWith result -- Was an nary match in the pattern but is used as list here; keep going
+         Nil "var (pair) not defined in pattern" -> 
+            if ellipsisLevel > 0
+               then return t
+               else continueTransformWith $ result ++ [List []] -- Was an nary match in the pattern but is used as list here; keep going
          Nil _ -> return t
          List l -> do
         {- What's going on here is that if the pattern was a dotted list but the transform is not, we
