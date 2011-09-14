@@ -129,18 +129,31 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
    let is = tail inputVar
    let p = case pattern of
               DottedList ds d -> case ds of
-                                  (Atom l : ls) -> List [Atom l, DottedList ls d]
-                                  _ -> pattern
-              _ -> pattern
+                                  -- Fix for Issue #44 - detect when pattern's match should be modified from a pair to an ...
+                                  (Atom l : ls) -> (List [Atom l, DottedList ls d], True)
+                                  _ -> (pattern, False)
+              _ -> (pattern, False)
    case p of
-      List (Atom _ : ps) -> do
-        match <- loadLocal outerEnv localEnv identifiers (List ps) (List is) 0 [] [] 
+      ((List (Atom _ : ps)), flag) -> do
+        match <- checkPattern ps is flag 
         case match of
            Bool False -> return $ Nil ""
            _ -> do
 --                bindings <- findBindings localEnv pattern
                 transformRule outerEnv localEnv 0 [] (List []) template
-      _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" p
+      _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
+
+ where
+   checkPattern ps@(DottedList ds d : _) is True = do
+     case is of
+       (List _ : _) -> do 
+         loadLocal outerEnv localEnv identifiers 
+                                  (List $ ds ++ [d, Atom "..."])
+                                  (List is)
+                                   0 []
+                                  (flagDottedLists [] (True, False) 0)
+       _ -> loadLocal outerEnv localEnv identifiers (List ps) (List is) 0 [] []
+   checkPattern ps is _ = loadLocal outerEnv localEnv identifiers (List ps) (List is) 0 [] [] 
 
 matchRule _ _ _ rule input = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
