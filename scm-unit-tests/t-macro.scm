@@ -286,26 +286,10 @@
   (syntax-rules ()
      ((_ var . step)
       (list (quote (var . step))))))
-
-;
-; TODO: should we release with this issue, and write up a new ticket for v3.4 to address it???
-;
-; TODO: WTF is there supposed to be an extra set of () in the transformed code?
-;
-; Is the issue here that an extra pair of parens needs to be added around an nary match that
-; occurs at the outermost level?
-;
 (assert/equal (my-pair-test/06 (1 . 3))
              '(((1 . 3))))
 (assert/equal (my-pair-test/06 (1 2))
              '(((1 2))))
-; WRT above, According to csi, with macro defined as (test):
-;
-; #;2> (test (1 . 3))
-; (((1 . 3)))
-; #;3> (test (1 2))
-; (((1 2)))
-
 
 ;
 ; Test cases for vector transforms

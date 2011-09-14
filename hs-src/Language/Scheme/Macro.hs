@@ -144,8 +144,16 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
 
  where
+   -- A pair at the outmost level must be transformed to use the ellipsis, 
+   -- or else its nary match will not work properly during pattern matching. 
    checkPattern ps@(DottedList ds d : _) is True = do
      case is of
+       (DottedList _ _ : _) -> do 
+         loadLocal outerEnv localEnv identifiers 
+                                  (List $ ds ++ [d, Atom "..."])
+                                  (List is)
+                                   0 []
+                                  (flagDottedLists [] (False, False) 0)
        (List _ : _) -> do 
          loadLocal outerEnv localEnv identifiers 
                                   (List $ ds ++ [d, Atom "..."])
@@ -153,6 +161,8 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
                                    0 []
                                   (flagDottedLists [] (True, False) 0)
        _ -> loadLocal outerEnv localEnv identifiers (List ps) (List is) 0 [] []
+
+   -- No pair, immediately begin matching
    checkPattern ps is _ = loadLocal outerEnv localEnv identifiers (List ps) (List is) 0 [] [] 
 
 matchRule _ _ _ rule input = do
