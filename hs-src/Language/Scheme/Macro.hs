@@ -191,7 +191,6 @@ searchForBindings _ _ bindings = return $ List bindings
 in preparation for macro transformation. -}
 loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> [(Bool, Bool)] -> IOThrowsError LispVal
 loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex listFlags = do
---  case ((trace ("loadLocal pattern = " ++ show pattern ++ " input = " ++ show input) pattern), input) of
   case (pattern, input) of
 
        ((DottedList ps p), (DottedList isRaw iRaw)) -> do
@@ -238,7 +237,6 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                                 {- No match, must be finished with ...
                                 Move past it, but keep the same input. -}
                                 then do
---                                        loadLocal outerEnv localEnv identifiers (List $ tail (trace ("moving past ... pattern = " ++ show pattern ++ " input = " ++ show input) ps)) (List (i : is)) ellipsisLevel ellipsisIndex listFlags
                                         case ps of
                                           [Atom "..."] -> return $ Bool True -- An otherwise empty list, so just let the caller know match is done
                                           _ -> loadLocal outerEnv localEnv identifiers (List $ tail ps) (List (i : is)) ellipsisLevel ellipsisIndex listFlags
@@ -348,16 +346,16 @@ getListFlags elIndices flags
   | length elIndices > 0 && length flags >= length elIndices = flags !! ((length elIndices) - 1)
   | otherwise = (False, False)
 
-{- Check pattern against input to determine if there is a match
- -
- - @param outerEnv - Local variables in play outside the macro
- - @param localEnv - Local variables for the macro, used during transform
- - @param identifiers  - List of identifiers passed into the macro
- - @param ellipsisLevel - Determine nesting level of the zero-or-many match, if there is any
- - @param pattern - Pattern to match
- - @param input - Input to be matched
- -}
-checkLocal :: Env -> Env -> LispVal -> Int -> [Int] -> LispVal -> LispVal -> [(Bool, Bool)]-> IOThrowsError LispVal
+-- Check pattern against input to determine if there is a match
+checkLocal :: Env            -- Outer environment where this macro was called
+           -> Env            -- Local environment used to store temporary variables for macro processing
+           -> LispVal        -- List of identifiers specified in the syntax-rules
+           -> Int            -- Current nary (ellipsis) level
+           -> [Int]          -- Ellipsis Index, keeps track of the current nary (ellipsis) depth at each level 
+           -> LispVal        -- Pattern to match
+           -> LispVal        -- Input to be matched
+           -> [(Bool, Bool)] -- Flags to determine whether input pattern/variables are proper lists
+           -> IOThrowsError LispVal
 checkLocal _ _ _ _ _ (Bool pattern) (Bool input) _ = return $ Bool $ pattern == input
 checkLocal _ _ _ _ _ (Number pattern) (Number input) _ = return $ Bool $ pattern == input
 checkLocal _ _ _ _ _ (Float pattern) (Float input) _ = return $ Bool $ pattern == input
@@ -441,10 +439,10 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
 -}                            
     where
       -- Store pattern variable in a nested list
-      -- TODO: ellipsisLevel should probably be used here for validation.
+      -- FUTURE: ellipsisLevel should probably be used here for validation.
       -- 
-      --  some notes: TODO (above): need to flag the ellipsisLevel of this variable.
-      --              also, it is an error if, for an existing var, ellipsisLevel input does not match the var's stored level
+      --         some notes: (above): need to flag the ellipsisLevel of this variable.
+      --                     also, it is an error if, for an existing var, ellipsisLevel input does not match the var's stored level
       --
       addPatternVar isDefined ellipLevel ellipIndex pat val
         | isDefined = do v <- getVar localEnv pat
@@ -507,28 +505,14 @@ transformRule :: Env        -- ^ Outer, enclosing environment
               -> LispVal    -- ^ The macro transformation, read out one atom at a time and rewritten to result
               -> IOThrowsError LispVal
 
-{-
- - Recursively transform a list
- -
- - OLD Parameters:
- -
- - localEnv - Local variable environment
- - ellipsisIndex - Zero-or-more match variables are stored as a list.
- -     This is the index into the current value to read from list
- - result - Resultant value, must be a parameter as it mutates with each function call, so we pass it using CPS
- - transform - The macro transformation, we read it out one atom at a time, and rewrite it into result
- - ellipsisList - Temporarily holds value of the "outer" result while we process the
- -     zero-or-more match. Once that is complete we swap this value back into it's rightful place 
- -}
+-- Recursively transform a list
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (List l : ts)) = do
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
---  if (trace ("trans List: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
   if (nextHasEllipsis)
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l)
---             case (trace ("curT = " ++ show curT) curT) of
              case (curT) of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
@@ -544,6 +528,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisLevel]
 
+-- Recursively transform a vector by processing it as a list
+-- FUTURE: can this code be consolidated with the list code?
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List ((Vector v) : ts)) = do
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
@@ -569,6 +555,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 
  where asVector lst = (Vector $ (listArray (0, length lst - 1)) lst)
 
+-- Recursively transform an improper list
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (dl@(DottedList _ _) : ts)) = do
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
@@ -622,11 +609,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
              then do 
                     isImproperPattern <- loadNamespacedBool "improper pattern"
                     isImproperInput <- loadNamespacedBool "improper input"
-                    -- get var
+                    -- Load variable and ensure it is a list
                     var <- getVar localEnv a
-                    -- ensure it is a list
                     case var of
---                    case (trace ("a = " ++ show a ++ " var = " ++ show var) var) of
                       -- add all elements of the list into result
                       List _ -> do case (appendNil (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput) of
                                      List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
@@ -635,8 +620,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 
 {- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
 --
--- TODO: this could be a problem, because we need to signal the end of the ... and do not want an infinite loop.
---       but we want the lexical value as well. need to think about this in more detail to get a truly workable solution
+-- notes: this could be a problem, because we need to signal the end of the ... and do not want an infinite loop.
+--        but we want the lexical value as well. need to think about this in more detail to get a truly workable solution
 --
                                   v <- getVar outerEnv input
                                   transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused -}
@@ -693,15 +678,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                else continueTransformWith $ result ++ [List []]
          Nil _ -> return t
          List l -> do
-        {- What's going on here is that if the pattern was a dotted list but the transform is not, we
-           need to "lift" the input up out of a list.
-TODO:
-some questions:
-- What if the transform is (a b c 1) or such? is this handled correctly? (maybe due to how pattern flag is set, not sure)
-- The list could be part of an ellipsis, right? I think similar logic probably needs to be above in the ellipsis case as well.
-  that complicates things because we would need to distinguish between an ellipsis and a dotted list in the transform, in
-  order to be able to figure out what to do...
--}
+            -- What's going on here is that if the pattern was a dotted list but the transform is not, we
+            -- need to "lift" the input up out of a list.
             if (eqVal isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
               then continueTransformWith $ result ++ (buildImproperList l)
               else continueTransformWith $ result ++ [t]
@@ -738,6 +716,7 @@ transformRule _ localEnv _ _ _ (Atom transform) = do
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
 transformRule _ _ _ _ _ transform = return transform
 
+-- | A helper function for transforming an improper list
 transformDottedList :: Env -> Env -> Int -> [Int] -> LispVal -> LispVal -> IOThrowsError LispVal
 transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List (DottedList ds d : ts)) = do
           lsto <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List ds)
@@ -800,7 +779,7 @@ continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result remaining
                        then return $ Nil ""  -- Nothing remains, no match
                        else return $ List [] -- Nothing remains, return empty list
 
--- Find an atom in a list; non-recursive (IE, a sub-list will not be inspected)
+-- |Find an atom in a list; non-recursive (IE, a sub-list will not be inspected)
 findAtom :: LispVal -> LispVal -> IOThrowsError LispVal
 findAtom (Atom target) (List (Atom a : as)) = do
   if target == a
