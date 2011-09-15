@@ -1,5 +1,7 @@
 v3.3
 ----
+- Completed a major overhaul of the macro code. In particular, husk now supports arbitrary nesting levels. Previous versions would not handle macros well that had more than 2 nesting levels of 0-or-more matches.
+- Macros now properly handle pairs. Previous versions of husk did not respect the fact that the trailing item in an improper list may be matched zero or more times. Also, husk macros now properly convert the transformed code into improper or proper lists depending upon the pattern, input, and transform.
 - Updated the parser to simplify improper lists; for example the following input: `'(1 2 . (3 . ()))` will now be converted to `(1 2 3)`
 
 v3.2
