@@ -15,15 +15,9 @@ This module contains the foreign function interface.
 -}
 module Language.Scheme.FFI (evalfuncLoadFFI) where
 
-import Language.Scheme.Macro
-import Language.Scheme.Numerical
-import Language.Scheme.Parser
-import Language.Scheme.Primitives
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
-import Data.Array
-import qualified Data.Map
 import IO hiding (try)
 
 import qualified GHC
@@ -45,7 +39,7 @@ evalfuncLoadFFI :: [LispVal] -> IOThrowsError LispVal
  - TODO: pass a list of functions to import. Need to make sure this is done in an efficient way
  - (IE, result as a list that can be processed) 
  -}
-evalfuncLoadFFI [cont@(Continuation env _ _ _ _), String targetSrcFile,
+evalfuncLoadFFI [(Continuation env _ _ _ _), String targetSrcFile,
                                                   String moduleName,
                                                   String externalFuncName,
                                                   String internalFuncName] = do
@@ -75,7 +69,7 @@ FUTURE: should be able to load multiple functions in one shot (?). -}
   defineVar env internalFuncName (IOFunc result) -- >>= continueEval env cont
 
 -- Overload that loads code from a compiled module
-evalfuncLoadFFI [cont@(Continuation env _ _ _ _), String moduleName, String externalFuncName, String internalFuncName] = do
+evalfuncLoadFFI [(Continuation env _ _ _ _), String moduleName, String externalFuncName, String internalFuncName] = do
   result <- liftIO $ defaultRunGhc $ do
     dynflags <- GHC.getSessionDynFlags
     _ <- GHC.setSessionDynFlags dynflags
