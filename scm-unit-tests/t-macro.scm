@@ -281,7 +281,7 @@
                      (vector-set! vec i i))
  (quote (loop (list vec vec) (list i (+ i 1)))))
 
-; Issue #9:
+; Issue #43:
 (define-syntax my-pair-test/06
   (syntax-rules ()
      ((_ var . step)
