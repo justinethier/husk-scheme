@@ -447,7 +447,6 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
       -- Define a pattern variable that is seen for the first time
       initializePatternVar _ ellipIndex pat val = do
         let flags = getListFlags ellipIndex listFlags 
---        _ <- defineVar (trace ("addPV pat = " ++ show pat) localEnv) pat (Matches.setData (List []) ellipIndex val)
         _ <- defineVar localEnv pat (Matches.setData (List []) ellipIndex val)
         _ <- defineNamespacedVar localEnv "improper pattern" pat $ Bool $ fst flags
         defineNamespacedVar localEnv "improper input" pat $ Bool $ snd flags
@@ -493,17 +492,6 @@ transformRule :: Env        -- ^ Outer, enclosing environment
                             -- ^ Must be a parameter as it mutates with each transform call
               -> LispVal    -- ^ The macro transformation, read out one atom at a time and rewritten to result
               -> IOThrowsError LispVal
-{- Notes
- -
- - the more I think about it, the more ellipsisList seems unnecessary. When transforming a zero-or-many
- - match the code can just start with an empty list and can append the transformed code to the result at
- - the current level. I think that will take care of everything
- -
- - simple example:
- -
- - ((list a ...) ...)
- -
- - -}
 
 {-
  - Recursively transform a list
@@ -683,41 +671,31 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 --                   case (trace ("var = " ++ show var) var) of
                    case (var) of
                      Nil "" -> do 
-                        --Issue #42: A 0 match case for var (input ran out in pattern), flag to calling code
+                        -- Fix for issue #42: A 0 match case for var (input ran out in pattern), flag to calling code
+                        --
+                        -- What's happening here is that the pattern was flagged because it was not matched in
+                        -- the pattern. We pick it up and in turn pass a special flag to the outer code (as t)
+                        -- so that it can finally be processed correctly.
                         wasPair <- getNamespacedVar localEnv "unmatched nary pattern variable" a
                         case wasPair of
                             Bool True -> return $ Nil "var (pair) not defined in pattern"
                             _ -> return $ Nil "var not defined in pattern"
                      Nil input -> do v <- getVar outerEnv input
                                      return v
--- TODO: why the hell is there another 'case' here when it is the same as the above one?
--- fix this up before the next release
-                     _ -> case (var) of
-                          List v -> do
-                               if ellipsisLevel > 0
-                                       then return $ appendNil (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput -- Take all elements, instead of one-at-a-time 
-                                       else if length v > 0 
-                                               then return var -- Just return the elements directly, so all can be appended
-                                               else return $ Nil "" -- A 0 match case, flag it to calling code
-                          _ -> if ellipsisLevel > 0
-                                  then throwError $ Default "Unexpected error processing data in transformRule" -- List req'd for 0-or-n match
-                                  else return var
-              else do
--- TODO: the TODO below has already been implemented, clean it up by moving the comment somewhere useful                  
-                -- TODO: need to determine if atom was within an nary-match in the pattern
-                -- the problem is that the pattern matching code will simply skip the pattern since input ends
-                -- will probably need to add code up there in order to flag it correctly down here
-                --
-                -- once we can flag it, we could return a special nil here such as "Continue" and could use that
-                -- to signal to the code below to simply skip over this atom (just like how the 0-match case is
-                -- handled above)
---                if ellipsisLevel > 0
---                   then return $ Nil "" -- No match, signal to the outer code... 
---                   else return $ Atom a
--- simple test cases:
--- (letrec ((x 1)) x)
--- (let* ((x 1)) x)
-                  return $ Atom a
+                     List v -> do
+                          if ellipsisLevel > 0
+                                  then -- Take all elements, instead of one-at-a-time
+                                       return $ appendNil (Matches.getData var ellipsisIndex) 
+                                                           isImproperPattern 
+                                                           isImproperInput 
+                                  else if length v > 0 
+                                          then return var -- Just return the elements directly, so all can be appended
+                                          else return $ Nil "" -- A 0 match case, flag it to calling code
+                     _ -> if ellipsisLevel > 0
+                             then -- List req'd for 0-or-n match
+                                  throwError $ Default "Unexpected error processing data in transformRule" 
+                             else return var
+              else return $ Atom a
       case t of
          Nil "var not defined in pattern" -> 
             if ellipsisLevel > 0
@@ -780,39 +758,34 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
           lsto <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List ds)
           case lsto of
             List lst -> do
+              -- Similar logic to the parser is applied here, where
+              -- results are transformed into either a list or pair depending upon whether
+              -- they form a proper list
+              --
+              -- d is an n-ary match, per Issue #34
+              r <- transformRule outerEnv localEnv 
+                                 ellipsisLevel -- OK not to increment here, this is accounted for later on
+                                 ellipsisIndex -- Same as above 
+                                 (List []) 
+                                 (List [d, Atom "..."])
+              case r of
+                   -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
+--                   List [List []] -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts) -- TODO: is this form still applicable, post Issue #34?
 
- -- TODO below: perhaps similar logic to the parser needs to be applied here, where
- --      the results are transformed into either a list or pair depending upon whether
- --      they form a proper list or not. think about this, I think this is what is supposed
- --      to happen, but the input in the pattern analysis step will need to change to 
- --      capture whether the input was a proper or improper list. hopefully the data stored to the
- --      input var can be altered to indicate this...
- --
-
-                           -- TODO: d is an n-ary match, per Issue #34
-                           r <- transformRule outerEnv localEnv 
-                                              ellipsisLevel -- OK not to increment here, this is accounted for later on
-                                              ellipsisIndex -- Same as above 
-                                              (List []) 
-                                              (List [d, Atom "..."])
-                           case r of
-                                -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
---                                List [List []] -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts) -- TODO: is this form still applicable, post Issue #34?
-
-                                List [] ->
-                                    transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
-                                Nil _ ->  -- Same as above, no match for d, so skip it 
-                                    transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
-                                {--
-                                -- FUTURE: Issue #9 - the transform needs to be as follows:
-                                --
-                                -- - transform into a list if original input was a list - code is below but commented-out
-                                - transform into a dotted list if original input was a dotted list 
-                                --
-                                -- Could implement this by calling a new function on input (ds?) that goes through it and
-                                -- looks up each atom that it finds, looking for its src. The src (or Nil?) would then be returned
-                                -- and used here to determine what type of transform is used. 
-                                --
+                   List [] ->
+                       transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
+                   Nil _ ->  -- Same as above, no match for d, so skip it 
+                       transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
+                   {--
+                   -- FUTURE: Issue #9 - the transform needs to be as follows:
+                   --
+                   -- - transform into a list if original input was a list - code is below but commented-out
+                   - transform into a dotted list if original input was a dotted list 
+                   --
+                   -- Could implement this by calling a new function on input (ds?) that goes through it and
+                   -- looks up each atom that it finds, looking for its src. The src (or Nil?) would then be returned
+                   -- and used here to determine what type of transform is used. 
+                   --
 -- List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList)
 --List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
 -}
@@ -828,11 +801,11 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
                                                     String "pair" -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList)
                                                     _ -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList)
                                                     -}
-                                List rst -> do
-                                    transformRule outerEnv localEnv ellipsisLevel ellipsisIndex 
-                                                 (buildTransformedCode result lst rst) (List ts)
-                                     -- OLD:(List $ result ++ [List $ lst ++ rst]) (List ts)
-                                _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
+                   List rst -> do
+                       transformRule outerEnv localEnv ellipsisLevel ellipsisIndex 
+                                    (buildTransformedCode result lst rst) (List ts)
+                        -- OLD:(List $ result ++ [List $ lst ++ rst]) (List ts)
+                   _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
             Nil _ -> return $ Nil ""
             _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
  where 
