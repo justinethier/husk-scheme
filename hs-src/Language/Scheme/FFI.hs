@@ -1,4 +1,18 @@
+{- |
+Module      : Language.Scheme.FFI
+Copyright   : Justin Ethier
+Licence     : MIT (see LICENSE in the distribution)
 
+Maintainer  : github.com/justinethier
+Stability   : experimental
+Portability : non-portable (GHC API)
+
+husk scheme interpreter
+
+A lightweight dialect of R5RS scheme.
+
+This module contains the foreign function interface.
+-}
 module Language.Scheme.FFI (evalfuncLoadFFI) where
 
 import Language.Scheme.Macro
