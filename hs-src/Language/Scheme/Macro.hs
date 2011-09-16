@@ -129,7 +129,8 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
    let is = tail inputVar
    let p = case pattern of
               DottedList ds d -> case ds of
-                                  -- Fix for Issue #44 - detect when pattern's match should be modified from a pair to an ...
+                                  -- Fix for Issue #44 - detect when pattern's match should 
+                                  -- be modified from a pair to an ellipsis
                                   (Atom l : ls) -> (List [Atom l, DottedList ls d], True)
                                   _ -> (pattern, False)
               _ -> (pattern, False)
