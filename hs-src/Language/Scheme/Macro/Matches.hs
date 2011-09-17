@@ -1,4 +1,4 @@
-{- |
+{- | 
 Module      : Language.Scheme.Macro.Matches
 Copyright   : Justin Ethier
 Licence     : MIT (see LICENSE in the distribution)
@@ -20,12 +20,12 @@ import Control.Exception
 --import Debug.Trace
 
 -- |Create a nested list
-create :: Int     -- ^ Number of nesting levels
+_create :: Int     -- ^ Number of nesting levels
        -> LispVal -- ^ Empty nested list
-create level 
+_create level 
     | level < 1     = Nil "" -- Error
     | level == 1    = List []
-    | otherwise = List [create $ level - 1]
+    | otherwise = List [_create $ level - 1]
 
 -- |Fill any empty "holes" in a list from the beginning to the given length
 --
@@ -95,70 +95,70 @@ setData (List lData) (i:is) val = do
                    else List $ (fst content) ++ [setData c is val] ++ (cs) 
 
 -- |Compare actual input with expected
-cmp :: LispVal -> LispVal -> IO ()
-cmp input expected = do
+_cmp :: LispVal -> LispVal -> IO ()
+_cmp input expected = do
   putStrLn $ show input
   putStrLn $ show $ assert (eqVal expected input) input
 
 -- |Run this function to test the above code
-test :: IO ()
-test = do
-  cmp (setData (List [Number 1, Number 2, Number 3, Number 4]) [4] (Number 5)) 
+_test :: IO ()
+_test = do
+  _cmp (setData (List [Number 1, Number 2, Number 3, Number 4]) [4] (Number 5)) 
                (List [Number 1, Number 2, Number 3, Number 4, Number 5])
 
-  cmp (setData (List [Number 1, Number 2, Number 3, Number 4]) [1] (Number 5)) 
+  _cmp (setData (List [Number 1, Number 2, Number 3, Number 4]) [1] (Number 5)) 
                (List [Number 1, Number 5, Number 2, Number 3, Number 4])
 
-  cmp (setData (List [List [Number 1, Number 2], List [Number 3, Number 4, Number 5]]) [1, 3] (Number 6)) 
+  _cmp (setData (List [List [Number 1, Number 2], List [Number 3, Number 4, Number 5]]) [1, 3] (Number 6)) 
                (List [List [Number 1, Number 2], List [Number 3, Number 4, Number 5, Number 6]])
 
-  cmp (setData (List [List [Number 1, Number 2], List [Number 3, Number 4, Number 5]]) [1, 2] (Number 6)) 
+  _cmp (setData (List [List [Number 1, Number 2], List [Number 3, Number 4, Number 5]]) [1, 2] (Number 6)) 
                (List [List [Number 1, Number 2], List [Number 3, Number 4, Number 6, Number 5]])
 
-  cmp (setData (List [List [Number 1, Number 2], List [Number 3, Number 4, Number 5]]) [0, 2] (Number 6)) 
+  _cmp (setData (List [List [Number 1, Number 2], List [Number 3, Number 4, Number 5]]) [0, 2] (Number 6)) 
                (List [List [Number 1, Number 2, Number 6], List [Number 3, Number 4, Number 5]])
 
-  let a = create 2
-  cmp a 
+  let a = _create 2
+  _cmp a 
       (List [List []])
 
   let b = setData a [0, 0] $ Atom "test"
-  cmp b (List [List [Atom "test"]])
+  _cmp b (List [List [Atom "test"]])
 
   let c = setData b [0, 1] $ Atom "test2"
-  cmp c (List [List [Atom "test", Atom "test2"]])
+  _cmp c (List [List [Atom "test", Atom "test2"]])
 
 
 -- An invalid test case because it attempts to initialize a leaf by adding at a non-zero leaf position.
---cmp (setData (List []) [0, 1, 2] $ Atom "test") 
+--_cmp (setData (List []) [0, 1, 2] $ Atom "test") 
 --               (List [List[List [], List[List [], List[], Atom "test"]]])
 --   A correct test is below:
-  cmp (setData (List []) [0, 1, 0] $ Atom "test") 
+  _cmp (setData (List []) [0, 1, 0] $ Atom "test") 
                (List [List[List [], List[Atom "test"]]])
 
   -- Illustrates an important point, that if we are adding into 
   -- a 'hole', we need to create a list there first
   let cc = setData b [1, 0] $ Atom "test2"
-  cmp cc (List [List [Atom "test"], List [Atom "test2"]])
+  _cmp cc (List [List [Atom "test"], List [Atom "test2"]])
 
   let cc2 = setData b [1, 4] $ Atom "test2"
-  cmp cc2 (List [List [Atom "test"], List [Atom "test2"]])
+  _cmp cc2 (List [List [Atom "test"], List [Atom "test2"]])
 
   let cc3 = setData b [4, 0] $ Atom "test2"
-  cmp cc3 (List [List [Atom "test"], List [], List [], List [], List [Atom "test2"]])
+  _cmp cc3 (List [List [Atom "test"], List [], List [], List [], List [Atom "test2"]])
 
-  cmp (setData (List []) [4, 0] (Number 5)) 
+  _cmp (setData (List []) [4, 0] (Number 5)) 
                (List [List [], List [], List [], List [], List [Number 5]])
 
-  cmp (getData (List [List [List [], List [Number 1, Number 2, Number 3, Number 4]]]) [0, 1, 2]) 
+  _cmp (getData (List [List [List [], List [Number 1, Number 2, Number 3, Number 4]]]) [0, 1, 2]) 
                (Number 3)
 
---  cmp (getData (List [List [List [], List [Number 1, Number 2, Number 3, Number 4]]]) [0, 1, 20]) 
+--  _cmp (getData (List [List [List [], List [Number 1, Number 2, Number 3, Number 4]]]) [0, 1, 20]) 
 --               (Nil "")
 
-  cmp (getData (List [List [List [], List [Atom "1", Number 2, Number 3, Number 4]]]) [0, 1, 0]) 
+  _cmp (getData (List [List [List [], List [Atom "1", Number 2, Number 3, Number 4]]]) [0, 1, 0]) 
                (Atom "1")
 
   -- Real world case, we would like to take the list (all leaves) at [0, 1]
-  cmp (getData (List [List [List [], List [Atom "1", Number 2, Number 3, Number 4]]]) [0, 1]) 
+  _cmp (getData (List [List [List [], List [Atom "1", Number 2, Number 3, Number 4]]]) [0, 1]) 
                (List [Atom "1", Number 2, Number 3, Number 4])
