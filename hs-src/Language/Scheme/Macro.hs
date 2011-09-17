@@ -638,15 +638,15 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
     else noEllipsis isDefined
 
   where
-    -- A temporary function to use input flags to append a '() to a list if necessary
--- TODO: only makes sense if the *transform* is a dotted list
+    -- A function to use input flags to append a '() to a list if necessary
+    -- Only makes sense to do this if the *transform* is a dotted list
     appendNil d (Bool isImproperPattern) (Bool isImproperInput) =
       case d of
          List lst -> if isImproperPattern && not isImproperInput
                         then List $ lst ++ [List []]
                         else List lst
          _ -> d
-    -- TODO: appendNil _ _ _ = throwError $ Default "Unexpected error in appendNil"
+    appendNil d _ _ = d -- Should never be reached...
 
     loadNamespacedBool namespc = do
         isDef <- liftIO $ isNamespacedBound localEnv namespc a
