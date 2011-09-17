@@ -356,8 +356,16 @@
 ((when condition . body) (if condition (begin . body) #f))))
 
 (define x -1)
-(when (negative? x)
-      (newline)
-      (display "bad number: negative"))
+(assert/equal
+  (when (negative? x)
+;        (newline)
+       '("bad number: negative"))
+ '("bad number: negative"))
+
+(assert/equal
+  (when (negative? 1)
+;        (newline)
+       '("bad number: negative"))
+  #f)
 
 (unit-test-handler-results)
