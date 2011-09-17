@@ -169,6 +169,10 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
 matchRule _ _ _ rule input = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
 
+TODO: let's try something dirt simple to start. just search the template for lambda forms (for now), and place any
+of the lambda's args into a rename table (template-symbol => gensym). May even want to just do a single pass through 
+the template and rename them right on the spot, both in the lambda definition and body. That would avoid problem of 
+having multiple lambdas with the same arg name, right? or is that unnecessary overkill?
 -- Issue #30
 {-------------------------
 -- Just some test code, this needs to be more sophisticated than simply finding a list of them.
