@@ -1,8 +1,14 @@
 v3.3
 ----
-- Completed a major overhaul of the macro code. In particular, husk now supports arbitrary nesting levels. Previous versions would not handle macros well that had more than 2 nesting levels of 0-or-more matches.
-- Macros now properly handle pairs. Previous versions of husk did not respect the fact that the trailing item in an improper list may be matched zero or more times. Also, husk macros now properly convert the transformed code into improper or proper lists depending upon the pattern, input, and transform.
+This release includes major improvements to the macro module. In particular:
+
+- husk now supports arbitrary nesting levels of macro 0-or-many matches (IE: `...`). Previous versions would not handle macros that had more than 2 nesting levels of 0-or-more matches.
+- Macros now correctly handle improper lists. Previous versions of husk did not respect the fact that the trailing item in an improper list may be matched zero or more times. Also, husk macros now properly convert the transformed code into improper or proper lists depending upon the pattern, input, and transform.
+- (do) is now defined in terms of the macro from R<sup>5</sup>RS.
+
+Other changes:
 - Updated the parser to simplify improper lists; for example the following input: `'(1 2 . (3 . ()))` will now be converted to `(1 2 3)`
+- Corrected the order of arguments to (fold). For example, the expression (fold (lambda (x y) x) 8 (list 1 2 3)) should yield 3, however in previous releases husk would incorrectly yield 8 because of the order of arguments.
 
 v3.2
 ----
