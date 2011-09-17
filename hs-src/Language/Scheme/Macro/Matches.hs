@@ -54,6 +54,7 @@ getData (List lData) (i:is) = do
           then getData (head lst) is
           else Nil "" -- Error: not enough elements in list
 getData val [] = val -- Base case: we have found the requested element
+getData val _ = val -- Should never be reached, just give up and return val 
 
 -- |Add an element to the given nested list
 setData :: LispVal -- ^ The nested list to modify
@@ -93,6 +94,8 @@ setData (List lData) (i:is) val = do
       (c:cs) -> if length is < 1
                    then List $ (fst content) ++ [val] ++ [c] ++ (cs) -- Base case - Requested pos must be one less than c
                    else List $ (fst content) ++ [setData c is val] ++ (cs) 
+
+setData _ _ val = val -- Should never be reached; just return val
 
 -- |Compare actual input with expected
 _cmp :: LispVal -> LispVal -> IO ()
