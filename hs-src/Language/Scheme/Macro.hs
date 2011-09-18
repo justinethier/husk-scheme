@@ -490,15 +490,6 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (DottedList
                                    ellipsisLevel -- Incremented in the list/list match below
                                    ellipsisIndex
                                    (flagDottedLists flags (True, False) $ length ellipsisIndex)
-{- TODO: prototype code for issue in test.scm
-checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(List (DottedList ps p : _)) input@(List (_ : _)) flags = do
-  loadLocal outerEnv localEnv identifiers 
-                                  (List $ ps ++ [p, Atom "..."])
-                                  input
-                                   ellipsisLevel -- Incremented in the list/list match below
-                                   ellipsisIndex
-                                   (flagDottedLists flags (True, False) $ length ellipsisIndex)
--}
 checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(List _) input@(List _) flags =
   loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
 
@@ -541,15 +532,6 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
              case (curT) of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
-
-{- TODO: refactor this code once list transformation works                               
-               -- Dotted list transform returned during processing...
-               List [Nil _, List _] -> if ellipsisIndex == 0
-                                -- First time through and no match ("zero" case). Use tail to move past the "..."
-                           then transformRule outerEnv localEnv 0 (List $ result) (List $ tail ts) (List [])
-                                -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
-                          else transformRule outerEnv localEnv 0 (List $ result) (List $ tail ts) (List [])
--}
                List _ -> transformRule outerEnv localEnv 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
@@ -558,12 +540,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
      else do
              lst <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List l)
              case lst of
--- OBSOLETE?                  List [Nil _, _] -> return lst
                   List _ -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [lst]) (List ts)
                   Nil _ -> return lst
--- TODO? seemed like a good idea but second-guessing this now:
---                  Nil _ -> --return (trace ("RETURNING NULL " ++ show transform ++ " , " ++ show lst) lst) -- TODO: seems wrong in some cases
---                           continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex (result ++ [List []]) (trace ("cont, ts = " ++ show ts ++ " lvl = " ++ show ellipsisLevel) ts)
                   _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisLevel]
 
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List ((Vector v) : ts)) = do
@@ -587,9 +565,6 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
              case lst of
                   List l -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [asVector l]) (List ts)
                   Nil _ -> return lst
--- TODO? seemed like a good idea but second-guessing this now:
---                  Nil _ -> return (trace ("RETURNING NULL " ++ show transform ++ " , " ++ show v) lst) -- TODO: seems wrong in some cases
---                           --continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result ts
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [Vector v]), Number $ toInteger ellipsisLevel]
 
  where asVector lst = (Vector $ (listArray (0, length lst - 1)) lst)
@@ -606,33 +581,20 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
              case curT of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts 
-{- TODO: needed?               -- This case is here because we need to process individual components of the pair to determine
-               -- whether we are done with the match. It is similar to above but not exact...
-               List [Nil _, List _] -> if ellipsisIndex == 0
-                                -- First time through and no match ("zero" case). Use tail to move past the "..."
-                           then transformRule outerEnv localEnv 0 (List $ result) (List $ tail ts) (List [])
-                                -- Done with zero-or-more match, append intermediate results (ellipsisList) and move past the "..."
-                           else transformRule outerEnv localEnv 0 (List $ result) (List $ tail ts) (List []) -}
                List t -> transformRule outerEnv localEnv 
                           ellipsisLevel -- Do not increment level, just wait until next iteration where incremented above
                           idx -- Keep incrementing each time
-                         (List $ result ++ t) transform -- TODO: does t have to be converted to a pair?
-    -- TODO: dotted list case?
+                         (List $ result ++ t) transform
                _ -> throwError $ Default "Unexpected error in transformRule"
      else do lst <- transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List [dl])
              case lst of
--- TODO: needed?                  List [Nil _, List _] -> return lst
-                  List l -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ l) (List ts) -- TODO: should l be a dotted list?
+                  List l -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ l) (List ts)
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [dl]), Number $ toInteger ellipsisLevel]
 
 -- Transform an atom by attempting to look it up as a var...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
   isDefined <- liftIO $ isBound localEnv a
-
-
---TODO: is this really what we want? Do we handle case where we are in a 0-to-many match but not at this level?
---  if (trace ("trans Atom: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex ++ " hasEllip = " ++ show hasEllipsis) hasEllipsis)
   if hasEllipsis
     then ellipsisHere isDefined
     else noEllipsis isDefined
@@ -793,41 +755,13 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
                                  (List [d, Atom "..."])
               case r of
                    -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
---                   List [List []] -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts) -- TODO: is this form still applicable, post Issue #34?
-
                    List [] ->
                        transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
                    Nil _ ->  -- Same as above, no match for d, so skip it 
                        transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
-                   {--
-                   -- FUTURE: Issue #9 - the transform needs to be as follows:
-                   --
-                   -- - transform into a list if original input was a list - code is below but commented-out
-                   - transform into a dotted list if original input was a dotted list 
-                   --
-                   -- Could implement this by calling a new function on input (ds?) that goes through it and
-                   -- looks up each atom that it finds, looking for its src. The src (or Nil?) would then be returned
-                   -- and used here to determine what type of transform is used. 
-                   --
--- List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList)
---List [rst] -> transformRule localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList) 
--}
--- TODO: both cases below do not take issue #9 into account
-{-                                List [rst] -> do
-                                    transformedCode <- buildTransformedCode result lst rst
-                                    transformRule outerEnv localEnv ellipsisLevel ellipsisIndex 
-                                                 (List transformedCode {-$ result ++ [DottedList lst rst]-}) (List ts)-}
-                                {- TODO: OBSOLETE CODE:
-                                   This method is broken, need to have more sophisticated pair/list processing
-                                                 src <- lookupPatternVarSrc localEnv $ List ds
-                                                 case src of
-                                                    String "pair" -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [DottedList lst rst]) (List ts) (List ellipsisList)
-                                                    _ -> transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [List $ lst ++ [rst]]) (List ts) (List ellipsisList)
-                                                    -}
                    List rst -> do
                        transformRule outerEnv localEnv ellipsisLevel ellipsisIndex 
                                     (buildTransformedCode result lst rst) (List ts)
-                        -- OLD:(List $ result ++ [List $ lst ++ rst]) (List ts)
                    _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
             Nil _ -> return $ Nil ""
             _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
@@ -841,7 +775,7 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
         [l] -> List $ results ++ [DottedList ps l]
         ls -> do
             -- Same concepts as above, but here we check the last entry of a list of elements
-            -- TODO: should be able to use a common function to encapsulate logic above and below
+            -- FUTURE: should be able to use a common function to encapsulate logic above and below
             case last ls of
               List [] -> List $ results ++ [List $ ps ++ init ls]
               List lls -> List $ results ++ [List $ ps ++ (init ls) ++ lls]
