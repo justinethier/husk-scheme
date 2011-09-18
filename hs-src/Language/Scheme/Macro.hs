@@ -140,6 +140,7 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
         case match of
            Bool False -> return $ Nil ""
            _ -> do
+                TODO: search for newly introduced identifiers here, per the paper.
 --                bindings <- findBindings localEnv pattern
                 transformRule outerEnv localEnv 0 [] (List []) template
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
