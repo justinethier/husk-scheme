@@ -1,27 +1,27 @@
-;;;
-;;; husk-scheme
-;;; http://github.com/justinethier/husk-scheme
-;;;
-;;; Written by Justin Ethier
-;;;
-;;; Test cases to ensure hygiene is preserved by macros
-;;;
-;(load "skim-unit.scm")
-;(unit-test-start "macro hygiene")
-;
-;(define-syntax orr 
-;  (syntax-rules () 
-;   ((orelse <expr1> <expr2>) 
-;    (let ((temp <expr1>)) 
-;         (if temp temp <expr2>)))))
-;
-;; TODO: this is broken currently
-;; see Issue #30
-;(assert/equal
-;    (let ((temp 4)) (orr #f temp))
-;    4)
-;;=> #f instead of 4
-;
+;;
+;; husk-scheme
+;; http://github.com/justinethier/husk-scheme
+;;
+;; Written by Justin Ethier
+;;
+;; Test cases to ensure hygiene is preserved by macros
+;;
+(load "skim-unit.scm")
+(unit-test-start "macro hygiene")
+
+(define-syntax orr 
+  (syntax-rules () 
+   ((orelse <expr1> <expr2>) 
+    (let ((temp <expr1>)) 
+         (if temp temp <expr2>)))))
+
+; TODO: this is broken currently
+; see Issue #30
+(assert/equal
+    (let ((temp 4)) (orr #f temp))
+    4)
+;=> #f instead of 4
+
 ;; TODO: test cases for each of the 4 classes of problems identified in Macros that Work:
 ;;
 ;; We can now identify four classes of capturing problems.
@@ -36,11 +36,10 @@
    (let ((temp ?b))
     (- (* temp temp) (* 4 ?a ?c))))))
 
-(write 
-(let ((temp 1))
-(discriminant temp 2 3))
-)
-; Above should be -8
+(assert/equal 
+    (let ((temp 1))
+        (discriminant temp 2 3))
+    -8) ; Above should be -8
 
 ; TODO: example of 2nd class
 ; Unfortunately the paper's example uses (let-syntax) which of course we do not support...
@@ -102,4 +101,8 @@
 ;    ((let-ex ((?name ?val)) ?body)
 ;     ((lambda (?name) ?body) ?val))))
 
-;(unit-test-handler-results)
+
+(write "TODO: example 1 from the paper")
+(write "TODO: example 2 from the paper")
+(write "TODO: example 3 from the paper")
+(unit-test-handler-results)
