@@ -141,6 +141,9 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
            Bool False -> return $ Nil ""
            _ -> do
                 TODO: search for newly introduced identifiers here, per the paper.
+
+                I wonder if it is too early to start simple, and implement renaming in procedure abstration (IE, lambda vars)
+                per the paper... that would be a small step towards the full implementation
 --                bindings <- findBindings localEnv pattern
                 transformRule outerEnv localEnv 0 [] (List []) template
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
