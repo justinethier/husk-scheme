@@ -34,7 +34,7 @@ module Language.Scheme.Macro
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import qualified Language.Scheme.Macro.Matches as Matches
--- TODO: import qualified Language.Scheme.Primitives (gensym)
+import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
 import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
@@ -144,8 +144,8 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
                 -- search for newly introduced identifiers here, per the paper.
                 -- Will start simple, and implement renaming in procedure abstration (IE, lambda vars)
                 --  per the paper... that would be a small step towards the full implementation
-                _ <- findBindings outerEnv localEnv identifiers template --pattern?
-                transformRule outerEnv localEnv 0 [] (List []) template
+                b <- findBindings outerEnv (trace ("find bindings for: " ++ show template) localEnv) identifiers template [] --pattern?
+                transformRule outerEnv (trace ("bindings = " ++ show b ++ " template = " ++ show template) localEnv) 0 [] (List []) template
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
 
  where
@@ -173,20 +173,27 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
 matchRule _ _ _ rule input = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
 
-findBindings :: Env -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
+findBindings :: Env -> Env -> LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 
-findBindings outerEnv localEnv identifiers (List (Atom "lambda" : List vars : ls)) = do
-  saveVars vars
-  findBindings outerEnv localEnv identifiers (List (trace ("TODO: rename vars: " ++ show vars) ls))
- where 
-  saveVars (v : vs) = do
-    defineNamespacedVar localEnv "renamed vars" v $ gensym v  
-    saveVar vs
-  saveVar [] = return $ Bool True
-findBindings outerEnv localEnv identifiers (List (_ : ls)) = do
-  findBindings outerEnv localEnv identifiers (List ls)
+findBindings outerEnv localEnv identifiers (List (Atom "lambda" : List vars : ls)) bindings = do
+--  saveVars vars
+  findBindings outerEnv localEnv identifiers (List ls) (bindings ++ (mapM (\v -> _gensym $ " " ++ v) vars)) 
+{- where 
+  saveVars (Atom v : vs) = do
+    defineNamespacedVar localEnv "renamed vars" v $ String "TODO" -- TODO: $ gensym v  
+    saveVars vs
+  saveVars (_: vs) = saveVars vs
+  saveVars [] = return $ Bool True-}
 
-findBindings _ _ _ _ = return $ Bool True 
+findBindings outerEnv localEnv identifiers (List (List l : ls)) bindings = do
+  b <- findBindings outerEnv localEnv identifiers (List l) bindings
+  case b of
+    List bb -> findBindings outerEnv localEnv identifiers (List ls) bb
+
+findBindings outerEnv localEnv identifiers (List (_ : ls)) bindings = do
+  findBindings outerEnv localEnv identifiers (List ls) bindings
+
+findBindings outerEnv localEnv _ val b = return $ List b
 
 -- Issue #30
 {-------------------------
