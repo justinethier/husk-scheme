@@ -125,4 +125,8 @@
 ; why is list not a free identifier but the other symbols are?
 ; is it because of the algorithm's equations in Fig 2?
 
+(define-syntax test
+  (syntax-rules ()
+    ((_)
+     ((lambda (x) 'x) 1))))
 
