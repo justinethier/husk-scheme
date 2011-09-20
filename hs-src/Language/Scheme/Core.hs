@@ -15,14 +15,13 @@ This module contains Core functionality, primarily Scheme expression evaluation.
 -}
 
 module Language.Scheme.Core
-    (
-      eval
+    ( eval
     , evalLisp
     , evalString
     , evalAndPrint
     , primitiveBindings
     ) where
-import Language.Scheme.FFI
+import qualified Language.Scheme.FFI
 import Language.Scheme.Macro
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
@@ -729,14 +728,13 @@ evalfuncCallCC _ = throwError $ NumArgs 1 []
 
 {- Primitive functions that extend the core evaluator -}
 evalFunctions :: [(String, [LispVal] -> IOThrowsError LispVal)]
-evalFunctions = [
-                    ("apply", evalfuncApply)
+evalFunctions =  [  ("apply", evalfuncApply)
                   , ("call-with-current-continuation", evalfuncCallCC)
                   , ("call-with-values", evalfuncCallWValues)
                   , ("dynamic-wind", evalfuncDynamicWind)
                   , ("eval", evalfuncEval)
                   , ("load", evalfuncLoad)
-                  , ("load-ffi", evalfuncLoadFFI) -- Non-standard extension
+                  , ("load-ffi", Language.Scheme.FFI.evalfuncLoadFFI) -- Non-standard extension
                 ]
 {- I/O primitives
 Primitive functions that execute within the IO monad -}
