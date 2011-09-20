@@ -18,7 +18,6 @@ module Language.Scheme.FFI (evalfuncLoadFFI) where
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
-import IO hiding (try)
 
 import qualified GHC
 import qualified GHC.Paths (libdir)
