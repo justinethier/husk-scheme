@@ -1,0 +1,130 @@
+This document covers the analysis of various development tasks occurring on this branch.
+
+----------------------------------------------------------------
+Problem: nesting of zero-or-many matches
+Variables are not captured properly when matches occur at multiple depth levels. For example, consider the following example:
+
+(define-syntax nesting-test
+  (syntax-rules ()
+    ((test a b (c d (e f ...) ...) ...)
+     (quote ((e f ...) ...) ...))))
+(write (nesting-test 1 2 (3 4 (5 6 7 8 9 10))))
+
+Here, the macro actually crashes husk v3.2 because we do not properly account for the nesting levels.
+In order to do so, we need to keep track of the ellipsis nesting level, both during pattern matching and transformation.
+
+Storage of data for variable-length inputs (IE, variables captured by a ...)
+----------------------------------------------------------------------------
+
+Data will be stored as a list at each depth level. 
+Note: non-zero_or_many vars could be stored in a list as well to generalize storage, but this is not necessary
+
+How to track depth level of each var? We could use a different namespace for each depth, but that makes it harder to figure out if a var name is already taken in another namespace. Instead, we can just have a separate namespace that keeps track of the depth level for each variable.
+
+What does the data look like at each depth level? Here are some examples:
+
+ 1 - (a b)
+ 2 - ((a b) (c d) (e))
+ 3 - (((a b) (c d)) ((e)))
+ etc...
+
+TODO: think about this, and characterize it better. Is it just a list of depth n for each level? any edge cases to be concerned of? How to build and traverse it effectively?
+
+The data structure discussed here must be populated during pattern matching (in the Atom function), and must be read by the transformation code (again, in the transformRule's Atom function). I believe logic will be isolated to those two functions, although they will require new inputs (see below)
+
+loadLocal
+---------
+Need a new variable:
+
+- ellipsisLevel - integer - used to track the current ellipsis depth level
+
+This variable will be used to let the atom storage level know how to store each variable. A separate ellipsisIndex is not required here because we just append to the existing list; the index is implicit with the length of the list
+
+nesting level is incremented when True is passed as hasEllipsis (one place during list/list case)
+also need to keep in mind that when localHasEllipse is set, then the ellipse level must be incremented by one as well.
+
+level decremented by one when this function moves past an ellipsis (see: "must be finished with ..."). I think this is the only place...?
+UPDATE - does that make sense? Maybe we don't need to decrement at all, since when a (+1) function returns, it will automatically set level back... will that work???
+
+TODO: need to read http://community.schemewiki.org/?scheme-faq-macros and make sure it aligns with this design approach
+
+checkLocal
+----------
+We need to pass the nesting level to this function, instead of a boolean. The nesting level is 0 if there is no ellipsis in play. Otherwise it
+is an integer from 1-to-n.
+
+The numeric input will be used in the Atom match, to store data accordingly, depending upon the depth level.
+
+The other functions (vector, list, pair) that use 'hasEllipsis' will now pass the depth level instead.
+
+transformRule
+-------------
+
+Instead of ellipsisIndex we need 2 new variables:
+
+ - ellisisIndex - List of integers - serves same purpose as current var, but will keep track of the current ellipsis index at each depth level
+ - ellipsisLevel - integer - Ellipsis depth level, 0-n - Used to track current depth level
+
+TBD: how to maintain values of both vars
+
+Earlier notes: 
+       (Can we just increment ellipsisIndex when we say (ellipsisIndex + 1) throughout the code? is it really that simple?
+        Assume ellipsisIndex would need to be decremented when the code says we are moving past the "...")
+
+
+
+
+----------------------------------------------------------------
+Problem: n-ary macros
+Analysis for changes required to implement nary macros
+
+common
+------
+Common function to break apart a list into a first part (n, same len as dotted list), and a second part with the remaining items
+
+
+
+checkLoad
+---------
+There are two cases here where the pattern is a dotted list. I suggest both just pass the pattern/input to loadLocal for detailed processing
+
+loadLocal
+---------
+This function needs to be extended to handle loading of an nary macro:
+loadLocal outerEnv localEnv identifiers pattern input hasEllipsis outerHasEllipsis = do
+
+There are two cases:
+
+DottedList / List
+-----------------
+
+Match case would be:
+       ((DottedList ps p), (List (i : is)) -> do
+
+In order to match, we need to compare ps (of length n) with the first n elements of i:is. If they match, we then need to compare the remaining elements of i:is (of length nn) with a list containing nn copies of p. This code would probably be the same as in the below case, and I think a common function could be used.
+
+TBD: how to record that input is a list or a pair? We should be able to check whether p is an atom, and if so, store a new variable named p in a new namespace (say, "nary") to indicate the input form.
+       
+DottedList / DottedList
+-----------------------
+
+Basically for a dotted list we:
+- match all elements of ps with the first elements of is (of the same length as is)
+- match remaining elements of is (and i) against p. This match needs to set a variable such as hasEllipsis (or a new one) to indicate that an atom in the pattern will be loaded up as a variable to unload during transformation
+
+The second part of this match could either iterate over remaining i members, or it could construct a list of i members as well as a corresponding list of the same length (0 to n) but each member is p. Then could just use loadLocal to process both lists (TBD: I *think* this would work)
+
+
+transform
+---------
+Still a work in progress. There is a lot going on here :)
+
+As a bonus, we should be able to address Issue #9 as part of this change
+
+Analysis, at a minimum:
+
+transformDottedList - when transforming ds, only need to transform the first n items in the input list, where n is the length of ds. The remaining items are dealt with later.
+
+When handling the case statement, need to add a case for this n match. Somehow need to keep matching d until either all remaining input items are read or there is a mismatch (error). Not quite sure how this code will be structured yet - perhaps we could call a function to take care of this work.
+
+Tricky part is to tell the other code (specifically - or maybe just - transformAtom) that we are in a 0-n match case.
