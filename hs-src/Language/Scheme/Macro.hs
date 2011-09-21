@@ -176,14 +176,20 @@ matchRule _ _ _ rule input = do
 findBindings :: Env -> Env -> LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 
 findBindings outerEnv localEnv identifiers (List (Atom "lambda" : List vars : ls)) bindings = do
-  _ <- saveVars vars
-  findBindings outerEnv localEnv identifiers (List ls) (bindings ++ vars) 
- where 
-  saveVars (Atom v : vs) = do
-    defineNamespacedVar (trace ("renamed var:" ++ v) localEnv) "renamed vars" v $ Atom $ v ++ "-TEST" -- TODO: a temporary rename used for testing  
-    saveVars vs
-  saveVars (_: vs) = saveVars vs
-  saveVars [] = return $ Bool True
+  renamedVars <- saveVars vars []
+  findBindings outerEnv localEnv identifiers (List ls) (appendBindings bindings renamedVars) 
+ where
+  appendBindings b (List vars) = b ++ vars
+  appendBindings b _ = b
+
+  saveVars :: [LispVal] -> [LispVal] -> IOThrowsError LispVal
+  saveVars (Atom "..." : vs) renamedVars = saveVars vs renamedVars -- The ellipsis is reserved; skip it
+  saveVars (Atom v : vs) renamedVars = do
+    renamed <- _gensym v
+    defineNamespacedVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) localEnv) "renamed vars" v renamed -- TODO: a temporary rename used for testing  
+    saveVars vs $ renamedVars ++ [Atom v]
+  saveVars (_: vs) renamedVars = saveVars vs renamedVars
+  saveVars [] renamedVars = return $ List renamedVars
 
 findBindings outerEnv localEnv identifiers (List (List l : ls)) bindings = do
   b <- findBindings outerEnv localEnv identifiers (List l) bindings
