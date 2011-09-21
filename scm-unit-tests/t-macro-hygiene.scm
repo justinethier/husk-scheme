@@ -15,6 +15,9 @@
     (let ((temp <expr1>)) 
          (if temp temp <expr2>)))))
 
+TODO: in order to get this to work, I think we need to implement more of the algorithm from the paper,
+where vars introduced by a macro are properly renamed
+
 ; TODO: this is broken currently
 ; see Issue #30
 ;(assert/equal
