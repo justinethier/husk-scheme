@@ -95,7 +95,11 @@
 ) ; Expected: ("unreliable")
 |#
 
-; TODO: example of fourth class 
-
+; Example of fourth class 
+; TODO: not exactly sure how to work code from paper into a test case
+;(define-syntax let-ex
+;  (syntax-rules ()
+;    ((let-ex ((?name ?val)) ?body)
+;     ((lambda (?name) ?body) ?val))))
 
 ;(unit-test-handler-results)
