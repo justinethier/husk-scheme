@@ -118,3 +118,9 @@
   (push "unreliable" cons)
   cons)
 
+; Questions about the paper:
+; why is e1 |- list -> list?
+; why is list not a free identifier but the other symbols are?
+; is it because of the algorithm's equations in Fig 2?
+
+
