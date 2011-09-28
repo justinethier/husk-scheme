@@ -34,9 +34,10 @@ module Language.Scheme.Macro
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import qualified Language.Scheme.Macro.Matches as Matches
+-- TODO: import qualified Language.Scheme.Primitives (gensym)
 import Control.Monad.Error
 import Data.Array
---import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -140,11 +141,10 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
         case match of
            Bool False -> return $ Nil ""
            _ -> do
-                TODO: search for newly introduced identifiers here, per the paper.
-
-                I wonder if it is too early to start simple, and implement renaming in procedure abstration (IE, lambda vars)
-                per the paper... that would be a small step towards the full implementation
---                bindings <- findBindings localEnv pattern
+                -- search for newly introduced identifiers here, per the paper.
+                -- Will start simple, and implement renaming in procedure abstration (IE, lambda vars)
+                --  per the paper... that would be a small step towards the full implementation
+                _ <- findBindings outerEnv localEnv identifiers template --pattern?
                 transformRule outerEnv localEnv 0 [] (List []) template
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
 
@@ -173,13 +173,26 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
 matchRule _ _ _ rule input = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
 
+findBindings :: Env -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
+
+findBindings outerEnv localEnv identifiers (List (Atom "lambda" : List vars : ls)) = do
+  saveVars vars
+  findBindings outerEnv localEnv identifiers (List (trace ("TODO: rename vars: " ++ show vars) ls))
+ where 
+  saveVars (v : vs) = do
+    defineNamespacedVar localEnv "renamed vars" v $ gensym v  
+    saveVar vs
+  saveVar [] = return $ Bool True
+findBindings outerEnv localEnv identifiers (List (_ : ls)) = do
+  findBindings outerEnv localEnv identifiers (List ls)
+
+findBindings _ _ _ _ = return $ Bool True 
+
 -- Issue #30
 {-------------------------
 -- Just some test code, this needs to be more sophisticated than simply finding a list of them.
 -- because we probably need to know the context - IE, (begin ... (lambda ...) (define ...) x) - x should
 -- not be rewritten if it is the name of one of the lambda arguments
-findBindings :: Env -> LispVal -> IOThrowsError LispVal
-findBindings localEnv pattern@(List (_ : ps)) = searchForBindings localEnv (List ps) [] 
 
 searchForBindings :: Env -> LispVal -> [LispVal] -> IOThrowsError LispVal
 --env pattern@(List (List (Atom "lambda" : List bs : _) : ps)) bindings = searchForBindings env (List ps) (bindings ++ bs) 

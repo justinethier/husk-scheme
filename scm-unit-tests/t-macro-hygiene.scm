@@ -9,18 +9,20 @@
 ;(load "skim-unit.scm")
 ;(unit-test-start "macro hygiene")
 ;
-;(define-syntax orr 
-;  (syntax-rules () 
-;   ((orelse <expr1> <expr2>) 
-;    (let ((temp <expr1>)) 
-;         (if temp temp <expr2>)))))
-;
-;; TODO: this is broken currently
-;; see Issue #30
+(define-syntax orr 
+  (syntax-rules () 
+   ((orelse <expr1> <expr2>) 
+    (let ((temp <expr1>)) 
+         (if temp temp <expr2>)))))
+
+; TODO: this is broken currently
+; see Issue #30
 ;(assert/equal
-;    (let ((temp 4)) (orr #f temp))
+(write
+    (let ((temp 4)) (orr #f temp))
+)
 ;    4)
-;;=> #f instead of 4
+;=> #f instead of 4
 ;
 ;;; TODO: test cases for each of the 4 classes of problems identified in Macros that Work:
 ;;;
@@ -108,15 +110,15 @@
 ;(unit-test-handler-results)
 
 ; FUTURE: once this works, should also test the let-syntax version
-(define-syntax push
-  (syntax-rules ()
-    ((push ?v ?x)
-     (set! ?x (cons ?v ?x)))))
-
-(let ((pros (list "cheap" "fast"))
-      (cons (list)))
-  (push "unreliable" cons)
-  cons)
+;(define-syntax push
+;  (syntax-rules ()
+;    ((push ?v ?x)
+;     (set! ?x (cons ?v ?x)))))
+;
+;(let ((pros (list "cheap" "fast"))
+;      (cons (list)))
+;  (push "unreliable" cons)
+;  cons)
 
 ; Questions about the paper:
 ; why is e1 |- list -> list?
