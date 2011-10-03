@@ -176,14 +176,14 @@ matchRule _ _ _ rule input = do
 findBindings :: Env -> Env -> LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 
 findBindings outerEnv localEnv identifiers (List (Atom "lambda" : List vars : ls)) bindings = do
---  saveVars vars
-  findBindings outerEnv localEnv identifiers (List ls) (bindings ++ (mapM (\v -> _gensym $ " " ++ v) vars)) 
-{- where 
+  _ <- saveVars vars
+  findBindings outerEnv localEnv identifiers (List ls) (bindings ++ vars) 
+ where 
   saveVars (Atom v : vs) = do
-    defineNamespacedVar localEnv "renamed vars" v $ String "TODO" -- TODO: $ gensym v  
+    defineNamespacedVar (trace ("renamed var:" ++ v) localEnv) "renamed vars" v $ Atom $ v ++ "-TEST" -- TODO: a temporary rename used for testing  
     saveVars vs
   saveVars (_: vs) = saveVars vs
-  saveVars [] = return $ Bool True-}
+  saveVars [] = return $ Bool True
 
 findBindings outerEnv localEnv identifiers (List (List l : ls)) bindings = do
   b <- findBindings outerEnv localEnv identifiers (List l) bindings
@@ -690,7 +690,11 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                              then -- List req'd for 0-or-n match
                                   throwError $ Default "Unexpected error processing data in transformRule" 
                              else return var
-              else return $ Atom a
+              else do
+                isRenameDefined <- liftIO $ isNamespacedBound localEnv "renamed vars" a
+                case (trace ("isRenamed: " ++ show isRenameDefined ++ " var: " ++ show a) isRenameDefined) of
+                  True -> getNamespacedVar localEnv "renamed vars" a
+                  _ -> return $ Atom a
       case t of
          Nil "var not defined in pattern" -> 
             if ellipsisLevel > 0
