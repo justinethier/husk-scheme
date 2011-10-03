@@ -9,18 +9,18 @@
 ;(load "skim-unit.scm")
 ;(unit-test-start "macro hygiene")
 ;
-;(define-syntax orr 
-;  (syntax-rules () 
-;   ((orelse <expr1> <expr2>) 
-;    (let ((temp <expr1>)) 
-;         (if temp temp <expr2>)))))
-;
-;; TODO: this is broken currently
-;; see Issue #30
-;;(assert/equal
-;(write
-;    (let ((temp 4)) (orr #f temp))
-;)
+(define-syntax orr 
+  (syntax-rules () 
+   ((orelse <expr1> <expr2>) 
+    (let ((temp <expr1>)) 
+         (if temp temp <expr2>)))))
+
+; TODO: this is broken currently
+; see Issue #30
+;(assert/equal
+(write
+    (let ((temp 4)) (orr #f temp))
+)
 ;    4)
 ;=> #f instead of 4
 ;
