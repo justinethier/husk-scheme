@@ -633,21 +633,29 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 --  - lambda, to handle as procedure abstraction
 --  - a macro, to handle as a macro call
 --
-  let tempDebug x = if (testBit modeFlags modeFlagIsFuncApp)
-                     then (trace ("possible function application detected for: " ++ a ++ " trans = " ++ show transform) x)
-                     else x
+  let tempDebug x = x --if (testBit modeFlags modeFlagIsFuncApp)
+                     --then (trace ("possible function application detected for: " ++ a ++ " trans = " ++ show transform) x)
+                     --else x
 
   isDefinedAsMacro <- liftIO $ isNamespacedRecBound outerEnv macroNamespace a
 
   if (testBit modeFlags modeFlagIsFuncApp) && isDefinedAsMacro
              -- Test code to explore how to call the expander from within another macro...
---
+-- 
 -- TODO: am getting hung up above, but seems related to this code; perhaps we need to expand an nary
 -- match prior to expanding a sub-macro? need to investigate further
 -- see: (if test1 (and test2 ...) in stdlib
 --
-     then do expanded <- macroEval outerEnv transform
-             return $ List $ (trace ("t = " ++ show transform ++ " ex = " ++ show expanded) result) ++ [expanded]
+-- Right, the issue is that (and) is a recursive macro. I think pattern variables need to be filled in before
+-- recursively expanding the inner (and)?
+--
+ NEXT STEP:
+-- I see the problem now, the inner macro expands to 2, which we return from here as (2) - this causes
+-- eval to choke since there is no way to evaluate (2)... crap!
+--
+     then do expandedTransform <- transformRule (trace ("Expanding sub-macro " ++ show a ) outerEnv) localEnv ellipsisLevel ellipsisIndex (List []) (List ts) 0
+             expanded <- macroEval outerEnv (trace ("t = " ++ show transform ++ " ex = " ++ show expandedTransform) expandedTransform)
+             return $ List $ ((trace ("expanded = " ++ show expanded ++ " result = " ++ show result) result)) ++ [expanded]
      else do
              isDefined <- liftIO $ isBound localEnv a
              if tempDebug (hasEllipsis)
