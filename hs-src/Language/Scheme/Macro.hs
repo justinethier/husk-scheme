@@ -653,9 +653,25 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 -- I see the problem now, the inner macro expands to 2, which we return from here as (2) - this causes
 -- eval to choke since there is no way to evaluate (2)... crap!
 --
+-- Do we need a new return type for transformRule? It would contain the following:
+--  - the transformed expression (what is List or Nil today)
+--  - an environment?
+--  - perhaps a boolean or new field to indicate no match, instead of using Nil (which is more error prone)
+--
+-- My main concern here is that by boxing / unboxing each time transformRule is called, there will be
+-- additional overhead, since we need to create the return object each time, and then we would need
+-- to inspect the contents of it. Then again, we are already inspecting the return contents now... it
+-- may just amount to a few more constructor calls and some more memory being used.
+--
+-- But I think we have to go this route when hygiene is introduced because it will need to return
+-- env's. BUT, is localEnv good enough to handle that? need to consider which env's will need to
+-- be manipulated, and what vars will be stored where
+--
      then do expandedTransform <- transformRule (trace ("Expanding sub-macro " ++ show a ) outerEnv) localEnv ellipsisLevel ellipsisIndex (List []) (List ts) 0
              expanded <- macroEval outerEnv (trace ("t = " ++ show transform ++ " ex = " ++ show expandedTransform) expandedTransform)
-             return $ List $ ((trace ("expanded = " ++ show expanded ++ " result = " ++ show result) result)) ++ [expanded]
+             case ((trace ("expanded = " ++ show expanded ++ " result = " ++ show result) expanded)) of
+               List r -> return $ List $ result ++ r
+               _ -> return $ List $ result ++ [expanded]
      else do
              isDefined <- liftIO $ isBound localEnv a
              if tempDebug (hasEllipsis)
