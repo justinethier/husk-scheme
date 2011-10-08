@@ -642,21 +642,25 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 
 -- Transform an atom by attempting to look it up as a var...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) inputModeFlags = do
--- TODO: function application only matters if we find:
---  - lambda, to handle as procedure abstraction
---  - a macro, to handle as a macro call
---
 
   isDefinedAsMacro <- liftIO $ isNamespacedRecBound outerEnv macroNamespace a
 
---TODO: if function application and quote, then set the quote bit... then do not call into the
---      below if a quote is active
-
+  -- The macro subsystem needs to actively scan the template for binding constructs
+  -- and macros. These only matter if they are at the start of a list (function application) 
+  -- since otherwise they would not be executed as such.
+  --
+  -- Function application only matters if we find:
+  --  - lambda, to handle as procedure abstraction (TODO: code this)
+  --  - a macro, to handle as a macro call
+  --  - quote marks, so we skip any quoted (literal) constructs - TODO: is this always the case that we skip? or is it not that simple??
+  --
+-- TODO: what about quasi-quotation? This probably is not handled correctly, but need to figure out what the
+--       correct behavior is for a splice within a quasiquoted section of a template.
   if testBit inputModeFlags modeFlagIsFuncApp
-     then if isDefinedAsMacro 
+     then if isDefinedAsMacro && not (testBit inputModeFlags modeFlagIsQuoted) -- Do not expand quoted macros 
              then expandMacro
              else if a == "quote"
-                     then expandLisp inputModeFlags -- TODO: change mode flags 
+                     then expandLisp $ setBit inputModeFlags modeFlagIsQuoted -- Set the quoted flag
                      else expandLisp inputModeFlags 
      else expandLisp inputModeFlags
 

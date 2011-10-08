@@ -350,6 +350,9 @@
 (assert/equal (orr-debugging 1 1)
               '(let ((temp 1)) (if temp temp 1)))
 
+(assert/equal (orr-debugging 1 1)
+              `(let ((temp 1)) (if temp temp 1)))
+
 ; Issue #44:
 (define-syntax when
 (syntax-rules ()
