@@ -133,3 +133,9 @@ where vars introduced by a macro are properly renamed
     ((_)
      ((lambda (very-long-name) 'very-long-name) 1))))
 (test)
+
+
+
+; TODO: will need test cases for nested lambda's. for example, something like (could be a bad example):
+;
+; (lambda (x) (lambda (x) x))

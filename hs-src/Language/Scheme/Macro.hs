@@ -659,12 +659,16 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   if testBit inputModeFlags modeFlagIsFuncApp
      then if isDefinedAsMacro && not (testBit inputModeFlags modeFlagIsQuoted) -- Do not expand quoted macros 
              then expandMacro
-             else if a == "quote"
-                     then expandLisp $ setBit inputModeFlags modeFlagIsQuoted -- Set the quoted flag
-                     else expandLisp inputModeFlags 
+             else expandFuncApp a
      else expandLisp inputModeFlags
 
   where
+    -- Expand from an atom in the function application position
+    expandFuncApp :: String -> IOThrowsError LispVal
+    expandFuncApp "quote" = expandLisp $ setBit inputModeFlags modeFlagIsQuoted -- Set the quoted flag
+    --expandFuncApp "lambda" = TODO --expandLisp inputModeFlags
+    expandFuncApp _ = expandLisp inputModeFlags
+
     -- Expand basic Lisp code using the normal means...
     expandLisp modeFlags = do
       isDefined <- liftIO $ isBound localEnv a
