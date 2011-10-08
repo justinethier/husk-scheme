@@ -164,11 +164,14 @@ data LispVal = Atom String
      --   because syntax objects are stored in the same environments and 
      --   manipulated by the same functions as regular variables.
  | SyntaxResult { synExpanded :: [LispVal] -- Expanded syntax
-                , synNoMatch :: Bool  -- True if an nary (0-or-more match) pattern variable is not matched
+                , synMatched :: Bool  -- True unless an nary (0-or-more match) pattern variable is not matched
    } -- ^Internal use only
  | EOF
  | Nil String
  -- ^Internal use only; do not use this type directly.
+
+-- |A helper function to create a syntax result
+normalSyntaxResult lisp = SyntaxResult lisp True
 
 -- |Container to hold code that is passed to a continuation for deferred execution
 data DeferredCode =

@@ -85,6 +85,9 @@ macroEval env lisp@(List (Atom x : _)) = do
   isDefined <- liftIO $ isNamespacedRecBound env macroNamespace x
   isDefinedAsVar <- liftIO $ isBound env x -- TODO: Not entirely correct; for example if a macro and var 
                                            -- are defined in same env with same name, which one should be selected?
+
+-- TODO: interesting that a simple (+) results in macroEval being called twice...
+--       should see if the performance can be improved, at some point
   if (trace ("entering macroEval. lisp = " ++ show lisp) isDefined) && not isDefinedAsVar 
      then do
        (List (Atom "syntax-rules" : (List identifiers : rules))) <- getNamespacedVar env macroNamespace x
@@ -571,7 +574,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
              lst <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List l) $ setModeFlagIsFuncApp modeFlags
              case lst of
                   -- TODO: example code for how this will work... would eventually replace the other types in this case
-                  SyntaxResult {-[List-} r noMatch -> do
+                  SyntaxResult r noMatch -> do
                     transformRule outerEnv localEnv 
                               ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                               idx -- Must keep index since it is incremented each time
@@ -637,13 +640,11 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 --  - lambda, to handle as procedure abstraction
 --  - a macro, to handle as a macro call
 --
-  let tempDebug x = x --if (testBit modeFlags modeFlagIsFuncApp)
-                     --then (trace ("possible function application detected for: " ++ a ++ " trans = " ++ show transform) x)
-                     --else x
 
   isDefinedAsMacro <- liftIO $ isNamespacedRecBound outerEnv macroNamespace a
 
-  if ((trace ("entering transform(atom). transform = " ++ show transform) testBit) modeFlags modeFlagIsFuncApp) && isDefinedAsMacro
+  if (testBit modeFlags modeFlagIsFuncApp) && isDefinedAsMacro -- && False -- TODO: disabling this for now... going to refactor first
+--  if ((trace ("entering transform(atom). transform = " ++ show transform) testBit) modeFlags modeFlagIsFuncApp) && isDefinedAsMacro
              -- Test code to explore how to call the expander from within another macro...
 -- 
 -- TODO: am getting hung up above, but seems related to this code; perhaps we need to expand an nary
@@ -676,7 +677,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
              return $ SyntaxResult (result ++ (trace ("a = " ++ a ++ " t = " ++ show transform ++ " ex = " ++ show expandedTransform ++ " expanded = " ++ show expanded ) [expanded])) False
      else do
              isDefined <- liftIO $ isBound localEnv a
-             if tempDebug (hasEllipsis)
+             if hasEllipsis
                then ellipsisHere isDefined
                else noEllipsis isDefined
 
@@ -806,23 +807,23 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List 
 
 -- Base case - empty transform
 transformRule _ _ _ _ result@(List _) (List []) _ = do
-  return result
+  return $ normalSyntaxResult [result]
 
 -- Transform is a single var, just look it up.
 transformRule _ localEnv _ _ _ (Atom transform) _ = do
   v <- getVar localEnv transform
-  return v
+  return $ normalSyntaxResult [v]
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
-transformRule _ _ _ _ _ transform _ = return transform
+transformRule _ _ _ _ _ transform _ = return $ normalSyntaxResult [transform]
 
 -- | A helper function for transforming an improper list
 transformDottedList :: Env -> Env -> Int -> [Int] -> LispVal -> LispVal -> IOThrowsError LispVal
 transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List (DottedList ds d : ts)) = do
           lsto <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List ds) 0
           case lsto of
-            List lst -> do
+            SyntaxResult lst True -> do
               -- Similar logic to the parser is applied here, where
               -- results are transformed into either a list or pair depending upon whether
               -- they form a proper list
@@ -835,16 +836,16 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
                                  (List [d, Atom "..."])
                                  0
               case r of
-                   -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
-                   List [] ->
+                   SyntaxResult [List []] True ->
+                       -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
                        transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts) 0
-                   Nil _ ->  -- Same as above, no match for d, so skip it 
+                   SyntaxResult _ False ->  -- Same as above, no match for d, so skip it 
                        transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts) 0
-                   List rst -> do
+                   SyntaxResult rst True -> do
                        transformRule outerEnv localEnv ellipsisLevel ellipsisIndex 
                                     (buildTransformedCode result lst rst) (List ts) 0
                    _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
-            Nil _ -> return $ Nil ""
+            SyntaxResult _ False -> return lsto -- No match
             _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
  where 
    -- Transform code as either a proper or improper list depending upon the data
@@ -879,8 +880,8 @@ continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result remaining
        else if length result > 0 
                then return $ List result
                else if ellipsisLevel > 0 
-                       then return $ Nil ""  -- Nothing remains, no match
-                       else return $ List [] -- Nothing remains, return empty list
+                       then return $ SyntaxResult [Nil ""] False -- Nothing remains, no match
+                       else return $ SyntaxResult [List []] True -- Nothing remains, return empty list
 
 -- |Find an atom in a list; non-recursive (IE, a sub-list will not be inspected)
 findAtom :: LispVal -> LispVal -> IOThrowsError LispVal
