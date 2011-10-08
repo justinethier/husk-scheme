@@ -141,11 +141,9 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
         case match of
            Bool False -> return $ Nil ""
            _ -> do
-                -- search for newly introduced identifiers here, per the paper.
-                -- Will start simple, and implement renaming in procedure abstration (IE, lambda vars)
-                --  per the paper... that would be a small step towards the full implementation
-                b <- findBindings outerEnv (trace ("find bindings for: " ++ show template) localEnv) identifiers template [] --pattern?
-                transformRule outerEnv (trace ("bindings = " ++ show b ++ " template = " ++ show template) localEnv) 0 [] (List []) template
+--                b <- findBindings outerEnv (trace ("find bindings for: " ++ show template) localEnv) identifiers template [] --pattern?
+--                transformRule outerEnv (trace ("bindings = " ++ show b ++ " template = " ++ show template) localEnv) 0 [] (List []) template
+                transformRule outerEnv localEnv 0 [] (List []) template
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
 
  where
@@ -697,10 +695,12 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                                   throwError $ Default "Unexpected error processing data in transformRule" 
                              else return var
               else do
-                isRenameDefined <- liftIO $ isNamespacedBound localEnv "renamed vars" a
-                case (trace ("isRenamed: " ++ show isRenameDefined ++ " var: " ++ show a) isRenameDefined) of
-                  True -> getNamespacedVar localEnv "renamed vars" a
-                  _ -> return $ Atom a
+    -- TODO: this was the experimental code from findBindings...
+--                isRenameDefined <- liftIO $ isNamespacedBound localEnv "renamed vars" a
+--                case (trace ("isRenamed: " ++ show isRenameDefined ++ " var: " ++ show a) isRenameDefined) of
+--                  True -> getNamespacedVar localEnv "renamed vars" a
+ --                 _ -> return $ Atom a
+                  return $ Atom a
       case t of
          Nil "var not defined in pattern" -> 
             if ellipsisLevel > 0
