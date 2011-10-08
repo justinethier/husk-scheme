@@ -665,11 +665,16 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
      else expandLisp inputModeFlags
 
   where
+    -- Expand basic Lisp code using the normal means...
     expandLisp modeFlags = do
       isDefined <- liftIO $ isBound localEnv a
       if hasEllipsis
         then ellipsisHere isDefined modeFlags
         else noEllipsis isDefined modeFlags
+
+    -- Expand a macro inline
+    -- This is more efficient than waiting until after expansion to expand an inner macro,
+    -- and is also required for Clinger's hygiene algorithm.
     expandMacro = do
       expandedTransform <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) transform (clearFncFlg inputModeFlags)
       case expandedTransform of
