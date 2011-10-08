@@ -641,7 +641,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [dl]), Number $ toInteger ellipsisLevel]
 
 -- Transform an atom by attempting to look it up as a var...
-transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) modeFlags = do
+transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) inputModeFlags = do
 -- TODO: function application only matters if we find:
 --  - lambda, to handle as procedure abstraction
 --  - a macro, to handle as a macro call
@@ -649,54 +649,34 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 
   isDefinedAsMacro <- liftIO $ isNamespacedRecBound outerEnv macroNamespace a
 
-TODO: if function application and quote, then set the quote bit... then do not call into the
-      below if a quote is active
+--TODO: if function application and quote, then set the quote bit... then do not call into the
+--      below if a quote is active
 
-  if (testBit modeFlags modeFlagIsFuncApp) && isDefinedAsMacro 
---  if ((trace ("entering transform(atom). transform = " ++ show transform) testBit) modeFlags modeFlagIsFuncApp) && isDefinedAsMacro
-             -- Test code to explore how to call the expander from within another macro...
--- 
--- TODO: am getting hung up above, but seems related to this code; perhaps we need to expand an nary
--- match prior to expanding a sub-macro? need to investigate further
--- see: (if test1 (and test2 ...) in stdlib
---
--- Right, the issue is that (and) is a recursive macro. I think pattern variables need to be filled in before
--- recursively expanding the inner (and)?
---
--- NEXT STEP:
--- I see the problem now, the inner macro expands to 2, which we return from here as (2) - this causes
--- eval to choke since there is no way to evaluate (2)... crap!
---
--- Do we need a new return type for transformRule? It would contain the following:
---  - the transformed expression (what is List or Nil today)
---  - an environment?
---  - perhaps a boolean or new field to indicate no match, instead of using Nil (which is more error prone)
---
--- My main concern here is that by boxing / unboxing each time transformRule is called, there will be
--- additional overhead, since we need to create the return object each time, and then we would need
--- to inspect the contents of it. Then again, we are already inspecting the return contents now... it
--- may just amount to a few more constructor calls and some more memory being used.
---
--- But I think we have to go this route when hygiene is introduced because it will need to return
--- env's. BUT, is localEnv good enough to handle that? need to consider which env's will need to
--- be manipulated, and what vars will be stored where
---
-     then do expandedTransform <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) transform (clearFncFlg modeFlags)
-             case expandedTransform of
-                SyntaxResult r True -> do
-                    expanded <- macroEval outerEnv $ getSyntaxResult expandedTransform
-                    -- TODO: may not be this simple, since we discard the value of result. Probably OK though since the only way into this
-                    --       code block is if atom is in the head position, in which case we are guaranteed (?) to have an empty result list anyway
-                    return $ SyntaxResult ((trace ("a = " ++ a ++ " t = " ++ show transform ++ " ex = " ++ show expandedTransform ++ " expanded = " ++ show expanded ) expanded)) True
---                    return $ SyntaxResult expanded True
-                SyntaxResult _ False -> return expandedTransform
-     else do
-             isDefined <- liftIO $ isBound localEnv a
-             if hasEllipsis
-               then ellipsisHere isDefined
-               else noEllipsis isDefined
+  if testBit inputModeFlags modeFlagIsFuncApp
+     then if isDefinedAsMacro 
+             then expandMacro
+             else if a == "quote"
+                     then expandLisp inputModeFlags -- TODO: change mode flags 
+                     else expandLisp inputModeFlags 
+     else expandLisp inputModeFlags
 
   where
+    expandLisp modeFlags = do
+      isDefined <- liftIO $ isBound localEnv a
+      if hasEllipsis
+        then ellipsisHere isDefined modeFlags
+        else noEllipsis isDefined modeFlags
+    expandMacro = do
+      expandedTransform <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) transform (clearFncFlg inputModeFlags)
+      case expandedTransform of
+         SyntaxResult r True -> do
+             expanded <- macroEval outerEnv $ getSyntaxResult expandedTransform
+             -- TODO: may not be this simple, since we discard the value of result. Probably OK though since the only way into this
+             --       code block is if atom is in the head position, in which case we are guaranteed (?) to have an empty result list anyway
+             return $ SyntaxResult ((trace ("a = " ++ a ++ " t = " ++ show transform ++ " ex = " ++ show expandedTransform ++ " expanded = " ++ show expanded ) expanded)) True
+--             return $ SyntaxResult expanded True
+         SyntaxResult _ False -> return expandedTransform
+
     -- A function to use input flags to append a '() to a list if necessary
     -- Only makes sense to do this if the *transform* is a dotted list
     appendNil d (Bool isImproperPattern) (Bool isImproperInput) =
@@ -714,7 +694,7 @@ TODO: if function application and quote, then set the quote bit... then do not c
            else return $ Bool False
 
     hasEllipsis = macroElementMatchesMany transform
-    ellipsisHere isDefined = do
+    ellipsisHere isDefined modeFlags = do
         if isDefined
              then do 
                     isImproperPattern <- loadNamespacedBool "improper pattern"
@@ -741,7 +721,7 @@ TODO: if function application and quote, then set the quote bit... then do not c
              else -- Matched 0 times, skip it
                   transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ tail ts) (clearFncFlg modeFlags)
 
-    noEllipsis isDefined = do
+    noEllipsis isDefined modeFlags = do
       isImproperPattern <- loadNamespacedBool "improper pattern"
       isImproperInput <- loadNamespacedBool "improper input"
 --      t <- if (trace ("a = " ++ show a ++ "isDefined = " ++ show isDefined) isDefined)
@@ -786,20 +766,20 @@ TODO: if function application and quote, then set the quote bit... then do not c
          Nil "var not defined in pattern" -> 
             if ellipsisLevel > 0
                then return $ SyntaxResult t False
-               else continueTransformWith result -- nary match in the pattern but used as list in transform; keep going
+               else continueTransformWith result modeFlags -- nary match in the pattern but used as list in transform; keep going
          Nil "var (pair) not defined in pattern" -> 
             if ellipsisLevel > 0
                then return $ SyntaxResult t False
                     -- nary match in pattern as part of an improper list but used as list here; append the empty list
-               else continueTransformWith $ result ++ [List []]
+               else continueTransformWith (result ++ [List []]) modeFlags
          Nil _ -> return  $ SyntaxResult t False
          List l -> do
             -- What's going on here is that if the pattern was a dotted list but the transform is not, we
             -- need to "lift" the input up out of a list.
             if (eqVal isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
-              then continueTransformWith $ result ++ (buildImproperList l)
-              else continueTransformWith $ result ++ [t]
-         _ -> continueTransformWith $ result ++ [t]
+              then continueTransformWith (result ++ (buildImproperList l)) modeFlags
+              else continueTransformWith (result ++ [t]) modeFlags
+         _ -> continueTransformWith (result ++ [t]) modeFlags
 
     -- Transformed code should be an improper list, but may need to "promote" it to a proper list
     buildImproperList lst 
@@ -807,7 +787,7 @@ TODO: if function application and quote, then set the quote bit... then do not c
       | otherwise      = lst
 
     -- Continue calling into transformRule
-    continueTransformWith results = 
+    continueTransformWith results modeFlags = 
       transformRule outerEnv 
                     localEnv 
                     ellipsisLevel 
