@@ -85,7 +85,7 @@ macroEval env lisp@(List (Atom x : _)) = do
   isDefined <- liftIO $ isNamespacedRecBound env macroNamespace x
   isDefinedAsVar <- liftIO $ isBound env x -- TODO: Not entirely correct; for example if a macro and var 
                                            -- are defined in same env with same name, which one should be selected?
-  if isDefined && not isDefinedAsVar 
+  if (trace ("entering macroEval. lisp = " ++ show lisp) isDefined) && not isDefinedAsVar 
      then do
        (List (Atom "syntax-rules" : (List identifiers : rules))) <- getNamespacedVar env macroNamespace x
        -- Transform the input and then call macroEval again, since a macro may be contained within...
@@ -571,11 +571,11 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
              lst <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List l) $ setModeFlagIsFuncApp modeFlags
              case lst of
                   -- TODO: example code for how this will work... would eventually replace the other types in this case
-                  SyntaxResult r noMatch -> do
+                  SyntaxResult {-[List-} r noMatch -> do
                     transformRule outerEnv localEnv 
                               ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                               idx -- Must keep index since it is incremented each time
-                              (List $ result ++ r) transform 0
+                              (List $ result ++ r) (List ts) 0
                   List _ -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [lst]) (List ts) 0
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisLevel]
@@ -643,7 +643,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 
   isDefinedAsMacro <- liftIO $ isNamespacedRecBound outerEnv macroNamespace a
 
-  if (testBit modeFlags modeFlagIsFuncApp) && isDefinedAsMacro
+  if ((trace ("entering transform(atom). transform = " ++ show transform) testBit) modeFlags modeFlagIsFuncApp) && isDefinedAsMacro
              -- Test code to explore how to call the expander from within another macro...
 -- 
 -- TODO: am getting hung up above, but seems related to this code; perhaps we need to expand an nary
@@ -671,9 +671,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 -- env's. BUT, is localEnv good enough to handle that? need to consider which env's will need to
 -- be manipulated, and what vars will be stored where
 --
-     then do expandedTransform <- transformRule (trace ("Expanding sub-macro " ++ show a ) outerEnv) localEnv ellipsisLevel ellipsisIndex (List []) (List ts) 0
-             expanded <- macroEval outerEnv (trace ("t = " ++ show transform ++ " ex = " ++ show expandedTransform) expandedTransform)
-             return $ SyntaxResult (result ++ [expanded]) False
+     then do expandedTransform <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) transform 0
+             expanded <- macroEval outerEnv expandedTransform
+             return $ SyntaxResult (result ++ (trace ("a = " ++ a ++ " t = " ++ show transform ++ " ex = " ++ show expandedTransform ++ " expanded = " ++ show expanded ) [expanded])) False
      else do
              isDefined <- liftIO $ isBound localEnv a
              if tempDebug (hasEllipsis)
