@@ -163,7 +163,7 @@ data LispVal = Atom String
      --   application. In any case, it is convenient to define the type here 
      --   because syntax objects are stored in the same environments and 
      --   manipulated by the same functions as regular variables.
- | SyntaxResult { synExpanded :: [LispVal] -- Expanded syntax
+ | SyntaxResult { synExpanded :: LispVal -- Expanded syntax
                 , synMatched :: Bool  -- True unless an nary (0-or-more match) pattern variable is not matched
    } -- ^Internal use only
  | EOF
