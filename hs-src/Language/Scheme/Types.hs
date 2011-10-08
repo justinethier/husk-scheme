@@ -172,6 +172,8 @@ data LispVal = Atom String
 
 -- |A helper function to create a syntax result
 normalSyntaxResult lisp = SyntaxResult lisp True
+getSyntaxResult (SyntaxResult r _) = r
+--getSyntaxResult _ = throwError $ Default "Unexpected error in getSyntaxResult"
 
 -- |Container to hold code that is passed to a continuation for deferred execution
 data DeferredCode =

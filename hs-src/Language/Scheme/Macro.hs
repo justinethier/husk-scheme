@@ -38,7 +38,7 @@ import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
 import Data.Bits
---import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 -- |The bit for function application
 modeFlagIsFuncApp = 0 
@@ -567,18 +567,20 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   if (nextHasEllipsis)
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l) $ setModeFlagIsFuncApp modeFlags
-             case (curT) of
+--             case (curT) of
+             case (trace ("curT = " ++ show curT ++ " transform = " ++ show transform) curT) of
+               SyntaxResult (Nil _) True -> throwError $ Default "should never happen" 
                SyntaxResult (Nil _) False -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result (tail ts) 0
-               SyntaxResult lst@(List _) True -> transformRule outerEnv localEnv 
+               SyntaxResult lst {-@(List _)-} True -> transformRule outerEnv localEnv 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
                            (List $ result ++ [lst]) transform 0
-               _ -> throwError $ Default "Unexpected error transforming list"
+               _ -> throwError $ Default $ "Unexpected error transforming list. Received: " ++ show curT
      else do
              lst <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List l) $ setModeFlagIsFuncApp modeFlags
              case lst of
-             {- TODO:
+             {- TODO: should be obsolete, see comment line after this comment block
                   -- TODO: example code for how this will work... would eventually replace the other types in this case
                   SyntaxResult r noMatch -> do
                     transformRule outerEnv localEnv 
@@ -586,7 +588,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                               idx -- Must keep index since it is incremented each time
                               (List $ result ++ r) (List ts) 0
                               -}
-                  SyntaxResult lstResult@(List _) True -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [lstResult]) (List ts) 0
+-- TODO: see below, am trying to make this more general to support nested macro expansion. this line should become obsolete                  SyntaxResult lstResult@(List _) True -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [lstResult]) (List ts) 0
+                  SyntaxResult lstResult True -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [lstResult]) (List ts) 0
                   SyntaxResult (Nil _) False -> return lst
                   _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisLevel]
 
@@ -650,7 +653,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 
   isDefinedAsMacro <- liftIO $ isNamespacedRecBound outerEnv macroNamespace a
 
-  if (testBit modeFlags modeFlagIsFuncApp) && isDefinedAsMacro && False -- TODO: disabling this for now... going to refactor first
+  if (testBit modeFlags modeFlagIsFuncApp) && isDefinedAsMacro 
 --  if ((trace ("entering transform(atom). transform = " ++ show transform) testBit) modeFlags modeFlagIsFuncApp) && isDefinedAsMacro
              -- Test code to explore how to call the expander from within another macro...
 -- 
@@ -680,9 +683,14 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 -- be manipulated, and what vars will be stored where
 --
      then do expandedTransform <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) transform 0
-             expanded <- macroEval outerEnv expandedTransform
---             return $ SyntaxResult (List $ result ++ (trace ("a = " ++ a ++ " t = " ++ show transform ++ " ex = " ++ show expandedTransform ++ " expanded = " ++ show expanded ) [expanded])) False
-             return $ SyntaxResult (List $ result ++ [expanded]) False
+             case expandedTransform of
+                SyntaxResult r True -> do
+                    expanded <- macroEval outerEnv $ getSyntaxResult expandedTransform
+                    -- TODO: may not be this simple, since we discard the value of result. Probably OK though since the only way into this
+                    --       code block is if atom is in the head position, in which case we are guaranteed (?) to have an empty result list anyway
+                    return $ SyntaxResult ((trace ("a = " ++ a ++ " t = " ++ show transform ++ " ex = " ++ show expandedTransform ++ " expanded = " ++ show expanded ) expanded)) True
+--                    return $ SyntaxResult expanded True
+                SyntaxResult _ False -> return expandedTransform
      else do
              isDefined <- liftIO $ isBound localEnv a
              if hasEllipsis
@@ -820,11 +828,11 @@ transformRule _ _ _ _ result@(List _) (List []) _ = do
 -- Transform is a single var, just look it up.
 transformRule _ localEnv _ _ _ (Atom transform) _ = do
   v <- getVar localEnv transform
-  return $ normalSyntaxResult v
+  return $ normalSyntaxResult (trace ("v = " ++ show v) v) -- Nil?
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
-transformRule _ _ _ _ _ transform _ = return $ normalSyntaxResult transform
+transformRule _ _ _ _ _ transform _ = return $ normalSyntaxResult (trace ("transform = " ++ show transform) transform)
 
 -- | A helper function for transforming an improper list
 transformDottedList :: Env -> Env -> Int -> [Int] -> LispVal -> LispVal -> IOThrowsError LispVal
