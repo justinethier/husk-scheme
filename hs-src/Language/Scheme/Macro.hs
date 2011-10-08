@@ -185,52 +185,6 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
 matchRule _ _ _ rule input = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
 
-findBindings :: Env -> Env -> LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
-
-findBindings outerEnv localEnv identifiers (List (Atom "lambda" : List vars : ls)) bindings = do
-  renamedVars <- saveVars vars []
-  findBindings outerEnv localEnv identifiers (List ls) (appendBindings bindings renamedVars) 
- where
-  appendBindings b (List vars) = b ++ vars
-  appendBindings b _ = b
-
-  saveVars :: [LispVal] -> [LispVal] -> IOThrowsError LispVal
-  saveVars (Atom "..." : vs) renamedVars = saveVars vs renamedVars -- The ellipsis is reserved; skip it
-  saveVars (Atom v : vs) renamedVars = do
-    renamed <- _gensym v
---    defineNamespacedVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) localEnv) "renamed vars" v renamed -- TODO: a temporary rename used for testing  
-    defineNamespacedVar localEnv "renamed vars" v renamed -- TODO: a temporary rename used for testing  
-    saveVars vs $ renamedVars ++ [Atom v]
-  saveVars (_: vs) renamedVars = saveVars vs renamedVars
-  saveVars [] renamedVars = return $ List renamedVars
-
-findBindings outerEnv localEnv identifiers (List (List l : ls)) bindings = do
-  b <- findBindings outerEnv localEnv identifiers (List l) bindings
-  case b of
-    List bb -> findBindings outerEnv localEnv identifiers (List ls) bb
-
-findBindings outerEnv localEnv identifiers (List (_ : ls)) bindings = do
-  findBindings outerEnv localEnv identifiers (List ls) bindings
-
-findBindings outerEnv localEnv _ val b = return $ List b
-
--- Issue #30
-{-------------------------
--- Just some test code, this needs to be more sophisticated than simply finding a list of them.
--- because we probably need to know the context - IE, (begin ... (lambda ...) (define ...) x) - x should
--- not be rewritten if it is the name of one of the lambda arguments
-
-searchForBindings :: Env -> LispVal -> [LispVal] -> IOThrowsError LispVal
---env pattern@(List (List (Atom "lambda" : List bs : _) : ps)) bindings = searchForBindings env (List ps) (bindings ++ bs) 
---searchForBindings env pattern@(List (List (Atom "lambda" : List bs : _) : ps)) bindings = searchForBindings env (List ps) (bindings ++ bs) 
-searchForBindings env pattern@(List (p : ps)) bindings = do
-  newBindings <- searchForBindings env (List [p]) []
-  case newBindings of
-    List n -> searchForBindings env (List ps) (bindings ++ n)
-    _ -> throwError $ Default "Unexpected error in searchForBindings" 
-searchForBindings _ _ bindings = return $ List bindings
--------------------------}
-
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 in preparation for macro transformation. -}
 loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> [(Bool, Bool)] -> IOThrowsError LispVal
@@ -666,7 +620,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
     -- Expand from an atom in the function application position
     expandFuncApp :: String -> IOThrowsError LispVal
     expandFuncApp "quote" = expandLisp $ setBit inputModeFlags modeFlagIsQuoted -- Set the quoted flag
-    --expandFuncApp "lambda" = TODO --expandLisp inputModeFlags
+    expandFuncApp "lambda" = do
+        _ <- markBoundIdentifiers localEnv ts
+        expandLisp inputModeFlags
     expandFuncApp _ = expandLisp inputModeFlags
 
     -- Expand basic Lisp code using the normal means...
@@ -676,6 +632,11 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
         then ellipsisHere isDefined modeFlags
         else noEllipsis isDefined modeFlags
 
+
+--
+-- TODO: the 'real' version from Clinger is much more involved, and has a match and rewrite step.
+--       although... do those have to be done anyway, even if only 1 macro is being expanded (the one detected 'by eval')??
+--
     -- Expand a macro inline
     -- This is more efficient than waiting until after expansion to expand an inner macro,
     -- and is also required for Clinger's hygiene algorithm.
@@ -918,3 +879,41 @@ calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex =
                -- First input element that matches pattern; start at 0
                else ellipsisIndex ++ [0]
        else ellipsisIndex
+
+markBoundIdentifiers :: Env -> [LispVal] -> IOThrowsError LispVal
+markBoundIdentifiers env input@(List vars : _) = do
+  saveVars env vars
+
+-- TODO: does the code need to be expanded first? for example, if the template says (x y ...) what to do?
+-- ^ perhaps the caller can read the pattern vars out and pass them along to this function... That probably makes the most sense
+-- TODO: rename function to something more meaningful
+saveVars :: Env -> [LispVal] -> IOThrowsError LispVal
+saveVars env (Atom "..." : vs) = saveVars env vs -- The ellipsis is reserved; skip it
+saveVars env (Atom v : vs) = do
+  renamed <- _gensym v
+  defineNamespacedVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) env) "renamed vars" v renamed -- TODO: a temporary rename used for testing  
+--  defineNamespacedVar localEnv "renamed vars" v renamed -- TODO: a temporary rename used for testing  
+  saveVars env vs 
+saveVars env (_: vs) = saveVars env vs
+saveVars _ [] = return $ Bool True --List renamedVars
+
+{- findBindings :: Env -> Env -> LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
+
+findBindings outerEnv localEnv identifiers (List (Atom "lambda" : List vars : ls)) bindings = do
+  renamedVars <- saveVars vars []
+  findBindings outerEnv localEnv identifiers (List ls) (appendBindings bindings renamedVars) 
+ where
+  appendBindings b (List vars) = b ++ vars
+  appendBindings b _ = b
+
+
+findBindings outerEnv localEnv identifiers (List (List l : ls)) bindings = do
+  b <- findBindings outerEnv localEnv identifiers (List l) bindings
+  case b of
+    List bb -> findBindings outerEnv localEnv identifiers (List ls) bb
+
+findBindings outerEnv localEnv identifiers (List (_ : ls)) bindings = do
+  findBindings outerEnv localEnv identifiers (List ls) bindings
+
+findBindings outerEnv localEnv _ val b = return $ List b
+-}
