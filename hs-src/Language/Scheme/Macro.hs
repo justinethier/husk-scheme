@@ -619,18 +619,24 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   where
     -- Expand from an atom in the function application position
     expandFuncApp :: String -> [LispVal] -> IOThrowsError LispVal
+-- TODO: probably will not be acceptable to hardcode like this, would probably need to look up
+-- the atom to make sure it is the 'real' quote, lambda, etc
     expandFuncApp "quote" ts = expandLisp ts $ setBit inputModeFlags modeFlagIsQuoted -- Set the quoted flag
     expandFuncApp "lambda" ts@(List vars : body) = do
         rawExpandedVars <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List vars) inputModeFlags
 
 -- STILL WORKING THROUGH THIS SECTION!!
 
+- What is going on below is that even though we expand vars above, it is still going through an
+- expansion below as well. we need to skip that expansion, append "lambda (vars)" to result,
+- and just expand the body
+
 -- TODO: expand the vars section of ts - maybe cheating, but good enough for now
 -- trouble is code needs to be restructured
-        case rawExpandedVars of
+        case (trace ("vars = " ++ show vars ++ " exp = " ++ show rawExpandedVars) rawExpandedVars) of
           SyntaxResult (List expandedVars) True -> do
             _ <- markBoundIdentifiers localEnv expandedVars
-            expandLisp (List expandedVars : body) inputModeFlags
+            expandLisp (List {-expandedVars-} vars : body) inputModeFlags
           otherwise -> throwError $ BadSpecialForm "Unexpected error in expandFuncApp" otherwise
     expandFuncApp _ ts = expandLisp ts inputModeFlags
 
@@ -898,7 +904,7 @@ markBoundIdentifiers _ input = throwError $ BadSpecialForm "Unexpected input to 
 -- ^ perhaps the caller can read the pattern vars out and pass them along to this function... That probably makes the most sense
 -- TODO: rename function to something more meaningful
 saveVars :: Env -> [LispVal] -> IOThrowsError LispVal
--- TODO: the following should not be necessary
+-- TODO: the following line should not be necessary
 saveVars env (Atom "..." : vs) = saveVars env vs -- The ellipsis is reserved; skip it
 saveVars env (Atom v : vs) = do
   renamed <- _gensym v
