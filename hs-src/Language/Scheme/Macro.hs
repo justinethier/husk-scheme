@@ -37,6 +37,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
+import Data.Bits
 import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
@@ -529,6 +530,8 @@ TODO: to start, will need some way for the transformer to know that it is proces
 so... will probably have to pass a flag around or something.   is transform the right place to do this? I think so, but need
 to think about it, since transform is done after the whole pattern is read but prior to the full expansion of the macro.
 does this equate to the paper's algorithm?
+
+perhaps use Data.Bits to use an int to pass around this flag an potentially others
 -}
 
 
@@ -543,10 +546,12 @@ transformRule :: Env        -- ^ Outer, enclosing environment
               -> LispVal    -- ^ Resultant (transformed) value. 
                             -- ^ Must be a parameter as it mutates with each transform call
               -> LispVal    -- ^ The macro transformation, read out one atom at a time and rewritten to result
+              -> Int        -- ^ Mode flags
+-- TODO: a single mode flag will be used first to determine whether the list is in position for function application
               -> IOThrowsError LispVal
 
 -- Recursively transform a list
-transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (List l : ts)) = do
+transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (List l : ts)) modeFlags = do
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
@@ -622,7 +627,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 -- Transform an atom by attempting to look it up as a var...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
   isDefined <- liftIO $ isBound localEnv a
-  if hasEllipsis
+  if (trace ("TODO: function application detected for: " ++ a) hasEllipsis)
     then ellipsisHere isDefined
     else noEllipsis isDefined
 
