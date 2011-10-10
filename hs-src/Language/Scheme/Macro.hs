@@ -523,10 +523,14 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(Li
 checkLocal _ _ _ _ _ _ _ _ = return $ Bool False
 
 
+
+{- TODO:
 TODO: to start, will need some way for the transformer to know that it is processing the head component of a list.
 so... will probably have to pass a flag around or something.   is transform the right place to do this? I think so, but need
 to think about it, since transform is done after the whole pattern is read but prior to the full expansion of the macro.
 does this equate to the paper's algorithm?
+-}
+
 
 
 {- |Transform input by walking the tranform structure and creating a new structure

@@ -151,6 +151,18 @@ data LispVal = Atom String
                         , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind)
                 }
  -- ^Continuation
+ | Syntax { closure :: Env
+          , identifiers :: [LispVal]
+          , pattern :: [LispVal]
+          , template :: [LispVal] -- TODO: use a syntax-rules type to hold a single pattern/transform pair?
+
+   } -- ^ Type to hold a syntax object that is created by a macro definition.
+     --   Syntax objects are not used like regular types in that they are not
+     --   passed around within variables. In other words, you cannot use set! to
+     --   assign a variable to a syntax object. But they are used during function
+     --   application. In any case, it is convenient to define the type here 
+     --   because syntax objects are stored in the same environments and 
+     --   manipulated by the same functions as regular variables.
  | EOF
  | Nil String
  -- ^Internal use only; do not use this type directly.
