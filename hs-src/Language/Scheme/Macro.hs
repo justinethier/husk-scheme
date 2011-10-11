@@ -629,14 +629,30 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 
 -- Transform an atom by attempting to look it up as a var...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) modeFlags = do
+-- TODO: function application only matters if we find:
+--  - lambda, to handle as procedure abstraction
+--  - a macro, to handle as a macro call
+--
   let tempDebug x = if (testBit modeFlags modeFlagIsFuncApp)
-                     then (trace ("possible function application detected for: " ++ a) x)
+                     then (trace ("possible function application detected for: " ++ a ++ " trans = " ++ show transform) x)
                      else x
 
-  isDefined <- liftIO $ isBound localEnv a
-  if tempDebug (hasEllipsis)
-    then ellipsisHere isDefined
-    else noEllipsis isDefined
+  isDefinedAsMacro <- liftIO $ isNamespacedRecBound outerEnv macroNamespace a
+
+  if (testBit modeFlags modeFlagIsFuncApp) && isDefinedAsMacro
+             -- Test code to explore how to call the expander from within another macro...
+--
+-- TODO: am getting hung up above, but seems related to this code; perhaps we need to expand an nary
+-- match prior to expanding a sub-macro? need to investigate further
+-- see: (if test1 (and test2 ...) in stdlib
+--
+     then do expanded <- macroEval outerEnv transform
+             return $ List $ (trace ("t = " ++ show transform ++ " ex = " ++ show expanded) result) ++ [expanded]
+     else do
+             isDefined <- liftIO $ isBound localEnv a
+             if tempDebug (hasEllipsis)
+               then ellipsisHere isDefined
+               else noEllipsis isDefined
 
   where
     -- A function to use input flags to append a '() to a list if necessary
