@@ -163,6 +163,9 @@ data LispVal = Atom String
      --   application. In any case, it is convenient to define the type here 
      --   because syntax objects are stored in the same environments and 
      --   manipulated by the same functions as regular variables.
+ | SyntaxResult { result :: [LispVal]
+                , noMatch :: Bool  -- True if an nary pattern variable is not matched
+   } -- ^Internal use only
  | EOF
  | Nil String
  -- ^Internal use only; do not use this type directly.
@@ -259,6 +262,7 @@ instance Eq LispVal where
 showVal :: LispVal -> String
 showVal (Nil _) = ""
 showVal (EOF) = "#!EOF"
+showVal (SyntaxResult result noMatch) = "{" ++ show result ++ ", " ++ show noMatch ++ "}"
 showVal (String contents) = "\"" ++ contents ++ "\""
 showVal (Char chr) = [chr]
 showVal (Atom name) = name

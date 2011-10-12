@@ -146,8 +146,6 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
         case match of
            Bool False -> return $ Nil ""
            _ -> do
---                b <- findBindings outerEnv (trace ("find bindings for: " ++ show template) localEnv) identifiers template [] --pattern?
---                transformRule outerEnv (trace ("bindings = " ++ show b ++ " template = " ++ show template) localEnv) 0 [] (List []) template
                 transformRule outerEnv localEnv 0 [] (List []) template $ setModeFlagIsFuncApp 0 
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
 
@@ -572,6 +570,12 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
      else do
              lst <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List l) $ setModeFlagIsFuncApp modeFlags
              case lst of
+                  -- TODO: example code for how this will work... would eventually replace the other types in this case
+                  SyntaxResult r noMatch -> do
+                    transformRule outerEnv localEnv 
+                              ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
+                              idx -- Must keep index since it is incremented each time
+                              (List $ result ++ r) transform 0
                   List _ -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [lst]) (List ts) 0
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisLevel]
@@ -649,7 +653,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 -- Right, the issue is that (and) is a recursive macro. I think pattern variables need to be filled in before
 -- recursively expanding the inner (and)?
 --
- NEXT STEP:
+-- NEXT STEP:
 -- I see the problem now, the inner macro expands to 2, which we return from here as (2) - this causes
 -- eval to choke since there is no way to evaluate (2)... crap!
 --
@@ -669,9 +673,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 --
      then do expandedTransform <- transformRule (trace ("Expanding sub-macro " ++ show a ) outerEnv) localEnv ellipsisLevel ellipsisIndex (List []) (List ts) 0
              expanded <- macroEval outerEnv (trace ("t = " ++ show transform ++ " ex = " ++ show expandedTransform) expandedTransform)
-             case ((trace ("expanded = " ++ show expanded ++ " result = " ++ show result) expanded)) of
-               List r -> return $ List $ result ++ r
-               _ -> return $ List $ result ++ [expanded]
+             return $ SyntaxResult (result ++ [expanded]) False
      else do
              isDefined <- liftIO $ isBound localEnv a
              if tempDebug (hasEllipsis)
