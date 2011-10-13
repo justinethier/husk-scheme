@@ -649,6 +649,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 
   isDefinedAsMacro <- liftIO $ isNamespacedRecBound outerEnv macroNamespace a
 
+TODO: if function application and quote, then set the quote bit... then do not call into the
+      below if a quote is active
+
   if (testBit modeFlags modeFlagIsFuncApp) && isDefinedAsMacro 
 --  if ((trace ("entering transform(atom). transform = " ++ show transform) testBit) modeFlags modeFlagIsFuncApp) && isDefinedAsMacro
              -- Test code to explore how to call the expander from within another macro...
