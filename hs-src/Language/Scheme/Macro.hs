@@ -619,24 +619,23 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   where
     -- Expand from an atom in the function application position
     expandFuncApp :: String -> [LispVal] -> IOThrowsError LispVal
--- TODO: probably will not be acceptable to hardcode like this, would probably need to look up
+-- TODO: not acceptable to hardcode like this, would probably need to look up
 -- the atom to make sure it is the 'real' quote, lambda, etc
+-- (just like how is done below).
+-- but good enough for the moment...
+--
+-- right, because 'quote' (for eg) could have been redefined but we do not check that below...
     expandFuncApp "quote" ts = expandLisp ts $ setBit inputModeFlags modeFlagIsQuoted -- Set the quoted flag
     expandFuncApp "lambda" ts@(List vars : body) = do
         rawExpandedVars <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List vars) inputModeFlags
 
--- STILL WORKING THROUGH THIS SECTION!!
-
-- What is going on below is that even though we expand vars above, it is still going through an
-- expansion below as well. we need to skip that expansion, append "lambda (vars)" to result,
-- and just expand the body
-
--- TODO: expand the vars section of ts - maybe cheating, but good enough for now
--- trouble is code needs to be restructured
-        case (trace ("vars = " ++ show vars ++ " exp = " ++ show rawExpandedVars) rawExpandedVars) of
+        case (rawExpandedVars) of
           SyntaxResult (List expandedVars) True -> do
+-- TODO: rename the identifiers in this step, possibly by returning the transformed vars
             _ <- markBoundIdentifiers localEnv expandedVars
-            expandLisp (List {-expandedVars-} vars : body) inputModeFlags
+-- TODO: rename marked vars during transformation
+            transformRule outerEnv localEnv ellipsisLevel ellipsisIndex
+                          (List [Atom a, List expandedVars]) (List body) inputModeFlags
           otherwise -> throwError $ BadSpecialForm "Unexpected error in expandFuncApp" otherwise
     expandFuncApp _ ts = expandLisp ts inputModeFlags
 
