@@ -595,7 +595,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [dl]), Number $ toInteger ellipsisLevel]
 
 -- Transform an atom by attempting to look it up as a var...
-transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) inputModeFlags = do
+transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : rst)) inputModeFlags = do
 
   isDefinedAsMacro <- liftIO $ isNamespacedRecBound outerEnv macroNamespace a
 
@@ -610,27 +610,29 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   --
 -- TODO: what about quasi-quotation? This probably is not handled correctly, but need to figure out what the
 --       correct behavior is for a splice within a quasiquoted section of a template.
-  if testBit inputModeFlags modeFlagIsFuncApp
-     then if isDefinedAsMacro && not (testBit inputModeFlags modeFlagIsQuoted) -- Do not expand quoted macros 
+  if testBit inputModeFlags modeFlagIsFuncApp && not (testBit inputModeFlags modeFlagIsQuoted) -- Do not expand quoted macros 
+     then if isDefinedAsMacro
              then expandMacro
-             else expandFuncApp a
-     else expandLisp inputModeFlags
+             else expandFuncApp a rst
+     else expandLisp rst inputModeFlags
 
   where
     -- Expand from an atom in the function application position
-    expandFuncApp :: String -> IOThrowsError LispVal
-    expandFuncApp "quote" = expandLisp $ setBit inputModeFlags modeFlagIsQuoted -- Set the quoted flag
-    expandFuncApp "lambda" = do
+    expandFuncApp :: String -> [LispVal] -> IOThrowsError LispVal
+    expandFuncApp "quote" ts = expandLisp ts $ setBit inputModeFlags modeFlagIsQuoted -- Set the quoted flag
+    expandFuncApp "lambda" ts = do
+     -- TODO: expand the vars section of ts - maybe cheating, but good enough for now
+     -- trouble is code needs to be restructured
         _ <- markBoundIdentifiers localEnv ts
-        expandLisp inputModeFlags
-    expandFuncApp _ = expandLisp inputModeFlags
+        expandLisp ts inputModeFlags
+    expandFuncApp _ ts = expandLisp ts inputModeFlags
 
     -- Expand basic Lisp code using the normal means...
-    expandLisp modeFlags = do
+    expandLisp ts modeFlags = do
       isDefined <- liftIO $ isBound localEnv a
       if hasEllipsis
-        then ellipsisHere isDefined modeFlags
-        else noEllipsis isDefined modeFlags
+        then ellipsisHere isDefined ts modeFlags
+        else noEllipsis isDefined ts modeFlags
 
 
 --
@@ -668,7 +670,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
            else return $ Bool False
 
     hasEllipsis = macroElementMatchesMany transform
-    ellipsisHere isDefined modeFlags = do
+    ellipsisHere isDefined ts modeFlags = do
         if isDefined
              then do 
                     isImproperPattern <- loadNamespacedBool "improper pattern"
@@ -695,7 +697,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
              else -- Matched 0 times, skip it
                   transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ tail ts) (clearFncFlg modeFlags)
 
-    noEllipsis isDefined modeFlags = do
+    noEllipsis isDefined ts modeFlags = do
       isImproperPattern <- loadNamespacedBool "improper pattern"
       isImproperInput <- loadNamespacedBool "improper input"
 --      t <- if (trace ("a = " ++ show a ++ "isDefined = " ++ show isDefined) isDefined)
@@ -740,20 +742,20 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
          Nil "var not defined in pattern" -> 
             if ellipsisLevel > 0
                then return $ SyntaxResult t False
-               else continueTransformWith result modeFlags -- nary match in the pattern but used as list in transform; keep going
+               else continueTransformWith result ts modeFlags -- nary match in the pattern but used as list in transform; keep going
          Nil "var (pair) not defined in pattern" -> 
             if ellipsisLevel > 0
                then return $ SyntaxResult t False
                     -- nary match in pattern as part of an improper list but used as list here; append the empty list
-               else continueTransformWith (result ++ [List []]) modeFlags
+               else continueTransformWith (result ++ [List []]) ts modeFlags
          Nil _ -> return  $ SyntaxResult t False
          List l -> do
             -- What's going on here is that if the pattern was a dotted list but the transform is not, we
             -- need to "lift" the input up out of a list.
             if (eqVal isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
-              then continueTransformWith (result ++ (buildImproperList l)) modeFlags
-              else continueTransformWith (result ++ [t]) modeFlags
-         _ -> continueTransformWith (result ++ [t]) modeFlags
+              then continueTransformWith (result ++ (buildImproperList l)) ts modeFlags
+              else continueTransformWith (result ++ [t]) ts modeFlags
+         _ -> continueTransformWith (result ++ [t]) ts modeFlags
 
     -- Transformed code should be an improper list, but may need to "promote" it to a proper list
     buildImproperList lst 
@@ -761,7 +763,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
       | otherwise      = lst
 
     -- Continue calling into transformRule
-    continueTransformWith results modeFlags = 
+    continueTransformWith results ts modeFlags = 
       transformRule outerEnv 
                     localEnv 
                     ellipsisLevel 
@@ -888,10 +890,11 @@ markBoundIdentifiers env input@(List vars : _) = do
 -- ^ perhaps the caller can read the pattern vars out and pass them along to this function... That probably makes the most sense
 -- TODO: rename function to something more meaningful
 saveVars :: Env -> [LispVal] -> IOThrowsError LispVal
+-- TODO: the following should not be necessary
 saveVars env (Atom "..." : vs) = saveVars env vs -- The ellipsis is reserved; skip it
 saveVars env (Atom v : vs) = do
   renamed <- _gensym v
-  defineNamespacedVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) env) "renamed vars" v renamed -- TODO: a temporary rename used for testing  
+  _ <- defineNamespacedVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) env) "renamed vars" v renamed -- TODO: a temporary rename used for testing  
 --  defineNamespacedVar localEnv "renamed vars" v renamed -- TODO: a temporary rename used for testing  
   saveVars env vs 
 saveVars env (_: vs) = saveVars env vs
