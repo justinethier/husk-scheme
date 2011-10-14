@@ -631,11 +631,11 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 
         case (rawExpandedVars) of
           SyntaxResult (List expandedVars) True -> do
--- TODO: rename the identifiers in this step, possibly by returning the transformed vars
-            _ <- markBoundIdentifiers localEnv expandedVars
+            -- Rename identifiers in the expanded code, and mark them for later
+            renamedVars <- markBoundIdentifiers localEnv expandedVars []
 -- TODO: rename marked vars during transformation
             transformRule outerEnv localEnv ellipsisLevel ellipsisIndex
-                          (List [Atom a, List expandedVars]) (List body) inputModeFlags
+                          (List [Atom a, renamedVars]) (List body) inputModeFlags
           otherwise -> throwError $ BadSpecialForm "Unexpected error in expandFuncApp" otherwise
     expandFuncApp _ ts = expandLisp ts inputModeFlags
 
@@ -894,24 +894,18 @@ calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex =
                else ellipsisIndex ++ [0]
        else ellipsisIndex
 
-markBoundIdentifiers :: Env -> [LispVal] -> IOThrowsError LispVal
-markBoundIdentifiers env vars = do
-  saveVars env vars
-markBoundIdentifiers _ input = throwError $ BadSpecialForm "Unexpected input to markBoundIdentifiers" $ List input 
-
--- TODO: does the code need to be expanded first? for example, if the template says (x y ...) what to do?
--- ^ perhaps the caller can read the pattern vars out and pass them along to this function... That probably makes the most sense
--- TODO: rename function to something more meaningful
-saveVars :: Env -> [LispVal] -> IOThrowsError LispVal
--- TODO: the following line should not be necessary
-saveVars env (Atom "..." : vs) = saveVars env vs -- The ellipsis is reserved; skip it
-saveVars env (Atom v : vs) = do
+markBoundIdentifiers :: Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
+--markBoundIdentifiers env vars renamed = do
+markBoundIdentifiers _ (Atom "..." : vs) _ = throwError $ Default "Unexpected ellipsis found while marking vars"
+markBoundIdentifiers env (Atom v : vs) renamedVars = do
   renamed <- _gensym v
   _ <- defineNamespacedVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) env) "renamed vars" v renamed -- TODO: a temporary rename used for testing  
 --  defineNamespacedVar localEnv "renamed vars" v renamed -- TODO: a temporary rename used for testing  
-  saveVars env vs 
-saveVars env (_: vs) = saveVars env vs
-saveVars _ [] = return $ Bool True --List renamedVars
+  markBoundIdentifiers env vs $ renamedVars ++ [renamed]
+markBoundIdentifiers env (_: vs) renamedVars = markBoundIdentifiers env vs renamedVars
+markBoundIdentifiers _ [] renamedVars = return $ List renamedVars
+markBoundIdentifiers _ input _ = throwError $ BadSpecialForm "Unexpected input to markBoundIdentifiers" $ List input 
+
 
 {- findBindings :: Env -> Env -> LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 
