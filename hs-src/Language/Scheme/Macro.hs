@@ -620,11 +620,18 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
     -- Expand from an atom in the function application position
     expandFuncApp :: String -> [LispVal] -> IOThrowsError LispVal
     expandFuncApp "quote" ts = expandLisp ts $ setBit inputModeFlags modeFlagIsQuoted -- Set the quoted flag
-    expandFuncApp "lambda" ts = do
-     -- TODO: expand the vars section of ts - maybe cheating, but good enough for now
-     -- trouble is code needs to be restructured
-        _ <- markBoundIdentifiers localEnv ts
-        expandLisp ts inputModeFlags
+    expandFuncApp "lambda" ts@(List vars : body) = do
+        rawExpandedVars <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List vars) inputModeFlags
+
+-- STILL WORKING THROUGH THIS SECTION!!
+
+-- TODO: expand the vars section of ts - maybe cheating, but good enough for now
+-- trouble is code needs to be restructured
+        case rawExpandedVars of
+          SyntaxResult (List expandedVars) True -> do
+            _ <- markBoundIdentifiers localEnv expandedVars
+            expandLisp (List expandedVars : body) inputModeFlags
+          otherwise -> throwError $ BadSpecialForm "Unexpected error in expandFuncApp" otherwise
     expandFuncApp _ ts = expandLisp ts inputModeFlags
 
     -- Expand basic Lisp code using the normal means...
@@ -883,8 +890,9 @@ calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex =
        else ellipsisIndex
 
 markBoundIdentifiers :: Env -> [LispVal] -> IOThrowsError LispVal
-markBoundIdentifiers env input@(List vars : _) = do
+markBoundIdentifiers env vars = do
   saveVars env vars
+markBoundIdentifiers _ input = throwError $ BadSpecialForm "Unexpected input to markBoundIdentifiers" $ List input 
 
 -- TODO: does the code need to be expanded first? for example, if the template says (x y ...) what to do?
 -- ^ perhaps the caller can read the pattern vars out and pass them along to this function... That probably makes the most sense
