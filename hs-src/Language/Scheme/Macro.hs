@@ -634,6 +634,13 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
             -- Rename identifiers in the expanded code, and mark them for later
             renamedVars <- markBoundIdentifiers localEnv expandedVars []
 -- TODO: rename marked vars during transformation
+--
+-- the change will be made in this function, but need to be careful. if the identifier
+-- is defined in the outer env but used in the lambda, presumably the lambda def would
+-- take precedence? also may need to consider Edef as well.
+--
+-- may need to be careful when making this change, it is a chance to plan ahead as well.
+--
             transformRule outerEnv localEnv ellipsisLevel ellipsisIndex
                           (List [Atom a, renamedVars]) (List body) inputModeFlags
           otherwise -> throwError $ BadSpecialForm "Unexpected error in expandFuncApp" otherwise
@@ -894,6 +901,9 @@ calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex =
                else ellipsisIndex ++ [0]
        else ellipsisIndex
 
+-- |Accept a list of bound identifiers from a lambda expression, and rename them
+--  Returns a list of the renamed identifiers as well as marking those identifiers
+--  in the given environment, so they can be renamed during expansion.
 markBoundIdentifiers :: Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
 --markBoundIdentifiers env vars renamed = do
 markBoundIdentifiers _ (Atom "..." : vs) _ = throwError $ Default "Unexpected ellipsis found while marking vars"
@@ -906,24 +916,3 @@ markBoundIdentifiers env (_: vs) renamedVars = markBoundIdentifiers env vs renam
 markBoundIdentifiers _ [] renamedVars = return $ List renamedVars
 markBoundIdentifiers _ input _ = throwError $ BadSpecialForm "Unexpected input to markBoundIdentifiers" $ List input 
 
-
-{- findBindings :: Env -> Env -> LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
-
-findBindings outerEnv localEnv identifiers (List (Atom "lambda" : List vars : ls)) bindings = do
-  renamedVars <- saveVars vars []
-  findBindings outerEnv localEnv identifiers (List ls) (appendBindings bindings renamedVars) 
- where
-  appendBindings b (List vars) = b ++ vars
-  appendBindings b _ = b
-
-
-findBindings outerEnv localEnv identifiers (List (List l : ls)) bindings = do
-  b <- findBindings outerEnv localEnv identifiers (List l) bindings
-  case b of
-    List bb -> findBindings outerEnv localEnv identifiers (List ls) bb
-
-findBindings outerEnv localEnv identifiers (List (_ : ls)) bindings = do
-  findBindings outerEnv localEnv identifiers (List ls) bindings
-
-findBindings outerEnv localEnv _ val b = return $ List b
--}
