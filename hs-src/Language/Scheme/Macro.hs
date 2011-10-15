@@ -610,7 +610,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
   --
 -- TODO: what about quasi-quotation? This probably is not handled correctly, but need to figure out what the
 --       correct behavior is for a splice within a quasiquoted section of a template.
-  if testBit inputModeFlags modeFlagIsFuncApp && not (testBit inputModeFlags modeFlagIsQuoted) -- Do not expand quoted macros 
+  if (trace ("atom: " ++ a) testBit) inputModeFlags modeFlagIsFuncApp && not (testBit inputModeFlags modeFlagIsQuoted) -- Do not expand quoted macros 
      then if isDefinedAsMacro
              then expandMacro
              else expandFuncApp a rst
@@ -641,6 +641,11 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 --
 -- may need to be careful when making this change, it is a chance to plan ahead as well.
 --
+
+-- TODO: 
+-- Another concern; the vars marked above only really make sense to use when expanding
+-- body; if the var is used "above" this list, there would be no reason to rename it,
+-- right???
             transformRule outerEnv localEnv ellipsisLevel ellipsisIndex
                           (List [Atom a, renamedVars]) (List body) inputModeFlags
           otherwise -> throwError $ BadSpecialForm "Unexpected error in expandFuncApp" otherwise
@@ -751,11 +756,20 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                                   throwError $ Default "Unexpected error processing data in transformRule" 
                              else return var
               else do
-    -- TODO: this was the experimental code from findBindings...
---                isRenameDefined <- liftIO $ isNamespacedBound localEnv "renamed vars" a
---                case (trace ("isRenamed: " ++ show isRenameDefined ++ " var: " ++ show a) isRenameDefined) of
---                  True -> getNamespacedVar localEnv "renamed vars" a
- --                 _ -> return $ Atom a
+
+TODO: it is not this simple because the var to rename might be added by a pattern var. in effect we need to look at
+the expanded code and then rename, so... will need to intersperse the logic in more places above.
+
+{-    -- TODO: this was the experimental code from findBindings...
+this is not quite right for several reasons, but in this case this is not the only place that needs to change,
+I think just the atom case (not atom as part of a list, like here) needs to have this code also
+
+                isRenameDefined <- liftIO $ isNamespacedBound localEnv "renamed vars" a
+                case (trace ("isRenamed: " ++ show isRenameDefined ++ " var: " ++ show a) isRenameDefined) of
+                  True -> getNamespacedVar localEnv "renamed vars" a
+                 _ -> return $ Atom a
+-}
+-- ORIGINAL CODE:
                   return $ Atom a
       case t of
          Nil "var not defined in pattern" -> 
