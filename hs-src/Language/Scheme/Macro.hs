@@ -693,6 +693,10 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
            then getNamespacedVar localEnv namespc a
            else return $ Bool False
 
+    -- Short-hand for transformRule
+    trans tResult tTemplate tModeFlags =
+      transformRule outerEnv localEnv ellipsisLevel ellipsisIndex tResult tTemplate (clearFncFlg tModeFlags)
+
     hasEllipsis = macroElementMatchesMany transform
     ellipsisHere isDefined ts modeFlags = do
         if isDefined
@@ -704,7 +708,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                     case var of
                       -- add all elements of the list into result
                       List _ -> do case (appendNil (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput) of
-                                     List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts) (clearFncFlg modeFlags)
+                                     List aa -> trans (List $ result ++ aa) (List $ tail ts) modeFlags
                                      _ -> -- No matches for var
                                           continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result (tail ts) (clearFncFlg modeFlags)
 
@@ -719,7 +723,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                                 continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result (tail ts) (clearFncFlg modeFlags)
                       v@(_) -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [v]) (List $ tail ts) (clearFncFlg modeFlags)
              else -- Matched 0 times, skip it
-                  transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ tail ts) (clearFncFlg modeFlags)
+                  trans (List result) (List $ tail ts) modeFlags
 
     noEllipsis isDefined ts modeFlags = do
       isImproperPattern <- loadNamespacedBool "improper pattern"
@@ -759,6 +763,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 
 TODO: it is not this simple because the var to rename might be added by a pattern var. in effect we need to look at
 the expanded code and then rename, so... will need to intersperse the logic in more places above.
+
+essentiallly, each time we 'keep going', we need to call renameBindings on what is appended to result.
+that function will 'loop' over the list and replace any known atom with the renamed atom
 
 {-    -- TODO: this was the experimental code from findBindings...
 this is not quite right for several reasons, but in this case this is not the only place that needs to change,
