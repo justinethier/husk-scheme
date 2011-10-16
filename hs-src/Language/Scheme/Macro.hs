@@ -703,7 +703,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
     renameIdent (Atom ident) = do
         isDef <- liftIO $ isNamespacedBound localEnv "renamed vars" ident
         case isDef of
-          True -> getNamespacedVar localEnv "renamed vars" ident
+          True -> getNamespacedVar localEnv "renamed vars" (trace ("renamed " ++ ident) ident)
           _ -> return $ Atom ident
     renameIdent other = return other
 
@@ -718,7 +718,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                     case var of
                       -- add all elements of the list into result
                       List _ -> do case (appendNil (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput) of
-                                     List aa -> trans (List $ result ++ aa) (List $ tail ts) modeFlags
+                                     List aa -> do
+                                       expanded <- renameIdentifiers aa
+                                       trans (List $ result ++ expanded) (List $ tail ts) modeFlags
                                      _ -> -- No matches for var
                                           continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result (tail ts) (clearFncFlg modeFlags)
 
@@ -731,7 +733,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                                   transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused -}
                       Nil "" -> -- No matches, keep going
                                 continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result (tail ts) (clearFncFlg modeFlags)
-                      v@(_) -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [v]) (List $ tail ts) (clearFncFlg modeFlags)
+                      v@(_) -> do
+                        expanded <- renameIdentifiers [v]
+                        transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ expanded) (List $ tail ts) (clearFncFlg modeFlags)
              else -- Matched 0 times, skip it
                   trans (List result) (List $ tail ts) modeFlags
 
@@ -800,12 +804,17 @@ I think just the atom case (not atom as part of a list, like here) needs to have
                else continueTransformWith (result ++ [List []]) ts modeFlags
          Nil _ -> return  $ SyntaxResult t False
          List l -> do
+            expanded <- renameIdentifiers l
+
             -- What's going on here is that if the pattern was a dotted list but the transform is not, we
             -- need to "lift" the input up out of a list.
             if (eqVal isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
-              then continueTransformWith (result ++ (buildImproperList l)) ts modeFlags
-              else continueTransformWith (result ++ [t]) ts modeFlags
-         _ -> continueTransformWith (result ++ [t]) ts modeFlags
+              then do
+                continueTransformWith (result ++ (buildImproperList expanded)) ts modeFlags
+              else continueTransformWith (result ++ [List expanded]) ts modeFlags
+         l -> do
+            expanded <- renameIdentifiers [l] -- TODO: I think this implies rI needs to be more generic...
+            continueTransformWith (result ++ expanded) ts modeFlags
 
     -- Transformed code should be an improper list, but may need to "promote" it to a proper list
     buildImproperList lst 
