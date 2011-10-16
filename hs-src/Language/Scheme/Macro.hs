@@ -702,6 +702,10 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 --
 -- how is this supposed to work... ?
 -- 
+
+
+TODO: this is wrong, I think we only want to rename an identifier as it is found. otherwise we could rename one that
+is part of a macro that is waiting to be expanded. we would want that macro expanded and *then* any identifiers renamed.
     -- |Recursively rename any identifiers
     renameIdentifiers idents = do
       mapM renameIdent idents
