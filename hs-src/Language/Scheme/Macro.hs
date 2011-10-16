@@ -697,15 +697,26 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
     trans tResult tTemplate tModeFlags =
       transformRule outerEnv localEnv ellipsisLevel ellipsisIndex tResult tTemplate (clearFncFlg tModeFlags)
 
+--This does not handle the case where the same var is used twice, each at different levels, for example:
+-- test case: (let ((x 2) (y 3)) (let ((x 7) (z (+ x y))) (* z x)))
+--
+-- how is this supposed to work... ?
+-- 
+    -- |Recursively rename any identifiers
     renameIdentifiers idents = do
       mapM renameIdent idents
 
     renameIdent (Atom ident) = do
-        isDef <- liftIO $ isNamespacedBound localEnv "renamed vars" ident
+        isDef <- liftIO $ isNamespacedBound localEnv "renamed vars" (trace ("checking ident: " ++ show ident) ident)
         case isDef of
           True -> getNamespacedVar localEnv "renamed vars" (trace ("renamed " ++ ident) ident)
           _ -> return $ Atom ident
-    renameIdent other = return other
+    renameIdent (List idents) = do
+      expanded <- renameIdentifiers idents
+      return $ List expanded
+    -- TODO: dotted list
+    -- TODO: vector?
+    renameIdent other = return (trace ("skipping ident = " ++ show other) other)
 
     hasEllipsis = macroElementMatchesMany transform
     ellipsisHere isDefined ts modeFlags = do
@@ -808,12 +819,12 @@ I think just the atom case (not atom as part of a list, like here) needs to have
 
             -- What's going on here is that if the pattern was a dotted list but the transform is not, we
             -- need to "lift" the input up out of a list.
-            if (eqVal isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
+            if ((trace ("l = " ++ show l ++ ", expanded = " ++ show expanded) eqVal) isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
               then do
                 continueTransformWith (result ++ (buildImproperList expanded)) ts modeFlags
               else continueTransformWith (result ++ [List expanded]) ts modeFlags
          l -> do
-            expanded <- renameIdentifiers [l] -- TODO: I think this implies rI needs to be more generic...
+            expanded <- (trace ("l = " ++ show l) renameIdentifiers) [l] -- TODO: I think this implies rI needs to be more generic...
             continueTransformWith (result ++ expanded) ts modeFlags
 
     -- Transformed code should be an improper list, but may need to "promote" it to a proper list
