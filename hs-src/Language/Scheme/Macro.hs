@@ -697,6 +697,16 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
     trans tResult tTemplate tModeFlags =
       transformRule outerEnv localEnv ellipsisLevel ellipsisIndex tResult tTemplate (clearFncFlg tModeFlags)
 
+    renameIdentifiers idents = do
+      mapM renameIdent idents
+
+    renameIdent (Atom ident) = do
+        isDef <- liftIO $ isNamespacedBound localEnv "renamed vars" ident
+        case isDef of
+          True -> getNamespacedVar localEnv "renamed vars" ident
+          _ -> return $ Atom ident
+    renameIdent other = return other
+
     hasEllipsis = macroElementMatchesMany transform
     ellipsisHere isDefined ts modeFlags = do
         if isDefined
@@ -760,13 +770,13 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                                   throwError $ Default "Unexpected error processing data in transformRule" 
                              else return var
               else do
-
+{-
 TODO: it is not this simple because the var to rename might be added by a pattern var. in effect we need to look at
 the expanded code and then rename, so... will need to intersperse the logic in more places above.
 
 essentiallly, each time we 'keep going', we need to call renameBindings on what is appended to result.
 that function will 'loop' over the list and replace any known atom with the renamed atom
-
+-}
 {-    -- TODO: this was the experimental code from findBindings...
 this is not quite right for several reasons, but in this case this is not the only place that needs to change,
 I think just the atom case (not atom as part of a list, like here) needs to have this code also
@@ -935,5 +945,5 @@ markBoundIdentifiers env (Atom v : vs) renamedVars = do
   markBoundIdentifiers env vs $ renamedVars ++ [renamed]
 markBoundIdentifiers env (_: vs) renamedVars = markBoundIdentifiers env vs renamedVars
 markBoundIdentifiers _ [] renamedVars = return $ List renamedVars
-markBoundIdentifiers _ input _ = throwError $ BadSpecialForm "Unexpected input to markBoundIdentifiers" $ List input 
+--markBoundIdentifiers _ input _ = throwError $ BadSpecialForm "Unexpected input to markBoundIdentifiers" $ List input 
 
