@@ -635,6 +635,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
             renamedVars <- markBoundIdentifiers localEnv expandedVars []
 -- TODO: rename marked vars during transformation
 --
+-- some notes:
+--
 -- the change will be made in this function, but need to be careful. if the identifier
 -- is defined in the outer env but used in the lambda, presumably the lambda def would
 -- take precedence? also may need to consider Edef as well.
@@ -646,8 +648,17 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 -- Another concern; the vars marked above only really make sense to use when expanding
 -- body; if the var is used "above" this list, there would be no reason to rename it,
 -- right???
+--
+--
+-- BIG TODO:
+-- another consideration: when a macro is expanded inside of another one, it needs to use its own environment for pattern
+-- variables. otherwise it might overwrite or corrupt vars used by the enclosing macro.
+--
+
+-- body = [e1,e2,...]
+-- need to inspect again after that is expanded, since it expands to a lambda form
             transformRule outerEnv localEnv ellipsisLevel ellipsisIndex
-                          (List [Atom a, renamedVars]) (List body) inputModeFlags
+                          (List [Atom a, renamedVars]) (List (trace ("body = " ++ show body) body)) $ setModeFlagIsFuncApp inputModeFlags
           otherwise -> throwError $ BadSpecialForm "Unexpected error in expandFuncApp" otherwise
     expandFuncApp _ ts = expandLisp ts inputModeFlags
 
@@ -819,14 +830,19 @@ I think just the atom case (not atom as part of a list, like here) needs to have
                else continueTransformWith (result ++ [List []]) ts modeFlags
          Nil _ -> return  $ SyntaxResult t False
          List l -> do
-            expanded <- renameIdentifiers l
-
-            -- What's going on here is that if the pattern was a dotted list but the transform is not, we
-            -- need to "lift" the input up out of a list.
-            if ((trace ("l = " ++ show l ++ ", expanded = " ++ show expanded) eqVal) isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
-              then do
-                continueTransformWith (result ++ (buildImproperList expanded)) ts modeFlags
-              else continueTransformWith (result ++ [List expanded]) ts modeFlags
+-- TODO: causes an inf loop in:
+-- (let ((name 'a)) `(list ,name . ,name))
+--                    expanded <- renameIdentifiers l
+-- { -
+            ex <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List (trace ("l = " ++ show l) l)) $ setModeFlagIsFuncApp inputModeFlags --renameIdentifiers l
+            case ex of
+                SyntaxResult (List expanded) _ -> do
+                    -- What's going on here is that if the pattern was a dotted list but the transform is not, we
+                    -- need to "lift" the input up out of a list. - }
+                    if ((trace ("l = " ++ show l ++ ", expanded = " ++ show expanded) eqVal) isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
+                      then do
+                        continueTransformWith (result ++ (buildImproperList expanded)) ts modeFlags
+                      else continueTransformWith (result ++ [List expanded]) ts modeFlags
          l -> do
             expanded <- (trace ("l = " ++ show l) renameIdentifiers) [l] -- TODO: I think this implies rI needs to be more generic...
             continueTransformWith (result ++ expanded) ts modeFlags
