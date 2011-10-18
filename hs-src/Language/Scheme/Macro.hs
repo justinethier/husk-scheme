@@ -526,7 +526,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
      then do
              curT <- transformRule outerEnv localEnv level idx (List []) (List l) $ setModeFlagIsFuncApp modeFlags
 --             case (curT) of
-             case (trace ("curT = " ++ show curT ++ " transform = " ++ show transform) curT) of
+             case (trace ("curT = " ++ show curT ++ " result = " ++ show result ++ " transform = " ++ show transform) curT) of
                SyntaxResult (Nil _) True -> throwError $ Default "should never happen" 
                SyntaxResult (Nil _) False -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result (tail ts) (clearFncFlg modeFlags)
@@ -580,7 +580,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
      then do
              -- Idea here is that we need to handle case where you have (pair ...) - EG: ((var . step) ...)
              curT <- transformDottedList outerEnv localEnv level idx (List []) (List [dl]) (clearFncFlg modeFlags)
-             case curT of
+--             case curT of
+             case (trace ("pair: curT = " ++ show curT ++ " transform = " ++ show transform) curT) of
                SyntaxResult (Nil _) False -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result (tail ts) (clearFncFlg modeFlags)
                SyntaxResult (List t) True -> transformRule outerEnv localEnv 
@@ -830,11 +831,20 @@ I think just the atom case (not atom as part of a list, like here) needs to have
                else continueTransformWith (result ++ [List []]) ts modeFlags
          Nil _ -> return  $ SyntaxResult t False
          List l -> do
+--                    expanded <- renameIdentifiers l
 -- TODO: causes an inf loop in:
 -- (let ((name 'a)) `(list ,name . ,name))
---                    expanded <- renameIdentifiers l
+--
+--
+-- this breaks because we insert a dotted list in for a pattern var and then
+-- attemt to transform it. the transformer does not know any better and thinks it
+-- is an nary match so it rewrites the pair to a list followed by "..."
+--
+-- how to solve this?
+-- one idea - mark if an identier is replaced, then stop the match if no idents are inserted. feels incomplete, though
+--
 -- { -
-            ex <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List (trace ("l = " ++ show l) l)) $ setModeFlagIsFuncApp inputModeFlags --renameIdentifiers l
+            ex <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List (trace ("List l = " ++ show l) l)) $ setModeFlagIsFuncApp inputModeFlags --renameIdentifiers l
             case ex of
                 SyntaxResult (List expanded) _ -> do
                     -- What's going on here is that if the pattern was a dotted list but the transform is not, we
