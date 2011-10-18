@@ -536,7 +536,14 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
                SyntaxResult (Nil _) True _ -> throwError $ Default "should never happen" 
                SyntaxResult (Nil _) False npv -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex (numExpPatternVars + npv) result (tail ts) (clearFncFlg modeFlags)
-               SyntaxResult _ _ 0 -> throwError $ Default "TODO"
+               SyntaxResult lst True 0 -> --throwError $ Default "TODO"
+
+TODO: something is not quite right, when testing this pattern it looks like the tail is skipped:
+(let ((name 'a)) `(list ,name . ,name))
+
+                    -- No pattern vars were encountered, which means this expansion would go on forever if not stopped.
+                    -- So, just append what we got and keep going
+                    continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex (numExpPatternVars) (result ++ [lst]) (tail ts) (clearFncFlg modeFlags)
                SyntaxResult lst True npv -> transformRule outerEnv localEnv 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
@@ -565,7 +572,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
              case curT of
                SyntaxResult (Nil _) False npv -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex (numExpPatternVars + npv) result (tail ts) (clearFncFlg modeFlags)
-               SyntaxResult _ _ 0 -> throwError $ Default "TODO"
+               SyntaxResult _ _ 0 -> throwError $ Default "TODO (vector)"
                SyntaxResult (List t) True npv -> transformRule outerEnv localEnv 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
@@ -594,7 +601,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
              case (trace ("pair: curT = " ++ show curT ++ " transform = " ++ show transform) curT) of
                SyntaxResult (Nil _) False npv -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex (numExpPatternVars + npv) result (tail ts) (clearFncFlg modeFlags)
-               SyntaxResult _ _ 0 -> throwError $ Default "TODO"
+               SyntaxResult _ _ 0 -> throwError $ Default "TODO (pair)"
                SyntaxResult (List t) True npv -> transformRule outerEnv localEnv 
                           ellipsisLevel -- Do not increment level, just wait until next iteration where incremented above
                           idx -- Keep incrementing each time
@@ -926,7 +933,7 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternV
                                 (List [d, Atom "..."])
                                 (clearFncFlg modeFlags)
               case r of
-                   SyntaxResult _ True 0 -> throwError $ Default "TODO"
+--                   SyntaxResult _ True 0 -> throwError $ Default "TODO (dotted list)"
                    SyntaxResult (List []) True npvT ->
                        -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
                        transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (numExpPatternVars + npvH + npvT) (List $ result ++ [List lst]) (List ts) (clearFncFlg modeFlags)
