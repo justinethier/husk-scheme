@@ -604,6 +604,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
 -- Transform an atom by attempting to look it up as a var...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (List result) transform@(List (Atom a : rst)) inputModeFlags = do
 
+TODO: increment numExpPatternVars but be careful, it needs to increment even if the 
+      pattern var is a zero match (hence why the name will need to change eventually).
+
   isDefinedAsMacro <- liftIO $ isNamespacedRecBound outerEnv macroNamespace a
 
   -- The macro subsystem needs to actively scan the template for binding constructs
