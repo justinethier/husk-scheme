@@ -165,6 +165,7 @@ data LispVal = Atom String
      --   manipulated by the same functions as regular variables.
  | SyntaxResult { synExpanded :: LispVal -- Expanded syntax
                 , synMatched :: Bool  -- True unless an nary (0-or-more match) pattern variable is not matched
+                , synNumPattVars :: Int -- Number of pattern variables encountered during syntax expansion
    } -- ^Internal use only
  | EOF
  | Nil String
@@ -172,7 +173,7 @@ data LispVal = Atom String
 
 -- |A helper function to create a syntax result
 normalSyntaxResult lisp = SyntaxResult lisp True
-getSyntaxResult (SyntaxResult r _) = r
+getSyntaxResult (SyntaxResult r _ _) = r
 --getSyntaxResult _ = throwError $ Default "Unexpected error in getSyntaxResult"
 
 -- |Container to hold code that is passed to a continuation for deferred execution
@@ -267,7 +268,7 @@ instance Eq LispVal where
 showVal :: LispVal -> String
 showVal (Nil _) = ""
 showVal (EOF) = "#!EOF"
-showVal (SyntaxResult result noMatch) = "{" ++ show result ++ ", " ++ show noMatch ++ "}"
+showVal (SyntaxResult result noMatch numPV) = "{" ++ show result ++ ", " ++ show noMatch ++ ", " ++ show numPV ++ "}"
 showVal (String contents) = "\"" ++ contents ++ "\""
 showVal (Char chr) = [chr]
 showVal (Atom name) = name
