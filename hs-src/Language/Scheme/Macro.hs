@@ -608,6 +608,10 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
                   SyntaxResult (Nil _) False _ -> return lst
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [dl]), Number $ toInteger ellipsisLevel]
 
+-- Temporary work-around, if an ellipsis is found by itself, skip it and keep going...
+transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars result transform@(List (Atom "..." : rst)) inputModeFlags = do
+    transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars result (List rst) inputModeFlags
+
 -- Transform an atom by attempting to look it up as a var...
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (List result) transform@(List (Atom a : rst)) inputModeFlags = do
 
@@ -640,8 +644,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
 --
 -- right, because 'quote' (for eg) could have been redefined but we do not check that below...
     expandFuncApp "quote" ts = expandLisp ts $ setBit inputModeFlags modeFlagIsQuoted -- Set the quoted flag
-Temporarily disabling this while I figure out WTF is going on with the test cases    
-    expandFuncApp "2lambda" ts@(List vars : body) = do
+    expandFuncApp "lambda" ts@(List vars : body) = do
         rawExpandedVars <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (List []) (List vars) inputModeFlags
 
         case (rawExpandedVars) of
