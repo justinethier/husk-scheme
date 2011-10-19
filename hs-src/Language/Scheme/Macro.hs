@@ -640,7 +640,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
 --
 -- right, because 'quote' (for eg) could have been redefined but we do not check that below...
     expandFuncApp "quote" ts = expandLisp ts $ setBit inputModeFlags modeFlagIsQuoted -- Set the quoted flag
-    expandFuncApp "lambda" ts@(List vars : body) = do
+Temporarily disabling this while I figure out WTF is going on with the test cases    
+    expandFuncApp "2lambda" ts@(List vars : body) = do
         rawExpandedVars <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (List []) (List vars) inputModeFlags
 
         case (rawExpandedVars) of
