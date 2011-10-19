@@ -539,7 +539,16 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
                SyntaxResult lst True 0 -> --throwError $ Default "TODO"
                     -- No pattern vars were encountered, which means this expansion would go on forever if not stopped.
                     -- So, just append what we got and keep going
-                    continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex (numExpPatternVars) (result ++ [lst]) (tail ts) (clearFncFlg modeFlags)
+                    --
+                    -- Note that lst is encapsulated within a list, to prevent problems downstream, EG:
+                    --
+                    --      (list (unquote name2) unquote name2)
+                    --
+                    -- Instead of:
+                    --
+                    --      (list (unquote name) . (unquote name)) 
+                    --
+                    continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex (numExpPatternVars) (result ++ [List [lst]]) (tail ts) (clearFncFlg modeFlags)
                SyntaxResult lst True npv -> transformRule outerEnv localEnv 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
@@ -909,14 +918,6 @@ transformRule _ localEnv _ _ numExpPatternVars _ (Atom transform) _ = do
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
 transformRule _ _ _ _ numExpPatternVars _ transform _ = return $ normalSyntaxResult (trace ("transform = " ++ show transform) transform) numExpPatternVars
-
-----
-TODO: why is the second unquote in the output from transformDottedList, not enclosed in a list? This screws up
-      everything downstream
-pair - 
-dl = (list (unquote name) . (unquote name)) 
-lst = {((list (unquote name2) unquote name2)), True, 2}
-----
 
 -- | A helper function for transforming an improper list
 transformDottedList :: Env -> Env -> Int -> [Int] -> Int -> LispVal -> LispVal -> Int -> IOThrowsError LispVal
