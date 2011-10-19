@@ -536,19 +536,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
                SyntaxResult (Nil _) True _ -> throwError $ Default "should never happen" 
                SyntaxResult (Nil _) False npv -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex (numExpPatternVars + npv) result (tail ts) (clearFncFlg modeFlags)
-               SyntaxResult lst True 0 -> --throwError $ Default "TODO"
-                    -- No pattern vars were encountered, which means this expansion would go on forever if not stopped.
-                    -- So, just append what we got and keep going
-                    --
-                    -- Note that lst is encapsulated within a list, to prevent problems downstream, EG:
-                    --
-                    --      (list (unquote name2) unquote name2)
-                    --
-                    -- Instead of:
-                    --
-                    --      (list (unquote name) . (unquote name)) 
-                    --
-                    continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex (numExpPatternVars) (result ++ [List [lst]]) (tail ts) (clearFncFlg modeFlags)
+               SyntaxResult lst True 0 ->
+                    continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex (numExpPatternVars) (result ++ [lst]) (tail ts) (clearFncFlg modeFlags)
                SyntaxResult lst True npv -> transformRule outerEnv localEnv 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
@@ -956,6 +945,8 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternV
    buildTransformedCode results ps p = do 
      case p of
         [List []] -> List $ results ++ [List ps]         -- Proper list has null list at the end
+        [List l@(Atom "unquote" : _ )] -> List $ results ++ [DottedList ps $ List l] -- Special case from parser. 
+--TODO: hardcode of "unquote" may be an issue for hygiene 
         [List ls] -> List $ results ++ [List $ ps ++ ls] -- Again, convert to proper list because a proper list is at end
         [l] -> List $ results ++ [DottedList ps l]
         ls -> do
