@@ -751,6 +751,7 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
    buildTransformedCode results ps p = do 
      case p of
         [List []] -> List $ results ++ [List ps]         -- Proper list has null list at the end
+        [List l@(Atom "unquote" : _ )] -> List $ results ++ [DottedList ps $ List l] -- Special case from parser. 
         [List ls] -> List $ results ++ [List $ ps ++ ls] -- Again, convert to proper list because a proper list is at end
         [l] -> List $ results ++ [DottedList ps l]
         ls -> do
