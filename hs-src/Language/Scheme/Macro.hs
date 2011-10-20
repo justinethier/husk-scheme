@@ -857,22 +857,8 @@ I think just the atom case (not atom as part of a list, like here) needs to have
                else continueTransformWith numPattVars (result ++ [List []]) ts modeFlags
          (Nil _, numPattVars) -> return  $ SyntaxResult (Nil "") False numPattVars
          (List l, numPattVars) -> do
---                    expanded <- renameIdentifiers l
--- TODO: causes an inf loop in:
--- (let ((name 'a)) `(list ,name . ,name))
---
---
--- this breaks because we insert a dotted list in for a pattern var and then
--- attemt to transform it. the transformer does not know any better and thinks it
--- is an nary match so it rewrites the pair to a list followed by "..."
---
--- how to solve this?
--- one idea - mark if an identier is replaced, then stop the match if no idents are inserted. feels incomplete, though
---
--- { -
---
--- TODO: read num patt vars from below transformRule, and use that value to pass to continueTransformWith
-            ex <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numPattVars (List []) (List (trace ("List l = " ++ show l) l)) $ setModeFlagIsFuncApp inputModeFlags --renameIdentifiers l
+            expanded <- renameIdentifiers l
+            ex <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numPattVars (List []) (List (trace ("List l = " ++ show l ++ " t = " ++ show t) expanded)) $ setModeFlagIsFuncApp inputModeFlags --renameIdentifiers l
             case ex of
                 SyntaxResult (List expanded) _ npv -> do
                     -- What's going on here is that if the pattern was a dotted list but the transform is not, we
