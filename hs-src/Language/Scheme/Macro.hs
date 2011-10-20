@@ -676,6 +676,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
 -- body = [e1,e2,...]
 -- need to inspect again after that is expanded, since it expands to a lambda form
             transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars
+--            QUICK and DIRTY test code:
+--            newlocalEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
+--            transformRule outerEnv newlocalEnv ellipsisLevel ellipsisIndex numExpPatternVars
                           (List [Atom a, renamedVars]) (List (trace ("body = " ++ show body) body)) $ setModeFlagIsFuncApp inputModeFlags
           otherwise -> throwError $ BadSpecialForm "Unexpected error in expandFuncApp" otherwise
     expandFuncApp _ ts = expandLisp ts inputModeFlags
