@@ -1,5 +1,7 @@
 ; test cases for hygienic macro rework
 
+(write (let ((x 2) (y 3)) (let ((x 7)) x)))
+
 (write
   (let ((z 1)) ((lambda () z))))
 
