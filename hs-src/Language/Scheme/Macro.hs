@@ -628,7 +628,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
   --
 -- TODO: what about quasi-quotation? This probably is not handled correctly, but need to figure out what the
 --       correct behavior is for a splice within a quasiquoted section of a template.
-  if (trace ("atom: " ++ a) testBit) inputModeFlags modeFlagIsFuncApp && not (testBit inputModeFlags modeFlagIsQuoted) -- Do not expand quoted macros 
+  if (trace ("atom: " ++ a ++ " rst = " ++ show rst) testBit) inputModeFlags modeFlagIsFuncApp && not (testBit inputModeFlags modeFlagIsQuoted) -- Do not expand quoted macros 
      then if isDefinedAsMacro
              then expandMacro
              else expandFuncApp a rst
@@ -730,7 +730,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
 -- test case: (let ((x 2) (y 3)) (let ((x 7) (z (+ x y))) (* z x)))
 --
 -- how is this supposed to work... ?
--- 
+--  may need to refer back to the paper and consider the top-level design on this
 
 
 --TODO: this is wrong, I think we only want to rename an identifier as it is found. otherwise we could rename one that
@@ -782,8 +782,14 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
                         transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (numExpPatternVars + 1) (List $ result ++ expanded) (List $ tail ts) (clearFncFlg modeFlags)
                         -- TODO: can this cause an infinite loop expanding the same var over and over? may want to consider
                         --       zeroing-out the var at this point
-             else -- Matched 0 times, skip it
-                  trans (numExpPatternVars + 1) (List result) (List $ tail ts) modeFlags
+             else do
+                  if (testBit inputModeFlags modeFlagIsQuoted)
+                     then -- Quoted, pass along this token 
+                     -- TODO: this does not quite work if the atom was quasi-quoted. need to handle
+                     --      this eventually...
+                          trans (numExpPatternVars + 1) (List $ result ++ [Atom a]) (List $ tail ts) modeFlags
+                     else -- Matched 0 times, skip it
+                          trans (numExpPatternVars + 1) (List result) (List $ tail ts) modeFlags
 
     noEllipsis isDefined ts modeFlags = do
       isImproperPattern <- loadNamespacedBool "improper pattern"
@@ -876,7 +882,7 @@ I think just the atom case (not atom as part of a list, like here) needs to have
                         continueTransformWith npv (result ++ (buildImproperList expanded)) ts modeFlags
                       else continueTransformWith npv (result ++ [List expanded]) ts modeFlags
          (l, numPattVars) -> do
-            expanded <- (trace ("l = " ++ show l) renameIdentifiers) [l] -- TODO: I think this implies rI needs to be more generic...
+            expanded <- (trace ("l = " ++ show l ++ " npv = " ++ show numPattVars ++ " ts = " ++ show ts) renameIdentifiers) [l] -- TODO: I think this implies rI needs to be more generic...
             continueTransformWith numPattVars (result ++ expanded) ts modeFlags
 
     -- Transformed code should be an improper list, but may need to "promote" it to a proper list
