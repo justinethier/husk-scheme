@@ -1,5 +1,8 @@
 ; test cases for hygienic macro rework
 
+; TODO: idea, can we rename a var at the beginning of transformRule (atom)?
+; I think it is wrong to call renameVars to rename in a list, as per below:
+
 ; Following test case does not work, output below:
 ;
 ;a = let t = (let ((x 7)) x1) ex = {(let (((x1 y2) 7)) x1), True, 1} expanded = ((lambda () x1) 7)
