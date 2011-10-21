@@ -613,7 +613,18 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars re
     transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars result (List rst) inputModeFlags
 
 -- Transform an atom by attempting to look it up as a var...
-transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (List result) transform@(List (Atom a : rst)) inputModeFlags = do
+transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (List result) transform@(List (Atom aa : rst)) inputModeFlags = do
+
+-- TODO: experimenting with renaming vars as they are found; this seems in line w/Clinger's algorithm
+-- and seems a better approach than attempting to step ahead and rename (as witnessed by the lambda test
+-- that is currently failing). 
+-- also note that this renaming needs to occur when an atom is found by itself, not in a list...
+  a <- renameIdent $ Atom aa
+  isDef <- liftIO $ isNamespacedBound localEnv "renamed vars" (trace ("checking ident: " ++ show ident) ident)
+  let a = if isDef
+             then getNamespacedVar localEnv "renamed vars" (trace ("renamed " ++ ident) ident)
+          _ -> return $ Atom ident
+--
 
   isDefinedAsMacro <- liftIO $ isNamespacedRecBound outerEnv macroNamespace a
 
@@ -630,9 +641,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
 --       correct behavior is for a splice within a quasiquoted section of a template.
   if (trace ("atom: " ++ a ++ " rst = " ++ show rst) testBit) inputModeFlags modeFlagIsFuncApp && not (testBit inputModeFlags modeFlagIsQuoted) -- Do not expand quoted macros 
      then if isDefinedAsMacro
-             then expandMacro
+             then expandMacro a
              else expandFuncApp a rst
-     else expandLisp rst inputModeFlags
+     else expandLisp a rst inputModeFlags
 
   where
     -- Expand from an atom in the function application position
@@ -643,8 +654,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
 -- but good enough for the moment...
 --
 -- right, because 'quote' (for eg) could have been redefined but we do not check that below...
-    expandFuncApp "quote" ts = expandLisp ts $ setBit inputModeFlags modeFlagIsQuoted -- Set the quoted flag
-    expandFuncApp "lambda" ts@(List vars : body) = do
+    expandFuncApp a@("quote") ts = expandLisp a ts $ setBit inputModeFlags modeFlagIsQuoted -- Set the quoted flag
+    expandFuncApp a@("lambda") ts@(List vars : body) = do
         rawExpandedVars <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (List []) (List vars) inputModeFlags
 
         case (rawExpandedVars) of
@@ -676,19 +687,16 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
 -- body = [e1,e2,...]
 -- need to inspect again after that is expanded, since it expands to a lambda form
             transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars
---            QUICK and DIRTY test code:
---            newlocalEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
---            transformRule outerEnv newlocalEnv ellipsisLevel ellipsisIndex numExpPatternVars
                           (List [Atom a, renamedVars]) (List (trace ("body = " ++ show body) body)) $ setModeFlagIsFuncApp inputModeFlags
           otherwise -> throwError $ BadSpecialForm "Unexpected error in expandFuncApp" otherwise
-    expandFuncApp _ ts = expandLisp ts inputModeFlags
+    expandFuncApp a ts = expandLisp a ts inputModeFlags
 
     -- Expand basic Lisp code using the normal means...
-    expandLisp ts modeFlags = do
+    expandLisp a ts modeFlags = do
       isDefined <- liftIO $ isBound localEnv a
       if hasEllipsis
-        then ellipsisHere isDefined ts modeFlags
-        else noEllipsis isDefined ts modeFlags
+        then ellipsisHere isDefined a ts modeFlags
+        else noEllipsis isDefined a ts modeFlags
 
 
 --
@@ -698,8 +706,15 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
     -- Expand a macro inline
     -- This is more efficient than waiting until after expansion to expand an inner macro,
     -- and is also required for Clinger's hygiene algorithm.
-    expandMacro = do
-      expandedTransform <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex 0 (List []) transform (clearFncFlg inputModeFlags)
+    expandMacro a = do
+      expanded <- macroEval outerEnv transform
+      return $ SyntaxResult ((trace ("a = " ++ a ++ " t = " ++ show transform ++ " expanded = " ++ show expanded ) expanded)) True numExpPatternVars
+--
+-- TODO: test code for using new ENV, have not thought all of this through 
+--
+--      newlocalEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
+{-      expandedTransform <- transformRule outerEnv newlocalEnv ellipsisLevel ellipsisIndex 0 (List []) transform (clearFncFlg inputModeFlags)
+--      expandedTransform <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex 0 (List []) transform (clearFncFlg inputModeFlags)
       case expandedTransform of
          SyntaxResult r True _ -> do
              expanded <- macroEval outerEnv $ getSyntaxResult expandedTransform
@@ -708,7 +723,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
              return $ SyntaxResult ((trace ("a = " ++ a ++ " t = " ++ show transform ++ " ex = " ++ show expandedTransform ++ " expanded = " ++ show expanded ) expanded)) True numExpPatternVars
 --             return $ SyntaxResult expanded True
          SyntaxResult r False _ -> return $ SyntaxResult r False numExpPatternVars
-
+-}
     -- A function to use input flags to append a '() to a list if necessary
     -- Only makes sense to do this if the *transform* is a dotted list
     appendNil d (Bool isImproperPattern) (Bool isImproperInput) =
@@ -719,7 +734,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
          _ -> d
     appendNil d _ _ = d -- Should never be reached...
 
-    loadNamespacedBool namespc = do
+    loadNamespacedBool namespc a = do
         isDef <- liftIO $ isNamespacedBound localEnv namespc a
         if isDef
            then getNamespacedVar localEnv namespc a
@@ -739,8 +754,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
 --TODO: this is wrong, I think we only want to rename an identifier as it is found. otherwise we could rename one that
 --is part of a macro that is waiting to be expanded. we would want that macro expanded and *then* any identifiers renamed.
     -- |Recursively rename any identifiers
-    renameIdentifiers idents = do
-      mapM renameIdent idents
+    renameIdentifiers idents = idents -- TODO: temp disabling this, to experiment w/renaming atoms directly
+--      mapM renameIdent idents
 
     renameIdent (Atom ident) = do
         isDef <- liftIO $ isNamespacedBound localEnv "renamed vars" (trace ("checking ident: " ++ show ident) ident)
@@ -755,11 +770,11 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
     renameIdent other = return (trace ("skipping ident = " ++ show other) other)
 
     hasEllipsis = macroElementMatchesMany transform
-    ellipsisHere isDefined ts modeFlags = do
+    ellipsisHere isDefined a ts modeFlags = do
         if isDefined
              then do 
-                    isImproperPattern <- loadNamespacedBool "improper pattern"
-                    isImproperInput <- loadNamespacedBool "improper input"
+                    isImproperPattern <- loadNamespacedBool "improper pattern" aa -- TODO: aa, since not renamed in pattern?
+                    isImproperInput <- loadNamespacedBool "improper input" aa
                     -- Load variable and ensure it is a list
                     var <- getVar localEnv a
                     case var of
@@ -794,7 +809,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
                      else -- Matched 0 times, skip it
                           trans (numExpPatternVars + 1) (List result) (List $ tail ts) modeFlags
 
-    noEllipsis isDefined ts modeFlags = do
+    noEllipsis isDefined a ts modeFlags = do
       isImproperPattern <- loadNamespacedBool "improper pattern"
       isImproperInput <- loadNamespacedBool "improper input"
 --      t <- if (trace ("a = " ++ show a ++ "isDefined = " ++ show isDefined) isDefined)
@@ -870,6 +885,7 @@ I think just the atom case (not atom as part of a list, like here) needs to have
                       then do
                         continueTransformWith npv (result ++ (buildImproperList expanded)) ts modeFlags
                       else continueTransformWith npv (result ++ [List expanded]) ts modeFlags
+                otherwise -> throwError $ Default $ "Unexpected result in transformRule (Atom): " ++ show ex 
          (l, numPattVars) -> do
             expanded <- (trace ("l = " ++ show l ++ " npv = " ++ show numPattVars ++ " ts = " ++ show ts) renameIdentifiers) [l] -- TODO: I think this implies rI needs to be more generic...
             continueTransformWith numPattVars (result ++ expanded) ts modeFlags
