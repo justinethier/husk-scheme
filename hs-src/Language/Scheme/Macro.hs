@@ -786,9 +786,23 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
                     case var of
                       -- add all elements of the list into result
                       List _ -> do case (appendNil (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput) of
-                                     List expanded -> do
+                                     List l -> do
 -- TODO:                                       expanded <- renameIdentifiers exp
-                                       trans (numExpPatternVars + 1) (List $ result ++ expanded) (List $ tail ts) modeFlags
+                                       -- EXPERIMENTAL:
+                                       -- use a fresh env for this because we do not want pattern vars
+                                       -- to be recursively expanded forever. in our system a pattern
+                                       -- var only expands once, so we just pass an env without any more of them
+                                       --
+                                       -- ^ - does not work because renamed vars are in localEnv...
+                                       newEnv <- liftIO $ nullEnv
+                                       for below to work I would need to copy all vars in the renamed namespc
+                                       from localEnv to newEnv. grr...
+                                       extendEnv newEnv  
+--      (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
+                                       rawExpandedVars <- transformRule outerEnv newEnv ellipsisLevel ellipsisIndex numExpPatternVars (List []) (List l) inputModeFlags
+                                       case rawExpandedVars of
+                                         SyntaxResult (List expandedVars) True _ -> do
+                                           trans (numExpPatternVars + 1) (List $ result ++ expandedVars) (List $ tail ts) modeFlags
                                      _ -> -- No matches for var
                                           continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex (numExpPatternVars + 1) result (tail ts) (clearFncFlg modeFlags)
 
@@ -846,8 +860,8 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex numExpPatternVars (L
                                   else if length v > 0 
                                           then return (var, numExpPatternVars + 1) -- Just return the elements directly, so all can be appended
                                           else return $ (Nil "", numExpPatternVars + 1) -- A 0 match case, flag it to calling code
-TODO: the below is an example of what has to happen each time a pattern var is inserted,
-except if a list is inserted then we need to go a step further I think, and recursively expand it
+--TODO: the below is an example of what has to happen each time a pattern var is inserted,
+--except if a list is inserted then we need to go a step further I think, and recursively expand it
                      Atom v -> if ellipsisLevel > 0
                              then -- List req'd for 0-or-n match
                                   throwError $ Default "Unexpected error processing data in transformRule" 
