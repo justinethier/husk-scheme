@@ -11,9 +11,10 @@
 ;
 ;perhaps each recursively expanded macro needs its own environment, to prevent the outer x from
 ;clobbering x in the inner macro.
-(write (let ((x 2) (y 3)) (let ((x 7)) x)))
+;(write (let ((x 2) (y 3)) (let ((x 7)) x)))
 
-;(let ((x 1)) x (+ x x))
+(write (let ((z 1)) z (+ z z)))
+(write (let ((z 1)) (+ z z)))
 
 
 ;(write

@@ -810,11 +810,15 @@ transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numExpPatt
                                   transformRule outerEnv localEnv renameEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused -}
                       Nil "" -> -- No matches, keep going
                                 continueTransform outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (numExpPatternVars + 1) result (tail ts) (clearFncFlg modeFlags)
+                      expanded@(Atom v) -> do
+                        expanded <- renameAtom renameEnv v
+                        transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (numExpPatternVars + 1) (List $ result ++ [Atom expanded]) (List $ tail ts) (clearFncFlg modeFlags)
                       expanded@(_) -> do
 --                        expanded <- renameIdentifiers [v]
                         transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (numExpPatternVars + 1) (List $ result ++ [expanded]) (List $ tail ts) (clearFncFlg modeFlags)
                         -- TODO: can this cause an infinite loop expanding the same var over and over? may want to consider
                         --       zeroing-out the var at this point
+                        -- perhaps it needs to be set to nil???
              else do
                   if (testBit inputModeFlags modeFlagIsQuoted)
                      then -- Quoted, pass along this token 
@@ -895,18 +899,25 @@ I think just the atom case (not atom as part of a list, like here) needs to have
                     -- nary match in pattern as part of an improper list but used as list here; append the empty list
                else continueTransformWith numPattVars (result ++ [List []]) ts modeFlags
          (Nil _, numPattVars) -> return  $ SyntaxResult (Nil "") False numPattVars
-         (List expanded, numPattVars) -> do
+         (List l, numPattVars) -> do
 --            expanded <- renameIdentifiers l
-            ex <- transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numPattVars (List []) (List (trace ("List l = " ++ show expanded ++ " t = " ++ show t) expanded)) $ setModeFlagIsFuncApp inputModeFlags --renameIdentifiers l
-            case ex of
-                SyntaxResult (List expanded) _ npv -> do
-                    -- What's going on here is that if the pattern was a dotted list but the transform is not, we
-                    -- need to "lift" the input up out of a list. - }
-                    if ((trace ("l = " ++ show expanded ++ ", expanded = " ++ show expanded) eqVal) isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
-                      then do
-                        continueTransformWith npv (result ++ (buildImproperList expanded)) ts modeFlags
-                      else continueTransformWith npv (result ++ [List expanded]) ts modeFlags
-                otherwise -> throwError $ Default $ "Unexpected result in transformRule (Atom): " ++ show ex 
+           newEnv <- liftIO $ nullEnv
+           rawExpandedVars <- transformRule outerEnv newEnv renameEnv ellipsisLevel ellipsisIndex numExpPatternVars (List []) (List l) $ setModeFlagIsFuncApp inputModeFlags
+           case rawExpandedVars of
+             SyntaxResult (List expanded) True _ -> do
+               ex <- transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numPattVars (List []) (List (trace ("List l = " ++ show expanded ++ " t = " ++ show t) expanded)) $ setModeFlagIsFuncApp inputModeFlags --renameIdentifiers l
+               case ex of
+                   SyntaxResult (List expanded) _ npv -> do
+                       -- What's going on here is that if the pattern was a dotted list but the transform is not, we
+                       -- need to "lift" the input up out of a list. - }
+                       if ((trace ("l = " ++ show expanded ++ ", expanded = " ++ show expanded) eqVal) isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
+                         then do
+                           continueTransformWith npv (result ++ (buildImproperList expanded)) ts modeFlags
+                         else continueTransformWith npv (result ++ [List expanded]) ts modeFlags
+                   otherwise -> throwError $ Default $ "Unexpected result in transformRule (Atom): " ++ show ex 
+         (Atom v, numPattVars) -> do
+            expanded <- renameAtom renameEnv v
+            continueTransformWith numPattVars (result ++ [Atom expanded]) ts modeFlags
          (expanded, numPattVars) -> do
 --            expanded <- (trace ("l = " ++ show l ++ " npv = " ++ show numPattVars ++ " ts = " ++ show ts) renameIdentifiers) [l] -- TODO: I think this implies rI needs to be more generic...
             continueTransformWith numPattVars (result ++ [expanded]) ts modeFlags
