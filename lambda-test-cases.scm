@@ -1,3 +1,19 @@
+(define-syntax my-let
+  (syntax-rules ()
+    ((_ ((x v) ...) e1 e2 ...)
+     '((lambda (x ...) e1 e2 ...) v ...))
+    ((_ name ((x v) ...) e1 e2 ...)
+     (let*
+       ((f  (lambda (name)
+              (lambda (x ...) e1 e2 ...)))
+        (ff ((lambda (proc) (f (lambda (x ...) ((proc proc)
+               x ...))))
+             (lambda (proc) (f (lambda (x ...) ((proc proc)
+               x ...)))))))
+        (ff v ...)))))
+(write 
+  (my-let ((x 2) (y 3)) (my-let ((x 7) (z (+ x y))) (* z x))))
+
 ; test cases for hygienic macro rework
 
 ; TODO: idea, can we rename a var at the beginning of transformRule (atom)?
@@ -13,8 +29,8 @@
 ;clobbering x in the inner macro.
 ;(write (let ((x 2) (y 3)) (let ((x 7)) x)))
 
-(write (let ((z 1)) z (+ z z)))
-(write (let ((z 1)) (+ z z)))
+;(write (let ((z 1)) z (+ z z)))
+;(write (let ((z 1)) (+ z z)))
 
 
 ;(write

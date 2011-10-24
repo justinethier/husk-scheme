@@ -668,6 +668,9 @@ transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numExpPatt
 
         case (rawExpandedVars) of
           SyntaxResult (List expandedVars) True _ -> do
+
+-- TODO: if a var in a let is define as an expression - EG: (+ x x), do we expand that expression to account for renaming?          
+
             -- Rename identifiers in the expanded code, and mark them for later
             renamedVars <- markBoundIdentifiers renameEnv expandedVars []
 -- TODO: rename marked vars during transformation
@@ -694,7 +697,7 @@ transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numExpPatt
 
 -- body = [e1,e2,...]
 -- need to inspect again after that is expanded, since it expands to a lambda form
-            transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numExpPatternVars
+            (trace ("!!! renamedVars = " ++ show renamedVars) transformRule) outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numExpPatternVars
                           (List [Atom a, renamedVars]) (List (trace ("body = " ++ show body) body)) $ setModeFlagIsFuncApp inputModeFlags
           otherwise -> throwError $ BadSpecialForm "Unexpected error in expandFuncApp" otherwise
     expandFuncApp a ts = expandLisp a ts inputModeFlags
