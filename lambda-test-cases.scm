@@ -7,6 +7,19 @@
 ; TODO: the problem below is that the mx in (+ mx my) is renamed to the mx in
 ;       the inner my-let, instead of the outer mx
 ;
+; More thoughts:
+;
+; ***I need to think about this more and convince myself*** , but I think the answer to get
+; this to work is to implement renaming (Clinger's algorithm) for macro calls as well as lambda.
+; Since they both work together, I do not think it will be possible to only implement lambda's and
+; not run into problems such as this.
+;
+; Perhaps this should be phased, and we should try to get everything working with the lambda
+; renaming disabled. Then once everything is up and running, then both lambda and macro calls
+; will have to be implemented together
+;
+; At least macro def's can wait until after the other two are implemented...
+;
 ; ; I think there is also a hygiene problem when the 'm' is removed from var names
 (write 
   (my-let ((mx 2) (my 3)) (my-let ((mx 7) (mz (+ mx my))) (* mz mx))))
