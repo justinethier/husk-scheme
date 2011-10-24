@@ -1,18 +1,15 @@
 (define-syntax my-let
   (syntax-rules ()
     ((_ ((x v) ...) e1 e2 ...)
-     '((lambda (x ...) e1 e2 ...) v ...))
-    ((_ name ((x v) ...) e1 e2 ...)
-     (let*
-       ((f  (lambda (name)
-              (lambda (x ...) e1 e2 ...)))
-        (ff ((lambda (proc) (f (lambda (x ...) ((proc proc)
-               x ...))))
-             (lambda (proc) (f (lambda (x ...) ((proc proc)
-               x ...)))))))
-        (ff v ...)))))
+     ((lambda (x ...) e1 e2 ...) v ...))))
+
+
+; TODO: the problem below is that the mx in (+ mx my) is renamed to the mx in
+;       the inner my-let, instead of the outer mx
+;
+; ; I think there is also a hygiene problem when the 'm' is removed from var names
 (write 
-  (my-let ((x 2) (y 3)) (my-let ((x 7) (z (+ x y))) (* z x))))
+  (my-let ((mx 2) (my 3)) (my-let ((mx 7) (mz (+ mx my))) (* mz mx))))
 
 ; test cases for hygienic macro rework
 

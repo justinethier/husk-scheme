@@ -157,7 +157,7 @@ matchRule outerEnv identifiers localEnv renameEnv (List [pattern, template]) (Li
            _ -> do
                 expandedLisp <- transformRule outerEnv localEnv renameEnv 0 [] 0 (List []) template $ setModeFlagIsFuncApp 0 
                 case expandedLisp of
-                    SyntaxResult r _ _ -> return r
+                    SyntaxResult r _ _ -> return (trace ("returning: " ++ show r) r)
                     x -> throwError $ BadSpecialForm "Unexpected code expansion from syntax-rules: " $ String $ show x
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
 
@@ -666,7 +666,7 @@ transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numExpPatt
     expandFuncApp a@("lambda") ts@(List vars : body) = do
         rawExpandedVars <- transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numExpPatternVars (List []) (List vars) inputModeFlags
 
-        case (rawExpandedVars) of
+        case (trace ("rawExpVars = " ++ show rawExpandedVars) rawExpandedVars) of
           SyntaxResult (List expandedVars) True _ -> do
 
 -- TODO: if a var in a let is define as an expression - EG: (+ x x), do we expand that expression to account for renaming?          
@@ -891,7 +891,7 @@ I think just the atom case (not atom as part of a list, like here) needs to have
 -}
 -- ORIGINAL CODE:
                   return (Atom a, numExpPatternVars)
-      case t of
+      case (trace ("t = " ++ show t) t) of
          (Nil "var not defined in pattern", numPattVars) -> 
             if ellipsisLevel > 0
                then return $ SyntaxResult (Nil "") False numPattVars
@@ -908,8 +908,9 @@ I think just the atom case (not atom as part of a list, like here) needs to have
            rawExpandedVars <- transformRule outerEnv newEnv renameEnv ellipsisLevel ellipsisIndex numExpPatternVars (List []) (List l) $ setModeFlagIsFuncApp inputModeFlags
            case rawExpandedVars of
              SyntaxResult (List expanded) True _ -> do
-               ex <- transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numPattVars (List []) (List (trace ("List l = " ++ show expanded ++ " t = " ++ show t) expanded)) $ setModeFlagIsFuncApp inputModeFlags --renameIdentifiers l
-               case ex of
+               ex <- transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numExpPatternVars (List []) (List (trace ("List l = " ++ show expanded ++ " t = " ++ show t ++ " expanded = " ++ show expanded) expanded)) $ setModeFlagIsFuncApp inputModeFlags --renameIdentifiers l
+--               case ex of
+               case (trace ("ex = " ++ show ex) ex) of
                    SyntaxResult (List expanded) _ npv -> do
                        -- What's going on here is that if the pattern was a dotted list but the transform is not, we
                        -- need to "lift" the input up out of a list. - }
