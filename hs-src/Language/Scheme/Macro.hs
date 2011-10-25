@@ -793,11 +793,13 @@ transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numExpPatt
                       List _ -> do case (appendNil (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput) of
                                      List l -> do
 -- TODO:                                       expanded <- renameIdentifiers exp
-                                       -- Use a fresh env for this because we do not want pattern vars
+                                       -- The expanded code may need to be expanded further, so call into it
+                                       --
+                                       -- Use a fresh env and ellipsis information for this because we do not want pattern vars
                                        -- to be recursively expanded forever. in our system a pattern
                                        -- var only expands once, so we just pass an env without any more of them
                                        newEnv <- liftIO $ nullEnv
-                                       rawExpandedVars <- transformRule outerEnv newEnv renameEnv ellipsisLevel ellipsisIndex numExpPatternVars (List []) (List l) inputModeFlags
+                                       rawExpandedVars <- transformRule outerEnv newEnv renameEnv 0 [] 0 (List []) (List l) inputModeFlags
                                        case rawExpandedVars of
                                          SyntaxResult (List expandedVars) True _ -> do
                                            trans (numExpPatternVars + 1) (List $ result ++ expandedVars) (List $ tail ts) modeFlags
@@ -814,6 +816,7 @@ transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numExpPatt
                       Nil "" -> -- No matches, keep going
                                 continueTransform outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (numExpPatternVars + 1) result (tail ts) (clearFncFlg modeFlags)
                       expanded@(Atom v) -> do
+                      -- TODO: per Clinger, may need to examine this more closely
                         expanded <- renameAtom renameEnv v
                         transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (numExpPatternVars + 1) (List $ result ++ [Atom expanded]) (List $ tail ts) (clearFncFlg modeFlags)
                       expanded@(_) -> do
@@ -903,12 +906,19 @@ I think just the atom case (not atom as part of a list, like here) needs to have
                else continueTransformWith numPattVars (result ++ [List []]) ts modeFlags
          (Nil _, numPattVars) -> return  $ SyntaxResult (Nil "") False numPattVars
          (List l, numPattVars) -> do
---            expanded <- renameIdentifiers l
-           newEnv <- liftIO $ nullEnv
-           rawExpandedVars <- transformRule outerEnv newEnv renameEnv ellipsisLevel ellipsisIndex numExpPatternVars (List []) (List l) $ setModeFlagIsFuncApp inputModeFlags
-           case rawExpandedVars of
-             SyntaxResult (List expanded) True _ -> do
-               ex <- transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex numExpPatternVars (List []) (List (trace ("List l = " ++ show expanded ++ " t = " ++ show t ++ " expanded = " ++ show expanded) expanded)) $ setModeFlagIsFuncApp inputModeFlags --renameIdentifiers l
+-- TODO (?):           expanded <- renameIdentifiers l
+             -- The expanded list may contain code that needs to be expanded further, so call
+             -- the transformer on it
+             --
+             -- EXPERIMENT: use a new localEnv so pattern vars at this level are not
+             --  inserted in the new level. Also zero-out ellipsis information since we are
+             --  not making any nested ellipsis expansions for the current macro; any inner macros
+             --  need to start fresh 
+             --
+             --  rational: this pattern var has already been expanded; do not expand it again
+               newEnv <- liftIO $ nullEnv
+               ex <- transformRule outerEnv newEnv renameEnv 0 [] 0 (List []) (List (trace ("List l = " ++ show l ++ " t = " ++ show t) l)) $ setModeFlagIsFuncApp inputModeFlags --renameIdentifiers l
+--               ex <- transformRule outerEnv newEnv renameEnv ellipsisLevel ellipsisIndex numExpPatternVars (List []) (List (trace ("List l = " ++ show expanded ++ " t = " ++ show t ++ " expanded = " ++ show expanded) expanded)) $ setModeFlagIsFuncApp inputModeFlags --renameIdentifiers l
 --               case ex of
                case (trace ("ex = " ++ show ex) ex) of
                    SyntaxResult (List expanded) _ npv -> do
@@ -920,6 +930,8 @@ I think just the atom case (not atom as part of a list, like here) needs to have
                          else continueTransformWith npv (result ++ [List expanded]) ts modeFlags
                    otherwise -> throwError $ Default $ "Unexpected result in transformRule (Atom): " ++ show ex 
          (Atom v, numPattVars) -> do
+-- FUTURE: I believe that per Clinger, we need to examine the 
+-- expanded atom to see if it is lambda, macro, etc
             expanded <- renameAtom renameEnv v
             continueTransformWith numPattVars (result ++ [Atom expanded]) ts modeFlags
          (expanded, numPattVars) -> do
