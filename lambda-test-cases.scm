@@ -33,11 +33,19 @@
 ;
 ;a = let t = (let ((x 7)) x1) ex = {(let (((x1 y2) 7)) x1), True, 1} expanded = ((lambda () x1) 7)
 ;
+
+
 ;some initial thoughts:
 ;
 ;perhaps each recursively expanded macro needs its own environment, to prevent the outer x from
 ;clobbering x in the inner macro.
+;
+; alternatively, do we need to handle lambda and macro renaming in order to get this to work???
+; looks like (x => (x, y)) in localEnv is "accidentally" getting loaded instead of (x => x)
+;
 (write (let ((x 2) (y 3)) (let ((x 7)) x)))
+
+
 ;
 ;;;(write (let ((z 1)) z (+ z z)))
 ;;;(write (let ((z 1)) (+ z z)))
