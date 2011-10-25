@@ -9,6 +9,8 @@
 (load "skim-unit.scm")
 (unit-test-start "macros (refactored)")
 
+(assert/equal (let* ((x 1)) x) 1)
+
 (define-syntax my-let
   (syntax-rules ()
     ((_ ((x v) ...) e1 e2 ...)
