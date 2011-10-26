@@ -25,6 +25,11 @@ At a high level, macro transformation is broken down into the following steps:
  2) If a rule matches,
  3) Transform by walking the transform, inserting variables as needed
 
+TODO: but the above is changing to use Clinger's algorithm!
+
+macros will change to have a step 0 that walks the macro code searching for 
+the 4 criteria noted in the paper. if any of the criteria are found (procedure abstractions,
+macro calls, etc) then the appropriate handler will be called to deal with it
 -}
 
 module Language.Scheme.Macro
@@ -63,7 +68,11 @@ macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom
   - As it stands now, there is no checking until the code attempts to perform a macro transformation.
   - At a minimum, should check identifiers to make sure each is an atom (see findAtom) 
   -}
-  _ <- defineNamespacedVar env macroNamespace keyword syntaxRules
+  _ <- do
+
+    -- TODO: store a syntax object instead, so we can store the Env of use
+    -- TBD: do we need to store a copy of that Env?
+    defineNamespacedVar env macroNamespace keyword syntaxRules
   return $ Nil "" -- Sentinal value
 
 {- Inspect code for macros
@@ -103,11 +112,18 @@ macroEval _ lisp@(_) = return lisp
  -}
 macroTransform :: Env -> LispVal -> [LispVal] -> LispVal -> IOThrowsError LispVal
 macroTransform env identifiers (rule@(List _) : rs) input = do
+  -- TODO: per Clinger, need to pass a rename env down to macroRule (although it will only be
+  -- used during the transformRule step), in order to collect any renamed variables
+  --
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
+                               -- to hold pattern variables
   result <- matchRule env identifiers localEnv rule input
   case result of
     Nil _ -> macroTransform env identifiers rs input
-    _ -> return result
+    _ -> do
+        -- TODO: walk the resulting code, performing the Clinger algorithm's 4 components
+        -- TODO: create a separate 'walk' function for this
+        return result
 
 -- Ran out of rules to match...
 macroTransform _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
@@ -168,25 +184,6 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
 
 matchRule _ _ _ rule input = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
-
--- Issue #30
-{-------------------------
--- Just some test code, this needs to be more sophisticated than simply finding a list of them.
--- because we probably need to know the context - IE, (begin ... (lambda ...) (define ...) x) - x should
--- not be rewritten if it is the name of one of the lambda arguments
-findBindings :: Env -> LispVal -> IOThrowsError LispVal
-findBindings localEnv pattern@(List (_ : ps)) = searchForBindings localEnv (List ps) [] 
-
-searchForBindings :: Env -> LispVal -> [LispVal] -> IOThrowsError LispVal
---env pattern@(List (List (Atom "lambda" : List bs : _) : ps)) bindings = searchForBindings env (List ps) (bindings ++ bs) 
---searchForBindings env pattern@(List (List (Atom "lambda" : List bs : _) : ps)) bindings = searchForBindings env (List ps) (bindings ++ bs) 
-searchForBindings env pattern@(List (p : ps)) bindings = do
-  newBindings <- searchForBindings env (List [p]) []
-  case newBindings of
-    List n -> searchForBindings env (List ps) (bindings ++ n)
-    _ -> throwError $ Default "Unexpected error in searchForBindings" 
-searchForBindings _ _ bindings = return $ List bindings
--------------------------}
 
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 in preparation for macro transformation. -}
@@ -495,7 +492,15 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(Li
 checkLocal _ _ _ _ _ _ _ _ = return $ Bool False
 
 {- |Transform input by walking the tranform structure and creating a new structure
-    with the same form, replacing identifiers in the tranform with those bound in localEnv -}
+    with the same form, replacing identifiers in the tranform with those bound in localEnv 
+
+TODO: this is essentially Clinger's rewrite step, however it needs to be extended to do all that is req'd, including:
+
+ - renaming of free variables
+ - collecting a list of variables that are renamed (perhaps in a new Env parameter)
+ - divert-ing bindings back into the resultant Env (not 100% clear on this, need to be careful)
+ - TODO: anything else?
+-}
 transformRule :: Env        -- ^ Outer, enclosing environment
               -> Env        -- ^ Environment local to the macro
               -> Int        -- ^ ellipsisLevel - Nesting level of the zero-to-many match, or 0 if none
