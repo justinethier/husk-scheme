@@ -39,6 +39,7 @@ module Language.Scheme.Macro
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import qualified Language.Scheme.Macro.Matches as Matches
+import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
 import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
@@ -119,10 +120,11 @@ macroTransform env identifiers (rule@(List _) : rs) input = do
   case result of
     Nil _ -> macroTransform env identifiers rs input
     _ -> do
+        renameEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
         -- TODO: walk the resulting code, performing the Clinger algorithm's 4 components
         -- TODO: create a separate 'walk' function for this
 --        return result
-        walkExpanded env env env (List []) result
+        walkExpanded env env renameEnv (List []) result
 
 -- Ran out of rules to match...
 macroTransform _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
@@ -504,12 +506,14 @@ walkExpanded defEnv useEnv renameEnv (List result) transform@(List ((DottedList 
   List ls <- walkExpanded defEnv useEnv renameEnv (List []) (List ds)
   l <- walkExpanded defEnv useEnv renameEnv (List []) d
   walkExpanded defEnv useEnv renameEnv (List $ result ++ [DottedList ls l]) (List ts)
-{-
+
 -- TODO: This is just a simple example...
-walkExpanded defEnv useEnv renameEnv (List result) transform@(List (Atom "lambda" : ts)) = do
+walkExpanded defEnv useEnv renameEnv (List result) transform@(List (Atom "lambda" : List vars : body)) = do
   -- TODO: more to come w/Clinger's algorithm...
-  walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom (trace ("found a lambda while walking expanded code") "lambda")]) (List ts)
--}
+--  walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom (trace ("found a lambda while walking expanded code") "lambda")]) (List ts)
+  renamedVars <- markBoundIdentifiers renameEnv vars []
+  walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom "lambda", renamedVars]) (List body)
+
 walkExpanded defEnv useEnv renameEnv (List result) transform@(List (Atom a : ts)) = do
   -- TODO: more to come w/Clinger's algorithm...
   walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom a]) (List ts)
@@ -529,6 +533,18 @@ walkExpanded defEnv useEnv renameEnv result@(List _) (List []) = do
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
 walkExpanded defEnv useEnv renameEnv _ transform = return transform
+
+-- |Accept a list of bound identifiers from a lambda expression, and rename them
+--  Returns a list of the renamed identifiers as well as marking those identifiers
+--  in the given environment, so they can be renamed during expansion.
+markBoundIdentifiers :: Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
+markBoundIdentifiers env (Atom v : vs) renamedVars = do
+  renamed <- _gensym v
+  _ <- defineNamespacedVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) env) "renamed vars" v renamed -- TODO: a temporary rename used for testing  
+  markBoundIdentifiers env vs $ renamedVars ++ [renamed]
+markBoundIdentifiers env (_: vs) renamedVars = markBoundIdentifiers env vs renamedVars
+markBoundIdentifiers _ [] renamedVars = return $ List renamedVars
+--markBoundIdentifiers _ input _ = throwError $ BadSpecialForm "Unexpected input to markBoundIdentifiers" $ List input 
 
 
 {- |Transform input by walking the tranform structure and creating a new structure
