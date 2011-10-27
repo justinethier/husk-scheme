@@ -516,7 +516,12 @@ walkExpanded defEnv useEnv renameEnv (List result) transform@(List (Atom "lambda
 
 walkExpanded defEnv useEnv renameEnv (List result) transform@(List (Atom a : ts)) = do
   -- TODO: more to come w/Clinger's algorithm...
-  walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom a]) (List ts)
+  isDefined <- liftIO $ isBound renameEnv a -- TODO: Not entirely correct; for example if a macro and var 
+  case (trace a isDefined) of
+    True -> do
+      expanded <- getVar renameEnv a
+      walkExpanded defEnv useEnv renameEnv (List $ result ++ [expanded]) (List ts)
+    False -> walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom a]) (List ts)
 
 -- Transform anything else as itself...
 walkExpanded defEnv useEnv renameEnv (List result) (List (t : ts)) = do
@@ -540,7 +545,7 @@ walkExpanded defEnv useEnv renameEnv _ transform = return transform
 markBoundIdentifiers :: Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
 markBoundIdentifiers env (Atom v : vs) renamedVars = do
   renamed <- _gensym v
-  _ <- defineNamespacedVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) env) "renamed vars" v renamed -- TODO: a temporary rename used for testing  
+  _ <- defineVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) env) v renamed -- TODO: a temporary rename used for testing  
   markBoundIdentifiers env vs $ renamedVars ++ [renamed]
 markBoundIdentifiers env (_: vs) renamedVars = markBoundIdentifiers env vs renamedVars
 markBoundIdentifiers _ [] renamedVars = return $ List renamedVars
