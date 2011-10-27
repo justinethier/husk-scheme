@@ -111,19 +111,15 @@ macroEval _ lisp@(_) = return lisp
  -}
 macroTransform :: Env -> LispVal -> [LispVal] -> LispVal -> IOThrowsError LispVal
 macroTransform env identifiers (rule@(List _) : rs) input = do
-  -- TODO: per Clinger, need to pass a rename env down to macroRule (although it will only be
-  -- used during the transformRule step), in order to collect any renamed variables
-  --
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
                                -- to hold pattern variables
-  result <- matchRule env identifiers localEnv rule input
+  renameEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
+                                -- to hold renamed variables
+  result <- matchRule env identifiers localEnv renameEnv rule input
   case result of
     Nil _ -> macroTransform env identifiers rs input
     _ -> do
-        renameEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
-        -- TODO: walk the resulting code, performing the Clinger algorithm's 4 components
-        -- TODO: create a separate 'walk' function for this
---        return result
+        -- Walk the resulting code, performing the Clinger algorithm's 4 components
         -- TODO: see below: expanded <-
         walkExpanded env env renameEnv (List []) result
 -- TODO: I think this is necessary, but let's hold off for right now:        cleanExpanded renameEnv (List []) expanded
@@ -143,8 +139,8 @@ macroElementMatchesMany _ = False
 
 {- Given input, determine if that input matches any rules
 @return Transformed code, or Nil if no rules match -}
-matchRule :: Env -> LispVal -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
-matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVar) = do
+matchRule :: Env -> LispVal -> Env -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
+matchRule outerEnv identifiers localEnv renameEnv (List [pattern, template]) (List inputVar) = do
    let is = tail inputVar
    let p = case pattern of
               DottedList ds d -> case ds of
@@ -160,7 +156,7 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
            Bool False -> return $ Nil ""
            _ -> do
 --                bindings <- findBindings localEnv pattern
-                transformRule outerEnv localEnv 0 [] (List []) template
+                transformRule outerEnv localEnv renameEnv 0 [] (List []) template
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
 
  where
@@ -185,7 +181,7 @@ matchRule outerEnv identifiers localEnv (List [pattern, template]) (List inputVa
    -- No pair, immediately begin matching
    checkPattern ps is _ = loadLocal outerEnv localEnv identifiers (List ps) (List is) 0 [] [] 
 
-matchRule _ _ _ rule input = do
+matchRule _ _ _ _ rule input = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
 
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
@@ -569,6 +565,10 @@ expandAtom renameEnv a = return a
 -- |Clean up any remaining renamed variables in the expanded code
 --  This is ugly but seems like a simple way to verify any remaining renames are cleaned up. However, it would
 --  be nice if this was unnecessary. 
+--
+--  TODO: this will never work when using the renameEnv from walk, because that env binds
+--        (old name => new name) in order to clean up any new names prior to eval, there would
+--        need to be another environment with the reverse mappings
 cleanExpanded :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 
 cleanExpanded renameEnv (List result) expanded@(List (List l : ls)) = do
@@ -616,7 +616,8 @@ TODO: this is essentially Clinger's rewrite step, however it needs to be extende
  - TODO: anything else?
 -}
 transformRule :: Env        -- ^ Outer, enclosing environment
-              -> Env        -- ^ Environment local to the macro
+              -> Env        -- ^ Environment local to the macro containing pattern variables
+              -> Env        -- ^ Environment local to the macro containing renamed variables
               -> Int        -- ^ ellipsisLevel - Nesting level of the zero-to-many match, or 0 if none
               -> [Int]      -- ^ ellipsisIndex - The index at each ellipsisLevel. This is used to read data stored in
                             --                   pattern variables.
@@ -626,55 +627,55 @@ transformRule :: Env        -- ^ Outer, enclosing environment
               -> IOThrowsError LispVal
 
 -- Recursively transform a list
-transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (List l : ts)) = do
+transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List result) transform@(List (List l : ts)) = do
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
   if (nextHasEllipsis)
      then do
-             curT <- transformRule outerEnv localEnv level idx (List []) (List l)
+             curT <- transformRule outerEnv localEnv renameEnv level idx (List []) (List l)
              case (curT) of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
-                        continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
-               List _ -> transformRule outerEnv localEnv 
+                        continueTransform outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex result $ tail ts
+               List _ -> transformRule outerEnv localEnv renameEnv 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
                            (List $ result ++ [curT]) transform
                _ -> throwError $ Default "Unexpected error"
      else do
-             lst <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List l)
+             lst <- transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List []) (List l)
              case lst of
-                  List _ -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [lst]) (List ts)
+                  List _ -> transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List $ result ++ [lst]) (List ts)
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "Macro transform error" $ List [lst, (List l), Number $ toInteger ellipsisLevel]
 
 -- Recursively transform a vector by processing it as a list
 -- FUTURE: can this code be consolidated with the list code?
-transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List ((Vector v) : ts)) = do
+transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List result) transform@(List ((Vector v) : ts)) = do
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
   if nextHasEllipsis
      then do
              -- Idea here is that we need to handle case where you have (vector ...) - EG: (#(var step) ...)
-             curT <- transformRule outerEnv localEnv level idx (List []) (List $ elems v)
+             curT <- transformRule outerEnv localEnv renameEnv level idx (List []) (List $ elems v)
 --             case (trace ("curT = " ++ show curT) curT) of
              case curT of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
-                        continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
-               List t -> transformRule outerEnv localEnv 
+                        continueTransform outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex result $ tail ts
+               List t -> transformRule outerEnv localEnv renameEnv 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
                            (List $ result ++ [asVector t]) transform
                _ -> throwError $ Default "Unexpected error in transformRule"
-     else do lst <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List $ elems v)
+     else do lst <- transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List []) (List $ elems v)
              case lst of
-                  List l -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [asVector l]) (List ts)
+                  List l -> transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List $ result ++ [asVector l]) (List ts)
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [Vector v]), Number $ toInteger ellipsisLevel]
 
 -- Recursively transform an improper list
-transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (dl@(DottedList _ _) : ts)) = do
+transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List result) transform@(List (dl@(DottedList _ _) : ts)) = do
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
@@ -682,23 +683,23 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 --  if (trace ("trans Pair: " ++ show transform ++ " lvl = " ++ show ellipsisLevel ++ " idx = " ++ show ellipsisIndex) nextHasEllipsis)
      then do
              -- Idea here is that we need to handle case where you have (pair ...) - EG: ((var . step) ...)
-             curT <- transformDottedList outerEnv localEnv level idx (List []) (List [dl])
+             curT <- transformDottedList outerEnv localEnv renameEnv level idx (List []) (List [dl])
              case curT of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
-                        continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts 
-               List t -> transformRule outerEnv localEnv 
+                        continueTransform outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex result $ tail ts 
+               List t -> transformRule outerEnv localEnv renameEnv 
                           ellipsisLevel -- Do not increment level, just wait until next iteration where incremented above
                           idx -- Keep incrementing each time
                          (List $ result ++ t) transform
                _ -> throwError $ Default "Unexpected error in transformRule"
-     else do lst <- transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List [dl])
+     else do lst <- transformDottedList outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List []) (List [dl])
              case lst of
-                  List l -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ l) (List ts)
+                  List l -> transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List $ result ++ l) (List ts)
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [dl]), Number $ toInteger ellipsisLevel]
 
 -- Transform an atom by attempting to look it up as a var...
-transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
+transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
   isDefined <- liftIO $ isBound localEnv a
   if hasEllipsis
     then ellipsisHere isDefined
@@ -732,9 +733,9 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                     case var of
                       -- add all elements of the list into result
                       List _ -> do case (appendNil (Matches.getData var ellipsisIndex) isImproperPattern isImproperInput) of
-                                     List aa -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
+                                     List aa -> transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List $ result ++ aa) (List $ tail ts)
                                      _ -> -- No matches for var
-                                          continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
+                                          continueTransform outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex result $ tail ts
 
 {- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
 --
@@ -742,12 +743,12 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
 --        but we want the lexical value as well. need to think about this in more detail to get a truly workable solution
 --
                                   v <- getVar outerEnv input
-                                  transformRule outerEnv localEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused -}
+                                  transformRule outerEnv localEnv renameEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused -}
                       Nil "" -> -- No matches, keep going
-                                continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result $ tail ts
-                      v@(_) -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [v]) (List $ tail ts)
+                                continueTransform outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex result $ tail ts
+                      v@(_) -> transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List $ result ++ [v]) (List $ tail ts)
              else -- Matched 0 times, skip it
-                  transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List $ tail ts)
+                  transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List result) (List $ tail ts)
 
     noEllipsis isDefined = do
       isImproperPattern <- loadNamespacedBool "improper pattern"
@@ -812,34 +813,35 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
     -- Continue calling into transformRule
     continueTransformWith results = 
       transformRule outerEnv 
-                    localEnv 
+                    localEnv
+                    renameEnv 
                     ellipsisLevel 
                     ellipsisIndex 
                    (List $ results)
                    (List ts)
 
 -- Transform anything else as itself...
-transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List (t : ts)) = do
-  transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [t]) (List ts) 
+transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List result) (List (t : ts)) = do
+  transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List $ result ++ [t]) (List ts) 
 
 -- Base case - empty transform
-transformRule _ _ _ _ result@(List _) (List []) = do
+transformRule _ _ _ _ _ result@(List _) (List []) = do
   return result
 
 -- Transform is a single var, just look it up.
-transformRule _ localEnv _ _ _ (Atom transform) = do
+transformRule _ localEnv renameEnv _ _ _ (Atom transform) = do
 -- TODO: really? What if the atom is an identifier?
   v <- getVar localEnv transform
   return v
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
-transformRule _ _ _ _ _ transform = return transform
+transformRule _ _ _ _ _ _ transform = return transform
 
 -- | A helper function for transforming an improper list
-transformDottedList :: Env -> Env -> Int -> [Int] -> LispVal -> LispVal -> IOThrowsError LispVal
-transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) (List (DottedList ds d : ts)) = do
-          lsto <- transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List []) (List ds)
+transformDottedList :: Env -> Env -> Env -> Int -> [Int] -> LispVal -> LispVal -> IOThrowsError LispVal
+transformDottedList outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List result) (List (DottedList ds d : ts)) = do
+          lsto <- transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List []) (List ds)
           case lsto of
             List lst -> do
               -- Similar logic to the parser is applied here, where
@@ -847,7 +849,7 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
               -- they form a proper list
               --
               -- d is an n-ary match, per Issue #34
-              r <- transformRule outerEnv localEnv 
+              r <- transformRule outerEnv localEnv renameEnv 
                                  ellipsisLevel -- OK not to increment here, this is accounted for later on
                                  ellipsisIndex -- Same as above 
                                  (List []) 
@@ -855,11 +857,11 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
               case r of
                    -- Trailing symbol in the pattern may be neglected in the transform, so skip it...
                    List [] ->
-                       transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
+                       transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
                    Nil _ ->  -- Same as above, no match for d, so skip it 
-                       transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
+                       transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List $ result ++ [List lst]) (List ts)
                    List rst -> do
-                       transformRule outerEnv localEnv ellipsisLevel ellipsisIndex 
+                       transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex 
                                     (buildTransformedCode result lst rst) (List ts)
                    _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
             Nil _ -> return $ Nil ""
@@ -882,14 +884,15 @@ transformDottedList outerEnv localEnv ellipsisLevel ellipsisIndex (List result) 
               t -> List $ results ++ [DottedList (ps ++ init ls) t]
 
 
-transformDottedList _ _ _ _ _ _ = throwError $ Default "Unexpected error in transformDottedList"
+transformDottedList _ _ _ _ _ _ _ = throwError $ Default "Unexpected error in transformDottedList"
 
 -- |Continue transforming after a preceding match has ended 
-continueTransform :: Env -> Env -> Int -> [Int] -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
-continueTransform outerEnv localEnv ellipsisLevel ellipsisIndex result remaining = do
+continueTransform :: Env -> Env -> Env -> Int -> [Int] -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
+continueTransform outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex result remaining = do
     if not (null remaining)
        then transformRule outerEnv 
                           localEnv 
+                          renameEnv
                           ellipsisLevel 
                           ellipsisIndex 
                          (List result) 
