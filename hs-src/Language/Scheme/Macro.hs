@@ -493,6 +493,8 @@ checkLocal _ _ _ _ _ _ _ _ = return $ Bool False
 -- |Walk expanded code per Clinger
 walkExpanded :: Env -> Env -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
 
+-- TODO: do think we will need to capture the 'quoted' state
+
 walkExpanded defEnv useEnv renameEnv (List result) transform@(List (List (Atom "lambda" : List vars : body) : ls)) = do
   -- TODO: more to come w/Clinger's algorithm...
 --  walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom (trace ("found a lambda while walking expanded code") "lambda")]) (List ts)
@@ -501,7 +503,17 @@ walkExpanded defEnv useEnv renameEnv (List result) transform@(List (List (Atom "
   walkExpanded defEnv useEnv renameEnv (List $ result ++ [lst]) (List ls)
 
 -- TODO: need to be able to detect a macro abstraction (FUTURE, get calls working first)
-TODO: need to be able to detect a macro call
+
+-- Detect a macro call and expand it in-line
+walkExpanded defEnv useEnv renameEnv (List result) transform@(List (List l@(Atom a : body) : ls)) = do
+  isDefinedAsMacro <- liftIO $ isNamespacedRecBound outerEnv macroNamespace a
+  if isDefinedAsMacro
+     then do
+Presumably want to expand here with a new localEnv but the same renameEnv, right???
+Need to be careful
+     else do
+        lst <- walkExpanded defEnv useEnv renameEnv (List []) (List l)
+        walkExpanded defEnv useEnv renameEnv (List $ result ++ [lst]) (List ls)
 
 walkExpanded defEnv useEnv renameEnv (List result) expanded@(List (List l : ls)) = do
   lst <- walkExpanded defEnv useEnv renameEnv (List []) (List l)
