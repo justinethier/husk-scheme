@@ -41,7 +41,7 @@ import Language.Scheme.Variables
 import qualified Language.Scheme.Macro.Matches as Matches
 import Control.Monad.Error
 import Data.Array
---import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -121,7 +121,8 @@ macroTransform env identifiers (rule@(List _) : rs) input = do
     _ -> do
         -- TODO: walk the resulting code, performing the Clinger algorithm's 4 components
         -- TODO: create a separate 'walk' function for this
-        return result
+--        return result
+        walkExpanded env env env (List []) result
 
 -- Ran out of rules to match...
 macroTransform _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
@@ -489,6 +490,47 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(Li
 
 checkLocal _ _ _ _ _ _ _ _ = return $ Bool False
 
+-- |Walk expanded code per Clinger
+walkExpanded :: Env -> Env -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
+walkExpanded defEnv useEnv renameEnv (List result) expanded@(List (List l : ls)) = do
+  lst <- walkExpanded defEnv useEnv renameEnv (List []) (List l)
+  walkExpanded defEnv useEnv renameEnv (List $ result ++ [lst]) (List ls)
+
+walkExpanded defEnv useEnv renameEnv (List result) transform@(List ((Vector v) : vs)) = do
+  List lst <- walkExpanded defEnv useEnv renameEnv (List []) (List $ elems v)
+  walkExpanded defEnv useEnv renameEnv (List $ result ++ [asVector lst]) (List vs)
+
+walkExpanded defEnv useEnv renameEnv (List result) transform@(List ((DottedList ds d) : ts)) = do
+  List ls <- walkExpanded defEnv useEnv renameEnv (List []) (List ds)
+  l <- walkExpanded defEnv useEnv renameEnv (List []) d
+  walkExpanded defEnv useEnv renameEnv (List $ result ++ [DottedList ls l]) (List ts)
+{-
+-- TODO: This is just a simple example...
+walkExpanded defEnv useEnv renameEnv (List result) transform@(List (Atom "lambda" : ts)) = do
+  -- TODO: more to come w/Clinger's algorithm...
+  walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom (trace ("found a lambda while walking expanded code") "lambda")]) (List ts)
+-}
+walkExpanded defEnv useEnv renameEnv (List result) transform@(List (Atom a : ts)) = do
+  -- TODO: more to come w/Clinger's algorithm...
+  walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom a]) (List ts)
+
+-- Transform anything else as itself...
+walkExpanded defEnv useEnv renameEnv (List result) (List (t : ts)) = do
+  walkExpanded defEnv useEnv renameEnv (List $ result ++ [t]) (List ts)
+
+-- Base case - empty transform
+walkExpanded defEnv useEnv renameEnv result@(List _) (List []) = do
+  return result
+
+-- TODO (?):
+-- Transform is a single var, just look it up.
+--walkExpanded defEnv useEnv renameEnv _ (Atom transform) = do
+
+-- If transforming into a scalar, just return the transform directly...
+-- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
+walkExpanded defEnv useEnv renameEnv _ transform = return transform
+
+
 {- |Transform input by walking the tranform structure and creating a new structure
     with the same form, replacing identifiers in the tranform with those bound in localEnv 
 
@@ -556,8 +598,6 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                   List l -> transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List $ result ++ [asVector l]) (List ts)
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [Vector v]), Number $ toInteger ellipsisLevel]
-
- where asVector lst = (Vector $ (listArray (0, length lst - 1)) lst)
 
 -- Recursively transform an improper list
 transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transform@(List (dl@(DottedList _ _) : ts)) = do
@@ -654,6 +694,7 @@ transformRule outerEnv localEnv ellipsisLevel ellipsisIndex (List result) transf
                         case wasPair of
                             Bool True -> return $ Nil "var (pair) not defined in pattern"
                             _ -> return $ Nil "var not defined in pattern"
+-- TODO: I think the outerEnv should be accessed by the walker, and not within rewrite as is done below...
                      Nil input -> do v <- getVar outerEnv input
                                      return v
                      List v -> do
@@ -713,6 +754,7 @@ transformRule _ _ _ _ result@(List _) (List []) = do
 
 -- Transform is a single var, just look it up.
 transformRule _ localEnv _ _ _ (Atom transform) = do
+-- TODO: really? What if the atom is an identifier?
   v <- getVar localEnv transform
   return v
 
@@ -811,3 +853,8 @@ calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex =
                -- First input element that matches pattern; start at 0
                else ellipsisIndex ++ [0]
        else ellipsisIndex
+
+-- |Convert a list of lisp values to a vector
+asVector :: [LispVal] -> LispVal
+asVector lst = (Vector $ (listArray (0, length lst - 1)) lst)
+
