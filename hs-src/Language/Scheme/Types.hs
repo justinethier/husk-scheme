@@ -153,8 +153,9 @@ data LispVal = Atom String
  -- ^Continuation
  | Syntax { synClosure :: Env
           , synIdentifiers :: [LispVal]
-          , synPattern :: [LispVal]
-          , synTemplate :: [LispVal] -- TODO: use a syntax-rules type to hold a single pattern/transform pair?
+          , synRules :: [LispVal]
+--          , synPattern :: [LispVal]
+--          , synTemplate :: [LispVal] -- TODO: use a syntax-rules type to hold a single pattern/transform pair?
 
    } -- ^ Type to hold a syntax object that is created by a macro definition.
      --   Syntax objects are not used like regular types in that they are not
@@ -274,7 +275,7 @@ showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showVal t ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
 showVal (Continuation _ _ _ _ _) = "<continuation>"
-showVal (Syntax _ _ _ _) = "<syntax>"
+showVal (Syntax _ _ _) = "<syntax>"
 showVal (Func {params = args, vararg = varargs, body = _, closure = _}) =
   "(lambda (" ++ unwords (map show args) ++
     (case varargs of

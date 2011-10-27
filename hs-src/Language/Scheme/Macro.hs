@@ -61,7 +61,7 @@ There is also a special case (define-syntax) that loads new rules. -}
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
 
 -- Special case, just load up the syntax rules
-macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List _ : _)))]) = do
+macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
   {-
    - FUTURE: Issue #15: there really ought to be some error checking of the syntax rules, 
    -                    since they could be malformed...
@@ -69,10 +69,8 @@ macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom
   - At a minimum, should check identifiers to make sure each is an atom (see findAtom) 
   -}
   _ <- do
-
-    -- TODO: store a syntax object instead, so we can store the Env of use
-    -- TBD: do we need to store a copy of that Env?
-    defineNamespacedVar env macroNamespace keyword syntaxRules
+    -- TBD: do we need to store a copy of this Env?
+    defineNamespacedVar env macroNamespace keyword $ Syntax env identifiers rules
   return $ Nil "" -- Sentinal value
 
 {- Inspect code for macros
@@ -90,7 +88,7 @@ macroEval env lisp@(List (Atom x : _)) = do
                                            -- are defined in same env with same name, which one should be selected?
   if isDefined && not isDefinedAsVar 
      then do
-       (List (Atom "syntax-rules" : (List identifiers : rules))) <- getNamespacedVar env macroNamespace x
+       Syntax _ identifiers rules <- getNamespacedVar env macroNamespace x
        -- Transform the input and then call macroEval again, since a macro may be contained within...
        macroEval env =<< macroTransform env (List identifiers) rules lisp
      else return lisp
