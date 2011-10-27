@@ -124,7 +124,9 @@ macroTransform env identifiers (rule@(List _) : rs) input = do
         -- TODO: walk the resulting code, performing the Clinger algorithm's 4 components
         -- TODO: create a separate 'walk' function for this
 --        return result
+        -- TODO: see below: expanded <-
         walkExpanded env env renameEnv (List []) result
+-- TODO: I think this is necessary, but let's hold off for right now:        cleanExpanded renameEnv (List []) expanded
 
 -- Ran out of rules to match...
 macroTransform _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
@@ -494,6 +496,15 @@ checkLocal _ _ _ _ _ _ _ _ = return $ Bool False
 
 -- |Walk expanded code per Clinger
 walkExpanded :: Env -> Env -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
+
+-- TODO: This is just a simple example...
+walkExpanded defEnv useEnv renameEnv (List result) transform@(List (List (Atom "lambda" : List vars : body) : ls)) = do
+  -- TODO: more to come w/Clinger's algorithm...
+--  walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom (trace ("found a lambda while walking expanded code") "lambda")]) (List ts)
+  renamedVars <- markBoundIdentifiers renameEnv vars []
+  lst <- walkExpanded defEnv useEnv renameEnv (List [Atom "lambda", renamedVars]) (List body)
+  walkExpanded defEnv useEnv renameEnv (List $ result ++ [lst]) (List ls)
+
 walkExpanded defEnv useEnv renameEnv (List result) expanded@(List (List l : ls)) = do
   lst <- walkExpanded defEnv useEnv renameEnv (List []) (List l)
   walkExpanded defEnv useEnv renameEnv (List $ result ++ [lst]) (List ls)
@@ -507,17 +518,10 @@ walkExpanded defEnv useEnv renameEnv (List result) transform@(List ((DottedList 
   l <- walkExpanded defEnv useEnv renameEnv (List []) d
   walkExpanded defEnv useEnv renameEnv (List $ result ++ [DottedList ls l]) (List ts)
 
--- TODO: This is just a simple example...
-walkExpanded defEnv useEnv renameEnv (List result) transform@(List (Atom "lambda" : List vars : body)) = do
-  -- TODO: more to come w/Clinger's algorithm...
---  walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom (trace ("found a lambda while walking expanded code") "lambda")]) (List ts)
-  renamedVars <- markBoundIdentifiers renameEnv vars []
-  walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom "lambda", renamedVars]) (List body)
-
 walkExpanded defEnv useEnv renameEnv (List result) transform@(List (Atom a : ts)) = do
   -- TODO: more to come w/Clinger's algorithm...
   isDefined <- liftIO $ isBound renameEnv a -- TODO: Not entirely correct; for example if a macro and var 
-  case (trace a isDefined) of
+  case isDefined of
     True -> do
       expanded <- getVar renameEnv a
       walkExpanded defEnv useEnv renameEnv (List $ result ++ [expanded]) (List ts)
@@ -550,6 +554,55 @@ markBoundIdentifiers env (Atom v : vs) renamedVars = do
 markBoundIdentifiers env (_: vs) renamedVars = markBoundIdentifiers env vs renamedVars
 markBoundIdentifiers _ [] renamedVars = return $ List renamedVars
 --markBoundIdentifiers _ input _ = throwError $ BadSpecialForm "Unexpected input to markBoundIdentifiers" $ List input 
+
+-- |Recursively expand an atom that may have been renamed multiple times
+expandAtom :: Env -> LispVal -> IOThrowsError LispVal
+expandAtom renameEnv (Atom a) = do
+  isDefined <- liftIO $ isBound renameEnv a 
+  if isDefined 
+     then do
+       expanded <- getVar renameEnv a
+       expandAtom renameEnv expanded -- Recursively expand
+     else return $ Atom a 
+expandAtom renameEnv a = return a
+
+-- |Clean up any remaining renamed variables in the expanded code
+--  This is ugly but seems like a simple way to verify any remaining renames are cleaned up. However, it would
+--  be nice if this was unnecessary. 
+cleanExpanded :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+
+cleanExpanded renameEnv (List result) expanded@(List (List l : ls)) = do
+  lst <- cleanExpanded renameEnv (List []) (List l)
+  cleanExpanded renameEnv (List $ result ++ [lst]) (List ls)
+
+cleanExpanded renameEnv (List result) transform@(List ((Vector v) : vs)) = do
+  List lst <- cleanExpanded renameEnv (List []) (List $ elems v)
+  cleanExpanded renameEnv (List $ result ++ [asVector lst]) (List vs)
+
+cleanExpanded renameEnv (List result) transform@(List ((DottedList ds d) : ts)) = do
+  List ls <- cleanExpanded renameEnv (List []) (List ds)
+  l <- cleanExpanded renameEnv (List []) d
+  cleanExpanded renameEnv (List $ result ++ [DottedList ls l]) (List ts)
+
+cleanExpanded renameEnv (List result) transform@(List (Atom a : ts)) = do
+  expanded <- expandAtom renameEnv $ Atom a
+  cleanExpanded renameEnv (List $ result ++ [expanded]) (List ts)
+
+-- Transform anything else as itself...
+cleanExpanded renameEnv (List result) (List (t : ts)) = do
+  cleanExpanded renameEnv (List $ result ++ [t]) (List ts)
+
+-- Base case - empty transform
+cleanExpanded renameEnv result@(List _) (List []) = do
+  return result
+
+-- TODO (?):
+-- Transform is a single var, just look it up.
+--cleanExpanded renameEnv _ (Atom transform) = do
+
+-- If transforming into a scalar, just return the transform directly...
+-- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
+cleanExpanded renameEnv _ transform = return transform
 
 
 {- |Transform input by walking the tranform structure and creating a new structure
