@@ -493,13 +493,15 @@ checkLocal _ _ _ _ _ _ _ _ = return $ Bool False
 -- |Walk expanded code per Clinger
 walkExpanded :: Env -> Env -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
 
--- TODO: This is just a simple example...
 walkExpanded defEnv useEnv renameEnv (List result) transform@(List (List (Atom "lambda" : List vars : body) : ls)) = do
   -- TODO: more to come w/Clinger's algorithm...
 --  walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom (trace ("found a lambda while walking expanded code") "lambda")]) (List ts)
   renamedVars <- markBoundIdentifiers renameEnv vars []
   lst <- walkExpanded defEnv useEnv renameEnv (List [Atom "lambda", renamedVars]) (List body)
   walkExpanded defEnv useEnv renameEnv (List $ result ++ [lst]) (List ls)
+
+-- TODO: need to be able to detect a macro abstraction (FUTURE, get calls working first)
+TODO: need to be able to detect a macro call
 
 walkExpanded defEnv useEnv renameEnv (List result) expanded@(List (List l : ls)) = do
   lst <- walkExpanded defEnv useEnv renameEnv (List []) (List l)
@@ -517,7 +519,7 @@ walkExpanded defEnv useEnv renameEnv (List result) transform@(List ((DottedList 
 walkExpanded defEnv useEnv renameEnv (List result) transform@(List (Atom a : ts)) = do
   -- TODO: more to come w/Clinger's algorithm...
   isDefined <- liftIO $ isBound renameEnv a -- TODO: Not entirely correct; for example if a macro and var 
-  case isDefined of
+  case (trace ("walker found atom: " ++ a ++ " isRenamed = " ++ show isDefined) isDefined) of
     True -> do
       expanded <- getVar renameEnv a
       walkExpanded defEnv useEnv renameEnv (List $ result ++ [expanded]) (List ts)
@@ -785,7 +787,10 @@ transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List resu
                              then -- List req'd for 0-or-n match
                                   throwError $ Default "Unexpected error processing data in transformRule" 
                              else return var
-              else return $ Atom a
+              else do
+                  Atom renamed <- _gensym a
+                  _ <- defineVar (trace ("macro renamed var:" ++ a ++ " to: " ++ show renamed) renameEnv) renamed $ Atom a
+                  return $ Atom renamed
       case t of
          Nil "var not defined in pattern" -> 
             if ellipsisLevel > 0
@@ -830,7 +835,7 @@ transformRule _ _ _ _ _ result@(List _) (List []) = do
 
 -- Transform is a single var, just look it up.
 transformRule _ localEnv renameEnv _ _ _ (Atom transform) = do
--- TODO: really? What if the atom is an identifier?
+-- TODO: really? What if the atom is an identifier? Don't we need to rename it?
   v <- getVar localEnv transform
   return v
 
