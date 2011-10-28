@@ -41,6 +41,10 @@ findNamespacedEnv envRef namespace var = do
 isBound :: Env -> String -> IO Bool
 isBound envRef var = isNamespacedBound envRef varNamespace var
 
+-- |Determine if a variable is bound in the default namespace
+isRecBound :: Env -> String -> IO Bool
+isRecBound envRef var = isNamespacedRecBound envRef varNamespace var
+
 -- |Determine if a variable is bound in a given namespace
 isNamespacedBound :: Env -> String -> String -> IO Bool
 isNamespacedBound envRef namespace var = (readIORef $ bindings envRef) >>= return . maybe False (const True) . lookup (namespace, var)

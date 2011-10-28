@@ -533,23 +533,31 @@ walkExpanded defEnv useEnv renameEnv startOfList (List result) transform@(List (
 
 -- TODO: do think we will need to capture the 'quoted' state
   isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
-  if a == "lambda"
+  if a == "lambda" -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
      then do
        case transform of
          List (Atom _ : List vars : body) -> do
-           renamedVars <- markBoundIdentifiers renameEnv vars []
+           -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
+           env <- liftIO $ extendEnv renameEnv []
+           renamedVars <- markBoundIdentifiers env vars []
 -- TODO: this structure is causing rename vars from an inner lambda to overwrite those in an outer
 -- lambda. This does not happen with the old code. need to understand how this is happening (and not w/old code), and
 -- try to figure out how to fix it.
 --           
---           env <- liftIO $ extendEnv renameEnv []
-           walkExpanded defEnv useEnv renameEnv False (List [Atom "lambda", renamedVars]) (List body)
+           walkExpanded defEnv useEnv env False (List [Atom "lambda", renamedVars]) (List body)
          -- lambda is malformed, just transform as normal atom...
          otherwise -> walkExpanded defEnv useEnv renameEnv False (List $ result ++ [Atom a]) (List ts)
      else if isDefinedAsMacro
              then do
                Syntax _ identifiers rules <- getNamespacedVar useEnv macroNamespace a
-      {- TODO: below should be defEnv, will be switching over later -}
+{- TODO: below should be defEnv instead of useEnv, will be switching over later -}
+
+               -- A child renameEnv is not created because for a macro call there is no way an
+               -- renamed identifier inserted by the macro could override one in the outer env.
+               --
+               -- This is because the macro renames non-matched identifiers and stores mappings
+               -- from the {rename ==> original}. Each new name is unique by definition, so
+               -- no conflicts are possible.
                macroTransform useEnv renameEnv (List identifiers) rules (List (Atom a : ts))
              else walkExpanded defEnv useEnv renameEnv False (List $ result ++ [Atom a]) (List ts)
 -- TODO: use startOfList for lambda/macro call processing
@@ -594,11 +602,11 @@ markBoundIdentifiers _ [] renamedVars = return $ List renamedVars
 -- |Recursively expand an atom that may have been renamed multiple times
 expandAtom :: Env -> LispVal -> IOThrowsError LispVal
 expandAtom renameEnv (Atom a) = do
-  isDefined <- liftIO $ isBound renameEnv a 
+  isDefined <- liftIO $ isRecBound renameEnv a -- Search parent Env's also
   if isDefined 
      then do
        expanded <- getVar renameEnv a
-       expandAtom renameEnv expanded -- Recursively expand
+       return expanded -- TODO: temporarily disabling this; just expand once. expandAtom renameEnv expanded -- Recursively expand
      else return $ Atom a 
 expandAtom renameEnv a = return a
 
@@ -606,9 +614,14 @@ expandAtom renameEnv a = return a
 --  This is ugly but seems like a simple way to verify any remaining renames are cleaned up. However, it would
 --  be nice if this was unnecessary. 
 --
---  TODO: this will never work when using the renameEnv from walk, because that env binds
+--  TODO: IMPORTANT!!!!!
+--
+--        this will never work when using the renameEnv from walk, because that env binds
 --        (old name => new name) in order to clean up any new names prior to eval, there would
 --        need to be another environment with the reverse mappings
+--   ALSO, due to parent Env logic going on, these bindings need to be in some sort of
+--   'master' env that transcends those env's and maps all gensyms back to their original symbols
+--
 cleanExpanded :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 
 cleanExpanded renameEnv (List result) expanded@(List (List l : ls)) = do
