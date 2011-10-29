@@ -20,3 +20,14 @@
 )
 ;    4)
 ;=> #f instead of 4
+
+; Assert that a template can be quoted, allowing someone debugging a macro the
+; ability to see the expansion of that macro
+(define-syntax orr-debugging 
+  (syntax-rules () 
+   ((orelse <expr1> <expr2>) 
+    '(let ((temp <expr1>)) 
+         (if temp temp <expr2>)))))
+
+(write (orr-debugging 1 1)
+              '(let ((temp 1)) (if temp temp 1)))
