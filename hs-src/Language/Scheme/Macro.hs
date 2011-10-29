@@ -540,7 +540,11 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList (List result) transf
 
 -- TODO: experimenting with the 'quote' code below. on the one hand it seems correct, but on the other it caused
 -- at least one test case to fail, so...
-
+--
+-- Yes, within the back-quoting test suite. I think what may need to happen is that we keep going but mark that
+-- we are within a quote, and do not expand any macros in that case. Because we definetly are not supposed to
+-- do that, but any vars renamed before the quote still need to be renamed within the quote, or they will
+-- be undefined.
  if a == "quote"
   then
    walkExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [Atom aa] ++ ts) (List [])
