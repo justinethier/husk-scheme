@@ -41,12 +41,10 @@
     (let ((temp <expr1>)) 
          (if temp temp <expr2>)))))
 
-; TODO: this is broken currently
 ; see Issue #30
-;(assert/equal
-;    (let ((temp 4)) (orr #f temp))
-;    4)
-;=> #f instead of 4
+(assert/equal
+    (let ((temp 4)) (orr #f temp))
+    4)
 
 (assert/equal
     (let ((if +)) (orr 1 1))
