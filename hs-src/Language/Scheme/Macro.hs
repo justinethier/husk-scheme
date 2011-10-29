@@ -97,7 +97,8 @@ macroEval env lisp@(List (Atom x : _)) = do
                                       -- can use this to clean up any left after transformation
        -- Transform the input and then call macroEval again, since a macro may be contained within...
        expanded <- macroTransform env renameEnv cleanupEnv (List identifiers) rules lisp -- TODO: w/Clinger, may not need to call macroEval again
-       macroEval env expanded -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
+       macroEval env =<< cleanExpanded cleanupEnv (List []) expanded 
+--       macroEval env expanded -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
         -- let's figure out why cond and iteration are failing, then circle around back to this...
      else return lisp
 
@@ -127,7 +128,6 @@ macroTransform env renameEnv cleanupEnv identifiers (rule@(List _) : rs) input =
         -- Walk the resulting code, performing the Clinger algorithm's 4 components
         -- TODO: see below: expanded <-
         walkExpanded env env renameEnv cleanupEnv True (List []) (trace ("macroT, result = " ++ show result) result)
--- TODO: I think this is necessary, but let's hold off for right now:        cleanExpanded renameEnv (List []) expanded
 
 -- Ran out of rules to match...
 macroTransform _ _ _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
@@ -534,16 +534,18 @@ walkExpanded defEnv useEnv renameEnv (List result) transform@(List (List l@(Atom
   walkExpanded defEnv useEnv renameEnv (List $ result ++ [lst]) (List ls)
 -}
 walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList (List result) transform@(List (Atom aa : ts)) = do
-  Atom a <- expandAtom renameEnv (Atom aa)
+ Atom a <- expandAtom renameEnv (Atom aa)
 
+ isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
 
--- TODO: do think we will need to capture the 'quoted' state
+-- TODO: experimenting with the 'quote' code below. on the one hand it seems correct, but on the other it caused
+-- at least one test case to fail, so...
 
--- update, not quite sure what the right answer is here; perhaps everything is still processed the same when a quote occurs, and
--- that quote just stops the evaluator from executing all of the code. so no change to this subsystem?
-
-  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
-  if a == "lambda" -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
+ if a == "quote"
+  then
+   walkExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [Atom aa] ++ ts) (List [])
+  else do
+   if a == "lambda" -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
      then do
        case transform of
          List (Atom _ : List vars : body) -> do

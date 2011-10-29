@@ -29,5 +29,6 @@
     '(let ((temp <expr1>)) 
          (if temp temp <expr2>)))))
 
-(write (orr-debugging 1 1)
-              '(let ((temp 1)) (if temp temp 1)))
+(write (orr-debugging 1 1))
+; Expected:              '(let ((temp 1)) (if temp temp 1)))
+
