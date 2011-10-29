@@ -584,6 +584,10 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv _ (List result) (List (t : ts)) 
 walkExpanded defEnv useEnv renameEnv cleanupEnv _ result@(List _) (List []) = do
   return (trace ("returning = " ++ show result) result)
 
+-- Single atom, rename (if necessary) and return
+walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ (Atom a) = do
+  expandAtom renameEnv (Atom a)
+
 -- TODO (?):
 -- Transform is a single var, just look it up.
 --walkExpanded defEnv useEnv renameEnv _ (Atom transform) = do
@@ -917,7 +921,7 @@ transformRule _ _ _ _ _ _ result@(List _) (List []) = do
 -- Transform is a single var, just look it up.
 transformRule _ localEnv renameEnv cleanupEnv _ _ _ (Atom transform) = do
 -- TODO: really? What if the atom is an identifier? Don't we need to rename it?
-  v <- getVar localEnv transform
+  v <- getVar localEnv (trace ("tR - single atom = " ++ transform) transform)
   return v
 
 -- If transforming into a scalar, just return the transform directly...
