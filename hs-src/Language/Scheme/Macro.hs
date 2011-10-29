@@ -839,9 +839,20 @@ transformRule outerEnv localEnv renameEnv ellipsisLevel ellipsisIndex (List resu
                                   throwError $ Default "Unexpected error processing data in transformRule" 
                              else return var
               else do
-                  Atom renamed <- _gensym a
-                  _ <- defineVar (trace ("macro renamed var:" ++ a ++ " to: " ++ show renamed) renameEnv) renamed $ Atom a
-                  return $ Atom renamed
+                  -- Rename each encountered symbol, but the trick is that we want to give
+                  -- the same symbol the same new name if it is found more than once, so...
+                  -- we need to keep track of the var in two environments to map both ways 
+                  -- between the original name and the new name.
+                  isAlreadyRenamed <- liftIO $ isNamespacedBound localEnv "renamed" a
+                  if isAlreadyRenamed
+                     then do
+                       renamed <- getNamespacedVar localEnv "renamed" a
+                       return (trace ("macro renamed var:" ++ a ++ " to: " ++ show renamed) renamed)
+                     else do
+                       Atom renamed <- _gensym a
+                       _ <- defineNamespacedVar localEnv "renamed" a $ Atom renamed -- Keep track of vars that are renamed; maintain reverse mapping
+                       _ <- defineVar (trace ("macro renamed var:" ++ a ++ " to: " ++ show renamed) renameEnv) renamed $ Atom a -- Keep for Clinger
+                       return $ Atom renamed
       case t of
          Nil "var not defined in pattern" -> 
             if ellipsisLevel > 0
