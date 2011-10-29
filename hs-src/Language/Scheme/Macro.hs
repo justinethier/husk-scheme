@@ -536,7 +536,12 @@ walkExpanded defEnv useEnv renameEnv (List result) transform@(List (List l@(Atom
 walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList (List result) transform@(List (Atom aa : ts)) = do
   Atom a <- expandAtom renameEnv (Atom aa)
 
+
 -- TODO: do think we will need to capture the 'quoted' state
+
+-- update, not quite sure what the right answer is here; perhaps everything is still processed the same when a quote occurs, and
+-- that quote just stops the evaluator from executing all of the code. so no change to this subsystem?
+
   isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
   if a == "lambda" -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
      then do
