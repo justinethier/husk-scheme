@@ -511,20 +511,29 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) transfo
   walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [DottedList ls l]) (List ts)
 
 walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List result) transform@(List (Atom aa : ts)) = do
+  
  Atom a <- expandAtom renameEnv (Atom aa)
- isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
+
+ {- TODO: need to work through how to handle quoting an atoms that are renamed
+ Atom aTmp <- expandAtom renameEnv (Atom aa)
+ let a = if inputIsQuoted
+            then aa
+            else aTmp
+-}
 
  -- If a macro is quoted, keep track of it and do not invoke rules below for
  -- procedure abstraction or macro calls 
  let isQuoted = inputIsQuoted || (a == "quote")
-  
+
+ isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
+
  if a == "lambda" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
      then do
        case transform of
          List (Atom _ : List vars : body) -> do
            -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
            env <- liftIO $ extendEnv renameEnv []
-           renamedVars <- markBoundIdentifiers env vars []
+           renamedVars <- markBoundIdentifiers env cleanupEnv vars []
            walkExpanded defEnv useEnv env cleanupEnv False isQuoted (List [Atom "lambda", renamedVars]) (List body)
          -- lambda is malformed, just transform as normal atom...
          otherwise -> walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
@@ -575,13 +584,14 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ _ transform = return transfo
 -- |Accept a list of bound identifiers from a lambda expression, and rename them
 --  Returns a list of the renamed identifiers as well as marking those identifiers
 --  in the given environment, so they can be renamed during expansion.
-markBoundIdentifiers :: Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
-markBoundIdentifiers env (Atom v : vs) renamedVars = do
-  renamed <- _gensym v
-  _ <- defineVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) env) v renamed -- TODO: a temporary rename used for testing  
-  markBoundIdentifiers env vs $ renamedVars ++ [renamed]
-markBoundIdentifiers env (_: vs) renamedVars = markBoundIdentifiers env vs renamedVars
-markBoundIdentifiers _ [] renamedVars = return $ List renamedVars
+markBoundIdentifiers :: Env -> Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
+markBoundIdentifiers env cleanupEnv (Atom v : vs) renamedVars = do
+  Atom renamed <- _gensym v
+  _ <- defineVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) env) v $ Atom renamed
+  _ <- defineVar cleanupEnv renamed $ Atom v
+  markBoundIdentifiers env cleanupEnv vs $ renamedVars ++ [Atom renamed]
+markBoundIdentifiers env cleanupEnv (_: vs) renamedVars = markBoundIdentifiers env cleanupEnv vs renamedVars
+markBoundIdentifiers _ _ [] renamedVars = return $ List renamedVars
 --markBoundIdentifiers _ input _ = throwError $ BadSpecialForm "Unexpected input to markBoundIdentifiers" $ List input 
 
 -- |Recursively expand an atom that may have been renamed multiple times
