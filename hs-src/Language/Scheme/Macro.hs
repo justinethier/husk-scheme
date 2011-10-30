@@ -127,7 +127,7 @@ macroTransform env renameEnv cleanupEnv identifiers (rule@(List _) : rs) input =
     _ -> do
         -- Walk the resulting code, performing the Clinger algorithm's 4 components
         -- TODO: see below: expanded <-
-        walkExpanded env env renameEnv cleanupEnv True (List []) (trace ("macroT, result = " ++ show result) result)
+        walkExpanded env env renameEnv cleanupEnv True False (List []) (trace ("macroT, result = " ++ show result) result)
 
 -- Ran out of rules to match...
 macroTransform _ _ _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
@@ -496,60 +496,29 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(Li
 checkLocal _ _ _ _ _ _ _ _ = return $ Bool False
 
 -- |Walk expanded code per Clinger
-walkExpanded :: Env -> Env -> Env -> Env -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
-walkExpanded defEnv useEnv renameEnv cleanupEnv _ (List result) expanded@(List (List l : ls)) = do
-  lst <- walkExpanded defEnv useEnv renameEnv cleanupEnv True (List []) (List l)
-  walkExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [lst]) (List ls)
+walkExpanded :: Env -> Env -> Env -> Env -> Bool -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
+walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) expanded@(List (List l : ls)) = do
+  lst <- walkExpanded defEnv useEnv renameEnv cleanupEnv True isQuoted (List []) (List l)
+  walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [lst]) (List ls)
 
-walkExpanded defEnv useEnv renameEnv cleanupEnv _ (List result) transform@(List ((Vector v) : vs)) = do
-  List lst <- walkExpanded defEnv useEnv renameEnv cleanupEnv False (List []) (List $ elems v)
-  walkExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [asVector lst]) (List vs)
+walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) transform@(List ((Vector v) : vs)) = do
+  List lst <- walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List []) (List $ elems v)
+  walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [asVector lst]) (List vs)
 
-walkExpanded defEnv useEnv renameEnv cleanupEnv _ (List result) transform@(List ((DottedList ds d) : ts)) = do
-  List ls <- walkExpanded defEnv useEnv renameEnv cleanupEnv False (List []) (List ds)
-  l <- walkExpanded defEnv useEnv renameEnv cleanupEnv False (List []) d
-  walkExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [DottedList ls l]) (List ts)
+walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) transform@(List ((DottedList ds d) : ts)) = do
+  List ls <- walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List []) (List ds)
+  l <- walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List []) d
+  walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [DottedList ls l]) (List ts)
 
-{-
-
-walkExpanded defEnv useEnv renameEnv startOfList (List result) transform@(List (List (Atom "lambda" : List vars : body) : ls)) = do
-  -- TODO: more to come w/Clinger's algorithm...
---  walkExpanded defEnv useEnv renameEnv (List $ result ++ [Atom (trace ("found a lambda while walking expanded code") "lambda")]) (List ts)
-  renamedVars <- markBoundIdentifiers renameEnv vars []
-  lst <- walkExpanded defEnv useEnv renameEnv (List [Atom "lambda", renamedVars]) (List body)
-  walkExpanded defEnv useEnv renameEnv (List $ result ++ [lst]) (List ls)
-
--- TODO: need to be able to detect a macro abstraction (FUTURE, get calls working first)
-
--- Detect a macro call and expand it in-line
-walkExpanded defEnv useEnv renameEnv (List result) transform@(List (List l@(Atom aa : body) : ls)) = do
-  Atom a <- expandAtom renameEnv (Atom aa)
-  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
-  lst <- if isDefinedAsMacro
-            then do
-               Syntax _ identifiers rules <- getNamespacedVar useEnv macroNamespace a
-               macroTransform useEnv {- <== TODO: should be defEnv, will be switching over later -} renameEnv (List identifiers) rules (List l) 
-            else do
-               walkExpanded defEnv useEnv renameEnv (List []) (List l)
-  walkExpanded defEnv useEnv renameEnv (List $ result ++ [lst]) (List ls)
--}
-walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList (List result) transform@(List (Atom aa : ts)) = do
+walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List result) transform@(List (Atom aa : ts)) = do
  Atom a <- expandAtom renameEnv (Atom aa)
-
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
 
--- TODO: experimenting with the 'quote' code below. on the one hand it seems correct, but on the other it caused
--- at least one test case to fail, so...
---
--- Yes, within the back-quoting test suite. I think what may need to happen is that we keep going but mark that
--- we are within a quote, and do not expand any macros in that case. Because we definetly are not supposed to
--- do that, but any vars renamed before the quote still need to be renamed within the quote, or they will
--- be undefined.
- if a == "quote"
-  then
-   walkExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [Atom aa] ++ ts) (List [])
-  else do
-   if a == "lambda" -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
+ -- If a macro is quoted, keep track of it and do not invoke rules below for
+ -- procedure abstraction or macro calls 
+ let isQuoted = inputIsQuoted || (a == "quote")
+  
+ if a == "lambda" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
      then do
        case transform of
          List (Atom _ : List vars : body) -> do
@@ -560,10 +529,10 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList (List result) transf
 -- lambda. This does not happen with the old code. need to understand how this is happening (and not w/old code), and
 -- try to figure out how to fix it.
 --           
-           walkExpanded defEnv useEnv env cleanupEnv False (List [Atom "lambda", renamedVars]) (List body)
+           walkExpanded defEnv useEnv env cleanupEnv False isQuoted (List [Atom "lambda", renamedVars]) (List body)
          -- lambda is malformed, just transform as normal atom...
-         otherwise -> walkExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [Atom a]) (List ts)
-     else if isDefinedAsMacro
+         otherwise -> walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
+     else if isDefinedAsMacro && not isQuoted
              then do
                Syntax _ identifiers rules <- getNamespacedVar useEnv macroNamespace a
 {- TODO: below should be defEnv instead of useEnv, will be switching over later -}
@@ -575,7 +544,7 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList (List result) transf
                -- from the {rename ==> original}. Each new name is unique by definition, so
                -- no conflicts are possible.
                macroTransform useEnv renameEnv cleanupEnv (List identifiers) rules (List (Atom a : ts))
-             else walkExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [Atom a]) (List ts)
+             else walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
 -- TODO: use startOfList for lambda/macro call processing
 {- OLD CODE: 
   -- TODO: more to come w/Clinger's algorithm...
@@ -588,15 +557,15 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList (List result) transf
 -}
 
 -- Transform anything else as itself...
-walkExpanded defEnv useEnv renameEnv cleanupEnv _ (List result) (List (t : ts)) = do
-  walkExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [t]) (List ts)
+walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) (List (t : ts)) = do
+  walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [t]) (List ts)
 
 -- Base case - empty transform
-walkExpanded defEnv useEnv renameEnv cleanupEnv _ result@(List _) (List []) = do
+walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ result@(List _) (List []) = do
   return (trace ("returning = " ++ show result) result)
 
 -- Single atom, rename (if necessary) and return
-walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ (Atom a) = do
+walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted _ (Atom a) = do
   expandAtom renameEnv (Atom a)
 
 -- TODO (?):
@@ -605,7 +574,7 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ (Atom a) = do
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
-walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ transform = return transform
+walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ _ transform = return transform
 
 -- |Accept a list of bound identifiers from a lambda expression, and rename them
 --  Returns a list of the renamed identifiers as well as marking those identifiers
