@@ -97,8 +97,8 @@ macroEval env lisp@(List (Atom x : _)) = do
                                       -- can use this to clean up any left after transformation
        -- Transform the input and then call macroEval again, since a macro may be contained within...
        expanded <- macroTransform env renameEnv cleanupEnv (List identifiers) rules lisp -- TODO: w/Clinger, may not need to call macroEval again
-       macroEval env =<< cleanExpanded cleanupEnv (List []) expanded 
---       macroEval env expanded -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
+--       macroEval env =<< cleanExpanded cleanupEnv (List []) expanded 
+       macroEval env expanded -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
         -- let's figure out why cond and iteration are failing, then circle around back to this...
      else return lisp
 
@@ -525,10 +525,6 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
            -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
            env <- liftIO $ extendEnv renameEnv []
            renamedVars <- markBoundIdentifiers env vars []
--- TODO: this structure is causing rename vars from an inner lambda to overwrite those in an outer
--- lambda. This does not happen with the old code. need to understand how this is happening (and not w/old code), and
--- try to figure out how to fix it.
---           
            walkExpanded defEnv useEnv env cleanupEnv False isQuoted (List [Atom "lambda", renamedVars]) (List body)
          -- lambda is malformed, just transform as normal atom...
          otherwise -> walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
@@ -629,7 +625,7 @@ cleanExpanded renameEnv (List result) transform@(List ((DottedList ds d) : ts)) 
 cleanExpanded renameEnv (List result) transform@(List (Atom a : ts)) = do
   expanded <- tmpexpandAtom renameEnv $ Atom a
 --  expanded <- expandAtom renameEnv $ Atom a
-  cleanExpanded renameEnv (List $ result ++ [expanded]) (List ts)
+  cleanExpanded (trace ("cleanup, a = " ++ show a ++ " exp = " ++ show expanded) renameEnv) (List $ result ++ [expanded]) (List ts)
  where
   -- TODO: if this works, figure out a way to simplify this code (perhaps consolidate with expandAtom)
   tmpexpandAtom :: Env -> LispVal -> IOThrowsError LispVal

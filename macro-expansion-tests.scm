@@ -32,3 +32,21 @@
 (write (orr-debugging 1 1))
 ; Expected:              '(let ((temp 1)) (if temp temp 1)))
 
+(define-syntax my-do/1
+  (syntax-rules ()
+     ((_ ((var init . step) ...)
+         (test expr ...) 
+          command ...)
+     (let loop ((var init) ...)
+       (if test
+         (begin expr ...)
+         (begin (begin command ...)
+                (quote (((((((loop 
+                      (list var . step))))))) ...))))))))
+(write
+                (my-do/1 ((vec (make-vector 5) vec)
+                     (i 0 (+ i 1)))
+                    ((= i 5) vec)
+                     (vector-set! vec i i))
+)
+;expected: (quote (((((((loop (list vec vec))))))) ((((((loop (list i (+ i 1)))))))))))
