@@ -53,6 +53,8 @@
 ;expected: (quote (((((((loop (list vec vec))))))) ((((((loop (list i (+ i 1)))))))))))
 |#
 
+; I think this might be an example of case 2; => is defined as #f and thus that pattern should
+; not be matched in (cond) ... again, I *think* that is what is going on here
 (write
   (let ((=> #f)) (cond (#t => 'ok)))
 )
