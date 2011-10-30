@@ -21,6 +21,7 @@
 ;    4)
 ;=> #f instead of 4
 
+#| TODO:
 ; Assert that a template can be quoted, allowing someone debugging a macro the
 ; ability to see the expansion of that macro
 (define-syntax orr-debugging 
@@ -50,3 +51,9 @@
                      (vector-set! vec i i))
 )
 ;expected: (quote (((((((loop (list vec vec))))))) ((((((loop (list i (+ i 1)))))))))))
+|#
+
+(write
+  (let ((=> #f)) (cond (#t => 'ok)))
+)
+;              'ok)
