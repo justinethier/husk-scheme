@@ -365,6 +365,17 @@ checkLocal _ _ _ _ _ _ (Float pattern) (Float input) _ = return $ Bool $ pattern
 checkLocal _ _ _ _ _ _ (String pattern) (String input) _ = return $ Bool $ pattern == input
 checkLocal _ _ _ _ _ _ (Char pattern) (Char input) _ = return $ Bool $ pattern == input
 checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (Atom pattern) input listFlags = do
+
+  -- TODO: 
+  --
+  -- The code below uses this rename boolean as a factor to determine whether a named
+  -- identifier has been redefined and thus should not match itself in the input. But the
+  -- thing is, the actual code is supposed to compare the value at macro definition
+  -- time with the value in the environment of use (outerEnv) to make this determination.
+  -- So what is below is close but not truly correct.
+  --
+  isRenamed <- liftIO $ isRecBound renameEnv (trace ("pattern = " ++ pattern) pattern)
+
   if (ellipsisLevel) > 0
      {- FUTURE: may be able to simplify both cases below by using a
      lambda function to store the 'save' actions -}
@@ -372,11 +383,6 @@ checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (
              -- Var is part of a 0-to-many match, store up in a list...
      then do isDefined <- liftIO $ isBound localEnv pattern
              isLexicallyDefinedVar <- liftIO $ isBound outerEnv pattern
-
-TODO: WRT below, need to figure out what is causing the macro test to fail, and how to work around it...
--- TODO: the code below is too simplistic, the true test is to compare what is in the envDef with
---       the envUse...
---             isRenamed <- liftIO $ isRecBound renameEnv (trace ("pattern = " ++ pattern) pattern)
 
              --
              -- If pattern is a literal identifier, need to ensure
@@ -418,7 +424,7 @@ TODO: WRT below, need to figure out what is causing the macro test to fail, and 
                 case input of
                     Atom inpt -> do
                         -- Pattern/Input are atoms; both must match
-                        if (pattern == inpt && (not isLexicallyDefinedPatternVar)) -- Regarding lex binding; see above, sec 4.3.2 from spec
+                        if (pattern == inpt && (not isLexicallyDefinedPatternVar)) && (not isRenamed) -- Regarding lex binding; see above, sec 4.3.2 from spec
                            then do _ <- defineVar localEnv pattern input
                                    return $ Bool True
                            else return $ (Bool False)
