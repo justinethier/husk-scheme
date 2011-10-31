@@ -56,6 +56,35 @@ import Debug.Trace -- Only req'd to support trace, can be disabled at any time..
  -  http://en.wikipedia.org/wiki/Hygienic_macro
  -}
 
+-- TODO:
+--
+-- Notes regarding other side of hygiene.
+-- In order to handle the 'other side', the env at macro definition needs to be saved. It
+-- will be used again when a macro is expanded. The pattern matcher will compare any named
+-- identifiers it finds against both environments to ensure identifiers were not redefined.
+--
+-- Also, during rewrite identifiers are supposed to be read out of envDef. They are then 
+-- diverted into envUse at the end of the macro transcription (in other words, once an
+-- instance of rewrite is finished).
+--
+-- So... how do we preserve envDef? One idea is to create a deep copy of the env during
+-- macro definition, but this could be error prone and expensive. Another idea is to
+-- call extendEnv to create a new environment on top of envDef. This new environment
+-- would then need to be passed along to eval (and presumably its current/next continuations).
+--
+-- This should work because any env changes would only affect the new environment and not
+-- the parent one. The disadvantage is that macroEval is called in several places in Core.
+-- It's calls will need to be modified to use a new function that will pass along the
+-- extended env if necessary. I am a bit concerned about suble errors occuring if any
+-- continuations in the chain are not updated and still have the old environment in them.
+-- It may be tricky to get this right. But otherwise the change *should* be straightforward.
+
+
+-- A support function for Core that will be used as part of the above...
+needToExtendEnv :: Env -> LispVal -> Bool --IOThrowsError LispVal
+needToExtendEnv env (List [Atom "define-syntax", Atom _, (List (Atom "syntax-rules" : (List _ : _)))]) = True
+needToExtendEnv _ _ = False 
+
 {- |macroEval
 Search for macro's in the AST, and transform any that are found.
 There is also a special case (define-syntax) that loads new rules. -}
@@ -89,14 +118,19 @@ macroEval env lisp@(List (Atom x : _)) = do
                                            -- are defined in same env with same name, which one should be selected?
   if isDefined && not isDefinedAsVar 
      then do
-       Syntax _ identifiers rules <- getNamespacedVar env macroNamespace x
+       Syntax defEnv identifiers rules <- getNamespacedVar env macroNamespace x
        renameEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
                                      -- to hold renamed variables
        cleanupEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
                                       -- to hold new symbols introduced by renaming. We
                                       -- can use this to clean up any left after transformation
+                                      --
+       isUseDef <- liftIO $ isRecBound env "=>"
+       isDefDef <- liftIO $ isRecBound defEnv "=>"
+
        -- Transform the input and then call macroEval again, since a macro may be contained within...
-       expanded <- macroTransform env renameEnv cleanupEnv (List identifiers) rules lisp -- TODO: w/Clinger, may not need to call macroEval again
+       expanded <- macroTransform env renameEnv cleanupEnv (List identifiers) rules 
+         (trace ("useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
 --       macroEval env =<< cleanExpanded cleanupEnv (List []) expanded 
        macroEval env expanded -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
         -- let's figure out why cond and iteration are failing, then circle around back to this...
