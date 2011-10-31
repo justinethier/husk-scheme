@@ -124,9 +124,11 @@ macroEval env lisp@(List (Atom x : _)) = do
        cleanupEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
                                       -- to hold new symbols introduced by renaming. We
                                       -- can use this to clean up any left after transformation
-                                      --
+
+{- TODO: this is just test code for comparing use/def environments
        isUseDef <- liftIO $ isRecBound env "=>"
        isDefDef <- liftIO $ isRecBound defEnv "=>"
+-}
 
        -- Transform the input and then call macroEval again, since a macro may be contained within...
        expanded <- macroTransform env renameEnv cleanupEnv (List identifiers) rules 
