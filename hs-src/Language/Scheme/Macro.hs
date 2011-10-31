@@ -170,29 +170,29 @@ matchRule outerEnv identifiers localEnv renameEnv cleanupEnv (List [pattern, tem
    checkPattern ps@(DottedList ds d : _) is True = do
      case is of
        (DottedList _ _ : _) -> do 
-         loadLocal outerEnv localEnv identifiers 
+         loadLocal outerEnv localEnv renameEnv identifiers 
                                   (List $ ds ++ [d, Atom "..."])
                                   (List is)
                                    0 []
                                   (flagDottedLists [] (False, False) 0)
        (List _ : _) -> do 
-         loadLocal outerEnv localEnv identifiers 
+         loadLocal outerEnv localEnv renameEnv identifiers 
                                   (List $ ds ++ [d, Atom "..."])
                                   (List is)
                                    0 []
                                   (flagDottedLists [] (True, False) 0)
-       _ -> loadLocal outerEnv localEnv identifiers (List ps) (List is) 0 [] []
+       _ -> loadLocal outerEnv localEnv renameEnv identifiers (List ps) (List is) 0 [] []
 
    -- No pair, immediately begin matching
-   checkPattern ps is _ = loadLocal outerEnv localEnv identifiers (List ps) (List is) 0 [] [] 
+   checkPattern ps is _ = loadLocal outerEnv localEnv renameEnv identifiers (List ps) (List is) 0 [] [] 
 
 matchRule _ _ _ _ _ rule input = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
 
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 in preparation for macro transformation. -}
-loadLocal :: Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> [(Bool, Bool)] -> IOThrowsError LispVal
-loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex listFlags = do
+loadLocal :: Env -> Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> [(Bool, Bool)] -> IOThrowsError LispVal
+loadLocal outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel ellipsisIndex listFlags = do
   case (pattern, input) of
 
        ((DottedList ps p), (DottedList isRaw iRaw)) -> do
@@ -204,11 +204,11 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
          let is = fst isSplit
          let i = (snd isSplit) ++ [iRaw]
 
-         result <- loadLocal outerEnv localEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex listFlags
+         result <- loadLocal outerEnv localEnv renameEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex listFlags
          case result of
             Bool True -> --  By matching on an elipsis we force the code 
                          --  to match pagainst all elements in i. 
-                         loadLocal outerEnv localEnv identifiers 
+                         loadLocal outerEnv localEnv renameEnv identifiers 
                                   (List $ [p, Atom "..."]) 
                                   (List i)
                                    ellipsisLevel -- Incremented in the list/list match below
@@ -232,7 +232,7 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                       else ellipsisIndex
 
          -- At this point we know if the input is part of an ellipsis, so set the level accordingly 
-         status <- checkLocal outerEnv (localEnv) identifiers level idx p i listFlags
+         status <- checkLocal outerEnv (localEnv) renameEnv identifiers level idx p i listFlags
          case (status) of
               -- No match
               Bool False -> if nextHasEllipsis
@@ -241,16 +241,16 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
                                 then do
                                         case ps of
                                           [Atom "..."] -> return $ Bool True -- An otherwise empty list, so just let the caller know match is done
-                                          _ -> loadLocal outerEnv localEnv identifiers (List $ tail ps) (List (i : is)) ellipsisLevel ellipsisIndex listFlags
+                                          _ -> loadLocal outerEnv localEnv renameEnv identifiers (List $ tail ps) (List (i : is)) ellipsisLevel ellipsisIndex listFlags
                                 else return $ Bool False
               -- There was a match
               _ -> if nextHasEllipsis
                       then 
-                           loadLocal outerEnv localEnv identifiers pattern (List is)
+                           loadLocal outerEnv localEnv renameEnv identifiers pattern (List is)
                             ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                             idx -- Must keep index since it is incremented each time
                             listFlags
-                      else loadLocal outerEnv localEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex listFlags
+                      else loadLocal outerEnv localEnv renameEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex listFlags
 
        -- Base case - All data processed
        (List [], List []) -> return $ Bool True
@@ -271,7 +271,7 @@ loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisInde
        (List [], _) -> return $ Bool False
 
        -- Check input against pattern (both should be single var)
-       (_, _) -> checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern input listFlags
+       (_, _) -> checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex pattern input listFlags
 
 --
 -- |Utility function to flag pattern variables as 'no match' that exist in the 
@@ -351,6 +351,7 @@ getListFlags elIndices flags
 -- Check pattern against input to determine if there is a match
 checkLocal :: Env            -- Outer environment where this macro was called
            -> Env            -- Local environment used to store temporary variables for macro processing
+           -> Env            -- Local environment used to store vars that have been renamed by the macro subsystem 
            -> LispVal        -- List of identifiers specified in the syntax-rules
            -> Int            -- Current nary (ellipsis) level
            -> [Int]          -- Ellipsis Index, keeps track of the current nary (ellipsis) depth at each level 
@@ -358,12 +359,12 @@ checkLocal :: Env            -- Outer environment where this macro was called
            -> LispVal        -- Input to be matched
            -> [(Bool, Bool)] -- Flags to determine whether input pattern/variables are proper lists
            -> IOThrowsError LispVal
-checkLocal _ _ _ _ _ (Bool pattern) (Bool input) _ = return $ Bool $ pattern == input
-checkLocal _ _ _ _ _ (Number pattern) (Number input) _ = return $ Bool $ pattern == input
-checkLocal _ _ _ _ _ (Float pattern) (Float input) _ = return $ Bool $ pattern == input
-checkLocal _ _ _ _ _ (String pattern) (String input) _ = return $ Bool $ pattern == input
-checkLocal _ _ _ _ _ (Char pattern) (Char input) _ = return $ Bool $ pattern == input
-checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom pattern) input listFlags = do
+checkLocal _ _ _ _ _ _ (Bool pattern) (Bool input) _ = return $ Bool $ pattern == input
+checkLocal _ _ _ _ _ _ (Number pattern) (Number input) _ = return $ Bool $ pattern == input
+checkLocal _ _ _ _ _ _ (Float pattern) (Float input) _ = return $ Bool $ pattern == input
+checkLocal _ _ _ _ _ _ (String pattern) (String input) _ = return $ Bool $ pattern == input
+checkLocal _ _ _ _ _ _ (Char pattern) (Char input) _ = return $ Bool $ pattern == input
+checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (Atom pattern) input listFlags = do
   if (ellipsisLevel) > 0
      {- FUTURE: may be able to simplify both cases below by using a
      lambda function to store the 'save' actions -}
@@ -371,6 +372,12 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
              -- Var is part of a 0-to-many match, store up in a list...
      then do isDefined <- liftIO $ isBound localEnv pattern
              isLexicallyDefinedVar <- liftIO $ isBound outerEnv pattern
+
+TODO: WRT below, need to figure out what is causing the macro test to fail, and how to work around it...
+-- TODO: the code below is too simplistic, the true test is to compare what is in the envDef with
+--       the envUse...
+--             isRenamed <- liftIO $ isRecBound renameEnv (trace ("pattern = " ++ pattern) pattern)
+
              --
              -- If pattern is a literal identifier, need to ensure
              -- input matches that literal, or that (in this case)
@@ -382,7 +389,7 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
                     case input of
                         Atom inpt -> do
                             if (pattern == inpt)  
-                               then if isLexicallyDefinedVar == False 
+                               then if isLexicallyDefinedVar == False -- && not isRenamed 
                                        -- Var is not bound in outer code; proceed
                                        then do
                                          -- Set variable in the local environment
@@ -474,26 +481,26 @@ checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Atom patte
         _ <- defineNamespacedVar localEnv "improper pattern" pat $ Bool $ fst flags
         defineNamespacedVar localEnv "improper input" pat $ Bool $ snd flags
 
-checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (Vector p) (Vector i) flags =
+checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (Vector p) (Vector i) flags =
   -- For vectors, just use list match for now, since vector input matching just requires a
   -- subset of that behavior. Should be OK since parser would catch problems with trying
   -- to add pair syntax to a vector declaration. -}
-  loadLocal outerEnv localEnv identifiers (List $ elems p) (List $ elems i) ellipsisLevel ellipsisIndex flags
+  loadLocal outerEnv localEnv renameEnv identifiers (List $ elems p) (List $ elems i) ellipsisLevel ellipsisIndex flags
 
-checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(DottedList _ _) input@(DottedList _ _) flags =
-  loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
+checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex pattern@(DottedList _ _) input@(DottedList _ _) flags =
+  loadLocal outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
 
-checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex (DottedList ps p) input@(List (_ : _)) flags = do
-  loadLocal outerEnv localEnv identifiers 
+checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (DottedList ps p) input@(List (_ : _)) flags = do
+  loadLocal outerEnv localEnv renameEnv identifiers 
                                   (List $ ps ++ [p, Atom "..."])
                                   input
                                    ellipsisLevel -- Incremented in the list/list match below
                                    ellipsisIndex
                                    (flagDottedLists flags (True, False) $ length ellipsisIndex)
-checkLocal outerEnv localEnv identifiers ellipsisLevel ellipsisIndex pattern@(List _) input@(List _) flags =
-  loadLocal outerEnv localEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
+checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex pattern@(List _) input@(List _) flags =
+  loadLocal outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
 
-checkLocal _ _ _ _ _ _ _ _ = return $ Bool False
+checkLocal _ _ _ _ _ _ _ _ _ = return $ Bool False
 
 -- |Walk expanded code per Clinger
 walkExpanded :: Env -> Env -> Env -> Env -> Bool -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
