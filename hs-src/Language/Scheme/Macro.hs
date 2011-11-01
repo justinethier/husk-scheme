@@ -126,14 +126,16 @@ macroEval env lisp@(List (Atom x : _)) = do
                                       -- to hold new symbols introduced by renaming. We
                                       -- can use this to clean up any left after transformation
 
-{- TODO: this is just test code for comparing use/def environments
+-- TODO: this is just test code for comparing use/def environments
+--       isUseDef <- liftIO $ isNamespacedRecBoundWUpper defEnv env varNamespace "=>"
+       isCleanDef <- liftIO $ isRecBound cleanupEnv "=>"
        isUseDef <- liftIO $ isRecBound env "=>"
        isDefDef <- liftIO $ isRecBound defEnv "=>"
--}
+--
 
        -- Transform the input and then call macroEval again, since a macro may be contained within...
-       expanded <- macroTransform env renameEnv cleanupEnv (List identifiers) rules lisp
---         (trace ("useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
+       expanded <- macroTransform env renameEnv cleanupEnv (List identifiers) rules --lisp
+         (trace ("cleanDef = " ++ show isCleanDef ++ " useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
 --       macroEval env =<< cleanExpanded cleanupEnv (List []) expanded 
        macroEval env expanded -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
         -- let's figure out why cond and iteration are failing, then circle around back to this...
