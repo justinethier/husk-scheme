@@ -64,14 +64,17 @@ evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = meval env (makeNullContinuation env) lisp
 
 -- |A wrapper for macroEval and eval
-meval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-meval env cont lisp = do
+meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+meval env cont lisp = mfunc env cont lisp eval
+mprepareApply env cont lisp = mfunc env cont lisp prepareApply
+mfunc :: Env -> LispVal -> LispVal -> (Env -> LispVal -> LispVal -> IOThrowsError LispVal) -> IOThrowsError LispVal
+mfunc env cont lisp func = do
   if needToExtendEnv lisp
      then do
        exEnv <- liftIO $ extendEnv env []
        -- TODO: replace recursively replace env of nextCont with the extended env
-       macroEval env lisp >>= (eval exEnv (trace ("extending Env") cont))
-     else macroEval env lisp >>= (eval env cont) 
+       macroEval env lisp >>= (func exEnv (trace ("extending Env") cont))
+     else macroEval env lisp >>= (func env cont) 
 
 {- continueEval is a support function for eval, below.
  -
@@ -523,7 +526,7 @@ eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 2 args
 
-eval env cont args@(List (_ : _)) = macroEval env args >>= prepareApply env cont
+eval env cont args@(List (_ : _)) = mprepareApply env cont args
 eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 {- Prepare for apply by evaluating each function argument,
