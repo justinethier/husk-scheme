@@ -342,7 +342,7 @@ eval env cont args@(List (Atom "define" : DottedList (Atom var : fparams) vararg
           continueEval env cont result
 
 eval env cont args@(List (Atom "lambda" : List fparams : fbody)) = do
- bound <- liftIO $ isBound env "lambda"
+ bound <- liftIO $ isBound env "lambda" -- TODO: all of these probably should use isRecBound
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do result <- makeNormalFunc env fparams fbody
