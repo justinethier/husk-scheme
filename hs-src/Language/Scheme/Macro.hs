@@ -35,6 +35,7 @@ macro calls, etc) then the appropriate handler will be called to deal with it
 module Language.Scheme.Macro
     (
       macroEval
+    , needToExtendEnv
     ) where
 import Language.Scheme.Types
 import Language.Scheme.Variables
@@ -81,9 +82,9 @@ import Debug.Trace -- Only req'd to support trace, can be disabled at any time..
 
 
 -- A support function for Core that will be used as part of the above...
-needToExtendEnv :: Env -> LispVal -> Bool --IOThrowsError LispVal
-needToExtendEnv env (List [Atom "define-syntax", Atom _, (List (Atom "syntax-rules" : (List _ : _)))]) = True
-needToExtendEnv _ _ = False 
+needToExtendEnv :: LispVal -> Bool --IOThrowsError LispVal
+needToExtendEnv (List [Atom "define-syntax", Atom _, (List (Atom "syntax-rules" : (List _ : _)))]) = True
+needToExtendEnv _ = False 
 
 {- |macroEval
 Search for macro's in the AST, and transform any that are found.
@@ -131,8 +132,8 @@ macroEval env lisp@(List (Atom x : _)) = do
 -}
 
        -- Transform the input and then call macroEval again, since a macro may be contained within...
-       expanded <- macroTransform env renameEnv cleanupEnv (List identifiers) rules 
-         (trace ("useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
+       expanded <- macroTransform env renameEnv cleanupEnv (List identifiers) rules lisp
+--         (trace ("useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
 --       macroEval env =<< cleanExpanded cleanupEnv (List []) expanded 
        macroEval env expanded -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
         -- let's figure out why cond and iteration are failing, then circle around back to this...
