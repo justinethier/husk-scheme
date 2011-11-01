@@ -20,6 +20,34 @@ import Language.Scheme.Types
 import Control.Monad.Error
 import Data.IORef
 
+{- Experimental code:
+-- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/
+import Foreign
+isMemoryEquivalent :: a -> a -> IO Bool
+isMemoryEquivalent obj1 obj2 = do
+  obj1Ptr <- newStablePtr obj1
+  obj2Ptr <- newStablePtr obj2
+  let result = obj1Ptr == obj2Ptr
+  freeStablePtr obj1Ptr
+  freeStablePtr obj2Ptr
+  return result
+
+-- Using above, search an env for a variable definition, but stop if the upperEnv is
+-- reached before the variable
+isNamespacedRecBoundWUpper :: Env -> Env -> String -> String -> IO Bool
+isNamespacedRecBoundWUpper upperEnvRef envRef namespace var = do 
+  areEnvsEqual <- liftIO $ isMemoryEquivalent upperEnvRef envRef
+  if areEnvsEqual
+     then return False
+     else do
+         found <- liftIO $ isNamespacedBound envRef namespace var
+         if found
+            then return True 
+            else case parentEnv envRef of
+                      (Just par) -> isNamespacedRecBoundWUpper upperEnvRef par namespace var
+                      Nothing -> return False -- Var never found
+-}
+
 -- |Extend given environment by binding a series of values to a new environment.
 extendEnv :: Env -> [((String, String), LispVal)] -> IO Env
 extendEnv envRef abindings = do bindinglist <- mapM addBinding abindings >>= newIORef
