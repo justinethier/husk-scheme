@@ -71,11 +71,12 @@ mfunc :: Env -> LispVal -> LispVal -> (Env -> LispVal -> LispVal -> IOThrowsErro
 mfunc env cont lisp func = do
   if needToExtendEnv lisp
      then do
+       expanded <- macroEval env lisp
        exEnv <- liftIO $ extendEnv env []
        -- Recursively replace env of nextCont with the extended env
        -- This is more expensive than I would like, but I think it should be straightforward enough...
        exCont <- updateContEnv exEnv cont
-       macroEval env lisp >>= (func exEnv (trace ("extending Env") exCont))
+       func exEnv (trace ("extending Env") exCont) expanded
      else macroEval env lisp >>= (func env cont) 
 
 updateContEnv :: Env -> LispVal -> IOThrowsError LispVal
