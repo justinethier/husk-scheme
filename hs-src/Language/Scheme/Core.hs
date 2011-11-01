@@ -69,7 +69,7 @@ meval env cont lisp = mfunc env cont lisp eval
 mprepareApply env cont lisp = mfunc env cont lisp prepareApply
 mfunc :: Env -> LispVal -> LispVal -> (Env -> LispVal -> LispVal -> IOThrowsError LispVal) -> IOThrowsError LispVal
 mfunc env cont lisp func = do
-  if needToExtendEnv lisp
+  if False --needToExtendEnv lisp
      then do
        expanded <- macroEval env lisp
        exEnv <- liftIO $ extendEnv env []
@@ -717,6 +717,11 @@ evalfuncApply _ = throwError $ NumArgs 2 []
 evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
 -- TODO: I think the use of map here is causing the env to be overwritten when evaluating code
 -- in files. this needs to be changed to use cps style...
+{-  code <- load filename
+  if not (null code)
+     then continueEval env (Continuation env (Just $ SchemeBody code) (Just cont) Nothing Nothing) $ Nil "" 
+     else return $ Nil "" -- Empty, unspecified value
+         -}
     results <- load filename >>= mapM (evaluate env (makeNullContinuation env))
     if not (null results)
        then do result <- return . last $ results

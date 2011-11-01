@@ -1,3 +1,4 @@
+(write "test")
 ;Some initial test cases to work through macro expansion
 
 (write
