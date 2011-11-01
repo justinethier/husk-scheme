@@ -73,6 +73,7 @@ mfunc env cont lisp func = do
      then do
        exEnv <- liftIO $ extendEnv env []
        -- TODO: replace recursively replace env of nextCont with the extended env
+       -- This is more expensive than I would like, but I think it should be straightforward enough...
        macroEval env lisp >>= (func exEnv (trace ("extending Env") cont))
      else macroEval env lisp >>= (func env cont) 
 
