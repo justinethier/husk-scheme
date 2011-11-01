@@ -135,7 +135,7 @@ macroEval env lisp@(List (Atom x : _)) = do
 
        -- Transform the input and then call macroEval again, since a macro may be contained within...
        expanded <- macroTransform env renameEnv cleanupEnv (List identifiers) rules --lisp
-         (trace ("cleanDef = " ++ show isCleanDef ++ " useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
+         (trace ("macro = " ++ x ++ " cleanDef = " ++ show isCleanDef ++ " useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
 --       macroEval env =<< cleanExpanded cleanupEnv (List []) expanded 
        macroEval env expanded -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
         -- let's figure out why cond and iteration are failing, then circle around back to this...
