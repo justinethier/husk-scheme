@@ -100,9 +100,18 @@ macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom
   - At a minimum, should check identifiers to make sure each is an atom (see findAtom) 
   -}
   _ <- do
-    -- TBD: do we need to store a copy of this Env?
-    defEnv <- liftIO $ copyEnv env
-    defineNamespacedVar env macroNamespace keyword $ Syntax defEnv identifiers rules
+-- 
+-- TODO: I think it seems to be a better solution to use this defEnv, but
+-- that causes problems when a var is changed via (define) or (set!) since most
+-- schemes interpret allow this change to propagate back to the point of definition
+-- (or at least, when modules are not in play). See:
+--
+-- http://stackoverflow.com/questions/7999084/scheme-syntax-rules-difference-in-variable-bindings-between-let-anddefine
+--
+-- Anyway, this may come back. But I am not using it for now...
+--
+--    defEnv <- liftIO $ copyEnv env
+    defineNamespacedVar env macroNamespace keyword $ Syntax env identifiers rules
   return $ Nil "" -- Sentinal value
 
 {- Inspect code for macros
