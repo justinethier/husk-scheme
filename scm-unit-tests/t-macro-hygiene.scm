@@ -1,7 +1,29 @@
 ;(define-syntax a
 ; (syntax-rules ()
 
+(define-syntax test-var
+ (syntax-rules (var)
+   ((_ var)
+    'var)
+   ((_ pattern-var)
+    'no-match)))
 
+; Should return var since var is same in env/use 
+(write (test-var var))
+
+; Should be unmatched because of the difference between env/use
+(let ((var 1)) (test-var var))
+
+; Again, should be unmatched because of the difference between env/use
+(define var 2)
+(test-var var)
+
+
+; TODO: test the rewrite side by placing the literal in a template
+
+
+
+#|
 ; if marked as a literal identifier so it is not loaded as a pattern variable...
 (define-syntax test
  (syntax-rules (if)
@@ -36,4 +58,4 @@
     (if #t #t #f))))
 (write
   (test-2 if))
-
+|#
