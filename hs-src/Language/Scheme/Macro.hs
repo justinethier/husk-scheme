@@ -355,13 +355,16 @@ flagUnmatchedAtom defEnv outerEnv localEnv identifiers p improperListFlag = do
 -- TODO: use defEnv
 
   isDefined <- liftIO $ isBound localEnv p
-  isLexicallyDefinedVar <- liftIO $ isBound outerEnv p
+--  isLexicallyDefinedVar <- liftIO $ isBound outerEnv p
   isIdent <- findAtom (Atom p) identifiers
   if isDefined 
      -- Var already defined, skip it...
      then continueFlagging
      else case isIdent of
-             Bool True -> if isLexicallyDefinedVar   -- Is this good enough?
+             Bool True -> do
+                           matches <- identifierMatches defEnv outerEnv p
+                           if not matches 
+{-isLexicallyDefinedVar-}   -- TODO: Is this good enough? what about renameEnv?
                              then return $ Bool True
                              else do _ <- flagUnmatchedVar localEnv p improperListFlag
                                      continueFlagging
@@ -419,7 +422,7 @@ checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsis
   -- So what is below is close but not truly correct.
   --
   isRenamed <- liftIO $ isRecBound renameEnv (trace ("pattern = " ++ pattern) pattern)
-
+  doesIdentMatch <- identifierMatches defEnv outerEnv pattern
 -- TODO: use defEnv
 
   if (ellipsisLevel) > 0
@@ -428,7 +431,7 @@ checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsis
 
              -- Var is part of a 0-to-many match, store up in a list...
      then do isDefined <- liftIO $ isBound localEnv pattern
-             isLexicallyDefinedVar <- liftIO $ isBound outerEnv pattern
+--             isLexicallyDefinedVar <- liftIO $ isBound outerEnv pattern
 
              --
              -- If pattern is a literal identifier, need to ensure
@@ -441,7 +444,7 @@ checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsis
                     case input of
                         Atom inpt -> do
                             if (pattern == inpt)  
-                               then if isLexicallyDefinedVar == False -- && not isRenamed 
+                               then if (doesIdentMatch) && (not isRenamed)  --isLexicallyDefinedVar == False -- && not isRenamed 
                                        -- Var is not bound in outer code; proceed
                                        then do
                                          -- Set variable in the local environment
@@ -463,14 +466,15 @@ checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsis
      --
      else do
          isIdent <- findAtom (Atom pattern) identifiers
-         isLexicallyDefinedPatternVar <- liftIO $ isBound outerEnv pattern -- Var defined in scope outside macro
+         --isLexicallyDefinedPatternVar <- liftIO $ isBound outerEnv pattern -- Var defined in scope outside macro
          case (isIdent) of
             -- Fail the match if pattern is a literal identifier and input does not match
             Bool True -> do
                 case input of
                     Atom inpt -> do
                         -- Pattern/Input are atoms; both must match
-                        if (pattern == inpt && (not isLexicallyDefinedPatternVar)) && (not isRenamed) -- Regarding lex binding; see above, sec 4.3.2 from spec
+                        if (pattern == inpt && (doesIdentMatch)) && (not isRenamed) -- Regarding lex binding; see above, sec 4.3.2 from spec
+--                        if (pattern == inpt && (not isLexicallyDefinedPatternVar)) && (not isRenamed) -- Regarding lex binding; see above, sec 4.3.2 from spec
                            then do _ <- defineVar localEnv pattern input
                                    return $ Bool True
                            else return $ (Bool False)
@@ -553,6 +557,31 @@ checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsis
   loadLocal defEnv outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
 
 checkLocal _ _ _ _ _ _ _ _ _ _ = return $ Bool False
+
+-- |Determine if an identifier in a pattern matches an identifier of the same
+--  name in the input.
+--
+-- Note that identifiers are lexically scoped: bindings that intervene
+-- between the definition and use of a macro may cause match failure
+--
+-- TODO: what if var is a macro or a special form?
+--
+-- TODO: what about vars that are introduced during macro expansion, that are not
+-- yet defined in an Env? This may be a future TBD
+--
+identifierMatches :: Env -> Env -> String -> IOThrowsError Bool
+identifierMatches defEnv useEnv ident = do
+  atDef <- liftIO $ isRecBound defEnv ident
+  atUse <- liftIO $ isRecBound useEnv ident
+  matchIdent atDef atUse --defEnv useEnv ident
+
+ where --matchIdent :: Bool -> Bool -> Env -> Env
+  matchIdent False False = return True -- Never defined, so match
+  matchIdent True True = do -- Defined in both places, check for equality
+    d <- getVar defEnv ident
+    u <- getVar useEnv ident
+    return $ eqVal d u 
+  matchIdent _ _ = return False -- Not defined in one place, reject it 
 
 -- |Walk expanded code per Clinger
 walkExpanded :: Env -> Env -> Env -> Env -> Bool -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
