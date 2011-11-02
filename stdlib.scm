@@ -233,13 +233,13 @@
 ;
 (define-syntax let*
   (syntax-rules ()
-    ((_ () body) ((lambda () body)))
-    ((_ ((var val)
-		 (vars vals) ...)
-		 body)
-	 (let ((var val))
-       (let* ((vars vals) ...)
-		     body)))))
+    ((let* () body1 body2 ...)
+     (let () body1 body2 ...))
+    ((let* ((name1 val1) (name2 val2) ...)
+       body1 body2 ...)
+     (let ((name1 val1))
+       (let* ((name2 val2) ...)
+         body1 body2 ...)))))
 
 ; Iteration - do
 (define-syntax do
