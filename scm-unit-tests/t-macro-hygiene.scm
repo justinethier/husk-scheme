@@ -1,4 +1,17 @@
+;;
+;; husk-scheme
+;; http://github.com/justinethier/husk-scheme
+;;
+;; Written by Justin Ethier
+;;
+;; More test cases for macros, specifically to test macros using
+;; improper and proper lists.
+;;
+(load "skim-unit.scm")
+(unit-test-start "macros - hygiene")
 
+#|
+; TODO:
 ; A demonstration of how to deal with 'other side of hygiene' when
 ; the literal is in the template
 (define v 1)
@@ -12,8 +25,8 @@
 (write (let ((v 2)) (test-template)))
 (define v 3)
 (write (test-template))
+|#
 
-#|
 (define var 'original)
 
 (define-syntax test-var
@@ -24,17 +37,20 @@
     'no-match)))
 
 ; Should return var since var is same in env/use 
-(write (test-var var))
+(assert/equal (test-var var)
+              'original)
 
 ; Should be unmatched because of the difference between env/use
-(write (let ((var 1)) (test-var var)))
+(assert/equal (let ((var 1)) (test-var var))
+              'no-match)
 
 ; Again, should be unmatched because of the difference between env/use
+; BUT, it is matched due to how scheme implementations deal with the global env
 (define var 'new-var)
-(write (test-var var))
-|#
+(assert/equal (test-var var)
+              'new-var)
 
-; TODO: test the rewrite side by placing the literal in a template
+
 
 
 
@@ -74,3 +90,5 @@
 (write
   (test-2 if))
 |#
+
+(unit-test-handler-results)

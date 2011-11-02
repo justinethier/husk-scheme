@@ -50,6 +50,7 @@ test: husk stdlib.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-extensions.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-iteration.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-macro.scm
+	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-macro-lists.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-numerical-ops.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-hashtable.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-scoping.scm
@@ -59,7 +60,7 @@ test: husk stdlib.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-string.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-vector.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-parser.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-macro-lists.scm
+	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-macro-hygiene.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) summarize.scm
 	@rm -f $(UNIT_TEST_DIR)/scm-unit.tmp
 
