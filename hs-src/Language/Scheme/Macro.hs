@@ -127,19 +127,19 @@ macroEval env lisp@(List (Atom x : _)) = do
                                       -- to hold new symbols introduced by renaming. We
                                       -- can use this to clean up any left after transformation
 
+{- TODO: TEST CODE is below
 -- TODO: this is just test code for comparing use/def environments
 --       isUseDef <- liftIO $ isNamespacedRecBoundWUpper defEnv env varNamespace "=>"
        isCleanDef <- liftIO $ isRecBound cleanupEnv "=>"
        isUseDef <- liftIO $ isRecBound env "=>"
        isDefDef <- liftIO $ isRecBound defEnv "=>"
---
+-}
 
        -- Transform the input and then call macroEval again, since a macro may be contained within...
-       expanded <- macroTransform env renameEnv cleanupEnv (List identifiers) rules --lisp
-         (trace ("macro = " ++ x ++ " cleanDef = " ++ show isCleanDef ++ " useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
+       expanded <- macroTransform defEnv env renameEnv cleanupEnv (List identifiers) rules lisp
+-- DEBUG CODE: (trace ("macro = " ++ x ++ " cleanDef = " ++ show isCleanDef ++ " useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
 --       macroEval env =<< cleanExpanded cleanupEnv (List []) expanded 
        macroEval env expanded -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
-        -- let's figure out why cond and iteration are failing, then circle around back to this...
      else return lisp
 
 -- No macro to process, just return code as it is...
@@ -157,20 +157,20 @@ macroEval _ lisp@(_) = return lisp
  -  rules - pattern/transform pairs to compare to input
  -  input - Code from the scheme application 
  -}
-macroTransform :: Env -> Env -> Env -> LispVal -> [LispVal] -> LispVal -> IOThrowsError LispVal
-macroTransform env renameEnv cleanupEnv identifiers (rule@(List _) : rs) input = do
+macroTransform :: Env -> Env -> Env -> Env -> LispVal -> [LispVal] -> LispVal -> IOThrowsError LispVal
+macroTransform defEnv env renameEnv cleanupEnv identifiers (rule@(List _) : rs) input = do
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
                                -- to hold pattern variables
-  result <- matchRule env identifiers localEnv renameEnv cleanupEnv rule input
+  result <- matchRule defEnv env identifiers localEnv renameEnv cleanupEnv rule input
   case result of
-    Nil _ -> macroTransform env renameEnv cleanupEnv identifiers rs input
+    Nil _ -> macroTransform defEnv env renameEnv cleanupEnv identifiers rs input
     _ -> do
         -- Walk the resulting code, performing the Clinger algorithm's 4 components
         -- TODO: see below: expanded <-
-        walkExpanded env env renameEnv cleanupEnv True False (List []) (trace ("macroT, result = " ++ show result) result)
+        walkExpanded defEnv env renameEnv cleanupEnv True False (List []) (trace ("macroT, result = " ++ show result) result)
 
 -- Ran out of rules to match...
-macroTransform _ _ _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
+macroTransform _ _ _ _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
 
 -- Determine if the next element in a list matches 0-to-n times due to an ellipsis
 macroElementMatchesMany :: LispVal -> Bool
@@ -184,8 +184,8 @@ macroElementMatchesMany _ = False
 
 {- Given input, determine if that input matches any rules
 @return Transformed code, or Nil if no rules match -}
-matchRule :: Env -> LispVal -> Env -> Env -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
-matchRule outerEnv identifiers localEnv renameEnv cleanupEnv (List [pattern, template]) (List inputVar) = do
+matchRule :: Env -> Env -> LispVal -> Env -> Env -> Env -> LispVal -> LispVal -> IOThrowsError LispVal
+matchRule defEnv outerEnv identifiers localEnv renameEnv cleanupEnv (List [pattern, template]) (List inputVar) = do
    let is = tail inputVar
    let p = case pattern of
               DottedList ds d -> case ds of
@@ -200,7 +200,7 @@ matchRule outerEnv identifiers localEnv renameEnv cleanupEnv (List [pattern, tem
         case match of
            Bool False -> return $ Nil ""
            _ -> do
---                bindings <- findBindings localEnv pattern
+-- TODO: pass defEnv down as part of 'other side' of hygiene           
                 transformRule outerEnv localEnv renameEnv cleanupEnv 0 [] (List []) template
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
 
@@ -210,29 +210,29 @@ matchRule outerEnv identifiers localEnv renameEnv cleanupEnv (List [pattern, tem
    checkPattern ps@(DottedList ds d : _) is True = do
      case is of
        (DottedList _ _ : _) -> do 
-         loadLocal outerEnv localEnv renameEnv identifiers 
+         loadLocal defEnv outerEnv localEnv renameEnv identifiers 
                                   (List $ ds ++ [d, Atom "..."])
                                   (List is)
                                    0 []
                                   (flagDottedLists [] (False, False) 0)
        (List _ : _) -> do 
-         loadLocal outerEnv localEnv renameEnv identifiers 
+         loadLocal defEnv outerEnv localEnv renameEnv identifiers 
                                   (List $ ds ++ [d, Atom "..."])
                                   (List is)
                                    0 []
                                   (flagDottedLists [] (True, False) 0)
-       _ -> loadLocal outerEnv localEnv renameEnv identifiers (List ps) (List is) 0 [] []
+       _ -> loadLocal defEnv outerEnv localEnv renameEnv identifiers (List ps) (List is) 0 [] []
 
    -- No pair, immediately begin matching
-   checkPattern ps is _ = loadLocal outerEnv localEnv renameEnv identifiers (List ps) (List is) 0 [] [] 
+   checkPattern ps is _ = loadLocal defEnv outerEnv localEnv renameEnv identifiers (List ps) (List is) 0 [] [] 
 
-matchRule _ _ _ _ _ rule input = do
+matchRule _ _ _ _ _ _ rule input = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
 
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 in preparation for macro transformation. -}
-loadLocal :: Env -> Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> [(Bool, Bool)] -> IOThrowsError LispVal
-loadLocal outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel ellipsisIndex listFlags = do
+loadLocal :: Env -> Env -> Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> [(Bool, Bool)] -> IOThrowsError LispVal
+loadLocal defEnv outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel ellipsisIndex listFlags = do
   case (pattern, input) of
 
        ((DottedList ps p), (DottedList isRaw iRaw)) -> do
@@ -244,11 +244,11 @@ loadLocal outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel el
          let is = fst isSplit
          let i = (snd isSplit) ++ [iRaw]
 
-         result <- loadLocal outerEnv localEnv renameEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex listFlags
+         result <- loadLocal defEnv outerEnv localEnv renameEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex listFlags
          case result of
             Bool True -> --  By matching on an elipsis we force the code 
                          --  to match pagainst all elements in i. 
-                         loadLocal outerEnv localEnv renameEnv identifiers 
+                         loadLocal defEnv outerEnv localEnv renameEnv identifiers 
                                   (List $ [p, Atom "..."]) 
                                   (List i)
                                    ellipsisLevel -- Incremented in the list/list match below
@@ -272,7 +272,7 @@ loadLocal outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel el
                       else ellipsisIndex
 
          -- At this point we know if the input is part of an ellipsis, so set the level accordingly 
-         status <- checkLocal outerEnv (localEnv) renameEnv identifiers level idx p i listFlags
+         status <- checkLocal defEnv outerEnv (localEnv) renameEnv identifiers level idx p i listFlags
          case (status) of
               -- No match
               Bool False -> if nextHasEllipsis
@@ -281,16 +281,16 @@ loadLocal outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel el
                                 then do
                                         case ps of
                                           [Atom "..."] -> return $ Bool True -- An otherwise empty list, so just let the caller know match is done
-                                          _ -> loadLocal outerEnv localEnv renameEnv identifiers (List $ tail ps) (List (i : is)) ellipsisLevel ellipsisIndex listFlags
+                                          _ -> loadLocal defEnv outerEnv localEnv renameEnv identifiers (List $ tail ps) (List (i : is)) ellipsisLevel ellipsisIndex listFlags
                                 else return $ Bool False
               -- There was a match
               _ -> if nextHasEllipsis
                       then 
-                           loadLocal outerEnv localEnv renameEnv identifiers pattern (List is)
+                           loadLocal defEnv outerEnv localEnv renameEnv identifiers pattern (List is)
                             ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                             idx -- Must keep index since it is incremented each time
                             listFlags
-                      else loadLocal outerEnv localEnv renameEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex listFlags
+                      else loadLocal defEnv outerEnv localEnv renameEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex listFlags
 
        -- Base case - All data processed
        (List [], List []) -> return $ Bool True
@@ -304,14 +304,14 @@ loadLocal outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel el
               -- Note:
               -- Appending to eIndex to compensate for fact we are outside the list containing the nary match 
               let flags = getListFlags (ellipsisIndex ++ [0]) listFlags
-              flagUnmatchedVars outerEnv localEnv identifiers pattern $ fst flags
+              flagUnmatchedVars defEnv outerEnv localEnv identifiers pattern $ fst flags
             else return $ Bool False
 
        -- Pattern ran out, but there is still input. No match.
        (List [], _) -> return $ Bool False
 
        -- Check input against pattern (both should be single var)
-       (_, _) -> checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex pattern input listFlags
+       (_, _) -> checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex pattern input listFlags
 
 --
 -- |Utility function to flag pattern variables as 'no match' that exist in the 
@@ -323,34 +323,37 @@ loadLocal outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel el
 -- This information is necessary for use during transformation, where the output may
 -- change depending upon the form of the input.
 --
-flagUnmatchedVars :: Env -> Env -> LispVal -> LispVal -> Bool -> IOThrowsError LispVal 
+flagUnmatchedVars :: Env -> Env -> Env -> LispVal -> LispVal -> Bool -> IOThrowsError LispVal 
 
-flagUnmatchedVars outerEnv localEnv identifiers (DottedList ps p) partOfImproperPattern = do
-  flagUnmatchedVars outerEnv localEnv identifiers (List $ ps ++ [p]) partOfImproperPattern
+flagUnmatchedVars defEnv outerEnv localEnv identifiers (DottedList ps p) partOfImproperPattern = do
+  flagUnmatchedVars defEnv outerEnv localEnv identifiers (List $ ps ++ [p]) partOfImproperPattern
 
-flagUnmatchedVars outerEnv localEnv identifiers (Vector p) partOfImproperPattern = do
-  flagUnmatchedVars outerEnv localEnv identifiers (List $ elems p) partOfImproperPattern
+flagUnmatchedVars defEnv outerEnv localEnv identifiers (Vector p) partOfImproperPattern = do
+  flagUnmatchedVars defEnv outerEnv localEnv identifiers (List $ elems p) partOfImproperPattern
 
-flagUnmatchedVars _ _ _ (List []) _ = return $ Bool True 
+flagUnmatchedVars _ _ _ _ (List []) _ = return $ Bool True 
 
-flagUnmatchedVars outerEnv localEnv identifiers (List (p : ps)) partOfImproperPattern = do
-  _ <- flagUnmatchedVars outerEnv localEnv identifiers p partOfImproperPattern
-  flagUnmatchedVars outerEnv localEnv identifiers (List ps) partOfImproperPattern
+flagUnmatchedVars defEnv outerEnv localEnv identifiers (List (p : ps)) partOfImproperPattern = do
+  _ <- flagUnmatchedVars defEnv outerEnv localEnv identifiers p partOfImproperPattern
+  flagUnmatchedVars defEnv outerEnv localEnv identifiers (List ps) partOfImproperPattern
 
-flagUnmatchedVars _ _ _ (Atom "...") _ = return $ Bool True 
+flagUnmatchedVars _ _ _ _ (Atom "...") _ = return $ Bool True 
 
-flagUnmatchedVars outerEnv localEnv identifiers (Atom p) partOfImproperPattern =
-  flagUnmatchedAtom outerEnv localEnv identifiers p partOfImproperPattern
+flagUnmatchedVars defEnv outerEnv localEnv identifiers (Atom p) partOfImproperPattern =
+  flagUnmatchedAtom defEnv outerEnv localEnv identifiers p partOfImproperPattern
 
-flagUnmatchedVars _ _ _ _ _ = return $ Bool True 
+flagUnmatchedVars _ _ _ _ _ _ = return $ Bool True 
 
 -- |Flag an atom that did not have any matching input
 --
 --  Note that an atom may not be flagged in certain cases, for example if
 --  the var is lexically defined in the outer environment. This logic
 --  matches that in the pattern matching code.
-flagUnmatchedAtom :: Env -> Env -> LispVal -> String -> Bool -> IOThrowsError LispVal 
-flagUnmatchedAtom outerEnv localEnv identifiers p improperListFlag = do
+flagUnmatchedAtom :: Env -> Env -> Env -> LispVal -> String -> Bool -> IOThrowsError LispVal 
+flagUnmatchedAtom defEnv outerEnv localEnv identifiers p improperListFlag = do
+
+-- TODO: use defEnv
+
   isDefined <- liftIO $ isBound localEnv p
   isLexicallyDefinedVar <- liftIO $ isBound outerEnv p
   isIdent <- findAtom (Atom p) identifiers
@@ -389,7 +392,8 @@ getListFlags elIndices flags
   | otherwise = (False, False)
 
 -- Check pattern against input to determine if there is a match
-checkLocal :: Env            -- Outer environment where this macro was called
+checkLocal :: Env            -- Environment where the macro was defined
+           -> Env            -- Outer environment where this macro was called
            -> Env            -- Local environment used to store temporary variables for macro processing
            -> Env            -- Local environment used to store vars that have been renamed by the macro subsystem 
            -> LispVal        -- List of identifiers specified in the syntax-rules
@@ -399,12 +403,12 @@ checkLocal :: Env            -- Outer environment where this macro was called
            -> LispVal        -- Input to be matched
            -> [(Bool, Bool)] -- Flags to determine whether input pattern/variables are proper lists
            -> IOThrowsError LispVal
-checkLocal _ _ _ _ _ _ (Bool pattern) (Bool input) _ = return $ Bool $ pattern == input
-checkLocal _ _ _ _ _ _ (Number pattern) (Number input) _ = return $ Bool $ pattern == input
-checkLocal _ _ _ _ _ _ (Float pattern) (Float input) _ = return $ Bool $ pattern == input
-checkLocal _ _ _ _ _ _ (String pattern) (String input) _ = return $ Bool $ pattern == input
-checkLocal _ _ _ _ _ _ (Char pattern) (Char input) _ = return $ Bool $ pattern == input
-checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (Atom pattern) input listFlags = do
+checkLocal _ _ _ _ _ _ _ (Bool pattern) (Bool input) _ = return $ Bool $ pattern == input
+checkLocal _ _ _ _ _ _ _ (Number pattern) (Number input) _ = return $ Bool $ pattern == input
+checkLocal _ _ _ _ _ _ _ (Float pattern) (Float input) _ = return $ Bool $ pattern == input
+checkLocal _ _ _ _ _ _ _ (String pattern) (String input) _ = return $ Bool $ pattern == input
+checkLocal _ _ _ _ _ _ _ (Char pattern) (Char input) _ = return $ Bool $ pattern == input
+checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (Atom pattern) input listFlags = do
 
   -- TODO: 
   --
@@ -415,6 +419,8 @@ checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (
   -- So what is below is close but not truly correct.
   --
   isRenamed <- liftIO $ isRecBound renameEnv (trace ("pattern = " ++ pattern) pattern)
+
+-- TODO: use defEnv
 
   if (ellipsisLevel) > 0
      {- FUTURE: may be able to simplify both cases below by using a
@@ -527,26 +533,26 @@ checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (
         _ <- defineNamespacedVar localEnv "improper pattern" pat $ Bool $ fst flags
         defineNamespacedVar localEnv "improper input" pat $ Bool $ snd flags
 
-checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (Vector p) (Vector i) flags =
+checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (Vector p) (Vector i) flags =
   -- For vectors, just use list match for now, since vector input matching just requires a
   -- subset of that behavior. Should be OK since parser would catch problems with trying
   -- to add pair syntax to a vector declaration. -}
-  loadLocal outerEnv localEnv renameEnv identifiers (List $ elems p) (List $ elems i) ellipsisLevel ellipsisIndex flags
+  loadLocal defEnv outerEnv localEnv renameEnv identifiers (List $ elems p) (List $ elems i) ellipsisLevel ellipsisIndex flags
 
-checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex pattern@(DottedList _ _) input@(DottedList _ _) flags =
-  loadLocal outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
+checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex pattern@(DottedList _ _) input@(DottedList _ _) flags =
+  loadLocal defEnv outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
 
-checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (DottedList ps p) input@(List (_ : _)) flags = do
-  loadLocal outerEnv localEnv renameEnv identifiers 
+checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (DottedList ps p) input@(List (_ : _)) flags = do
+  loadLocal defEnv outerEnv localEnv renameEnv identifiers 
                                   (List $ ps ++ [p, Atom "..."])
                                   input
                                    ellipsisLevel -- Incremented in the list/list match below
                                    ellipsisIndex
                                    (flagDottedLists flags (True, False) $ length ellipsisIndex)
-checkLocal outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex pattern@(List _) input@(List _) flags =
-  loadLocal outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
+checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex pattern@(List _) input@(List _) flags =
+  loadLocal defEnv outerEnv localEnv renameEnv identifiers pattern input ellipsisLevel ellipsisIndex flags
 
-checkLocal _ _ _ _ _ _ _ _ _ = return $ Bool False
+checkLocal _ _ _ _ _ _ _ _ _ _ = return $ Bool False
 
 -- |Walk expanded code per Clinger
 walkExpanded :: Env -> Env -> Env -> Env -> Bool -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
@@ -601,7 +607,7 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
                -- This is because the macro renames non-matched identifiers and stores mappings
                -- from the {rename ==> original}. Each new name is unique by definition, so
                -- no conflicts are possible.
-               macroTransform useEnv renameEnv cleanupEnv (List identifiers) rules (List (Atom a : ts))
+               macroTransform defEnv useEnv renameEnv cleanupEnv (List identifiers) rules (List (Atom a : ts))
              else walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
 -- TODO: use startOfList for lambda/macro call processing
 {- OLD CODE: 
