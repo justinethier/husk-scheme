@@ -716,6 +716,7 @@ evalfuncApply (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation
 evalfuncApply _ = throwError $ NumArgs 2 []
 
 evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
+{-
 -- TODO: I think the use of map here is causing the env to be overwritten when evaluating code
 -- in files. this needs to be changed to use cps style...
 --
@@ -725,14 +726,14 @@ evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
   if not (null code)
      then continueEval env (Continuation env (Just $ SchemeBody code) (Just cont) Nothing Nothing) $ Nil "" 
      else return $ Nil "" -- Empty, unspecified value
-{-
+-}
     results <- load filename >>= mapM (evaluate env (makeNullContinuation env))
     if not (null results)
        then do result <- return . last $ results
                continueEval env cont result
        else return $ Nil "" -- Empty, unspecified value
   where evaluate env2 cont2 val2 = meval env2 cont2 val2
-  -}
+
 evalfuncLoad (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncLoad _ = throwError $ NumArgs 1 []
 
