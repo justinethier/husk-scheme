@@ -101,7 +101,8 @@ macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom
   -}
   _ <- do
     -- TBD: do we need to store a copy of this Env?
-    defineNamespacedVar env macroNamespace keyword $ Syntax env identifiers rules
+    defEnv <- liftIO $ copyEnv env
+    defineNamespacedVar env macroNamespace keyword $ Syntax defEnv identifiers rules
   return $ Nil "" -- Sentinal value
 
 {- Inspect code for macros
