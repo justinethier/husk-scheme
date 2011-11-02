@@ -48,6 +48,17 @@ isNamespacedRecBoundWUpper upperEnvRef envRef namespace var = do
                       Nothing -> return False -- Var never found
 -}
 
+-- |Create a deep copy of an environment
+copyEnv :: Env -> IO Env
+copyEnv env = do
+  binds <- liftIO $ readIORef $ bindings env
+  bindingList <- mapM addBinding binds >>= newIORef
+  return $ Environment (parentEnv env) bindingList -- TODO: recursively create a copy of parent also?
+ where addBinding ((namespace, name), val) = do --ref <- newIORef $ liftIO $ readIORef val
+                                                x <- liftIO $ readIORef val
+                                                ref <- newIORef x
+                                                return ((namespace, name), ref)
+
 -- |Extend given environment by binding a series of values to a new environment.
 extendEnv :: Env -> [((String, String), LispVal)] -> IO Env
 extendEnv envRef abindings = do bindinglist <- mapM addBinding abindings >>= newIORef
