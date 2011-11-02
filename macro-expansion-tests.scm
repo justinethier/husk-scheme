@@ -55,7 +55,7 @@
 |#
 
 (write (let ((x 'test)) x))
-;(define => 'test)
+(define => 'test)
 
 ; I think this might be an example of case 2; => is defined as #f and thus that pattern should
 ; not be matched in (cond) ... again, I *think* that is what is going on here
@@ -91,3 +91,5 @@
   (let ((=> #f)) (cond (#t => 'ok)))
 )))
 ;              'ok)
+
+(my-cond (#t #f 'ok))
