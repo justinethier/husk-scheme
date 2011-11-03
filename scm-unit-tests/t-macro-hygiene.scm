@@ -1,10 +1,25 @@
-;(define-syntax a
-; (syntax-rules ()
+
+; A demonstration of how to deal with 'other side of hygiene' when
+; the literal is in the template
+(define v 1)
+(define-syntax test-template
+ (syntax-rules (v)
+   ((_)
+    v)))
+
+(write (test-template))
+(write (let ((v 1)) (test-template)))
+(write (let ((v 2)) (test-template)))
+(define v 3)
+(write (test-template))
+
+#|
+(define var 'original)
 
 (define-syntax test-var
  (syntax-rules (var)
    ((_ var)
-    'var)
+    var)
    ((_ pattern-var)
     'no-match)))
 
@@ -12,12 +27,12 @@
 (write (test-var var))
 
 ; Should be unmatched because of the difference between env/use
-(let ((var 1)) (test-var var))
+(write (let ((var 1)) (test-var var)))
 
 ; Again, should be unmatched because of the difference between env/use
-(define var 2)
-(test-var var)
-
+(define var 'new-var)
+(write (test-var var))
+|#
 
 ; TODO: test the rewrite side by placing the literal in a template
 
