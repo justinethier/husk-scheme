@@ -432,7 +432,6 @@ checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsis
   --
   isRenamed <- liftIO $ isRecBound renameEnv (trace ("pattern = " ++ pattern) pattern)
   doesIdentMatch <- identifierMatches defEnv outerEnv pattern
--- TODO: use defEnv
 
   if (ellipsisLevel) > 0
      {- FUTURE: may be able to simplify both cases below by using a
@@ -1003,6 +1002,18 @@ transformRule _ _ _ _ _ _ result@(List _) (List []) = do
 
 -- Transform is a single var, just look it up.
 transformRule _ localEnv renameEnv cleanupEnv _ _ _ (Atom transform) = do
+{- TODO:
+  isDefined <- liftIO $ isBound localEnv a
+
+
+  TODO: rename the atom, per (List Atom : _) logic?
+  if the atom is an identifier, then we want to divert it back into envUse.
+  I *think* the best way to do that may be to divert back into a gensym'd name,
+  although that will cause complications for special forms such as if.
+
+  TODO: once literal identifiers are handled here, will need to add logic for them
+  back to the other List(Atom :_) handler
+-}
 -- TODO: really? What if the atom is an identifier? Don't we need to rename it?
   v <- getVar localEnv (trace ("tR - single atom = " ++ transform) transform)
   return v
