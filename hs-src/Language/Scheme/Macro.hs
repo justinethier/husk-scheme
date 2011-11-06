@@ -210,7 +210,7 @@ matchRule defEnv outerEnv identifiers localEnv renameEnv cleanupEnv (List [patte
            Bool False -> return $ Nil ""
            _ -> do
 -- TODO: pass defEnv down as part of 'other side' of hygiene           
-                transformRule outerEnv localEnv renameEnv cleanupEnv identifiers 0 [] (List []) template
+                transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers 0 [] (List []) template
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
 
  where
@@ -771,7 +771,8 @@ TODO: this is essentially Clinger's rewrite step, however it needs to be extende
  - divert-ing bindings back into the resultant Env (not 100% clear on this, need to be careful)
  - TODO: anything else?
 -}
-transformRule :: Env        -- ^ Outer, enclosing environment
+transformRule :: Env        -- ^ Environment the macro was defined in
+              -> Env        -- ^ Outer, enclosing environment
               -> Env        -- ^ Environment local to the macro containing pattern variables
               -> Env        -- ^ Environment local to the macro containing renamed variables
               -> Env        -- ^ Environment local to the macro used to cleanup any left-over renamed vars 
