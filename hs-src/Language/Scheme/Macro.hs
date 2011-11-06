@@ -1016,6 +1016,21 @@ transformRule _ localEnv renameEnv cleanupEnv identifiers _ _ _ (Atom transform)
   back to the other List(Atom :_) handler
 -}
 -- TODO: really? What if the atom is an identifier? Don't we need to rename it?
+{-
+  isIdent <- findAtom (Atom p) identifiers
+  isDefined <- liftIO $ isBound localEnv p
+  if isIdent
+     then
+if defined in defEnv, then 
+  - create a gensym for the new var
+  - divert the old value back into the gensym
+else if not defined in defEnv then just pass the var back as-is (?)
+  not entirely correct, a special form would not be defined but still has
+  a meaning and could be shadowed in useEnv. need some way of being able to
+  divert a special form back into useEnv...
+
+     else do
+       -}
   v <- getVar localEnv (trace ("tR - single atom = " ++ transform) transform)
   return v
 
