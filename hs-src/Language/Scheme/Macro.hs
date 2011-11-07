@@ -1020,7 +1020,12 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers _ _ _ (A
      then
       if isInDef
         then do
+
+
 -- TODO: this logic (actually all defEnv logic) needs to exist in the (List (Atom _ : _)) function handler above...
+     perhaps this would be easier if a new function were created containing all this logic. then it could
+     be called from both places.
+
 
           {- Variable exists in the environment the macro was defined in,
              so divert that value back into the environment of use. The value
