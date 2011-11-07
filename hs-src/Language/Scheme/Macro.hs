@@ -43,7 +43,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+--import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -176,7 +176,7 @@ macroTransform defEnv env renameEnv cleanupEnv identifiers (rule@(List _) : rs) 
     _ -> do
         -- Walk the resulting code, performing the Clinger algorithm's 4 components
         -- TODO: see below: expanded <-
-        walkExpanded defEnv env renameEnv cleanupEnv True False (List []) (trace ("macroT, result = " ++ show result) result)
+        walkExpanded defEnv env renameEnv cleanupEnv True False (List []) (result)
 
 -- Ran out of rules to match...
 macroTransform _ _ _ _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
@@ -430,7 +430,7 @@ checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsis
   -- time with the value in the environment of use (outerEnv) to make this determination.
   -- So what is below is close but not truly correct.
   --
-  isRenamed <- liftIO $ isRecBound renameEnv (trace ("pattern = " ++ pattern) pattern)
+  isRenamed <- liftIO $ isRecBound renameEnv (pattern)
   doesIdentMatch <- identifierMatches defEnv outerEnv pattern
 
   if (ellipsisLevel) > 0
@@ -663,7 +663,7 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) (List (
 
 -- Base case - empty transform
 walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ result@(List _) (List []) = do
-  return (trace ("returning = " ++ show result) result)
+  return (result)
 
 -- Single atom, rename (if necessary) and return
 walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted _ (Atom a) = do
@@ -683,7 +683,8 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ _ transform = return transfo
 markBoundIdentifiers :: Env -> Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
 markBoundIdentifiers env cleanupEnv (Atom v : vs) renamedVars = do
   Atom renamed <- _gensym v
-  _ <- defineVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) env) v $ Atom renamed
+--  _ <- defineVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) env) v $ Atom renamed
+  _ <- defineVar env v $ Atom renamed
   _ <- defineVar cleanupEnv renamed $ Atom v
   markBoundIdentifiers env cleanupEnv vs $ renamedVars ++ [Atom renamed]
 markBoundIdentifiers env cleanupEnv (_: vs) renamedVars = markBoundIdentifiers env cleanupEnv vs renamedVars
@@ -731,7 +732,7 @@ cleanExpanded renameEnv (List result) transform@(List ((DottedList ds d) : ts)) 
 cleanExpanded renameEnv (List result) transform@(List (Atom a : ts)) = do
   expanded <- tmpexpandAtom renameEnv $ Atom a
 --  expanded <- expandAtom renameEnv $ Atom a
-  cleanExpanded (trace ("cleanup, a = " ++ show a ++ " exp = " ++ show expanded) renameEnv) (List $ result ++ [expanded]) (List ts)
+  cleanExpanded renameEnv (List $ result ++ [expanded]) (List ts)
  where
   -- TODO: if this works, figure out a way to simplify this code (perhaps consolidate with expandAtom)
   tmpexpandAtom :: Env -> LispVal -> IOThrowsError LispVal
@@ -980,12 +981,13 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsis
                   if isAlreadyRenamed
                      then do
                        renamed <- getNamespacedVar localEnv "renamed" a
-                       return (trace ("macro renamed var:" ++ a ++ " to: " ++ show renamed) renamed)
+                       --return (trace ("macro renamed var:" ++ a ++ " to: " ++ show renamed) renamed)
+                       return renamed
                      else do
                        Atom renamed <- _gensym a
                        _ <- defineNamespacedVar localEnv "renamed" a $ Atom renamed -- Keep track of vars that are renamed; maintain reverse mapping
                        _ <- defineVar cleanupEnv renamed $ Atom a -- Global record for final cleanup of macro
-                       _ <- defineVar (trace ("macro renamed var:" ++ a ++ " to: " ++ show renamed) renameEnv) renamed $ Atom a -- Keep for Clinger
+                       _ <- defineVar (renameEnv) renamed $ Atom a -- Keep for Clinger
                        return $ Atom renamed
       case t of
          Nil "var not defined in pattern" -> 
