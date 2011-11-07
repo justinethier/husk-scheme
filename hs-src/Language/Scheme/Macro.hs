@@ -1050,7 +1050,7 @@ transformRule _ _ _ _ _ _ _ _ _ transform = return transform
 -- |A helper function for transforming an atom that has been marked as as literal identifier
 transformLiteralIdentifier :: Env -> Env -> Env -> String -> IOThrowsError LispVal
 transformLiteralIdentifier defEnv outerEnv localEnv transform = do
-  isInDef <- liftIO $ isBound defEnv transform
+  isInDef <- liftIO $ isRecBound defEnv transform
   if isInDef
      then do
 
