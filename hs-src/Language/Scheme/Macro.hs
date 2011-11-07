@@ -890,12 +890,6 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsis
          --   TODO: if error (per above logic) then -
          --   throwError $ Default "Unexpected ellipsis encountered after literal identifier in macro template" 
          else do
-         {- TODO: It seems the literal ident code is not properly accounting for dotted lists
-            -- What's going on here is that if the pattern was a dotted list but the transform is not, we
-            -- need to "lift" the input up out of a list.
-            if (eqVal isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
-              then continueTransformWith $ result ++ (DottedList buildImproperList expanded)
-              else -}
               continueTransformWith $ result ++ [expanded]
 
     -- A function to use input flags to append a '() to a list if necessary
@@ -1077,8 +1071,7 @@ else if not defined in defEnv then just pass the var back as-is (?)
   a meaning and could be shadowed in useEnv. need some way of being able to
   divert a special form back into useEnv...
 -}
-         v <- getVar localEnv transform
-         return v
+         return $ Atom transform
 
 -- | A helper function for transforming an improper list
 transformDottedList :: Env -> Env -> Env -> Env -> Env -> LispVal -> Int -> [Int] -> LispVal -> LispVal -> IOThrowsError LispVal
