@@ -1003,7 +1003,7 @@ transformRule _ _ _ _ _ _ _ _ result@(List _) (List []) = do
   return result
 
 -- Transform is a single var, just look it up.
-transformRule defEnv _ localEnv renameEnv cleanupEnv identifiers _ _ _ (Atom transform) = do
+transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers _ _ _ (Atom transform) = do
 {- TODO:
   isDefined <- liftIO $ isBound localEnv a
 
@@ -1017,23 +1017,36 @@ transformRule defEnv _ localEnv renameEnv cleanupEnv identifiers _ _ _ (Atom tra
   back to the other List(Atom :_) handler
 -}
 -- TODO: really? What if the atom is an identifier? Don't we need to rename it?
-{-
-  isIdent <- findAtom (Atom p) identifiers
-  isDefined <- liftIO $ isBound localEnv p
+
+  Bool isIdent <- findAtom (Atom transform) identifiers
+-- TODO: take into account:  isPatternVar <- liftIO $ isBound localEnv p
+  isInDef <- liftIO $ isBound defEnv transform
   if isIdent
      then
-if defined in defEnv, then 
-  - create a gensym for the new var
-  - divert the old value back into the gensym
+      if isInDef
+        then do
+-- TODO: this logic (actually all defEnv logic) needs to exist in the (List (Atom _ : _)) function handler above...
+
+          {- Variable exists in the environment the macro was defined in,
+             so divert that value back into the environment of use. The value
+             is diverted back with a different name so as not to be shadowed by
+             a variable of the same name in env of use.           -}
+          value <- getVar defEnv transform
+          Atom renamed <- _gensym transform
+          _ <- defineVar outerEnv renamed value 
+          return $ Atom renamed
+        else do
+{- TODO:         
 else if not defined in defEnv then just pass the var back as-is (?)
-  not entirely correct, a special form would not be defined but still has
+  this is not entirely correct, a special form would not be defined but still has
   a meaning and could be shadowed in useEnv. need some way of being able to
   divert a special form back into useEnv...
-
+-}
+          v <- getVar localEnv (trace ("tR - single atom = " ++ transform) transform)
+          return v
      else do
-       -}
-  v <- getVar localEnv (trace ("tR - single atom = " ++ transform) transform)
-  return v
+      v <- getVar localEnv (trace ("tR - single atom = " ++ transform) transform)
+      return v
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
