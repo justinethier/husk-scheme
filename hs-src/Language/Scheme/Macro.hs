@@ -43,7 +43,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
---import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -92,6 +92,7 @@ There is also a special case (define-syntax) that loads new rules. -}
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
 
 -- Special case, just load up the syntax rules
+-- TODO: would this be a better fit for core, as part of eval?
 macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
   {-
    - FUTURE: Issue #15: there really ought to be some error checking of the syntax rules, 
@@ -622,8 +623,14 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
  let isQuoted = inputIsQuoted || (a == "quote")
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
-
- if a == "lambda" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
+ if a == "define-syntax" && not isQuoted
+   then case ts of
+     [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] -> do
+     -- TODO: do we need to rename the keyword, or at least take that into account?
+        _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax useEnv identifiers rules
+        return $ Nil "" -- Sentinal value
+     otherwise -> throwError $ BadSpecialForm "Malformed define-syntax expression" transform
+   else if a == "lambda" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
      then do
        case transform of
          List (Atom _ : List vars : body) -> do
