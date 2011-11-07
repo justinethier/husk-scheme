@@ -32,7 +32,6 @@ import Control.Monad.Error
 import Data.Array
 import qualified Data.Map
 import IO hiding (try)
-import Debug.Trace
 
 {- |Evaluate a string containing Scheme code.
 
@@ -69,6 +68,8 @@ meval env cont lisp = mfunc env cont lisp eval
 mprepareApply env cont lisp = mfunc env cont lisp prepareApply
 mfunc :: Env -> LispVal -> LispVal -> (Env -> LispVal -> LispVal -> IOThrowsError LispVal) -> IOThrowsError LispVal
 mfunc env cont lisp func = do
+  macroEval env lisp >>= (func env cont) 
+{- TODO: old code for updating env's in the continuation chain (see below)
   if False --needToExtendEnv lisp
      then do
        expanded <- macroEval env lisp
@@ -78,6 +79,12 @@ mfunc env cont lisp func = do
        exCont <- updateContEnv exEnv cont
        func exEnv (trace ("extending Env") exCont) expanded
      else macroEval env lisp >>= (func env cont) 
+-}
+{- EXPERIMENTAL CODE FOR REPLACING ENV's in the continuation chain
+   
+   TODO:
+   This is a difficult problem to solve and this code will likely just
+   end up going away because we are not going with this approach...
 
 updateContEnv :: Env -> LispVal -> IOThrowsError LispVal
 updateContEnv env (Continuation _ curC (Just nextC) xargs dwind) = do
@@ -87,6 +94,7 @@ updateContEnv env (Continuation _ curC Nothing xargs dwind) = do
     return $ Continuation env curC Nothing xargs dwind
 updateContEnv _ val = do
     return val
+-}
 
 {- continueEval is a support function for eval, below.
  -
