@@ -1015,42 +1015,44 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers _ _ _ (A
 -}
 
   Bool isIdent <- findAtom (Atom transform) identifiers
-  isInDef <- liftIO $ isBound defEnv transform
   if isIdent
-     then
-      if isInDef
-        then do
+     then transformLiteralIdentifier defEnv outerEnv localEnv transform
+     else getVar localEnv transform
+      --v <- getVar localEnv transform
+      --return v
+
+-- If transforming into a scalar, just return the transform directly...
+-- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
+transformRule _ _ _ _ _ _ _ _ _ transform = return transform
+
+-- |A helper function for transforming an atom that has been marked as as literal identifier
+transformLiteralIdentifier :: Env -> Env -> Env -> String -> IOThrowsError LispVal
+transformLiteralIdentifier defEnv outerEnv localEnv transform = do
+  isInDef <- liftIO $ isBound defEnv transform
+  if isInDef
+     then do
 
 
 -- TODO: this logic (actually all defEnv logic) needs to exist in the (List (Atom _ : _)) function handler above...
-     perhaps this would be easier if a new function were created containing all this logic. then it could
-     be called from both places.
 
 
           {- Variable exists in the environment the macro was defined in,
              so divert that value back into the environment of use. The value
              is diverted back with a different name so as not to be shadowed by
              a variable of the same name in env of use.           -}
-          value <- getVar defEnv transform
-          Atom renamed <- _gensym transform
-          _ <- defineVar outerEnv renamed value 
-          return $ Atom renamed
-        else do
+         value <- getVar defEnv transform
+         Atom renamed <- _gensym transform
+         _ <- defineVar outerEnv renamed value 
+         return $ Atom renamed
+     else do
 {- TODO:         
 else if not defined in defEnv then just pass the var back as-is (?)
   this is not entirely correct, a special form would not be defined but still has
   a meaning and could be shadowed in useEnv. need some way of being able to
   divert a special form back into useEnv...
 -}
-          v <- getVar localEnv transform
-          return v
-     else do
-      v <- getVar localEnv transform
-      return v
-
--- If transforming into a scalar, just return the transform directly...
--- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
-transformRule _ _ _ _ _ _ _ _ _ transform = return transform
+         v <- getVar localEnv transform
+         return v
 
 -- | A helper function for transforming an improper list
 transformDottedList :: Env -> Env -> Env -> Env -> Env -> LispVal -> Int -> [Int] -> LispVal -> LispVal -> IOThrowsError LispVal
