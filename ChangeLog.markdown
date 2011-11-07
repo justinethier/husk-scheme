@@ -1,6 +1,9 @@
 v3.4
 ----
 
+- When searching for a redefinition of a special form, the code now
+recursively examines parent environments instead of only inspecting the
+current environment.
 - (let*) is now defined in terms of the definition from R<sup>5</sup>RS, to
 fix issues with valid inputs that were not matched by (let*).
 
