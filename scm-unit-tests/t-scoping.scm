@@ -54,4 +54,8 @@
     (let ((if +)) (if (orr 1 1) 10 100))
     111)
 
+; Test case for Issue #52
+(define if (lambda (x y z) 'test))
+(assert/equal ((lambda () (if 1 2 3))) 'test)
+
 (unit-test-handler-results)
