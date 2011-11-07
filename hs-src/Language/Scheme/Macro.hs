@@ -149,7 +149,7 @@ macroEval env lisp@(List (Atom x : _)) = do
        expanded <- macroTransform defEnv env renameEnv cleanupEnv (List identifiers) rules lisp
 -- DEBUG CODE: (trace ("macro = " ++ x ++ " cleanDef = " ++ show isCleanDef ++ " useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
 --       macroEval env =<< cleanExpanded cleanupEnv (List []) expanded 
-       macroEval env expanded -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
+       macroEval env (trace ("expanded = " ++ show expanded) expanded) -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
      else return lisp
 
 -- No macro to process, just return code as it is...
@@ -872,11 +872,11 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsis
 -- nested ellipses.
 transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
   Bool isIdent <- findAtom (Atom a) identifiers -- Literal Identifier
+  isDefined <- liftIO $ isBound localEnv a -- Pattern Variable
 
   if isIdent
      then literalHere
      else do
-        isDefined <- liftIO $ isBound localEnv a -- Pattern Variable
         if hasEllipsis
           then ellipsisHere isDefined
           else noEllipsis isDefined
