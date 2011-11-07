@@ -274,7 +274,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
         cpsUnquoteFld _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteFld"
 
 eval env cont args@(List [Atom "if", predic, conseq, alt]) = do
- bound <- liftIO $ isBound env "if"
+ bound <- liftIO $ isRecBound env "if"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else meval env (makeCPS env cont cps) predic
@@ -285,7 +285,7 @@ eval env cont args@(List [Atom "if", predic, conseq, alt]) = do
               _ -> meval e c conseq
 
 eval env cont args@(List [Atom "if", predic, conseq]) = do
- bound <- liftIO $ isBound env "if"
+ bound <- liftIO $ isRecBound env "if"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else meval env (makeCPS env cont cpsResult) predic
@@ -296,7 +296,7 @@ eval env cont args@(List [Atom "if", predic, conseq]) = do
               _ -> continueEval e c $ Nil "" -- Unspecified return value per R5RS
 
 eval env cont fargs@(List (Atom "begin" : funcs)) = do
- bound <- liftIO $ isBound env "begin"
+ bound <- liftIO $ isRecBound env "begin"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else if length funcs == 0
@@ -311,25 +311,25 @@ eval env cont fargs@(List (Atom "begin" : funcs)) = do
             Nothing -> throwError $ Default "Unexpected error in begin"
 
 eval env cont args@(List [Atom "set!", Atom var, form]) = do
- bound <- liftIO $ isBound env "set!"
+ bound <- liftIO $ isRecBound env "set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else meval env (makeCPS env cont cpsResult) form
  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsResult e c result _ = setVar e var result >>= continueEval e c
 eval env cont args@(List [Atom "set!", nonvar, _]) = do 
- bound <- liftIO $ isBound env "set!"
+ bound <- liftIO $ isRecBound env "set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
 eval env cont fargs@(List (Atom "set!" : args)) = do
- bound <- liftIO $ isBound env "set!"
+ bound <- liftIO $ isRecBound env "set!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 2 args
 
 eval env cont args@(List [Atom "define", Atom var, form]) = do
- bound <- liftIO $ isBound env "define"
+ bound <- liftIO $ isRecBound env "define"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else meval env (makeCPS env cont cpsResult) form
@@ -337,42 +337,42 @@ eval env cont args@(List [Atom "define", Atom var, form]) = do
        cpsResult e c result _ = defineVar e var result >>= continueEval e c
 
 eval env cont args@(List (Atom "define" : List (Atom var : fparams) : fbody )) = do
- bound <- liftIO $ isBound env "define"
+ bound <- liftIO $ isRecBound env "define"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do result <- (makeNormalFunc env fparams fbody >>= defineVar env var)
           continueEval env cont result
 
 eval env cont args@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) = do
- bound <- liftIO $ isBound env "define"
+ bound <- liftIO $ isRecBound env "define"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do result <- (makeVarargs varargs env fparams fbody >>= defineVar env var)
           continueEval env cont result
 
 eval env cont args@(List (Atom "lambda" : List fparams : fbody)) = do
- bound <- liftIO $ isBound env "lambda" -- TODO: all of these probably should use isRecBound
+ bound <- liftIO $ isRecBound env "lambda" -- TODO: all of these probably should use isRecBound
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do result <- makeNormalFunc env fparams fbody
           continueEval env cont result
 
 eval env cont args@(List (Atom "lambda" : DottedList fparams varargs : fbody)) = do
- bound <- liftIO $ isBound env "lambda"
+ bound <- liftIO $ isRecBound env "lambda"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do result <- makeVarargs varargs env fparams fbody
           continueEval env cont result
 
 eval env cont args@(List (Atom "lambda" : varargs@(Atom _) : fbody)) = do
- bound <- liftIO $ isBound env "lambda"
+ bound <- liftIO $ isRecBound env "lambda"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do result <- makeVarargs varargs env [] fbody
           continueEval env cont result
 
 eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
- bound <- liftIO $ isBound env "string-set!"
+ bound <- liftIO $ isRecBound env "string-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else meval env (makeCPS env cont cpsStr) i
@@ -393,18 +393,18 @@ eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
         substr (String _, c, _) = throwError $ TypeMismatch "character" c
         substr (s, _, _) = throwError $ TypeMismatch "string" s
 eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do
- bound <- liftIO $ isBound env "string-set!"
+ bound <- liftIO $ isRecBound env "string-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
 eval env cont fargs@(List (Atom "string-set!" : args)) = do 
- bound <- liftIO $ isBound env "string-set!"
+ bound <- liftIO $ isRecBound env "string-set!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 3 args
 
 eval env cont args@(List [Atom "set-car!", Atom var, argObj]) = do
- bound <- liftIO $ isBound env "set-car!"
+ bound <- liftIO $ isRecBound env "set-car!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else continueEval env (makeCPS env cont cpsObj) =<< getVar env var
@@ -420,18 +420,18 @@ eval env cont args@(List [Atom "set-car!", Atom var, argObj]) = do
         cpsSet e c obj (Just [DottedList (_ : ls) l]) = setVar e var (DottedList (obj : ls) l) >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
 eval env cont args@(List [Atom "set-car!" , nonvar , _ ]) = do
- bound <- liftIO $ isBound env "set-car!"
+ bound <- liftIO $ isRecBound env "set-car!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
 eval env cont fargs@(List (Atom "set-car!" : args)) = do
- bound <- liftIO $ isBound env "set-car!"
+ bound <- liftIO $ isRecBound env "set-car!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 2 args
 
 eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
- bound <- liftIO $ isBound env "set-cdr!"
+ bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else continueEval env (makeCPS env cont cpsObj) =<< getVar env var
@@ -447,18 +447,18 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
         cpsSet e c obj (Just [DottedList (l : _) _]) = setVar e var (DottedList [l] obj) >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
 eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
- bound <- liftIO $ isBound env "set-cdr!"
+ bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
 eval env cont fargs@(List (Atom "set-cdr!" : args)) = do
- bound <- liftIO $ isBound env "set-cdr!"
+ bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 2 args
 
 eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
- bound <- liftIO $ isBound env "vector-set!"
+ bound <- liftIO $ isRecBound env "vector-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else meval env (makeCPS env cont cpsObj) i
@@ -479,18 +479,18 @@ eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
         updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec // [(fromInteger idx, obj)]
         updateVector v _ _ = throwError $ TypeMismatch "vector" v
 eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
- bound <- liftIO $ isBound env "vector-set!"
+ bound <- liftIO $ isRecBound env "vector-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
 eval env cont fargs@(List (Atom "vector-set!" : args)) = do 
- bound <- liftIO $ isBound env "vector-set!"
+ bound <- liftIO $ isRecBound env "vector-set!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 3 args
 
 eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
- bound <- liftIO $ isBound env "hash-table-set!"
+ bound <- liftIO $ isRecBound env "hash-table-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else meval env (makeCPS env cont cpsValue) rkey
@@ -510,18 +510,18 @@ eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
 eval env cont args@(List [Atom "hash-table-set!" , nonvar , _ , _]) = do
- bound <- liftIO $ isBound env "hash-table-set!"
+ bound <- liftIO $ isRecBound env "hash-table-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
 eval env cont fargs@(List (Atom "hash-table-set!" : args)) = do
- bound <- liftIO $ isBound env "hash-table-set!"
+ bound <- liftIO $ isRecBound env "hash-table-set!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 3 args
 
 eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
- bound <- liftIO $ isBound env "hash-table-delete!"
+ bound <- liftIO $ isRecBound env "hash-table-delete!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else meval env (makeCPS env cont cpsH) rkey
@@ -537,12 +537,12 @@ eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
 eval env cont args@(List [Atom "hash-table-delete!" , nonvar , _]) = do
- bound <- liftIO $ isBound env "hash-table-delete!"
+ bound <- liftIO $ isRecBound env "hash-table-delete!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
 eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
- bound <- liftIO $ isBound env "hash-table-delete!"
+ bound <- liftIO $ isRecBound env "hash-table-delete!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 2 args

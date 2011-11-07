@@ -55,7 +55,9 @@
     111)
 
 ; Test case for Issue #52
-(define if (lambda (x y z) 'test))
-(assert/equal ((lambda () (if 1 2 3))) 'test)
+(let ()
+    (define if (lambda (x y z) 'test))
+    (assert/equal ((lambda () (if 1 2 3))) 'test)
+)
 
 (unit-test-handler-results)
