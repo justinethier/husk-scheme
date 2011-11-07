@@ -1002,24 +1002,19 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsis
 transformRule _ _ _ _ _ _ _ _ result@(List _) (List []) = do
   return result
 
--- Transform is a single var, just look it up.
+-- Transform a single var
+--
+-- The nice thing about this test case is that the only way we can get here is if the
+-- transform is an atom - if it is a list then there is no way this case can be reached.
+-- So... we do not need to worry about pattern variables here. No need to port that code
+-- here from the above case.
 transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers _ _ _ (Atom transform) = do
-{- TODO:
-  isDefined <- liftIO $ isBound localEnv a
-
-
-  TODO: rename the atom, per (List Atom : _) logic?
-  if the atom is an identifier, then we want to divert it back into envUse.
-  I *think* the best way to do that may be to divert back into a gensym'd name,
-  although that will cause complications for special forms such as if.
-
+{-
   TODO: once literal identifiers are handled here, will need to add logic for them
   back to the other List(Atom :_) handler
 -}
--- TODO: really? What if the atom is an identifier? Don't we need to rename it?
 
   Bool isIdent <- findAtom (Atom transform) identifiers
--- TODO: take into account:  isPatternVar <- liftIO $ isBound localEnv p
   isInDef <- liftIO $ isBound defEnv transform
   if isIdent
      then
@@ -1042,10 +1037,10 @@ else if not defined in defEnv then just pass the var back as-is (?)
   a meaning and could be shadowed in useEnv. need some way of being able to
   divert a special form back into useEnv...
 -}
-          v <- getVar localEnv (trace ("tR - single atom = " ++ transform) transform)
+          v <- getVar localEnv transform
           return v
      else do
-      v <- getVar localEnv (trace ("tR - single atom = " ++ transform) transform)
+      v <- getVar localEnv transform
       return v
 
 -- If transforming into a scalar, just return the transform directly...
