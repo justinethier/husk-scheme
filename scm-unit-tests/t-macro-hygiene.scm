@@ -40,14 +40,9 @@
 (define v1 3)
 (assert/equal (test-template) 3)
 
-;(let ()
+;(lambda ()
+(let ()
   (define var-02 1)
-;
-; TODO: the below does not work when the (let) is added back, because
-; there is currently no support for defining a macro during macro processing.
-; since macros are just loaded up into syntax objects, it should be simple
-; enough to add this support in...
-;
   (define-syntax test-template
    (syntax-rules ()
      ((_)
@@ -57,8 +52,11 @@
   (assert/equal (let ((var-02 2)) (test-template)) 1)
   (define var-02 3)
   (assert/equal (test-template) 3)
-;)
-(assert/equal #t #f) ; TODO: see above
+)
+; TODO: above, need to return the internal vars pass-count and fail-count since within a function
+; the correct var is not set. Or is this a bug in set! because it creates a new var instead
+; of modifying the one in the parent env?
+; UPDATE - this may just be when lambda is used, still need to track it down
 
 ; Example without a literal identifier; variable is referenced
 ; directly from the template
