@@ -24,6 +24,18 @@
 (assert/equal (let ((v 2)) (test-template)) 1)
 (define v 3)
 (assert/equal (test-template) 3)
+
+(define v1 1)
+(define-syntax test-template
+ (syntax-rules (v1)
+   ((_)
+    (+ v1))))
+
+(assert/equal (test-template) 1)
+(assert/equal (let ((v1 1)) (test-template)) 1)
+((lambda (v1) (let ((v1 2)) (test-template))) 10)
+(define v1 3)
+(assert/equal (test-template) 3)
 ; End other side of hygiene in the template
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
