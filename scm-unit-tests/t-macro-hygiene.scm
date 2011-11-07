@@ -10,22 +10,23 @@
 (load "skim-unit.scm")
 (unit-test-start "macros - hygiene")
 
-#|
-; TODO:
-; A demonstration of how to deal with 'other side of hygiene' when
-; the literal is in the template
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Test cases to demonstrate how to deal with
+; 'other side of hygiene' when literal is in the template
 (define v 1)
 (define-syntax test-template
  (syntax-rules (v)
    ((_)
     v)))
 
-(write (test-template))
-(write (let ((v 1)) (test-template)))
-(write (let ((v 2)) (test-template)))
+(assert/equal (test-template) 1)
+(assert/equal (let ((v 1)) (test-template)) 1)
+(assert/equal (let ((v 2)) (test-template)) 1)
 (define v 3)
-(write (test-template))
-|#
+(assert/equal (test-template) 3)
+; End other side of hygiene in the template
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (define var 'original)
 
