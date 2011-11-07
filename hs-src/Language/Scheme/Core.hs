@@ -350,6 +350,15 @@ eval env cont args@(List (Atom "define" : DottedList (Atom var : fparams) vararg
   else do result <- (makeVarargs varargs env fparams fbody >>= defineVar env var)
           continueEval env cont result
 
+-- TODO: let-syntax
+--
+-- high-level design 
+--  - use extendEnv to create a new environment
+--  - read all macros into new Syntax objects in the new env
+--  - pick up execution of the body, perhaps just like how it is
+--    done today with a function body
+--
+
 eval env cont args@(List (Atom "lambda" : List fparams : fbody)) = do
  bound <- liftIO $ isRecBound env "lambda" -- TODO: all of these probably should use isRecBound
  if bound
