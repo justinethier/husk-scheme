@@ -857,14 +857,47 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsis
                   Nil _ -> return lst
                   _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [dl]), Number $ toInteger ellipsisLevel]
 
--- Transform an atom by attempting to look it up as a var...
+-- |Transform an atom
+--
+-- This is a complicated transformation because we need to take into account
+-- literal identifiers, pattern variables, ellipses in the current list, and 
+-- nested ellipses.
 transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsisLevel ellipsisIndex (List result) transform@(List (Atom a : ts)) = do
-  isDefined <- liftIO $ isBound localEnv a
-  if hasEllipsis
-    then ellipsisHere isDefined
-    else noEllipsis isDefined
+  Bool isIdent <- findAtom (Atom a) identifiers -- Literal Identifier
+
+  if isIdent
+     then literalHere
+     else do
+        isDefined <- liftIO $ isBound localEnv a -- Pattern Variable
+        if hasEllipsis
+          then ellipsisHere isDefined
+          else noEllipsis isDefined
 
   where
+    literalHere = do
+      expanded <- transformLiteralIdentifier defEnv outerEnv localEnv a
+      if hasEllipsis 
+         then do
+              -- Skip over ellipsis if present
+              -- 
+              -- TODO:
+              -- We should throw an error here, but the problem is that we need to differentiate
+              -- between the case where an ellipsis is inserted as a shorthand for a pair (in which
+              -- case this is allowed) or when an ellipsis is present in the actual macro (which
+              -- should be an error).
+              --
+              transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsisLevel ellipsisIndex (List $ result ++ [expanded]) (List $ tail ts)
+         --   TODO: if error (per above logic) then -
+         --   throwError $ Default "Unexpected ellipsis encountered after literal identifier in macro template" 
+         else do
+         {- TODO: It seems the literal ident code is not properly accounting for dotted lists
+            -- What's going on here is that if the pattern was a dotted list but the transform is not, we
+            -- need to "lift" the input up out of a list.
+            if (eqVal isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
+              then continueTransformWith $ result ++ (DottedList buildImproperList expanded)
+              else -}
+              continueTransformWith $ result ++ [expanded]
+
     -- A function to use input flags to append a '() to a list if necessary
     -- Only makes sense to do this if the *transform* is a dotted list
     appendNil d (Bool isImproperPattern) (Bool isImproperInput) =
@@ -1009,17 +1042,10 @@ transformRule _ _ _ _ _ _ _ _ result@(List _) (List []) = do
 -- So... we do not need to worry about pattern variables here. No need to port that code
 -- here from the above case.
 transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers _ _ _ (Atom transform) = do
-{-
-  TODO: once literal identifiers are handled here, will need to add logic for them
-  back to the other List(Atom :_) handler
--}
-
   Bool isIdent <- findAtom (Atom transform) identifiers
   if isIdent
      then transformLiteralIdentifier defEnv outerEnv localEnv transform
      else getVar localEnv transform
-      --v <- getVar localEnv transform
-      --return v
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
