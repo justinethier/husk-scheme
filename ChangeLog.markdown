@@ -1,3 +1,9 @@
+v3.4
+----
+
+- (let*) is now defined in terms of the definition from R<sup>5</sup>RS, to
+fix issues with valid inputs that were not matched by (let*).
+
 v3.3
 ----
 This release includes major improvements to the macro module.
