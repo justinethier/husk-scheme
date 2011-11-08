@@ -149,7 +149,8 @@ macroEval env lisp@(List (Atom x : _)) = do
        expanded <- macroTransform defEnv env renameEnv cleanupEnv (List identifiers) rules lisp
 -- DEBUG CODE: (trace ("macro = " ++ x ++ " cleanDef = " ++ show isCleanDef ++ " useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
 --       macroEval env =<< cleanExpanded cleanupEnv (List []) expanded 
-       macroEval env (expanded) -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
+       macroEval env (trace ("exp = " ++ show expanded) expanded)
+--       macroEval env (expanded)
      else return lisp
 
 -- No macro to process, just return code as it is...
@@ -652,8 +653,12 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
                -- from the {rename ==> original}. Each new name is unique by definition, so
                -- no conflicts are possible.
                macroTransform defEnv useEnv renameEnv cleanupEnv (List identifiers) rules (List (Atom a : ts))
-             else if False --isQuoted
+             else if isQuoted
                      then do
+                        -- Cleanup all symbols in the quoted code
+                        --
+                        -- TODO: This becomes a problem if there is an unquote:
+                        -- exp = ((lambda (name2) (quasiquote (list (unquote name2) (quote (unquote name))))) (quote a))
                         List cleaned <- cleanExpanded cleanupEnv (List []) (List ts)
                         walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ (Atom a : cleaned)) (List [])
                      else walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
@@ -732,8 +737,13 @@ cleanExpanded renameEnv (List result) transform@(List ((DottedList ds d) : ts)) 
 
 cleanExpanded renameEnv (List result) transform@(List (Atom a : ts)) = do
   expanded <- tmpexpandAtom renameEnv $ Atom a
---  expanded <- expandAtom renameEnv $ Atom a
-  cleanExpanded renameEnv (List $ result ++ [expanded]) (List ts)
+  case (trace ("expanded = " ++ show expanded) expanded) of
+ TODO: only makes sense to do this at the start of a list!!
+    Atom "unquote" -> 
+         TODO: perhaps we have to pick up walkExpanded at this point...
+        cleanExpanded renameEnv (List $ result ++ (expanded : ts)) (List [])
+    otherwise -> 
+        cleanExpanded renameEnv (List $ result ++ [expanded]) (List ts)
  where
   -- TODO: if this works, figure out a way to simplify this code (perhaps consolidate with expandAtom)
   tmpexpandAtom :: Env -> LispVal -> IOThrowsError LispVal
