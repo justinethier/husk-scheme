@@ -740,11 +740,11 @@ cleanExpanded defEnv useEnv renameEnv cleanupEnv startOfList (List result) trans
   case (startOfList, (trace ("expanded = " ++ show expanded) expanded)) of
  --TODO: only makes sense to do this at the start of a list!!
     (True, Atom "unquote") -> do 
-    Another TODO - I think that the list r below needs to be appended to the
-    list from the function "above" this one, instead of being added as a list at the end of it...
+--    Another TODO - I think that the list r below needs to be appended to the
+--    list from the function "above" this one, instead of being added as a list at the end of it...
 --         TODO: perhaps we have to pick up walkExpanded at this point...
 --        cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ (expanded : ts)) (List [])
-        r <- walkExpanded defEnv useEnv renameEnv cleanupEnv True False (List result) (trace ("ts = " ++ show ts) (List ts) )
+        r <- walkExpanded defEnv useEnv renameEnv cleanupEnv True False (List $ result ++ [Atom "unquote"]) (trace ("ts = " ++ show ts) (List ts) )
         return (trace ("r = " ++ show r) r)
     otherwise -> 
         cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [expanded]) (List ts)
