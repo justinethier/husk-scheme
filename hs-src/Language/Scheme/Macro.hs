@@ -148,7 +148,6 @@ macroEval env lisp@(List (Atom x : _)) = do
        -- Transform the input and then call macroEval again, since a macro may be contained within...
        expanded <- macroTransform defEnv env renameEnv cleanupEnv (List identifiers) rules lisp
 -- DEBUG CODE: (trace ("macro = " ++ x ++ " cleanDef = " ++ show isCleanDef ++ " useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
---       macroEval env =<< cleanExpanded cleanupEnv (List []) expanded 
        macroEval env (trace ("exp = " ++ show expanded) expanded)
 --       macroEval env expanded
      else return lisp
@@ -621,10 +620,11 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
 
  -- If a macro is quoted, keep track of it and do not invoke rules below for
  -- procedure abstraction or macro calls 
- let isQuoted = inputIsQuoted || (a == "quote")
+ let isQuoted = inputIsQuoted || (a == "quote") || (a == "quasiquote")
+ let isQuasiQuoted = (a == "quasiquote")
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
- if startOfList && a == "define-syntax" && not isQuoted
+ if (trace ("a = " ++ a ++ " isQuoted = " ++ show isQuoted) startOfList) && a == "define-syntax" && not isQuoted
    then case ts of
      [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] -> do
      -- TODO: do we need to rename the keyword, or at least take that into account?
@@ -659,7 +659,7 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
                         --
                         -- TODO: This becomes a problem if there is an unquote:
                         -- exp = ((lambda (name2) (quasiquote (list (unquote name2) (quote (unquote name))))) (quote a))
-                        List cleaned <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True (List []) (List ts)
+                        List cleaned <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True isQuasiQuoted (trace ("isQuoted = " ++ show isQuoted) (List [])) (List ts)
                         walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ (Atom a : cleaned)) (List [])
                      else walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
 
@@ -709,45 +709,47 @@ expandAtom renameEnv (Atom a) = do
 expandAtom renameEnv a = return a
 
 -- |Clean up any remaining renamed variables in the expanded code
---  This is ugly but seems like a simple way to verify any remaining renames are cleaned up. However, it would
---  be nice if this was unnecessary. 
+--  Only needed in special circumstances to deal with quoting.
 --
---  TODO: IMPORTANT!!!!!
+-- Notes:
 --
---        this will never work when using the renameEnv from walk, because that env binds
---        (old name => new name) in order to clean up any new names prior to eval, there would
---        need to be another environment with the reverse mappings
---   ALSO, due to parent Env logic going on, these bindings need to be in some sort of
---   'master' env that transcends those env's and maps all gensyms back to their original symbols
+--  Keep in mind this will never work when using the renameEnv from walk, because that env binds
+--  (old name => new name) in order to clean up any new names prior to eval, there would
+--  need to be another environment with the reverse mappings.
 --
-cleanExpanded :: Env -> Env -> Env -> Env -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
+--  ALSO, due to parent Env logic going on, these bindings need to be in some sort of
+--  'master' env that transcends those env's and maps all gensyms back to their original symbols
+--
+cleanExpanded :: Env -> Env -> Env -> Env -> Bool -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
 
-cleanExpanded defEnv useEnv renameEnv cleanupEnv _ (List result) expanded@(List (List l : ls)) = do
-  lst <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True (List []) (List l)
-  cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [lst]) (List ls)
+cleanExpanded defEnv useEnv renameEnv cleanupEnv _ isQQ (List result) expanded@(List (List l : ls)) = do
+  lst <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True isQQ (List []) (List l)
+  cleanExpanded defEnv useEnv renameEnv cleanupEnv False isQQ (List $ result ++ [lst]) (List ls)
 
-cleanExpanded defEnv useEnv renameEnv cleanupEnv _ (List result) transform@(List ((Vector v) : vs)) = do
-  List lst <- cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List []) (List $ elems v)
-  cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [asVector lst]) (List vs)
+cleanExpanded defEnv useEnv renameEnv cleanupEnv _ isQQ (List result) transform@(List ((Vector v) : vs)) = do
+  List lst <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True isQQ (List []) (List $ elems v)
+  cleanExpanded defEnv useEnv renameEnv cleanupEnv False isQQ (List $ result ++ [asVector lst]) (List vs)
 
-cleanExpanded defEnv useEnv renameEnv cleanupEnv _ (List result) transform@(List ((DottedList ds d) : ts)) = do
-  List ls <- cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List []) (List ds)
-  l <- cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List []) d
-  cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [DottedList ls l]) (List ts)
+cleanExpanded defEnv useEnv renameEnv cleanupEnv _ isQQ (List result) transform@(List ((DottedList ds d) : ts)) = do
+  List ls <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True isQQ (List []) (List ds)
+  l <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True isQQ (List []) d
+  cleanExpanded defEnv useEnv renameEnv cleanupEnv False isQQ (List $ result ++ [DottedList ls l]) (List ts)
 
-cleanExpanded defEnv useEnv renameEnv cleanupEnv startOfList (List result) transform@(List (Atom a : ts)) = do
+cleanExpanded defEnv useEnv renameEnv cleanupEnv startOfList isQQ (List result) transform@(List (Atom a : ts)) = do
   expanded <- tmpexpandAtom cleanupEnv $ Atom a
-  case (startOfList, (trace ("expanded = " ++ show expanded) expanded)) of
- --TODO: only makes sense to do this at the start of a list!!
-    (True, Atom "unquote") -> do 
---    Another TODO - I think that the list r below needs to be appended to the
---    list from the function "above" this one, instead of being added as a list at the end of it...
---         TODO: perhaps we have to pick up walkExpanded at this point...
---        cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ (expanded : ts)) (List [])
+  case (startOfList, isQQ, (trace ("expanded = " ++ show expanded) expanded)) of
+    -- Unquote an expression by continuing to expand it as a macro form
+    -- 
+    -- Only perform an unquote if (in order):
+    --  - We are currently at the head of the list
+    --  - Expression is quasi-quoted
+    --  - An "unquote" is found
+    --
+    (True, True, Atom "unquote") -> do 
         r <- walkExpanded defEnv useEnv renameEnv cleanupEnv True False (List $ result ++ [Atom "unquote"]) (trace ("ts = " ++ show ts) (List ts) )
-        return (trace ("r = " ++ show r) r)
+        return (trace ("r = " ++ show r ++ " trans = " ++ show transform) r)
     otherwise -> 
-        cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [expanded]) (List ts)
+        cleanExpanded defEnv useEnv renameEnv cleanupEnv False isQQ (List $ result ++ [expanded]) (List ts)
  where
   -- TODO: if this works, figure out a way to simplify this code (perhaps consolidate with expandAtom)
   tmpexpandAtom :: Env -> LispVal -> IOThrowsError LispVal
@@ -761,11 +763,11 @@ cleanExpanded defEnv useEnv renameEnv cleanupEnv startOfList (List result) trans
   tmpexpandAtom renameEnv a = return a
 
 -- Transform anything else as itself...
-cleanExpanded defEnv useEnv renameEnv cleanupEnv _ (List result) (List (t : ts)) = do
-  cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [t]) (List ts)
+cleanExpanded defEnv useEnv renameEnv cleanupEnv _ isQQ (List result) (List (t : ts)) = do
+  cleanExpanded defEnv useEnv renameEnv cleanupEnv False isQQ (List $ result ++ [t]) (List ts)
 
 -- Base case - empty transform
-cleanExpanded _ _ _ _ _ result@(List _) (List []) = do
+cleanExpanded _ _ _ _ _ _ result@(List _) (List []) = do
   return result
 
 -- TODO (?):
@@ -774,7 +776,7 @@ cleanExpanded _ _ _ _ _ result@(List _) (List []) = do
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
-cleanExpanded _ _ _ _ _ _ transform = return transform
+cleanExpanded _ _ _ _ _ _ _ transform = return transform
 
 
 {- |Transform input by walking the tranform structure and creating a new structure
