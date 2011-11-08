@@ -567,7 +567,12 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
 {- 
  if (startOfList) && a == "let-syntax" && not isQuoted -- TODO: letrec-syntax, and a better way to organize all this
-  then
+  then case ts of
+    List bindings : body -> do
+        bodyEnv <- liftIO $ extendEnv -- TODO: not sure about this... how will this work?
+        _ <- loadMacros env bodyEnv bindings
+        -- TODO: expand the macro body
+    -- TODO: error
   else 
 -}
  if (startOfList) && a == "define-syntax" && not isQuoted
