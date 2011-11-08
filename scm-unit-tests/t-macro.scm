@@ -177,6 +177,25 @@
  7)
 ; End R5RS cases
 
+;; TODO: presumably this fails because the macro walker does not
+;;  presently have knowledge of let-syntax
+(assert/equal
+  (let ((f (lambda (x) (+ x 1))))
+    (let-syntax ((f (syntax-rules ()
+                      ((_ x) x)))
+                 (g (syntax-rules ()
+                      ((_ x) (f x)))))
+      (list (f 1) (g 1))))  
+  '(1 2))
+
+(assert/equal
+  (let ((f (lambda (x) (+ x 1))))
+    (letrec-syntax ((f (syntax-rules ()
+                         ((_ x) x)))
+                    (g (syntax-rules ()
+                         ((_ x) (f x)))))
+      (list (f 1) (g 1))))  
+  '(1 1))
 
 ; Dotted lists (pairs)
 ;
