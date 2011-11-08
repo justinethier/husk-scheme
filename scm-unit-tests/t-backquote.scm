@@ -20,6 +20,10 @@
 (assert/equal (let ((name 'a)) `(list ,name ',name))
               '(list a (quote a)))
 
+; Variant, ensure unquotes are not expanded when a normal quote is used
+(assert/equal (let ((name 'a)) '(list ,name ',name))
+              '(list (unquote name) (quote (unquote name))))
+
 (assert/equal (let ((name 'a)) `(list ,name (,name)))
               '(list a (a)))
 
