@@ -980,11 +980,3 @@ primitives = [("+", numAdd),
 
               ("boolean?", isBoolean)]
 
--- |Helper function to load macros from a let*-syntax expression
-loadMacros :: Env -> Env -> [LispVal] -> IOThrowsError LispVal
-loadMacros e be (List [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] : bs) = do
-  -- TODO: error checking
-  _ <- defineNamespacedVar be macroNamespace keyword $ Syntax e identifiers rules
-  loadMacros e be bs
-loadMacros e be [] = return $ Nil ""
-loadMacros _ _ form = throwError $ BadSpecialForm "Unable to evaluate form" $ List form 

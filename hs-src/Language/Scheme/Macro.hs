@@ -39,6 +39,7 @@ At a high level, macro transformation is broken down into the following steps:
 module Language.Scheme.Macro
     (
       macroEval
+    , loadMacros  
     ) where
 import Language.Scheme.Types
 import Language.Scheme.Variables
@@ -564,6 +565,11 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
  let isQuasiQuoted = (a == "quasiquote")
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
+{- 
+ if (startOfList) && a == "let-syntax" && not isQuoted -- TODO: letrec-syntax, and a better way to organize all this
+  then
+  else 
+-}
  if (startOfList) && a == "define-syntax" && not isQuoted
    then case ts of
      [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] -> do
@@ -1116,3 +1122,14 @@ calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex =
 asVector :: [LispVal] -> LispVal
 asVector lst = (Vector $ (listArray (0, length lst - 1)) lst)
 
+-- |Helper function to load macros from a let*-syntax expression
+loadMacros :: Env       -- ^ Parent environment containing the let*-syntax expression
+           -> Env       -- ^ Environment of the let*-syntax body
+           -> [LispVal] -- ^ List containing syntax-rule definitions
+           -> IOThrowsError LispVal -- ^ A dummy value, unless an error is thrown
+loadMacros e be (List [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] : bs) = do
+  -- TODO: error checking
+  _ <- defineNamespacedVar be macroNamespace keyword $ Syntax e identifiers rules
+  loadMacros e be bs
+loadMacros e be [] = return $ Nil ""
+loadMacros _ _ form = throwError $ BadSpecialForm "Unable to evaluate form" $ List form 
