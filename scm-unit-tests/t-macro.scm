@@ -371,4 +371,11 @@
        '("bad number: negative"))
   #f)
 
+; Example from http://community.schemewiki.org/?scheme-faq-macros
+; that proves that "oversized" matches are automatically shortened as needed.
+(define-syntax foo (syntax-rules () ((foo (a ...) (b ...)) '((a b) ...))))
+(assert/equal (foo (1 2) (3 4 5))
+             '((1 3) (2 4)))
+
+
 (unit-test-handler-results)
