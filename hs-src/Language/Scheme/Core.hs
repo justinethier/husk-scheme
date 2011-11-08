@@ -273,7 +273,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
             _ -> cpsUnquoteList e c (head unEvaled) (Just [List (tail unEvaled), List $ acc ++ [val] ])
         cpsUnquoteFld _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteFld"
 
--- TODO: let-syntax
+-- A rudimentary implementation of let-syntax
 eval env cont args@(List (Atom "let-syntax" : List bindings : body)) = do
   -- TODO: check if let-syntax has been rebound?
 --
@@ -285,18 +285,17 @@ eval env cont args@(List (Atom "let-syntax" : List bindings : body)) = do
 --
   bodyEnv <- liftIO $ extendEnv env []
   _ <- loadMacros env bodyEnv bindings
---  eval bodyEnv cont body
   continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody body) (Just cont) Nothing Nothing) $ Nil "" 
- where
 
-   loadMacros :: Env -> Env -> [LispVal] -> IOThrowsError LispVal
---   loadMacros e be bindings = return $ String "TODO"
-   loadMacros e be (List [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] : bs) = do
-     -- TODO: error checking
-     _ <- defineNamespacedVar be macroNamespace keyword $ Syntax e identifiers rules
-     loadMacros e be bs
-   loadMacros e be [] = return $ Nil ""
-   loadMacros _ _ form = throwError $ BadSpecialForm "Unable to evaluate form" $ List form 
+eval env cont args@(List (Atom "letrec-syntax" : List bindings : body)) = do
+  -- TODO: check if letrec-syntax has been rebound?
+  bodyEnv <- liftIO $ extendEnv env []
+  -- A primitive means of implementing letrec, by simply assuming that each macro is defined in
+  -- the letrec's environment, instead of the parent env. Not sure if this is 100% correct but it
+  -- is good enough to pass the R5RS test case so it will be used as a rudimentary implementation 
+  -- for now...
+  _ <- loadMacros bodyEnv bodyEnv bindings
+  continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody body) (Just cont) Nothing Nothing) $ Nil "" 
 
 eval env cont args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
  bound <- liftIO $ isRecBound env "define-syntax"
@@ -980,3 +979,12 @@ primitives = [("+", numAdd),
               ("string-copy", stringCopy),
 
               ("boolean?", isBoolean)]
+
+-- |Helper function to load macros from a let*-syntax expression
+loadMacros :: Env -> Env -> [LispVal] -> IOThrowsError LispVal
+loadMacros e be (List [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] : bs) = do
+  -- TODO: error checking
+  _ <- defineNamespacedVar be macroNamespace keyword $ Syntax e identifiers rules
+  loadMacros e be bs
+loadMacros e be [] = return $ Nil ""
+loadMacros _ _ form = throwError $ BadSpecialForm "Unable to evaluate form" $ List form 

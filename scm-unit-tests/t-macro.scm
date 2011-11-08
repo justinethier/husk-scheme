@@ -132,14 +132,13 @@
 (assert/equal (my-test a a a a a 2) '((2)))
 
 
-; FUTURE: support, test cases for
 ; let-syntax and letrec-syntax
-
 (assert/equal (let-syntax () 2) 2)
 (assert/equal (let ((x 1)) (let-syntax () x)) 1)
 (assert/equal (let-syntax () 1 2 3) 3)
 (assert/equal (let-syntax ((my-let (syntax-rules () ((my-let x) (begin x))))) (define x "hello, world") (my-let 2)) 2)
 
+; Cases from R5RS
 (assert/equal
   (let-syntax ((when (syntax-rules ()
                 ((when test stmt1 stmt2 ...)
@@ -150,13 +149,34 @@
             (when if (set! if 'now))
                 if))
   'now)
-
 (assert/equal
   (let ((x 'outer))
     (let-syntax ((m (syntax-rules () ((m) x))))
       (let ((x 'inner))
         (m))))
   'outer)
+(assert/equal
+ (letrec-syntax
+  ((my-or (syntax-rules ()
+            ((my-or) #f)
+            ((my-or e) e)
+            ((my-or e1 e2 ...)
+             (let ((temp e1))
+               (if temp
+                   temp
+                   (my-or e2 ...)))))))
+  (let ((x #f)
+        (y 7)
+        (temp 8)
+        (let odd?)
+        (if even?))
+    (my-or x
+           (let temp)
+           (if y)
+           y)))
+ 7)
+; End R5RS cases
+
 
 ; Dotted lists (pairs)
 ;
