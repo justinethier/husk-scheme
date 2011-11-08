@@ -1,5 +1,5 @@
 Name:                husk-scheme
-Version:             3.4
+Version:             3.4.1
 Synopsis:            R5RS Scheme interpreter program and library.
 Description:         A dialect of R5RS Scheme written in Haskell. Provides advanced 
                      features including continuations, hygienic macros, a Haskell FFI,
