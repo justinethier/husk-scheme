@@ -1077,6 +1077,21 @@ else if not defined in defEnv then just pass the var back as-is (?)
   this is not entirely correct, a special form would not be defined but still has
   a meaning and could be shadowed in useEnv. need some way of being able to
   divert a special form back into useEnv...
+
+Or, consider the following example. csi throws an error because if is not defined.
+If we make the modifications to store intermediate vars somewhere that are introduced
+via lambda, set!, and define then we may be able to throw an error if the var is not
+defined, instead of trying to store the special form to a variable somehow.
+
+;(define if 3)
+(define-syntax test-template
+ (syntax-rules (if)
+    ((_)
+        if)))
+(write (let ((if 1)) (test-template)) )
+(write (let ((if 2)) (test-template)) )
+
+
 -}
          return $ Atom transform
 
