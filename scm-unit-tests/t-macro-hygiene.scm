@@ -73,6 +73,20 @@
 ; End other side of hygiene in the template
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; Test case from
+; http://en.wikipedia.org/wiki/Hygienic_macro
+(define-syntax swap!
+     (syntax-rules ()
+         ((_ a b)
+          (let ((temp a))
+            (set! a b)
+            (set! b temp)))))
+(define swap-x 1)
+(define swap-y 2)
+(swap! swap-x swap-y)
+(assert/equal swap-x 2)
+(assert/equal swap-y 1)
+
 
 (define var 'original)
 
