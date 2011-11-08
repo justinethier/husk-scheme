@@ -13,29 +13,31 @@ A lightweight dialect of R5RS scheme.
 
 This module contains code for hygienic macros.
 
-During transformation, the following components are considered:
+Hygienic macros are implemented using the algorithm from the paper
+Macros That Work by William Clinger and Jonathan Rees. During 
+transformation, the following components are considered:
+
  - Pattern (part of a rule that matches input)
  - Transform (what the macro "expands" into)
  - Input (the actual code in the user's program)
+ - Environments of macro definition and macro use
 
 At a high level, macro transformation is broken down into the following steps:
 
  1) Search for a rule that matches the input.
-    During this process, any variables in the input are loaded into a temporary environment
+    During this process, any pattern variables in the input are loaded into a temporary environment
  2) If a rule matches,
- 3) Transform by walking the transform, inserting variables as needed
+ 3) Transcribe the rule's template by walking the transform, inserting pattern variables 
+    and renaming free identifiers as needed.
+ 4) Walk the expanded code, checking for each of the cases from Macros That Work. If a 
+    case is found (such as a macro call or procedure abstraction) then the appropriate 
+    handler will be called to deal with it.
 
-TODO: but the above is changing to use Clinger's algorithm!
-
-macros will change to have a step 0 that walks the macro code searching for 
-the 4 criteria noted in the paper. if any of the criteria are found (procedure abstractions,
-macro calls, etc) then the appropriate handler will be called to deal with it
 -}
 
 module Language.Scheme.Macro
     (
       macroEval
-    , needToExtendEnv
     ) where
 import Language.Scheme.Types
 import Language.Scheme.Variables
@@ -43,7 +45,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+--import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -54,12 +56,26 @@ import Debug.Trace -- Only req'd to support trace, can be disabled at any time..
  Consider high-level ideas from these articles (of all places):
  
  -  http://en.wikipedia.org/wiki/Scheme_(programming_language)#Hygienic_macros
- -  http://en.wikipedia.org/wiki/Hygienic_macro
+
+TODO
+In particular, this seems to imply we should always check for a macro keyword first, and that one could
+shadow a normal variable definition. Should check the source but should verify husk has correct behavior:
+
+Invocations of macros and procedures bear a close resemblance—both are s-expressions—but they are treated differently. When the compiler encounters an s-expression in the program, it first checks to see if the symbol is defined as a syntactic keyword within the current lexical scope. If so, it then attempts to expand the macro, treating the items in the tail of the s-expression as arguments without compiling code to evaluate them, and this process is repeated recursively until no macro invocations remain. If it is not a syntactic keyword, the compiler compiles code to evaluate the arguments in the tail of the s-expression and then to evaluate the variable represented by the symbol at the head of the s-expression and call it as a procedure with the evaluated tail expressions passed as actual arguments to it.
+
  -}
 
--- TODO:
 --
 -- Notes regarding other side of hygiene.
+--
+-- !!!
+-- Turns out this was unnecessary because it is sufficient to simply save the environment of
+-- definition directly. Even though this causes problems with define, it seems that is how
+-- other Schemes work, so it will stay that way for now. This note is being kept for the 
+-- moment although it should probably go away... in any case only take it as brainstorming
+-- notes and nothing further:
+-- !!!
+--
 -- In order to handle the 'other side', the env at macro definition needs to be saved. It
 -- will be used again when a macro is expanded. The pattern matcher will compare any named
 -- identifiers it finds against both environments to ensure identifiers were not redefined.
@@ -81,10 +97,11 @@ import Debug.Trace -- Only req'd to support trace, can be disabled at any time..
 -- It may be tricky to get this right. But otherwise the change *should* be straightforward.
 
 
+-- Currently unused, and likely to go away:
 -- A support function for Core that will be used as part of the above...
-needToExtendEnv :: LispVal -> Bool --IOThrowsError LispVal
-needToExtendEnv (List [Atom "define-syntax", Atom _, (List (Atom "syntax-rules" : (List _ : _)))]) = True
-needToExtendEnv _ = False 
+--needToExtendEnv :: LispVal -> Bool --IOThrowsError LispVal
+--needToExtendEnv (List [Atom "define-syntax", Atom _, (List (Atom "syntax-rules" : (List _ : _)))]) = True
+--needToExtendEnv _ = False 
 
 {- |macroEval
 Search for macro's in the AST, and transform any that are found.
@@ -97,21 +114,21 @@ macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom
   {-
    - FUTURE: Issue #15: there really ought to be some error checking of the syntax rules, 
    -                    since they could be malformed...
-  - As it stands now, there is no checking until the code attempts to perform a macro transformation.
-  - At a minimum, should check identifiers to make sure each is an atom (see findAtom) 
-  -}
+   - As it stands now, there is no checking until the code attempts to perform a macro transformation.
+   - At a minimum, should check identifiers to make sure each is an atom (see findAtom) 
+   -}
   _ <- do
--- 
--- TODO: I think it seems to be a better solution to use this defEnv, but
--- that causes problems when a var is changed via (define) or (set!) since most
--- schemes interpret allow this change to propagate back to the point of definition
--- (or at least, when modules are not in play). See:
---
--- http://stackoverflow.com/questions/7999084/scheme-syntax-rules-difference-in-variable-bindings-between-let-anddefine
---
--- Anyway, this may come back. But I am not using it for now...
---
---    defEnv <- liftIO $ copyEnv env
+    -- 
+    -- I think it seems to be a better solution to use this defEnv, but
+    -- that causes problems when a var is changed via (define) or (set!) since most
+    -- schemes interpret allow this change to propagate back to the point of definition
+    -- (or at least, when modules are not in play). See:
+    --
+    -- http://stackoverflow.com/questions/7999084/scheme-syntax-rules-difference-in-variable-bindings-between-let-anddefine
+    --
+    -- Anyway, this may come back. But I am not using it for now...
+    --
+    --    defEnv <- liftIO $ copyEnv env
     defineNamespacedVar env macroNamespace keyword $ Syntax env identifiers rules
   return $ Nil "" -- Sentinal value
 
@@ -128,6 +145,9 @@ macroEval env lisp@(List (Atom x : _)) = do
   isDefined <- liftIO $ isNamespacedRecBound env macroNamespace x
   isDefinedAsVar <- liftIO $ isBound env x -- TODO: Not entirely correct; for example if a macro and var 
                                            -- are defined in same env with same name, which one should be selected?
+                                           --
+                                           -- !!!
+                                           -- See earlier notes, I think macro should "win"
   if isDefined && not isDefinedAsVar 
      then do
        Syntax defEnv identifiers rules <- getNamespacedVar env macroNamespace x
@@ -137,19 +157,9 @@ macroEval env lisp@(List (Atom x : _)) = do
                                       -- to hold new symbols introduced by renaming. We
                                       -- can use this to clean up any left after transformation
 
-{- TODO: TEST CODE is below
--- TODO: this is just test code for comparing use/def environments
---       isUseDef <- liftIO $ isNamespacedRecBoundWUpper defEnv env varNamespace "=>"
-       isCleanDef <- liftIO $ isRecBound cleanupEnv "=>"
-       isUseDef <- liftIO $ isRecBound env "=>"
-       isDefDef <- liftIO $ isRecBound defEnv "=>"
--}
-
        -- Transform the input and then call macroEval again, since a macro may be contained within...
        expanded <- macroTransform defEnv env renameEnv cleanupEnv (List identifiers) rules lisp
--- DEBUG CODE: (trace ("macro = " ++ x ++ " cleanDef = " ++ show isCleanDef ++ " useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
-       macroEval env (trace ("exp = " ++ show expanded) expanded)
---       macroEval env expanded
+       macroEval env expanded -- Useful debug to see all exp's: (trace ("exp = " ++ show expanded) expanded)
      else return lisp
 
 -- No macro to process, just return code as it is...
@@ -173,10 +183,10 @@ macroTransform defEnv env renameEnv cleanupEnv identifiers (rule@(List _) : rs) 
                                -- to hold pattern variables
   result <- matchRule defEnv env identifiers localEnv renameEnv cleanupEnv rule input
   case result of
+    -- No match, check the next rule
     Nil _ -> macroTransform defEnv env renameEnv cleanupEnv identifiers rs input
     _ -> do
         -- Walk the resulting code, performing the Clinger algorithm's 4 components
-        -- TODO: see below: expanded <-
         walkExpanded defEnv env renameEnv cleanupEnv True False (List []) (result)
 
 -- Ran out of rules to match...
@@ -210,7 +220,6 @@ matchRule defEnv outerEnv identifiers localEnv renameEnv cleanupEnv (List [patte
         case match of
            Bool False -> return $ Nil ""
            _ -> do
--- TODO: pass defEnv down as part of 'other side' of hygiene           
                 transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers 0 [] (List []) template
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
 
@@ -624,7 +633,7 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
  let isQuasiQuoted = (a == "quasiquote")
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
- if (trace ("a = " ++ a ++ " isQuoted = " ++ show isQuoted) startOfList) && a == "define-syntax" && not isQuoted
+ if (startOfList) && a == "define-syntax" && not isQuoted
    then case ts of
      [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] -> do
      -- TODO: do we need to rename the keyword, or at least take that into account?
@@ -659,7 +668,7 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
                         --
                         -- TODO: This becomes a problem if there is an unquote:
                         -- exp = ((lambda (name2) (quasiquote (list (unquote name2) (quote (unquote name))))) (quote a))
-                        List cleaned <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True isQuasiQuoted (trace ("isQuoted = " ++ show isQuoted) (List [])) (List ts)
+                        List cleaned <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True isQuasiQuoted (List []) (List ts)
                         walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ (Atom a : cleaned)) (List [])
                      else walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
 
@@ -737,7 +746,7 @@ cleanExpanded defEnv useEnv renameEnv cleanupEnv _ isQQ (List result) transform@
 
 cleanExpanded defEnv useEnv renameEnv cleanupEnv startOfList isQQ (List result) transform@(List (Atom a : ts)) = do
   expanded <- tmpexpandAtom cleanupEnv $ Atom a
-  case (startOfList, isQQ, (trace ("expanded = " ++ show expanded) expanded)) of
+  case (startOfList, isQQ, expanded) of
     -- Unquote an expression by continuing to expand it as a macro form
     -- 
     -- Only perform an unquote if (in order):
@@ -746,8 +755,8 @@ cleanExpanded defEnv useEnv renameEnv cleanupEnv startOfList isQQ (List result) 
     --  - An "unquote" is found
     --
     (True, True, Atom "unquote") -> do 
-        r <- walkExpanded defEnv useEnv renameEnv cleanupEnv True False (List $ result ++ [Atom "unquote"]) (trace ("ts = " ++ show ts) (List ts) )
-        return (trace ("r = " ++ show r ++ " trans = " ++ show transform) r)
+        r <- walkExpanded defEnv useEnv renameEnv cleanupEnv True False (List $ result ++ [Atom "unquote"]) (List ts)
+        return r
     otherwise -> 
         cleanExpanded defEnv useEnv renameEnv cleanupEnv False isQQ (List $ result ++ [expanded]) (List ts)
  where
