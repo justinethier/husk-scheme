@@ -611,7 +611,7 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
   
  Atom a <- expandAtom renameEnv (Atom aa)
 
- {- TODO: need to work through how to handle quoting an atoms that are renamed
+ {- TODO: need to work through how to handle quoting atoms that are renamed
  Atom aTmp <- expandAtom renameEnv (Atom aa)
  let a = if inputIsQuoted
             then aa
@@ -623,14 +623,14 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
  let isQuoted = inputIsQuoted || (a == "quote")
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
- if a == "define-syntax" && not isQuoted
+ if startOfList && a == "define-syntax" && not isQuoted
    then case ts of
      [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] -> do
      -- TODO: do we need to rename the keyword, or at least take that into account?
         _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax useEnv identifiers rules
         return $ Nil "" -- Sentinal value
      otherwise -> throwError $ BadSpecialForm "Malformed define-syntax expression" transform
-   else if a == "lambda" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
+   else if startOfList && a == "lambda" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
      then do
        case transform of
          List (Atom _ : List vars : body) -> do
@@ -640,7 +640,7 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
            walkExpanded defEnv useEnv env cleanupEnv False isQuoted (List [Atom "lambda", renamedVars]) (List body)
          -- lambda is malformed, just transform as normal atom...
          otherwise -> walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
-     else if isDefinedAsMacro && not isQuoted
+     else if startOfList && isDefinedAsMacro && not isQuoted
              then do
                Syntax _ identifiers rules <- getNamespacedVar useEnv macroNamespace a
 {- TODO: below should be defEnv instead of useEnv, will be switching over later -}
@@ -652,17 +652,11 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
                -- from the {rename ==> original}. Each new name is unique by definition, so
                -- no conflicts are possible.
                macroTransform defEnv useEnv renameEnv cleanupEnv (List identifiers) rules (List (Atom a : ts))
-             else walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
--- TODO: use startOfList for lambda/macro call processing
-{- OLD CODE: 
-  -- TODO: more to come w/Clinger's algorithm...
-  isDefined <- liftIO $ isBound renameEnv aa -- TODO: Not entirely correct; for example if a macro and var 
-  case (trace ("walker found atom: " ++ aa ++ " isRenamed = " ++ show isDefined) isDefined) of
-    True -> do
-      expanded <- getVar renameEnv aa
-      walkExpanded defEnv useEnv renameEnv False (List $ result ++ [expanded]) (List ts)
-    False -> walkExpanded defEnv useEnv renameEnv False (List $ result ++ [Atom aa]) (List ts)
--}
+             else if False --isQuoted
+                     then do
+                        List cleaned <- cleanExpanded cleanupEnv (List []) (List ts)
+                        walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ (Atom a : cleaned)) (List [])
+                     else walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
 
 -- Transform anything else as itself...
 walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) (List (t : ts)) = do
