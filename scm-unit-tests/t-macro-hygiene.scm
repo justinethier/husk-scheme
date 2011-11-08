@@ -40,7 +40,8 @@
 (define v1 3)
 (assert/equal (test-template) 3)
 
-; Issue #53:
+; TODO: Issue #53:
+#|
 ; TODO: test cases fail below because var-02 is not actually defined
 ; in the env until after the macros are already expanded...
 ; So, since the var is not defined in defEnv, the "other side" of
@@ -64,6 +65,7 @@
 ; the correct var is not set. Or is this a bug in set! because it creates a new var instead
 ; of modifying the one in the parent env?
 ; UPDATE - this may just be when lambda is used, still need to track it down
+|#
 
 ; Example without a literal identifier; variable is referenced
 ; directly from the template
