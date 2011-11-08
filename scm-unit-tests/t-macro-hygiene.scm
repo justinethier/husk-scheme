@@ -39,20 +39,27 @@
 ((lambda (v1) (let ((v1 2)) (test-template))) 10)
 (define v1 3)
 (assert/equal (test-template) 3)
-#|
-(let ()
+
+;(let ()
   (define var-02 1)
+;
+; TODO: the below does not work when the (let) is added back, because
+; there is currently no support for defining a macro during macro processing.
+; since macros are just loaded up into syntax objects, it should be simple
+; enough to add this support in...
+;
   (define-syntax test-template
    (syntax-rules ()
      ((_)
       var-02)))
-  
   (assert/equal (test-template) 1)
   (assert/equal (let ((var-02 1)) (test-template)) 1)
   (assert/equal (let ((var-02 2)) (test-template)) 1)
   (define var-02 3)
-  (assert/equal (test-template) 3))
-|#
+  (assert/equal (test-template) 3)
+;)
+(assert/equal #t #f) ; TODO: see above
+
 ; Example without a literal identifier; variable is referenced
 ; directly from the template
 

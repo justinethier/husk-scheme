@@ -1039,6 +1039,8 @@ transformRule _ _ _ _ _ _ _ _ result@(List _) (List []) = do
 -- here from the above case.
 transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers _ _ _ (Atom transform) = do
   Bool isIdent <- findAtom (Atom transform) identifiers
+-- TODO: does the logic below need to be migrated to the List(Atom) case above? Or to put it another way,
+--  does that function handle the cases correctly when a literal is in the template that is not listed in 'identifiers'????
   isPattVar <- liftIO $ isRecBound localEnv transform
   if isPattVar && not isIdent
      then getVar localEnv transform
