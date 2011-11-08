@@ -134,7 +134,17 @@
 
 ; FUTURE: support, test cases for
 ; let-syntax and letrec-syntax
+#|
+(let-syntax () 2) ==> 2
+(let ((x 1)) (let-syntax () x)) ==> 1
+(let-syntax () 1 2 3) ==> 3
 
+(let-syntax ((my-let (syntax-rules () ((my-let x) (begin x)))))
+    (define x "hello, world")
+    (my-let 2))
+(assert/equal (my-let 2) 2)
+
+|#
 
 ; Dotted lists (pairs)
 ;
