@@ -1039,9 +1039,10 @@ transformRule _ _ _ _ _ _ _ _ result@(List _) (List []) = do
 -- here from the above case.
 transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers _ _ _ (Atom transform) = do
   Bool isIdent <- findAtom (Atom transform) identifiers
-  if isIdent
-     then transformLiteralIdentifier defEnv outerEnv localEnv transform
-     else getVar localEnv transform
+  isPattVar <- liftIO $ isRecBound localEnv transform
+  if isPattVar && not isIdent
+     then getVar localEnv transform
+     else transformLiteralIdentifier defEnv outerEnv localEnv transform
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
@@ -1053,11 +1054,6 @@ transformLiteralIdentifier defEnv outerEnv localEnv transform = do
   isInDef <- liftIO $ isRecBound defEnv transform
   if isInDef
      then do
-
-
--- TODO: this logic (actually all defEnv logic) needs to exist in the (List (Atom _ : _)) function handler above...
-
-
           {- Variable exists in the environment the macro was defined in,
              so divert that value back into the environment of use. The value
              is diverted back with a different name so as not to be shadowed by
