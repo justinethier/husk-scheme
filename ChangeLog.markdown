@@ -7,7 +7,7 @@ This release adds the first hygienic macro support to husk. There are two
 - names that the macro references are coming from the lexical context of its definition, rather than the lexical context of its use
 
 Support has been added for both sides, although there are some issues as noted
-in the (Version 3.4.x Milestone)[https://github.com/justinethier/husk-scheme/issues?milestone=9&state=open]. Macro support will continue to improve in future releases.
+in the [Version 3.4.x Milestone](https://github.com/justinethier/husk-scheme/issues?milestone=9&state=open). Macro support will continue to improve in future releases.
 
 In addition, this release contains the following bug fixes:
 
