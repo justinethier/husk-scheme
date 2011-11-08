@@ -53,16 +53,6 @@ import Data.Array
  Nice FAQ regarding macro's, points out some of the limitations of current implementation
  http://community.schemewiki.org/?scheme-faq-macros
 
- Consider high-level ideas from these articles (of all places):
- 
- -  http://en.wikipedia.org/wiki/Scheme_(programming_language)#Hygienic_macros
-
-TODO
-In particular, this seems to imply we should always check for a macro keyword first, and that one could
-shadow a normal variable definition. Should check the source but should verify husk has correct behavior:
-
-Invocations of macros and procedures bear a close resemblance—both are s-expressions—but they are treated differently. When the compiler encounters an s-expression in the program, it first checks to see if the symbol is defined as a syntactic keyword within the current lexical scope. If so, it then attempts to expand the macro, treating the items in the tail of the s-expression as arguments without compiling code to evaluate them, and this process is repeated recursively until no macro invocations remain. If it is not a syntactic keyword, the compiler compiles code to evaluate the arguments in the tail of the s-expression and then to evaluate the variable represented by the symbol at the head of the s-expression and call it as a procedure with the evaluated tail expressions passed as actual arguments to it.
-
  -}
 
 --
@@ -142,13 +132,9 @@ macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom
  -
  -}
 macroEval env lisp@(List (Atom x : _)) = do
+  -- Note: If there is a procedure of the same name it will be shadowed by the macro.
   isDefined <- liftIO $ isNamespacedRecBound env macroNamespace x
-  isDefinedAsVar <- liftIO $ isBound env x -- TODO: Not entirely correct; for example if a macro and var 
-                                           -- are defined in same env with same name, which one should be selected?
-                                           --
-                                           -- !!!
-                                           -- See earlier notes, I think macro should "win"
-  if isDefined && not isDefinedAsVar 
+  if isDefined
      then do
        Syntax defEnv identifiers rules <- getNamespacedVar env macroNamespace x
        renameEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
