@@ -274,6 +274,8 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
         cpsUnquoteFld _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteFld"
 
 -- TODO: let-syntax
+eval env cont args@(List (Atom "let-syntax" : List bindings : body)) = do
+  -- TODO: check if let-syntax has been rebound?
 --
 -- high-level design 
 --  - use extendEnv to create a new environment
@@ -281,6 +283,20 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
 --  - pick up execution of the body, perhaps just like how it is
 --    done today with a function body
 --
+  bodyEnv <- liftIO $ extendEnv env []
+  _ <- loadMacros env bodyEnv bindings
+--  eval bodyEnv cont body
+  continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody body) (Just cont) Nothing Nothing) $ Nil "" 
+ where
+
+   loadMacros :: Env -> Env -> [LispVal] -> IOThrowsError LispVal
+--   loadMacros e be bindings = return $ String "TODO"
+   loadMacros e be (List [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] : bs) = do
+     -- TODO: error checking
+     _ <- defineNamespacedVar be macroNamespace keyword $ Syntax e identifiers rules
+     loadMacros e be bs
+   loadMacros e be [] = return $ Nil ""
+   loadMacros _ _ form = throwError $ BadSpecialForm "Unable to evaluate form" $ List form 
 
 eval env cont args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
  bound <- liftIO $ isRecBound env "define-syntax"

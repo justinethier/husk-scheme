@@ -134,17 +134,29 @@
 
 ; FUTURE: support, test cases for
 ; let-syntax and letrec-syntax
-#|
-(let-syntax () 2) ==> 2
-(let ((x 1)) (let-syntax () x)) ==> 1
-(let-syntax () 1 2 3) ==> 3
 
-(let-syntax ((my-let (syntax-rules () ((my-let x) (begin x)))))
-    (define x "hello, world")
-    (my-let 2))
-(assert/equal (my-let 2) 2)
+(assert/equal (let-syntax () 2) 2)
+(assert/equal (let ((x 1)) (let-syntax () x)) 1)
+(assert/equal (let-syntax () 1 2 3) 3)
+(assert/equal (let-syntax ((my-let (syntax-rules () ((my-let x) (begin x))))) (define x "hello, world") (my-let 2)) 2)
 
-|#
+(assert/equal
+  (let-syntax ((when (syntax-rules ()
+                ((when test stmt1 stmt2 ...)
+                 (if test
+                    (begin stmt1
+                           stmt2 ...))))))
+      (let ((if #t))
+            (when if (set! if 'now))
+                if))
+  'now)
+
+(assert/equal
+  (let ((x 'outer))
+    (let-syntax ((m (syntax-rules () ((m) x))))
+      (let ((x 'inner))
+        (m))))
+  'outer)
 
 ; Dotted lists (pairs)
 ;
