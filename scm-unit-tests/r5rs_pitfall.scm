@@ -81,11 +81,6 @@
 (should-be 2.1 1
  (call/cc (lambda (c) (0 (c 1)))))
 
-(display "3.1 fails") (newline)
-(display "3.2 fails") (newline)
-(display "3.3 fails") (newline)
-(display "3.4 fails") (newline)
-#|
 ;; Section 3: Hygienic macros
 
 ;; Eli Barzilay 
@@ -131,7 +126,7 @@
 ;; Contributed directly
 (should-be 3.4 1
   (let-syntax ((x (syntax-rules ()))) 1))
-|#
+
 ;; Setion 4: No identifiers are reserved
 
 ;;(Brian M. Moore)
@@ -213,6 +208,8 @@
       ((3) (b 7))
       ((4) (c 4)))
     r))
+(display "7.3 fails")
+(newline)
 #|
 ;; Credits to Matthias Radestock
 ;; Another test case used to test SISC's lazy CallFrame routines.
@@ -284,13 +281,11 @@
 
 (display "8.2 fails")
 (newline)
-(display "8.3 fails")
-(newline)
 #|
 (should-be 8.2 '(1 2 3 4 1 2 3 4 5)
   (let ((ls (list 1 2 3 4)))
     (append ls ls '(5))))
-
+|#
 ;; This example actually illustrates a bug in R5RS.  If a Scheme system
 ;; follows the letter of the standard, 1 should be returned, but
 ;; the general agreement is that 2 should instead be returned.
@@ -326,7 +321,7 @@
       (define x (foo))
       3)
     x))
-|#
+
 ;;Not really an error to fail this (Matthias Radestock)
 ;;If this returns (0 1 0), your map isn't call/cc safe, but is probably
 ;;tail-recursive.  If its (0 0 0), the opposite is true.
