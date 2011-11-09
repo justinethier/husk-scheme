@@ -2,9 +2,8 @@ v3.4.1
 ------
 Bug fixes:
 
-- Fixed a nasty issue where the macro pattern matching code would not properly
-reset itself when transcribing a macro containing an ellipsis in the middle of
-a list. This caused data to be missing in the transformed code.
+- Fixed a nasty issue where the macro pattern matching code would not properly reset itself when transcribing a macro containing an ellipsis in the middle of a list. This caused data to be missing in the transformed code.
+- Fixed a bug that would cause the evaluator to terminate if define-syntax was called within a nested scope. 
 
 v3.4
 ----
