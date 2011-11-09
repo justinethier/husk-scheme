@@ -149,7 +149,7 @@ macroEval env lisp@(List (Atom x : _)) = do
        expanded <- macroTransform defEnv env renameEnv cleanupEnv (List identifiers) rules lisp
 -- DEBUG CODE: (trace ("macro = " ++ x ++ " cleanDef = " ++ show isCleanDef ++ " useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
 --       macroEval env =<< cleanExpanded cleanupEnv (List []) expanded 
-       macroEval env (trace ("expanded = " ++ show expanded) expanded) -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
+       macroEval env (expanded) -- TODO: disabling this for now: =<< cleanExpanded cleanupEnv (List []) expanded 
      else return lisp
 
 -- No macro to process, just return code as it is...
