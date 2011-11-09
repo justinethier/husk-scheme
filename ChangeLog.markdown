@@ -1,3 +1,11 @@
+v3.4.1
+------
+Bug fixes:
+
+- Fixed a nasty issue where the macro pattern matching code would not properly
+reset itself when transcribing a macro containing an ellipsis in the middle of
+a list. This caused data to be missing in the transformed code.
+
 v3.4
 ----
 This release adds the first hygienic macro support to husk. There are two "sides" to macro hygiene:
