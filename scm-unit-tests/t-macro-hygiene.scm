@@ -40,8 +40,12 @@
 (define v1 3)
 (assert/equal (test-template) 3)
 
+;
 ; TODO: test cases fail below because var-02 is not actually defined
 ; in the env until after the macros are already expanded...
+; So, since the var is not defined in defEnv, the "other side" of
+; hygiene is not respected in this case.
+;
 ;(lambda ()
 (let ((var-02 1))
 ;(let ()
