@@ -320,7 +320,7 @@ eval env cont args@(List [Atom "define-syntax", Atom keyword, (List (Atom "synta
     --
     --    defEnv <- liftIO $ copyEnv env
     _ <- defineNamespacedVar env macroNamespace keyword $ Syntax env identifiers rules
-    return $ Nil "" -- Sentinel value
+    continueEval env cont $ Nil "" 
 
 eval env cont args@(List [Atom "if", predic, conseq, alt]) = do
  bound <- liftIO $ isRecBound env "if"
