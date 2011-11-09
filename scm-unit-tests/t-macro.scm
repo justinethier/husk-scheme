@@ -438,5 +438,9 @@
 (assert/equal (foo (1 2) (3 4 5))
              '((1 3) (2 4)))
 
+; Issue #56
+(assert/equal (letrec ((z 12)) 1 2 z) 12)
+(assert/equal (letrec ((z 12)) (let () (let ((z 1) (y 2)) (+ z y))) z) 12)
+; End #56
 
 (unit-test-handler-results)

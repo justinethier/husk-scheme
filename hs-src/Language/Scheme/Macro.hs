@@ -762,7 +762,10 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsis
              curT <- transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers level idx (List []) (List l)
              case (curT) of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
-                        continueTransform defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsisLevel ellipsisIndex result $ tail ts
+                        continueTransform defEnv outerEnv localEnv renameEnv cleanupEnv identifiers 
+                                          ellipsisLevel 
+                                          (init ellipsisIndex) -- Issue #56 - done w/ellip so no need for last idx
+                                          result $ tail ts
                List _ -> transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
@@ -788,7 +791,7 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsis
 --             case (trace ("curT = " ++ show curT) curT) of
              case curT of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
-                        continueTransform defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsisLevel ellipsisIndex result $ tail ts
+                        continueTransform defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsisLevel (init ellipsisIndex) result $ tail ts
                List t -> transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
@@ -812,7 +815,7 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsis
              curT <- transformDottedList defEnv outerEnv localEnv renameEnv cleanupEnv identifiers level idx (List []) (List [dl])
              case curT of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
-                        continueTransform defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsisLevel ellipsisIndex result $ tail ts 
+                        continueTransform defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsisLevel (init ellipsisIndex) result $ tail ts 
                List t -> transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers 
                           ellipsisLevel -- Do not increment level, just wait until next iteration where incremented above
                           idx -- Keep incrementing each time
