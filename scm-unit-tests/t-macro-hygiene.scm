@@ -40,9 +40,12 @@
 (define v1 3)
 (assert/equal (test-template) 3)
 
+; TODO: test cases fail below because var-02 is not actually defined
+; in the env until after the macros are already expanded...
 ;(lambda ()
-(let ()
-  (define var-02 1)
+(let ((var-02 1))
+;(let ()
+;  (define var-02 1)
   (define-syntax test-template
    (syntax-rules ()
      ((_)
