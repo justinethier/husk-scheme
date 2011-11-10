@@ -113,7 +113,7 @@ macroEval env lisp@(List (Atom x : _)) = do
   isDefined <- liftIO $ isNamespacedRecBound env macroNamespace x
   if isDefined
      then do
-       Syntax defEnv identifiers rules <- getNamespacedVar env macroNamespace x
+       Syntax (Just defEnv) _ identifiers rules <- getNamespacedVar env macroNamespace x
        renameEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
                                      -- to hold renamed variables
        cleanupEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
@@ -591,7 +591,8 @@ the macro to ensure that none of the introduced macros reference each other.
    then case ts of
      [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] -> do
         -- Do we need to rename the keyword, or at least take that into account?
-        _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax useEnv identifiers rules
+        renameEnvClosure <- liftIO $ copyEnv renameEnv
+        _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax (Just useEnv) (Just renameEnvClosure) identifiers rules
         return $ Nil "" -- Sentinal value
      _ -> throwError $ BadSpecialForm "Malformed define-syntax expression" transform
    else if startOfList && a == "lambda" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
@@ -606,14 +607,19 @@ the macro to ensure that none of the introduced macros reference each other.
          _ -> walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
      else if startOfList && isDefinedAsMacro && not isQuoted
              then do
-               Syntax _ identifiers rules <- getNamespacedVar useEnv macroNamespace a
-               -- A child renameEnv is not created because for a macro call there is no way an
-               -- renamed identifier inserted by the macro could override one in the outer env.
-               --
-               -- This is because the macro renames non-matched identifiers and stores mappings
-               -- from the {rename ==> original}. Each new name is unique by definition, so
-               -- no conflicts are possible.
-               macroTransform defEnv useEnv renameEnv cleanupEnv (List identifiers) rules (List (Atom a : ts))
+               syn <- getNamespacedVar useEnv macroNamespace a
+               case syn of
+                 Syntax _ (Just renameClosure) identifiers rules -> do 
+                    macroTransform defEnv useEnv renameClosure cleanupEnv (List identifiers) rules (List (Atom a : ts))
+                 Syntax _ _ identifiers rules -> do 
+                 -- A child renameEnv is not created because for a macro call there is no way an
+                 -- renamed identifier inserted by the macro could override one in the outer env.
+                 --
+                 -- This is because the macro renames non-matched identifiers and stores mappings
+                 -- from the {rename ==> original}. Each new name is unique by definition, so
+                 -- no conflicts are possible.
+                 macroTransform defEnv useEnv renameEnv cleanupEnv (List identifiers) rules (List (Atom a : ts))
+
              else if isQuoted
                      then do
                         -- Cleanup all symbols in the quoted code
@@ -1149,7 +1155,9 @@ loadMacros :: Env       -- ^ Parent environment containing the let*-syntax expre
            -> IOThrowsError LispVal -- ^ A dummy value, unless an error is thrown
 loadMacros e be (List [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] : bs) = do
   -- TODO: error checking
-  _ <- defineNamespacedVar be macroNamespace keyword $ Syntax e identifiers rules
+  _ <- defineNamespacedVar be macroNamespace keyword $ Syntax (Just e)
+        (Nothing) -- TODO: copy of renameEnv
+        identifiers rules
   loadMacros e be bs
 loadMacros e be [] = return $ Nil ""
 loadMacros _ _ form = throwError $ BadSpecialForm "Unable to evaluate form" $ List form 
