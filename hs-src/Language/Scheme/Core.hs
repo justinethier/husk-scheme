@@ -319,7 +319,7 @@ eval env cont args@(List [Atom "define-syntax", Atom keyword, (List (Atom "synta
     -- Anyway, this may come back. But not using it for now...
     --
     --    defEnv <- liftIO $ copyEnv env
-    _ <- defineNamespacedVar env macroNamespace keyword $ Syntax env identifiers rules
+    _ <- defineNamespacedVar env macroNamespace keyword $ Syntax (Just env) Nothing identifiers rules
     continueEval env cont $ Nil "" 
 
 eval env cont args@(List [Atom "if", predic, conseq, alt]) = do
