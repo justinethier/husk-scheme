@@ -124,7 +124,8 @@ macroEval env lisp@(List (Atom x : _)) = do
        expanded <- macroTransform defEnv env renameEnv cleanupEnv 
                                   definedInMacro 
                                  (List identifiers) rules lisp
-       macroEval env expanded -- Useful debug to see all exp's: (trace ("exp = " ++ show expanded) expanded)
+--       macroEval env expanded -- Useful debug to see all exp's: (trace ("exp = " ++ show expanded) expanded)
+       macroEval env (trace ("exp = " ++ show expanded) expanded)
      else return lisp
 
 -- No macro to process, just return code as it is...
@@ -590,14 +591,14 @@ the macro to ensure that none of the introduced macros reference each other.
   else 
 -}
 
-
+{-
 TODO: need to call a new function to scan for define (and set! ??) forms. 
 if found, need to add an entry to renameEnv (?) so as to get the transLiteral
 code to work. otherwise there is no way for that code to know that a (define)
 called within a macro is inserting a new binding.
 do not actually need to do anything to the (define) form, just mark somehow
 that it is inserting a binding for the var
-
+-}
 
  if (startOfList) && a == "define-syntax" && not isQuoted
    then case ts of
@@ -607,7 +608,17 @@ that it is inserting a binding for the var
         _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax (Just useEnv) (Just renameEnvClosure) True identifiers rules
         return $ Nil "" -- Sentinal value
      _ -> throwError $ BadSpecialForm "Malformed define-syntax expression" transform
-   else if startOfList && a == "lambda" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
+   else if startOfList && a == "define" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
+    then do
+       case transform of
+         List [Atom _, Atom var, val] -> do
+--           -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
+--           env <- liftIO $ extendEnv renameEnv []
+           List renamedVars <- markBoundIdentifiers renameEnv cleanupEnv [Atom var] []
+           walkExpanded defEnv useEnv renameEnv cleanupEnv dim False isQuoted (List [Atom "define", head renamedVars, val]) (List [])
+         -- define is malformed, just transform as normal atom...
+         _ -> walkExpanded defEnv useEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [Atom a]) (List ts)
+    else if startOfList && a == "lambda" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
      then do
        case transform of
          List (Atom _ : List vars : fbody) -> do
@@ -1032,9 +1043,9 @@ transformLiteralIdentifier :: Env -> Env -> Env -> Bool -> String -> IOThrowsErr
 transformLiteralIdentifier defEnv outerEnv renameEnv definedInMacro transform = do
   isInDef <- liftIO $ isRecBound defEnv transform
   isRenamed <- liftIO $ isRecBound renameEnv transform
-  if (trace ("a = " ++ transform ++ " inDef = " ++ show isInDef ++ " isRnm = " ++ show isRenamed ++ " dim = " ++ show definedInMacro) isInDef) && not isRenamed
+--  if (trace ("a = " ++ transform ++ " inDef = " ++ show isInDef ++ " isRnm = " ++ show isRenamed ++ " dim = " ++ show definedInMacro) isInDef) && not isRenamed
 --  TODO: isRenamed should only matter if the macro was originally defined within another macro
---  if (isInDef && not definedInMacro) || (isInDef && definedInMacro && not isRenamed)
+  if (isInDef && not definedInMacro) || (isInDef && definedInMacro && not isRenamed)
      then do
           {- Variable exists in the environment the macro was defined in,
              so divert that value back into the environment of use. The value
