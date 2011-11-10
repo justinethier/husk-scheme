@@ -61,6 +61,7 @@ test: husk stdlib.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-vector.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-parser.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-macro-hygiene.scm
+	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-macro-ref-trans.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) summarize.scm
 	@rm -f $(UNIT_TEST_DIR)/scm-unit.tmp
 
