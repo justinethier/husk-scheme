@@ -1,7 +1,7 @@
 ; Testing ability of a nested macro def to use a renamed var
 (let ()
-;  (define var-02 1)
- ((lambda (var-02)
+  (define var-02 1)
+; ((lambda (var-02)
 
   (define-syntax test-template
    (syntax-rules ()
@@ -15,7 +15,8 @@
   (define var-02 3)
   (write (test-template))
 ))
-) 1))
+)
+; 1))
 
 #|
 ; Lot of weird things going on here...
