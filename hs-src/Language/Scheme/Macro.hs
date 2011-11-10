@@ -124,8 +124,8 @@ macroEval env lisp@(List (Atom x : _)) = do
        expanded <- macroTransform defEnv env renameEnv cleanupEnv 
                                   definedInMacro 
                                  (List identifiers) rules lisp
---       macroEval env expanded -- Useful debug to see all exp's: (trace ("exp = " ++ show expanded) expanded)
-       macroEval env (trace ("exp = " ++ show expanded) expanded)
+       macroEval env expanded -- Useful debug to see all exp's: (trace ("exp = " ++ show expanded) expanded)
+--       macroEval env (trace ("exp = " ++ show expanded) expanded)
      else return lisp
 
 -- No macro to process, just return code as it is...
@@ -614,8 +614,9 @@ that it is inserting a binding for the var
          List [Atom _, Atom var, val] -> do
 --           -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
 --           env <- liftIO $ extendEnv renameEnv []
-           List renamedVars <- markBoundIdentifiers renameEnv cleanupEnv [Atom var] []
-           walkExpanded defEnv useEnv renameEnv cleanupEnv dim False isQuoted (List [Atom "define", head renamedVars, val]) (List [])
+--           List renamedVars <- markBoundIdentifiers renameEnv cleanupEnv [Atom var] []
+           _ <- defineVar renameEnv var $ Atom var
+           walkExpanded defEnv useEnv renameEnv cleanupEnv dim False isQuoted (List [Atom "define", {-head renamedVars-} Atom var]) (List [val])
          -- define is malformed, just transform as normal atom...
          _ -> walkExpanded defEnv useEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [Atom a]) (List ts)
     else if startOfList && a == "lambda" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
