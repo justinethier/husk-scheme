@@ -737,9 +737,9 @@ cleanExpanded defEnv useEnv renameEnv cleanupEnv _ (List result) transform@(List
 
 cleanExpanded defEnv useEnv renameEnv cleanupEnv startOfList (List result) transform@(List (Atom a : ts)) = do
   expanded <- tmpexpandAtom cleanupEnv $ Atom a
-  case (trace ("expanded = " ++ show expanded) expanded) of
+  case (startOfList, (trace ("expanded = " ++ show expanded) expanded)) of
  --TODO: only makes sense to do this at the start of a list!!
-    Atom "unquote" -> 
+    (True, Atom "unquote") -> 
 --         TODO: perhaps we have to pick up walkExpanded at this point...
         cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ (expanded : ts)) (List [])
     otherwise -> 
