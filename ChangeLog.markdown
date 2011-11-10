@@ -1,6 +1,7 @@
 v3.4.1
 ------
-Added limited support for let-syntax and letrec-syntax.
+Added very limited support for let-syntax and letrec-syntax. Currently these forms
+are not supported when used within a macro call or definition.
 
 Bug fixes:
 
