@@ -150,7 +150,7 @@ macroEval env lisp@(List (Atom x : _)) = do
 -- DEBUG CODE: (trace ("macro = " ++ x ++ " cleanDef = " ++ show isCleanDef ++ " useDef = " ++ show isUseDef ++ " defDef = " ++ show isDefDef) lisp) -- TODO: w/Clinger, may not need to call macroEval again
 --       macroEval env =<< cleanExpanded cleanupEnv (List []) expanded 
        macroEval env (trace ("exp = " ++ show expanded) expanded)
---       macroEval env (expanded)
+--       macroEval env expanded
      else return lisp
 
 -- No macro to process, just return code as it is...
@@ -739,9 +739,13 @@ cleanExpanded defEnv useEnv renameEnv cleanupEnv startOfList (List result) trans
   expanded <- tmpexpandAtom cleanupEnv $ Atom a
   case (startOfList, (trace ("expanded = " ++ show expanded) expanded)) of
  --TODO: only makes sense to do this at the start of a list!!
-    (True, Atom "unquote") -> 
+    (True, Atom "unquote") -> do 
+    Another TODO - I think that the list r below needs to be appended to the
+    list from the function "above" this one, instead of being added as a list at the end of it...
 --         TODO: perhaps we have to pick up walkExpanded at this point...
-        cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ (expanded : ts)) (List [])
+--        cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ (expanded : ts)) (List [])
+        r <- walkExpanded defEnv useEnv renameEnv cleanupEnv True False (List result) (trace ("ts = " ++ show ts) (List ts) )
+        return (trace ("r = " ++ show r) r)
     otherwise -> 
         cleanExpanded defEnv useEnv renameEnv cleanupEnv False (List $ result ++ [expanded]) (List ts)
  where
