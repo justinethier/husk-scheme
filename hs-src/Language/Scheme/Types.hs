@@ -151,12 +151,11 @@ data LispVal = Atom String
                         , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind)
                 }
  -- ^Continuation
- | Syntax { synClosure :: Env
-          , synIdentifiers :: [LispVal]
-          , synRules :: [LispVal]
---          , synPattern :: [LispVal]
---          , synTemplate :: [LispVal] -- TODO: use a syntax-rules type to hold a single pattern/transform pair?
-
+ | Syntax { synClosure :: Maybe Env       -- ^ Code env in effect at definition time, if applicable
+          , synRenameClosure :: Maybe Env -- ^ Renames (from macro hygiene) in effect at def time;
+                                          --   only applicable if this macro defined inside another macro.
+          , synIdentifiers :: [LispVal]   -- ^ Literal identifiers from syntax-rules 
+          , synRules :: [LispVal]         -- ^ Rules from syntax-rules
    } -- ^ Type to hold a syntax object that is created by a macro definition.
      --   Syntax objects are not used like regular types in that they are not
      --   passed around within variables. In other words, you cannot use set! to
@@ -275,7 +274,7 @@ showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showVal t ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
 showVal (Continuation _ _ _ _ _) = "<continuation>"
-showVal (Syntax _ _ _) = "<syntax>"
+showVal (Syntax _ _ _ _) = "<syntax>"
 showVal (Func {params = args, vararg = varargs, body = _, closure = _}) =
   "(lambda (" ++ unwords (map show args) ++
     (case varargs of
