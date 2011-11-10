@@ -851,7 +851,7 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsis
 
   where
     literalHere = do
-      expanded <- transformLiteralIdentifier defEnv outerEnv localEnv a
+      expanded <- transformLiteralIdentifier defEnv outerEnv renameEnv a
       if hasEllipsis 
          then do
               -- Skip over ellipsis if present
@@ -1003,12 +1003,12 @@ transformRule _ _ _ _ _ _ _ _ result@(List _) (List []) = do
 -- transform is an atom - if it is a list then there is no way this case can be reached.
 -- So... we do not need to worry about pattern variables here. No need to port that code
 -- from the above case.
-transformRule defEnv outerEnv localEnv _ _ identifiers _ _ _ (Atom transform) = do
+transformRule defEnv outerEnv localEnv renameEnv _ identifiers _ _ _ (Atom transform) = do
   Bool isIdent <- findAtom (Atom transform) identifiers
   isPattVar <- liftIO $ isRecBound localEnv transform
   if isPattVar && not isIdent
      then getVar localEnv transform
-     else transformLiteralIdentifier defEnv outerEnv localEnv transform
+     else transformLiteralIdentifier defEnv outerEnv renameEnv transform
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
@@ -1016,9 +1016,12 @@ transformRule _ _ _ _ _ _ _ _ _ transform = return transform
 
 -- |A helper function for transforming an atom that has been marked as as literal identifier
 transformLiteralIdentifier :: Env -> Env -> Env -> String -> IOThrowsError LispVal
-transformLiteralIdentifier defEnv outerEnv _ transform = do
+transformLiteralIdentifier defEnv outerEnv renameEnv transform = do
   isInDef <- liftIO $ isRecBound defEnv transform
-  if isInDef
+  isRenamed <- liftIO $ isRecBound renameEnv transform
+--  if (trace ("a = " ++ transform ++ " inDef = " ++ show isInDef ++ " isRnm = " ++ show isRenamed) isInDef) && not isRenamed
+--  TODO: isRenamed should only matter if the macro was originally defined within another macro
+  if isInDef -- && not isRenamed
      then do
           {- Variable exists in the environment the macro was defined in,
              so divert that value back into the environment of use. The value
