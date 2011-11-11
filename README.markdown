@@ -1,6 +1,6 @@
 ![husk Scheme](https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png)
 
-husk is a dialect of Scheme written in Haskell that implements a subset of the [R<sup>5</sup>RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Advanced R<sup>5</sup>RS features are provided including continuations, non-hygienic macros, and a full numeric tower.
+husk is a dialect of Scheme written in Haskell that implements a subset of the [R<sup>5</sup>RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Advanced R<sup>5</sup>RS features are provided including continuations, hygienic macros, and a full numeric tower.
 
 husk provides many features and is intended as a good choice for non-performance critical applications, as it is not a highly optimized Scheme. Rather, the goal of the project is to provide a tight integration between Haskell and Scheme while at the same time providing an opportunity for deeper understanding of both languages. In addition, by closely following the R<sup>5</sup>RS standard, the intent is to develop a Scheme that is as compatible as possible with other R<sup>5</sup>RS Schemes.
 
@@ -25,7 +25,7 @@ husk includes the following features from R<sup>5</sup>RS:
 - Read-Eval-Print-Loop (REPL) interpreter, with input driven by Haskeline to provide a rich user experience
 - Full numeric tower: includes support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types and other constraints from the R<sup>5</sup>RS specification.
 - Continuations: First-class continuations, call/cc, and call-with-values.
-- Non-hygienic Macros: High-level macros via define-syntax - *Note this is still somewhat of a work in progress* and while it works well enough that many derived forms are implemented in our standard library, you may still run into problems when defining your own macros.
+- Hygienic Macros: High-level macros via define-syntax - *Note this is still somewhat of a work in progress* - Macro support has improve significantly in the last few releases, and it works well enough that many derived forms are implemented in our standard library, but you may still run into problems when defining your own macros.
 
 As well as the following approved extensions:
 
