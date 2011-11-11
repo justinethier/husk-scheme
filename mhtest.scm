@@ -1,6 +1,7 @@
 ; Testing ability of a nested macro def to use a renamed var
+(define var-02 222)
 (let ()
-  (define var-02 1)
+  (set! var-02 1)
 ; ((lambda (var-02)
 
   (define-syntax test-template
