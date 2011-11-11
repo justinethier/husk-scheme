@@ -541,15 +541,15 @@ identifierMatches defEnv useEnv ident = do
 
 -- |Walk expanded code per Clinger
 walkExpanded :: Env -> Env -> Env -> Env -> Bool -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
-walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) expanded@(List (List l : ls)) = do
+walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) (List (List l : ls)) = do
   lst <- walkExpanded defEnv useEnv renameEnv cleanupEnv True isQuoted (List []) (List l)
   walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [lst]) (List ls)
 
-walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) transform@(List ((Vector v) : vs)) = do
+walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) (List ((Vector v) : vs)) = do
   List lst <- walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List []) (List $ elems v)
   walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [asVector lst]) (List vs)
 
-walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) transform@(List ((DottedList ds d) : ts)) = do
+walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) (List ((DottedList ds d) : ts)) = do
   List ls <- walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List []) (List ds)
   l <- walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List []) d
   walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [DottedList ls l]) (List ts)
@@ -570,17 +570,17 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
         -- Do we need to rename the keyword, or at least take that into account?
         _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax useEnv identifiers rules
         return $ Nil "" -- Sentinal value
-     otherwise -> throwError $ BadSpecialForm "Malformed define-syntax expression" transform
+     _ -> throwError $ BadSpecialForm "Malformed define-syntax expression" transform
    else if startOfList && a == "lambda" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
      then do
        case transform of
-         List (Atom _ : List vars : body) -> do
+         List (Atom _ : List vars : fbody) -> do
            -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
            env <- liftIO $ extendEnv renameEnv []
            renamedVars <- markBoundIdentifiers env cleanupEnv vars []
-           walkExpanded defEnv useEnv env cleanupEnv False isQuoted (List [Atom "lambda", renamedVars]) (List body)
+           walkExpanded defEnv useEnv env cleanupEnv False isQuoted (List [Atom "lambda", renamedVars]) (List fbody)
          -- lambda is malformed, just transform as normal atom...
-         otherwise -> walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
+         _ -> walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
      else if startOfList && isDefinedAsMacro && not isQuoted
              then do
                Syntax _ identifiers rules <- getNamespacedVar useEnv macroNamespace a
@@ -608,16 +608,14 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) (List (
   walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [t]) (List ts)
 
 -- Base case - empty transform
-walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ result@(List _) (List []) = do
-  return (result)
+walkExpanded _ _ _ _ _ _ result@(List _) (List []) = return result
 
 -- Single atom, rename (if necessary) and return
-walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted _ (Atom a) = do
-  expandAtom renameEnv (Atom a)
+walkExpanded _ _ renameEnv _ _ _ _ (Atom a) = expandAtom renameEnv (Atom a)
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
-walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ _ transform = return transform
+walkExpanded _ _ _ _ _ _ _ transform = return transform
 
 -- |Accept a list of bound identifiers from a lambda expression, and rename them
 --  Returns a list of the renamed identifiers as well as marking those identifiers
@@ -640,7 +638,7 @@ expandAtom renameEnv (Atom a) = do
        expanded <- getVar renameEnv a
        return expanded -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
      else return $ Atom a 
-expandAtom renameEnv a = return a
+expandAtom _ a = return a
 
 -- |Clean up any remaining renamed variables in the expanded code
 --  Only needed in special circumstances to deal with quoting.
@@ -656,20 +654,20 @@ expandAtom renameEnv a = return a
 --
 cleanExpanded :: Env -> Env -> Env -> Env -> Bool -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
 
-cleanExpanded defEnv useEnv renameEnv cleanupEnv _ isQQ (List result) expanded@(List (List l : ls)) = do
+cleanExpanded defEnv useEnv renameEnv cleanupEnv _ isQQ (List result) (List (List l : ls)) = do
   lst <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True isQQ (List []) (List l)
   cleanExpanded defEnv useEnv renameEnv cleanupEnv False isQQ (List $ result ++ [lst]) (List ls)
 
-cleanExpanded defEnv useEnv renameEnv cleanupEnv _ isQQ (List result) transform@(List ((Vector v) : vs)) = do
+cleanExpanded defEnv useEnv renameEnv cleanupEnv _ isQQ (List result) (List ((Vector v) : vs)) = do
   List lst <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True isQQ (List []) (List $ elems v)
   cleanExpanded defEnv useEnv renameEnv cleanupEnv False isQQ (List $ result ++ [asVector lst]) (List vs)
 
-cleanExpanded defEnv useEnv renameEnv cleanupEnv _ isQQ (List result) transform@(List ((DottedList ds d) : ts)) = do
+cleanExpanded defEnv useEnv renameEnv cleanupEnv _ isQQ (List result) (List ((DottedList ds d) : ts)) = do
   List ls <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True isQQ (List []) (List ds)
   l <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True isQQ (List []) d
   cleanExpanded defEnv useEnv renameEnv cleanupEnv False isQQ (List $ result ++ [DottedList ls l]) (List ts)
 
-cleanExpanded defEnv useEnv renameEnv cleanupEnv startOfList isQQ (List result) transform@(List (Atom a : ts)) = do
+cleanExpanded defEnv useEnv renameEnv cleanupEnv startOfList isQQ (List result) (List (Atom a : ts)) = do
   expanded <- tmpexpandAtom cleanupEnv $ Atom a
   case (startOfList, isQQ, expanded) of
     -- Unquote an expression by continuing to expand it as a macro form
@@ -682,19 +680,19 @@ cleanExpanded defEnv useEnv renameEnv cleanupEnv startOfList isQQ (List result) 
     (True, True, Atom "unquote") -> do 
         r <- walkExpanded defEnv useEnv renameEnv cleanupEnv True False (List $ result ++ [Atom "unquote"]) (List ts)
         return r
-    otherwise -> 
+    _ -> 
         cleanExpanded defEnv useEnv renameEnv cleanupEnv False isQQ (List $ result ++ [expanded]) (List ts)
  where
   -- TODO: figure out a way to simplify this code (perhaps consolidate with expandAtom)
   tmpexpandAtom :: Env -> LispVal -> IOThrowsError LispVal
-  tmpexpandAtom renameEnv (Atom a) = do
-    isDefined <- liftIO $ isRecBound renameEnv a -- Search parent Env's also
+  tmpexpandAtom _renameEnv (Atom _a) = do
+    isDefined <- liftIO $ isRecBound _renameEnv _a -- Search parent Env's also
     if isDefined 
        then do
-         expanded <- getVar renameEnv a
-         tmpexpandAtom renameEnv expanded -- Recursively expand
-       else return $ Atom a 
-  tmpexpandAtom renameEnv a = return a
+         expanded <- getVar _renameEnv _a
+         tmpexpandAtom _renameEnv expanded -- Recursively expand
+       else return $ Atom _a 
+  tmpexpandAtom _ _a = return _a
 
 -- Transform anything else as itself...
 cleanExpanded defEnv useEnv renameEnv cleanupEnv _ isQQ (List result) (List (t : ts)) = do
@@ -973,7 +971,7 @@ transformRule _ _ _ _ _ _ _ _ result@(List _) (List []) = do
 -- transform is an atom - if it is a list then there is no way this case can be reached.
 -- So... we do not need to worry about pattern variables here. No need to port that code
 -- from the above case.
-transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers _ _ _ (Atom transform) = do
+transformRule defEnv outerEnv localEnv _ _ identifiers _ _ _ (Atom transform) = do
   Bool isIdent <- findAtom (Atom transform) identifiers
   isPattVar <- liftIO $ isRecBound localEnv transform
   if isPattVar && not isIdent
@@ -986,7 +984,7 @@ transformRule _ _ _ _ _ _ _ _ _ transform = return transform
 
 -- |A helper function for transforming an atom that has been marked as as literal identifier
 transformLiteralIdentifier :: Env -> Env -> Env -> String -> IOThrowsError LispVal
-transformLiteralIdentifier defEnv outerEnv localEnv transform = do
+transformLiteralIdentifier defEnv outerEnv _ transform = do
   isInDef <- liftIO $ isRecBound defEnv transform
   if isInDef
      then do
