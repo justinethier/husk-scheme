@@ -69,7 +69,8 @@ mprepareApply env cont lisp = mfunc env cont lisp prepareApply
 mfunc :: Env -> LispVal -> LispVal -> (Env -> LispVal -> LispVal -> IOThrowsError LispVal) -> IOThrowsError LispVal
 mfunc env cont lisp func = do
   macroEval env lisp >>= (func env cont) 
-{- TODO: old code for updating env's in the continuation chain (see below)
+{- OBSOLETE:
+ old code for updating env's in the continuation chain (see below)
   if False --needToExtendEnv lisp
      then do
        expanded <- macroEval env lisp
@@ -82,7 +83,6 @@ mfunc env cont lisp func = do
 -}
 {- EXPERIMENTAL CODE FOR REPLACING ENV's in the continuation chain
    
-   TODO:
    This is a difficult problem to solve and this code will likely just
    end up going away because we are not going with this approach...
 
@@ -273,6 +273,15 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
             _ -> cpsUnquoteList e c (head unEvaled) (Just [List (tail unEvaled), List $ acc ++ [val] ])
         cpsUnquoteFld _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteFld"
 
+-- TODO: let-syntax
+--
+-- high-level design 
+--  - use extendEnv to create a new environment
+--  - read all macros into new Syntax objects in the new env
+--  - pick up execution of the body, perhaps just like how it is
+--    done today with a function body
+--
+
 eval env cont args@(List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
  bound <- liftIO $ isRecBound env "define-syntax"
  if bound
@@ -375,17 +384,8 @@ eval env cont args@(List (Atom "define" : DottedList (Atom var : fparams) vararg
   else do result <- (makeVarargs varargs env fparams fbody >>= defineVar env var)
           continueEval env cont result
 
--- TODO: let-syntax
---
--- high-level design 
---  - use extendEnv to create a new environment
---  - read all macros into new Syntax objects in the new env
---  - pick up execution of the body, perhaps just like how it is
---    done today with a function body
---
-
 eval env cont args@(List (Atom "lambda" : List fparams : fbody)) = do
- bound <- liftIO $ isRecBound env "lambda" -- TODO: all of these probably should use isRecBound
+ bound <- liftIO $ isRecBound env "lambda"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do result <- makeNormalFunc env fparams fbody
@@ -759,11 +759,10 @@ evalfuncApply _ = throwError $ NumArgs 2 []
 
 evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
 {-
--- TODO: I think the use of map here is causing the env to be overwritten when evaluating code
--- in files. this needs to be changed to use cps style...
+-- It would be nice to use CPS style below.
 --
--- TODO: this mostly works, but causes looping problems in t-cont. need to test to see if
--- those are an artifact of this change or a code problem in that test suite
+-- This code mostly works, but causes looping problems in t-cont. need to test to see if
+-- those are an artifact of this change or a code problem in that test suite:
   code <- load filename
   if not (null code)
      then continueEval env (Continuation env (Just $ SchemeBody code) (Just cont) Nothing Nothing) $ Nil "" 
