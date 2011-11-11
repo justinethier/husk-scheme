@@ -245,7 +245,7 @@
   '(((1 2)) ((4 5)) ((6 7)) ((8 9))))
 
 ; TODO: Issue #54:
-#|
+
 (define-syntax my-do/1
   (syntax-rules ()
      ((_ ((var init . step) ...)
@@ -282,7 +282,7 @@
                     ((= i 5) vec)
                      (vector-set! vec i i))
  (quote (loop (list vec vec) (list i (+ i 1)))))
-|#
+
 
 ; Issue #43:
 (define-syntax my-pair-test/06
