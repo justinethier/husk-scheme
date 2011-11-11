@@ -273,6 +273,31 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
             _ -> cpsUnquoteList e c (head unEvaled) (Just [List (tail unEvaled), List $ acc ++ [val] ])
         cpsUnquoteFld _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteFld"
 
+eval env cont args@(List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
+ bound <- liftIO $ isRecBound env "define-syntax"
+ if bound
+  then prepareApply env cont args -- if bound to a variable in this scope; call into it
+  else do 
+  {-
+   - FUTURE: Issue #15: there really ought to be some error checking of the syntax rules, 
+   -                    since they could be malformed...
+   - As it stands now, there is no checking until the code attempts to perform a macro transformation.
+   - At a minimum, should check identifiers to make sure each is an atom (see findAtom) 
+   -}
+    -- 
+    -- I think it seems to be a better solution to use this defEnv, but
+    -- that causes problems when a var is changed via (define) or (set!) since most
+    -- schemes interpret allow this change to propagate back to the point of definition
+    -- (or at least, when modules are not in play). See:
+    --
+    -- http://stackoverflow.com/questions/7999084/scheme-syntax-rules-difference-in-variable-bindings-between-let-anddefine
+    --
+    -- Anyway, this may come back. But not using it for now...
+    --
+    --    defEnv <- liftIO $ copyEnv env
+    _ <- defineNamespacedVar env macroNamespace keyword $ Syntax env identifiers rules
+    return $ Nil "" -- Sentinel value
+
 eval env cont args@(List [Atom "if", predic, conseq, alt]) = do
  bound <- liftIO $ isRecBound env "if"
  if bound

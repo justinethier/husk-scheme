@@ -19,6 +19,7 @@ transformation, the following components are considered:
 
  - Pattern (part of a rule that matches input)
  - Transform (what the macro "expands" into)
+ - Literal Identifiers (from the macro definition)
  - Input (the actual code in the user's program)
  - Environments of macro definition and macro use
 
@@ -27,7 +28,7 @@ At a high level, macro transformation is broken down into the following steps:
  1) Search for a rule that matches the input.
     During this process, any pattern variables in the input are loaded into a temporary environment
  2) If a rule matches,
- 3) Transcribe the rule's template by walking the transform, inserting pattern variables 
+ 3) Transcribe the rule's template by walking the template, inserting pattern variables 
     and renaming free identifiers as needed.
  4) Walk the expanded code, checking for each of the cases from Macros That Work. If a 
     case is found (such as a macro call or procedure abstraction) then the appropriate 
@@ -93,34 +94,9 @@ import Data.Array
 --needToExtendEnv (List [Atom "define-syntax", Atom _, (List (Atom "syntax-rules" : (List _ : _)))]) = True
 --needToExtendEnv _ = False 
 
-{- |macroEval
-Search for macro's in the AST, and transform any that are found.
-There is also a special case (define-syntax) that loads new rules. -}
+-- |macroEval
+--  Search for macro's in the AST, and transform any that are found.
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
-
--- Special case, just load up the syntax rules
--- TODO: would this be a better fit for core, as part of eval?
-macroEval env (List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
-  {-
-   - FUTURE: Issue #15: there really ought to be some error checking of the syntax rules, 
-   -                    since they could be malformed...
-   - As it stands now, there is no checking until the code attempts to perform a macro transformation.
-   - At a minimum, should check identifiers to make sure each is an atom (see findAtom) 
-   -}
-  _ <- do
-    -- 
-    -- I think it seems to be a better solution to use this defEnv, but
-    -- that causes problems when a var is changed via (define) or (set!) since most
-    -- schemes interpret allow this change to propagate back to the point of definition
-    -- (or at least, when modules are not in play). See:
-    --
-    -- http://stackoverflow.com/questions/7999084/scheme-syntax-rules-difference-in-variable-bindings-between-let-anddefine
-    --
-    -- Anyway, this may come back. But I am not using it for now...
-    --
-    --    defEnv <- liftIO $ copyEnv env
-    defineNamespacedVar env macroNamespace keyword $ Syntax env identifiers rules
-  return $ Nil "" -- Sentinal value
 
 {- Inspect code for macros
  -
