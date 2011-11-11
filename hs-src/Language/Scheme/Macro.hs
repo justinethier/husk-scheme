@@ -332,11 +332,7 @@ flagUnmatchedVars _ _ _ _ _ _ = return $ Bool True
 --  matches that in the pattern matching code.
 flagUnmatchedAtom :: Env -> Env -> Env -> LispVal -> String -> Bool -> IOThrowsError LispVal 
 flagUnmatchedAtom defEnv outerEnv localEnv identifiers p improperListFlag = do
-
--- TODO: use defEnv
-
   isDefined <- liftIO $ isBound localEnv p
---  isLexicallyDefinedVar <- liftIO $ isBound outerEnv p
   isIdent <- findAtom (Atom p) identifiers
   if isDefined 
      -- Var already defined, skip it...
@@ -345,7 +341,6 @@ flagUnmatchedAtom defEnv outerEnv localEnv identifiers p improperListFlag = do
              Bool True -> do
                            matches <- identifierMatches defEnv outerEnv p
                            if not matches 
-{-isLexicallyDefinedVar-}   -- TODO: Is this good enough? what about renameEnv?
                              then return $ Bool True
                              else do _ <- flagUnmatchedVar localEnv p improperListFlag
                                      continueFlagging
@@ -411,8 +406,6 @@ checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsis
 
              -- Var is part of a 0-to-many match, store up in a list...
      then do isDefined <- liftIO $ isBound localEnv pattern
---             isLexicallyDefinedVar <- liftIO $ isBound outerEnv pattern
-
              --
              -- If pattern is a literal identifier, need to ensure
              -- input matches that literal, or that (in this case)
@@ -424,7 +417,7 @@ checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsis
                     case input of
                         Atom inpt -> do
                             if (pattern == inpt)  
-                               then if (doesIdentMatch) && (not isRenamed)  --isLexicallyDefinedVar == False -- && not isRenamed 
+                               then if (doesIdentMatch) && (not isRenamed)
                                        -- Var is not bound in outer code; proceed
                                        then do
                                          -- Set variable in the local environment
@@ -464,30 +457,13 @@ checkLocal defEnv outerEnv localEnv renameEnv identifiers ellipsisLevel ellipsis
             -- No literal identifier, just load up the var
             _ -> do _ <- defineVar localEnv pattern input
                     return $ Bool True
-{- TODO:
- the issue with this is that sometimes the var needs to be preserved and not have its value directly inserted.
- the real fix is to rename any identifiers bound in the macro transform. for example, (let ((temp ...)) ...) should
- have the variable renamed to temp-1 (for example)
-
-
-            _ -> case input of
-                    Atom inpt -> do
-                       isLexicallyDefinedInput <- liftIO $ isBound outerEnv inpt -- Var defined in scope outside macro
-                       if isLexicallyDefinedInput
-                           then do _ <- defineVar localEnv pattern ((Nil inpt)) -- Var defined outside macro, flag as such for transform code
--- TODO: flag as such from the above ellipsis code as well            
-                                   return $ Bool True
-                           else do _ <- defineVar localEnv pattern input
-                                   return $ Bool True
-                    _ -> do _ <- defineVar localEnv pattern input
-                            return $ Bool True
--}                            
     where
       -- Store pattern variable in a nested list
       -- FUTURE: ellipsisLevel should probably be used here for validation.
       -- 
-      --         some notes: (above): need to flag the ellipsisLevel of this variable.
-      --                     also, it is an error if, for an existing var, ellipsisLevel input does not match the var's stored level
+      -- some notes:
+      --  (above): need to flag the ellipsisLevel of this variable.
+      --  also, it is an error if, for an existing var, ellipsisLevel input does not match the var's stored level
       --
       addPatternVar isDefined ellipLevel ellipIndex pat val
         | isDefined = do v <- getVar localEnv pat
@@ -553,9 +529,9 @@ identifierMatches :: Env -> Env -> String -> IOThrowsError Bool
 identifierMatches defEnv useEnv ident = do
   atDef <- liftIO $ isRecBound defEnv ident
   atUse <- liftIO $ isRecBound useEnv ident
-  matchIdent atDef atUse --defEnv useEnv ident
+  matchIdent atDef atUse
 
- where --matchIdent :: Bool -> Bool -> Env -> Env
+ where
   matchIdent False False = return True -- Never defined, so match
   matchIdent True True = do -- Defined in both places, check for equality
     d <- getVar defEnv ident
@@ -582,13 +558,6 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
   
  Atom a <- expandAtom renameEnv (Atom aa)
 
- {- TODO: need to work through how to handle quoting atoms that are renamed
- Atom aTmp <- expandAtom renameEnv (Atom aa)
- let a = if inputIsQuoted
-            then aa
-            else aTmp
--}
-
  -- If a macro is quoted, keep track of it and do not invoke rules below for
  -- procedure abstraction or macro calls 
  let isQuoted = inputIsQuoted || (a == "quote") || (a == "quasiquote")
@@ -598,7 +567,7 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
  if (startOfList) && a == "define-syntax" && not isQuoted
    then case ts of
      [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] -> do
-     -- TODO: do we need to rename the keyword, or at least take that into account?
+        -- Do we need to rename the keyword, or at least take that into account?
         _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax useEnv identifiers rules
         return $ Nil "" -- Sentinal value
      otherwise -> throwError $ BadSpecialForm "Malformed define-syntax expression" transform
@@ -615,8 +584,6 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
      else if startOfList && isDefinedAsMacro && not isQuoted
              then do
                Syntax _ identifiers rules <- getNamespacedVar useEnv macroNamespace a
-{- TODO: below should be defEnv instead of useEnv, will be switching over later -}
-
                -- A child renameEnv is not created because for a macro call there is no way an
                -- renamed identifier inserted by the macro could override one in the outer env.
                --
@@ -627,12 +594,14 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
              else if isQuoted
                      then do
                         -- Cleanup all symbols in the quoted code
-                        --
-                        -- TODO: This becomes a problem if there is an unquote:
-                        -- exp = ((lambda (name2) (quasiquote (list (unquote name2) (quote (unquote name))))) (quote a))
-                        List cleaned <- cleanExpanded defEnv useEnv renameEnv cleanupEnv True isQuasiQuoted (List []) (List ts)
-                        walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ (Atom a : cleaned)) (List [])
-                     else walkExpanded defEnv useEnv renameEnv cleanupEnv False isQuoted (List $ result ++ [Atom a]) (List ts)
+                        List cleaned <- cleanExpanded 
+                                          defEnv useEnv renameEnv cleanupEnv 
+                                          True isQuasiQuoted 
+                                          (List []) (List ts)
+                        return $ List $ result ++ (Atom a : cleaned)
+                     else walkExpanded defEnv useEnv renameEnv cleanupEnv 
+                                       False isQuoted 
+                                      (List $ result ++ [Atom a]) (List ts)
 
 -- Transform anything else as itself...
 walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted (List result) (List (t : ts)) = do
@@ -646,10 +615,6 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ result@(List _) (List []) = 
 walkExpanded defEnv useEnv renameEnv cleanupEnv _ isQuoted _ (Atom a) = do
   expandAtom renameEnv (Atom a)
 
--- TODO (?):
--- Transform is a single var, just look it up.
---walkExpanded defEnv useEnv renameEnv _ (Atom transform) = do
-
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
 walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ _ transform = return transform
@@ -660,13 +625,11 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv _ _ _ transform = return transfo
 markBoundIdentifiers :: Env -> Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
 markBoundIdentifiers env cleanupEnv (Atom v : vs) renamedVars = do
   Atom renamed <- _gensym v
---  _ <- defineVar (trace ("renamed var:" ++ v ++ " to: " ++ show renamed) env) v $ Atom renamed
   _ <- defineVar env v $ Atom renamed
   _ <- defineVar cleanupEnv renamed $ Atom v
   markBoundIdentifiers env cleanupEnv vs $ renamedVars ++ [Atom renamed]
 markBoundIdentifiers env cleanupEnv (_: vs) renamedVars = markBoundIdentifiers env cleanupEnv vs renamedVars
 markBoundIdentifiers _ _ [] renamedVars = return $ List renamedVars
---markBoundIdentifiers _ input _ = throwError $ BadSpecialForm "Unexpected input to markBoundIdentifiers" $ List input 
 
 -- |Recursively expand an atom that may have been renamed multiple times
 expandAtom :: Env -> LispVal -> IOThrowsError LispVal
@@ -675,7 +638,7 @@ expandAtom renameEnv (Atom a) = do
   if isDefined 
      then do
        expanded <- getVar renameEnv a
-       return expanded -- TODO: temporarily disabling this; just expand once. expandAtom renameEnv expanded -- Recursively expand
+       return expanded -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
      else return $ Atom a 
 expandAtom renameEnv a = return a
 
@@ -722,7 +685,7 @@ cleanExpanded defEnv useEnv renameEnv cleanupEnv startOfList isQQ (List result) 
     otherwise -> 
         cleanExpanded defEnv useEnv renameEnv cleanupEnv False isQQ (List $ result ++ [expanded]) (List ts)
  where
-  -- TODO: if this works, figure out a way to simplify this code (perhaps consolidate with expandAtom)
+  -- TODO: figure out a way to simplify this code (perhaps consolidate with expandAtom)
   tmpexpandAtom :: Env -> LispVal -> IOThrowsError LispVal
   tmpexpandAtom renameEnv (Atom a) = do
     isDefined <- liftIO $ isRecBound renameEnv a -- Search parent Env's also
@@ -741,10 +704,6 @@ cleanExpanded defEnv useEnv renameEnv cleanupEnv _ isQQ (List result) (List (t :
 cleanExpanded _ _ _ _ _ _ result@(List _) (List []) = do
   return result
 
--- TODO (?):
--- Transform is a single var, just look it up.
---cleanExpanded renameEnv _ (Atom transform) = do
-
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
 cleanExpanded _ _ _ _ _ _ _ transform = return transform
@@ -753,12 +712,10 @@ cleanExpanded _ _ _ _ _ _ _ transform = return transform
 {- |Transform input by walking the tranform structure and creating a new structure
     with the same form, replacing identifiers in the tranform with those bound in localEnv 
 
-TODO: this is essentially Clinger's rewrite step, however it needs to be extended to do all that is req'd, including:
-
+ This is essentially the rewrite step from MTW, and does all that is req'd, including:
  - renaming of free variables
- - collecting a list of variables that are renamed (perhaps in a new Env parameter)
- - divert-ing bindings back into the resultant Env (not 100% clear on this, need to be careful)
- - TODO: anything else?
+ - collecting an env of variables that are renamed
+ - diverting bindings back into the Env of use (outer env)
 -}
 transformRule :: Env        -- ^ Environment the macro was defined in
               -> Env        -- ^ Outer, enclosing environment
@@ -912,13 +869,6 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsis
                                      _ -> -- No matches for var
                                           continueTransform defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsisLevel ellipsisIndex result $ tail ts
 
-{- TODO:                      Nil input -> do -- Var lexically defined outside of macro, load from there
---
--- notes: this could be a problem, because we need to signal the end of the ... and do not want an infinite loop.
---        but we want the lexical value as well. need to think about this in more detail to get a truly workable solution
---
-                                  v <- getVar outerEnv input
-                                  transformRule defEnv outerEnv localEnv renameEnv ellipsisIndex (List $ result ++ [v]) (List $ tail ts) unused -}
                       Nil "" -> -- No matches, keep going
                                 continueTransform defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsisLevel ellipsisIndex result $ tail ts
                       v@(_) -> transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsisLevel ellipsisIndex (List $ result ++ [v]) (List $ tail ts)
@@ -928,11 +878,9 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsis
     noEllipsis isDefined = do
       isImproperPattern <- loadNamespacedBool "improper pattern"
       isImproperInput <- loadNamespacedBool "improper input"
---      t <- if (trace ("a = " ++ show a ++ "isDefined = " ++ show isDefined) isDefined)
       t <- if (isDefined)
               then do
                    var <- getVar localEnv a
---                   case (trace ("var = " ++ show var) var) of
                    case (var) of
                      Nil "" -> do 
                         -- Fix for issue #42: A 0 match case for var (input ran out in pattern), flag to calling code
@@ -969,11 +917,11 @@ transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers ellipsis
                   if isAlreadyRenamed
                      then do
                        renamed <- getNamespacedVar localEnv "renamed" a
-                       --return (trace ("macro renamed var:" ++ a ++ " to: " ++ show renamed) renamed)
                        return renamed
                      else do
                        Atom renamed <- _gensym a
-                       _ <- defineNamespacedVar localEnv "renamed" a $ Atom renamed -- Keep track of vars that are renamed; maintain reverse mapping
+                       _ <- defineNamespacedVar localEnv "renamed" a $ Atom renamed
+                       -- Keep track of vars that are renamed; maintain reverse mapping
                        _ <- defineVar cleanupEnv renamed $ Atom a -- Global record for final cleanup of macro
                        _ <- defineVar (renameEnv) renamed $ Atom a -- Keep for Clinger
                        return $ Atom renamed
@@ -1021,14 +969,12 @@ transformRule _ _ _ _ _ _ _ _ result@(List _) (List []) = do
 
 -- Transform a single var
 --
--- The nice thing about this test case is that the only way we can get here is if the
+-- The nice thing about this case is that the only way we can get here is if the
 -- transform is an atom - if it is a list then there is no way this case can be reached.
 -- So... we do not need to worry about pattern variables here. No need to port that code
--- here from the above case.
+-- from the above case.
 transformRule defEnv outerEnv localEnv renameEnv cleanupEnv identifiers _ _ _ (Atom transform) = do
   Bool isIdent <- findAtom (Atom transform) identifiers
--- TODO: does the logic below need to be migrated to the List(Atom) case above? Or to put it another way,
---  does that function handle the cases correctly when a literal is in the template that is not listed in 'identifiers'????
   isPattVar <- liftIO $ isRecBound localEnv transform
   if isPattVar && not isIdent
      then getVar localEnv transform
@@ -1071,8 +1017,6 @@ defined, instead of trying to store the special form to a variable somehow.
         if)))
 (write (let ((if 1)) (test-template)) )
 (write (let ((if 2)) (test-template)) )
-
-
 -}
          return $ Atom transform
 
