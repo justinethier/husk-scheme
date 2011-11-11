@@ -282,7 +282,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
 --    done today with a function body
 --
 
-eval env cont args@(List [Atom "define-syntax", Atom keyword, syntaxRules@(List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
+eval env cont args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
  bound <- liftIO $ isRecBound env "define-syntax"
  if bound
   then prepareApply env cont args -- if bound to a variable in this scope; call into it
