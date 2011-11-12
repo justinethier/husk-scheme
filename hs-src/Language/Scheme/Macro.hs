@@ -566,6 +566,18 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv startOfList inputIsQuoted (List 
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
 {- 
+Some high-level design notes on how this could be made to work:
+
+Note from http://www.cs.indiana.edu/~dyb/pubs/LaSC-5-4-pp295-326.pdf
+
+Also, internal deﬁne-syntax forms may appear wherever internal deﬁne forms are
+permitted, in which case the deﬁnitions behave as if introduced by letrec-syntax
+
+so we could transform a letrec-syntax form into another using define-syntax.
+let-syntax could be handled in the same way, although we would need to walk
+the macro to ensure that none of the introduced macros reference each other.
+
+
  if (startOfList) && a == "let-syntax" && not isQuoted -- TODO: letrec-syntax, and a better way to organize all this
   then case ts of
     List bindings : body -> do
