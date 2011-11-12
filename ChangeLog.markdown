@@ -1,3 +1,7 @@
+v3.4.2
+------
+Many improvements and bug fixes for let-syntax and letrec-syntax.
+
 v3.4.1
 ------
 Added experimental support for let-syntax and letrec-syntax.
