@@ -125,12 +125,12 @@
           var-02))))
       
       ((lambda ()
-        (assert/equal (test-template))
-        (assert/equal (let ((var-02 1)) (test-template)))
-        (assert/equal (let ((var-02 2)) (test-template)))
-        (assert/equal (let ((var-02 2)) (test)))
+        (assert/equal (test-template) 1)
+        (assert/equal (let ((var-02 1)) (test-template)) 1)
+        (assert/equal (let ((var-02 2)) (test-template)) 1)
+        (assert/equal (let ((var-02 2)) (test)) 1)
         (define var-02 3)
-        (assert/equal (test-template))))) 
+        (assert/equal (test-template) 1)))) 
       ) 1))))
 
 (unit-test-handler-results)
