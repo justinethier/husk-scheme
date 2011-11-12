@@ -1237,14 +1237,14 @@ asVector lst = (Vector $ (listArray (0, length lst - 1)) lst)
 -- |Helper function to load macros from a let*-syntax expression
 loadMacros :: Env       -- ^ Parent environment containing the let*-syntax expression
            -> Env       -- ^ Environment of the let*-syntax body
+           -> Maybe Env -- ^ Environment of renamed variables, if applicable
+           -> Bool      -- ^ True if the macro was defined inside another macro
            -> [LispVal] -- ^ List containing syntax-rule definitions
            -> IOThrowsError LispVal -- ^ A dummy value, unless an error is thrown
-loadMacros e be (List [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] : bs) = do
+loadMacros e be re dim (List [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] : bs) = do
   -- TODO: error checking
-  _ <- defineNamespacedVar be macroNamespace keyword $ Syntax (Just e)
-        (Nothing) -- TODO: copy of renameEnv, if this func is used from Macro module
-        False -- TODO: make a param if we call this func from Macro module
-        identifiers rules
-  loadMacros e be bs
-loadMacros e be [] = return $ Nil ""
-loadMacros _ _ form = throwError $ BadSpecialForm "Unable to evaluate form" $ List form 
+  _ <- defineNamespacedVar be macroNamespace keyword $ 
+        Syntax (Just e) re dim identifiers rules
+  loadMacros e be re dim bs
+loadMacros _ _ _ _ [] = return $ Nil ""
+loadMacros _ _ _ _ form = throwError $ BadSpecialForm "Unable to evaluate form" $ List form 

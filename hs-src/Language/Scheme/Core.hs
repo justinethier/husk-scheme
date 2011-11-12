@@ -284,7 +284,7 @@ eval env cont (List (Atom "let-syntax" : List bindings : body)) = do
 --    done today with a function body
 --
   bodyEnv <- liftIO $ extendEnv env []
-  _ <- loadMacros env bodyEnv bindings
+  _ <- loadMacros env bodyEnv Nothing False bindings
   continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody body) (Just cont) Nothing Nothing) $ Nil "" 
 
 eval env cont args@(List (Atom "letrec-syntax" : List bindings : body)) = do
@@ -294,7 +294,7 @@ eval env cont args@(List (Atom "letrec-syntax" : List bindings : body)) = do
   -- the letrec's environment, instead of the parent env. Not sure if this is 100% correct but it
   -- is good enough to pass the R5RS test case so it will be used as a rudimentary implementation 
   -- for now...
-  _ <- loadMacros bodyEnv bodyEnv bindings
+  _ <- loadMacros bodyEnv bodyEnv Nothing False bindings
   continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody body) (Just cont) Nothing Nothing) $ Nil "" 
 
 eval env cont args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
