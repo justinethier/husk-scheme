@@ -104,4 +104,33 @@
     (assert/equal (test-template-ls) 1)))) 
   ) 1))
 
+; A series of test cases demonstrating that divert works
+; in the case of a nested let-syntax expression.
+;
+; In this example, x is diverted back into the enclosing env.
+((lambda ()
+    (define x 1)
+    (define-syntax test
+     (syntax-rules (x)
+      ((_)
+       x)))
+    
+    ;(let () ;-syntax ()
+    (let-syntax ()
+     ((lambda (var-02)
+    
+      (let-syntax ((test-template
+       (syntax-rules ()
+         ((_)
+          var-02))))
+      
+      ((lambda ()
+        (assert/equal (test-template))
+        (assert/equal (let ((var-02 1)) (test-template)))
+        (assert/equal (let ((var-02 2)) (test-template)))
+        (assert/equal (let ((var-02 2)) (test)))
+        (define var-02 3)
+        (assert/equal (test-template))))) 
+      ) 1))))
+
 (unit-test-handler-results)
