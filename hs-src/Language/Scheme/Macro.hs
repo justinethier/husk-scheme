@@ -621,15 +621,22 @@ the macro to ensure that none of the introduced macros reference each other.
   else 
 -}
 
-{-
-TODO: need to call a new function to scan for define (and set! ??) forms. 
-if found, need to add an entry to renameEnv (?) so as to get the transLiteral
-code to work. otherwise there is no way for that code to know that a (define)
-called within a macro is inserting a new binding.
-do not actually need to do anything to the (define) form, just mark somehow
-that it is inserting a binding for the var
--}
+{- TODO:
+walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
+    "let-syntax" 
+    (List bindings : body)
+--    ts@([Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))])
+    False _ = do
+        bodyEnv <- liftIO $ extendEnv defEnv []
+        _ <- loadMacros defEnv 
+{-    
+        _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax (Just useEnv) (Just renameEnvClosure) True identifiers rules
+        return $ Nil "" -- Sentinal value
+        -}
 
+walkExpandedAtom _ _ _ _ _ True _ _ "let-syntax" ts False _ = do
+  throwError $ BadSpecialForm "Malformed let-syntax expression" $ List (Atom "let-syntax" : ts)
+-}
 walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
     "define-syntax" 
     ts@([Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))])
@@ -640,6 +647,18 @@ walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List
         return $ Nil "" -- Sentinal value
 walkExpandedAtom _ _ _ _ _ True _ _ "define-syntax" ts False _ = do
   throwError $ BadSpecialForm "Malformed define-syntax expression" $ List (Atom "define-syntax" : ts)
+
+
+{-
+ - Notes regarding define and set
+ -
+TODO: need to call a new function to scan for define (and set! ??) forms. 
+if found, need to add an entry to renameEnv (?) so as to get the transLiteral
+code to work. otherwise there is no way for that code to know that a (define)
+called within a macro is inserting a new binding.
+do not actually need to do anything to the (define) form, just mark somehow
+that it is inserting a binding for the var
+-}
 
 walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
     "define" 
