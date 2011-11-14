@@ -27,7 +27,14 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 import Text.Parsec.Language
 import Text.Parsec.Prim (ParsecT)
 import qualified Text.Parsec.Token as P
-import Data.Functor.Identity (Identity)
+-- This was added by pull request #63 as part of a series of fixes
+-- to get husk to build on ghc 7.2.2
+--
+-- For now this has been removed to allow husk to support the older
+-- GHC 6.x.x series. But if removing this breaks things on 7.2 then 
+-- it will force a "real" solution...
+--
+--import Data.Functor.Identity (Identity)
 
 lispDef :: LanguageDef ()
 lispDef 
@@ -42,23 +49,23 @@ lispDef
   , P.caseSensitive  = True
   } 
 
-lexer :: P.GenTokenParser String () Identity
+--lexer :: P.GenTokenParser String () Identity
 lexer = P.makeTokenParser lispDef
 
-dot :: ParsecT String () Identity String
+--dot :: ParsecT String () Identity String
 dot = P.dot lexer
 
-parens :: ParsecT String () Identity a -> ParsecT String () Identity a
+--parens :: ParsecT String () Identity a -> ParsecT String () Identity a
 parens = P.parens lexer
 
-identifier :: ParsecT String () Identity String
+--identifier :: ParsecT String () Identity String
 identifier = P.identifier lexer
 
 -- TODO: typedef. starting point was: whiteSpace :: CharParser ()
-whiteSpace :: ParsecT String () Identity ()
+--whiteSpace :: ParsecT String () Identity ()
 whiteSpace = P.whiteSpace lexer
 
-lexeme :: ParsecT String () Identity a -> ParsecT String () Identity a
+--lexeme :: ParsecT String () Identity a -> ParsecT String () Identity a
 lexeme = P.lexeme lexer
 
 symbol :: Parser Char
