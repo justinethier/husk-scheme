@@ -48,6 +48,17 @@ isNamespacedRecBoundWUpper upperEnvRef envRef namespace var = do
                       Nothing -> return False -- Var never found
 -}
 
+-- |Show the contents of an environment
+printEnv :: Env -> IO String
+printEnv env = do
+  binds <- liftIO $ readIORef $ bindings env
+  l <- mapM showVar binds 
+  return $ unlines l
+ where 
+  showVar ((_, name), val) = do
+    v <- liftIO $ readIORef val
+    return $ name ++ ": " ++ show v
+
 -- |Create a deep copy of an environment
 copyEnv :: Env -> IO Env
 copyEnv env = do
