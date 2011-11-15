@@ -1,5 +1,7 @@
 v3.4.1
 ------
+Added limited support for let-syntax and letrec-syntax.
+
 Bug fixes:
 
 - Fixed a nasty issue where the macro pattern matching code would not properly reset itself when transcribing a macro containing an ellipsis in the middle of a list. This caused data to be missing in the transformed code.
