@@ -751,7 +751,14 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv _ True _ (List _)
 -- TODO: why do we assume that defEnv is the same as the one defined for the macro? Should read
 -- this out of the Syntax object
       Syntax _ (Just renameClosure) definedInMacro identifiers rules -> do 
-         macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
+         -- A hack that will 
+         -- Make a pass across the macro body, marking any instances of renamed vars
+         --
+         --  TODO: assume needs to be extended to the 2 cases below... anywhere else?
+         --  TODO: can cleanExpanded actually be used for this purpose? There is other logic
+         --        in there...
+         List exp <- cleanExpanded defEnv useEnv divertEnv renameEnv renameEnv True False False (List []) (List ts)
+         macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : exp))
       Syntax (Just _defEnv) _ definedInMacro identifiers rules -> do 
         macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : (trace ("ts = " ++ show ts) ts)))
       Syntax Nothing _ definedInMacro identifiers rules -> do 
