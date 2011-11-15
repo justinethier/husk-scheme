@@ -129,7 +129,35 @@
     (m))))
  "outer")
 
+; Examples from the source to R5RS pitfall 3.3
+(assert/equal
+  (let ((a 1)) 
+     (letrec-syntax 
+         ((foo (syntax-rules () 
+                 ((_ b) 
+                  (bar a b)))) 
+          (bar (syntax-rules () 
+                 ((_ c d) 
+                  (cons c (let ((c 3)) 
+                            (list d c 'c))))))) 
+       (let ((a 2)) 
+         (foo a)))) 
+  '(1 2 3 a))
 
+(assert/equal 
+  (let ((a 1)) 
+     (define-syntax 
+         foo (syntax-rules () 
+                 ((_ b) 
+                  (bar a b)))) 
+     (define-syntax
+          bar (syntax-rules () 
+                 ((_ c d) 
+                  (cons c (let ((c 3)) 
+                            (list d c 'c)))))) 
+       (let ((a 2)) 
+         (foo a)))
+  '(1 2 3 a))
 
 #|
 ; if marked as a literal identifier so it is not loaded as a pattern variable...
