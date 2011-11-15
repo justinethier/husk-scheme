@@ -748,15 +748,27 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv _ True _ (List _)
     False True = do
     syn <- getNamespacedVar useEnv macroNamespace (trace ("atom = " ++ a) a)
     case syn of
--- TODO: why do we assume that defEnv is the same as the one defined for the macro? Should read
--- this out of the Syntax object
+--
+-- Note:
+--
+-- Why do we assume that defEnv is the same as the one defined for the macro? Should read
+-- this out of the Syntax object, right?
+--
+-- A) I think this is because for a macro with a renameClosure, it may only be defined
+--    within another macro. So defEnv is not modified by this macro definition, and
+--    there is no need to insert it.
+--
       Syntax _ (Just renameClosure) definedInMacro identifiers rules -> do 
-         -- A hack that will 
-         -- Make a pass across the macro body, marking any instances of renamed vars
+         -- Before expanding the macro, make a pass across the macro body to mark
+         -- any instances of renamed variables. 
+         -- 
+         -- It seems this does not need to be done in the two cases below. 
+         -- Presumably this is because in those cases there is no rename 
+         -- environment inserted by the macro call, so no information is lost.
          --
-         --  TODO: assume needs to be extended to the 2 cases below... anywhere else?
-         --  TODO: can cleanExpanded actually be used for this purpose? There is other logic
-         --        in there...
+         -- I am still concerned that this may highlight a flaw in the husk
+         -- implementation, and that this solution may not be complete.
+         --
          List exp <- cleanExpanded defEnv useEnv divertEnv renameEnv renameEnv True False False (List []) (List ts)
          macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : exp))
       Syntax (Just _defEnv) _ definedInMacro identifiers rules -> do 
