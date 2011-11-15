@@ -8,7 +8,7 @@ Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design p
 
 Feature List
 ------------
-husk includes the following features from R<sup>5</sup>RS:
+husk includes most features from R<sup>5</sup>RS, including:
 
 - Primitive data types and their standard forms, including string, char, numbers (integer, rational, floating point, and complex), list, pair, vector, and symbols
 - Proper tail recursion
