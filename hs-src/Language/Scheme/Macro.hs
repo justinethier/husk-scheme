@@ -587,8 +587,26 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
  let isQuoted = inputIsQuoted || (a == "quote") || (a == "quasiquote")
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
- walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result) 
-                  (trace ("walkExAtom, a = " ++ a) a) ts isQuoted isDefinedAsMacro
+-- the problem with pitfall 3.3 is that let7 is a variable that is renamed twice, but it is only
+-- expanded once, and never the second time (which would encounter let and trigger the necessary
+-- handler). 
+--
+-- Anyway, this is a quick hack to explore recursively expanding the atom. it actually passes the
+-- test but appears to break other test cases
+ if isDefinedAsMacro 
+     || not startOfList
+     || a == aa
+     || a == "let-syntax" 
+     || a == "letrec-syntax" 
+     || a == "define-syntax" 
+     || a == "define"  
+     || a == "set!"
+     || a == "lambda"
+    then  walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result)            (trace ("walkExAtom, a = " ++ a) a) ts isQuoted isDefinedAsMacro
+    -- A hack to look up the
+    else walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result) (List (Atom a : ts))
+-- END  HACK
+
 
 -- Transform anything else as itself...
 walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (t : ts)) = do
