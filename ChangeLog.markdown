@@ -1,11 +1,10 @@
 v3.4.1
 ------
-Added very limited support for let-syntax and letrec-syntax. Currently these forms
-are not supported when used within a macro call or definition.
+Added experimental support for let-syntax and letrec-syntax.
 
 Bug fixes:
 
-- Fixed a nasty issue where the macro pattern matching code would not properly reset itself when transcribing a macro containing an ellipsis in the middle of a list. This caused data to be missing in the transformed code.
+- Fixed a nasty issue where the macro pattern matching code would not properly reset itself when transcribing a macro containing an ellipsis in the middle of a list. For example: `(a ... b c)`. This caused the expanded macro to be incomplete and/or malformed.
 - Fixed a bug that would cause the evaluator to terminate if define-syntax was called within a nested scope. 
 
 v3.4
