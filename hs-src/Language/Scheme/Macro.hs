@@ -589,6 +589,16 @@ the macro to ensure that none of the introduced macros reference each other.
     -- TODO: error
   else 
 -}
+
+
+TODO: need to call a new function to scan for define (and set! ??) forms. 
+if found, need to add an entry to renameEnv (?) so as to get the transLiteral
+code to work. otherwise there is no way for that code to know that a (define)
+called within a macro is inserting a new binding.
+do not actually need to do anything to the (define) form, just mark somehow
+that it is inserting a binding for the var
+
+
  if (startOfList) && a == "define-syntax" && not isQuoted
    then case ts of
      [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] -> do
