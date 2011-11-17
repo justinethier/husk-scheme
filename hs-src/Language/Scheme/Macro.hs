@@ -587,6 +587,11 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
  let isQuoted = inputIsQuoted || (a == "quote") || (a == "quasiquote")
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
+
+ -- Hypothesis: OK for a mangled name to proceed if it is known by the expanded code
+ isDiverted <- liftIO $ isRecBound divertEnv a
+ isMacroBound <- liftIO $ isRecBound renameEnv a
+ isLocalRename <- liftIO $ isNamespacedRecBound renameEnv "renamed" a
 -- the problem with pitfall 3.3 is that let7 is a variable that is renamed twice, but it is only
 -- expanded once, and never the second time (which would encounter let and trigger the necessary
 -- handler). 
@@ -594,8 +599,11 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
 -- Anyway, this is a quick hack to explore recursively expanding the atom. it actually passes the
 -- test but appears to break other test cases
  if isDefinedAsMacro 
+     || isDiverted
+     || (isMacroBound && not isLocalRename)
      || not startOfList
      || a == aa
+     || a == "if" -- A complete hack I think, unless there is any way to justify this as preserving a keyword? 
      || a == "let-syntax" 
      || a == "letrec-syntax" 
      || a == "define-syntax" 
@@ -603,6 +611,7 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
      || a == "set!"
      || a == "lambda"
     then  walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result)            (trace ("walkExAtom, a = " ++ a) a) ts isQuoted isDefinedAsMacro
+--    else  walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result)            (trace ("walkExAtom, a = " ++ a) a) ts isQuoted isDefinedAsMacro
     -- A hack to look up the
     else walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result) (List (Atom a : ts))
 -- END  HACK
@@ -1128,6 +1137,7 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
                      else do
                        Atom renamed <- _gensym a
                        _ <- defineNamespacedVar localEnv "renamed" a $ Atom renamed
+                       _ <- defineNamespacedVar renameEnv "renamed" a $ Atom renamed
                        -- Keep track of vars that are renamed; maintain reverse mapping
                        _ <- defineVar cleanupEnv renamed $ Atom a -- Global record for final cleanup of macro
                        _ <- defineVar (renameEnv) renamed $ Atom a -- Keep for Clinger
