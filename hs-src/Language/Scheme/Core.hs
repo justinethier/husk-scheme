@@ -274,7 +274,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
         cpsUnquoteFld _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteFld"
 
 -- A rudimentary implementation of let-syntax
-eval env cont args@(List (Atom "let-syntax" : List bindings : body)) = do
+eval env cont (List (Atom "let-syntax" : List bindings : body)) = do
   -- TODO: check if let-syntax has been rebound?
 --
 -- high-level design 
@@ -319,7 +319,7 @@ eval env cont args@(List [Atom "define-syntax", Atom keyword, (List (Atom "synta
     -- Anyway, this may come back. But not using it for now...
     --
     --    defEnv <- liftIO $ copyEnv env
-    _ <- defineNamespacedVar env macroNamespace keyword $ Syntax (Just env) Nothing identifiers rules
+    _ <- defineNamespacedVar env macroNamespace keyword $ Syntax (Just env) Nothing False identifiers rules
     continueEval env cont $ Nil "" 
 
 eval env cont args@(List [Atom "if", predic, conseq, alt]) = do

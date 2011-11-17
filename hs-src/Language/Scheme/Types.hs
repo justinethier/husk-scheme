@@ -154,6 +154,7 @@ data LispVal = Atom String
  | Syntax { synClosure :: Maybe Env       -- ^ Code env in effect at definition time, if applicable
           , synRenameClosure :: Maybe Env -- ^ Renames (from macro hygiene) in effect at def time;
                                           --   only applicable if this macro defined inside another macro.
+          , synDefinedInMacro :: Bool
           , synIdentifiers :: [LispVal]   -- ^ Literal identifiers from syntax-rules 
           , synRules :: [LispVal]         -- ^ Rules from syntax-rules
    } -- ^ Type to hold a syntax object that is created by a macro definition.
@@ -274,7 +275,7 @@ showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showVal t ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
 showVal (Continuation _ _ _ _ _) = "<continuation>"
-showVal (Syntax _ _ _ _) = "<syntax>"
+showVal (Syntax _ _ _ _ _) = "<syntax>"
 showVal (Func {params = args, vararg = varargs, body = _, closure = _}) =
   "(lambda (" ++ unwords (map show args) ++
     (case varargs of
