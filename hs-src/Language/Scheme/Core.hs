@@ -342,8 +342,8 @@ eval env cont args@(List [Atom "if", predic, conseq]) = do
  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsResult e c result _ =
             case result of
-              Bool True -> meval e c conseq
-              _ -> continueEval e c $ Nil "" -- Unspecified return value per R5RS
+              Bool False -> continueEval e c $ Nil "" -- Unspecified return value per R5RS
+              _ -> meval e c conseq
 
 eval env cont fargs@(List (Atom "begin" : funcs)) = do
  bound <- liftIO $ isRecBound env "begin"
