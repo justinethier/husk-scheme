@@ -277,9 +277,6 @@
 (should-be 8.1 -1
   (let - ((n (- 1))) n))
 
-(display "TODO: 8.2 fails") ; REMOVE THIS TODO ONCE 8.2 WORKS
-(newline)
-
 (should-be 8.2 '(1 2 3 4 1 2 3 4 5)
   (let ((ls (list 1 2 3 4)))
     (append ls ls '(5))))
