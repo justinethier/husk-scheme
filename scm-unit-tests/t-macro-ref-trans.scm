@@ -23,7 +23,7 @@
     (assert/equal (let ((var-02 1)) (test-template)) 1)
     (assert/equal (let ((var-02 2)) (test-template)) 1)
     (define var-02 3)
-    (assert/equal (test-template) 'TODO)))) 
+    (assert/equal (test-template) 1)))) 
   1))
 
 (let ()
@@ -38,7 +38,7 @@
     (assert/equal (let ((var-02 1)) (test-template)) 1)
     (assert/equal (let ((var-02 2)) (test-template)) 1)
     (define var-02 3)
-    (assert/equal (test-template) 'TODO)))) 
+    (assert/equal (test-template) 3)))) 
 
 ; Variable defined within macro (1) should take precedence over
 ; the one in the outer env (33)
@@ -55,6 +55,6 @@
     (assert/equal (let ((var-02 1)) (test-template)) 1)
     (assert/equal (let ((var-02 2)) (test-template)) 1)
     (define var-02 3)
-    (assert/equal (test-template) 'TODO)))) 
+    (assert/equal (test-template) 3)))) 
 
 (unit-test-handler-results)

@@ -565,9 +565,39 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (L
  -- If a macro is quoted, keep track of it and do not invoke rules below for
  -- procedure abstraction or macro calls 
  let isQuoted = inputIsQuoted || (a == "quote") || (a == "quasiquote")
- let isQuasiQuoted = (a == "quasiquote")
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
+ walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result) 
+                  a ts isQuoted isDefinedAsMacro
+
+-- Transform anything else as itself...
+walkExpanded defEnv useEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (t : ts)) = do
+  walkExpanded defEnv useEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [t]) (List ts)
+
+-- Base case - empty transform
+walkExpanded _ _ _ _ _ _ _ result@(List _) (List []) = return result
+
+-- Single atom, rename (if necessary) and return
+walkExpanded _ _ renameEnv _ _ _ _ _ (Atom a) = expandAtom renameEnv (Atom a)
+
+-- If transforming into a scalar, just return the transform directly...
+-- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
+walkExpanded _ _ _ _ _ _ _ _ transform = return transform
+
+walkExpandedAtom :: Env 
+                 -> Env 
+                 -> Env 
+                 -> Env 
+                 -> Bool 
+                 -> Bool 
+                 -> Bool 
+                 -> LispVal 
+                 -> String 
+                 -> [LispVal] 
+                 -> Bool -- is Quoted
+                 -> Bool -- is defined as macro
+                 -> IOThrowsError LispVal
+
 {- 
 Some high-level design notes on how this could be made to work:
 
@@ -600,75 +630,75 @@ do not actually need to do anything to the (define) form, just mark somehow
 that it is inserting a binding for the var
 -}
 
- if (startOfList) && a == "define-syntax" && not isQuoted
-   then case ts of
-     [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] -> do
+walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
+    "define-syntax" 
+    ts@([Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))])
+    False _ = do
         -- Do we need to rename the keyword, or at least take that into account?
         renameEnvClosure <- liftIO $ copyEnv renameEnv
         _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax (Just useEnv) (Just renameEnvClosure) True identifiers rules
         return $ Nil "" -- Sentinal value
-     _ -> throwError $ BadSpecialForm "Malformed define-syntax expression" transform
-   else if startOfList && a == "define" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
-    then do
-       case transform of
-         List [Atom _, Atom var, val] -> do
---           -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
---           env <- liftIO $ extendEnv renameEnv []
---           List renamedVars <- markBoundIdentifiers renameEnv cleanupEnv [Atom var] []
+walkExpandedAtom _ _ _ _ _ True _ _ "define-syntax" ts False _ = do
+  throwError $ BadSpecialForm "Malformed define-syntax expression" $ List (Atom "define-syntax" : ts)
+
+
+walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
+    "define" 
+    [Atom var, val]
+    False _ = do
            _ <- defineVar renameEnv var $ Atom var
-           walkExpanded defEnv useEnv renameEnv cleanupEnv dim False isQuoted (List [Atom "define", {-head renamedVars-} Atom var]) (List [val])
-         -- define is malformed, just transform as normal atom...
-         _ -> walkExpanded defEnv useEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [Atom a]) (List ts)
-    else if startOfList && a == "lambda" && not isQuoted -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
-     then do
-       case transform of
-         List (Atom _ : List vars : fbody) -> do
-           -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
-           env <- liftIO $ extendEnv renameEnv []
-           renamedVars <- markBoundIdentifiers env cleanupEnv vars []
-           walkExpanded defEnv useEnv env cleanupEnv dim False isQuoted (List [Atom "lambda", renamedVars]) (List fbody)
-         -- lambda is malformed, just transform as normal atom...
-         _ -> walkExpanded defEnv useEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [Atom a]) (List ts)
-     else if startOfList && isDefinedAsMacro && not isQuoted
-             then do
-               syn <- getNamespacedVar useEnv macroNamespace a
-               case syn of
-                 Syntax _ (Just renameClosure) definedInMacro identifiers rules -> do 
-                    macroTransform defEnv useEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
-                 Syntax _ _ definedInMacro identifiers rules -> do 
-                 -- A child renameEnv is not created because for a macro call there is no way an
-                 -- renamed identifier inserted by the macro could override one in the outer env.
-                 --
-                 -- This is because the macro renames non-matched identifiers and stores mappings
-                 -- from the {rename ==> original}. Each new name is unique by definition, so
-                 -- no conflicts are possible.
-                 macroTransform defEnv useEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
+           walkExpanded defEnv useEnv renameEnv cleanupEnv dim False False (List [Atom "define", {-head renamedVars-} Atom var]) (List [val])
+walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True _ (List result) a@"define" ts False _ = do
+    -- define is malformed, just transform as normal atom...
+    walkExpanded defEnv useEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
 
-             else if isQuoted
-                     then do
-                        -- Cleanup all symbols in the quoted code
-                        List cleaned <- cleanExpanded 
-                                          defEnv useEnv renameEnv cleanupEnv 
-                                          dim True isQuasiQuoted 
-                                          (List []) (List ts)
-                        return $ List $ result ++ (Atom a : cleaned)
-                     else walkExpanded defEnv useEnv renameEnv cleanupEnv 
-                                       dim False isQuoted 
-                                      (List $ result ++ [Atom a]) (List ts)
+walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
+    "lambda" 
+    (List vars : fbody)
+    False _ = do
+-- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
+    -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
+    env <- liftIO $ extendEnv renameEnv []
+    renamedVars <- markBoundIdentifiers env cleanupEnv vars []
+    walkExpanded defEnv useEnv env cleanupEnv dim False False (List [Atom "lambda", renamedVars]) (List fbody)
+walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True _ (List result) a@"lambda" ts False _ = do
+    -- lambda is malformed, just transform as normal atom...
+    walkExpanded defEnv useEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
 
--- Transform anything else as itself...
-walkExpanded defEnv useEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (t : ts)) = do
-  walkExpanded defEnv useEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [t]) (List ts)
+walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
+    a
+    ts 
+    False True = do
+    syn <- getNamespacedVar useEnv macroNamespace a
+    case syn of
+      Syntax _ (Just renameClosure) definedInMacro identifiers rules -> do 
+         macroTransform defEnv useEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
+      Syntax _ _ definedInMacro identifiers rules -> do 
+      -- A child renameEnv is not created because for a macro call there is no way an
+      -- renamed identifier inserted by the macro could override one in the outer env.
+      --
+      -- This is because the macro renames non-matched identifiers and stores mappings
+      -- from the {rename ==> original}. Each new name is unique by definition, so
+      -- no conflicts are possible.
+      macroTransform defEnv useEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
 
--- Base case - empty transform
-walkExpanded _ _ _ _ _ _ _ result@(List _) (List []) = return result
+walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim _ inputIsQuoted (List result)
+    a
+    ts
+    True _ = do
+    let isQuasiQuoted = (a == "quasiquote")
+    -- Cleanup all symbols in the quoted code
+    List cleaned <- cleanExpanded 
+                      defEnv useEnv renameEnv cleanupEnv 
+                      dim True isQuasiQuoted 
+                      (List []) (List ts)
+    return $ List $ result ++ (Atom a : cleaned)
 
--- Single atom, rename (if necessary) and return
-walkExpanded _ _ renameEnv _ _ _ _ _ (Atom a) = expandAtom renameEnv (Atom a)
-
--- If transforming into a scalar, just return the transform directly...
--- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
-walkExpanded _ _ _ _ _ _ _ _ transform = return transform
+walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim _ inputIsQuoted (List result)
+    a ts isQuoted _ = do
+    walkExpanded defEnv useEnv renameEnv cleanupEnv 
+                 dim False isQuoted 
+                (List $ result ++ [Atom a]) (List ts)
 
 -- |Accept a list of bound identifiers from a lambda expression, and rename them
 --  Returns a list of the renamed identifiers as well as marking those identifiers
