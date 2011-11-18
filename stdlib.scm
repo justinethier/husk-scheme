@@ -130,43 +130,26 @@
          (begin result1 result2 ...)
          (cond clause1 clause2 ...)))))
 ; Case
-;
-; TODO: form from R5RS:
-;(define-syntax case
-;  (syntax-rules (else)
-;    ((case (key ...)
-;       clauses ...)
-;     (let ((atom-key (key ...)))
-;       (case atom-key clauses ...)))
-;    ((case key
-;       (else result1 result2 ...))
-;     (begin result1 result2 ...))
-;    ((case key
-;       ((atoms ...) result1 result2 ...))
-;     (if (memv key '(atoms ...))
-;         (begin result1 result2 ...)))
-;    ((case key
-;       ((atoms ...) result1 result2 ...)
-;       clause clauses ...)
-;     (if (memv key '(atoms ...))
-;         (begin result1 result2 ...)
-;         (case key clause clauses ...)))))
-;
-; Based loosely on implementation from:
-; http://blog.jcoglan.com/2009/02/25/announcing-heist-a-new-scheme-implementation-written-in-ruby/
+; Form from R5RS:
 (define-syntax case
   (syntax-rules (else)
-    ((_ key) ((lambda () #f)))
-    ((_ key (else expr1 expr2 ...))
-     (begin expr1 expr2 ...))
-    ((_ key (() expr ...) clause ...)
-     (case key clause ...))
-    ((_ key
-           ((datum1 datum2 ...) expr1 expr2 ...)
-           clause ...)
-     (if (eqv? #f (memv key '(datum1 datum2 ...)))
-          (case key clause ...)
-          (begin expr1 expr2 ...)))))
+    ((case (key ...)
+       clauses ...)
+     (let ((atom-key (key ...)))
+       (case atom-key clauses ...)))
+    ((case key
+       (else result1 result2 ...))
+     (begin result1 result2 ...))
+    ((case key
+       ((atoms ...) result1 result2 ...))
+     (if (memv key '(atoms ...))
+         (begin result1 result2 ...)))
+    ((case key
+       ((atoms ...) result1 result2 ...)
+       clause clauses ...)
+     (if (memv key '(atoms ...))
+         (begin result1 result2 ...)
+         (case key clause clauses ...)))))
 
 (define (my-mem-helper obj lst cmp-proc)
  (cond 

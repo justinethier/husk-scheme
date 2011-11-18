@@ -19,10 +19,13 @@
                 (else 'consonant))
               'consonant)
 
-(assert/equal (case (car '(c d)) 
-                ((a) 'a)
-                ((b) 'b))
-              #f)
+; This is no longer a valid test case.
+; Per R5RS the result is unspecified; in husk 
+; it is a value we cannot test for directly.
+;(assert/equal (case (car '(c d)) 
+;                ((a) 'a)
+;                ((b) 'b))
+;              #f)
 
 ; Misc test cases
 (assert/equal (case (* 2 3) ((6) '(#t)) (else #f)) 
