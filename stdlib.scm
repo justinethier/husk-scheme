@@ -202,14 +202,21 @@
           (list-tail (cdr lst) (- k 1))))
 (define (list-ref lst k)  (car (list-tail lst k)))
 
-(define (append inlist alist) (foldr (lambda (ap in) (cons ap in)) alist inlist))
-#|
-; TODO: working on a new version of append
-(define (append . lst) (foldr (lambda (ap in) (cons ap in)) (cdr lst) (car lst)))
-(write (append '(1) '(2)))
-(write (append '(1 3) '(2 4)))
-(write (append '(1 3) '(2 4) '(5 6 7)))
-|#
+; append accepts a variable number of arguments, per R5RS. So a wrapper
+; has been provided for the standard 2-argument version of (append).
+;
+; We return the given value if less than 2 arguments are given, and
+; otherwise fold over each arg, appending it to its predecessor. 
+(define (append . lst)
+  (let ((append-2 
+          (lambda (inlist alist) 
+                  (foldr (lambda (ap in) (cons ap in)) alist inlist))))
+    (if (null? lst)
+        lst
+        (if (null? (cdr lst))
+            (car lst)
+            (fold (lambda (a b) (append-2 b a)) (car lst) (cdr lst))))))
+
 ; Let forms
 (define-syntax letrec
   (syntax-rules ()

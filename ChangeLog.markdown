@@ -1,6 +1,7 @@
 v3.4.3
 ------
 - Fixed let-syntax and letrec-syntax to extend the rename environment when nested, to prevent corrupting identifiers in the outer scope with the same name as those within the nested macro.
+- Fixed (append) to accept an arbitrary number of arguments, per R<sup>5</sup>RS.
 
 v3.4.2
 ------
