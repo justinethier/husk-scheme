@@ -641,7 +641,6 @@ walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List
 walkExpandedAtom _ _ _ _ _ True _ _ "define-syntax" ts False _ = do
   throwError $ BadSpecialForm "Malformed define-syntax expression" $ List (Atom "define-syntax" : ts)
 
-
 walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
     "define" 
     [Atom var, val]
@@ -651,7 +650,17 @@ walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List
 walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True _ (List result) a@"define" ts False _ = do
     -- define is malformed, just transform as normal atom...
     walkExpanded defEnv useEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
-
+{-
+walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
+    "set!" 
+    [Atom var, val]
+    False _ = do
+           _ <- defineVar renameEnv var $ Atom var
+           walkExpanded defEnv useEnv renameEnv cleanupEnv dim False False (List [Atom "set!", Atom var]) (List [val])
+walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True _ (List result) a@"set!" ts False _ = do
+    -- set! is malformed, just transform as normal atom...
+    walkExpanded defEnv useEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
+-}
 walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
     "lambda" 
     (List vars : fbody)

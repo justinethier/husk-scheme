@@ -1,3 +1,8 @@
+(write (let ((x "outer"))
+  (let-syntax ((m (syntax-rules () ((m) x))))
+    (let ((x "inner"))
+    (m)))))
+
 ; Testing ability of a nested macro def to use a renamed var
 (define var-02 222)
 (let ()

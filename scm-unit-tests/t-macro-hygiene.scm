@@ -111,7 +111,12 @@
 (assert/equal (test-var var)
               'new-var)
 
-
+; Example #2 from Macros that Work
+(assert/equal (let ((x "outer"))
+  (let-syntax ((m (syntax-rules () ((m) x))))
+    (let ((x "inner"))
+    (m))))
+ "outer")
 
 
 
