@@ -46,9 +46,6 @@
            (c 0))
          (+ x y)))))
 
-(display "1.2 fails")
-(newline)
-#|
 ;;Credits to Al Petrofsky
 ;; In thread:
 ;; Widespread bug (arguably) in letrec when an initializer returns twice
@@ -59,7 +56,7 @@
 	  ((procedure? y) (y (pair? x))))
     (let ((x (car x)) (y (car y)))
       (and (call/cc x) (call/cc y) (call/cc x)))))
-|#
+
 ;;Credits to Alan Bawden
 ;; In thread:
 ;; LETREC + CALL/CC = SET! even in a limited setting 
