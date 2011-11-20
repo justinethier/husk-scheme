@@ -812,6 +812,7 @@ evalfuncCallCC [cont@(Continuation _ _ _ _ _), func] = do
          case cont of
              Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
              _ -> return result
+     Func _ (Just _) _ _ -> apply cont func [cont] -- Variable # of args (pair). Just call into cont
      Func aparams _ _ _ ->
        if (toInteger $ length aparams) == 1
          then apply cont func [cont]
