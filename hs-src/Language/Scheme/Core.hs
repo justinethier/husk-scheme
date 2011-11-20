@@ -807,6 +807,7 @@ evalfuncEval _ = throwError $ NumArgs 1 []
 
 evalfuncCallCC [cont@(Continuation _ _ _ _ _), func] = do
    case func of
+     Continuation _ _ _ _ _ -> apply cont func [cont] 
      PrimitiveFunc f -> do
          result <- liftThrows $ f [cont]
          case cont of
