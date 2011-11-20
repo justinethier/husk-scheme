@@ -107,7 +107,19 @@
 (define-syntax cond
   (syntax-rules (else =>)
     ((cond (else result1 result2 ...))
-     (begin result1 result2 ...))
+;
+; TODO: see pitfall 3.2
+;
+; This is a modification from R5RS - we put the begin within
+; an if statement, because in this context definitions are
+; not allowed. This prevents one from interfering with macro
+; hygiene. 
+;
+; TODO: unfortunately the macro logic has not yet been
+; updated to take this into acccount, so the pitfall
+; still fails
+;
+     (if #t (begin result1 result2 ...)))
     ((cond (test => result))
      (let ((temp test))
        (if temp (result temp))))
@@ -139,7 +151,7 @@
        (case atom-key clauses ...)))
     ((case key
        (else result1 result2 ...))
-     (begin result1 result2 ...))
+     (if #t (begin result1 result2 ...)))
     ((case key
        ((atoms ...) result1 result2 ...))
      (if (memv key '(atoms ...))
