@@ -1,6 +1,7 @@
 v3.4.4
 ------
 - Replaced the definition of `letrec` with the macro from R<sup>5</sup>RS.
+- Allow a continuation to call into another continuation via call/cc - see R<sup>5</sup>RS pitfall 1.2
 
 v3.4.3
 ------
