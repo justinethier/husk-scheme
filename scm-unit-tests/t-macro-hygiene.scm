@@ -27,6 +27,17 @@
 (define v 3)
 (assert/equal (test-template) 3)
 
+(let-syntax ((test-template-2
+ (syntax-rules (v)
+   ((_)
+    v))))
+    
+    (assert/equal (test-template-2) 3)
+    (assert/equal (let ((v 1)) (test-template-2)) 3)
+    (assert/equal (let ((v 2)) (test-template-2)) 3)
+    (define v 3)
+    (assert/equal (test-template-2) 3))
+
 ; Simple example of a list-based template
 (define v1 1)
 (define-syntax test-template
