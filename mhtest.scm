@@ -12,4 +12,4 @@
     (write (let ((var-02 2)) (test-template)))
     (define var-02 3)
     (write (test-template))))) 
-  1)))
+  ) 1))
