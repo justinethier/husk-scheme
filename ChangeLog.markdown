@@ -1,3 +1,7 @@
+v3.4.5
+------
+- Improved support for comparing instances of functions using `eq?`, `eqv?`, etc
+
 v3.4.4
 ------
 This release continues the trend of quick point releases for the 3.4.x series. The key change is support for GHC 7.2: 
