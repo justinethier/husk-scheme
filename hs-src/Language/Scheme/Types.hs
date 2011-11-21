@@ -232,6 +232,25 @@ eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg
 eqv [(HashTable arg1), (HashTable arg2)] =
   eqv [List $ (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg1),
        List $ (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg2)]
+--
+-- This comparison function may be too simplistic. Basically we check to see if
+-- functions have the same calling interface. If they do, then we compare the 
+-- function bodies for equality.
+--
+--FUTURE:
+--
+-- The real solution for this and many of the other comparison functions is to
+-- assign memory locations to data. Then we can just compare memory locations
+-- in cases such as this one. But that is a much larger change.
+eqv [x@(Func _ _ xBody _), y@(Func _ _ yBody _)] = do
+  if (show x) /= (show y)
+     then return $ Bool False
+     else eqvList eqv [List xBody, List yBody] 
+--
+eqv [x@(PrimitiveFunc _), y@(PrimitiveFunc _)] = return $ Bool $ (show x) == (show y)
+eqv [x@(IOFunc _), y@(IOFunc _)] = return $ Bool $ (show x) == (show y)
+eqv [x@(EvalFunc _), y@(EvalFunc _)] = return $ Bool $ (show x) == (show y)
+-- FUTURE: comparison of two continuations
 eqv [l1@(List _), l2@(List _)] = eqvList eqv [l1, l2]
 eqv [_, _] = return $ Bool False
 eqv badArgList = throwError $ NumArgs 2 badArgList
