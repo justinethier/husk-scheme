@@ -621,22 +621,22 @@ the macro to ensure that none of the introduced macros reference each other.
   else 
 -}
 
-{- TODO:
 walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
     "let-syntax" 
     (List bindings : body)
---    ts@([Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))])
     False _ = do
-        bodyEnv <- liftIO $ extendEnv defEnv []
-        _ <- loadMacros defEnv 
-{-    
-        _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax (Just useEnv) (Just renameEnvClosure) True identifiers rules
-        return $ Nil "" -- Sentinal value
-        -}
+
+-- TODO: use of bodyEnv is not entirely correct because diverted vars will be lost!
+-- may need to pass one more env around for divert...
+
+        bodyEnv <- liftIO $ extendEnv useEnv []
+        _ <- loadMacros useEnv bodyEnv (Just renameEnv) True bindings
+        expanded <- walkExpanded defEnv bodyEnv renameEnv cleanupEnv dim True inputIsQuoted (List [Atom "lambda", List []]) (List body)
+        return $ List [(trace ("exp = " ++ show expanded) expanded)]
 
 walkExpandedAtom _ _ _ _ _ True _ _ "let-syntax" ts False _ = do
   throwError $ BadSpecialForm "Malformed let-syntax expression" $ List (Atom "let-syntax" : ts)
--}
+
 walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
     "define-syntax" 
     ts@([Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))])
