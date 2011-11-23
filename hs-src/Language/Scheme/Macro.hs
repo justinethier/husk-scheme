@@ -657,6 +657,22 @@ walkExpandedAtom _ _ _ _ _ True _ _ "let-syntax" ts False _ = do
   throwError $ BadSpecialForm "Malformed let-syntax expression" $ List (Atom "let-syntax" : ts)
 
 walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
+    "letrec-syntax" 
+    (List bindings : body)
+    False _ = do
+
+-- TODO: use of bodyEnv is not entirely correct because diverted vars will be lost!
+-- may need to pass one more env around for divert...
+
+        bodyEnv <- liftIO $ extendEnv useEnv []
+        _ <- loadMacros bodyEnv bodyEnv (Just renameEnv) True bindings
+        expanded <- walkExpanded defEnv bodyEnv renameEnv cleanupEnv dim True inputIsQuoted (List [Atom "lambda", List []]) (List body)
+        return $ List [expanded]
+
+walkExpandedAtom _ _ _ _ _ True _ _ "letrec-syntax" ts False _ = do
+  throwError $ BadSpecialForm "Malformed letrec-syntax expression" $ List (Atom "letrec-syntax" : ts)
+
+walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
     "define-syntax" 
     ts@([Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))])
     False _ = do
