@@ -40,6 +40,7 @@ module Language.Scheme.Macro
     (
       macroEval
     , loadMacros  
+    , expand
     ) where
 import Language.Scheme.Types
 import Language.Scheme.Variables
@@ -47,7 +48,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+--import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -543,6 +544,16 @@ identifierMatches defEnv useEnv ident = do
     return $ eqVal d u 
   matchIdent _ _ = return False -- Not defined in one place, reject it 
 
+-- |This function walks the given block of code using the macro expansion algorithm,
+--  recursively expanding macro calls as they are encountered.
+--
+-- It is essentially a wrapper for the function walkExpanded which is internal to this module.
+expand :: Env -> Bool -> LispVal -> IOThrowsError LispVal
+expand env dim code = do
+  renameEnv <- liftIO $ nullEnv
+  cleanupEnv <- liftIO $ nullEnv
+  walkExpanded env env renameEnv cleanupEnv dim True False (List []) code
+
 -- |Walk expanded code per Clinger
 walkExpanded :: Env -> Env -> Env -> Env -> Bool -> Bool -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
 walkExpanded defEnv useEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (List l : ls)) = do
@@ -568,7 +579,7 @@ walkExpanded defEnv useEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (L
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
  walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result) 
-                  a ts isQuoted isDefinedAsMacro
+                  (a) ts isQuoted isDefinedAsMacro
 
 -- Transform anything else as itself...
 walkExpanded defEnv useEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (t : ts)) = do
@@ -632,7 +643,7 @@ walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List
         bodyEnv <- liftIO $ extendEnv useEnv []
         _ <- loadMacros useEnv bodyEnv (Just renameEnv) True bindings
         expanded <- walkExpanded defEnv bodyEnv renameEnv cleanupEnv dim True inputIsQuoted (List [Atom "lambda", List []]) (List body)
-        return $ List [(trace ("exp = " ++ show expanded) expanded)]
+        return $ List [expanded]
 
 walkExpandedAtom _ _ _ _ _ True _ _ "let-syntax" ts False _ = do
   throwError $ BadSpecialForm "Malformed let-syntax expression" $ List (Atom "let-syntax" : ts)
@@ -688,7 +699,7 @@ walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List
     -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
     env <- liftIO $ extendEnv renameEnv []
     renamedVars <- markBoundIdentifiers env cleanupEnv vars []
-    walkExpanded defEnv useEnv env cleanupEnv dim False False (List [Atom "lambda", renamedVars]) (List fbody)
+    walkExpanded defEnv useEnv env cleanupEnv dim True False (List [Atom "lambda", renamedVars]) (List fbody)
 walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True _ (List result) a@"lambda" ts False _ = do
     -- lambda is malformed, just transform as normal atom...
     walkExpanded defEnv useEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
@@ -699,6 +710,8 @@ walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List
     False True = do
     syn <- getNamespacedVar useEnv macroNamespace a
     case syn of
+-- TODO: why do we assume that defEnv is the same as the one defined for the macro? Should read
+-- this out of the Syntax object
       Syntax _ (Just renameClosure) definedInMacro identifiers rules -> do 
          macroTransform defEnv useEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
       Syntax _ _ definedInMacro identifiers rules -> do 
