@@ -552,6 +552,14 @@ expand :: Env -> Bool -> LispVal -> IOThrowsError LispVal
 expand env dim code = do
   renameEnv <- liftIO $ nullEnv
   cleanupEnv <- liftIO $ nullEnv
+
+-- TODO: not sure if it is a problem to use env for both def and use, however I cannot think
+-- of anything else to use below.
+--
+-- However, I believe this does highlight problems later on where defEnv is taken from the
+-- function parameter instead of the Syntax object
+--
+
   walkExpanded env env renameEnv cleanupEnv dim True False (List []) code
 
 -- |Walk expanded code per Clinger
