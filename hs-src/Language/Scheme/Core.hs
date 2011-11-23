@@ -22,7 +22,7 @@ module Language.Scheme.Core
     , primitiveBindings
     ) where
 import qualified Language.Scheme.FFI
-import Language.Scheme.Macro
+import qualified Language.Scheme.Macro
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Primitives
@@ -68,7 +68,7 @@ meval env cont lisp = mfunc env cont lisp eval
 mprepareApply env cont lisp = mfunc env cont lisp prepareApply
 mfunc :: Env -> LispVal -> LispVal -> (Env -> LispVal -> LispVal -> IOThrowsError LispVal) -> IOThrowsError LispVal
 mfunc env cont lisp func = do
-  macroEval env lisp >>= (func env cont) 
+  Language.Scheme.Macro.macroEval env lisp >>= (func env cont) 
 {- OBSOLETE:
  old code for updating env's in the continuation chain (see below)
   if False --needToExtendEnv lisp
@@ -276,16 +276,13 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
 -- A rudimentary implementation of let-syntax
 eval env cont (List (Atom "let-syntax" : List bindings : body)) = do
   -- TODO: check if let-syntax has been rebound?
---
--- high-level design 
---  - use extendEnv to create a new environment
---  - read all macros into new Syntax objects in the new env
---  - pick up execution of the body, perhaps just like how it is
---    done today with a function body
---
   bodyEnv <- liftIO $ extendEnv env []
-  _ <- loadMacros env bodyEnv Nothing False bindings
-  continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody body) (Just cont) Nothing Nothing) $ Nil "" 
+  _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False bindings
+  -- Expand whole body as a single continuous macro, to ensure hygiene
+  expanded <- Language.Scheme.Macro.expand bodyEnv False $ List body  
+  case expanded of
+    List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing Nothing) $ Nil "" 
+    e -> continueEval bodyEnv cont e
 
 eval env cont args@(List (Atom "letrec-syntax" : List bindings : body)) = do
   -- TODO: check if letrec-syntax has been rebound?
@@ -294,8 +291,12 @@ eval env cont args@(List (Atom "letrec-syntax" : List bindings : body)) = do
   -- the letrec's environment, instead of the parent env. Not sure if this is 100% correct but it
   -- is good enough to pass the R5RS test case so it will be used as a rudimentary implementation 
   -- for now...
-  _ <- loadMacros bodyEnv bodyEnv Nothing False bindings
-  continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody body) (Just cont) Nothing Nothing) $ Nil "" 
+  _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False bindings
+  -- Expand whole body as a single continuous macro, to ensure hygiene
+  expanded <- Language.Scheme.Macro.expand bodyEnv False $ List body  
+  case expanded of
+    List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing Nothing) $ Nil "" 
+    e -> continueEval bodyEnv cont e
 
 eval env cont args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
  bound <- liftIO $ isRecBound env "define-syntax"
