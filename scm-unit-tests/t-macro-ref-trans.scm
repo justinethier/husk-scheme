@@ -57,7 +57,7 @@
     (define var-02 3)
     (assert/equal (test-template) 3)))) 
 
-(define var-02 33)
+(define var-02 34)
 (let ()
   (set! var-02 1)
   (define-syntax test-template
