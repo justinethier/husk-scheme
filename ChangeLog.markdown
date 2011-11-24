@@ -1,6 +1,7 @@
 v3.4.2
 ------
-Many improvements and bug fixes for let-syntax and letrec-syntax.
+- Many improvements and bug fixes for let-syntax and letrec-syntax.
+- Improved handling of define and set! within a macro definition.
 
 v3.4.1
 ------
