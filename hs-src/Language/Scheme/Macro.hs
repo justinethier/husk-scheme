@@ -706,17 +706,28 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True inputIsQu
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result) a@"define" ts False _ = do
     -- define is malformed, just transform as normal atom...
     walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
-{-
-walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
+
+walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
     "set!" 
     [Atom var, val]
     False _ = do
+      isLexicalDef <- liftIO $ isRecBound useEnv var
+      isAlreadyRenamed <- liftIO $ isRecBound renameEnv var
+      case (isLexicalDef, isAlreadyRenamed) of
+        -- Only create a new record for this variable if it has not yet been
+        -- seen within this macro. Otherwise the existing algorithms will handle
+        -- everything just fine...
+        (True, False) -> do
            _ <- defineVar renameEnv var $ Atom var
-           walkExpanded defEnv useEnv renameEnv cleanupEnv dim False False (List [Atom "set!", Atom var]) (List [val])
-walkExpandedAtom defEnv useEnv renameEnv cleanupEnv dim True _ (List result) a@"set!" ts False _ = do
-    -- set! is malformed, just transform as normal atom...
-    walkExpanded defEnv useEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
--}
+           walk
+        _ -> walk
+  where
+    walk = walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List [Atom "set!"]) (List [Atom var, val])
+
+walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result) a@"set!" ts False _ = do
+    -- define is malformed, just transform as normal atom...
+    walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
+
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True inputIsQuoted (List result)
     "lambda" 
     (List vars : fbody)
