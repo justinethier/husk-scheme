@@ -274,26 +274,26 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
         cpsUnquoteFld _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteFld"
 
 -- A rudimentary implementation of let-syntax
-eval env cont (List (Atom "let-syntax" : List bindings : body)) = do
+eval env cont (List (Atom "let-syntax" : List _bindings : _body)) = do
   -- TODO: check if let-syntax has been rebound?
   bodyEnv <- liftIO $ extendEnv env []
-  _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False bindings
+  _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
   -- Expand whole body as a single continuous macro, to ensure hygiene
-  expanded <- Language.Scheme.Macro.expand bodyEnv False $ List body  
+  expanded <- Language.Scheme.Macro.expand bodyEnv False $ List _body  
   case expanded of
     List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing Nothing) $ Nil "" 
     e -> continueEval bodyEnv cont e
 
-eval env cont args@(List (Atom "letrec-syntax" : List bindings : body)) = do
+eval env cont (List (Atom "letrec-syntax" : List _bindings : _body)) = do
   -- TODO: check if letrec-syntax has been rebound?
   bodyEnv <- liftIO $ extendEnv env []
   -- A primitive means of implementing letrec, by simply assuming that each macro is defined in
   -- the letrec's environment, instead of the parent env. Not sure if this is 100% correct but it
   -- is good enough to pass the R5RS test case so it will be used as a rudimentary implementation 
   -- for now...
-  _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False bindings
+  _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False _bindings
   -- Expand whole body as a single continuous macro, to ensure hygiene
-  expanded <- Language.Scheme.Macro.expand bodyEnv False $ List body  
+  expanded <- Language.Scheme.Macro.expand bodyEnv False $ List _body  
   case expanded of
     List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing Nothing) $ Nil "" 
     e -> continueEval bodyEnv cont e
