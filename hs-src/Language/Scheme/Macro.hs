@@ -1295,31 +1295,16 @@ loadMacros :: Env       -- ^ Parent environment containing the let*-syntax expre
            -> Bool      -- ^ True if the macro was defined inside another macro
            -> [LispVal] -- ^ List containing syntax-rule definitions
            -> IOThrowsError LispVal -- ^ A dummy value, unless an error is thrown
-
-loadMacros e be re dim (List [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] : bs) = do
+loadMacros e be Nothing dim (List [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] : bs) = do
   -- TODO: error checking
   _ <- defineNamespacedVar be macroNamespace keyword $ 
-        Syntax (Just e) re dim identifiers rules
-  loadMacros e be re dim bs
-
-{-
-TODO: experimental code to make pass over the syntax-rules code prior to 
- processing it, to un-name any renamed atoms. This code is not working yet,
- but the general idea is that the syntax-rules atom may be renamed and must
- be inspected before it can be processed. I am unsure if we need to do similar
- processing to identifiers or rules...
-
-loadMacros e be Nothing dim args = do -- This won't work because of Syntax below
-    re <- liftIO $ nullEnv 
-    loadMacros e be (Just re) dim args
+        Syntax (Just e) Nothing dim identifiers rules
+  loadMacros e be Nothing dim bs
 loadMacros e be (Just re) dim args@(List [Atom keyword, (List (Atom syntaxrules : (List identifiers : rules)))] : bs) = do
+  Atom exKeyword <- expandAtom re (Atom keyword)
+  exSynRules <- expandAtom re (Atom syntaxrules)
 
-TODO: need to do a case on re, and then rename appropriately
-
---  Atom exKeyword <- expandAtom re (Atom keyword)
---  exSynRules <- expandAtom re (Atom syntaxrules)
-  let exKeyword = keyword
-  let exSynRules = Atom syntaxrules
+-- TODO: need to process identifiers and rules - are they just expanded, or cleaned up?
 
   case exSynRules of
     Atom "syntax-rules" -> do
@@ -1328,6 +1313,5 @@ TODO: need to do a case on re, and then rename appropriately
              Syntax (Just e) (Just re) dim identifiers rules
         loadMacros e be (Just re) dim bs
     _ -> throwError $ BadSpecialForm "Unable to evaluate form" $ List args
--}
 loadMacros _ _ _ _ [] = return $ Nil ""
 loadMacros _ _ _ _ form = throwError $ BadSpecialForm "Unable to evaluate form" $ List form 
