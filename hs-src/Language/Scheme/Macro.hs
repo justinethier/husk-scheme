@@ -1309,10 +1309,13 @@ TODO: experimental code to make pass over the syntax-rules code prior to
  be inspected before it can be processed. I am unsure if we need to do similar
  processing to identifiers or rules...
 
-loadMacros e be Nothing dim args = do
+loadMacros e be Nothing dim args = do -- This won't work because of Syntax below
     re <- liftIO $ nullEnv 
     loadMacros e be (Just re) dim args
 loadMacros e be (Just re) dim args@(List [Atom keyword, (List (Atom syntaxrules : (List identifiers : rules)))] : bs) = do
+
+TODO: need to do a case on re, and then rename appropriately
+
 --  Atom exKeyword <- expandAtom re (Atom keyword)
 --  exSynRules <- expandAtom re (Atom syntaxrules)
   let exKeyword = keyword
