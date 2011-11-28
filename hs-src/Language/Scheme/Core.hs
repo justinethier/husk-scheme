@@ -31,7 +31,7 @@ import Language.Scheme.Variables
 import Control.Monad.Error
 import Data.Array
 import qualified Data.Map
-import IO hiding (try)
+import System.IO
 
 {- |Evaluate a string containing Scheme code.
 

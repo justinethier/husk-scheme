@@ -21,7 +21,7 @@ import Language.Scheme.Core      -- Scheme Interpreter
 import Language.Scheme.Types     -- Scheme data types
 import Language.Scheme.Variables -- Scheme variable operations
 import Control.Monad.Error
-import IO hiding (try)
+import System.IO
 import System.Environment
 import System.Console.Haskeline
 
