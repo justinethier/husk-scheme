@@ -48,7 +48,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
---import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -1308,8 +1308,13 @@ loadMacros e be (Just re) dim args@(List [Atom keyword, (List (Atom syntaxrules 
 
   case exSynRules of
     Atom "syntax-rules" -> do
+--        -- Temporary hack to expand the rules
+--        List exRules <- cleanExpanded e e e re re dim False False (List []) (List rules)
+
         -- TODO: error checking
         _ <- defineNamespacedVar be macroNamespace exKeyword $ 
+--             Syntax (Just e) (Just re) dim identifiers (trace ("exRules = " ++ show exRules) exRules) --rules
+--             Syntax (Just e) (Just re) dim identifiers exRules --rules
              Syntax (Just e) (Just re) dim identifiers rules
         loadMacros e be (Just re) dim bs
     _ -> throwError $ BadSpecialForm "Unable to evaluate form" $ List args
