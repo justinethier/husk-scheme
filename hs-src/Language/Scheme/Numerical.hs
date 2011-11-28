@@ -16,11 +16,11 @@ This module implements the numerical tower.
 
 module Language.Scheme.Numerical where
 import Language.Scheme.Types
-import Complex
+import Data.Complex
 import Control.Monad.Error
 import Data.Char
 import Numeric
-import Ratio
+import Data.Ratio
 import Text.Printf
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError LispVal

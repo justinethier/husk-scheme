@@ -19,11 +19,11 @@ import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Types
 import Control.Monad.Error
-import Char
+import Data.Char
 import Data.Array
 import Data.Unique
 import qualified Data.Map
-import IO hiding (try)
+import System.IO
 import System.Directory (doesFileExist)
 import System.IO.Error
 
