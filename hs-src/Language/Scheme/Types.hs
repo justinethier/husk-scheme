@@ -18,13 +18,13 @@ This module contains top-level data type definitions and their associated functi
 -}
 
 module Language.Scheme.Types where
-import Complex
+import Data.Complex
 import Control.Monad.Error
 import Data.Array
 import Data.IORef
 import qualified Data.Map
-import IO hiding (try)
-import Ratio
+import System.IO
+import Data.Ratio
 import Text.ParserCombinators.Parsec hiding (spaces)
 
 -- Environment management

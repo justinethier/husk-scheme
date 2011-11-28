@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 {- |
 Module      : Language.Scheme.FFI
 Copyright   : Justin Ethier
@@ -60,6 +62,9 @@ FUTURE: should be able to load multiple functions in one shot (?). -}
            m <- GHC.findModule (GHC.mkModuleName moduleName) Nothing
 #if __GLASGOW_HASKELL__ < 700
            GHC.setContext [] [m]
+#elif __GLASGOW_HASKELL__ == 702
+           (_,oi) <- GHC.getContext
+           GHC.setContext [m] oi
 #else
            GHC.setContext [] [(m, Nothing)]
 #endif
@@ -75,6 +80,9 @@ evalfuncLoadFFI [(Continuation env _ _ _ _), String moduleName, String externalF
     m <- GHC.findModule (GHC.mkModuleName moduleName) Nothing
 #if __GLASGOW_HASKELL__ < 700
     GHC.setContext [] [m]
+#elif __GLASGOW_HASKELL__ == 702
+    (_,oi) <- GHC.getContext
+    GHC.setContext [m] oi
 #else
     GHC.setContext [] [(m, Nothing)]
 #endif
@@ -85,4 +93,5 @@ evalfuncLoadFFI [(Continuation env _ _ _ _), String moduleName, String externalF
 evalfuncLoadFFI _ = throwError $ NumArgs 3 []
 
 defaultRunGhc :: GHC.Ghc a -> IO a
-defaultRunGhc = GHC.defaultErrorHandler DynFlags.defaultDynFlags . GHC.runGhc (Just GHC.Paths.libdir)
+defaultRunGhc =
+  GHC.defaultErrorHandler DynFlags.defaultLogAction . GHC.runGhc (Just GHC.Paths.libdir)

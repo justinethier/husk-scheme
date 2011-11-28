@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 {- |
 Module      : Language.Scheme.Parser
 Copyright   : Justin Ethier
@@ -17,14 +18,16 @@ This module implements parsing of Scheme code.
 module Language.Scheme.Parser where
 import Language.Scheme.Types
 import Control.Monad.Error
-import Char
-import Complex
+import qualified Data.Char as Char
+import Data.Complex
 import Data.Array
 import Numeric
-import Ratio
+import Data.Ratio
 import Text.ParserCombinators.Parsec hiding (spaces)
 import Text.Parsec.Language
+import Text.Parsec.Prim (ParsecT)
 import qualified Text.Parsec.Token as P
+import Data.Functor.Identity (Identity)
 
 lispDef :: LanguageDef ()
 lispDef 
@@ -39,12 +42,23 @@ lispDef
   , P.caseSensitive  = True
   } 
 
+lexer :: P.GenTokenParser String () Identity
 lexer = P.makeTokenParser lispDef
+
+dot :: ParsecT String () Identity String
 dot = P.dot lexer
+
+parens :: ParsecT String () Identity a -> ParsecT String () Identity a
 parens = P.parens lexer
+
+identifier :: ParsecT String () Identity String
 identifier = P.identifier lexer
+
 -- TODO: typedef. starting point was: whiteSpace :: CharParser ()
+whiteSpace :: ParsecT String () Identity ()
 whiteSpace = P.whiteSpace lexer
+
+lexeme :: ParsecT String () Identity a -> ParsecT String () Identity a
 lexeme = P.lexeme lexer
 
 symbol :: Parser Char
