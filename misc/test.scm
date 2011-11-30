@@ -1,6 +1,6 @@
 ; From: 
 ; http://groups.google.com/group/comp.lang.scheme/msg/eb6cc6e11775b619?pli=1
-(let ((a 1)) 
+(write (let ((a 1)) 
      (letrec-syntax 
          ((foo (syntax-rules () 
                  ((_ b) 
@@ -10,4 +10,4 @@
                   (cons c (let ((c 3)) 
                             (list d c 'c))))))) 
        (let ((a 2)) 
-         (foo a)))) 
+         (foo a)))) )
