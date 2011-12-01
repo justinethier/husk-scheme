@@ -125,8 +125,8 @@ macroEval env lisp@(List (Atom x : _)) = do
        expanded <- macroTransform defEnv env env renameEnv cleanupEnv 
                                   definedInMacro 
                                  (List identifiers) rules lisp
-       macroEval env expanded -- Useful debug to see all exp's: (trace ("exp = " ++ show expanded) expanded)
---       macroEval env (trace ("exp = " ++ show expanded) expanded)
+--       macroEval env expanded -- Useful debug to see all exp's: (trace ("exp = " ++ show expanded) expanded)
+       macroEval env (trace ("exp = " ++ show expanded) expanded)
      else return lisp
 
 -- No macro to process, just return code as it is...
@@ -149,7 +149,7 @@ macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers (rule@(
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
                                -- to hold pattern variables
   result <- matchRule defEnv env divertEnv dim identifiers localEnv renameEnv cleanupEnv rule input
-  case result of
+  case (trace ("result = " ++ show result) result) of
     -- No match, check the next rule
     Nil _ -> macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers rs input
     _ -> do
@@ -588,7 +588,7 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
  walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result) 
-                  (a) ts isQuoted isDefinedAsMacro
+                  (trace ("walkExAtom, a = " ++ a) a) ts isQuoted isDefinedAsMacro
 
 -- Transform anything else as itself...
 walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (t : ts)) = do
@@ -734,9 +734,10 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _
     False _ = do
 -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
     -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
-    env <- liftIO $ extendEnv renameEnv []
+    env <- liftIO $ extendEnv (trace ("found procedure abstraction, vars = " ++ show vars ++ "body = " ++ show fbody) renameEnv) []
     renamedVars <- markBoundIdentifiers env cleanupEnv vars []
-    walkExpanded defEnv useEnv divertEnv env cleanupEnv dim True False (List [Atom "lambda", renamedVars]) (List fbody)
+    walkExpanded defEnv useEnv divertEnv env cleanupEnv dim True False (List [Atom "lambda", (renamedVars)]) (List (trace ("renamed = " ++ show renamedVars) fbody))
+
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result) a@"lambda" ts False _ = do
     -- lambda is malformed, just transform as normal atom...
     walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
@@ -745,20 +746,29 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv _ True _ (List _)
     a
     ts 
     False True = do
-    syn <- getNamespacedVar useEnv macroNamespace a
+    syn <- getNamespacedVar useEnv macroNamespace (trace ("atom = " ++ a) a)
     case syn of
 -- TODO: why do we assume that defEnv is the same as the one defined for the macro? Should read
 -- this out of the Syntax object
       Syntax _ (Just renameClosure) definedInMacro identifiers rules -> do 
-         macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
-      Syntax _ _ definedInMacro identifiers rules -> do 
+         -- A hack that will 
+         -- Make a pass across the macro body, marking any instances of renamed vars
+         --
+         --  TODO: assume needs to be extended to the 2 cases below... anywhere else?
+         --  TODO: can cleanExpanded actually be used for this purpose? There is other logic
+         --        in there...
+         List exp <- cleanExpanded defEnv useEnv divertEnv renameEnv renameEnv True False False (List []) (List ts)
+         macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : exp))
+      Syntax (Just _defEnv) _ definedInMacro identifiers rules -> do 
+        macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : (trace ("ts = " ++ show ts) ts)))
+      Syntax Nothing _ definedInMacro identifiers rules -> do 
         -- A child renameEnv is not created because for a macro call there is no way an
         -- renamed identifier inserted by the macro could override one in the outer env.
         --
         -- This is because the macro renames non-matched identifiers and stores mappings
         -- from the {rename ==> original}. Each new name is unique by definition, so
         -- no conflicts are possible.
-        macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
+        macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : (trace ("syntax #3") ts)))
       _ -> throwError $ Default "Unexpected error processing a macro in walkExpandedAtom"
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List result)
@@ -787,7 +797,7 @@ walkExpandedAtom _ _ _ _ _ _ _ _ _ _ _ _ _ = throwError $ Default "Unexpected er
 markBoundIdentifiers :: Env -> Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
 markBoundIdentifiers env cleanupEnv (Atom v : vs) renamedVars = do
   Atom renamed <- _gensym v
-  _ <- defineVar env v $ Atom renamed
+  _ <- defineVar env v $ Atom (trace (v ++ " was marked as " ++ renamed) renamed)
   _ <- defineVar cleanupEnv renamed $ Atom v
   markBoundIdentifiers env cleanupEnv vs $ renamedVars ++ [Atom renamed]
 markBoundIdentifiers env cleanupEnv (_: vs) renamedVars = markBoundIdentifiers env cleanupEnv vs renamedVars
@@ -800,7 +810,7 @@ expandAtom renameEnv (Atom a) = do
   if isDefined 
      then do
        expanded <- getVar renameEnv a
-       return expanded -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
+       return (trace ("ea renaming " ++ a ++ " to " ++ show expanded) expanded) -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
      else return $ Atom a 
 expandAtom _ a = return a
 
@@ -1084,14 +1094,14 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
                   if isAlreadyRenamed
                      then do
                        renamed <- getNamespacedVar localEnv "renamed" a
-                       return renamed
+                       return (trace ("macro call renaming (again) " ++ a ++ " to " ++ show renamed) renamed)
                      else do
                        Atom renamed <- _gensym a
                        _ <- defineNamespacedVar localEnv "renamed" a $ Atom renamed
                        -- Keep track of vars that are renamed; maintain reverse mapping
                        _ <- defineVar cleanupEnv renamed $ Atom a -- Global record for final cleanup of macro
                        _ <- defineVar (renameEnv) renamed $ Atom a -- Keep for Clinger
-                       return $ Atom renamed
+                       return $ Atom (trace ("macro call renamed " ++ a ++ " to " ++ renamed) renamed)
       case t of
          Nil "var not defined in pattern" -> 
             if ellipsisLevel > 0
@@ -1167,7 +1177,7 @@ transformLiteralIdentifier defEnv _ divertEnv renameEnv definedInMacro transform
          value <- getVar defEnv transform
          Atom renamed <- _gensym transform
          _ <- defineVar divertEnv renamed value 
-         return $ Atom renamed
+         return $ Atom (trace ("diverted " ++ transform ++ " into " ++ renamed) renamed)
      else do
 {- TODO:         
 else if not defined in defEnv then just pass the var back as-is (?)
