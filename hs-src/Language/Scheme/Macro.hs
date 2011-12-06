@@ -149,7 +149,7 @@ macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers (rule@(
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
                                -- to hold pattern variables
   result <- matchRule defEnv env divertEnv dim identifiers localEnv renameEnv cleanupEnv rule input
-  case (trace ("result = " ++ show result) result) of
+  case (result) of
     -- No match, check the next rule
     Nil _ -> macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers rs input
     _ -> do
@@ -728,8 +728,13 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _
     "define" 
     [Atom var, val]
     False _ = do
-           _ <- defineVar renameEnv var $ Atom var
-           walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List [Atom "define", {-head renamedVars-} Atom var]) (List [val])
+      isAlreadyRenamed <- liftIO $ isRecBound renameEnv var
+      case (isAlreadyRenamed) of
+        False -> do
+          _ <- defineVar renameEnv var $ Atom var
+          walk
+        _ -> walk
+ where walk = walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List [Atom "define", Atom var]) (List [val])
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result) a@"define" ts False _ = do
     -- define is malformed, just transform as normal atom...
     walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
