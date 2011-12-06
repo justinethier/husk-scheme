@@ -588,33 +588,33 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
 
- -- Hypothesis: OK for a mangled name to proceed if it is known by the expanded code
- isDiverted <- liftIO $ isRecBound divertEnv a
- isMacroBound <- liftIO $ isRecBound renameEnv a
- isLocalRename <- liftIO $ isNamespacedRecBound renameEnv "renamed" a
--- the problem with pitfall 3.3 is that let7 is a variable that is renamed twice, but it is only
--- expanded once, and never the second time (which would encounter let and trigger the necessary
--- handler). 
---
--- Anyway, this is a quick hack to explore recursively expanding the atom. it actually passes the
--- test but appears to break other test cases
+ -- (currently) unused conditional variables for below test
+ --isDiverted <- liftIO $ isRecBound divertEnv a
+ --isMacroBound <- liftIO $ isRecBound renameEnv a
+ --isLocalRename <- liftIO $ isNamespacedRecBound renameEnv "renamed" a
+
+ -- Determine if we should recursively rename an atom
+ -- This code is a bit of a hack/mess at the moment
  if isDefinedAsMacro 
-     || isDiverted
-     || (isMacroBound && not isLocalRename)
-     || not startOfList
-     || a == aa
-     || a == "if" -- A complete hack I think, unless there is any way to justify this as preserving a keyword? 
+--     || isDiverted
+--     || (isMacroBound && not isLocalRename)
+--     || not startOfList
+     || a == aa -- Prevent an infinite loop
+     -- Preserve keywords encountered in the macro 
+     -- A complete hack I think. This will likely need to be revisited throughout the 3.4.x 
+     -- series of macro-related releases.
+     || a == "if"
+     || a == "begin"
      || a == "let-syntax" 
      || a == "letrec-syntax" 
      || a == "define-syntax" 
      || a == "define"  
      || a == "set!"
      || a == "lambda"
-    then  walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result)            (trace ("walkExAtom, a = " ++ a) a) ts isQuoted isDefinedAsMacro
---    else  walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result)            (trace ("walkExAtom, a = " ++ a) a) ts isQuoted isDefinedAsMacro
-    -- A hack to look up the
-    else walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result) (List (Atom a : ts))
--- END  HACK
+    then walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv 
+                          dim startOfList inputIsQuoted (List result) a ts isQuoted isDefinedAsMacro
+    else walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
+                      dim startOfList inputIsQuoted (List result) (List (Atom a : ts))
 
 
 -- Transform anything else as itself...
