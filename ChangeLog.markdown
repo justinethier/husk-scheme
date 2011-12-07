@@ -1,3 +1,7 @@
+v3.4.3
+------
+- Fixed let-syntax and letrec-syntax to extend the rename environment when nested, to prevent corrupting identifiers in the outer scope with the same name as those within the nested macro.
+
 v3.4.2
 ------
 - Many improvements and bug fixes for let-syntax and letrec-syntax.
