@@ -48,7 +48,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
---import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -125,8 +125,8 @@ macroEval env lisp@(List (Atom x : _)) = do
        expanded <- macroTransform defEnv env env renameEnv cleanupEnv 
                                   definedInMacro 
                                  (List identifiers) rules lisp
-       macroEval env expanded -- Useful debug to see all exp's: (trace ("exp = " ++ show expanded) expanded)
---       macroEval env (trace ("exp = " ++ show expanded) expanded)
+--       macroEval env expanded -- Useful debug to see all exp's: (trace ("exp = " ++ show expanded) expanded)
+       macroEval env (trace ("exp = " ++ show expanded) expanded)
      else return lisp
 
 -- No macro to process, just return code as it is...
@@ -673,13 +673,10 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True inputIsQu
     "let-syntax" 
     (List _bindings : _body)
     False _ = do
-
--- TODO: use of bodyEnv is not entirely correct because diverted vars will be lost!
--- may need to pass one more env around for divert...
-
         bodyEnv <- liftIO $ extendEnv useEnv []
-        _ <- loadMacros useEnv bodyEnv (Just renameEnv) True _bindings
-        expanded <- walkExpanded defEnv bodyEnv divertEnv renameEnv cleanupEnv dim True inputIsQuoted (List [Atom "lambda", List []]) (List _body)
+        bodyRenameEnv <- liftIO $ extendEnv renameEnv []
+        _ <- loadMacros useEnv bodyEnv (Just bodyRenameEnv) True _bindings
+        expanded <- walkExpanded defEnv bodyEnv divertEnv bodyRenameEnv cleanupEnv dim True inputIsQuoted (List [Atom "lambda", List []]) (List _body)
         return $ List [expanded]
 
 walkExpandedAtom _ _ _ _ _ _ True _ _ "let-syntax" ts False _ = do
@@ -689,13 +686,10 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True inputIsQu
     "letrec-syntax" 
     (List _bindings : _body)
     False _ = do
-
--- TODO: use of bodyEnv is not entirely correct because diverted vars will be lost!
--- may need to pass one more env around for divert...
-
         bodyEnv <- liftIO $ extendEnv useEnv []
-        _ <- loadMacros bodyEnv bodyEnv (Just renameEnv) True _bindings
-        expanded <- walkExpanded defEnv bodyEnv divertEnv renameEnv cleanupEnv dim True inputIsQuoted (List [Atom "lambda", List []]) (List _body)
+        bodyRenameEnv <- liftIO $ extendEnv renameEnv []
+        _ <- loadMacros bodyEnv bodyEnv (Just bodyRenameEnv) True _bindings
+        expanded <- walkExpanded defEnv bodyEnv divertEnv bodyRenameEnv cleanupEnv dim True inputIsQuoted (List [Atom "lambda", List []]) (List _body)
         return $ List [expanded]
 
 walkExpandedAtom _ _ _ _ _ _ True _ _ "letrec-syntax" ts False _ = do
@@ -728,15 +722,14 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _
     "define" 
     [Atom var, val]
     False _ = do
--- TODO: Was trying to fix pitfall 8.3 by not shadowing a renamed var of the same name, BUT
---  this breaks the iteration macro and its test cases. Most likely the detailed traces need
---  to be added back to get to the bottom of all this
+{- It seems like this should be necessary, but it causes problems so it is
+   disabled for now...
       isAlreadyRenamed <- liftIO $ isRecBound renameEnv var
       case (isAlreadyRenamed) of
-        _ -> do --False -> do
-          _ <- defineVar renameEnv var $ Atom var
+        _ -> do --False -> do -}
+          _ <- defineVar renameEnv var $ Atom (trace ("define RENAMED " ++ var) var)
           walk
-        _ -> walk
+--        _ -> walk
  where walk = walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List [Atom "define", Atom var]) (List [val])
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result) a@"define" ts False _ = do
     -- define is malformed, just transform as normal atom...
@@ -770,7 +763,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _
 -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
     -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
 --    env <- liftIO $ extendEnv (trace ("found procedure abstraction, vars = " ++ show vars ++ "body = " ++ show fbody) renameEnv) []
-    env <- liftIO $ extendEnv renameEnv []
+    env <- liftIO $ (trace "extending env due to lambda" extendEnv) renameEnv []
     renamedVars <- markBoundIdentifiers env cleanupEnv vars []
     walkExpanded defEnv useEnv divertEnv env cleanupEnv dim True False (List [Atom "lambda", (renamedVars)]) (List fbody)
 
@@ -858,8 +851,8 @@ expandAtom renameEnv (Atom a) = do
   if isDefined 
      then do
        expanded <- getVar renameEnv a
---       return (trace ("ea renaming " ++ a ++ " to " ++ show expanded) expanded) -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
-       return expanded -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
+       return (trace ("ea renaming " ++ a ++ " to " ++ show expanded) expanded) -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
+--       return expanded -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
      else return $ Atom a 
 expandAtom _ a = return a
 
