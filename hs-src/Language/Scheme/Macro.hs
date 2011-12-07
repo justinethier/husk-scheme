@@ -48,7 +48,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+--import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -125,8 +125,8 @@ macroEval env lisp@(List (Atom x : _)) = do
        expanded <- macroTransform defEnv env env renameEnv cleanupEnv 
                                   definedInMacro 
                                  (List identifiers) rules lisp
---       macroEval env expanded -- Useful debug to see all exp's: (trace ("exp = " ++ show expanded) expanded)
-       macroEval env (trace ("exp = " ++ show expanded) expanded)
+       macroEval env expanded -- Useful debug to see all exp's: (trace ("exp = " ++ show expanded) expanded)
+--       macroEval env (trace ("exp = " ++ show expanded) expanded)
      else return lisp
 
 -- No macro to process, just return code as it is...
@@ -727,7 +727,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _
       isAlreadyRenamed <- liftIO $ isRecBound renameEnv var
       case (isAlreadyRenamed) of
         _ -> do --False -> do -}
-          _ <- defineVar renameEnv var $ Atom (trace ("define RENAMED " ++ var) var)
+          _ <- defineVar renameEnv var $ Atom var
           walk
 --        _ -> walk
  where walk = walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List [Atom "define", Atom var]) (List [val])
@@ -763,7 +763,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _
 -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
     -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
 --    env <- liftIO $ extendEnv (trace ("found procedure abstraction, vars = " ++ show vars ++ "body = " ++ show fbody) renameEnv) []
-    env <- liftIO $ (trace "extending env due to lambda" extendEnv) renameEnv []
+    env <- liftIO $ extendEnv renameEnv []
     renamedVars <- markBoundIdentifiers env cleanupEnv vars []
     walkExpanded defEnv useEnv divertEnv env cleanupEnv dim True False (List [Atom "lambda", (renamedVars)]) (List fbody)
 
@@ -798,8 +798,8 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv _ True _ (List _)
          -- I am still concerned that this may highlight a flaw in the husk
          -- implementation, and that this solution may not be complete.
          --
-         List exp <- cleanExpanded defEnv useEnv divertEnv renameEnv renameEnv True False False (List []) (List ts)
-         macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : exp))
+         List lexpanded <- cleanExpanded defEnv useEnv divertEnv renameEnv renameEnv True False False (List []) (List ts)
+         macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : lexpanded))
       Syntax (Just _defEnv) _ definedInMacro identifiers rules -> do 
         macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
       Syntax Nothing _ definedInMacro identifiers rules -> do 
@@ -851,8 +851,8 @@ expandAtom renameEnv (Atom a) = do
   if isDefined 
      then do
        expanded <- getVar renameEnv a
-       return (trace ("ea renaming " ++ a ++ " to " ++ show expanded) expanded) -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
---       return expanded -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
+--       return (trace ("ea renaming " ++ a ++ " to " ++ show expanded) expanded) -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
+       return expanded -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
      else return $ Atom a 
 expandAtom _ a = return a
 
