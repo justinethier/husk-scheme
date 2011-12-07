@@ -208,9 +208,7 @@
       ((3) (b 7))
       ((4) (c 4)))
     r))
-(display "7.3 fails")
-(newline)
-#|
+
 ;; Credits to Matthias Radestock
 ;; Another test case used to test SISC's lazy CallFrame routines.
 (should-be 7.3 '((-1 4 5 3)
@@ -248,7 +246,7 @@
                      ((2) (k2 2))
                      ((3) (k1 -)))))))
     (map check '((1 2 3) (1 3 2) (2 1 3) (2 3 1) (3 1 2) (3 2 1)))))
-|#
+
 ;; Modification of the yin-yang puzzle so that it terminates and produces
 ;; a value as a result. (Scott G. Miller)
 (should-be 7.4 '(10 9 8 7 6 5 4 3 2 1 0)
