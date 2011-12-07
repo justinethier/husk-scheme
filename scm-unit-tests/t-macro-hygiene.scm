@@ -196,4 +196,18 @@
   (test-2 if))
 |#
 
+; Examples from/based on pitfall 8.3
+(assert/equal 1
+  (let ((x 1))
+    (let-syntax ((foo (syntax-rules () ((_) 2))))
+      (define x (foo))
+      3)
+    x))
+(assert/equal 1
+  (let ((x 1))
+    (letrec-syntax ((foo (syntax-rules () ((_) 2))))
+      (define x (foo))
+      3)
+    x))
+
 (unit-test-handler-results)
