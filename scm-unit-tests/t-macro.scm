@@ -444,4 +444,10 @@
 (assert/equal (letrec ((z 12)) (let () (let ((z 1) (y 2)) (+ z y))) z) 12)
 ; End #56
 
+; From:
+; http://groups.google.com/group/comp.lang.scheme/msg/3e2d267c8f0ef180?pli=1
+(assert/equal 
+    (let ((f -)) (let f ((n (f 1))) n))
+    -1)
+
 (unit-test-handler-results)
