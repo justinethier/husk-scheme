@@ -203,7 +203,13 @@
 (define (list-ref lst k)  (car (list-tail lst k)))
 
 (define (append inlist alist) (foldr (lambda (ap in) (cons ap in)) alist inlist))
-
+#|
+; TODO: working on a new version of append
+(define (append . lst) (foldr (lambda (ap in) (cons ap in)) (cdr lst) (car lst)))
+(write (append '(1) '(2)))
+(write (append '(1 3) '(2 4)))
+(write (append '(1 3) '(2 4) '(5 6 7)))
+|#
 ; Let forms
 (define-syntax letrec
   (syntax-rules ()
