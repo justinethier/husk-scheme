@@ -1,10 +1,10 @@
 ![husk Scheme](https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png)
 
-husk is a dialect of Scheme written in Haskell that implements a subset of the [R<sup>5</sup>RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Advanced R<sup>5</sup>RS features are provided including continuations, hygienic macros, and a full numeric tower.
+husk is a dialect of Scheme written in Haskell that implements most of the [R<sup>5</sup>RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Advanced R<sup>5</sup>RS features are provided including continuations, hygienic macros, and a full numeric tower.
 
-husk provides many features and is intended as a good choice for non-performance critical applications, as it is not a highly optimized Scheme. Rather, the goal of the project is to provide a tight integration between Haskell and Scheme while at the same time providing an opportunity for deeper understanding of both languages. In addition, by closely following the R<sup>5</sup>RS standard, the intent is to develop a Scheme that is as compatible as possible with other R<sup>5</sup>RS Schemes.
+husk may be used as either a stand-alone interpreter or as an extension language within a larger Haskell application. By closely following the R<sup>5</sup>RS standard, the intent is to develop a Scheme that is as compatible as possible with other R<sup>5</sup>RS Schemes. husk is mature enough that it could be used for production applications, however, it is not optimized for performance-critical applications. 
 
-Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy: the core language consists of a small number of fundamental forms which may be used to implement the other built-in forms. Scheme is an excellent language for writing small, elegant programs, and may also be used to write scripts or embed scripting functionality within a larger application.
+Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy: the core language consists of a small number of fundamental forms which may be used to implement other built-in forms. Scheme is an excellent language for writing small, elegant programs, and may also be used to write scripts or embed scripting functionality within a larger application.
 
 Feature List
 ------------
@@ -37,7 +37,7 @@ And the following R<sup>7</sup>RS draft features:
 
 Installation
 ------------
-husk may be easily installed using [cabal](http://www.haskell.org/cabal/) - just run the following command:
+husk may be installed using [cabal](http://www.haskell.org/cabal/) - just run the following command:
 
     cabal install husk-scheme
 
