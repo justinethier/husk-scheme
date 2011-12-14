@@ -1,0 +1,325 @@
+
+/*
+Design by Free CSS Templates
+http://www.freecsstemplates.org
+Released for free under a Creative Commons Attribution 2.5 License
+*/
+
+body {
+	margin: 0;
+	padding: 0;
+	background: #FFFFFF url(images/img04.gif) repeat-x;
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	font-size: 13px;
+	color: #7F7772;
+}
+
+h1, h2, h3 {
+	margin-top: 0;
+	font-family: Arial, Helvetica, sans-serif;
+	font-weight: normal;
+	color: #666666;
+}
+
+h1 {
+	font-size: 197%;
+}
+
+h2 {
+	font-size: 136%;
+}
+
+h3 {
+	font-size: 100%;
+	font-weight: bold;
+}
+
+p, ul, ol {
+	margin-bottom: 1.6em;
+	line-height: 180%;
+}
+
+p {
+}
+
+blockquote {
+	font-style: italic;
+}
+
+ul {
+}
+
+ol {
+}
+
+a {
+	color: #E52A00; /*FFBF23;*/
+}
+
+a:hover {
+	text-decoration: none;
+}
+
+small {
+}
+
+hr {
+	display: none;
+}
+
+img {
+    border-width: 0px;
+    /*
+	border: 1px solid #B2B2B2;
+    */
+}
+
+img.left {
+	float: left;
+	margin: 0 15px 0 0;
+}
+
+img.right {
+	float: right;
+	margin: 0 0 0 15px;
+}
+
+/* header */
+
+#header {
+	width: 870px;
+	height: 100px;
+	margin: 0 auto;
+}
+
+/* Logo */
+
+#logo {
+	float: left;
+	width: 300px;
+	height: 100px;
+	background: #E52A00 url(images/img01.gif) no-repeat left bottom;
+}
+
+#logo h1, #logo h2 {
+	margin: 0;
+/*	text-transform: lowercase; */
+	text-align: center;
+}
+
+#logo h1 {
+	padding-top: 15px;
+	font-size: 36px;
+}
+
+#logo h2 {
+	font-size: 12px;
+}
+
+#logo a {
+	text-decoration: none;
+	color: #FFFFFF;
+}
+
+/* Search */
+
+#search {
+	float: right;
+	width: 280px;
+	padding-top: 20px;
+}
+
+#search form {
+	margin: 0;
+	padding: 0;
+}
+
+#search fieldset {
+	margin: 0;
+	padding: 0;
+	border: none;
+}
+
+#search legend {
+	display: none;
+}
+
+#searchinput, #searchsubmit {
+	border: 1px solid #EDEBD5;
+	font: bold 100% "Trebuchet MS", Arial, Helvetica, sans-serif;
+	color: #7F7772;
+}
+
+#searchinput {
+	padding: 2px 5px;
+	width: 198px;
+	background: #FFFFFF url(images/img02.gif) repeat-x;
+}
+
+#searchsubmit {
+	background: #FFFFFF url(images/img03.gif) repeat-x left bottom;
+}
+
+/* Menu */
+
+#menu {
+	width: 770px;
+	height: 70px;
+	margin: -30px auto 0 auto;
+}
+
+#menu ul {
+	float: right;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+#menu li {
+	float: left;
+	display: block;
+	height: 40px;
+}
+
+#menu li:hover {
+	background: #F9F8F1;
+}
+
+#menu a {
+	display: block;
+	width: 60px;
+	height: 35px;
+	padding: 5px 20px 0 20px;
+	text-align: center;
+	text-decoration: none;
+/*	text-transform: lowercase; */
+	font-weight: bold;
+	color: #7F7772;
+}
+
+html>body #menu a {
+	width: auto;
+}
+
+#menu li.active {
+	background: #EDEBD5 url(images/img05.gif) no-repeat;
+}
+
+#menu li.active a {
+	background: url(images/img06.gif) no-repeat right top;
+}
+
+/* Page */
+
+#page {
+	width: 870px;
+	margin: 0 auto 20px auto;
+	background: url(images/img07.gif) repeat-y 260px 0;
+}
+
+/* Content */
+
+#content {
+	float: right;
+	width: 590px;
+}
+
+.title {
+	padding-bottom: 5px;
+	border-bottom: 1px solid #EDEBD5;
+}
+
+.twocols {
+}
+
+.twocols .col1 {
+	float: left;
+	width: 235px;
+}
+
+.twocols .col2 {
+	float: right;
+	width: 235px;
+}
+
+.list {
+	margin-left: 0;
+	padding-left: 0;
+	list-style: none;
+}
+
+.list li {
+	padding-left: 10px;
+	background: url(images/img10.gif) no-repeat left center;
+}
+
+/* Sidebar */
+
+#sidebar {
+	float: left;
+	width: 240px;
+}
+
+#sidebar ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+#sidebar li {
+	padding: 20px;
+	background: url(images/img11.gif) no-repeat;
+}
+
+#sidebar li ul {
+}
+
+#sidebar li li {
+	padding: 5px 0;
+	background: url(images/img12.gif) repeat-x left bottom;
+}
+
+#sidebar h2 {
+	border-bottom: 1px solid #EDEBD5;
+	font-size: 114%;
+	font-weight: bold;
+}
+
+#sidebar h3 {
+	margin: 0;
+}
+
+#sidebar p {
+	margin: 0;
+	line-height: normal;
+}
+
+#sidebar a {
+	text-decoration: none;
+}
+
+#sidebar a:hover {
+	text-decoration: underline;
+}
+
+/* Footer */
+
+#footer {
+	clear: both;
+	height: 100px;
+	padding-top: 20px;
+	background: #EDEBD5 url(images/img08.gif) repeat-x;
+}
+
+#footer p {
+	margin: 0;
+	text-align: center;
+	font-size: 77%;
+}
+
+/*
+pre {
+	border: 1px solid #000000;
+    }
+    */
+

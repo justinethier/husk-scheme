@@ -1,0 +1,59 @@
+---
+title: husk scheme
+menu: about
+---
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+
+Design by Free CSS Templates
+http://www.freecsstemplates.org
+Released for free under a Creative Commons Attribution 2.5 License
+
+Title      : Simpletex
+Version    : 1.0
+Released   : 20070725
+Description: A two-column, fixed-width template with light color blend.
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>husk scheme</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="" />
+    <link href="default.css" rel="stylesheet" type="text/css" />
+    <link href="pygments.css" rel="stylesheet" type="text/css" />
+<!--
+	<script type="text/javascript" src="syntax-highlighter/scripts/shCore.js"></script>
+	<script type="text/javascript" src="syntax-highlighter/scripts/shBrushBash.js"></script>
+	<link type="text/css" rel="stylesheet" href="syntax-highlighter/styles/shThemeRDark.css"/>
+	<script type="text/javascript">SyntaxHighlighter.all();</script>
+    -->
+</head>
+<body>
+<div id="header">
+</div>
+    {% include menu.html %}
+<hr />
+<div id="page">
+	<div id="content">
+		<div>
+        TODO: use this to drive the side bar
+
+{% for post in site.posts limit: 3 %}
+{{post.title}}
+{{post.date | date: "%b %d/%y" }}
+{{post.url}}
+{{post.excerpt}}...
+{% endfor %}
+		</div>
+	</div>
+    {% include sidebar.html %}
+</div>
+<hr />
+<div id="footer">
+	<p id="legal">Copyright &copy; 2011 Justin Ethier. All Rights Reserved | Designed by <a href="http://www.freecsstemplates.org/">Free CSS Templates</a></p>
+	<p id="links"><a href="#">Privacy Policy</a> | <a href="#">Terms of Use</a> | <a href="http://validator.w3.org/check/referer" title="This page validates as XHTML 1.0 Transitional"><abbr title="eXtensible HyperText Markup Language">XHTML</abbr></a> | <a href="http://jigsaw.w3.org/css-validator/check/referer" title="This page validates as CSS"><abbr title="Cascading Style Sheets">CSS</abbr></a></p>
+</div>
+</body>
+</html>

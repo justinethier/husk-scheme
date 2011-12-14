@@ -1,0 +1,15 @@
+safe:        false
+auto:        false
+server:      false
+server_port: 4000
+baseurl:    /
+
+source:      .
+destination: ./_site
+plugins:     ./_plugins
+
+future:      true
+lsi:         false
+pygments:    true
+markdown:    maruku
+permalink:   date

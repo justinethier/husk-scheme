@@ -1,0 +1,118 @@
+---
+title: husk scheme
+menu: docs
+---
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+
+Design by Free CSS Templates
+http://www.freecsstemplates.org
+Released for free under a Creative Commons Attribution 2.5 License
+
+Title      : Simpletex
+Version    : 1.0
+Released   : 20070725
+Description: A two-column, fixed-width template with light color blend.
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>husk scheme</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="" />
+    <link href="default.css" rel="stylesheet" type="text/css" />
+    <link href="pygments.css" rel="stylesheet" type="text/css" />
+<!--
+	<script type="text/javascript" src="syntax-highlighter/scripts/shCore.js"></script>
+	<script type="text/javascript" src="syntax-highlighter/scripts/shBrushBash.js"></script>
+	<link type="text/css" rel="stylesheet" href="syntax-highlighter/styles/shThemeRDark.css"/>
+	<script type="text/javascript">SyntaxHighlighter.all();</script>
+    -->
+</head>
+<body>
+<div id="header">
+</div>
+    {% include menu.html %}
+<hr />
+<div id="page">
+	<div id="content">
+		<div>
+            <h2 class="title">Usage</h2>
+            <p>
+                The interpreter may be invoked by running it directly from the command line:
+
+                {% highlight console %}
+./huski
+                {% endhighlight %}
+
+                Alternatively, you may run an individual scheme program:
+
+                {% highlight console %}
+./huski my-scheme-file.scm
+                {% endhighlight %}
+</p>
+
+<h2 class="title">Scheme Language Reference</h2>
+<p>
+TODO: reference spec? will not have a full reference here
+</p>
+
+<h2 class="title">Non-standard Scheme Extensions</h2>
+<p> gensym, others? </p>
+
+<h2 class="title">API</h2>
+<p>
+A Haskell API is also provided to allow you to embed a Scheme interpreter within a Haskell program. The key API modules are:
+
+<ul>
+    <li><strong>Language.Scheme.Core</strong> - Contains functions to evaluate (execute) Scheme code</li>
+    <li><strong>Language.Scheme.Types</strong> - Contains Haskell data types used to represent Scheme primitives</li>
+</ul>
+
+For more information, run <strong>make doc</strong> to generate API documentation from the source code. Also, see <strong>shell.hs</strong> in the husk source code for a quick example of how you might get started.
+
+TODO: should just build the docs and post them here
+</p>
+
+<h2 class="title">Foreign Function Interface</h2>
+<p>
+A foreign function interface (FFI) is provided to allow husk to call into arbitrary Haskell code. The interface is currently available via the <strong>load-ffi</strong> function:
+
+                {% highlight scheme %}
+(load-ffi "Language.Scheme.Plugins.CPUTime" "precision" "cpu-time:precision")
+                {% endhighlight %}
+
+<strong>load-ffi</strong> accepts the following string arguments:
+
+<ul>
+    <li>Name of a Haskell module to dynamically load</li>
+    <li>Haskell function to load from that module</li>
+    <li>Name to use for the function after it is loaded into husk</li>
+</ul>
+
+From the previous example, once <strong>cpu-time:precision</strong> is loaded, it may be called directly from husk just like a regular Scheme function:
+
+                {% highlight scheme %}
+(cpu-time:precision)
+                {% endhighlight %}
+
+Any Haskell function loaded via the FFI must be of the following type:
+
+                {% highlight haskell %}
+    [LispVal] -> IOThrowsError LispVal
+                {% endhighlight %}
+
+See husk's <strong>Language.Scheme.Plugins.CPUTime</strong> module for an example of how to use the husk FFI.
+</p>
+		</div>
+	</div>
+    {% include sidebar.html %}
+</div>
+<hr />
+<div id="footer">
+	<p id="legal">Copyright &copy; 2011 Justin Ethier. All Rights Reserved | Designed by <a href="http://www.freecsstemplates.org/">Free CSS Templates</a></p>
+	<p id="links"><a href="#">Privacy Policy</a> | <a href="#">Terms of Use</a> | <a href="http://validator.w3.org/check/referer" title="This page validates as XHTML 1.0 Transitional"><abbr title="eXtensible HyperText Markup Language">XHTML</abbr></a> | <a href="http://jigsaw.w3.org/css-validator/check/referer" title="This page validates as CSS"><abbr title="Cascading Style Sheets">CSS</abbr></a></p>
+</div>
+</body>
+</html>

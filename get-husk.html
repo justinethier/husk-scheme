@@ -1,0 +1,106 @@
+---
+title: husk scheme
+menu: get-husk
+---
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+
+Design by Free CSS Templates
+http://www.freecsstemplates.org
+Released for free under a Creative Commons Attribution 2.5 License
+
+Title      : Simpletex
+Version    : 1.0
+Released   : 20070725
+Description: A two-column, fixed-width template with light color blend.
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>husk scheme</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="" />
+    <link href="default.css" rel="stylesheet" type="text/css" />
+    <link href="pygments.css" rel="stylesheet" type="text/css" />
+<!--
+	<script type="text/javascript" src="syntax-highlighter/scripts/shCore.js"></script>
+	<script type="text/javascript" src="syntax-highlighter/scripts/shBrushBash.js"></script>
+	<link type="text/css" rel="stylesheet" href="syntax-highlighter/styles/shThemeRDark.css"/>
+	<script type="text/javascript">SyntaxHighlighter.all();</script>
+    -->
+</head>
+<body>
+<div id="header">
+<!--
+	<div id="logo">
+        <h1>
+            <img src="images/husk-scheme.png" width="350" alt="husk scheme" />
+        </h1>
+		<h2></h2>
+	</div>
+    
+	<div id="search">
+		<form id="searchform" method="get" action="">
+			<fieldset>
+			<legend>Search</legend>
+			<input id="searchinput" type="text" name="searchinput" value="" />
+			<input id="searchsubmit" type="submit" value="Search" />
+			</fieldset>
+		</form>
+	</div>
+-->
+</div>
+    {% include menu.html %}
+<hr />
+<div id="page">
+	<div id="content">
+		<div>
+			<h2 class="title">Install using Cabal</h2>
+            <p>
+                The easiest way to install husk is via <a href="http://www.haskell.org/cabal/">Cabal</a>:
+                {% highlight console %}
+cabal install husk-scheme
+                {% endhighlight %}
+            </p>
+            <h2 class="title">Build from Source</h2>
+            <p>
+                Alternatively, husk may be built from source. The first thing you need to do is download the latest version of husk from <a href="https://github.com/justinethier/husk-scheme/downloads">here</a>.
+
+                <p>
+                
+                Before building husk, all of the required dependencies must be available. On Fedora these dependencies are:
+                <ul>
+                    <li>ghc</li>
+                    <li>ghc-doc</li>
+                    <li>ghc-parsec-devel</li>
+                    <li>ghc-haskeline-devel</li>
+                    <li>ghc-ghc-paths-devel</li>
+                    <li>ghc-ghc-devel</li>
+                </ul>
+
+                The same packages are necessary regardless of your platform, but the names may differ.
+                </p>
+
+                Once husk has been downloaded and dependencies have been met, the following commands may be used to build, install, and optionally test the husk executable and libraries:
+                {% highlight console %}
+make clean
+
+# Install husk to your HOME directory
+make dist
+
+# An optional step to run all the built-in unit tests
+make test
+                {% endhighlight %}
+            </p>
+		</div>
+	</div>
+    {% include sidebar.html %}
+</div>
+<hr />
+<div id="footer">
+	<p id="legal">Copyright &copy; 2011 Justin Ethier. All Rights Reserved | Designed by <a href="http://www.freecsstemplates.org/">Free CSS Templates</a></p>
+	<p id="links"><a href="#">Privacy Policy</a> | <a href="#">Terms of Use</a> | <a href="http://validator.w3.org/check/referer" title="This page validates as XHTML 1.0 Transitional"><abbr title="eXtensible HyperText Markup Language">XHTML</abbr></a> | <a href="http://jigsaw.w3.org/css-validator/check/referer" title="This page validates as CSS"><abbr title="Cascading Style Sheets">CSS</abbr></a></p>
+</div>
+</body>
+</html>
