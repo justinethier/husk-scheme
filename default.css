@@ -8,7 +8,7 @@ Released for free under a Creative Commons Attribution 2.5 License
 body {
 	margin: 0;
 	padding: 0;
-	background: #FFFFFF url(images/img04.gif) repeat-x;
+	background: #FFFFFF url(images/img04.png) repeat-x;
 	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
 	font-size: 13px;
 	color: #7F7772;
@@ -88,7 +88,7 @@ img.right {
 
 #header {
 	width: 870px;
-	height: 100px;
+	height: 50px;
 	margin: 0 auto;
 }
 
@@ -202,7 +202,7 @@ html>body #menu a {
 }
 
 #menu li.active {
-	background: #EDEBD5 url(images/img05.gif) no-repeat;
+	background: /*#EDEBD5*/ #FFFFFF url(images/img05.gif) no-repeat;
 }
 
 #menu li.active a {
