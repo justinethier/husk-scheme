@@ -213,12 +213,36 @@
             (fold (lambda (a b) (append-2 b a)) (car lst) (cdr lst))))))
 
 ; Let forms
+;
+; letrec from R5RS
 (define-syntax letrec
-  (syntax-rules ()
-    ((_ ((x v) ...) e1 e2 ...)
-     (let () 
-       (define x v) ...
-       (let () e1 e2 ...)))))
+    (syntax-rules ()
+      ((letrec ((var1 init1) ...) body ...)
+       (letrec "generate_temp_names"
+         (var1 ...)
+         ()
+         ((var1 init1) ...)
+         body ...))
+      ((letrec "generate_temp_names"
+         ()
+         (temp1 ...)
+         ((var1 init1) ...)
+         body ...)                         ; start the changed code
+       (let ((var1 #f) ...)
+         (let ((temp1 init1) ...)
+           (set! var1 temp1)
+           ...
+           body ...)))
+      ((letrec "generate_temp_names"
+         (x y ...)
+         (temp ...)
+         ((var1 init1) ...)
+         body ...)
+       (letrec "generate_temp_names"
+         (y ...)
+         (newtemp temp ...)
+         ((var1 init1) ...)
+         body ...))))
 
 ; let and named let (using the Y-combinator):
 (define-syntax let

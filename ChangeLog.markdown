@@ -1,3 +1,7 @@
+v3.4.4
+------
+- Replaced the definition of `letrec` with the macro from R<sup>5</sup>RS.
+
 v3.4.3
 ------
 - Fixed `let-syntax` and `letrec-syntax` to prevent conflicts between identifiers of the same name in the outer scope and within the macro body.
