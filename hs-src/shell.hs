@@ -67,8 +67,8 @@ showBanner = do
   putStrLn " | | | | |_| \\__ \\   <    /// \\\\\\   \\__ \\ (__| | | |  __/ | | | | |  __/ "
   putStrLn " |_| |_|\\__,_|___/_|\\_\\  ///   \\\\\\  |___/\\___|_| |_|\\___|_| |_| |_|\\___| "
   putStrLn "                                                                         "
-  putStrLn " husk Scheme Interpreter                                   Version 3.4.3 "
-  putStrLn " (c) 2010-2011 Justin Ethier         github.com/justinethier/husk-scheme "
+  putStrLn " http://justinethier.github.com/husk-scheme                Version 3.4.4 "
+  putStrLn " (c) 2010-2011 Justin Ethier                                             "
   putStrLn "                                                                         "
 
 runRepl :: IO ()
