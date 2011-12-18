@@ -1,5 +1,7 @@
 v3.4.4
 ------
+We are continuing the trend of quick point releases for the 3.4.x series with this release. The key change is compilation support in GHC 7.2. This ended up being a simple change - I had mis-interpreted the value of a pre-processor directive - sorry about that!
+
 - husk now compiles in GHC 7.2
 - Replaced the definition of `letrec` with the macro from R<sup>5</sup>RS.
 - Allow a continuation to call into another continuation via call/cc - see R<sup>5</sup>RS pitfall 1.2
