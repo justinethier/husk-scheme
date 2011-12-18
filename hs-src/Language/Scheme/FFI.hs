@@ -94,8 +94,10 @@ evalfuncLoadFFI _ = throwError $ NumArgs 3 []
 
 defaultRunGhc :: GHC.Ghc a -> IO a
 defaultRunGhc =
-#if __GLASGOW_HASKELL__ < 720
+#if __GLASGOW_HASKELL__ <= 700
+  -- Old syntax for GHC 7.0.x and lower
   GHC.defaultErrorHandler DynFlags.defaultDynFlags . GHC.runGhc (Just GHC.Paths.libdir)
 #else
+  -- New syntax in GHC 7.2
   GHC.defaultErrorHandler DynFlags.defaultLogAction . GHC.runGhc (Just GHC.Paths.libdir)
 #endif
