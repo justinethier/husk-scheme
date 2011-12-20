@@ -1,5 +1,5 @@
 Name:                husk-scheme
-Version:             3.4.4
+Version:             3.4.5
 Synopsis:            R5RS Scheme interpreter program and library.
 Description:         A dialect of R5RS Scheme written in Haskell. Provides advanced 
                      features including continuations, hygienic macros, a Haskell FFI,
@@ -8,15 +8,19 @@ License:             MIT
 License-file:        LICENSE
 Author:              Justin Ethier
 Maintainer:          Justin Ethier <github.com/justinethier>
-Homepage:            https://github.com/justinethier/husk-scheme
-Cabal-Version:       >= 1.4
+Homepage:            http://justinethier.github.com/husk-scheme
+Cabal-Version:       >= 1.6
 Build-Type:          Simple
 Category:            Compilers/Interpreters, Language
-Tested-with:         GHC == 7.0.2, GHC == 6.12.3, GHC == 6.10.4
+Tested-with:         GHC == 7.2.2, GHC == 7.0.2, GHC == 6.12.3, GHC == 6.10.4
 
 Extra-Source-Files:  README.markdown
                      LICENSE
 Data-Files:          stdlib.scm
+
+Source-Repository head
+    Type:            git
+    Location:        git://github.com/justinethier/husk-scheme.git
 
 Library
   Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc, ghc-paths
