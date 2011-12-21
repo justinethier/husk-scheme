@@ -11,8 +11,8 @@ This module contains Core functionality, primarily Scheme expression evaluation.
 -}
 
 module Language.Scheme.Core
-    ( -- eval
-     evalLisp
+    (
+      evalLisp
     , evalString
     , evalAndPrint
     , primitiveBindings
