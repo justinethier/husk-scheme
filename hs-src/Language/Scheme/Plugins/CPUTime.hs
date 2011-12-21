@@ -7,10 +7,6 @@ Maintainer  : github.com/justinethier
 Stability   : experimental
 Portability : portable
 
-husk scheme interpreter
-
-A lightweight dialect of R5RS scheme.
-
 This module wraps System.CPUTime so that it can be used directly by Scheme code.
 
 More importantly, it serves as an example of how to wrap existing Haskell code so

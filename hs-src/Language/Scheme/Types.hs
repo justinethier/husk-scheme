@@ -7,13 +7,7 @@ Maintainer  : github.com/justinethier
 Stability   : experimental
 Portability : portable
 
-husk scheme interpreter
-
-A lightweight dialect of R5RS scheme.
-
-This module contains top-level data type definitions and their associated functions, including:
- - Scheme data types
- - Scheme errors
+This module contains top-level data type definitions, environments, error types, and associated functions.
 
 -}
 
@@ -255,6 +249,7 @@ eqv [l1@(List _), l2@(List _)] = eqvList eqv [l1, l2]
 eqv [_, _] = return $ Bool False
 eqv badArgList = throwError $ NumArgs 2 badArgList
 
+-- |Compare two lists of haskell values, using the given comparison function
 eqvList :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
 eqvList eqvFunc [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) &&
                                                     (all eqvPair $ zip arg1 arg2)
@@ -304,6 +299,7 @@ showVal (Port _) = "<IO port>"
 showVal (IOFunc _) = "<IO primitive>"
 showVal (EvalFunc _) = "<procedure>"
 
+-- |Convert a list of Lisp objects into a space-separated string
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map showVal
 

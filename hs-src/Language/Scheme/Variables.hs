@@ -7,10 +7,6 @@ Maintainer  : github.com/justinethier
 Stability   : experimental
 Portability : portable
 
-husk scheme interpreter
-
-A lightweight dialect of R5RS scheme.
-
 This module contains code for working with Scheme variables.
 
 -}

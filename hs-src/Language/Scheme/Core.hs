@@ -7,16 +7,12 @@ Maintainer  : github.com/justinethier
 Stability   : experimental
 Portability : portable
 
-husk scheme interpreter
-
-A lightweight dialect of R5RS scheme.
-
 This module contains Core functionality, primarily Scheme expression evaluation.
 -}
 
 module Language.Scheme.Core
-    ( eval
-    , evalLisp
+    ( -- eval
+     evalLisp
     , evalString
     , evalAndPrint
     , primitiveBindings
@@ -57,8 +53,7 @@ evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>
 evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn
 
-{- |Evaluate lisp code that has already been loaded into haskell
-FUTURE: code example for this, via ghci and/or a custom Haskell program. -}
+-- |Evaluate lisp code that has already been loaded into haskell
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = meval env (makeNullContinuation env) lisp
 

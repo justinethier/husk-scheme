@@ -7,10 +7,6 @@ Maintainer  : github.com/justinethier
 Stability   : experimental
 Portability : portable
 
-husk scheme interpreter
-
-A lightweight dialect of R5RS scheme.
-
 This module contains code for hygienic macros.
 
 Hygienic macros are implemented using the algorithm from the paper
@@ -25,6 +21,7 @@ transformation, the following components are considered:
 
 At a high level, macro transformation is broken down into the following steps:
 
+ 0) Walk the input code looking for a macro definition or macro call. If a macro call is found -
  1) Search for a rule that matches the input.
     During this process, any pattern variables in the input are loaded into a temporary environment
  2) If a rule matches,

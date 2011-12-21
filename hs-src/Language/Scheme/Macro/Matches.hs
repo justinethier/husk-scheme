@@ -7,10 +7,6 @@ Maintainer  : github.com/justinethier
 Stability   : experimental
 Portability : portable
 
-husk scheme interpreter
-
-A lightweight dialect of R5RS scheme.
-
 This module contains utility functions used to support macro processing,
 by storing and/or manipulating data involving 0-or-many matches.
 -}
