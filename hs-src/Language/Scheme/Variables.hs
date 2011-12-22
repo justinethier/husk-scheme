@@ -104,7 +104,8 @@ isRecBound envRef var = isNamespacedRecBound envRef varNamespace var
 
 -- |Determine if a variable is bound in a given namespace
 isNamespacedBound :: Env -> String -> String -> IO Bool
-isNamespacedBound envRef namespace var = (readIORef $ bindings envRef) >>= return . maybe False (const True) . Data.Map.lookup (namespace, var)
+isNamespacedBound envRef namespace var = 
+    (readIORef $ bindings envRef) >>= return . Data.Map.member (namespace, var)
 
 -- TODO: should isNamespacedBound be replaced with this? Probably, but one step at a time...
 isNamespacedRecBound :: Env -> String -> String -> IO Bool
