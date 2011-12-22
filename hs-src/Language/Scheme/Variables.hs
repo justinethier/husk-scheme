@@ -15,6 +15,12 @@ module Language.Scheme.Variables where
 import Language.Scheme.Types
 import Control.Monad.Error
 import Data.IORef
+import qualified Data.Map
+
+
+-- TODO: convert from storing vars in a list to a more efficient
+--       data structure using Data.Map
+
 
 {- Experimental code:
 -- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/
