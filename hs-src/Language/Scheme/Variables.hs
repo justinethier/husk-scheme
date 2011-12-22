@@ -54,7 +54,7 @@ isNamespacedRecBoundWUpper upperEnvRef envRef namespace var = do
 printEnv :: Env -> IO String
 printEnv env = do
   binds <- liftIO $ readIORef $ bindings env
-  l <- mapM showVar binds 
+  l <- mapM showVar $ Data.Map.toList binds 
   return $ unlines l
  where 
   showVar ((_, name), val) = do
@@ -65,7 +65,9 @@ printEnv env = do
 copyEnv :: Env -> IO Env
 copyEnv env = do
   binds <- liftIO $ readIORef $ bindings env
-  bindingList <- mapM addBinding binds >>= newIORef
+--  bindingList <- mapM addBinding binds >>= newIORef
+  bindingListT <- mapM addBinding $ Data.Map.toList binds -- TODO: there is a more elegant way to write this here (and below, too)
+  bindingList <- newIORef $ Data.Map.fromList bindingListT
   return $ Environment (parentEnv env) bindingList -- TODO: recursively create a copy of parent also?
  where addBinding ((namespace, name), val) = do --ref <- newIORef $ liftIO $ readIORef val
                                                 x <- liftIO $ readIORef val
@@ -73,8 +75,11 @@ copyEnv env = do
                                                 return ((namespace, name), ref)
 
 -- |Extend given environment by binding a series of values to a new environment.
+
+-- TODO: should be able to use Data.Map.fromList to ease construction of new Env
 extendEnv :: Env -> [((String, String), LispVal)] -> IO Env
-extendEnv envRef abindings = do bindinglist <- mapM addBinding abindings >>= newIORef
+extendEnv envRef abindings = do bindinglistT <- (mapM addBinding abindings) -- >>= newIORef
+                                bindinglist <- newIORef $ Data.Map.fromList bindinglistT
                                 return $ Environment (Just envRef) bindinglist
  where addBinding ((namespace, name), val) = do ref <- newIORef val
                                                 return ((namespace, name), ref)
@@ -99,7 +104,7 @@ isRecBound envRef var = isNamespacedRecBound envRef varNamespace var
 
 -- |Determine if a variable is bound in a given namespace
 isNamespacedBound :: Env -> String -> String -> IO Bool
-isNamespacedBound envRef namespace var = (readIORef $ bindings envRef) >>= return . maybe False (const True) . lookup (namespace, var)
+isNamespacedBound envRef namespace var = (readIORef $ bindings envRef) >>= return . maybe False (const True) . Data.Map.lookup (namespace, var)
 
 -- TODO: should isNamespacedBound be replaced with this? Probably, but one step at a time...
 isNamespacedRecBound :: Env -> String -> String -> IO Bool
@@ -118,7 +123,7 @@ getNamespacedVar :: Env -> String -> String -> IOThrowsError LispVal
 getNamespacedVar envRef
                  namespace
                  var = do binds <- liftIO $ readIORef $ bindings envRef
-                          case lookup (namespace, var) binds of
+                          case Data.Map.lookup (namespace, var) binds of
                             (Just a) -> liftIO $ readIORef a
                             Nothing -> case parentEnv envRef of
                                          (Just par) -> getNamespacedVar par namespace var
@@ -137,7 +142,7 @@ setNamespacedVar :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
 setNamespacedVar envRef
                  namespace
                  var value = do env <- liftIO $ readIORef $ bindings envRef
-                                case lookup (namespace, var) env of
+                                case Data.Map.lookup (namespace, var) env of
                                   (Just a) -> do -- vprime <- liftIO $ readIORef a
                                                  liftIO $ writeIORef a value
                                                  return value
@@ -156,5 +161,5 @@ defineNamespacedVar envRef
     else liftIO $ do
        valueRef <- newIORef value
        env <- readIORef $ bindings envRef
-       writeIORef (bindings envRef) (((namespace, var), valueRef) : env)
+       writeIORef (bindings envRef) (Data.Map.insert (namespace, var) valueRef env) --  (((namespace, var), valueRef) : env)
        return value

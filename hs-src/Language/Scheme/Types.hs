@@ -24,11 +24,14 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 -- Environment management
 
 -- |A Scheme environment containing variable bindings of form @(namespaceName, variableName), variableValue@
-data Env = Environment {parentEnv :: (Maybe Env), bindings :: (IORef [((String, String), IORef LispVal)])} -- lookup via: (namespace, variable)
+data Env = Environment {
+        parentEnv :: (Maybe Env), 
+        bindings :: (IORef (Data.Map.Map (String, String) (IORef LispVal)))
+    }
 
 -- |An empty environment
 nullEnv :: IO Env
-nullEnv = do nullBindings <- newIORef []
+nullEnv = do nullBindings <- newIORef $ Data.Map.fromList []
              return $ Environment Nothing nullBindings
 
 -- Internal namespace for macros
