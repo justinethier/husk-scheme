@@ -6,7 +6,6 @@
 ;;
 ;; Test cases for eval 
 ;;
-(load "skim-unit.scm")
 (unit-test-start "eval")
 
 (assert/equal (eval '(* 7 3))

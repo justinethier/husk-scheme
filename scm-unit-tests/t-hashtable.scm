@@ -6,7 +6,6 @@
 ;;
 ;; Test cases for hash tables 
 ;;
-(load "skim-unit.scm")
 (unit-test-start "hash tables")
 
 (define ht (make-hash-table))

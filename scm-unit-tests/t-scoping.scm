@@ -6,7 +6,6 @@
 ;;
 ;; Test cases to ensure proper lexical scope
 ;;
-(load "skim-unit.scm")
 (unit-test-start "lexical scope")
 
 ; Lexical scoping must work even for special forms:

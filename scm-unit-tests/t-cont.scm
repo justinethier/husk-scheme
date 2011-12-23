@@ -6,7 +6,6 @@
 ;;
 ;; Test cases for continuations
 ;;
-(load "skim-unit.scm")
 (unit-test-start "continuations")
 
 (define (f return)

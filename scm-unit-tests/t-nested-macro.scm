@@ -6,7 +6,6 @@
 ;;
 ;; More test cases for macros, used to test nested matching
 ;;
-(load "skim-unit.scm")
 (unit-test-start "macros")
 
 ; TODO:

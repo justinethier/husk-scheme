@@ -6,7 +6,6 @@
 ;;
 ;; Test cases for execution-related forms 
 ;;
-(load "skim-unit.scm")
 (unit-test-start "control features")
 
 (assert/equal (procedure? car) #t)

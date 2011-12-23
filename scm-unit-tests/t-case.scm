@@ -6,7 +6,6 @@
 ;;
 ;; Test cases for case form
 ;;
-(load "skim-unit.scm")
 (unit-test-start "case")
 
 ; Tests from spec

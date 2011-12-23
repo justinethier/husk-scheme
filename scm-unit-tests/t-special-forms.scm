@@ -6,7 +6,6 @@
 ;;
 ;; Test cases for special forms 
 ;;
-(load "skim-unit.scm")
 (unit-test-start "special forms")
 
 (assert/equal (procedure? car) #t)

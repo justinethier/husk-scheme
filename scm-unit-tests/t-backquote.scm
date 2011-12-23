@@ -6,7 +6,6 @@
 ;;
 ;; Test cases for quasi-quotation (back-quoting) 
 ;;
-(load "skim-unit.scm")
 (unit-test-start "quasi-quotation")
 
 (assert/equal `(list ,(+ 1 2) 4)

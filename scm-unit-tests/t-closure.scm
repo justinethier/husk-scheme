@@ -7,7 +7,6 @@
 ;; Test cases for closures
 ;; From: http://stackoverflow.com/questions/36636/what-is-a-closure
 ;;
-(load "skim-unit.scm")
 (unit-test-start "closures")
 
 (define (make-counter)

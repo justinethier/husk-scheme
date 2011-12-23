@@ -6,7 +6,6 @@
 ;;
 ;; Test cases for built-in string forms
 ;;
-(load "skim-unit.scm")
 (unit-test-start "strings")
 
 ; FUTURE: commented out lines indicate issue with Core

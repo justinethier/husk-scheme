@@ -6,7 +6,6 @@
 ;;
 ;; Test cases for I/O-related forms 
 ;;
-(load "skim-unit.scm")
 (unit-test-start "I/O (TODO)")
 
 ; TODO: tests

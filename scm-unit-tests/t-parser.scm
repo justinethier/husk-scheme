@@ -12,7 +12,6 @@
 ;; #| a nested block comment |#
 |#
 
-(load "skim-unit.scm")
 (unit-test-start "parser")
 
 (assert/equal 

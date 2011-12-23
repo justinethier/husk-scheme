@@ -6,7 +6,6 @@
 ;;
 ;; Unit tests for the standard library
 ;;
-(load "skim-unit.scm")
 (unit-test-start "standard library")
 
 ; Primitive expression types, tests from R5RS spec

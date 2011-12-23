@@ -6,7 +6,6 @@
 ;;
 ;; Test cases specifically for referential transparency.
 ;;
-(load "skim-unit.scm")
 (unit-test-start "hygienic macros - referential transparency")
 
 ; Testing ability of a nested macro def to use a renamed var

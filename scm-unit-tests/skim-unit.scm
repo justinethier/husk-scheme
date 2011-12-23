@@ -53,7 +53,10 @@
   (let ((outf (open-output-file *file-with-counts*)))
       (write (+ total-pass pass-count) outf)
       (write (+ total-fail fail-count) outf)
-      (close-output-port outf)))
+      (close-output-port outf))
+
+  (set! pass-count 0)
+  (set! fail-count 0))
 
 (define (summarize-results)
   (define total-pass 0)

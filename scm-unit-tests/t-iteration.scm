@@ -6,7 +6,6 @@
 ;;
 ;; Test cases for do form
 ;;
-(load "skim-unit.scm")
 (unit-test-start "iteration")
 
 (assert/equal 

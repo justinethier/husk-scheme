@@ -6,7 +6,6 @@
 ;;
 ;; Test cases for cond form 
 ;;
-(load "skim-unit.scm")
 (unit-test-start "cond")
 
 (assert/equal (cond ((> 3 2) 'greater) ((< 3 2) 'less))

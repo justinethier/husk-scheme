@@ -7,7 +7,6 @@
 ;; More test cases for macros, specifically to test macros using
 ;; improper and proper lists.
 ;;
-(load "skim-unit.scm")
 (unit-test-start "macros - improper/proper lists")
 
 ; A simple example of a pair in the pattern and transform

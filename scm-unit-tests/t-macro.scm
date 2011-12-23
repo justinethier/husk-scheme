@@ -6,7 +6,6 @@
 ;;
 ;; Test cases for macros
 ;;
-(load "skim-unit.scm")
 (unit-test-start "macros")
 
 (define-syntax my-let 

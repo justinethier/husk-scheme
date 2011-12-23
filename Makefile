@@ -11,6 +11,7 @@ HUSKI = ../huski
 UNIT_TEST_DIR = scm-unit-tests
 
 # Run a "simple" build using GHC directly 
+# ghc options for profiling: -prof -auto-all -rtsopts 
 husk: hs-src/shell.hs hs-src/Language/Scheme/Core.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Types.hs hs-src/Language/Scheme/Variables.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Macro/Matches.hs hs-src/Language/Scheme/FFI.hs
 	ghc -cpp -Wall --make -package parsec -package ghc -fglasgow-exts -o huski hs-src/shell.hs hs-src/Language/Scheme/Core.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Types.hs hs-src/Language/Scheme/Variables.hs Paths_husk_scheme.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Macro/Matches.hs hs-src/Language/Scheme/FFI.hs
 
@@ -39,30 +40,7 @@ doc:
 test: husk stdlib.scm
 	@echo "0" > $(UNIT_TEST_DIR)/scm-unit.tmp
 	@echo "0" >> $(UNIT_TEST_DIR)/scm-unit.tmp
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-backquote.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-case.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-closure.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-cond.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-cont.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-delay.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-eval.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-exec.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-extensions.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-iteration.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-macro.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-macro-lists.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-numerical-ops.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-hashtable.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-scoping.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-special-forms.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-standard-procedures.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-stdlib.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-string.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-vector.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-parser.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-macro-hygiene.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) t-macro-ref-trans.scm
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) summarize.scm
+	@cd $(UNIT_TEST_DIR) ; $(HUSKI) run-tests.scm
 	@rm -f $(UNIT_TEST_DIR)/scm-unit.tmp
 
 # Create tag files to ease souce code browsing
