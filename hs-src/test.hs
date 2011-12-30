@@ -6,6 +6,7 @@
 module Main where
 --import Paths_husk_scheme
 --import Language.Scheme.Core      -- Scheme Interpreter
+import Language.Scheme.Numerical
 import Language.Scheme.Primitives
 import Language.Scheme.Types     -- Scheme data types
 --import Language.Scheme.Variables -- Scheme variable operations
@@ -16,8 +17,8 @@ import System.IO
 
 main :: IO LispVal --()
 main = do
---TODO: how to handle throws
-  writeProc (\ port obj -> hPrint port obj) [Number 1]
+--TODO: how to handle throws, how to handle multiple expressions...
+  writeProc (\ port obj -> hPrint port obj) [numAdd [Number 1, Number 2]]
 {-main = do args <- getArgs
           if null args then do showBanner
                                runRepl
