@@ -33,10 +33,19 @@ import qualified Data.Map
 -}
 import System.IO
 
-compileLisp :: String -> IO ()
-compileLisp file = do
-  putStrLn $ "TODO: load file " ++ file
-
+compileLisp :: Env -> String -> IOThrowsError LispVal --IO ()
+compileLisp env filename = do
+--  putStrLn $ "TODO: load file " ++ file
+  comp <- load filename >>= mapM (compile env)
+  return $ String "TODO" --comp
+{-  if not (null comp)
+     then do
+       -- TODO: append header
+       putStrLn comp
+     else putStrLn "empty file"
+-}
+compile :: Env -> LispVal -> IOThrowsError String 
+compile _ (Number n) = return $ "Number " ++ (show n)
 {-
 TODO:
 

@@ -26,7 +26,8 @@ main = do args <- getArgs
 
 comp :: [String] -> IO ()
 comp args = do
-  compileLisp $ args !! 0
+  env <- liftIO $ nullEnv -- TODO: load an Env specifically for compilation (perhaps in the Compiler module)
+  (runIOThrows $ liftM show $ compileLisp env $ args !! 0) >>= putStrLn
 
 {-
 runOne :: [String] -> IO ()
