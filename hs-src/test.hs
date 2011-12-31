@@ -15,9 +15,9 @@ import System.IO
 --import System.Environment
 --import System.Console.Haskeline
 
-main :: IO ()
+main :: IO String --()
 main = do
-  (runIOThrows $ liftM show $ run) >>= putStr ""  -- TODO: args  - see shell.hs
+  (runIOThrows $ liftM show $ run) -- >>= putStr ""  -- TODO: args  - see shell.hs
 
 run :: IOThrowsError LispVal
 run = do
