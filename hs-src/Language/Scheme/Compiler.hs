@@ -37,7 +37,11 @@ compileLisp :: Env -> String -> IOThrowsError LispVal --IO ()
 compileLisp env filename = do
 --  putStrLn $ "TODO: load file " ++ file
   comp <- load filename >>= mapM (compile env)
-  return $ String "TODO" --comp
+  outH <- liftIO $ openFile "a.out" WriteMode
+  liftIO $ hPutStr outH $ foldr (\a b -> a ('\n' : b)) "\n" (map shows comp) --(map shows [1,2,3])
+  _ <- liftIO $ hClose outH
+--  _ <- liftIO $ writeFile "a.out" comp
+  return $ String $ show comp -- "TODO" --comp
 {-  if not (null comp)
      then do
        -- TODO: append header
