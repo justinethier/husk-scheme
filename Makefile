@@ -12,9 +12,9 @@ UNIT_TEST_DIR = scm-unit-tests
 
 # Run a "simple" build using GHC directly 
 # ghc options for profiling: -prof -auto-all -rtsopts 
-husk: hs-src/shell.hs hs-src/Language/Scheme/Core.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Types.hs hs-src/Language/Scheme/Variables.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Macro/Matches.hs hs-src/Language/Scheme/FFI.hs
+husk: hs-src/shell.hs hs-src/Language/Scheme/Core.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Types.hs hs-src/Language/Scheme/Variables.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Macro/Matches.hs hs-src/Language/Scheme/FFI.hs hs-src/Language/Scheme/Compiler.hs
 	ghc -cpp -Wall --make -package parsec -package ghc -fglasgow-exts -o huski hs-src/shell.hs hs-src/Language/Scheme/Core.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Types.hs hs-src/Language/Scheme/Variables.hs Paths_husk_scheme.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Macro/Matches.hs hs-src/Language/Scheme/FFI.hs
-	ghc -cpp -Wall --make -package parsec -package ghc -fglasgow-exts -o huskc hs-src/huskc.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Types.hs hs-src/Language/Scheme/Variables.hs Paths_husk_scheme.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Macro/Matches.hs hs-src/Language/Scheme/FFI.hs
+	ghc -cpp -Wall --make -package parsec -package ghc -fglasgow-exts -o huskc hs-src/huskc.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Types.hs hs-src/Language/Scheme/Variables.hs Paths_husk_scheme.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Macro/Matches.hs hs-src/Language/Scheme/FFI.hs hs-src/Language/Scheme/Compiler.hs
 
 # An experimental target to create a smaller, dynamically linked executable using GHC directly 
 # See: http://stackoverflow.com/questions/699908/making-small-haskell-executables

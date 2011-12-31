@@ -12,7 +12,7 @@ A front-end for an experimental compiler
 
 module Main where
 import Paths_husk_scheme
---import Language.Scheme.Core      -- Scheme Interpreter
+import Language.Scheme.Compiler
 import Language.Scheme.Types     -- Scheme data types
 import Language.Scheme.Variables -- Scheme variable operations
 import Control.Monad.Error
@@ -26,8 +26,7 @@ main = do args <- getArgs
 
 comp :: [String] -> IO ()
 comp args = do
-  -- TODO: hook into a new Compile module here...
-  putStrLn "TODO"
+  compileLisp $ args !! 0
 
 {-
 runOne :: [String] -> IO ()
