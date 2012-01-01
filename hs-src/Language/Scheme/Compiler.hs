@@ -33,23 +33,51 @@ import qualified Data.Map
 -}
 import System.IO
 
-compileLisp :: Env -> String -> IOThrowsError LispVal --IO ()
+header :: [String]
+header = [
+   "module Main where "
+ , "import Language.Scheme.Numerical "
+ , "import Language.Scheme.Primitives "
+ , "import Language.Scheme.Types     -- Scheme data types "
+ , "--import Language.Scheme.Variables -- Scheme variable operations "
+ , "import Control.Monad.Error "
+ , "import System.IO "
+ , " "
+ , "main :: IO String "
+ , "main = do "
+ , "  (runIOThrows $ liftM show $ run) "
+ , " "
+ , "run :: IOThrowsError LispVal "
+ , "run = do "]
+
+compileLisp :: Env -> String -> IOThrowsError LispVal
 compileLisp env filename = do
---  putStrLn $ "TODO: load file " ++ file
+  -- TODO: below does not really work when compiling an expression that evaluates to a value (eg: 1)
   comp <- load filename >>= mapM (compile env)
-  outH <- liftIO $ openFile "a.out" WriteMode
-  liftIO $ hPutStr outH $ foldr (\a b -> a ('\n' : b)) "\n" (map shows comp) --(map shows [1,2,3])
+  outH <- liftIO $ openFile "_tmp.hs" WriteMode
+  _ <- liftIO $ writeList outH header
+  _ <- liftIO $ writeList outH comp
   _ <- liftIO $ hClose outH
---  _ <- liftIO $ writeFile "a.out" comp
-  return $ String $ show comp -- "TODO" --comp
+  return $ String "" -- Dummy value
 {-  if not (null comp)
      then do
-       -- TODO: append header
-       putStrLn comp
      else putStrLn "empty file"
 -}
+
+writeList outH (l : ls) = do
+  hPutStrLn outH l
+  writeList outH ls
+writeList outH _ = do
+  hPutStr outH ""
+
 compile :: Env -> LispVal -> IOThrowsError String 
 compile _ (Number n) = return $ "Number " ++ (show n)
+
+compile env args@(List _ : _) = do
+ -- look up the function
+ -- compile each arg (see prepareApply)
+ -- emit haskell code to call the function, passing in each arg as parameters
+
 {-
 TODO:
 
