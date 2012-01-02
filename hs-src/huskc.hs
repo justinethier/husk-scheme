@@ -13,6 +13,7 @@ A front-end for an experimental compiler
 module Main where
 import Paths_husk_scheme
 import Language.Scheme.Compiler
+import Language.Scheme.Core
 import Language.Scheme.Types     -- Scheme data types
 import Language.Scheme.Variables -- Scheme variable operations
 import Control.Monad.Error

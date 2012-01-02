@@ -27,11 +27,15 @@ import Language.Scheme.Primitives
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
+import qualified Data.List
 {-
 import Data.Array
 import qualified Data.Map
 -}
 import System.IO
+
+compiledPrimitives :: [(String, String)]
+compiledPrimitives = [("write", "writeProc (\\ port obj -> hPrint port obj)")]
 
 header :: [String]
 header = [
@@ -72,11 +76,21 @@ writeList outH _ = do
 
 compile :: Env -> LispVal -> IOThrowsError String 
 compile _ (Number n) = return $ "Number " ++ (show n)
+compile _ (Atom a) = return $ "Atom " ++ a
 
-compile env args@(List _ : _) = do
- -- look up the function
- -- compile each arg (see prepareApply)
- -- emit haskell code to call the function, passing in each arg as parameters
+compile env args@(List (Atom func : params)) = do
+  -- TODO: all of this needs to be based off of the equivalent code from Core.hs
+  -- however, this is a simple example of how this might work within a compiler...
+--  cfunc <- lookup
+  case lookup func compiledPrimitives of
+    (Just a) -> do
+      ps <- mapM (compile env) params
+      return $ a ++ " [ " ++ (unwords ps) ++ " ] "
+    Nothing -> throwError $ Default $ "Function definition not found: " ++ func 
+
+  -- look up the function
+  -- compile each arg (see prepareApply)
+  -- emit haskell code to call the function, passing in each arg as parameters
 
 {-
 TODO:
