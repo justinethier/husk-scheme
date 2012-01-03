@@ -35,7 +35,12 @@ import qualified Data.Map
 import System.IO
 
 compiledPrimitives :: [(String, String)]
-compiledPrimitives = [("write", "writeProc (\\ port obj -> hPrint port obj)")]
+compiledPrimitives = [
+  ("write", "writeProc (\\ port obj -> hPrint port obj)")
+ ,("+", "numAdd")
+ ,("-", "numSub")
+ ,("*", "numMul")
+ ,("/", "numDiv")]
 
 header :: [String]
 header = [
@@ -78,14 +83,18 @@ compile :: Env -> LispVal -> IOThrowsError String
 compile _ (Number n) = return $ "Number " ++ (show n)
 compile _ (Atom a) = return $ "Atom " ++ a
 
+-- TODO: this is not good enough; a line of scheme may need to be compiled into many lines of haskell,
+--  for example
+
 compile env args@(List (Atom func : params)) = do
-  -- TODO: all of this needs to be based off of the equivalent code from Core.hs
+  -- TODO: all of this needs to be based off of the equivalent code from Core.hs, and generated code needs to be in CPS
   -- however, this is a simple example of how this might work within a compiler...
 --  cfunc <- lookup
   case lookup func compiledPrimitives of
     (Just a) -> do
       ps <- mapM (compile env) params
-      return $ a ++ " [ " ++ (unwords ps) ++ " ] "
+      return $ a ++ " [ " ++ (Data.List.intercalate ", " ps) ++ " ] "
+--      return $ a ++ " [ " ++ (unwords ps) ++ " ] "
     Nothing -> throwError $ Default $ "Function definition not found: " ++ func 
 
   -- look up the function
