@@ -34,6 +34,8 @@ import qualified Data.Map
 -}
 import System.IO
 
+-- TODO: will probably need to differentiate functions that are in the IO monad 
+--  and pure ones that are not (such as numAdd)
 compiledPrimitives :: [(String, String)]
 compiledPrimitives = [
   ("write", "writeProc (\\ port obj -> hPrint port obj)")
@@ -78,6 +80,16 @@ writeList outH (l : ls) = do
   writeList outH ls
 writeList outH _ = do
   hPutStr outH ""
+
+{-
+compileBlock - need to use explicit recursion to transform a block of code, because
+ later lines may depend on previous ones (is this true?)
+
+bs
+ - compile the first expression
+ - need to save result to gensym'd var if not last line
+ - need to lift up the result if not pure
+-}
 
 compile :: Env -> LispVal -> IOThrowsError String 
 compile _ (Number n) = return $ "Number " ++ (show n)
