@@ -47,19 +47,42 @@ compiledPrimitives = [
 header :: [String]
 header = [
    "module Main where "
+ , "import Language.Scheme.Core "
  , "import Language.Scheme.Numerical "
  , "import Language.Scheme.Primitives "
  , "import Language.Scheme.Types     -- Scheme data types "
- , "--import Language.Scheme.Variables -- Scheme variable operations "
+ , "import Language.Scheme.Variables -- Scheme variable operations "
  , "import Control.Monad.Error "
  , "import System.IO "
  , " "
+ , "-- Stubs from core; these should eventually be rolled into a common module "
+ , "apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal "
+ , "apply cont (PrimitiveFunc func) args = do "
+ , "  result <- liftThrows $ func args "
+ , "  case cont of "
+ , "    Continuation cEnv _ _ _ _ -> continueEval cEnv cont result "
+ , "    _ -> return result "
+ , "apply cont (IOFunc func) args = do "
+ , "  result <- func args "
+ , "  case cont of "
+ , "    Continuation cEnv _ _ _ _ -> continueEval cEnv cont result "
+ , "    _ -> return result "
+ , "continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal "
+ , "continueEval _ "
+ , "            (Continuation cEnv (Just (HaskellBody func funcArgs)) "
+ , "                               (Just (Continuation cce cnc ccc _ cdynwind)) "
+ , "                                xargs _) "
+ , "             val = func cEnv (Continuation cce cnc ccc xargs cdynwind) val funcArgs "
+ , "continueEval _ (Continuation cEnv Nothing (Just cCont) _ _) val = continueEval cEnv cCont val "
+ , "continueEval _ (Continuation _ Nothing Nothing _ _) val = return val "
+ , "continueEval _ _ _ = throwError $ Default \"Internal error in continueEval\" "
  , "main :: IO String "
  , "main = do "
- , "  (runIOThrows $ liftM show $ run) "
+ , "  env <- primitiveBindings "
+ , "  (runIOThrows $ liftM show $ run env (makeNullContinuation env) (Nil \"\") Nothing) "
  , " "
- , "run :: IOThrowsError LispVal "
- , "run = do "]
+ , "run :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal "
+ , "run env cont _ _ = do "]
 
 compileLisp :: Env -> String -> IOThrowsError LispVal
 compileLisp env filename = do
@@ -93,21 +116,23 @@ bs
 
 compile :: Env -> LispVal -> IOThrowsError String 
 compile _ (Number n) = return $ "Number " ++ (show n)
-compile _ (Atom a) = return $ "Atom " ++ a
+compile _ (Atom a) = return $ "getVar env " ++ a --"Atom " ++ a
 
 -- TODO: this is not good enough; a line of scheme may need to be compiled into many lines of haskell,
 --  for example
 
-compile env args@(List (Atom func : params)) = do
-  -- TODO: all of this needs to be based off of the equivalent code from Core.hs, and generated code needs to be in CPS
-  -- however, this is a simple example of how this might work within a compiler...
---  cfunc <- lookup
+compile env args@(List (func : params)) = do
+  f <- compile env func
+  f <- liftThrows $ "  x1 <- " ++ show f
+  -- TODO: continueEval
+{- TODO:
   case lookup func compiledPrimitives of
     (Just a) -> do
       ps <- mapM (compile env) params
       return $ a ++ " [ " ++ (Data.List.intercalate ", " ps) ++ " ] "
 --      return $ a ++ " [ " ++ (unwords ps) ++ " ] "
     Nothing -> throwError $ Default $ "Function definition not found: " ++ func 
+-}
 
   -- look up the function
   -- compile each arg (see prepareApply)
