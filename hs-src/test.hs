@@ -15,11 +15,10 @@ import Language.Scheme.Core      -- Scheme Interpreter
 import Language.Scheme.Numerical
 import Language.Scheme.Primitives
 import Language.Scheme.Types     -- Scheme data types
---import Language.Scheme.Variables -- Scheme variable operations
+import Language.Scheme.Variables -- Scheme variable operations
 import Control.Monad.Error
 import System.IO
 --import System.Environment
---import System.Console.Haskeline
 
 main :: IO String --()
 main = do
@@ -52,37 +51,43 @@ run env cont _ _ = do -- Missing params are result and args
 --  result <- liftThrows $ numAdd [Number 1, Number 2]
 --   writeProc (\ port obj -> hPrint port obj) [result]
  x1 <- getVar env "write" 
- continueEval env (makeCPS env cont f1) x1
+ continueEval env (makeCPS env (makeCPSWArgs env cont f5 [x1]) f1) $ Nil ""
 
 -- then call into similar code that processes +
-f1 env cont value _ = do
-TODO: value (the write function) is now lost - ooops... how to handle? should a new continuation be created?
+f1 env cont _ _ = do
  x1 <- getVar env "+" 
- continueEval env (makeCPS env cont f2) x1
+ continueEval env (makeCPSWArgs env cont f2 [x1]) $ Nil ""
 
 -- then call into code to get 1
-f2 env cont value _ = do
- x1 <- Number 1
- continueEval env (makeCPSWArgs env cont f3 [x1]) value
+f2 env cont _ (Just args) = do
+ x1 <- return $ Number 1
+ continueEval env (makeCPSWArgs env cont f3 $ args ++ [x1]) $ Nil ""
 
-f3 env cont value (Just args) = do
- x1 <- Number 2
- continueEval env (makeCPSWArgs env cont f4 (args ++ [x1])) value
+f3 env cont _  (Just args) = do
+ x1 <- return $ Number 2
+ continueEval env (makeCPSWArgs env cont f4 (args ++ [x1])) $ Nil "" 
 
--- TODO: then apply function corresponding to +
-f4 env cont value (Just args) = do
-  apply (makeCPSWArgs env cont f5) value args
--- TODO: need to apply args to func, and get value
--- then need to pass that to a continuation to a function f5 for (write)
---  x1 <- apply (makeCPSWArgs env cont f5) value args
---  continueEval env (makeCPSWArgs env cont x1
+-- then apply function corresponding to +
+f4 env cont _ (Just args) = do
+  apply cont (head args) (tail args)
 
+-- finally, pick back up evaluating (write).
+--
+-- we have no more continuations, so just call into cont, no need to
+-- create a new one.
+f5 env cont value (Just args) = do
+  apply cont (head args) (tail args ++ [value])
 
 
 -- Stubs to attempt to deal with above
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 apply cont (PrimitiveFunc func) args = do
   result <- liftThrows $ func args
+  case cont of
+    Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
+    _ -> return result
+apply cont (IOFunc func) args = do
+  result <- func args
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
@@ -100,7 +105,8 @@ continueEval _
                                (Just (Continuation cce cnc ccc _ cdynwind))
                                 xargs _) -- rather sloppy, should refactor code so this is not necessary
              val = func cEnv (Continuation cce cnc ccc xargs cdynwind) val funcArgs
-{-
+{- TODO: disabled for now...
+ -
  - No higher order function, so:
  -
  - If there is Scheme code to evaluate in the function body, we continue to evaluate it.
@@ -109,7 +115,7 @@ continueEval _
  - continuation (if there is one), or we just return the result. Yes technically with
  - CPS you are supposed to keep calling into functions and never return, but in this case
  - when the computation is complete, you have to return something. 
- -}
+ - }
 continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs dynWind) val = do
 --    case (trace ("cBody = " ++ show cBody) cBody) of
     case cBody of
@@ -121,6 +127,7 @@ continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraAr
             _ -> return (val)
         [lv] -> meval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) Nothing dynWind) lv
         (lv : lvs) -> meval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing dynWind) lv
+-}
 
 -- No current continuation, but a next cont is available; call into it
 continueEval _ (Continuation cEnv Nothing (Just cCont) _ _) val = continueEval cEnv cCont val
