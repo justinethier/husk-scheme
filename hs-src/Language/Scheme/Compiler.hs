@@ -116,14 +116,36 @@ bs
 
 compile :: Env -> LispVal -> IOThrowsError String 
 compile _ (Number n) = return $ "Number " ++ (show n)
-compile _ (Atom a) = return $ "getVar env " ++ a --"Atom " ++ a
+compile _ (Atom a) = return $ "getVar env \"" ++ a ++ "\"" --"Atom " ++ a
 
 -- TODO: this is not good enough; a line of scheme may need to be compiled into many lines of haskell,
 --  for example
-
+-- _gensym :: String -> iothrowserror lispval
 compile env args@(List (func : params)) = do
   f <- compile env func
-  f <- liftThrows $ "  x1 <- " ++ show f
+  f <- return $ "  x1 <- " ++ f
+  Atom nextFunc <- _gensym "f"
+  c <- return $ "\n  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " [x1]) $ Nil \"\""
+  rest <- compileArgs nextFunc params
+  return $ f ++ c ++ rest
+ where 
+  compileArgs :: String -> [LispVal] -> IOThrowsError String
+  compileArgs thisFunc args = do
+    case args of
+      [] -> do
+        fdef <- return $ "\n" ++ thisFunc ++ " env cont value (Just (a:as)) = do " 
+        apl <- return $ "\n  apply cont a as "
+        return $ fdef ++ apl
+      [a] -> do
+        fdef <- return $ "\n" ++ thisFunc ++ " env cont value (Just args) = do " 
+        f <- compile env func
+        f <- return $ "\n  x1 <- " ++ f
+        Atom nextFunc <- _gensym "f"
+        c <- return $ "\n  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " $ args ++ [x1]) $ Nil \"\""
+        rest <- compileArgs nextFunc [] 
+        return $ fdef ++ f ++ c ++ rest
+      (a : as) -> compileArgs thisFunc as
+
   -- TODO: continueEval
 {- TODO:
   case lookup func compiledPrimitives of
