@@ -76,10 +76,10 @@ header = [
  , "continueEval _ (Continuation cEnv Nothing (Just cCont) _ _) val = continueEval cEnv cCont val "
  , "continueEval _ (Continuation _ Nothing Nothing _ _) val = return val "
  , "continueEval _ _ _ = throwError $ Default \"Internal error in continueEval\" "
- , "main :: IO String "
+ , "main :: IO () "
  , "main = do "
  , "  env <- primitiveBindings "
- , "  (runIOThrows $ liftM show $ run env (makeNullContinuation env) (Nil \"\") Nothing) "
+ , "  (runIOThrows $ liftM show $ run env (makeNullContinuation env) (Nil \"\") Nothing) >>= putStr "
  , " "
  , "run :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal "
  , "run env cont _ _ = do "]
@@ -115,7 +115,7 @@ bs
 -}
 
 compile :: Env -> LispVal -> IOThrowsError String 
-compile _ (Number n) = return $ "Number " ++ (show n)
+compile _ (Number n) = return $ "return $ Number " ++ (show n)
 compile _ (Atom a) = return $ "getVar env \"" ++ a ++ "\"" --"Atom " ++ a
 
 -- TODO: this is not good enough; a line of scheme may need to be compiled into many lines of haskell,
@@ -138,13 +138,20 @@ compile env args@(List (func : params)) = do
         return $ fdef ++ apl
       [a] -> do
         fdef <- return $ "\n" ++ thisFunc ++ " env cont value (Just args) = do " 
-        f <- compile env func
+        f <- compile env a
         f <- return $ "\n  x1 <- " ++ f
         Atom nextFunc <- _gensym "f"
         c <- return $ "\n  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " $ args ++ [x1]) $ Nil \"\""
         rest <- compileArgs nextFunc [] 
         return $ fdef ++ f ++ c ++ rest
-      (a : as) -> compileArgs thisFunc as
+      (a : as) -> do
+        fdef <- return $ "\n" ++ thisFunc ++ " env cont value (Just args) = do " 
+        f <- compile env a
+        f <- return $ "\n  x1 <- " ++ f
+        Atom nextFunc <- _gensym "f"
+        c <- return $ "\n  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " $ args ++ [x1]) $ Nil \"\""
+        rest <- compileArgs nextFunc as 
+        return $ fdef ++ f ++ c ++ rest
 
   -- TODO: continueEval
 {- TODO:
