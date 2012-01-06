@@ -51,7 +51,16 @@ run env cont _ _ = do -- Missing params are result and args
 --  result <- liftThrows $ numAdd [Number 1, Number 2]
 --   writeProc (\ port obj -> hPrint port obj) [result]
  x1 <- getVar env "write" 
- continueEval env (makeCPS env (makeCPSWArgs env cont f5 [x1]) f1) $ Nil ""
+-- continueEval env (makeCPS env (makeCPSWArgs env cont f5 [x1]) f1) $ Nil ""
+ continueEval env (makeCPSWArgs env cont f0 [x1]) $ Nil ""
+
+f0 env cont _ (Just args) = do
+  -- When the compiler detects a nested function call, it cannot call it directly but it
+  -- can redirect into the function by creating a new continuation for it...
+  --
+  -- The compiler would also have knowledge of the fact that the value passed
+  -- to f5 needs to be appended to args, hence f5 will be written to do this
+  continueEval env (makeCPS env (makeCPSWArgs env cont f5 args) f1) $ Nil ""
 
 -- then call into similar code that processes +
 f1 env cont _ _ = do
