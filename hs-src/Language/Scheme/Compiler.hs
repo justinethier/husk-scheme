@@ -87,12 +87,12 @@ header = [
 compileLisp :: Env -> String -> IOThrowsError LispVal
 compileLisp env filename = do
   -- TODO: below does not really work when compiling an expression that evaluates to a value (eg: 1)
-  comp <- load filename >>= mapM (compile env)
+  comp <- load filename >>= compileBlock env [] --mapM (compile env)
   outH <- liftIO $ openFile "_tmp.hs" WriteMode
   _ <- liftIO $ writeList outH header
   _ <- liftIO $ writeList outH comp
   _ <- liftIO $ hClose outH
-  return $ String "" -- Dummy value
+  return $ Nil "" -- Dummy value
 {-  if not (null comp)
      then do
      else putStrLn "empty file"
@@ -104,6 +104,14 @@ writeList outH (l : ls) = do
 writeList outH _ = do
   hPutStr outH ""
 
+compileBlock :: Env -> [String] -> [LispVal] -> IOThrowsError [String]
+compileBlock env result code@(c:cs) = do
+
+-- TODO: may need to pass a 'level' variable for indentation
+
+  compiled <- compile env c
+  compileBlock env (result ++ [compiled]) cs
+compileBlock env result [] = return result
 {-
 compileBlock - need to use explicit recursion to transform a block of code, because
  later lines may depend on previous ones (is this true?)
