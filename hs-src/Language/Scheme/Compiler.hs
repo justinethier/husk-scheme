@@ -34,6 +34,32 @@ import qualified Data.Map
 -}
 import System.IO
 
+-- A very basic type to store a Haskell AST
+-- The compiler performs the following transformations:
+-- Scheme AST (LispVal) -> Haskell AST (HaskAST) -> Compiled Code (String)
+data HaskAST = AstVariableM String
+  | AstFunction {astfName :: String,
+--                 astfType :: String,
+                 astfArgs :: String,
+                 astfCode :: [HaskAST]
+                } 
+{-
+ | Func {params :: [String],
+         vararg :: (Maybe String),
+         body :: [LispVal],
+         closure :: Env
+        } -}
+ | AstValue String
+ | AstContinuation {astcNext :: String,
+                    astcArgs :: String
+                   }
+
+showVal :: HaskAST -> String
+showVal (AstVariableM v) = v ++ " <- "
+showVal (AstValue v) = v
+showVal (AstContinuation nextFunc args) = "continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " " ++ args ++ ") $ Nil \"\""
+
+
 -- TODO: will probably need to differentiate functions that are in the IO monad 
 --  and pure ones that are not (such as numAdd)
 compiledPrimitives :: [(String, String)]
@@ -123,8 +149,8 @@ bs
 -}
 
 compile :: Env -> LispVal -> IOThrowsError String 
-compile _ (Number n) = return $ "return $ Number " ++ (show n)
-compile _ (Atom a) = return $ "getVar env \"" ++ a ++ "\"" --"Atom " ++ a
+compile _ (Number n) = return $ "  return $ Number " ++ (show n)
+compile _ (Atom a) = return $ "  getVar env \"" ++ a ++ "\"" --"Atom " ++ a
 
 -- TODO: this is not good enough; a line of scheme may need to be compiled into many lines of haskell,
 --  for example
