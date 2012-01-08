@@ -53,22 +53,23 @@ data HaskAST = AstVariableM String
  | AstContinuation {astcNext :: String,
                     astcArgs :: String
                    }
+-- | AstNewline String -- Is this a hack?
 
 showVal :: HaskAST -> String
 showVal (AstVariableM v) = v ++ " <- "
 showVal (AstValue v) = v
 showVal (AstContinuation nextFunc args) = "continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " " ++ args ++ ") $ Nil \"\""
 
-
--- TODO: will probably need to differentiate functions that are in the IO monad 
---  and pure ones that are not (such as numAdd)
-compiledPrimitives :: [(String, String)]
-compiledPrimitives = [
-  ("write", "writeProc (\\ port obj -> hPrint port obj)")
- ,("+", "numAdd")
- ,("-", "numSub")
- ,("*", "numMul")
- ,("/", "numDiv")]
+-- OBSOLETE CODE:
+---- TODO: will probably need to differentiate functions that are in the IO monad 
+----  and pure ones that are not (such as numAdd)
+--compiledPrimitives :: [(String, String)]
+--compiledPrimitives = [
+--  ("write", "writeProc (\\ port obj -> hPrint port obj)")
+-- ,("+", "numAdd")
+-- ,("-", "numSub")
+-- ,("*", "numMul")
+-- ,("/", "numDiv")]
 
 header :: [String]
 header = [
@@ -148,9 +149,9 @@ bs
  - need to lift up the result if not pure
 -}
 
-compile :: Env -> LispVal -> IOThrowsError String 
-compile _ (Number n) = return $ "  return $ Number " ++ (show n)
-compile _ (Atom a) = return $ "  getVar env \"" ++ a ++ "\"" --"Atom " ++ a
+compile :: Env -> LispVal -> IOThrowsError HaskAST 
+compile _ (Number n) = return $ AstVariableM "  return $ Number " ++ (show n)
+compile _ (Atom a) = return $ AstVariableM "  getVar env \"" ++ a ++ "\"" --"Atom " ++ a
 
 -- TODO: this is not good enough; a line of scheme may need to be compiled into many lines of haskell,
 --  for example
