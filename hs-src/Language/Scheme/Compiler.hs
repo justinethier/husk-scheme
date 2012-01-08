@@ -37,18 +37,12 @@ import System.IO
 -- A very basic type to store a Haskell AST
 -- The compiler performs the following transformations:
 -- Scheme AST (LispVal) -> Haskell AST (HaskAST) -> Compiled Code (String)
-data HaskAST = AstVariableM String
-  | AstFunction {astfName :: String,
+data HaskAST = AstAssignM String HaskAST
+  | AstFunction {astfName :: Maybe String,
 --                 astfType :: String,
                  astfArgs :: String,
                  astfCode :: [HaskAST]
                 } 
-{-
- | Func {params :: [String],
-         vararg :: (Maybe String),
-         body :: [LispVal],
-         closure :: Env
-        } -}
  | AstValue String
  | AstContinuation {astcNext :: String,
                     astcArgs :: String
@@ -56,7 +50,7 @@ data HaskAST = AstVariableM String
 -- | AstNewline String -- Is this a hack?
 
 showVal :: HaskAST -> String
-showVal (AstVariableM v) = v ++ " <- "
+showVal (AstAssignM var val) = v ++ " <- " ++ show val
 showVal (AstValue v) = v
 showVal (AstContinuation nextFunc args) = "continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " " ++ args ++ ") $ Nil \"\""
 
@@ -150,19 +144,19 @@ bs
 -}
 
 compile :: Env -> LispVal -> IOThrowsError HaskAST 
-compile _ (Number n) = return $ AstVariableM "  return $ Number " ++ (show n)
-compile _ (Atom a) = return $ AstVariableM "  getVar env \"" ++ a ++ "\"" --"Atom " ++ a
+compile _ (Number n) = return $ AstValue "  return $ Number " ++ (show n)
+compile _ (Atom a) = return $ AstValue "  getVar env \"" ++ a ++ "\"" --"Atom " ++ a
 
 -- TODO: this is not good enough; a line of scheme may need to be compiled into many lines of haskell,
 --  for example
 -- _gensym :: String -> iothrowserror lispval
 compile env args@(List (func : params)) = do
-  f <- compile env func
-  f <- return $ "  x1 <- " ++ f
+  comp <- compile env func
+  f <- return $ AstAssignM "x1" comp
   Atom nextFunc <- _gensym "f"
-  c <- return $ "\n  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " [x1]) $ Nil \"\""
+  c <- return $ AstContinuation nextFunc "[x1])"
   rest <- compileArgs nextFunc params
-  return $ f ++ c ++ rest
+  return $ AstFunction "nameTODO" f ++ c ++ rest
  where 
   compileArgs :: String -> [LispVal] -> IOThrowsError String
   compileArgs thisFunc args = do
