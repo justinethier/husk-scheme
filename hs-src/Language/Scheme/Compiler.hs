@@ -210,23 +210,25 @@ compile env args@(List (func : params)) = do
                      ] ++ rest
           code@(_ : _) -> do
 
-TODO: this section is very broken, but the idea is that if another function is
- being called, we detect and splice it in...
+--TODO: this section is very broken, but the idea is that if another function is
+-- being called, we detect and splice it in...
 
             Atom stubFunc <- _gensym "f"
             Atom nextFunc <- _gensym "f"
       -- f1 - would be next func that comp will call into
       -- f5 - would be nextFunc
       --  continueEval env (makeCPS env (makeCPSWArgs env cont f5 args) f1) $ Nil ""
-            c <- return $ AstValue $ "  continueEval env (makeCPS env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
-            f <- return $ AstValue $ stubFunc ++ " env cont _ _ = do "
+            c <- return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
+            f <- return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do "
 
 
             rest <- compileArgs nextFunc [] 
-            return $ [c, f {-, AstFunction thisFunc " env cont value (Just args) " 
-                                  [ --AstAssignM "x1" $ code 
-                                   AstContinuation nextFunc "(args ++ [x1])"]-}
-                     ] ++ rest
+            return $ [ f, c, 
+                       AstFunction stubFunc " env cont _ _ " 
+                                  [
+                                   --AstContinuation nextFunc "(args ++ [x1])"
+                                  ]
+                     ] ++ code ++ rest
 
             
       (a : as) -> do
