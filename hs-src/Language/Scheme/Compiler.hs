@@ -38,7 +38,7 @@ import System.IO
 -- The compiler performs the following transformations:
 -- Scheme AST (LispVal) -> Haskell AST (HaskAST) -> Compiled Code (String)
 data HaskAST = AstAssignM String HaskAST
-  | AstFunction {astfName :: Maybe String,
+  | AstFunction {astfName :: String,
 --                 astfType :: String,
                  astfArgs :: String,
                  astfCode :: [HaskAST]
@@ -49,10 +49,16 @@ data HaskAST = AstAssignM String HaskAST
                    }
 -- | AstNewline String -- Is this a hack?
 
-showVal :: HaskAST -> String
-showVal (AstAssignM var val) = v ++ " <- " ++ show val
-showVal (AstValue v) = v
-showVal (AstContinuation nextFunc args) = "continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " " ++ args ++ ") $ Nil \"\""
+showValAST :: HaskAST -> String
+showValAST (AstAssignM var val) = var ++ " <- " ++ show val
+showValAST (AstFunction name args code) = do
+  let header = "\n" ++ name ++ args ++ " = do "
+  let body = unwords . map (\x -> "\n" ++ x ) $ map showValAST code
+  header ++ body 
+showValAST (AstValue v) = v
+showValAST (AstContinuation nextFunc args) = "continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " " ++ args ++ ") $ Nil \"\""
+
+instance Show HaskAST where show = showValAST
 
 -- OBSOLETE CODE:
 ---- TODO: will probably need to differentiate functions that are in the IO monad 
@@ -111,7 +117,7 @@ compileLisp env filename = do
   comp <- load filename >>= compileBlock env [] --mapM (compile env)
   outH <- liftIO $ openFile "_tmp.hs" WriteMode
   _ <- liftIO $ writeList outH header
-  _ <- liftIO $ writeList outH comp
+  _ <- liftIO $ writeList outH $ map show comp
   _ <- liftIO $ hClose outH
   return $ Nil "" -- Dummy value
 {-  if not (null comp)
@@ -125,13 +131,13 @@ writeList outH (l : ls) = do
 writeList outH _ = do
   hPutStr outH ""
 
-compileBlock :: Env -> [String] -> [LispVal] -> IOThrowsError [String]
+compileBlock :: Env -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST]
 compileBlock env result code@(c:cs) = do
 
 -- TODO: may need to pass a 'level' variable for indentation
 
   compiled <- compile env c
-  compileBlock env (result ++ [compiled]) cs
+  compileBlock env (result ++ compiled) cs
 compileBlock env result [] = return result
 {-
 compileBlock - need to use explicit recursion to transform a block of code, because
@@ -143,44 +149,61 @@ bs
  - need to lift up the result if not pure
 -}
 
-compile :: Env -> LispVal -> IOThrowsError HaskAST 
-compile _ (Number n) = return $ AstValue "  return $ Number " ++ (show n)
-compile _ (Atom a) = return $ AstValue "  getVar env \"" ++ a ++ "\"" --"Atom " ++ a
+compile :: Env -> LispVal -> IOThrowsError [HaskAST]
+compile _ (Number n) = return [AstValue $ "  return $ Number " ++ (show n)]
+compile _ (Atom a) = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
 
 -- TODO: this is not good enough; a line of scheme may need to be compiled into many lines of haskell,
 --  for example
 -- _gensym :: String -> iothrowserror lispval
 compile env args@(List (func : params)) = do
   comp <- compile env func
-  f <- return $ AstAssignM "x1" comp
+  f <- return $ AstAssignM "x1" $ head comp -- TODO: a hack
   Atom nextFunc <- _gensym "f"
   c <- return $ AstContinuation nextFunc "[x1])"
   rest <- compileArgs nextFunc params
-  return $ AstFunction "nameTODO" f ++ c ++ rest
+  return $ [f, c] ++ rest
  where 
-  compileArgs :: String -> [LispVal] -> IOThrowsError String
+  compileArgs :: String -> [LispVal] -> IOThrowsError [HaskAST]
   compileArgs thisFunc args = do
     case args of
       [] -> do
-        fdef <- return $ "\n" ++ thisFunc ++ " env cont value (Just (a:as)) = do " 
+        {-fdef <- return $ "\n" ++ thisFunc ++ " env cont value (Just (a:as)) = do " 
         apl <- return $ "\n  apply cont a as "
-        return $ fdef ++ apl
+        return $ fdef ++ apl-}
+        return $ [AstFunction thisFunc " env cont value (Just (a:as)) " [AstValue "  apply cont a as "]]
       [a] -> do
+      {-
         fdef <- return $ "\n" ++ thisFunc ++ " env cont value (Just args) = do " 
-        f <- compile env a
-        f <- return $ "\n  x1 <- " ++ f
+        comp <- compile env a
+        f <- return $ "\n  x1 <- " ++ comp
         Atom nextFunc <- _gensym "f"
         c <- return $ "\n  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " $ args ++ [x1]) $ Nil \"\""
         rest <- compileArgs nextFunc [] 
-        return $ fdef ++ f ++ c ++ rest
+        return $ fdef ++ f ++ c ++ res-}
+        comp <- compile env a
+        Atom nextFunc <- _gensym "f"
+        rest <- compileArgs nextFunc [] 
+        return $ [AstFunction thisFunc " env cont value (Just args) " 
+                              [AstAssignM "x1" $ head comp, -- TODO: a hack
+                               AstContinuation nextFunc "(args ++ [x1])"]
+                 ] ++ rest
       (a : as) -> do
+      {-
         fdef <- return $ "\n" ++ thisFunc ++ " env cont value (Just args) = do " 
-        f <- compile env a
-        f <- return $ "\n  x1 <- " ++ f
+        comp <- compile env a
+        f <- return $ "\n  x1 <- " ++ comp
         Atom nextFunc <- _gensym "f"
         c <- return $ "\n  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " $ args ++ [x1]) $ Nil \"\""
         rest <- compileArgs nextFunc as 
-        return $ fdef ++ f ++ c ++ rest
+        return $ fdef ++ f ++ c ++ rest -}
+        comp <- compile env a
+        Atom nextFunc <- _gensym "f"
+        rest <- compileArgs nextFunc as 
+        return $ [AstFunction thisFunc " env cont value (Just args) " 
+                              [AstAssignM "x1" $ head comp, -- TODO: a hack
+                               AstContinuation nextFunc "(args ++ [x1])"]
+                 ] ++ rest
 
   -- TODO: continueEval
 {- TODO:
