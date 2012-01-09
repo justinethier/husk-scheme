@@ -50,13 +50,13 @@ data HaskAST = AstAssignM String HaskAST
 -- | AstNewline String -- Is this a hack?
 
 showValAST :: HaskAST -> String
-showValAST (AstAssignM var val) = var ++ " <- " ++ show val
+showValAST (AstAssignM var val) = "  " ++ var ++ " <- " ++ show val
 showValAST (AstFunction name args code) = do
   let header = "\n" ++ name ++ args ++ " = do "
   let body = unwords . map (\x -> "\n" ++ x ) $ map showValAST code
   header ++ body 
 showValAST (AstValue v) = v
-showValAST (AstContinuation nextFunc args) = "continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " " ++ args ++ ") $ Nil \"\""
+showValAST (AstContinuation nextFunc args) = "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " " ++ args ++ ") $ Nil \"\""
 
 instance Show HaskAST where show = showValAST
 
@@ -160,7 +160,7 @@ compile env args@(List (func : params)) = do
   comp <- compile env func
   f <- return $ AstAssignM "x1" $ head comp -- TODO: a hack
   Atom nextFunc <- _gensym "f"
-  c <- return $ AstContinuation nextFunc "[x1])"
+  c <- return $ AstContinuation nextFunc "[x1]"
   rest <- compileArgs nextFunc params
   return $ [f, c] ++ rest
  where 
