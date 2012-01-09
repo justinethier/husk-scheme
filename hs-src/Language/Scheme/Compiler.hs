@@ -33,6 +33,7 @@ import Data.Array
 import qualified Data.Map
 -}
 import System.IO
+import Debug.Trace
 
 -- A very basic type to store a Haskell AST
 -- The compiler performs the following transformations:
@@ -149,6 +150,13 @@ bs
  - need to lift up the result if not pure
 -}
 
+{-
+findNextContinuation :: [HaskAST] -> Maybe HaskAST
+findNextContinuation (h@(AstContinuation _ _) : hs) = Just h
+findNextContinuation (_ : hs) = findNextContinuation hs
+findNextContinuation _ = Nothing
+  -}
+
 compile :: Env -> LispVal -> IOThrowsError [HaskAST]
 compile _ (Number n) = return [AstValue $ "  return $ Number " ++ (show n)]
 compile _ (Atom a) = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
@@ -157,12 +165,29 @@ compile _ (Atom a) = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom 
 --  for example
 -- _gensym :: String -> iothrowserror lispval
 compile env args@(List (func : params)) = do
-  comp <- compile env func
-  f <- return $ AstAssignM "x1" $ head comp -- TODO: a hack
-  Atom nextFunc <- _gensym "f"
-  c <- return $ AstContinuation nextFunc "[x1]"
-  rest <- compileArgs nextFunc params
-  return $ [f, c] ++ rest
+  _comp <- compile env func
+  
+--  case (trace ("_comp = " ++ show _comp) _comp) of
+  case _comp of
+    [comp] -> do
+      f <- return $ AstAssignM "x1" comp
+      Atom nextFunc <- _gensym "f"
+      c <- return $ AstContinuation nextFunc "[x1]"
+      rest <- compileArgs nextFunc params
+      return $ [f, c] ++ rest -- TODO: a hack
+{-    code@(_ : _) -> do
+-- TODO: search code for the continuation    AstFunction name args code -> do
+--      Just (AstContinuation cNextFunc _) <- findNextContinuation code
+      Atom stubFunc <- _gensym "f"
+      Atom nextFunc <- _gensym "f"
+-- f1 - would be next func that comp will call into
+-- f5 - would be nextFunc
+--  continueEval env (makeCPS env (makeCPSWArgs env cont f5 args) f1) $ Nil ""
+      c <- return $ AstValue $ "  continueEval env (makeCPS env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
+      f <- return $ AstValue $ stubFunc ++ " env cont _ _ = do "
+      rest <- compileArgs nextFunc params
+      return (c : rest)
+  -}    
  where 
   compileArgs :: String -> [LispVal] -> IOThrowsError [HaskAST]
   compileArgs thisFunc args = do
@@ -173,66 +198,59 @@ compile env args@(List (func : params)) = do
         return $ fdef ++ apl-}
         return $ [AstFunction thisFunc " env cont value (Just (a:as)) " [AstValue "  apply cont a as "]]
       [a] -> do
-      {-
-        fdef <- return $ "\n" ++ thisFunc ++ " env cont value (Just args) = do " 
-        comp <- compile env a
-        f <- return $ "\n  x1 <- " ++ comp
-        Atom nextFunc <- _gensym "f"
-        c <- return $ "\n  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " $ args ++ [x1]) $ Nil \"\""
-        rest <- compileArgs nextFunc [] 
-        return $ fdef ++ f ++ c ++ res-}
-        comp <- compile env a
-        Atom nextFunc <- _gensym "f"
-        rest <- compileArgs nextFunc [] 
-        return $ [AstFunction thisFunc " env cont value (Just args) " 
-                              [AstAssignM "x1" $ head comp, -- TODO: a hack
-                               AstContinuation nextFunc "(args ++ [x1])"]
-                 ] ++ rest
+        _comp <- compile env a
+        -- TODO: use this below to splice in a call to another function      
+        case (trace ("_comp = " ++ show _comp) _comp) of
+          [comp] -> do
+            Atom nextFunc <- _gensym "f"
+            rest <- compileArgs nextFunc [] 
+            return $ [AstFunction thisFunc " env cont value (Just args) " 
+                                  [AstAssignM "x1" $ comp, -- TODO: a hack
+                                   AstContinuation nextFunc "(args ++ [x1])"]
+                     ] ++ rest
+          code@(_ : _) -> do
+
+TODO: this section is very broken, but the idea is that if another function is
+ being called, we detect and splice it in...
+
+            Atom stubFunc <- _gensym "f"
+            Atom nextFunc <- _gensym "f"
+      -- f1 - would be next func that comp will call into
+      -- f5 - would be nextFunc
+      --  continueEval env (makeCPS env (makeCPSWArgs env cont f5 args) f1) $ Nil ""
+            c <- return $ AstValue $ "  continueEval env (makeCPS env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
+            f <- return $ AstValue $ stubFunc ++ " env cont _ _ = do "
+
+
+            rest <- compileArgs nextFunc [] 
+            return $ [c, f {-, AstFunction thisFunc " env cont value (Just args) " 
+                                  [ --AstAssignM "x1" $ code 
+                                   AstContinuation nextFunc "(args ++ [x1])"]-}
+                     ] ++ rest
+
+            
       (a : as) -> do
-      {-
-        fdef <- return $ "\n" ++ thisFunc ++ " env cont value (Just args) = do " 
-        comp <- compile env a
-        f <- return $ "\n  x1 <- " ++ comp
-        Atom nextFunc <- _gensym "f"
-        c <- return $ "\n  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " $ args ++ [x1]) $ Nil \"\""
-        rest <- compileArgs nextFunc as 
-        return $ fdef ++ f ++ c ++ rest -}
-        comp <- compile env a
-        Atom nextFunc <- _gensym "f"
-        rest <- compileArgs nextFunc as 
-        return $ [AstFunction thisFunc " env cont value (Just args) " 
-                              [AstAssignM "x1" $ head comp, -- TODO: a hack
-                               AstContinuation nextFunc "(args ++ [x1])"]
-                 ] ++ rest
-
-  -- TODO: continueEval
-{- TODO:
-  case lookup func compiledPrimitives of
-    (Just a) -> do
-      ps <- mapM (compile env) params
-      return $ a ++ " [ " ++ (Data.List.intercalate ", " ps) ++ " ] "
---      return $ a ++ " [ " ++ (unwords ps) ++ " ] "
-    Nothing -> throwError $ Default $ "Function definition not found: " ++ func 
--}
-
-  -- look up the function
-  -- compile each arg (see prepareApply)
-  -- emit haskell code to call the function, passing in each arg as parameters
-
+        _comp <- compile env a
+        -- TODO: use this below to splice in a call to another function      
+        case (trace ("_comp = " ++ show _comp) _comp) of
+          comp -> do --[comp] -> do
+            Atom nextFunc <- _gensym "f"
+            rest <- compileArgs nextFunc as 
+            return $ [AstFunction thisFunc " env cont value (Just args) " 
+                                  [AstAssignM "x1" $ head comp, -- TODO: a hack
+                                   AstContinuation nextFunc "(args ++ [x1])"]
+                     ] ++ rest
 {-
-TODO:
-
-- a function to load a scheme file
-- a function to compile a line of scheme code to haskell
-  TODO: can compilation happen one line at a time? for now that may be a good enough start
-
-  assume compilation will need to use gensym/name-mangling to emit functions and maintain a mapping of
-  previously-defined variables, in order to interleave them into the compiled program
-
-  will need to emit equivalents to continueEval, apply, and other forms from the interpreter. we will need to
-  maintain CPS within the compiled code
-
-TBD: can we compile directly to haskell, or do we need an intermediate representation?
-     maybe a direct compile is good enough for the initial proof-of-concept
-
--}
+code@(_ : _) -> do
+      -- TODO: search code for the continuation    AstFunction name args code -> do
+      --      Just (AstContinuation cNextFunc _) <- findNextContinuation code
+            Atom stubFunc <- _gensym "f"
+            Atom nextFunc <- _gensym "f"
+      -- f1 - would be next func that comp will call into
+      -- f5 - would be nextFunc
+      --  continueEval env (makeCPS env (makeCPSWArgs env cont f5 args) f1) $ Nil ""
+            c <- return $ AstValue $ "  continueEval env (makeCPS env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
+            f <- return $ AstValue $ stubFunc ++ " env cont _ _ = do "
+            rest <- compileArgs nextFunc params
+            return (c : rest)
+        --  -}    
