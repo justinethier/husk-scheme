@@ -190,30 +190,37 @@ compile env args@(List (func : params)) = do
   -}    
  where 
   compileArgs :: String -> Bool -> [LispVal] -> IOThrowsError [HaskAST]
-  compileArgs thisFunc applyUseValue args = do
+  compileArgs thisFunc thisFuncUseValue args = do
     case args of
       [] -> do
-        if applyUseValue
-           then return $ [AstFunction thisFunc " env cont value (Just (a:as)) " [AstValue "  apply cont a $ as ++ [value] "]]
-           else return $ [AstFunction thisFunc " env cont value (Just (a:as)) " [AstValue "  apply cont a as "]]
+           return $ [
+            AstFunction thisFunc 
+             " env cont (Nil _) (Just (a:as)) " [AstValue "  apply cont a as "],
+            AstFunction thisFunc 
+             " env cont value (Just (a:as)) " [AstValue "  apply cont a $ as ++ [value] "]]
       (a:as) -> do
         _comp <- compile env a
         -- Use this below to splice in a call to another function      
-        case (trace ("_comp = " ++ show _comp) _comp) of
+--        case (trace ("_comp = " ++ show _comp) _comp) of
+        case _comp of
           [comp] -> do
+            let nfArgs = if thisFuncUseValue
+                            then "(args ++ [value] ++ [x1])"
+                            else "(args ++ [x1])"
             Atom nextFunc <- _gensym "f"
-            rest <- compileArgs nextFunc applyUseValue as 
+            rest <- compileArgs nextFunc False as 
             return $ [AstFunction thisFunc " env cont value (Just args) " 
                                   [AstAssignM "x1" $ comp,
-                                   AstContinuation nextFunc "(args ++ [x1])"]
+                                   AstContinuation nextFunc nfArgs]
                      ] ++ rest
           code@(_ : _) -> do
             -- If another func is being called, we detect and splice it in...
             Atom stubFunc <- _gensym "f"
             Atom nextFunc <- _gensym "f"
             c <- return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
-            f <- return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do "
+            f <- return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do  -- TEST "
 
+            -- True indicates nextFunc needs to use value arg passed into it
             rest <- compileArgs nextFunc True as
             return $ [ f, c, 
                        AstFunction stubFunc " env cont _ _ " []
