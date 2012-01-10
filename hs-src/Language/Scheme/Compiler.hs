@@ -196,13 +196,13 @@ compile env args@(List (func : params)) = do
         if applyUseValue
            then return $ [AstFunction thisFunc " env cont value (Just (a:as)) " [AstValue "  apply cont a $ as ++ [value] "]]
            else return $ [AstFunction thisFunc " env cont value (Just (a:as)) " [AstValue "  apply cont a as "]]
-      [a] -> do
+      (a:as) -> do
         _comp <- compile env a
         -- Use this below to splice in a call to another function      
         case (trace ("_comp = " ++ show _comp) _comp) of
           [comp] -> do
             Atom nextFunc <- _gensym "f"
-            rest <- compileArgs nextFunc False [] 
+            rest <- compileArgs nextFunc applyUseValue as 
             return $ [AstFunction thisFunc " env cont value (Just args) " 
                                   [AstAssignM "x1" $ comp,
                                    AstContinuation nextFunc "(args ++ [x1])"]
@@ -214,20 +214,8 @@ compile env args@(List (func : params)) = do
             c <- return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
             f <- return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do "
 
-            rest <- compileArgs nextFunc True [] 
+            rest <- compileArgs nextFunc True as
             return $ [ f, c, 
                        AstFunction stubFunc " env cont _ _ " []
                      ] ++ code ++ rest
 
-            
-      (a : as) -> do
-        _comp <- compile env a
-        -- TODO: use this below to splice in a call to another function      
-        case (trace ("_comp = " ++ show _comp) _comp) of
-          comp -> do --[comp] -> do
-            Atom nextFunc <- _gensym "f"
-            rest <- compileArgs nextFunc False as 
-            return $ [AstFunction thisFunc " env cont value (Just args) " 
-                                  [AstAssignM "x1" $ head comp, -- TODO: a hack
-                                   AstContinuation nextFunc "(args ++ [x1])"]
-                     ] ++ rest
