@@ -173,7 +173,7 @@ compile env args@(List (func : params)) = do
       f <- return $ AstAssignM "x1" comp
       Atom nextFunc <- _gensym "f"
       c <- return $ AstContinuation nextFunc "[x1]"
-      rest <- compileArgs nextFunc params
+      rest <- compileArgs nextFunc False params
       return $ [f, c] ++ rest -- TODO: a hack
 {-    code@(_ : _) -> do
 -- TODO: search code for the continuation    AstFunction name args code -> do
@@ -189,45 +189,34 @@ compile env args@(List (func : params)) = do
       return (c : rest)
   -}    
  where 
-  compileArgs :: String -> [LispVal] -> IOThrowsError [HaskAST]
-  compileArgs thisFunc args = do
+  compileArgs :: String -> Bool -> [LispVal] -> IOThrowsError [HaskAST]
+  compileArgs thisFunc applyUseValue args = do
     case args of
       [] -> do
-        {-fdef <- return $ "\n" ++ thisFunc ++ " env cont value (Just (a:as)) = do " 
-        apl <- return $ "\n  apply cont a as "
-        return $ fdef ++ apl-}
-        return $ [AstFunction thisFunc " env cont value (Just (a:as)) " [AstValue "  apply cont a as "]]
+        if applyUseValue
+           then return $ [AstFunction thisFunc " env cont value (Just (a:as)) " [AstValue "  apply cont a $ as ++ [value] "]]
+           else return $ [AstFunction thisFunc " env cont value (Just (a:as)) " [AstValue "  apply cont a as "]]
       [a] -> do
         _comp <- compile env a
-        -- TODO: use this below to splice in a call to another function      
+        -- Use this below to splice in a call to another function      
         case (trace ("_comp = " ++ show _comp) _comp) of
           [comp] -> do
             Atom nextFunc <- _gensym "f"
-            rest <- compileArgs nextFunc [] 
+            rest <- compileArgs nextFunc False [] 
             return $ [AstFunction thisFunc " env cont value (Just args) " 
-                                  [AstAssignM "x1" $ comp, -- TODO: a hack
+                                  [AstAssignM "x1" $ comp,
                                    AstContinuation nextFunc "(args ++ [x1])"]
                      ] ++ rest
           code@(_ : _) -> do
-
---TODO: this section is very broken, but the idea is that if another function is
--- being called, we detect and splice it in...
-
+            -- If another func is being called, we detect and splice it in...
             Atom stubFunc <- _gensym "f"
             Atom nextFunc <- _gensym "f"
-      -- f1 - would be next func that comp will call into
-      -- f5 - would be nextFunc
-      --  continueEval env (makeCPS env (makeCPSWArgs env cont f5 args) f1) $ Nil ""
             c <- return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
             f <- return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do "
 
-
-            rest <- compileArgs nextFunc [] 
+            rest <- compileArgs nextFunc True [] 
             return $ [ f, c, 
-                       AstFunction stubFunc " env cont _ _ " 
-                                  [
-                                   --AstContinuation nextFunc "(args ++ [x1])"
-                                  ]
+                       AstFunction stubFunc " env cont _ _ " []
                      ] ++ code ++ rest
 
             
@@ -237,22 +226,8 @@ compile env args@(List (func : params)) = do
         case (trace ("_comp = " ++ show _comp) _comp) of
           comp -> do --[comp] -> do
             Atom nextFunc <- _gensym "f"
-            rest <- compileArgs nextFunc as 
+            rest <- compileArgs nextFunc False as 
             return $ [AstFunction thisFunc " env cont value (Just args) " 
                                   [AstAssignM "x1" $ head comp, -- TODO: a hack
                                    AstContinuation nextFunc "(args ++ [x1])"]
                      ] ++ rest
-{-
-code@(_ : _) -> do
-      -- TODO: search code for the continuation    AstFunction name args code -> do
-      --      Just (AstContinuation cNextFunc _) <- findNextContinuation code
-            Atom stubFunc <- _gensym "f"
-            Atom nextFunc <- _gensym "f"
-      -- f1 - would be next func that comp will call into
-      -- f5 - would be nextFunc
-      --  continueEval env (makeCPS env (makeCPSWArgs env cont f5 args) f1) $ Nil ""
-            c <- return $ AstValue $ "  continueEval env (makeCPS env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
-            f <- return $ AstValue $ stubFunc ++ " env cont _ _ = do "
-            rest <- compileArgs nextFunc params
-            return (c : rest)
-        --  -}    
