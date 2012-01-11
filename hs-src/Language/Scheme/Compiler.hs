@@ -158,6 +158,8 @@ findNextContinuation (_ : hs) = findNextContinuation hs
 findNextContinuation _ = Nothing
   -}
 
+-- TODO: could everything just be regular function calls except when a continuation is 'added to the stack' via a makeCPS(makeCPSWArgs ...) ?? I think this could be made more efficient
+
 compile :: Env -> LispVal -> Maybe String -> IOThrowsError [HaskAST]
 compile _ (Number n) _ = return [AstValue $ "  return $ Number " ++ (show n)]
 compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
@@ -176,7 +178,11 @@ compile env args@(List (func : params)) fForNextExpression = do
       c <- return $ AstContinuation nextFunc "[x1]"
       rest <- compileArgs nextFunc False params
       return $ [f, c] ++ rest -- TODO: a hack
-{-    code@(_ : _) -> do
+{-
+ - TODO: if there is an unevaluated function instead of a function instance,
+ -      then we need to compile that function first and proceed with its value
+ -
+ - code@(_ : _) -> do
 -- TODO: search code for the continuation    AstFunction name args code -> do
 --      Just (AstContinuation cNextFunc _) <- findNextContinuation code
       Atom stubFunc <- _gensym "f"
@@ -227,8 +233,14 @@ compile env args@(List (func : params)) fForNextExpression = do
             -- If another func is being called, we detect and splice it in...
             Atom stubFunc <- _gensym "f"
             Atom nextFunc <- _gensym "f"
-            c <- return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
-            f <- return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do "
+
+            -- Flag below means that the expression's value matters, add it to args
+            f <- if thisFuncUseValue
+                    then return $ AstValue $ thisFunc ++ " env cont value (Just args) = do "
+                    else return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do "
+            c <- if thisFuncUseValue
+                    then return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " $ args ++ [value]) " ++ stubFunc ++ ") $ Nil\"\""  
+                    else return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
 
             -- True indicates nextFunc needs to use value arg passed into it
             rest <- compileArgs nextFunc True as
