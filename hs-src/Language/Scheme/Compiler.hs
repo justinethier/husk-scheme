@@ -133,11 +133,12 @@ writeList outH _ = do
   hPutStr outH ""
 
 compileBlock :: Env -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST]
+compileBlock env result code@[c] = do
+  compiled <- compile env c Nothing
+  return $ result ++ compiled
 compileBlock env result code@(c:cs) = do
-
--- TODO: may need to pass a 'level' variable for indentation
-
-  compiled <- compile env c
+  Atom nextFunc <- _gensym "f"
+  compiled <- compile env c (Just nextFunc)
   compileBlock env (result ++ compiled) cs
 compileBlock env result [] = return result
 {-
@@ -157,15 +158,15 @@ findNextContinuation (_ : hs) = findNextContinuation hs
 findNextContinuation _ = Nothing
   -}
 
-compile :: Env -> LispVal -> IOThrowsError [HaskAST]
-compile _ (Number n) = return [AstValue $ "  return $ Number " ++ (show n)]
-compile _ (Atom a) = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
+compile :: Env -> LispVal -> Maybe String -> IOThrowsError [HaskAST]
+compile _ (Number n) _ = return [AstValue $ "  return $ Number " ++ (show n)]
+compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
 
 -- TODO: this is not good enough; a line of scheme may need to be compiled into many lines of haskell,
 --  for example
 -- _gensym :: String -> iothrowserror lispval
-compile env args@(List (func : params)) = do
-  _comp <- compile env func
+compile env args@(List (func : params)) fForNextExpresssion = do
+  _comp <- compile env func Nothing
   
 --  case (trace ("_comp = " ++ show _comp) _comp) of
   case _comp of
@@ -193,13 +194,19 @@ compile env args@(List (func : params)) = do
   compileArgs thisFunc thisFuncUseValue args = do
     case args of
       [] -> do
+           -- TODO:
+           --fForNextExpresssion
+           --
+           -- the basic idea is that if there is a next expression, call into it as a new continuation
+           -- instead of calling into cont
+
            return $ [
             AstFunction thisFunc 
              " env cont (Nil _) (Just (a:as)) " [AstValue "  apply cont a as "],
             AstFunction thisFunc 
              " env cont value (Just (a:as)) " [AstValue "  apply cont a $ as ++ [value] "]]
       (a:as) -> do
-        _comp <- compile env a
+        _comp <- compile env a Nothing
         -- Use this below to splice in a call to another function      
 --        case (trace ("_comp = " ++ show _comp) _comp) of
         case _comp of
@@ -218,7 +225,7 @@ compile env args@(List (func : params)) = do
             Atom stubFunc <- _gensym "f"
             Atom nextFunc <- _gensym "f"
             c <- return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
-            f <- return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do  -- TEST "
+            f <- return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do "
 
             -- True indicates nextFunc needs to use value arg passed into it
             rest <- compileArgs nextFunc True as
