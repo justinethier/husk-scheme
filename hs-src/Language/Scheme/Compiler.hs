@@ -165,7 +165,7 @@ compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Ato
 -- TODO: this is not good enough; a line of scheme may need to be compiled into many lines of haskell,
 --  for example
 -- _gensym :: String -> iothrowserror lispval
-compile env args@(List (func : params)) fForNextExpresssion = do
+compile env args@(List (func : params)) fForNextExpression = do
   _comp <- compile env func Nothing
   
 --  case (trace ("_comp = " ++ show _comp) _comp) of
@@ -194,17 +194,20 @@ compile env args@(List (func : params)) fForNextExpresssion = do
   compileArgs thisFunc thisFuncUseValue args = do
     case args of
       [] -> do
-           -- TODO:
-           --fForNextExpresssion
-           --
-           -- the basic idea is that if there is a next expression, call into it as a new continuation
+           -- The basic idea is that if there is a next expression, call into it as a new continuation
            -- instead of calling into cont
-
-           return $ [
-            AstFunction thisFunc 
-             " env cont (Nil _) (Just (a:as)) " [AstValue "  apply cont a as "],
-            AstFunction thisFunc 
-             " env cont value (Just (a:as)) " [AstValue "  apply cont a $ as ++ [value] "]]
+           case fForNextExpression of
+             Nothing -> return $ [
+               AstFunction thisFunc 
+                " env cont (Nil _) (Just (a:as)) " [AstValue "  apply cont a as "],
+               AstFunction thisFunc 
+                " env cont value (Just (a:as)) " [AstValue "  apply cont a $ as ++ [value] "]]
+             Just fnextExpr -> return $ [
+               AstFunction thisFunc 
+                " env cont (Nil _) (Just (a:as)) " [AstValue $ "  apply (makeCPS env cont " ++ fnextExpr ++ ") a as "],
+               AstFunction thisFunc 
+                " env cont value (Just (a:as)) " [AstValue $ "  apply (makeCPS env cont " ++ fnextExpr ++ ") a $ as ++ [value] "],
+               AstFunction fnextExpr " env cont _ _ " []]
       (a:as) -> do
         _comp <- compile env a Nothing
         -- Use this below to splice in a call to another function      
