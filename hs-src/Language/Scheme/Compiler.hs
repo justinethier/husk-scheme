@@ -164,6 +164,8 @@ compile :: Env -> LispVal -> Maybe String -> IOThrowsError [HaskAST]
 compile _ (Number n) _ = return [AstValue $ "  return $ Number " ++ (show n)]
 compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
 
+
+-- TODO: this does not work, and is a big mess to boot...
 compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
  Atom checkPredicFunc <- _gensym "ifPredic"
  Atom compPredicFunc <- _gensym "compiledIfPredicate"
