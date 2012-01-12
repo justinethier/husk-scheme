@@ -164,10 +164,31 @@ compile :: Env -> LispVal -> Maybe String -> IOThrowsError [HaskAST]
 compile _ (Number n) _ = return [AstValue $ "  return $ Number " ++ (show n)]
 compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
 
--- TODO: this is not good enough; a line of scheme may need to be compiled into many lines of haskell,
---  for example
--- _gensym :: String -> iothrowserror lispval
-compile env args@(List (func : params)) fForNextExpression = do
+compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
+ Atom checkPredicFunc <- _gensym "ifPredic"
+ Atom compPredicFunc <- _gensym "compPredic"
+-- Atom compiledFunc <- _gensym "ifComp"
+ f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"if\"",
+       AstValue $ "  if bound ",
+       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+       AstValue $ "     else " ++ checkPredicFunc ++ " env (makeCPS env cont " ++ compPredicFunc ++ ") (Nil \"\") [] "]
+ predicCompiled <- compile env predic fForNextExpression
+ predicCompiledF <- return $ AstFunction checkPredicFunc " env cont _ _ " predicCompiled
+ compPredicFuncF <- return $ AstFunction compPredicFunc " env cont result _ " [
+    AstValue $ "  return $ result" ]
+    -- TODO: need to implement the following logic from eval:
+{-     cps e c result _ =
+            case (result) of
+              Bool False -> meval e c alt
+              _ -> meval e c conseq
+              -}
+ return $ f ++ predicCompiled ++ [predicCompiledF, compPredicFuncF] 
+ 
+
+compile env args@(List (_ : _)) fForNextExpression = compileApply env args fForNextExpression
+
+compileApply :: Env -> LispVal -> Maybe String -> IOThrowsError [HaskAST]
+compileApply env args@(List (func : params)) fForNextExpression = do
   _comp <- compile env func Nothing
   
 --  case (trace ("_comp = " ++ show _comp) _comp) of
