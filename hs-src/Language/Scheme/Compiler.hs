@@ -166,7 +166,9 @@ compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Ato
 
 compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
  Atom checkPredicFunc <- _gensym "ifPredic"
- Atom compPredicFunc <- _gensym "compPredic"
+ Atom compPredicFunc <- _gensym "compiledIfPredicate"
+ Atom compConseqFunc <- _gensym "compiledConsequence"
+ Atom compAltFunc <- _gensym "compiledAlternative"
 -- Atom compiledFunc <- _gensym "ifComp"
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"if\"",
        AstValue $ "  if bound ",
@@ -174,15 +176,19 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
        AstValue $ "     else " ++ checkPredicFunc ++ " env (makeCPS env cont " ++ compPredicFunc ++ ") (Nil \"\") [] "]
  predicCompiled <- compile env predic fForNextExpression
  predicCompiledF <- return $ AstFunction checkPredicFunc " env cont _ _ " predicCompiled
+
  compPredicFuncF <- return $ AstFunction compPredicFunc " env cont result _ " [
-    AstValue $ "  return $ result" ]
-    -- TODO: need to implement the following logic from eval:
-{-     cps e c result _ =
-            case (result) of
-              Bool False -> meval e c alt
-              _ -> meval e c conseq
-              -}
- return $ f ++ predicCompiled ++ [predicCompiledF, compPredicFuncF] 
+    AstValue $ "  case result of ",
+    AstValue $ "    Bool False -> " ++ compAltFunc ++ " env cont (Nil \"\") [] ",
+    AstValue $ "    _ -> " ++ compConseqFunc ++ " env cont (Nil \"\") [] "]
+ 
+ conseqCompiled <- compile env conseq fForNextExpression
+ conseqCompiledF <- return $ AstFunction compConseqFunc " env cont _ _ " conseqCompiled
+
+ altCompiled <- compile env alt fForNextExpression
+ altCompiledF <- return $ AstFunction compAltFunc " env cont _ _ " altCompiled
+
+ return $ f ++ predicCompiled ++ [predicCompiledF, compPredicFuncF, conseqCompiledF, altCompiledF] 
  
 
 compile env args@(List (_ : _)) fForNextExpression = compileApply env args fForNextExpression
