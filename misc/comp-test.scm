@@ -16,4 +16,4 @@
 (write (if 1 (+ 2 1 4) 3))
 (write (if 1 2 3))
 (write (if 1 (+ 2 1 4) 3))
-;(if (+ 1) 2 3)
+; TODO: not supported yet - (if (+ 1) 2 3)

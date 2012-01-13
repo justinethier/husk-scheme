@@ -181,7 +181,11 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
        ]
  predicCompiled <- compile env predic fForNextExpression
 
- -- TODO: this seems like a common pattern, should extract it into a function or such
+
+-- !!!!!!!!!!!!!!!!!!!
+-- TODO: this seems like a common pattern, and is used in conseq/alt below. 
+--   we should extract it into a function
+
  predicCompiledF <- case predicCompiled of
     [comp] -> return $ AstFunction checkPredicFunc " env cont _ _ " 
                          [AstAssignM "x1" $ comp,
@@ -194,10 +198,18 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
     AstValue $ "    _ -> " ++ compConseqFunc ++ " env cont (Nil \"\") [] "]
  
  conseqCompiled <- compile env conseq fForNextExpression
- conseqCompiledF <- return $ AstFunction compConseqFunc " env cont _ _ " conseqCompiled
+ conseqCompiledF <- case conseqCompiled of
+   [comp] -> return $ AstFunction compConseqFunc " env cont _ _ " 
+                         [AstAssignM "x1" $ comp,
+                          AstValue $ "  continueEval env cont x1 "]
+   _ -> return $ AstFunction compConseqFunc " env cont _ _ " conseqCompiled
 
  altCompiled <- compile env alt fForNextExpression
- altCompiledF <- return $ AstFunction compAltFunc " env cont _ _ " altCompiled
+ altCompiledF <- case altCompiled of
+   [comp] -> return $ AstFunction compAltFunc " env cont _ _ " 
+                         [AstAssignM "x1" $ comp,
+                          AstValue $ "  continueEval env cont x1 "]
+   _ -> return $ AstFunction compAltFunc " env cont _ _ " altCompiled
 
  return $ f ++ [predicCompiledF, compPredicFuncF, conseqCompiledF, altCompiledF] 
  
