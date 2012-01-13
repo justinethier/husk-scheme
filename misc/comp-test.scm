@@ -12,5 +12,8 @@
 (write (+ (- 9 2) (/ 9 3)))
 (write (+ (/ 9 3))) ; results are OK
 |#
-(if 1 2 3)
+(write (if 1 (+ 2 1) (+ 3 1)))
+(write (if 1 (+ 2 1 4) 3))
+(write (if 1 2 3))
+(write (if 1 (+ 2 1 4) 3))
 ;(if (+ 1) 2 3)

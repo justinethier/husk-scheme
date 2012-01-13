@@ -57,6 +57,8 @@ showValAST (AstFunction name args code) = do
   let body = unwords . map (\x -> "\n" ++ x ) $ map showValAST code
   header ++ body 
 showValAST (AstValue v) = v
+
+-- TODO: this is too limiting, this is an 'internal' continuation. most should take a value and pass it along, not args
 showValAST (AstContinuation nextFunc args) = "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " " ++ args ++ ") $ Nil \"\""
 
 instance Show HaskAST where show = showValAST
@@ -175,9 +177,16 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"if\"",
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else " ++ checkPredicFunc ++ " env (makeCPS env cont " ++ compPredicFunc ++ ") (Nil \"\") [] "]
+       AstValue $ "     else do " ++ checkPredicFunc ++ " env (makeCPS env cont " ++ compPredicFunc ++ ") (Nil \"\") [] "
+       ]
  predicCompiled <- compile env predic fForNextExpression
- predicCompiledF <- return $ AstFunction checkPredicFunc " env cont _ _ " predicCompiled
+
+ -- TODO: this seems like a common pattern, should extract it into a function or such
+ predicCompiledF <- case predicCompiled of
+    [comp] -> return $ AstFunction checkPredicFunc " env cont _ _ " 
+                         [AstAssignM "x1" $ comp,
+                          AstValue $ "  continueEval env cont x1 "]
+    -- TODO: comp@(_ : _)
 
  compPredicFuncF <- return $ AstFunction compPredicFunc " env cont result _ " [
     AstValue $ "  case result of ",
@@ -190,7 +199,7 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
  altCompiled <- compile env alt fForNextExpression
  altCompiledF <- return $ AstFunction compAltFunc " env cont _ _ " altCompiled
 
- return $ f ++ predicCompiled ++ [predicCompiledF, compPredicFuncF, conseqCompiledF, altCompiledF] 
+ return $ f ++ [predicCompiledF, compPredicFuncF, conseqCompiledF, altCompiledF] 
  
 
 compile env args@(List (_ : _)) fForNextExpression = compileApply env args fForNextExpression
