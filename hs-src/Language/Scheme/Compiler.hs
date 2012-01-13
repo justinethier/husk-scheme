@@ -190,7 +190,7 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
     [comp] -> return $ AstFunction checkPredicFunc " env cont _ _ " 
                          [AstAssignM "x1" $ comp,
                           AstValue $ "  continueEval env cont x1 "]
-    -- TODO: comp@(_ : _)
+    comp@(_ : _) -> return $ AstFunction checkPredicFunc " env cont _ _ " comp
 
  compPredicFuncF <- return $ AstFunction compPredicFunc " env cont result _ " [
     AstValue $ "  case result of ",
