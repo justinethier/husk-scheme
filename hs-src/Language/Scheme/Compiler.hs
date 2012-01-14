@@ -11,16 +11,7 @@ This module contains an experimental compiler of Scheme to Haskell
 -}
 
 module Language.Scheme.Compiler where 
-{-    (
-      evalLisp
-    , evalString
-    , evalAndPrint
-    , primitiveBindings
-    ) where -}
-{-
-import qualified Language.Scheme.FFI
-import qualified Language.Scheme.Macro
--}
+--import qualified Language.Scheme.Macro
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Primitives
@@ -28,10 +19,6 @@ import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
 import qualified Data.List
-{-
-import Data.Array
-import qualified Data.Map
--}
 import System.IO
 import Debug.Trace
 
@@ -48,7 +35,6 @@ data HaskAST = AstAssignM String HaskAST
  | AstContinuation {astcNext :: String,
                     astcArgs :: String
                    }
--- | AstNewline String -- Is this a hack?
 
 showValAST :: HaskAST -> String
 showValAST (AstAssignM var val) = "  " ++ var ++ " <- " ++ show val
@@ -62,17 +48,6 @@ showValAST (AstValue v) = v
 showValAST (AstContinuation nextFunc args) = "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " " ++ args ++ ") $ Nil \"\""
 
 instance Show HaskAST where show = showValAST
-
--- OBSOLETE CODE:
----- TODO: will probably need to differentiate functions that are in the IO monad 
-----  and pure ones that are not (such as numAdd)
---compiledPrimitives :: [(String, String)]
---compiledPrimitives = [
---  ("write", "writeProc (\\ port obj -> hPrint port obj)")
--- ,("+", "numAdd")
--- ,("-", "numSub")
--- ,("*", "numMul")
--- ,("/", "numDiv")]
 
 header :: [String]
 header = [
@@ -116,8 +91,7 @@ header = [
 
 compileLisp :: Env -> String -> IOThrowsError LispVal
 compileLisp env filename = do
-  -- TODO: below does not really work when compiling an expression that evaluates to a value (eg: 1)
-  comp <- load filename >>= compileBlock env [] --mapM (compile env)
+  comp <- load filename >>= compileBlock env []
   outH <- liftIO $ openFile "_tmp.hs" WriteMode
   _ <- liftIO $ writeList outH header
   _ <- liftIO $ writeList outH $ map show comp
@@ -134,6 +108,8 @@ writeList outH (l : ls) = do
 writeList outH _ = do
   hPutStr outH ""
 
+-- compileBlock - need to use explicit recursion to transform a block of code, because
+--  later lines may depend on previous ones
 compileBlock :: Env -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST]
 compileBlock env result code@[c] = do
   compiled <- compile env c Nothing
@@ -143,15 +119,6 @@ compileBlock env result code@(c:cs) = do
   compiled <- compile env c (Just nextFunc)
   compileBlock env (result ++ compiled) cs
 compileBlock env result [] = return result
-{-
-compileBlock - need to use explicit recursion to transform a block of code, because
- later lines may depend on previous ones (is this true?)
-
-bs
- - compile the first expression
- - need to save result to gensym'd var if not last line
- - need to lift up the result if not pure
--}
 
 {-
 findNextContinuation :: [HaskAST] -> Maybe HaskAST
@@ -221,14 +188,13 @@ compileApply :: Env -> LispVal -> Maybe String -> IOThrowsError [HaskAST]
 compileApply env args@(List (func : params)) fForNextExpression = do
   _comp <- compile env func Nothing
   
---  case (trace ("_comp = " ++ show _comp) _comp) of
   case _comp of
     [comp] -> do
       f <- return $ AstAssignM "x1" comp
       Atom nextFunc <- _gensym "f"
       c <- return $ AstContinuation nextFunc "[x1]"
       rest <- compileArgs nextFunc False params
-      return $ [f, c] ++ rest -- TODO: a hack
+      return $ [f, c] ++ rest
 {-
  - TODO: if there is an unevaluated function instead of a function instance,
  -      then we need to compile that function first and proceed with its value
@@ -247,6 +213,8 @@ compileApply env args@(List (func : params)) fForNextExpression = do
       return (c : rest)
   -}    
  where 
+  -- TODO: this pattern may need to be extracted into a common place for use in other similar
+  --       situations, such as params to a lambda expression
   compileArgs :: String -> Bool -> [LispVal] -> IOThrowsError [HaskAST]
   compileArgs thisFunc thisFuncUseValue args = do
     case args of
@@ -268,7 +236,6 @@ compileApply env args@(List (func : params)) fForNextExpression = do
       (a:as) -> do
         _comp <- compile env a Nothing
         -- Use this below to splice in a call to another function      
---        case (trace ("_comp = " ++ show _comp) _comp) of
         case _comp of
           [comp] -> do
             let nfArgs = if thisFuncUseValue
