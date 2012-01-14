@@ -136,6 +136,7 @@ compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Ato
 --compile env (List [Atom "quote", val]) = return [AstValue $ "  continueEval env cont -- TODO: how to get the literal val?
 
 compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
+ -- TODO: think about it, these could probably be part of compileExpr
  Atom symPredicate <- _gensym "ifPredic"
  Atom symCheckPredicate <- _gensym "compiledIfPredicate"
  Atom symConsequence <- _gensym "compiledConsequence"
@@ -163,6 +164,9 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
  this means that instead of generating a Func object, we want to compile everything down into
  (basically) an IOFunc. except that is not quite right either because a compiled function
  also needs to support a closure, parameters, and variable-length arguments
+
+ A new type will be needed because lambda must evaluate to something, and it cannot be Func or IOFunc.
+ Possibly Func could be extended to also support haskell code??
 
 eval env cont args@(List (Atom "lambda" : List fparams : fbody)) = do
  bound <- liftIO $ isRecBound env "lambda"
