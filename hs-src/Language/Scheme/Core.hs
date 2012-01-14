@@ -16,6 +16,8 @@ module Language.Scheme.Core
     , evalString
     , evalAndPrint
     , primitiveBindings
+    , apply
+    , continueEval
     ) where
 import qualified Language.Scheme.FFI
 import qualified Language.Scheme.Macro
@@ -91,7 +93,7 @@ updateContEnv _ val = do
     return val
 -}
 
-{- continueEval is a support function for eval, below.
+{- |continueEval is a support function for eval.
  -
  - Transformed eval section into CPS by calling into this instead of returning from eval.
  - This function uses the cont argument to determine whether to keep going or to finally
@@ -640,7 +642,7 @@ makeVarargs :: (Monad m) => LispVal -> Env
                         -> m LispVal
 makeVarargs = makeFunc . Just . showVal
 
--- Call into a Scheme function
+-- |Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
 -- case (trace ("calling into continuation. dynWind = " ++ show ndynwind) ndynwind) of
