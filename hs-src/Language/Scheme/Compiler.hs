@@ -158,6 +158,19 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
  -- Join compiled code together
  return $ f ++ [compPredicate, compCheckPredicate, compConsequence, compAlternate] 
 
+{-
+ makeFunc for lambda is a bit trickier than with huski, because we want to compile the function body.
+ this means that instead of generating a Func object, we want to compile everything down into
+ (basically) an IOFunc. except that is not quite right either because a compiled function
+ also needs to support a closure, parameters, and variable-length arguments
+
+eval env cont args@(List (Atom "lambda" : List fparams : fbody)) = do
+ bound <- liftIO $ isRecBound env "lambda"
+ if bound
+  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
+  else do result <- makeNormalFunc env fparams fbody
+          continueEval env cont result
+-}
 compile env args@(List (_ : _)) fForNextExpression = compileApply env args fForNextExpression
 
 -- Compile an intermediate expression (such as an arg to if) and 
