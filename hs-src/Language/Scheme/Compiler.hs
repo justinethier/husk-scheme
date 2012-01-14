@@ -163,21 +163,22 @@ findNextContinuation _ = Nothing
 -- TODO: could everything just be regular function calls except when a continuation is 'added to the stack' via a makeCPS(makeCPSWArgs ...) ?? I think this could be made more efficient
 
 compile :: Env -> LispVal -> Maybe String -> IOThrowsError [HaskAST]
+compile _ (Bool b) _ = return [AstValue $ "  return $ Bool " ++ (show b)]
 compile _ (Number n) _ = return [AstValue $ "  return $ Number " ++ (show n)]
 compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
-
+--compile env (List [Atom "quote", val]) = return [AstValue $ "  continueEval env cont -- TODO: how to get the literal val?
 
 -- TODO: this does not work, and is a big mess to boot...
 compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
- Atom checkPredicFunc <- _gensym "ifPredic"
- Atom compPredicFunc <- _gensym "compiledIfPredicate"
- Atom compConseqFunc <- _gensym "compiledConsequence"
- Atom compAltFunc <- _gensym "compiledAlternative"
+ Atom symPredicate <- _gensym "ifPredic"
+ Atom symCheckPredicate <- _gensym "compiledIfPredicate"
+ Atom symConsequence <- _gensym "compiledConsequence"
+ Atom symAlternate <- _gensym "compiledAlternative"
 -- Atom compiledFunc <- _gensym "ifComp"
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"if\"",
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do " ++ checkPredicFunc ++ " env (makeCPS env cont " ++ compPredicFunc ++ ") (Nil \"\") [] "
+       AstValue $ "     else do " ++ symPredicate ++ " env (makeCPS env cont " ++ symCheckPredicate ++ ") (Nil \"\") [] "
        ]
  predicCompiled <- compile env predic fForNextExpression
 
@@ -186,32 +187,32 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
 -- TODO: this seems like a common pattern, and is used in conseq/alt below. 
 --   we should extract it into a function
 
- predicCompiledF <- case predicCompiled of
-    [comp] -> return $ AstFunction checkPredicFunc " env cont _ _ " 
+ compPredicate <- case predicCompiled of
+    [comp] -> return $ AstFunction symPredicate " env cont _ _ " 
                          [AstAssignM "x1" $ comp,
                           AstValue $ "  continueEval env cont x1 "]
-    comp@(_ : _) -> return $ AstFunction checkPredicFunc " env cont _ _ " comp
+    comp@(_ : _) -> return $ AstFunction symPredicate " env cont _ _ " comp
 
- compPredicFuncF <- return $ AstFunction compPredicFunc " env cont result _ " [
+ compCheckPredicate <- return $ AstFunction symCheckPredicate " env cont result _ " [
     AstValue $ "  case result of ",
-    AstValue $ "    Bool False -> " ++ compAltFunc ++ " env cont (Nil \"\") [] ",
-    AstValue $ "    _ -> " ++ compConseqFunc ++ " env cont (Nil \"\") [] "]
+    AstValue $ "    Bool False -> " ++ symAlternate ++ " env cont (Nil \"\") [] ",
+    AstValue $ "    _ -> " ++ symConsequence ++ " env cont (Nil \"\") [] "]
  
  conseqCompiled <- compile env conseq fForNextExpression
- conseqCompiledF <- case conseqCompiled of
-   [comp] -> return $ AstFunction compConseqFunc " env cont _ _ " 
+ compConsequence <- case conseqCompiled of
+   [comp] -> return $ AstFunction symConsequence " env cont _ _ " 
                          [AstAssignM "x1" $ comp,
                           AstValue $ "  continueEval env cont x1 "]
-   _ -> return $ AstFunction compConseqFunc " env cont _ _ " conseqCompiled
+   _ -> return $ AstFunction symConsequence " env cont _ _ " conseqCompiled
 
  altCompiled <- compile env alt fForNextExpression
- altCompiledF <- case altCompiled of
-   [comp] -> return $ AstFunction compAltFunc " env cont _ _ " 
+ compAlternate <- case altCompiled of
+   [comp] -> return $ AstFunction symAlternate " env cont _ _ " 
                          [AstAssignM "x1" $ comp,
                           AstValue $ "  continueEval env cont x1 "]
-   _ -> return $ AstFunction compAltFunc " env cont _ _ " altCompiled
+   _ -> return $ AstFunction symAlternate " env cont _ _ " altCompiled
 
- return $ f ++ [predicCompiledF, compPredicFuncF, conseqCompiledF, altCompiledF] 
+ return $ f ++ [compPredicate, compCheckPredicate, compConsequence, compAlternate] 
  
 
 compile env args@(List (_ : _)) fForNextExpression = compileApply env args fForNextExpression

@@ -17,5 +17,6 @@
 (write (if 1 2 3))
 (write (if 1 (+ 2 1 4) 3))
 (write (if (+ 1) 2 3))
+(write (if #f 2 #f))
 (write (if (+ 1) 22 3))
 
