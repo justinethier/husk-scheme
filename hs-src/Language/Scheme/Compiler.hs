@@ -138,6 +138,19 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
  -- Join compiled code together
  return $ f ++ [compPredicate, compCheckPredicate, compConsequence, compAlternate] 
 
+compile env args@(List (Atom "lambda", List fparams : fbody)) fForNextExpression = do
+{- Atom symPredicate <- _gensym "ifPredic"
+ Atom symAlternate <- _gensym "compiledAlternative" -}
+ -- Entry point; ensure var is not rebound
+-- TODO: will probably end up creating a common function for this,
+--       since it is almost the same as in "if"
+ f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
+       AstValue $ "  if bound ",
+       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" " -- if is bound to a variable in this scope; call into it
+
+-- TODO: make normal func       
+--       AstValue $ "     else do " ++ symPredicate ++ " env (makeCPS env cont " ++ symCheckPredicate ++ ") (Nil \"\") [] "
+       ]
 {-
  makeFunc for lambda is a bit trickier than with huski, because we want to compile the function body.
  this means that instead of generating a Func object, we want to compile everything down into
@@ -146,14 +159,12 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
 
  A new type will be needed because lambda must evaluate to something, and it cannot be Func or IOFunc.
  Possibly Func could be extended to also support haskell code??
-
-eval env cont args@(List (Atom "lambda" : List fparams : fbody)) = do
- bound <- liftIO $ isRecBound env "lambda"
- if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do result <- makeNormalFunc env fparams fbody
           continueEval env cont result
 -}
+
+
 compile env args@(List (_ : _)) fForNextExpression = compileApply env args fForNextExpression
 
 -- Compile an intermediate expression (such as an arg to if) and 
