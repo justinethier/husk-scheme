@@ -135,55 +135,43 @@ compile _ (Number n) _ = return [AstValue $ "  return $ Number " ++ (show n)]
 compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
 --compile env (List [Atom "quote", val]) = return [AstValue $ "  continueEval env cont -- TODO: how to get the literal val?
 
--- TODO: this does not work, and is a big mess to boot...
 compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
  Atom symPredicate <- _gensym "ifPredic"
  Atom symCheckPredicate <- _gensym "compiledIfPredicate"
  Atom symConsequence <- _gensym "compiledConsequence"
  Atom symAlternate <- _gensym "compiledAlternative"
--- Atom compiledFunc <- _gensym "ifComp"
+ -- Entry point; ensure if is not rebound
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"if\"",
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
        AstValue $ "     else do " ++ symPredicate ++ " env (makeCPS env cont " ++ symCheckPredicate ++ ") (Nil \"\") [] "
        ]
- predicCompiled <- compile env predic fForNextExpression
-
-
--- !!!!!!!!!!!!!!!!!!!
--- TODO: this seems like a common pattern, and is used in conseq/alt below. 
---   we should extract it into a function
-
- compPredicate <- case predicCompiled of
-    [comp] -> return $ AstFunction symPredicate " env cont _ _ " 
-                         [AstAssignM "x1" $ comp,
-                          AstValue $ "  continueEval env cont x1 "]
-    comp@(_ : _) -> return $ AstFunction symPredicate " env cont _ _ " comp
-
+ -- Compile expression for if's args
+ compPredicate <- compileExpr env predic fForNextExpression symPredicate
+ compConsequence <- compileExpr env conseq fForNextExpression symConsequence
+ compAlternate <- compileExpr env alt fForNextExpression symAlternate
+ -- Special case because we need to check the predicate's value
  compCheckPredicate <- return $ AstFunction symCheckPredicate " env cont result _ " [
     AstValue $ "  case result of ",
     AstValue $ "    Bool False -> " ++ symAlternate ++ " env cont (Nil \"\") [] ",
     AstValue $ "    _ -> " ++ symConsequence ++ " env cont (Nil \"\") [] "]
- 
- conseqCompiled <- compile env conseq fForNextExpression
- compConsequence <- case conseqCompiled of
-   [comp] -> return $ AstFunction symConsequence " env cont _ _ " 
-                         [AstAssignM "x1" $ comp,
-                          AstValue $ "  continueEval env cont x1 "]
-   _ -> return $ AstFunction symConsequence " env cont _ _ " conseqCompiled
-
- altCompiled <- compile env alt fForNextExpression
- compAlternate <- case altCompiled of
-   [comp] -> return $ AstFunction symAlternate " env cont _ _ " 
-                         [AstAssignM "x1" $ comp,
-                          AstValue $ "  continueEval env cont x1 "]
-   _ -> return $ AstFunction symAlternate " env cont _ _ " altCompiled
-
+ -- Join compiled code together
  return $ f ++ [compPredicate, compCheckPredicate, compConsequence, compAlternate] 
- 
 
 compile env args@(List (_ : _)) fForNextExpression = compileApply env args fForNextExpression
 
+-- Compile an intermediate expression (such as an arg to if) and 
+-- call into the next continuation with it's value
+compileExpr :: Env -> LispVal -> Maybe String -> String -> IOThrowsError HaskAST
+compileExpr env expr fForNextExpr symThisFunc = do
+ compiled <- compile env expr fForNextExpr
+ case compiled of
+   [comp] -> return $ AstFunction symThisFunc " env cont _ _ " 
+                         [AstAssignM "x1" $ comp,
+                          AstValue $ "  continueEval env cont x1 "]
+   _ -> return $ AstFunction symThisFunc " env cont _ _ " compiled
+
+-- |Compiles each argument to a function call, and then uses apply to call the function
 compileApply :: Env -> LispVal -> Maybe String -> IOThrowsError [HaskAST]
 compileApply env args@(List (func : params)) fForNextExpression = do
   _comp <- compile env func Nothing
