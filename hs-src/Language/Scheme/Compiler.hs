@@ -52,6 +52,7 @@ instance Show HaskAST where show = showValAST
 header :: [String]
 header = [
    "module Main where "
+ , "import Language.Scheme.Compiler.Helpers "
  , "import Language.Scheme.Core "
  , "import Language.Scheme.Numerical "
  , "import Language.Scheme.Primitives "
