@@ -138,19 +138,24 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
  -- Join compiled code together
  return $ f ++ [compPredicate, compCheckPredicate, compConsequence, compAlternate] 
 
-compile env args@(List (Atom "lambda", List fparams : fbody)) fForNextExpression = do
-{- Atom symPredicate <- _gensym "ifPredic"
- Atom symAlternate <- _gensym "compiledAlternative" -}
+compile env args@(List (Atom "lambda" : List fparams : fbody)) fForNextExpression = do
+ Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
+ let compiledParams = "" -- TODO: just a temporary stopgap
+-- TODO:  compiledParams <- return $ [] -- TODO: compile fparams
+
+ compiledBody <- compileBlock env [] fbody
+
  -- Entry point; ensure var is not rebound
 -- TODO: will probably end up creating a common function for this,
 --       since it is almost the same as in "if"
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
        AstValue $ "  if bound ",
-       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" " -- if is bound to a variable in this scope; call into it
-
--- TODO: make normal func       
---       AstValue $ "     else do " ++ symPredicate ++ " env (makeCPS env cont " ++ symCheckPredicate ++ ") (Nil \"\") [] "
+       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+       AstValue $ "     else do result <- makeNormalFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
+       AstValue $ "             continueEval env cont result ",
+       AstFunction symCallfunc " env cont _ _ " compiledBody
        ]
+ return $ f
 {-
  makeFunc for lambda is a bit trickier than with huski, because we want to compile the function body.
  this means that instead of generating a Func object, we want to compile everything down into
