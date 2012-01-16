@@ -141,7 +141,7 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
 
 compile env args@(List (Atom "lambda" : List fparams : fbody)) fForNextExpression = do
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
- let compiledParams = "" -- TODO: just a temporary stopgap
+ let compiledParams = "[]" -- TODO: just a temporary stopgap
 -- TODO:  compiledParams <- return $ [] -- TODO: compile fparams
 
  compiledBody <- compileBlock env [] fbody

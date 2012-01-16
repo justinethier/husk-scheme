@@ -134,6 +134,12 @@ data LispVal = Atom String
          closure :: Env
         }
  -- ^Function
+ | HFunc {hparams :: [String],
+          hvararg :: (Maybe String),
+          hbody :: (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal),
+          hclosure :: Env
+        }
+ -- ^Function formed from a Haskell function
  | IOFunc ([LispVal] -> IOThrowsError LispVal)
  -- ^Primitive function within the IO monad
  | EvalFunc ([LispVal] -> IOThrowsError LispVal)
@@ -243,6 +249,10 @@ eqv [x@(Func _ _ xBody _), y@(Func _ _ yBody _)] = do
   if (show x) /= (show y)
      then return $ Bool False
      else eqvList eqv [List xBody, List yBody] 
+eqv [x@(HFunc _ _ xBody _), y@(Func _ _ yBody _)] = do
+  if (show x) /= (show y)
+     then return $ Bool False
+     else return $ Bool True -- TODO: compare high-order functions... eqvList eqv [List xBody, List yBody] 
 --
 eqv [x@(PrimitiveFunc _), y@(PrimitiveFunc _)] = return $ Bool $ (show x) == (show y)
 eqv [x@(IOFunc _), y@(IOFunc _)] = return $ Bool $ (show x) == (show y)
@@ -294,6 +304,11 @@ showVal (PrimitiveFunc _) = "<primitive>"
 showVal (Continuation _ _ _ _ _) = "<continuation>"
 showVal (Syntax _ _ _ _ _) = "<syntax>"
 showVal (Func {params = args, vararg = varargs, body = _, closure = _}) =
+  "(lambda (" ++ unwords (map show args) ++
+    (case varargs of
+      Nothing -> ""
+      Just arg -> " . " ++ arg) ++ ") ...)"
+showVal (HFunc {hparams = args, hvararg = varargs, hbody = _, hclosure = _}) =
   "(lambda (" ++ unwords (map show args) ++
     (case varargs of
       Nothing -> ""
