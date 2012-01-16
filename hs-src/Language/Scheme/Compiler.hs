@@ -222,9 +222,9 @@ compileApply env args@(List (func : params)) fForNextExpression = do
       c <- return $ AstContinuation nextFunc "[x1]"
       rest <- compileArgs nextFunc False params
       return $ [f, c] ++ rest
-{-
+-
  - TODO: if there is an unevaluated function instead of a function instance,
- -      then we need to compile that function first and proceed with its value
+ -      then we need to execute (compile?) that function first and proceed with its value
  -
  - code@(_ : _) -> do
 -- TODO: search code for the continuation    AstFunction name args code -> do
@@ -238,7 +238,6 @@ compileApply env args@(List (func : params)) fForNextExpression = do
       f <- return $ AstValue $ stubFunc ++ " env cont _ _ = do "
       rest <- compileArgs nextFunc params
       return (c : rest)
-  -}    
  where 
   -- TODO: this pattern may need to be extracted into a common place for use in other similar
   --       situations, such as params to a lambda expression
