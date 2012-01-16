@@ -52,7 +52,7 @@ instance Show HaskAST where show = showValAST
 header :: [String]
 header = [
    "module Main where "
- , "import Language.Scheme.Compiler.Helpers "
+-- Currently not used: , "import Language.Scheme.Compiler.Helpers "
  , "import Language.Scheme.Core "
  , "import Language.Scheme.Numerical "
  , "import Language.Scheme.Primitives "
@@ -61,6 +61,32 @@ header = [
  , "import Control.Monad.Error "
  , "import System.IO "
  , " "
+-- TODO: eventually these make func's will be moved out into their own module
+ , ""
+ , "--makeNormalFunc :: Env -> [LispVal] -> String -> IOThrowsError LispVal "
+ , "makeHFunc ::"
+ , "            (Monad m) =>"
+ , "            Maybe String "
+ , "         -> Env "
+ , "         -> [String] "
+ , "         -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) "
+ , "--         -> String "
+ , "         -> m LispVal"
+ , "makeHFunc varargs env fparams fbody = return $ HFunc fparams varargs fbody env --(map showVal fparams) varargs fbody env"
+ , "makeNormalHFunc :: (Monad m) =>"
+ , "                  Env"
+ , "               -> [String]"
+ , "               -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal)"
+ , "--                -> String"
+ , "               -> LispVal"
+ , "makeNormalHFunc = makeHFunc Nothing"
+ , "{- TODO:"
+ , "makeHVarargs :: (Monad m) => LispVal -> Env"
+ , "                        -> [LispVal]"
+ , "                        -> [LispVal]"
+ , "                        -> m LispVal"
+ , "makeHVarargs = makeFunc . Just . showVal"
+ , "-}"
  , "main :: IO () "
  , "main = do "
  , "  env <- primitiveBindings "
@@ -152,7 +178,7 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) fForNextExpressio
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do result <- makeNormalFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
+       AstValue $ "     else do result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
        AstValue $ "             continueEval env cont result ",
        AstFunction symCallfunc " env cont _ _ " compiledBody
        ]
