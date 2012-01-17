@@ -178,6 +178,11 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) fForNextExpressio
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+
+
+-- TODO: need to pass fForNextExpression to the HFunc??
+
+
        AstValue $ "     else do result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
        AstValue $ "             continueEval env cont result ",
        AstFunction symCallfunc " env cont _ _ " compiledBody

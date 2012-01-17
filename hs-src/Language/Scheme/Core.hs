@@ -706,6 +706,28 @@ apply cont (Func aparams avarargs abody aclosure) args =
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
+apply cont (HFunc aparams avarargs abody aclosure) args =
+  if num aparams /= num args && avarargs == Nothing
+     then throwError $ NumArgs (num aparams) args
+     else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
+  where remainingArgs = drop (length aparams) args
+        num = toInteger . length
+        evalBody evBody env = evBody env cont (Nil "") Nothing 
+{- TODO: may need to handle cases from Func, such as dynamic winders
+        case cont of
+            Continuation _ (Just (SchemeBody cBody)) (Just cCont) _ cDynWind -> if length cBody == 0
+                then continueWCont env (evBody) cCont cDynWind
+                else continueWCont env (evBody) cont cDynWind -- Might be a problem, not fully optimizing
+            Continuation _ _ _ _ cDynWind -> continueWCont env (evBody) cont cDynWind
+            _ -> continueWCont env (evBody) cont Nothing
+
+        -- Shortcut for calling continueEval
+        continueWCont cwcEnv cwcBody cwcCont cwcDynWind =
+            continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing cwcDynWind) $ Nil ""-}
+
+        bindVarArgs arg env = case arg of
+          Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
+          Nothing -> return env
 apply _ func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List (func : args)
 
 {- |Environment containing the primitive forms that are built into the Scheme language. Note that this only includes
