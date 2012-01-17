@@ -225,12 +225,17 @@ compileApply env args@(List (func : params)) fForNextExpression = do
     -- if there is an unevaluated function instead of a function instance,
     -- then we need to execute (compile?) that function first and proceed with its value
     code@(_ : _) -> do
-TODO: not quite right, looks like the lambda func needs to be passed as an arg to apply...
-      Atom stubFunc <- _gensym "f"
-      Atom nextFunc <- _gensym "f"
-      c <- return $ AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ nextFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""  
+--TODO: not quite right, looks like the lambda func needs to be passed as an arg to apply...
+      Atom wrapperFunc <- _gensym "applyWrapper"
+      Atom stubFunc <- _gensym "applyStubF"
+      Atom nextFunc <- _gensym "applyNextF"
+      c <- return $ AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ wrapperFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""  
       rest <- compileArgs nextFunc True params
-      return $ [c, AstFunction stubFunc " env cont _ _ " []] ++ code ++ rest
+
+      -- Use wrapper to pass high-order function as an argument to apply
+      wrapper <- return $ AstFunction wrapperFunc " env cont value _ " [AstValue $ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " [value]) $ Nil \"\""]
+
+      return $ [c, wrapper, AstFunction stubFunc " env cont _ _ " code] {-++ code-} ++ rest
  where 
   -- TODO: this pattern may need to be extracted into a common place for use in other similar
   --       situations, such as params to a lambda expression
