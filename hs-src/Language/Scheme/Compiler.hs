@@ -180,7 +180,9 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) fForNextExpressio
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
 
 
--- TODO: need to pass fForNextExpression to the HFunc??
+ TODO: need to pass fForNextExpression to the HFunc??
+       basically need some way of getting the compiled code to execute the next
+       expression after the one that is called
 
 
        AstValue $ "     else do result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,

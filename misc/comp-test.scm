@@ -21,5 +21,6 @@
 (write (if #f 2 #f))
 (write (if (+ 1) 22 3))
 |#
-((lambda () 1 2 3))
+((lambda () 1 2 3 ))
 ((lambda () 1 2 (+ 3 4)))
+; TODO: (write (if #t (+ ((lambda () 1 2 3) 3)) 4))
