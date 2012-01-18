@@ -121,9 +121,25 @@ compileBlock env result code@[c] = do
   compiled <- compile env c Nothing
   return $ result ++ compiled
 compileBlock env result code@(c:cs) = do
-  Atom nextFunc <- _gensym "f"
-  compiled <- compile env c (Just nextFunc)
+  Atom symNextFunc <- _gensym "f"
+--  Atom symThisFunc <- _gensym "f"
+  compiled <- compile env c (Just symNextFunc)
+
+-- TODO: a series of expressions consisting of scalars such as (begin 1 2 3)
+--       seems to work in some cases, but actually compiles as a series of
+--       return statements, so it does not work for the *right* reasons.
+--       We may need to detect and wrap each of these into a function call
+--       to ensure the correct behavior.
+--
+--       Maybe in a manner similar to symNextFunc (see line 260)??
+--
+--  case compiled of
+--    AstValue v -> 
+--    _ -> compileBlock env (result ++ compiled) cs
+
   compileBlock env (result ++ compiled) cs
+--  compiled <- compileExpr env c (Just symNextFunc) symThisFunc
+--  compileBlock env (result ++ [compiled]) cs
 compileBlock env result [] = return result
 
 {-
@@ -178,31 +194,11 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) fForNextExpressio
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-
-
- TODO: need to pass fForNextExpression to the HFunc??
-       basically need some way of getting the compiled code to execute the next
-       expression after the one that is called
-
-
        AstValue $ "     else do result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
        AstValue $ "             continueEval env cont result ",
        AstFunction symCallfunc " env cont _ _ " compiledBody
        ]
  return $ f
-{-
- makeFunc for lambda is a bit trickier than with huski, because we want to compile the function body.
- this means that instead of generating a Func object, we want to compile everything down into
- (basically) an IOFunc. except that is not quite right either because a compiled function
- also needs to support a closure, parameters, and variable-length arguments
-
- A new type will be needed because lambda must evaluate to something, and it cannot be Func or IOFunc.
- Possibly Func could be extended to also support haskell code??
-  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else do result <- makeNormalFunc env fparams fbody
-          continueEval env cont result
--}
-
 
 compile env args@(List (_ : _)) fForNextExpression = compileApply env args fForNextExpression
 
