@@ -1,6 +1,11 @@
 
 1
 2
+(write (+ 11 22 33))
+3
+#|
+1
+2
 (write 3)
 2
 (write (+ 1 2 (+ 3 4 5)))
@@ -26,3 +31,4 @@
 (write ((lambda () 1 2 3 )))
 ((lambda () 1 2 (+ 3 4)))
 ; TODO: (write (if #t (+ ((lambda () 1 2 3) 3)) 4))
+|#
