@@ -1,3 +1,16 @@
+{- TODO:
+ -
+ - large changes to how compile works.
+ -
+ - to make everything cleaner, it would be better if each HaskAst object generates its own
+ - function header, instead of attempting to generate the header for the next expression.
+ - This will require passing additional information around, including:
+ -  - make of *this* function
+ -  - whether to use value (?)
+ -  - whether to use args (?)
+ -
+ - -}
+
 {- |
 Module      : Language.Scheme.Core
 Copyright   : Justin Ethier
@@ -21,6 +34,16 @@ import Control.Monad.Error
 import qualified Data.List
 import System.IO
 import Debug.Trace
+
+-- A type to store options passed to compile
+-- eventually all of this might be able to be integrated into a Compile monad
+data CompileOpts = CompileOptions {
+    coptsThisFunc :: String,
+    coptsThisFuncUseValue :: Bool,
+    coptsThisFuncUseArgs :: Bool,
+    coptsNextFunc :: Maybe String
+    }
+-- TODO: function to create compiled func definition
 
 -- A very basic type to store a Haskell AST
 -- The compiler performs the following transformations:
@@ -92,8 +115,9 @@ header = [
  , "  env <- primitiveBindings "
  , "  (runIOThrows $ liftM show $ run env (makeNullContinuation env) (Nil \"\") Nothing) >>= putStr "
  , " "
- , "run :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal "
- , "run env cont _ _ = do "]
+-- TODO: this is now obsolete, just pass func info to compile
+-- , "run :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal "
+-- , "run env cont _ _ = do "]
 
 compileLisp :: Env -> String -> IOThrowsError LispVal
 compileLisp env filename = do
@@ -154,15 +178,15 @@ findNextContinuation _ = Nothing
 -- TODO: could everything just be regular function calls except when a continuation is 'added to the stack' via a makeCPS(makeCPSWArgs ...) ?? I think this could be made more efficient
 
 compile :: Env -> LispVal -> Maybe String -> IOThrowsError [HaskAST]
-compile _ (Bool b) _ = return [AstValue $ "  return $ Bool " ++ (show b)]
+-- TODO: compile _ (Bool b) _ = return [AstValue $ "  return $ Bool " ++ (show b)]
 compile _ (Number n) _ = do
   -- TODO: all scalars should be compiled like this
   f <- return $ AstAssignM "x1" $ AstValue $ "  return $ Number " ++ (show n)
   Atom nextFunc <- _gensym "f"
   c <- return $ AstContinuation nextFunc "[x1]"
   return [f, c, AstFunction nextFunc " env cont _ _ " []]
-compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
---compile env (List [Atom "quote", val]) = return [AstValue $ "  continueEval env cont -- TODO: how to get the literal val?
+-- TODO: compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
+-- TODO: compile env (List [Atom "quote", val]) = return [AstValue $ "  continueEval env cont -- TODO: how to get the literal val?
 
 compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
  -- TODO: think about it, these could probably be part of compileExpr
