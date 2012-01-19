@@ -43,6 +43,9 @@ data CompileOpts = CompileOptions {
     coptsThisFuncUseArgs :: Bool,
     coptsNextFunc :: Maybe String
     }
+--DefaultCompileOptions :: String -> CompileOpts 
+defaultCompileOptions :: String -> CompileOpts
+defaultCompileOptions thisFunc = CompileOptions thisFunc False False Nothing
 -- TODO: function to create compiled func definition
 
 -- A very basic type to store a Haskell AST
@@ -114,7 +117,7 @@ header = [
  , "main = do "
  , "  env <- primitiveBindings "
  , "  (runIOThrows $ liftM show $ run env (makeNullContinuation env) (Nil \"\") Nothing) >>= putStr "
- , " "
+ , " "]
 -- TODO: this is now obsolete, just pass func info to compile
 -- , "run :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal "
 -- , "run env cont _ _ = do "]
