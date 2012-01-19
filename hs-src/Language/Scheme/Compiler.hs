@@ -119,7 +119,9 @@ writeList outH _ = do
 compileBlock :: Env -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST]
 compileBlock env result code@[c] = do
   compiled <- compile env c Nothing
-  return $ result ++ compiled
+  case compiled of
+    [aam@(AstAssignM "x1" _), AstContinuation _ _, AstFunction _ _ _] -> return $ result ++ [aam, AstValue "  return x1"]
+    _ -> return $ result ++ compiled
 compileBlock env result code@(c:cs) = do
   Atom symNextFunc <- _gensym "f"
 --  Atom symThisFunc <- _gensym "f"
@@ -153,7 +155,12 @@ findNextContinuation _ = Nothing
 
 compile :: Env -> LispVal -> Maybe String -> IOThrowsError [HaskAST]
 compile _ (Bool b) _ = return [AstValue $ "  return $ Bool " ++ (show b)]
-compile _ (Number n) _ = return [AstValue $ "  return $ Number " ++ (show n)]
+compile _ (Number n) _ = do
+  -- TODO: all scalars should be compiled like this
+  f <- return $ AstAssignM "x1" $ AstValue $ "  return $ Number " ++ (show n)
+  Atom nextFunc <- _gensym "f"
+  c <- return $ AstContinuation nextFunc "[x1]"
+  return [f, c, AstFunction nextFunc " env cont _ _ " []]
 compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
 --compile env (List [Atom "quote", val]) = return [AstValue $ "  continueEval env cont -- TODO: how to get the literal val?
 
