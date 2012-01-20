@@ -178,7 +178,10 @@ compile _ (Number n) copts = do
   f <- return $ AstAssignM "x1" $ AstValue $ "  return $ Number " ++ (show n)
   c <- return $ createAstCont copts "x1" --return $ AstValue $ "  continueEval env (makeCPS env cont " ++ nextFunc ++ ") x1"
   return [createAstFunc copts [f, c]] --, AstFunction nextFunc " env cont _ _ " []]
--- TODO: compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
+compile _ (Atom a) copts = do
+  f <- return $ AstAssignM "x1" $ AstValue $ "  getVar env \"" ++ a ++ "\""
+  c <- return $ createAstCont copts "x1"
+  return [createAstFunc copts [f, c]]
 -- TODO: compile env (List [Atom "quote", val]) = return [AstValue $ "  continueEval env cont -- TODO: how to get the literal val?
 
 {-
@@ -224,9 +227,11 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) fForNextExpressio
        AstFunction symCallfunc " env cont _ _ " compiledBody
        ]
  return $ f
+-}
 
-compile env args@(List (_ : _)) fForNextExpression = compileApply env args fForNextExpression
+compile env args@(List (_ : _)) copts = compileApply env args copts 
 
+{-
 -- Compile an intermediate expression (such as an arg to if) and 
 -- call into the next continuation with it's value
 compileExpr :: Env -> LispVal -> Maybe String -> String -> IOThrowsError HaskAST
@@ -237,33 +242,23 @@ compileExpr env expr fForNextExpr symThisFunc = do
                          [AstAssignM "x1" $ comp,
                           AstValue $ "  continueEval env cont x1 "]
    _ -> return $ AstFunction symThisFunc " env cont _ _ " compiled
+-}
 
 -- |Compiles each argument to a function call, and then uses apply to call the function
-compileApply :: Env -> LispVal -> Maybe String -> IOThrowsError [HaskAST]
-compileApply env args@(List (func : params)) fForNextExpression = do
-  _comp <- compile env func Nothing
-  
-  case _comp of
-    [comp] -> do
-      f <- return $ AstAssignM "x1" comp
-      Atom nextFunc <- _gensym "f"
-      c <- return $ AstContinuation nextFunc "[x1]"
-      rest <- compileArgs nextFunc False params
-      return $ [f, c] ++ rest
-    -- if there is an unevaluated function instead of a function instance,
-    -- then we need to execute (compile?) that function first and proceed with its value
-    code@(_ : _) -> do
---TODO: not quite right, looks like the lambda func needs to be passed as an arg to apply...
-      Atom wrapperFunc <- _gensym "applyWrapper"
-      Atom stubFunc <- _gensym "applyStubF"
-      Atom nextFunc <- _gensym "applyNextF"
-      c <- return $ AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ wrapperFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""  
-      rest <- compileArgs nextFunc True params
+compileApply :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
+compileApply env args@(List (func : params)) copts@(CompileOptions coptsThis _ _ coptsNext) = do
+  Atom stubFunc <- _gensym "applyStubF"
+  Atom wrapperFunc <- _gensym "applyWrapper"
+  Atom nextFunc <- _gensym "applyNextF"
 
-      -- Use wrapper to pass high-order function as an argument to apply
-      wrapper <- return $ AstFunction wrapperFunc " env cont value _ " [AstValue $ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " [value]) $ Nil \"\""]
+  c <- return $ AstFunction coptsThis " env cont _ _ " [AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ wrapperFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""]  
+  -- Use wrapper to pass high-order function (func) as an argument to apply
+  wrapper <- return $ AstFunction wrapperFunc " env cont value _ " [AstValue $ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " [value]) $ Nil \"\""]
+  _comp <- compile env func $ CompileOptions stubFunc False False Nothing
+-- TODO:  rest <- compileArgs nextFunc True params
 
-      return $ [c, wrapper, AstFunction stubFunc " env cont _ _ " code] {-++ code-} ++ rest
+  return $ [c, wrapper ] ++ _comp -- TODO: ++ rest
+  {- TODO:
  where 
   -- TODO: this pattern may need to be extracted into a common place for use in other similar
   --       situations, such as params to a lambda expression
@@ -273,7 +268,7 @@ compileApply env args@(List (func : params)) fForNextExpression = do
       [] -> do
            -- The basic idea is that if there is a next expression, call into it as a new continuation
            -- instead of calling into cont
-           case fForNextExpression of
+           case coptsNext of
              Nothing -> return $ [
                AstFunction thisFunc 
                 " env cont (Nil _) (Just (a:as)) " [AstValue "  apply cont a as "],
