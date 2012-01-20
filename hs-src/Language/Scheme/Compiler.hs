@@ -37,16 +37,30 @@ import Debug.Trace
 
 -- A type to store options passed to compile
 -- eventually all of this might be able to be integrated into a Compile monad
-data CompileOpts = CompileOptions {
+data CompOpts = CompileOptions {
     coptsThisFunc :: String,
     coptsThisFuncUseValue :: Bool,
     coptsThisFuncUseArgs :: Bool,
     coptsNextFunc :: Maybe String
     }
 --DefaultCompileOptions :: String -> CompileOpts 
-defaultCompileOptions :: String -> CompileOpts
+defaultCompileOptions :: String -> CompOpts
 defaultCompileOptions thisFunc = CompileOptions thisFunc False False Nothing
--- TODO: function to create compiled func definition
+
+createAstFunc :: CompOpts -> [HaskAST] -> HaskAST 
+createAstFunc (CompileOptions thisFunc useVal useArgs _) body = do
+  let val = case useVal of
+              True -> "value"
+              _ -> "_"
+      args = case useArgs of
+               True -> "(Just args)"
+               _ -> "_"
+  AstFunction thisFunc (" env cont " ++ val ++ " " ++ args ++ " ") body
+
+createAstCont (CompileOptions _ _ _ (Just nextFunc)) var = do
+  AstValue $ "  continueEval env (makeCPS env cont " ++ nextFunc ++ ") " ++ var
+createAstCont (CompileOptions _ _ _ Nothing) var = do
+  AstValue $ "  continueEval env cont " ++ var
 
 -- A very basic type to store a Haskell AST
 -- The compiler performs the following transformations:
@@ -124,7 +138,7 @@ header = [
 
 compileLisp :: Env -> String -> IOThrowsError LispVal
 compileLisp env filename = do
-  comp <- load filename >>= compileBlock env []
+  comp <- load filename >>= compileBlock "run" env []
   outH <- liftIO $ openFile "_tmp.hs" WriteMode
   _ <- liftIO $ writeList outH header
   _ <- liftIO $ writeList outH $ map show comp
@@ -143,54 +157,31 @@ writeList outH _ = do
 
 -- compileBlock - need to use explicit recursion to transform a block of code, because
 --  later lines may depend on previous ones
-compileBlock :: Env -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST]
-compileBlock env result code@[c] = do
-  compiled <- compile env c Nothing
-  case compiled of
-    [aam@(AstAssignM "x1" _), AstContinuation _ _, AstFunction _ _ _] -> return $ result ++ [aam, AstValue "  return x1"]
-    _ -> return $ result ++ compiled
-compileBlock env result code@(c:cs) = do
-  Atom symNextFunc <- _gensym "f"
+compileBlock :: String -> Env -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST]
+compileBlock symThisFunc env result code@[c] = do
 --  Atom symThisFunc <- _gensym "f"
-  compiled <- compile env c (Just symNextFunc)
-
--- TODO: a series of expressions consisting of scalars such as (begin 1 2 3)
---       seems to work in some cases, but actually compiles as a series of
---       return statements, so it does not work for the *right* reasons.
---       We may need to detect and wrap each of these into a function call
---       to ensure the correct behavior.
---
---       Maybe in a manner similar to symNextFunc (see line 260)??
---
---  case compiled of
---    AstValue v -> 
---    _ -> compileBlock env (result ++ compiled) cs
-
-  compileBlock env (result ++ compiled) cs
---  compiled <- compileExpr env c (Just symNextFunc) symThisFunc
---  compileBlock env (result ++ [compiled]) cs
-compileBlock env result [] = return result
-
-{-
-findNextContinuation :: [HaskAST] -> Maybe HaskAST
-findNextContinuation (h@(AstContinuation _ _) : hs) = Just h
-findNextContinuation (_ : hs) = findNextContinuation hs
-findNextContinuation _ = Nothing
-  -}
+  compiled <- compile env c $ defaultCompileOptions symThisFunc 
+  return $ result ++ compiled
+compileBlock symThisFunc env result code@(c:cs) = do
+--  Atom symThisFunc <- _gensym "f"
+  Atom symNextFunc <- _gensym "f"
+  compiled <- compile env c $ CompileOptions symThisFunc False False (Just symNextFunc)
+  compileBlock symNextFunc env (result ++ compiled) cs
+compileBlock _ _ result [] = return result
 
 -- TODO: could everything just be regular function calls except when a continuation is 'added to the stack' via a makeCPS(makeCPSWArgs ...) ?? I think this could be made more efficient
 
-compile :: Env -> LispVal -> Maybe String -> IOThrowsError [HaskAST]
+compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 -- TODO: compile _ (Bool b) _ = return [AstValue $ "  return $ Bool " ++ (show b)]
-compile _ (Number n) _ = do
+compile _ (Number n) copts = do
   -- TODO: all scalars should be compiled like this
   f <- return $ AstAssignM "x1" $ AstValue $ "  return $ Number " ++ (show n)
-  Atom nextFunc <- _gensym "f"
-  c <- return $ AstContinuation nextFunc "[x1]"
-  return [f, c, AstFunction nextFunc " env cont _ _ " []]
+  c <- return $ createAstCont copts "x1" --return $ AstValue $ "  continueEval env (makeCPS env cont " ++ nextFunc ++ ") x1"
+  return [createAstFunc copts [f, c]] --, AstFunction nextFunc " env cont _ _ " []]
 -- TODO: compile _ (Atom a) _ = return [AstValue $ "  getVar env \"" ++ a ++ "\""] --"Atom " ++ a
 -- TODO: compile env (List [Atom "quote", val]) = return [AstValue $ "  continueEval env cont -- TODO: how to get the literal val?
 
+{-
 compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
  -- TODO: think about it, these could probably be part of compileExpr
  Atom symPredicate <- _gensym "ifPredic"
@@ -326,4 +317,4 @@ compileApply env args@(List (func : params)) fForNextExpression = do
             return $ [ f, c, 
                        AstFunction stubFunc " env cont _ _ " []
                      ] ++ code ++ rest
-
+-}
