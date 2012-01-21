@@ -255,10 +255,9 @@ compileApply env args@(List (func : params)) copts@(CompileOptions coptsThis _ _
   -- Use wrapper to pass high-order function (func) as an argument to apply
   wrapper <- return $ AstFunction wrapperFunc " env cont value _ " [AstValue $ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " [value]) $ Nil \"\""]
   _comp <- compile env func $ CompileOptions stubFunc False False Nothing
--- TODO:  rest <- compileArgs nextFunc True params
+  rest <- compileArgs nextFunc False params -- False since no value passed in this time
 
-  return $ [c, wrapper ] ++ _comp -- TODO: ++ rest
-  {- TODO:
+  return $ [c, wrapper ] ++ _comp ++ rest
  where 
   -- TODO: this pattern may need to be extracted into a common place for use in other similar
   --       situations, such as params to a lambda expression
@@ -278,38 +277,20 @@ compileApply env args@(List (func : params)) copts@(CompileOptions coptsThis _ _
                AstFunction thisFunc 
                 " env cont (Nil _) (Just (a:as)) " [AstValue $ "  apply (makeCPS env cont " ++ fnextExpr ++ ") a as "],
                AstFunction thisFunc 
-                " env cont value (Just (a:as)) " [AstValue $ "  apply (makeCPS env cont " ++ fnextExpr ++ ") a $ as ++ [value] "],
-               AstFunction fnextExpr " env cont _ _ " []]
+                " env cont value (Just (a:as)) " [AstValue $ "  apply (makeCPS env cont " ++ fnextExpr ++ ") a $ as ++ [value] "]]
       (a:as) -> do
-        _comp <- compile env a Nothing
-        -- Use this below to splice in a call to another function      
-        case _comp of
-          [comp] -> do
-            let nfArgs = if thisFuncUseValue
-                            then "(args ++ [value] ++ [x1])"
-                            else "(args ++ [x1])"
-            Atom nextFunc <- _gensym "f"
-            rest <- compileArgs nextFunc False as 
-            return $ [AstFunction thisFunc " env cont value (Just args) " 
-                                  [AstAssignM "x1" $ comp,
-                                   AstContinuation nextFunc nfArgs]
-                     ] ++ rest
-          code@(_ : _) -> do
-            -- If another func is being called, we detect and splice it in...
-            Atom stubFunc <- _gensym "f"
-            Atom nextFunc <- _gensym "f"
+        Atom stubFunc <- _gensym "applyFirstArg" -- Call into compiled stub
+        Atom nextFunc <- _gensym "applyNextArg" -- Next func argument to execute...
+        _comp <- compile env a $ CompileOptions stubFunc False False Nothing
 
-            -- Flag below means that the expression's value matters, add it to args
-            f <- if thisFuncUseValue
-                    then return $ AstValue $ thisFunc ++ " env cont value (Just args) = do "
-                    else return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do "
-            c <- if thisFuncUseValue
-                    then return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " $ args ++ [value]) " ++ stubFunc ++ ") $ Nil\"\""  
-                    else return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
+        -- Flag below means that the expression's value matters, add it to args
+        f <- if thisFuncUseValue
+                then return $ AstValue $ thisFunc ++ " env cont value (Just args) = do "
+                else return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do "
+        c <- if thisFuncUseValue
+                then return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " $ args ++ [value]) " ++ stubFunc ++ ") $ Nil\"\""  
+                else return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
 
-            -- True indicates nextFunc needs to use value arg passed into it
-            rest <- compileArgs nextFunc True as
-            return $ [ f, c, 
-                       AstFunction stubFunc " env cont _ _ " []
-                     ] ++ code ++ rest
--}
+        rest <- compileArgs nextFunc True as -- True indicates nextFunc needs to use value arg passed into it
+        return $ [ f, c] ++ _comp ++ rest
+
