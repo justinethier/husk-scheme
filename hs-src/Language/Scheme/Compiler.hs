@@ -208,13 +208,14 @@ compile env args@(List [Atom "if", predic, conseq, alt]) fForNextExpression = do
     AstValue $ "    _ -> " ++ symConsequence ++ " env cont (Nil \"\") [] "]
  -- Join compiled code together
  return $ f ++ [compPredicate, compCheckPredicate, compConsequence, compAlternate] 
+-}
 
-compile env args@(List (Atom "lambda" : List fparams : fbody)) fForNextExpression = do
+compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
  let compiledParams = "[]" -- TODO: just a temporary stopgap
 -- TODO:  compiledParams <- return $ [] -- TODO: compile fparams
 
- compiledBody <- compileBlock env [] fbody
+ compiledBody <- compileBlock symCallfunc env [] fbody
 
  -- Entry point; ensure var is not rebound
 -- TODO: will probably end up creating a common function for this,
@@ -223,11 +224,10 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) fForNextExpressio
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
        AstValue $ "     else do result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
-       AstValue $ "             continueEval env cont result ",
-       AstFunction symCallfunc " env cont _ _ " compiledBody
+       AstValue $ "             continueEval env cont result "
+--       AstFunction symCallfunc " env cont _ _ " compiledBody
        ]
- return $ f
--}
+ return $ [createAstFunc copts f] ++ compiledBody
 
 compile env args@(List (_ : _)) copts = compileApply env args copts 
 
