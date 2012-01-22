@@ -1,3 +1,6 @@
+
+-- TODO items: lambda params, define, a simple test suite
+
 {- |
 Module      : Language.Scheme.Core
 Copyright   : Justin Ethier
@@ -166,6 +169,13 @@ compileScalar val copts = do
   c <- return $ createAstCont copts "x1"
   return [createAstFunc copts [f, c]]
 
+compileLambdaList :: [LispVal] -> IOThrowsError String
+compileLambdaList l = do
+  serialized <- mapM serialize l 
+  return $ "[" ++ ({-concat-} Data.List.Utils.genericJoin "," serialized) ++ "]"
+ where serialize (Atom a) = return $ (show a)
+       --serialize _ = throwError $ Default "invalid parameter to lambda list. TODO: output var"
+
 compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
 compile _ (Number n) copts = compileScalar ("  return $ Number " ++ (show n)) copts
@@ -197,10 +207,15 @@ compile env args@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions t
  -- Join compiled code together
  return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ compConsequence ++ compAlternate
 
+-- TODO: compile env args@(List (Atom "define" : List (Atom var : fparams) : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
+
 compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
- let compiledParams = "[]" -- TODO: just a temporary stopgap
--- TODO:  compiledParams <- return $ [] -- TODO: compile fparams
+-- let compiledParams = "[]" -- TODO: just a temporary stopgap
+ compiledParams <- compileLambdaList fparams
+
+--TODO: use a function to take fparams and output a "lambda list"
+-- basically just outputting var names
 
  compiledBody <- compileBlock symCallfunc env [] fbody
 
