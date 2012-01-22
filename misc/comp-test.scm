@@ -1,5 +1,8 @@
 1
 (write (((lambda () +)) 1 2 3 4))
+(write (if #f #t #f))
+(write (if ((lambda () #t)) (+ 100) (+ 200)))
+(write (if ((lambda () #f)) (+ 100) (+ 200)))
 1
 2
 ;(write (+ 11 22 33))
