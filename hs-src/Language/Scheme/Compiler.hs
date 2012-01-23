@@ -50,10 +50,11 @@ createAstFunc (CompileOptions thisFunc useVal useArgs _) body = do
                _ -> "_"
   AstFunction thisFunc (" env cont " ++ val ++ " " ++ args ++ " ") body
 
-createAstCont (CompileOptions _ _ _ (Just nextFunc)) var = do
-  AstValue $ "  continueEval env (makeCPS env cont " ++ nextFunc ++ ") " ++ var
-createAstCont (CompileOptions _ _ _ Nothing) var = do
-  AstValue $ "  continueEval env cont " ++ var
+createAstCont :: CompOpts -> String -> String -> HaskAST
+createAstCont (CompileOptions _ _ _ (Just nextFunc)) var indentation = do
+  AstValue $ indentation ++ "  continueEval env (makeCPS env cont " ++ nextFunc ++ ") " ++ var
+createAstCont (CompileOptions _ _ _ Nothing) var indentation = do
+  AstValue $ indentation ++ "  continueEval env cont " ++ var
 
 -- A very basic type to store a Haskell AST
 data HaskAST = AstAssignM String HaskAST
@@ -166,7 +167,7 @@ compileBlock _ _ result [] = return result
 compileScalar :: String -> CompOpts -> IOThrowsError [HaskAST]
 compileScalar val copts = do 
   f <- return $ AstAssignM "x1" $ AstValue val 
-  c <- return $ createAstCont copts "x1"
+  c <- return $ createAstCont copts "x1" ""
   return [createAstFunc copts [f, c]]
 
 compileLambdaList :: [LispVal] -> IOThrowsError String
@@ -196,9 +197,9 @@ compile env args@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions t
        AstValue $ "     else do " ++ symPredicate ++ " env (makeCPS env cont " ++ symCheckPredicate ++ ") (Nil \"\") [] "
        ]
  -- Compile expression for if's args
- compPredicate <- compileExpr env predic symPredicate nextFunc
- compConsequence <- compileExpr env conseq symConsequence nextFunc
- compAlternate <- compileExpr env alt symAlternate nextFunc
+ compPredicate <- compileExpr env predic symPredicate Nothing      -- Do not want to call into nextFunc in the middle of (if)
+ compConsequence <- compileExpr env conseq symConsequence nextFunc -- pick up at nextFunc after consequence
+ compAlternate <- compileExpr env alt symAlternate nextFunc        -- or...pick up at nextFunc after alternate
  -- Special case because we need to check the predicate's value
  compCheckPredicate <- return $ AstFunction symCheckPredicate " env cont result _ " [
     AstValue $ "  case result of ",
@@ -207,7 +208,6 @@ compile env args@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions t
  -- Join compiled code together
  return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ compConsequence ++ compAlternate
 
-TODO: below does not work, it needs to tie into nextFunc. See _tmp.hs from compiling misc/comp/test1.scm
 compile env args@(List [Atom "define", Atom var, form]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symDefine <- _gensym "defineFuncDefine"
  Atom symMakeDefine <- _gensym "defineFuncMakeDef"
@@ -219,13 +219,12 @@ compile env args@(List [Atom "define", Atom var, form]) copts@(CompileOptions th
        AstValue $ "     else do " ++ symDefine ++ " env (makeCPS env cont " ++ symMakeDefine ++ ") (Nil \"\") []" ]
  compDefine <- compileExpr env form symDefine nextFunc
  compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
-    AstValue $ "  defineVar env \"" ++ var ++ "\" result >>= continueEval env cont " ]
+    AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result",
+    createAstCont copts "result" ""]
  return $ [createAstFunc copts f] ++ compDefine ++ [compMakeDefine]
 
--- TODO: this is not tested!!!
 compile env args@(List (Atom "define" : List (Atom var : fparams) : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symCallfunc <- _gensym "defineFuncEntryPt"
--- let compiledParams = "[]" -- TODO: just a temporary stopgap
  compiledParams <- compileLambdaList fparams
  compiledBody <- compileBlock symCallfunc env [] fbody
 
@@ -234,19 +233,14 @@ compile env args@(List (Atom "define" : List (Atom var : fparams) : fbody)) copt
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
        AstValue $ "     else do result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
-       AstValue $ "             _ <- defineVar env " ++ var ++ " result ",
-       AstValue $ "             continueEval env cont result "
+       AstValue $ "             _ <- defineVar env \"" ++ var ++ "\" result ",
+       createAstCont copts "result" "           "
        ]
  return $ [createAstFunc copts f] ++ compiledBody
 
 compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
--- let compiledParams = "[]" -- TODO: just a temporary stopgap
  compiledParams <- compileLambdaList fparams
-
---TODO: use a function to take fparams and output a "lambda list"
--- basically just outputting var names
-
  compiledBody <- compileBlock symCallfunc env [] fbody
 
  -- Entry point; ensure var is not rebound
@@ -256,8 +250,7 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOpt
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
        AstValue $ "     else do result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
-       AstValue $ "             continueEval env cont result "
---       AstFunction symCallfunc " env cont _ _ " compiledBody
+       createAstCont copts "result" "           "
        ]
  return $ [createAstFunc copts f] ++ compiledBody
 

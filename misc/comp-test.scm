@@ -1,4 +1,14 @@
 1
+(if 1 2 3)
+
+;(define b 1) ; TODO: error when b is referenced below
+;(write b)
+;
+(define (a x) (write x))
+(a 1234567890)
+
+(lambda () 1)
+
 (write (((lambda () +)) 1 2 3 4))
 (write ((lambda (a b c) (+ a b c)) 2 4 6))
 (write (if #f #t #f))
