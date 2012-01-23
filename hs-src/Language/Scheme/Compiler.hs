@@ -172,7 +172,7 @@ compileScalar val copts = do
 compileLambdaList :: [LispVal] -> IOThrowsError String
 compileLambdaList l = do
   serialized <- mapM serialize l 
-  return $ "[" ++ ({-concat-} Data.List.Utils.genericJoin "," serialized) ++ "]"
+  return $ "[" ++ concat (Data.List.intersperse "," serialized) ++ "]"
  where serialize (Atom a) = return $ (show a)
        --serialize _ = throwError $ Default "invalid parameter to lambda list. TODO: output var"
 
