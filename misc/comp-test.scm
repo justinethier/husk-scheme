@@ -1,9 +1,9 @@
 1
 (if 1 2 3)
 
-;(define b 1) ; TODO: error when b is referenced below
-;(write b)
-;
+(define b 1) ; TODO: error when b is referenced below
+(write b)    ;  see also test1.scm, which has the same problem (but in a smaller file)
+
 (define (a x) (write x))
 (a 1234567890)
 
