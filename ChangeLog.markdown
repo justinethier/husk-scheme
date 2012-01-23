@@ -1,4 +1,4 @@
-v3.4.5
+v3.5.1
 ------
 - Improved support for comparing instances of functions using `eq?`, `eqv?`, etc
 - Various performance improvements
