@@ -1,3 +1,11 @@
+(define (assert-equal test-id value expression)
+  (if (eqv? value expression)
+    (write "passed")
+    (write "failed")))
+
+(assert-equal 1 1 1)
+(assert-equal 1 1 2)
+
 1
 (if 1 2 3)
 
