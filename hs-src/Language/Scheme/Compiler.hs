@@ -216,8 +216,8 @@ compile env args@(List [Atom "define", Atom var, form]) copts@(CompileOptions th
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do " ++ symDefine ++ " env (makeCPS env cont " ++ symMakeDefine ++ ") (Nil \"\") []" ]
- compDefine <- compileExpr env form symDefine nextFunc
+       AstValue $ "     else do " ++ symDefine ++ " env cont (Nil \"\") []" ]
+ compDefine <- compileExpr env form symDefine $ Just symMakeDefine
  compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
     AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result",
     createAstCont copts "result" ""]
