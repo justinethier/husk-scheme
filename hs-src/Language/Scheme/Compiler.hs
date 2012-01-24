@@ -178,11 +178,21 @@ compileLambdaList l = do
        --serialize _ = throwError $ Default "invalid parameter to lambda list. TODO: output var"
 
 compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
-compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
+compile _ (Nil n) copts = compileScalar ("  return $ Nil \"" ++ (show n) ++ "\"") copts
+compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts
+compile _ (Char c) copts = compileScalar ("  return $ Char " ++ (show c)) copts
+-- TODO: compile _ (Complex _) copts = continueEval env cont val
+compile _ (Float f) copts = compileScalar ("  return $ Float " ++ (show f)) copts
+-- TODO: compile _ (Rational _) copts = continueEval env cont val
 compile _ (Number n) copts = compileScalar ("  return $ Number " ++ (show n)) copts
+compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
+-- TODO: eval env cont val@(HashTable _) = continueEval env cont val
+-- TODO: eval env cont val@(Vector _) = do
 compile _ (Atom a) copts = compileScalar ("  getVar env \"" ++ a ++ "\"") copts 
 
 -- TODO: compile env (List [Atom "quote", val]) = return [AstValue $ "  continueEval env cont -- TODO: how to get the literal val?
+-- TODO: quasiquote
+-- TODO: other special forms...
 
 compile env args@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  -- TODO: think about it, these could probably be part of compileExpr
