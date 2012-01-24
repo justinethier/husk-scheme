@@ -1,10 +1,26 @@
+;;
+;; A simple unit testing function.
+;;
+;; This can be simplified using (begin) and (newline), 
+;; but neither is supported by huskc at this time.
+;;
 (define (assert-equal test-id value expression)
   (if (eqv? value expression)
-    (write "passed")
-    (write "failed")))
+    ((lambda () 
+       (display (string-append "Passed: " (number->string test-id)))
+       (display #\newline)))
 
-(assert-equal 1 1 1)
-(assert-equal 1 1 2)
+    ((lambda () 
+       (display (string-append "Failed: " (number->string test-id)))
+       (display ", expected [")
+       (display value)
+       (display "], got [")
+       (display expression)
+       (display "].")
+       (display #\newline)))))
+
+(assert-equal 1.1 1 1)
+(assert-equal 1.2 1 2)
 
 1
 (if 1 2 3)
