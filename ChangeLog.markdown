@@ -1,7 +1,7 @@
 v3.5.1
 ------
 - Improved support for comparing instances of functions using `eq?`, `eqv?`, etc
-- Various performance improvements
+- Reduced variable access time by using a Map to store variables within an environment. 
 
 v3.4.4
 ------
