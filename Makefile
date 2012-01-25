@@ -48,6 +48,10 @@ test: husk stdlib.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) run-tests.scm
 	@rm -f $(UNIT_TEST_DIR)/scm-unit.tmp
 
+# Run (experimental) compiler unit tests
+testc: husk stdlib.scm
+	$(UNIT_TEST_DIR)/compiler/compile.sh
+
 # Create tag files to ease souce code browsing
 tags:
 	hasktags hs-src/Language/Scheme/*/*.hs hs-src/Language/Scheme/*.hs hs-src/*.hs *.hs
