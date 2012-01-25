@@ -8,7 +8,7 @@
 #
 
 HUSKI = ../huski
-UNIT_TEST_DIR = scm-unit-tests
+UNIT_TEST_DIR = tests
 
 husk: huski huskc
 
