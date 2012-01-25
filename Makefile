@@ -7,7 +7,7 @@
 # Make file used to build husk and run test cases.
 #
 
-HUSKI = ../huski
+HUSKI = huski
 UNIT_TEST_DIR = tests
 
 husk: huski huskc
@@ -43,9 +43,10 @@ doc:
 
 # Run all unit tests
 test: husk stdlib.scm
+	./$(HUSKI) $(UNIT_TEST_DIR)/r5rs_pitfall.scm
 	@echo "0" > $(UNIT_TEST_DIR)/scm-unit.tmp
 	@echo "0" >> $(UNIT_TEST_DIR)/scm-unit.tmp
-	@cd $(UNIT_TEST_DIR) ; $(HUSKI) run-tests.scm
+	@cd $(UNIT_TEST_DIR) ; ../$(HUSKI) run-tests.scm
 	@rm -f $(UNIT_TEST_DIR)/scm-unit.tmp
 
 # Run (experimental) compiler unit tests
