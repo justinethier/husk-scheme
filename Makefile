@@ -50,7 +50,7 @@ test: husk stdlib.scm
 	@rm -f $(UNIT_TEST_DIR)/scm-unit.tmp
 
 # Run (experimental) compiler unit tests
-testc: husk stdlib.scm
+testc: huskc stdlib.scm
 	$(UNIT_TEST_DIR)/compiler/compile.sh
 
 # Create tag files to ease souce code browsing

@@ -194,6 +194,14 @@ compile _ (Atom a) copts = compileScalar ("  getVar env \"" ++ a ++ "\"") copts
 -- TODO: quasiquote
 -- TODO: other special forms...
 
+-- TODO: eval env cont args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
+-- macros will eventually need to introduce a definition in both the compiler's env (so macros can be processed at compile time) and in the program's env (so dynamically injected code has access to the macro). That said, the priority is compile-time processing.
+--
+
+
+-- TODO: eval env cont fargs@(List (Atom "begin" : funcs)) = do
+-- TODO: set!
+
 compile env args@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  -- TODO: think about it, these could probably be part of compileExpr
  Atom symPredicate <- _gensym "ifPredic"
@@ -217,6 +225,12 @@ compile env args@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions t
     AstValue $ "    _ -> " ++ symConsequence ++ " env cont (Nil \"\") [] "]
  -- Join compiled code together
  return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ compConsequence ++ compAlternate
+
+
+
+-- TODO: eval env cont args@(List [Atom "if", predic, conseq]) = do
+
+
 
 compile env args@(List [Atom "define", Atom var, form]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symDefine <- _gensym "defineFuncDefine"
@@ -248,6 +262,12 @@ compile env args@(List (Atom "define" : List (Atom var : fparams) : fbody)) copt
        ]
  return $ [createAstFunc copts f] ++ compiledBody
 
+
+
+-- TODO: eval env cont args@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) = do
+
+
+
 compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
  compiledParams <- compileLambdaList fparams
@@ -263,6 +283,13 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOpt
        createAstCont copts "result" "           "
        ]
  return $ [createAstFunc copts f] ++ compiledBody
+
+
+
+-- TODO: eval env cont args@(List (Atom "lambda" : DottedList fparams varargs : fbody)) = do
+-- TODO: eval env cont args@(List (Atom "lambda" : varargs@(Atom _) : fbody)) = do
+
+
 
 compile env args@(List (_ : _)) copts = compileApply env args copts 
 
