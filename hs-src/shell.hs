@@ -65,7 +65,7 @@ showBanner = do
   putStrLn "                                                                         "
   putStrLn " http://justinethier.github.com/husk-scheme                              "
   putStrLn " (c) 2010-2012 Justin Ethier                                             "
-  putStrLn " Version 3.5.1                                                           "
+  putStrLn " Version 3.5.2                                                           "
   putStrLn "                                                                         "
 
 runRepl :: IO ()
