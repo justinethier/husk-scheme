@@ -81,6 +81,9 @@ showValAST (AstContinuation nextFunc args) = "  continueEval env (makeCPSWArgs e
 
 instance Show HaskAST where show = showValAST
 
+astToHaskellStr :: LispVal -> String 
+astToHaskellStr (Atom a) = "Atom " ++ show a
+
 header :: [String]
 header = [
    "module Main where "
@@ -190,7 +193,8 @@ compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
 -- TODO: eval env cont val@(Vector _) = do
 compile _ (Atom a) copts = compileScalar ("  getVar env \"" ++ a ++ "\"") copts 
 
--- TODO: compile env (List [Atom "quote", val]) = return [AstValue $ "  continueEval env cont -- TODO: how to get the literal val?
+compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
+
 -- TODO: quasiquote
 -- TODO: other special forms...
 
