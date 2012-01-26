@@ -1,7 +1,7 @@
 ---
 layout: post
-title: Released Version 3.4.4 
-excerpt: This release continues the trend of quick point releases for the 3.4.x series...
+title: Released Version 3.5.1 
+excerpt: This release contains various incremental improvements to husk...
 ---
 # {{ page.title }}
 
