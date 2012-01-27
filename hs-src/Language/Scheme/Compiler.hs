@@ -24,7 +24,10 @@ import Language.Scheme.Primitives
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
+import qualified Data.Array
+import Data.Complex
 import qualified Data.List
+import Data.Ratio
 import System.IO
 import Debug.Trace
 
@@ -81,8 +84,25 @@ showValAST (AstContinuation nextFunc args) = "  continueEval env (makeCPSWArgs e
 
 instance Show HaskAST where show = showValAST
 
+joinL ls sep = concat $ Data.List.intersperse sep ls
+
 astToHaskellStr :: LispVal -> String 
+astToHaskellStr (String s) = "String " ++ show s
+astToHaskellStr (Char c) = "Char " ++ show c
 astToHaskellStr (Atom a) = "Atom " ++ show a
+astToHaskellStr (Number n) = "Number " ++ show n
+astToHaskellStr (Complex c) = "Complex $ " ++ (show $ realPart c) ++ " :+ " ++ (show $ imagPart c)
+astToHaskellStr (Rational r) = "Rational $ " ++ (show $ numerator r) ++ " % " ++ (show $ denominator r)
+astToHaskellStr (Float f) = "Float " ++ show f
+astToHaskellStr (Bool True) = "Bool True"
+astToHaskellStr (Bool False) = "Bool False"
+astToHaskellStr (Vector v) = do
+  let ls = Data.Array.elems v
+      size = (length ls) - 1
+  "Vector (listArray (0, " ++ show size ++ ")" ++ "[" ++ joinL (map astToHaskellStr ls) "," ++ "])"
+astToHaskellStr (List ls) = "List [" ++ joinL (map astToHaskellStr ls) "," ++ "]"
+astToHaskellStr (DottedList ls l) = 
+  "DottedList [" ++ joinL (map astToHaskellStr ls) "," ++ "] $ " ++ astToHaskellStr l
 
 header :: [String]
 header = [
@@ -94,6 +114,9 @@ header = [
  , "import Language.Scheme.Types     -- Scheme data types "
  , "import Language.Scheme.Variables -- Scheme variable operations "
  , "import Control.Monad.Error "
+ , "import Data.Array "
+ , "import Data.Complex "
+ , "import Data.Ratio "
  , "import System.IO "
  , " "
 -- TODO: eventually these make func's will be moved out into their own module
