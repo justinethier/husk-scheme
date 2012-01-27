@@ -207,9 +207,9 @@ compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 compile _ (Nil n) copts = compileScalar ("  return $ Nil \"" ++ (show n) ++ "\"") copts
 compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts
 compile _ (Char c) copts = compileScalar ("  return $ Char " ++ (show c)) copts
--- TODO: compile _ (Complex _) copts = continueEval env cont val
+compile _ (Complex c) copts = compileScalar ("  return $ Complex $ " ++ (show $ realPart c) ++ " :+ " ++ (show $ imagPart c)) copts
 compile _ (Float f) copts = compileScalar ("  return $ Float " ++ (show f)) copts
--- TODO: compile _ (Rational _) copts = continueEval env cont val
+compile _ (Rational r) copts = compileScalar ("  return $ Rational $ " ++ (show $ numerator r) ++ " % " ++ (show $ denominator r)) copts 
 compile _ (Number n) copts = compileScalar ("  return $ Number " ++ (show n)) copts
 compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
 -- TODO: eval env cont val@(HashTable _) = continueEval env cont val
