@@ -221,10 +221,13 @@ compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astT
 -- TODO: quasiquote
 -- TODO: other special forms...
 
--- TODO: eval env cont args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
--- macros will eventually need to introduce a definition in both the compiler's env (so macros can be processed at compile time) and in the program's env (so dynamically injected code has access to the macro). That said, the priority is compile-time processing.
+compile env args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
 --
-
+-- TODO:
+--
+-- macros will eventually need to introduce a definition in both the compiler's env (so macros can be processed at compile time) and in the program's env (so dynamically injected code has access to the macro). That said, the priority is compile-time processing.
+  _ <- defineNamespacedVar env macroNamespace keyword $ Syntax (Just env) Nothing False identifiers rules
+  compileScalar ("  return $ Nil \"\"") copts 
 
 -- TODO: eval env cont fargs@(List (Atom "begin" : funcs)) = do
 -- TODO: set!
