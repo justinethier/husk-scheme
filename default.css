@@ -181,8 +181,8 @@ img.right {
 	height: 41px;
 }
 
-#menu li:hover {
-	background: #F9F8F1;
+#menu li a:hover {
+	color: #E52A00;
 }
 
 #menu a {
@@ -206,6 +206,7 @@ html>body #menu a {
 }
 
 #menu li.active a {
+	color: #E52A00;
 	background: url(images/img06.gif) no-repeat right top;
 }
 
