@@ -325,7 +325,7 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOpt
 
 
 
-compile env args@(List (_ : _)) copts = compileApply env args copts 
+compile env args@(List (_ : _)) copts = mfunc env args compileApply copts 
 
 mcompile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 mcompile env lisp copts = mfunc env lisp compile copts
@@ -346,7 +346,7 @@ mfunc env cont lisp func = do
 -- call into the next continuation with it's value
 compileExpr :: Env -> LispVal -> String -> Maybe String -> IOThrowsError [HaskAST]
 compileExpr env expr symThisFunc fForNextExpr = do
-  compile env expr (CompileOptions symThisFunc False False fForNextExpr) 
+  mcompile env expr (CompileOptions symThisFunc False False fForNextExpr) 
 
 -- |Compiles each argument to a function call, and then uses apply to call the function
 compileApply :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
@@ -358,7 +358,7 @@ compileApply env args@(List (func : params)) copts@(CompileOptions coptsThis _ _
   c <- return $ AstFunction coptsThis " env cont _ _ " [AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ wrapperFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""]  
   -- Use wrapper to pass high-order function (func) as an argument to apply
   wrapper <- return $ AstFunction wrapperFunc " env cont value _ " [AstValue $ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " [value]) $ Nil \"\""]
-  _comp <- compile env func $ CompileOptions stubFunc False False Nothing
+  _comp <- mcompile env func $ CompileOptions stubFunc False False Nothing
   rest <- compileArgs nextFunc False params -- False since no value passed in this time
 
   return $ [c, wrapper ] ++ _comp ++ rest
@@ -385,7 +385,7 @@ compileApply env args@(List (func : params)) copts@(CompileOptions coptsThis _ _
       (a:as) -> do
         Atom stubFunc <- _gensym "applyFirstArg" -- Call into compiled stub
         Atom nextFunc <- _gensym "applyNextArg" -- Next func argument to execute...
-        _comp <- compile env a $ CompileOptions stubFunc False False Nothing
+        _comp <- mcompile env a $ CompileOptions stubFunc False False Nothing
 
         -- Flag below means that the expression's value matters, add it to args
         f <- if thisFuncUseValue
