@@ -327,6 +327,15 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOpt
 
 compile env args@(List (_ : _)) copts = compileApply env args copts 
 
+{- TODO: adapt for compilation
+meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+meval env cont lisp = mfunc env cont lisp eval
+mprepareApply env cont lisp = mfunc env cont lisp prepareApply
+mfunc :: Env -> LispVal -> LispVal -> (Env -> LispVal -> LispVal -> IOThrowsError LispVal) -> IOThrowsError LispVal
+mfunc env cont lisp func = do
+  Language.Scheme.Macro.macroEval env lisp >>= (func env cont) 
+-}
+
 -- Compile an intermediate expression (such as an arg to if) and 
 -- call into the next continuation with it's value
 compileExpr :: Env -> LispVal -> String -> Maybe String -> IOThrowsError [HaskAST]
