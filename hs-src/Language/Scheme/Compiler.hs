@@ -301,6 +301,10 @@ compile env args@(List (Atom "define" : List (Atom var : fparams) : fbody)) copt
 compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
  compiledParams <- compileLambdaList fparams
+
+-- TODO: need to extend Env below when compiling body?
+-- TODO: need to bind lambda params in the extended env, for purposes of macro processing?
+
  compiledBody <- compileBlock symCallfunc env [] fbody
 
  -- Entry point; ensure var is not rebound
