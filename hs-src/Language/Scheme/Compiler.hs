@@ -17,7 +17,7 @@ Scheme AST (LispVal) -> Haskell AST (HaskAST) -> Compiled Code (String)
 -}
 
 module Language.Scheme.Compiler where 
---import qualified Language.Scheme.Macro
+import qualified Language.Scheme.Macro
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Primitives
@@ -178,12 +178,12 @@ writeList outH _ = do
 compileBlock :: String -> Env -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST]
 compileBlock symThisFunc env result code@[c] = do
 --  Atom symThisFunc <- _gensym "f"
-  compiled <- compile env c $ defaultCompileOptions symThisFunc 
+  compiled <- mcompile env c $ defaultCompileOptions symThisFunc 
   return $ result ++ compiled
 compileBlock symThisFunc env result code@(c:cs) = do
 --  Atom symThisFunc <- _gensym "f"
   Atom symNextFunc <- _gensym "f"
-  compiled <- compile env c $ CompileOptions symThisFunc False False (Just symNextFunc)
+  compiled <- mcompile env c $ CompileOptions symThisFunc False False (Just symNextFunc)
   compileBlock symNextFunc env (result ++ compiled) cs
 compileBlock _ _ result [] = return result
 
@@ -327,6 +327,12 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOpt
 
 compile env args@(List (_ : _)) copts = compileApply env args copts 
 
+mcompile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
+mcompile env lisp copts = mfunc env lisp compile copts
+mfunc :: Env -> LispVal -> (Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]) -> CompOpts -> IOThrowsError [HaskAST] 
+mfunc env lisp func copts = do
+  transformed <- Language.Scheme.Macro.macroEval env lisp 
+  func env transformed copts
 {- TODO: adapt for compilation
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 meval env cont lisp = mfunc env cont lisp eval
