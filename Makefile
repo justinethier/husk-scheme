@@ -7,6 +7,7 @@
 # Make file used to build husk and run test cases.
 #
 
+HUSKC = huskc
 HUSKI = huski
 UNIT_TEST_DIR = tests
 
@@ -51,7 +52,8 @@ test: husk stdlib.scm
 
 # Run (experimental) compiler unit tests
 testc: huskc stdlib.scm
-	$(UNIT_TEST_DIR)/compiler/compile.sh
+	./$(HUSKC) $(UNIT_TEST_DIR)/compiler/t-basic.scm
+	$(UNIT_TEST_DIR)/compiler/t-basic.scm.out
 
 # Create tag files to ease souce code browsing
 tags:

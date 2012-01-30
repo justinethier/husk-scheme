@@ -17,18 +17,57 @@ import Language.Scheme.Core
 import Language.Scheme.Types     -- Scheme data types
 import Language.Scheme.Variables -- Scheme variable operations
 import Control.Monad.Error
+import System.Cmd (system)
+import System.Exit (ExitCode (..), exitWith, exitFailure)
 import System.IO
 import System.Environment
 
 main :: IO ()
 main = do args <- getArgs
           if null args then showUsage
-                       else comp args
+                       else process args
+showUsage :: IO ()
+showUsage = do
+  putStrLn "huskc: no input files"
 
-comp :: [String] -> IO ()
-comp args = do
-  env <- liftIO $ nullEnv -- TODO: load an Env specifically for compilation (perhaps in the Compiler module)
-  (runIOThrows $ liftM show $ compileLisp env $ args !! 0) >>= putStrLn
+process :: [String] -> IO ()
+process args = do
+  let filename = args !! 0
+  env <- liftIO $ nullEnv
+  result <- (runIOThrows $ liftM show $ compileSchemeFile env filename)
+  case result of
+   "" -> compileHaskellFile $ filename ++ ".out" -- TODO: just chop off file extension
+   _ -> putStrLn result
+
+compileSchemeFile :: Env -> String -> IOThrowsError LispVal
+compileSchemeFile env filename = do
+  comp <- compileLisp env filename "run"
+  outH <- liftIO $ openFile "_tmp.hs" WriteMode
+  _ <- liftIO $ writeList outH header
+  _ <- liftIO $ writeList outH $ map show comp
+  _ <- liftIO $ hClose outH
+  if not (null comp)
+     then return $ Nil "" -- Dummy value
+     else throwError $ Default "Empty file" --putStrLn "empty file"
+
+compileHaskellFile :: String -> IO() --ThrowsError LispVal
+compileHaskellFile filename = do
+  let ghc = "ghc" -- Need to make configurable??
+      exe = "test" -- TODO: allow as cmd line parameter
+  compileStatus <- system $ ghc ++ " -cpp --make -package ghc -fglasgow-exts -o " ++ filename ++ " _tmp.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Core.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/FFI.hs hs-src/Language/Scheme/Macro/Matches.hs"
+
+-- TODO: delete intermediate hs files if requested
+
+  case compileStatus of
+    ExitFailure _code -> exitWith compileStatus
+    ExitSuccess -> return ()
+
+writeList outH (l : ls) = do
+  hPutStrLn outH l
+  writeList outH ls
+writeList outH _ = do
+  hPutStr outH ""
+
 
 {-
 runOne :: [String] -> IO ()
@@ -46,7 +85,3 @@ runOne args = do
   (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
      >>= hPutStr nullIO
 -}
-showUsage :: IO ()
-showUsage = do
-  putStrLn "huskc: no input files"
---  putStrLn ""
