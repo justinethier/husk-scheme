@@ -28,23 +28,47 @@ import System.IO
 main :: IO ()
 main = do 
   args <- getArgs
-  let (flags, nonOpts, msgs) = getOpt RequireOrder options args
+  let (actions, nonOpts, msgs) = getOpt RequireOrder options args
+  opts <- foldl (>>=) (return defaultOptions) actions
+--  let Options {optInput = input, optOutput = output} = opts
+-- input >>= output
+
+-- TODO: command line args would need to be filtered from args, below:
   if null args 
      then showUsage
      else process args
 
--- TODO: need to figure out how to get command line args to work
+-- 
+-- For an explanation of the command line options code, see:
+-- http://leiffrenzel.de/papers/commandline-options-in-haskell.html
 --
--- see: http://leiffrenzel.de/papers/commandline-options-in-haskell.html
---
-data Flag = Version
-options :: [OptDescr Flag]
+data Options = Options {
+--    optInput :: IO String, optOutput :: String -> IO ()
+    }
+defaultOptions :: Options
+defaultOptions = Options {
+--    optInput = getContents, optOutput = putStr
+    }
+
+options :: [OptDescr (Options -> IO Options)]
 options = [
-  Option ['V'] ["version"] (NoArg Version) Language.Scheme.Core.version]
+  Option ['V'] ["version"] (NoArg showVersion) "show version number"
+--  Option ['i'] ["input"] (ReqArg readInput "FILE") "input file to read",
+--  Option ['o'] ["output"] (ReqArg writeInput "FILE") "output file to write"
+  ]
+
+-- readInput arg opt = return opt { optInput = readFile arg }
+-- writeOutput arg opt = return opt { optOutput = writeFile arg }
 
 showUsage :: IO ()
 showUsage = do
   putStrLn "huskc: no input files"
+
+showVersion :: Options -> IO Options
+showVersion _ = do
+  putStrLn Language.Scheme.Core.version
+-- TODO: would be nice to be able to print the banner:  Language.Scheme.Core.showBanner
+  exitWith ExitSuccess
 
 process :: [String] -> IO ()
 process args = do

@@ -53,7 +53,7 @@ test: husk stdlib.scm
 # Run (experimental) compiler unit tests
 testc: huskc stdlib.scm
 	./$(HUSKC) $(UNIT_TEST_DIR)/compiler/t-basic.scm
-	$(UNIT_TEST_DIR)/compiler/t-basic.scm.out
+	$(UNIT_TEST_DIR)/compiler/t-basic
 
 # Create tag files to ease souce code browsing
 tags:

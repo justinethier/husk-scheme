@@ -54,20 +54,6 @@ runOne args = do
             (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStr stderr
      else (runIOThrows $ liftM show $ evalLisp env (Nil "")) >>= hPutStr stderr
 
-showBanner :: IO ()
-showBanner = do
-  putStrLn "  _               _        __                 _                          "
-  putStrLn " | |             | |       \\\\\\               | |                         "
-  putStrLn " | |__  _   _ ___| | __     \\\\\\      ___  ___| |__   ___ _ __ ___   ___  "
-  putStrLn " | '_ \\| | | / __| |/ /    //\\\\\\    / __|/ __| '_ \\ / _ \\ '_ ` _ \\ / _ \\ "
-  putStrLn " | | | | |_| \\__ \\   <    /// \\\\\\   \\__ \\ (__| | | |  __/ | | | | |  __/ "
-  putStrLn " |_| |_|\\__,_|___/_|\\_\\  ///   \\\\\\  |___/\\___|_| |_|\\___|_| |_| |_|\\___| "
-  putStrLn "                                                                         "
-  putStrLn " http://justinethier.github.com/husk-scheme                              "
-  putStrLn " (c) 2010-2012 Justin Ethier                                             "
-  putStrLn $ " Version " ++ Language.Scheme.Core.version ++ " "
-  putStrLn "                                                                         "
-
 runRepl :: IO ()
 runRepl = do
     stdlib <- getDataFileName "stdlib.scm"

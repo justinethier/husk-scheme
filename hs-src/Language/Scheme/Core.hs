@@ -18,6 +18,7 @@ module Language.Scheme.Core
     , primitiveBindings
     , apply
     , continueEval
+    , showBanner
     , version
     ) where
 import qualified Language.Scheme.FFI
@@ -34,6 +35,21 @@ import System.IO
 
 version :: String
 version = "3.5.2"
+
+showBanner :: IO ()
+showBanner = do
+  putStrLn "  _               _        __                 _                          "
+  putStrLn " | |             | |       \\\\\\               | |                         "
+  putStrLn " | |__  _   _ ___| | __     \\\\\\      ___  ___| |__   ___ _ __ ___   ___  "
+  putStrLn " | '_ \\| | | / __| |/ /    //\\\\\\    / __|/ __| '_ \\ / _ \\ '_ ` _ \\ / _ \\ "
+  putStrLn " | | | | |_| \\__ \\   <    /// \\\\\\   \\__ \\ (__| | | |  __/ | | | | |  __/ "
+  putStrLn " |_| |_|\\__,_|___/_|\\_\\  ///   \\\\\\  |___/\\___|_| |_|\\___|_| |_| |_|\\___| "
+  putStrLn "                                                                         "
+  putStrLn " http://justinethier.github.com/husk-scheme                              "
+  putStrLn " (c) 2010-2012 Justin Ethier                                             "
+  putStrLn $ " Version " ++ version ++ " "
+  putStrLn "                                                                         "
+
 
 {- |Evaluate a string containing Scheme code.
 
