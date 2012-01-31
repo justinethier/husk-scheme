@@ -18,6 +18,7 @@ module Language.Scheme.Core
     , primitiveBindings
     , apply
     , continueEval
+    , version
     ) where
 import qualified Language.Scheme.FFI
 import qualified Language.Scheme.Macro
@@ -30,6 +31,9 @@ import Control.Monad.Error
 import Data.Array
 import qualified Data.Map
 import System.IO
+
+version :: String
+version = "3.5.2"
 
 {- |Evaluate a string containing Scheme code.
 
