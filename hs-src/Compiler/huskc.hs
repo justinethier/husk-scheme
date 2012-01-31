@@ -17,16 +17,31 @@ import Language.Scheme.Core
 import Language.Scheme.Types     -- Scheme data types
 import Language.Scheme.Variables -- Scheme variable operations
 import Control.Monad.Error
+import System (getArgs)
 import System.Cmd (system)
+import System.Console.GetOpt
 import System.FilePath (dropExtension)
 import System.Environment
 import System.Exit (ExitCode (..), exitWith, exitFailure)
 import System.IO
 
 main :: IO ()
-main = do args <- getArgs
-          if null args then showUsage
-                       else process args
+main = do 
+  args <- getArgs
+  let (flags, nonOpts, msgs) = getOpt RequireOrder options args
+  if null args 
+     then showUsage
+     else process args
+
+-- TODO: need to figure out how to get command line args to work
+--
+-- see: http://leiffrenzel.de/papers/commandline-options-in-haskell.html
+--
+data Flag = Version
+options :: [OptDescr Flag]
+options = [
+  Option ['V'] ["version"] (NoArg Version) Language.Scheme.Core.version]
+
 showUsage :: IO ()
 showUsage = do
   putStrLn "huskc: no input files"
