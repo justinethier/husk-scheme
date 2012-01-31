@@ -45,7 +45,7 @@ Executable         huski
   Hs-Source-Dirs:  hs-src/Interpreter
 
 Executable         huskc
-  Build-Depends:   husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc, ghc-paths, process, filepath
+  Build-Depends:   husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc, ghc-paths, process, filepath, haskell98
   Extensions:      ExistentialQuantification CPP CPP
   Main-is:         huskc.hs
   Hs-Source-Dirs:  hs-src/Compiler
