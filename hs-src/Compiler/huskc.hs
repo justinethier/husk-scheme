@@ -18,9 +18,10 @@ import Language.Scheme.Types     -- Scheme data types
 import Language.Scheme.Variables -- Scheme variable operations
 import Control.Monad.Error
 import System.Cmd (system)
+import System.FilePath (dropExtension)
+import System.Environment
 import System.Exit (ExitCode (..), exitWith, exitFailure)
 import System.IO
-import System.Environment
 
 main :: IO ()
 main = do args <- getArgs
@@ -36,7 +37,7 @@ process args = do
   env <- liftIO $ nullEnv
   result <- (runIOThrows $ liftM show $ compileSchemeFile env filename)
   case result of
-   "" -> compileHaskellFile $ filename ++ ".out" -- TODO: just chop off file extension
+   "" -> compileHaskellFile $ dropExtension filename
    _ -> putStrLn result
 
 compileSchemeFile :: Env -> String -> IOThrowsError LispVal
@@ -53,7 +54,6 @@ compileSchemeFile env filename = do
 compileHaskellFile :: String -> IO() --ThrowsError LispVal
 compileHaskellFile filename = do
   let ghc = "ghc" -- Need to make configurable??
-      exe = "test" -- TODO: allow as cmd line parameter
   compileStatus <- system $ ghc ++ " -cpp --make -package ghc -fglasgow-exts -o " ++ filename ++ " _tmp.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Core.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/FFI.hs hs-src/Language/Scheme/Macro/Matches.hs"
 
 -- TODO: delete intermediate hs files if requested
@@ -69,19 +69,3 @@ writeList outH _ = do
   hPutStr outH ""
 
 
-{-
-runOne :: [String] -> IO ()
-runOne args = do
-  {- Use this to suppress unwanted output.
-     Makes this unix-specific, but as of now
-     everything else is anyway, so... -}
-  nullIO <- openFile "/dev/null" WriteMode
-
-  stdlib <- getDataFileName "stdlib.scm"
-  env <- primitiveBindings >>= flip extendEnv
-                                   [((varNamespace, "args"),
-                                    List $ map String $ drop 1 args)]
-  _ <- evalString env $ "(load \"" ++ stdlib ++ "\")" -- Load standard library
-  (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
-     >>= hPutStr nullIO
--}
