@@ -135,16 +135,14 @@ header = [
  , "                  Env"
  , "               -> [String]"
  , "               -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal)"
- , "--                -> String"
  , "               -> m LispVal"
  , "makeNormalHFunc = makeHFunc Nothing"
- , "{- TODO:"
- , "makeHVarargs :: (Monad m) => LispVal -> Env"
- , "                        -> [LispVal]"
- , "                        -> [LispVal]"
+ , "makeHVarargs :: (Monad m) => LispVal "
+ , "                        -> Env"
+ , "                        -> [String]"
+ , "                        -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal)"
  , "                        -> m LispVal"
- , "makeHVarargs = makeFunc . Just . showVal"
- , "-}"
+ , "makeHVarargs = makeHFunc . Just . showVal"
  , "main :: IO () "
  , "main = do "
  , "  env <- primitiveBindings "
@@ -277,9 +275,21 @@ compile env args@(List (Atom "define" : List (Atom var : fparams) : fbody)) copt
        ]
  return $ [createAstFunc copts f] ++ compiledBody
 
-
-
 -- TODO: eval env cont args@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) = do
+compile env args@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
+ Atom symCallfunc <- _gensym "defineFuncEntryPt"
+ compiledParams <- compileLambdaList fparams
+ compiledBody <- compileBlock symCallfunc env [] fbody
+
+ -- Entry point; ensure var is not rebound
+ f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
+       AstValue $ "  if bound ",
+       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+       AstValue $ "     else do result <- makeHVarargs (" ++ astToHaskellStr varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
+       AstValue $ "             _ <- defineVar env \"" ++ var ++ "\" result ",
+       createAstCont copts "result" "           "
+       ]
+ return $ [createAstFunc copts f] ++ compiledBody
 
 
 
