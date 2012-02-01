@@ -27,58 +27,72 @@ import System.IO
 
 main :: IO ()
 main = do 
+  -- Read command line args and process options
   args <- getArgs
-  let (actions, nonOpts, msgs) = getOpt RequireOrder options args
+  let (actions, nonOpts, msgs) = getOpt Permute options args
   opts <- foldl (>>=) (return defaultOptions) actions
---  let Options {optInput = input, optOutput = output} = opts
--- input >>= output
+  let Options {optOutput = output} = opts
 
--- TODO: command line args would need to be filtered from args, below:
-  if null args 
+  if null nonOpts
      then showUsage
-     else process args
+     else do
+        let inFile = nonOpts !! 0
+            outExec = case output of
+              Just inFile -> inFile
+              Nothing -> dropExtension inFile
+        process inFile outExec
 
 -- 
 -- For an explanation of the command line options code, see:
 -- http://leiffrenzel.de/papers/commandline-options-in-haskell.html
 --
+
+-- |Data type to handle command line options that take parameters
 data Options = Options {
---    optInput :: IO String, optOutput :: String -> IO ()
+    optOutput :: Maybe String -- Executable file to write
     }
+
+-- |Default values for the command line options
 defaultOptions :: Options
 defaultOptions = Options {
---    optInput = getContents, optOutput = putStr
+    optOutput = Nothing 
     }
 
+-- |Command line options
 options :: [OptDescr (Options -> IO Options)]
 options = [
-  Option ['V'] ["version"] (NoArg showVersion) "show version number"
---  Option ['i'] ["input"] (ReqArg readInput "FILE") "input file to read",
---  Option ['o'] ["output"] (ReqArg writeInput "FILE") "output file to write"
+  Option ['V'] ["version"] (NoArg showVersion) "show version number",
+  Option ['o'] ["output"] (ReqArg writeExec "FILE") "output file to write"
   ]
 
--- readInput arg opt = return opt { optInput = readFile arg }
--- writeOutput arg opt = return opt { optOutput = writeFile arg }
+-- |Determine executable file to write. 
+--  This version just takes a name from the command line option
+writeExec arg opt = return opt { optOutput = Just arg }
 
+-- TODO: would nice to have this as well as a 'real' usage printout, perhaps via --help
+
+-- |Print a usage message
 showUsage :: IO ()
 showUsage = do
   putStrLn "huskc: no input files"
 
+-- |Print version information
 showVersion :: Options -> IO Options
 showVersion _ = do
   putStrLn Language.Scheme.Core.version
 -- TODO: would be nice to be able to print the banner:  Language.Scheme.Core.showBanner
   exitWith ExitSuccess
 
-process :: [String] -> IO ()
-process args = do
-  let filename = args !! 0
+-- |High level code to compile the given file
+process :: String -> String -> IO ()
+process inFile outExec = do
   env <- liftIO $ nullEnv
-  result <- (runIOThrows $ liftM show $ compileSchemeFile env filename)
+  result <- (runIOThrows $ liftM show $ compileSchemeFile env inFile)
   case result of
-   "" -> compileHaskellFile $ dropExtension filename
+   "" -> compileHaskellFile outExec
    _ -> putStrLn result
 
+-- |Compile a scheme file to haskell
 compileSchemeFile :: Env -> String -> IOThrowsError LispVal
 compileSchemeFile env filename = do
   comp <- compileLisp env filename "run"
@@ -90,6 +104,7 @@ compileSchemeFile env filename = do
      then return $ Nil "" -- Dummy value
      else throwError $ Default "Empty file" --putStrLn "empty file"
 
+-- |Compile the intermediate haskell file using GHC
 compileHaskellFile :: String -> IO() --ThrowsError LispVal
 compileHaskellFile filename = do
   let ghc = "ghc" -- Need to make configurable??
@@ -101,6 +116,7 @@ compileHaskellFile filename = do
     ExitFailure _code -> exitWith compileStatus
     ExitSuccess -> return ()
 
+-- |Helper function to write a list of abstract Haskell code to file
 writeList outH (l : ls) = do
   hPutStrLn outH l
   writeList outH ls
