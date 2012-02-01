@@ -62,6 +62,7 @@ defaultOptions = Options {
 options :: [OptDescr (Options -> IO Options)]
 options = [
   Option ['V'] ["version"] (NoArg showVersion) "show version number",
+  Option ['h', '?'] ["help"] (NoArg showHelp) "show usage information",
   Option ['o'] ["output"] (ReqArg writeExec "FILE") "output file to write"
   ]
 
@@ -75,6 +76,17 @@ writeExec arg opt = return opt { optOutput = Just arg }
 showUsage :: IO ()
 showUsage = do
   putStrLn "huskc: no input files"
+
+showHelp :: Options -> IO Options
+showHelp _ = do
+  putStrLn "Usage: huskc [options] file"
+  putStrLn ""
+  putStrLn "Options:"
+  putStrLn "  --help                Display this information"
+  putStrLn "  --version             Display husk version information"
+  putStrLn "  --output filename     Write executable to the given filename"
+  putStrLn ""
+  exitWith ExitSuccess
 
 -- |Print version information
 showVersion :: Options -> IO Options
