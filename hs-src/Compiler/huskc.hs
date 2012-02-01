@@ -108,7 +108,7 @@ compileSchemeFile env filename = do
 compileHaskellFile :: String -> IO() --ThrowsError LispVal
 compileHaskellFile filename = do
   let ghc = "ghc" -- Need to make configurable??
-  compileStatus <- system $ ghc ++ " -cpp --make -package ghc -fglasgow-exts -o " ++ filename ++ " _tmp.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Core.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/FFI.hs hs-src/Language/Scheme/Macro/Matches.hs"
+  compileStatus <- system $ ghc ++ " -cpp --make -package ghc -fglasgow-exts -o " ++ filename ++ " _tmp.hs"
 
 -- TODO: delete intermediate hs files if requested
 

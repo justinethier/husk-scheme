@@ -31,7 +31,8 @@ Library
                    Language.Scheme.Variables
                    Language.Scheme.Compiler
                    Language.Scheme.Plugins.CPUTime
-  Other-Modules:   Language.Scheme.FFI
+-- Other-Modules:
+                   Language.Scheme.FFI
                    Language.Scheme.Macro
                    Language.Scheme.Macro.Matches
                    Language.Scheme.Numerical
