@@ -311,6 +311,7 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOpt
 
 
 compile env args@(List (_ : _)) copts = mfunc env args compileApply copts 
+compile _ badForm _ = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 mcompile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 mcompile env lisp copts = mfunc env lisp compile copts
