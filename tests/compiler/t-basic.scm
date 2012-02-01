@@ -75,3 +75,7 @@
 ((lambda () 1 2 (+ 3 4)))
 ; TODO: (write (if #t (+ ((lambda () 1 2 3) 3)) 4))
 
+(define (f . a) a)
+(assert-equal (f 1 2 3) '(1 2 3))
+
+
