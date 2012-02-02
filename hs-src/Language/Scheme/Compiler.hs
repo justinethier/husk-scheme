@@ -187,7 +187,7 @@ compileLambdaList l = do
        --serialize _ = throwError $ Default "invalid parameter to lambda list. TODO: output var"
 
 compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
-compile _ (Nil n) copts = compileScalar ("  return $ Nil \"" ++ (show n) ++ "\"") copts
+compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
 compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts
 compile _ (Char c) copts = compileScalar ("  return $ Char " ++ (show c)) copts
 compile _ (Complex c) copts = compileScalar ("  return $ Complex $ " ++ (show $ realPart c) ++ " :+ " ++ (show $ imagPart c)) copts
@@ -215,6 +215,9 @@ compile env args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-
 -- TODO: eval env cont fargs@(List (Atom "begin" : funcs)) = do
 -- TODO: set!
 
+compile env args@(List [Atom "if", predic, conseq]) copts = 
+ compile env (List [Atom "if", predic, conseq, Nil ""]) copts
+
 compile env args@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  -- TODO: think about it, these could probably be part of compileExpr
  Atom symPredicate <- _gensym "ifPredic"
@@ -238,12 +241,6 @@ compile env args@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions t
     AstValue $ "    _ -> " ++ symConsequence ++ " env cont (Nil \"\") [] "]
  -- Join compiled code together
  return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ compConsequence ++ compAlternate
-
-
-
--- TODO: eval env cont args@(List [Atom "if", predic, conseq]) = do
-
-
 
 compile env args@(List [Atom "define", Atom var, form]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symDefine <- _gensym "defineFuncDefine"

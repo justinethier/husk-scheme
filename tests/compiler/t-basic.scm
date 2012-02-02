@@ -74,6 +74,8 @@
 (assert-equal 1.31 3 ((lambda () 1 2 3 )))
 ((lambda () 1 2 (+ 3 4)))
 (assert-equal 1.32 3 (if #t (+ ((lambda () 1 2 3) )) 4))
+(assert-equal 1.32 3 (if #t (+ ((lambda () 1 2 3) ))))
+(if #f (write "should not see this"))
 
 (define (f . a) a)
 (assert-equal 2.1 '(1 2 3) (f 1 2 3))
