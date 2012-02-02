@@ -73,9 +73,9 @@
 (assert-equal 1.30 3 ((lambda () 1 2 (+ 3) )))
 (assert-equal 1.31 3 ((lambda () 1 2 3 )))
 ((lambda () 1 2 (+ 3 4)))
-; TODO: (write (if #t (+ ((lambda () 1 2 3) 3)) 4))
+(assert-equal 1.32 3 (if #t (+ ((lambda () 1 2 3) )) 4))
 
 (define (f . a) a)
-(assert-equal (f 1 2 3) '(1 2 3))
+(assert-equal 2.1 '(1 2 3) (f 1 2 3))
 
 
