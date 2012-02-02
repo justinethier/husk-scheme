@@ -102,6 +102,11 @@
 (define (length lst)    (fold (lambda (x y) (+ y 1)) 0 lst))
 (define (reverse lst)   (fold (flip cons) '() lst))
 
+(define-syntax begin
+  (syntax-rules ()
+    ((begin exp ...)
+      ((lambda () exp ...)))))
+
 ; cond
 ; Form from R5RS:
 (define-syntax cond

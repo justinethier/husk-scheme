@@ -201,8 +201,10 @@ compile _ (Atom a) copts = compileScalar ("  getVar env \"" ++ a ++ "\"") copts
 
 compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
 
--- TODO: quasiquote
--- TODO: other special forms...
+-- TODO:
+-- eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value Nothing
+-- eval env cont (List (Atom "let-syntax" : List _bindings : _body)) = do
+-- eval env cont (List (Atom "letrec-syntax" : List _bindings : _body)) = do
 
 compile env args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
 --

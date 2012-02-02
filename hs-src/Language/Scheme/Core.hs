@@ -362,21 +362,6 @@ eval env cont args@(List [Atom "if", predic, conseq]) = do
               Bool False -> continueEval e c $ Nil "" -- Unspecified return value per R5RS
               _ -> meval e c conseq
 
-eval env cont fargs@(List (Atom "begin" : funcs)) = do
- bound <- liftIO $ isRecBound env "begin"
- if bound
-  then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
-  else if length funcs == 0
-          then meval env cont (Nil "")
-          else if length funcs == 1
-                  then meval env cont (head funcs)
-                  else meval env (makeCPSWArgs env cont cpsRest $ tail funcs) (head funcs)
-  where cpsRest :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsRest e c _ args =
-          case args of
-            Just fArgs -> meval e c (List (Atom "begin" : fArgs))
-            Nothing -> throwError $ Default "Unexpected error in begin"
-
 eval env cont args@(List [Atom "set!", Atom var, form]) = do
  bound <- liftIO $ isRecBound env "set!"
  if bound
