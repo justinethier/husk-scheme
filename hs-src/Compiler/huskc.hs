@@ -108,10 +108,13 @@ process inFile outExec = do
 -- |Compile a scheme file to haskell
 compileSchemeFile :: Env -> String -> String -> IOThrowsError LispVal
 compileSchemeFile env stdlib filename = do
-  libsC <- compileLisp env stdlib "lib" (Just "run")
-  execC <- compileLisp env filename "run" Nothing
+  -- TODO: it is only temporary to compile the standard library each time. It should be 
+  --       precompiled and just added during the ghc compilation
+  libsC <- compileLisp env stdlib "run" (Just "exec")
+  execC <- compileLisp env filename "exec" Nothing
   outH <- liftIO $ openFile "_tmp.hs" WriteMode
   _ <- liftIO $ writeList outH header
+  _ <- liftIO $ writeList outH $ map show libsC
   _ <- liftIO $ writeList outH $ map show execC
   _ <- liftIO $ hClose outH
   if not (null execC)
