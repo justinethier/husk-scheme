@@ -99,20 +99,22 @@ showVersion _ = do
 process :: String -> String -> IO ()
 process inFile outExec = do
   env <- liftIO $ nullEnv
-  result <- (runIOThrows $ liftM show $ compileSchemeFile env inFile)
+  stdlib <- getDataFileName "stdlib.scm"
+  result <- (runIOThrows $ liftM show $ compileSchemeFile env stdlib inFile)
   case result of
    "" -> compileHaskellFile outExec
    _ -> putStrLn result
 
 -- |Compile a scheme file to haskell
-compileSchemeFile :: Env -> String -> IOThrowsError LispVal
-compileSchemeFile env filename = do
-  comp <- compileLisp env filename "run"
+compileSchemeFile :: Env -> String -> String -> IOThrowsError LispVal
+compileSchemeFile env stdlib filename = do
+  libsC <- compileLisp env stdlib "lib" (Just "run")
+  execC <- compileLisp env filename "run" Nothing
   outH <- liftIO $ openFile "_tmp.hs" WriteMode
   _ <- liftIO $ writeList outH header
-  _ <- liftIO $ writeList outH $ map show comp
+  _ <- liftIO $ writeList outH $ map show execC
   _ <- liftIO $ hClose outH
-  if not (null comp)
+  if not (null execC)
      then return $ Nil "" -- Dummy value
      else throwError $ Default "Empty file" --putStrLn "empty file"
 
