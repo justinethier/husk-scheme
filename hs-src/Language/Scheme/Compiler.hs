@@ -213,7 +213,6 @@ compile env args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-
   compileScalar ("  return $ Nil \"\"") copts 
 
 -- TODO: eval env cont fargs@(List (Atom "begin" : funcs)) = do
--- TODO: set!
 
 compile env args@(List [Atom "if", predic, conseq]) copts = 
  compile env (List [Atom "if", predic, conseq, Nil ""]) copts
@@ -241,6 +240,23 @@ compile env args@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions t
     AstValue $ "    _ -> " ++ symConsequence ++ " env cont (Nil \"\") [] "]
  -- Join compiled code together
  return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ compConsequence ++ compAlternate
+
+compile env args@(List [Atom "set!", Atom var, form]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
+ Atom symDefine <- _gensym "setFunc"
+ Atom symMakeDefine <- _gensym "setFuncMakeSet"
+
+ -- Entry point; ensure var is not rebound
+ f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"set!\"",
+       AstValue $ "  if bound ",
+       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+       AstValue $ "     else do " ++ symDefine ++ " env cont (Nil \"\") []" ]
+ compDefine <- compileExpr env form symDefine $ Just symMakeDefine
+ compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
+    AstValue $ "  _ <- setVar env \"" ++ var ++ "\" result",
+    createAstCont copts "result" ""]
+ return $ [createAstFunc copts f] ++ compDefine ++ [compMakeDefine]
+-- eval env cont args@(List [Atom "set!", nonvar, _]) = do 
+-- eval env cont fargs@(List (Atom "set!" : args)) = do
 
 compile env args@(List [Atom "define", Atom var, form]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symDefine <- _gensym "defineFuncDefine"
@@ -272,7 +288,6 @@ compile env args@(List (Atom "define" : List (Atom var : fparams) : fbody)) copt
        ]
  return $ [createAstFunc copts f] ++ compiledBody
 
--- TODO: eval env cont args@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) = do
 compile env args@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symCallfunc <- _gensym "defineFuncEntryPt"
  compiledParams <- compileLambdaList fparams

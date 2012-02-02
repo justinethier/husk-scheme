@@ -80,4 +80,7 @@
 (define (f . a) a)
 (assert-equal 2.1 '(1 2 3) (f 1 2 3))
 
-
+(set! f 'test)
+(assert-equal 2.11 'test f)
+(set! f 100)
+(assert-equal 2.12 100 f)
