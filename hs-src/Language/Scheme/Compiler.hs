@@ -201,10 +201,9 @@ compile _ (Atom a) copts = compileScalar ("  getVar env \"" ++ a ++ "\"") copts
 
 compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
 
--- TODO:
--- eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value Nothing
--- eval env cont (List (Atom "let-syntax" : List _bindings : _body)) = do
--- eval env cont (List (Atom "letrec-syntax" : List _bindings : _body)) = do
+-- TODO: eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value Nothing
+-- TODO: eval env cont (List (Atom "let-syntax" : List _bindings : _body)) = do
+-- TODO: eval env cont (List (Atom "letrec-syntax" : List _bindings : _body)) = do
 
 compile env args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
 --
@@ -257,8 +256,9 @@ compile env args@(List [Atom "set!", Atom var, form]) copts@(CompileOptions this
     AstValue $ "  _ <- setVar env \"" ++ var ++ "\" result",
     createAstCont copts "result" ""]
  return $ [createAstFunc copts f] ++ compDefine ++ [compMakeDefine]
--- eval env cont args@(List [Atom "set!", nonvar, _]) = do 
--- eval env cont fargs@(List (Atom "set!" : args)) = do
+
+-- TODO: eval env cont args@(List [Atom "set!", nonvar, _]) = do 
+-- TODO: eval env cont fargs@(List (Atom "set!" : args)) = do
 
 compile env args@(List [Atom "define", Atom var, form]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symDefine <- _gensym "defineFuncDefine"
@@ -331,6 +331,23 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOpt
 
 -- TODO: eval env cont args@(List (Atom "lambda" : DottedList fparams varargs : fbody)) = do
 -- TODO: eval env cont args@(List (Atom "lambda" : varargs@(Atom _) : fbody)) = do
+-- TODO: eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
+-- TODO: eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do
+-- TODO: eval env cont fargs@(List (Atom "string-set!" : args)) = do 
+-- TODO: eval env cont args@(List [Atom "set-car!", Atom var, argObj]) = do
+-- TODO: eval env cont args@(List [Atom "set-car!" , nonvar , _ ]) = do
+-- TODO: eval env cont fargs@(List (Atom "set-car!" : args)) = do
+-- TODO: eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
+-- TODO: eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
+-- TODO: eval env cont fargs@(List (Atom "set-cdr!" : args)) = do
+-- TODO: eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
+-- TODO: eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
+-- TODO: eval env cont fargs@(List (Atom "vector-set!" : args)) = do 
+-- TODO: eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
+-- TODO: eval env cont args@(List [Atom "hash-table-set!" , nonvar , _ , _]) = do
+-- TODO: eval env cont fargs@(List (Atom "hash-table-set!" : args)) = do
+-- TODO: eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
+-- TODO: eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 
 
 
