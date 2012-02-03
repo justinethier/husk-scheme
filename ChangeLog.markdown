@@ -1,6 +1,11 @@
+v3.5.2
+------
+- Added an experimental compiler, huskc.
+- Streamlined the cabal file so that each source file is only compiled a single time.
+
 v3.5.1
 ------
-- Improved support for comparing instances of functions using `eq?`, `eqv?`, etc
+- Improved support for comparing instances of functions using `eq?`, `eqv?`, etc.
 - Reduced variable access time by using a Map to store variables within an environment. 
 - Various internal changes such as renaming the tests directory and integrating R<sup>5</sup>RS pitfalls with the unit tests.
 
