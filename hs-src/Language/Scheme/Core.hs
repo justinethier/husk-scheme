@@ -842,6 +842,11 @@ evalfuncCallCC [cont@(Continuation _ _ _ _ _), func] = do
        if (toInteger $ length aparams) == 1
          then apply cont func [cont]
          else throwError $ NumArgs (toInteger $ length aparams) [cont]
+     HFunc _ (Just _) _ _ -> apply cont func [cont] -- Variable # of args (pair). Just call into cont  
+     HFunc aparams _ _ _ ->
+       if (toInteger $ length aparams) == 1
+         then apply cont func [cont]
+         else throwError $ NumArgs (toInteger $ length aparams) [cont]
      other -> throwError $ TypeMismatch "procedure" other
 evalfuncCallCC (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncCallCC _ = throwError $ NumArgs 1 []
