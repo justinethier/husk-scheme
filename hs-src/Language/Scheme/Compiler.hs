@@ -208,10 +208,12 @@ compile env args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-
 -- TODO:
 --
 -- macros will eventually need to introduce a definition in both the compiler's env (so macros can be processed at compile time) and in the program's env (so dynamically injected code has access to the macro). That said, the priority is compile-time processing.
+--
+-- TBD: how the heck to serialize a Syntax object for use in the compiled code, since
+--    Syntax has embedded env's... perhaps the first step is to do it with a null env
+--
   _ <- defineNamespacedVar env macroNamespace keyword $ Syntax (Just env) Nothing False identifiers rules
   compileScalar ("  return $ Nil \"\"") copts 
-
--- TODO: eval env cont fargs@(List (Atom "begin" : funcs)) = do
 
 compile env args@(List [Atom "if", predic, conseq]) copts = 
  compile env (List [Atom "if", predic, conseq, Nil ""]) copts
@@ -244,6 +246,8 @@ compile env args@(List [Atom "set!", Atom var, form]) copts@(CompileOptions this
  Atom symDefine <- _gensym "setFunc"
  Atom symMakeDefine <- _gensym "setFuncMakeSet"
 
+-- TODO: need to store var in huskc's env for macro processing
+
  -- Entry point; ensure var is not rebound
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"set!\"",
        AstValue $ "  if bound ",
@@ -261,6 +265,8 @@ compile env args@(List [Atom "set!", Atom var, form]) copts@(CompileOptions this
 compile env args@(List [Atom "define", Atom var, form]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symDefine <- _gensym "defineFuncDefine"
  Atom symMakeDefine <- _gensym "defineFuncMakeDef"
+
+-- TODO: need to store var in huskc's env for macro processing (and same for other vers of define)
 
  -- Entry point; ensure var is not rebound
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
