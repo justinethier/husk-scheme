@@ -194,7 +194,7 @@ compile _ (Rational r) copts = compileScalar ("  return $ Rational $ (" ++ (show
 compile _ (Number n) copts = compileScalar ("  return $ Number (" ++ (show n) ++ ")") copts
 compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
 -- TODO: eval env cont val@(HashTable _) = continueEval env cont val
--- TODO: eval env cont val@(Vector _) = do
+compile _ v@(Vector _) copts = compileScalar (" return $ " ++ astToHaskellStr v) copts
 compile _ (Atom a) copts = compileScalar ("  getVar env \"" ++ a ++ "\"") copts 
 
 compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
