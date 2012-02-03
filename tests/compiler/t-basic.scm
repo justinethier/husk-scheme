@@ -84,3 +84,32 @@
 (assert-equal 2.11 'test f)
 (set! f 100)
 (assert-equal 2.12 100 f)
+
+(define (f return)
+    (return 2)
+      3)
+ 
+(assert-equal 3.1 #t (call/cc procedure?))
+(assert-equal 3.2 #t (call-with-current-continuation procedure?))
+(assert-equal 3.3 3 (f (lambda (x) x)))
+(assert-equal 3.4 2 (call/cc f))
+#|
+(define (f return)
+    (return (+ 1 2 3 (+ 4 5 6)))
+      3)
+
+(assert/equal (call/cc f) (+ 1 2 3 4 5 6))
+(assert/equal (call-with-current-continuation f) (+ 1 2 3 4 5 6))
+
+
+(assert/equal
+  (call-with-current-continuation
+    (lambda (exit)
+          (for-each (lambda (x)
+                            (if (negative? x)
+                                (exit x)))
+                   '(54 0 37 -3 245 19))
+              #t))
+  -3)
+|#
+
