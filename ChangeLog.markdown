@@ -1,6 +1,6 @@
 v3.5.2
 ------
-- Added an experimental compiler, huskc.
+- Added an experimental compiler, huskc. For more information see [Issue #62](https://github.com/justinethier/husk-scheme/issues/62).
 - Streamlined the cabal file so that each source file is only compiled a single time.
 
 v3.5.1
