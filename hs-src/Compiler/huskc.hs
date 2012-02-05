@@ -27,6 +27,14 @@ import System.IO
 
 main :: IO ()
 main = do 
+
+  putStrLn ""
+  putStrLn "!!! This version of huskc is Experimental !!!"
+  putStrLn ""
+  putStrLn "It is recommended you consult the issue list prior to use:"
+  putStrLn "https://github.com/justinethier/husk-scheme/issues"
+  putStrLn ""
+
   -- Read command line args and process options
   args <- getArgs
   let (actions, nonOpts, msgs) = getOpt Permute options args
