@@ -268,7 +268,7 @@ makeString [(Number n)] = return $ doMakeString n ' ' ""
 makeString [(Number n), (Char c)] = return $ doMakeString n c ""
 makeString badArgList = throwError $ NumArgs 1 badArgList
 
-doMakeString :: forall a . (Num a) => a -> Char -> String -> LispVal
+doMakeString :: forall a . (Num a, Eq a) => a -> Char -> String -> LispVal
 doMakeString n char s =
     if n == 0
        then String s
