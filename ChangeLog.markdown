@@ -1,3 +1,9 @@
+v3.5.3
+------
+- Added support for GHC 7.4.1
+
+TODO: FFI does not work in 7.4
+
 v3.5.2
 ------
 - Added an experimental compiler, huskc. For more information see [Issue #62](https://github.com/justinethier/husk-scheme/issues/62).
