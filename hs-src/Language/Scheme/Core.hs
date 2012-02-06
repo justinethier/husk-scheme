@@ -34,7 +34,7 @@ import qualified Data.Map
 import System.IO
 
 version :: String
-version = "3.5.2"
+version = "3.5.3"
 
 showBanner :: IO ()
 showBanner = do
