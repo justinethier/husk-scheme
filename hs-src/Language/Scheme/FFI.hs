@@ -62,6 +62,7 @@ FUTURE: should be able to load multiple functions in one shot (?). -}
            (_,oi) <- GHC.getContext
            GHC.setContext [m] oi
 #elif __GLASGOW_HASKELL__ >= 704
+-- TODO:
 --           interactImport <- GHC.getContext
 --           GHC.setContext $ [GHC.IIModule m]
 --           GHC.setContext $ interactImport ++ [GHC.IIModule m]
@@ -84,6 +85,7 @@ evalfuncLoadFFI [(Continuation env _ _ _ _), String moduleName, String externalF
     (_,oi) <- GHC.getContext
     GHC.setContext [m] oi
 #elif __GLASGOW_HASKELL__ >= 704
+-- TODO:
 --    interactImport <- GHC.getContext
 --    GHC.setContext $ [GHC.IIModule m]
 --    GHC.setContext $ interactImport ++ [GHC.IIModule m]
