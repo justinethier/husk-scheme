@@ -1,8 +1,6 @@
-v3.5.3
+v3.5.2.1
 ------
-- Added support for GHC 7.4.1
-
-TODO: FFI does not work in 7.4
+This is a quick bug-fix release that allows husk to build under GHC 7.4.1.
 
 v3.5.2
 ------
