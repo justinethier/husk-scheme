@@ -17,7 +17,6 @@ import qualified Language.Scheme.Core
 import Language.Scheme.Types     -- Scheme data types
 import Language.Scheme.Variables -- Scheme variable operations
 import Control.Monad.Error
-import System (getArgs)
 import System.Cmd (system)
 import System.Console.GetOpt
 import System.FilePath (dropExtension)
