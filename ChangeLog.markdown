@@ -1,6 +1,10 @@
-v3.5.2.1
+v3.5.3
 ------
-This is a quick bug-fix release that allows husk to build under GHC 7.4.1.
+Allow any redefinition of let-syntax and letrec-syntax (huski).
+
+v3.5.2.x
+------
+This is a series of quick bug-fix releases that allows husk to build under GHC 7.4.1.
 
 v3.5.2
 ------
