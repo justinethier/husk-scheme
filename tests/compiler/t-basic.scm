@@ -113,3 +113,27 @@
   -3)
 |#
 
+(assert-equal 4.1 2 (let-syntax () 2))
+(assert-equal 4.2 1 (let ((x 1)) (let-syntax () x)))
+(assert-equal 4.3 3 (let-syntax () 1 2 3))
+(assert-equal 4.4 2 (let-syntax ((my-let (syntax-rules () ((my-let x) (begin x))))) (define x "hello, world") (my-let 2)))
+
+(assert-equal 4.5 7
+ (letrec-syntax
+  ((my-or (syntax-rules ()
+            ((my-or) #f)
+            ((my-or e) e)
+            ((my-or e1 e2 ...)
+             (let ((temp e1))
+               (if temp
+                   temp
+                   (my-or e2 ...)))))))
+  (let ((x #f)
+        (y 7)
+        (temp 8)
+        (let odd?)
+        (if even?))
+    (my-or x
+           (let temp)
+           (if y)
+           y))))

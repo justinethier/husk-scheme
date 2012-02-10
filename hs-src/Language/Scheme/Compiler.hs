@@ -200,8 +200,26 @@ compile _ (Atom a) copts = compileScalar ("  getVar env \"" ++ a ++ "\"") copts
 compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
 
 -- TODO: eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value Nothing
--- TODO: eval env cont (List (Atom "let-syntax" : List _bindings : _body)) = do
--- TODO: eval env cont (List (Atom "letrec-syntax" : List _bindings : _body)) = do
+
+compile env args@(List (Atom "let-syntax" : List _bindings : _body)) copts = do
+  -- TODO: check if let-syntax has been rebound?
+  bodyEnv <- liftIO $ extendEnv env []
+  _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
+  -- Expand whole body as a single continuous macro, to ensure hygiene
+  expanded <- Language.Scheme.Macro.expand bodyEnv False $ List _body  
+  case expanded of
+    List e -> compile bodyEnv (List $ Atom "begin" : e) copts
+    e -> compile bodyEnv e copts
+
+compile env args@(List (Atom "letrec-syntax" : List _bindings : _body)) copts = do
+  -- TODO: check if let-syntax has been rebound?
+  bodyEnv <- liftIO $ extendEnv env []
+  _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False _bindings
+  -- Expand whole body as a single continuous macro, to ensure hygiene
+  expanded <- Language.Scheme.Macro.expand bodyEnv False $ List _body  
+  case expanded of
+    List e -> compile bodyEnv (List $ Atom "begin" : e) copts
+    e -> compile bodyEnv e copts
 
 compile env args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
 --
