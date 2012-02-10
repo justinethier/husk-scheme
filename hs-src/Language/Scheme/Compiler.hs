@@ -199,7 +199,13 @@ compile _ (Atom a) copts = compileScalar ("  getVar env \"" ++ a ++ "\"") copts
 
 compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
 
+
 -- TODO: eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value Nothing
+-- 
+-- This is only a temporary solution that does not handle unquoting
+--
+compile _ (List [Atom "quasiquote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
+
 
 compile env args@(List (Atom "let-syntax" : List _bindings : _body)) copts = do
   -- TODO: check if let-syntax has been rebound?
@@ -237,7 +243,7 @@ compile env args@(List [Atom "if", predic, conseq]) copts =
  compile env (List [Atom "if", predic, conseq, Nil ""]) copts
 
 compile env args@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
- -- TODO: think about it, these could probably be part of compileExpr
+ -- FUTURE: think about it, these could probably be part of compileExpr
  Atom symPredicate <- _gensym "ifPredic"
  Atom symCheckPredicate <- _gensym "compiledIfPredicate"
  Atom symConsequence <- _gensym "compiledConsequence"
@@ -389,6 +395,18 @@ mprepareApply env cont lisp = mfunc env cont lisp prepareApply
 mfunc :: Env -> LispVal -> LispVal -> (Env -> LispVal -> LispVal -> IOThrowsError LispVal) -> IOThrowsError LispVal
 mfunc env cont lisp func = do
   Language.Scheme.Macro.macroEval env lisp >>= (func env cont) 
+-}
+
+
+{- TODO: a helper function to allow special forms to be redefined at runtime...
+compileSpecialFormEntryPoint :: String -> String -> CompileOptions
+compileSpecialFormEntryPoint formName nextFunction copts = do
+
+ f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"set!\"",
+       AstValue $ "  if bound ",
+       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+       AstValue $ "     else do " ++ symDefine ++ " env cont (Nil \"\") []" ]
+ return $ createAstFunc copts f
 -}
 
 -- Compile an intermediate expression (such as an arg to if) and 
