@@ -1,5 +1,6 @@
 v3.5.3
 ------
+Compiler - added let-syntax, letrec-syntax
 Allow any redefinition of let-syntax and letrec-syntax (huski).
 
 v3.5.2.x
