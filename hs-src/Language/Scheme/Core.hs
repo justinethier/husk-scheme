@@ -601,6 +601,7 @@ eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 eval env cont args@(List (_ : _)) = mprepareApply env cont args
 eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
+-- |A helper function for the special form (string-set!)
 substr :: (LispVal, LispVal, LispVal) -> IOThrowsError LispVal 
 substr (String str, Char char, Number ii) = do
                       return $ String $ (take (fromInteger ii) . drop 0) str ++
