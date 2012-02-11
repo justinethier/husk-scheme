@@ -271,7 +271,7 @@ compile env args@(List [Atom "set!", Atom var, form]) copts@(CompileOptions this
  Atom symMakeDefine <- _gensym "setFuncMakeSet"
 
  -- Store var in huskc's env for macro processing
- _ <- setVar env var form
+ _ <- defineVar env var form
 
  entryPt <- compileSpecialFormEntryPoint "set!" symDefine copts
  compDefine <- compileExpr env form symDefine $ Just symMakeDefine
@@ -374,16 +374,15 @@ compile env args@(List [Atom "string-set!", Atom var, i, character]) copts = do
  Atom symDefine <- _gensym "stringSetFunc"
  Atom symMakeDefine <- _gensym "stringSetFuncMakeSet"
 
- -- Store var in huskc's env for macro processing
- _ <- setVar env var form
-
- entryPt <- compileSpecialFormEntryPoint "set!" symDefine copts
- compDefine <- compileExpr env form symDefine $ Just symMakeDefine
- compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
+ entryPt <- compileSpecialFormEntryPoint "string-set!" symDefine copts
+ compDefine <- compileExpr env i symDefine $ Just symMakeDefine
+ compMakeDefine <- return $ AstFunction symMakeDefine " env cont idx _ " [
+    AstValue $ "  tmp <- getVar env \"" ++ var ++ "\"",
+    AstValue $ "  result <- substr (tmp (" ++ astToHaskellStr(character) ++ ") idx)",
     AstValue $ "  _ <- setVar env \"" ++ var ++ "\" result",
     createAstCont copts "result" ""]
  return $ [entryPt] ++ compDefine ++ [compMakeDefine]
-
+-}
 -- string-set! code from Core:
 ---  else meval env (makeCPS env cont cpsStr) i
 --- where
@@ -394,7 +393,6 @@ compile env args@(List [Atom "string-set!", Atom var, i, character]) copts = do
 ---        cpsSubStr e c str (Just [idx]) =
 ---            substr (str, character, idx) >>= setVar e var >>= continueEval e c
 ---        cpsSubStr _ _ _ _ = throwError $ InternalError "Invalid argument to cpsSubStr"
--}
 
 -- TODO: eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "string-set!" : args)) = do 

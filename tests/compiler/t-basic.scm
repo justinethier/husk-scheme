@@ -137,3 +137,7 @@
            (let temp)
            (if y)
            y))))
+(define f (make-string 3 #\*))
+;(define (g) "***")
+(string-set! f 0 #\?)
+(assert-equal 5.1 "?**" f) 
