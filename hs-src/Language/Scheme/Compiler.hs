@@ -443,9 +443,32 @@ compile env args@(List [Atom "set-car!", Atom var, argObj]) copts = do
 -- TODO: eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
 -- TODO: eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "set-cdr!" : args)) = do
--- TODO: eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
+compile env args@(List [Atom "vector-set!", Atom var, i, object]) copts = do
+ Atom symGetVar <- _gensym "vectorSetGetVar"
+ Atom symCompiledIdx <- _gensym "vectorSetIdx"
+ Atom symCompiledObj <- _gensym "vectorSetObj"
+ Atom symUpdateVec <- _gensym "vectorSetUpdate"
+
+ -- Entry point that allows this form to be redefined
+ entryPt <- compileSpecialFormEntryPoint "vector-set!" symGetVar copts
+
+ -- Function to read existing var
+ compGetVar <- return $ AstFunction symGetVar " env cont idx _ " [
+    AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
+    AstValue $ "  " ++ symCompiledIdx ++ " env cont result Nothing "]
+ -- Compiled version of args
+ compiledIdx <- compileExpr env i symCompiledIdx (Just symCompiledObj) 
+ compiledObj <- compileExpr env object symCompiledObj (Just symUpdateVec)
+ -- Actual update
+ compiledUpdate <- return $ AstFunction symUpdateVec " env cont vec (Just [idx, obj]) " [
+    AstValue $ "  result <- updateVector vec idx obj >>= setVar e \"" ++ var ++ "\"",
+    createAstCont copts "result" ""]
+
+ return $ [entryPt, compGetVar, compiledUpdate] ++ compiledIdx ++ compiledObj
+
 -- TODO: eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
 -- TODO: eval env cont fargs@(List (Atom "vector-set!" : args)) = do 
+
 -- TODO: eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
 -- TODO: eval env cont args@(List [Atom "hash-table-set!" , nonvar , _ , _]) = do
 -- TODO: eval env cont fargs@(List (Atom "hash-table-set!" : args)) = do
