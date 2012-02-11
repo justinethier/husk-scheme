@@ -443,13 +443,6 @@ eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
             substr (str, character, idx) >>= setVar e var >>= continueEval e c
         cpsSubStr _ _ _ _ = throwError $ InternalError "Invalid argument to cpsSubStr"
 
-        substr (String str, Char char, Number ii) = do
-                              return $ String $ (take (fromInteger ii) . drop 0) str ++
-                                       [char] ++
-                                       (take (length str) . drop (fromInteger ii + 1)) str
-        substr (String _, Char _, n) = throwError $ TypeMismatch "number" n
-        substr (String _, c, _) = throwError $ TypeMismatch "character" c
-        substr (s, _, _) = throwError $ TypeMismatch "string" s
 eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do
  bound <- liftIO $ isRecBound env "string-set!"
  if bound
@@ -607,6 +600,15 @@ eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 
 eval env cont args@(List (_ : _)) = mprepareApply env cont args
 eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
+
+substr :: (LispVal, LispVal, LispVal) -> IOThrowsError LispVal 
+substr (String str, Char char, Number ii) = do
+                      return $ String $ (take (fromInteger ii) . drop 0) str ++
+                               [char] ++
+                               (take (length str) . drop (fromInteger ii + 1)) str
+substr (String _, Char _, n) = throwError $ TypeMismatch "number" n
+substr (String _, c, _) = throwError $ TypeMismatch "character" c
+substr (s, _, _) = throwError $ TypeMismatch "string" s
 
 {- Prepare for apply by evaluating each function argument,
    and then execute the function via 'apply' -}
