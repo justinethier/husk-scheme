@@ -406,20 +406,20 @@ compile env args@(List [Atom "set-car!", Atom var, argObj]) copts = do
     AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
     AstValue $ "  " ++ symObj ++ " env cont result Nothing "]
  compiledObj <- compileExpr env argObj symCompiledObj Nothing 
- compObj <- return $ AstValue "" ++
-              symObj ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n"
-              symObj ++ " _ _ obj@(List []) _ = throwError $ TypeMismatch \"pair\" obj\n"
+ compObj <- return $ AstValue $ "" ++
+              symObj ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
+              symObj ++ " _ _ obj@(List []) _ = throwError $ TypeMismatch \"pair\" obj\n" ++
 -- TODO: below, we want to make sure obj is of the right type. if so, compile obj and call into the "set" 
 --       function below to do the actual set-car
-              symObj ++ " e c obj@(List (_ : _)) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\")\n"
-              symObj ++ " e c obj@(DottedList _ _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\")\n"
+              symObj ++ " e c obj@(List (_ : _)) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\")\n" ++
+              symObj ++ " e c obj@(DottedList _ _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\")\n" ++
               symObj ++ " _ _ obj _ = throwError $ TypeMismatch \"pair\" obj\n"
- compDoSet <- return $ AstValue "" ++
-              symObj ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n"
-              symDoSet ++ " e c obj (Just [List (_ : ls)]) = setVar e var (List (obj : ls)) >>= continueEval e c"
-              symDoSet ++ " e c obj (Just [DottedList (_ : ls) l]) = setVar e var (DottedList (obj : ls) l) >>= continueEval e c"
+ compDoSet <- return $ AstValue $ "" ++
+              symDoSet ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
+              symDoSet ++ " e c obj (Just [List (_ : ls)]) = setVar e \"" ++ var ++ "\" (List (obj : ls)) >>= continueEval e c\n" ++
+              symDoSet ++ " e c obj (Just [DottedList (_ : ls) l]) = setVar e \"" ++ var ++ "\" (DottedList (obj : ls) l) >>= continueEval e c\n" ++
               symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
- return $ [entryPt] ++ compGetVar   <-- TODO
+ return $ [entryPt, compGetVar, compObj, compDoSet] ++ compiledObj
 
 -- TODO: eval env cont args@(List [Atom "set-car!" , nonvar , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "set-car!" : args)) = do
