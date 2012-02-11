@@ -270,7 +270,8 @@ compile env args@(List [Atom "set!", Atom var, form]) copts@(CompileOptions this
  Atom symDefine <- _gensym "setFunc"
  Atom symMakeDefine <- _gensym "setFuncMakeSet"
 
--- TODO: need to store var in huskc's env for macro processing
+ -- Store var in huskc's env for macro processing
+ _ <- setVar env var form
 
  entryPt <- compileSpecialFormEntryPoint "set!" symDefine copts
  compDefine <- compileExpr env form symDefine $ Just symMakeDefine
@@ -290,7 +291,8 @@ compile env args@(List [Atom "define", Atom var, form]) copts@(CompileOptions th
  Atom symDefine <- _gensym "defineFuncDefine"
  Atom symMakeDefine <- _gensym "defineFuncMakeDef"
 
--- TODO: need to store var in huskc's env for macro processing (and same for other vers of define)
+ -- Store var in huskc's env for macro processing (and same for other vers of define)
+ _ <- defineVar env var form
 
  -- Entry point; ensure var is not rebound
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
@@ -308,6 +310,10 @@ compile env args@(List (Atom "define" : List (Atom var : fparams) : fbody)) copt
  compiledParams <- compileLambdaList fparams
  compiledBody <- compileBlock symCallfunc Nothing env [] fbody
 
+-- TODO:
+-- -- Store var in huskc's env for macro processing (and same for other vers of define)
+-- _ <- defineVar e var form
+
  -- Entry point; ensure var is not rebound
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
        AstValue $ "  if bound ",
@@ -322,6 +328,10 @@ compile env args@(List (Atom "define" : DottedList (Atom var : fparams) varargs 
  Atom symCallfunc <- _gensym "defineFuncEntryPt"
  compiledParams <- compileLambdaList fparams
  compiledBody <- compileBlock symCallfunc Nothing env [] fbody
+
+-- TODO:
+-- -- Store var in huskc's env for macro processing (and same for other vers of define)
+-- _ <- defineVar e var form
 
  -- Entry point; ensure var is not rebound
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
