@@ -391,34 +391,51 @@ compile env args@(List [Atom "string-set!", Atom var, i, character]) copts = do
 -- TODO: eval env cont fargs@(List (Atom "string-set!" : args)) = do 
 
 compile env args@(List [Atom "set-car!", Atom var, argObj]) copts = do
-
--- create a function to pass getVar
--- call into a function to simulate cpsObj (need to overload compiled func)
---   TBD: create this func each time, or make it a single runtime func?
--- the new func to call into cpsSet
  Atom symGetVar <- _gensym "setCarGetVar"
  Atom symCompiledObj <- _gensym "setCarCompiledObj"
  Atom symObj <- _gensym "setCarObj"
  Atom symDoSet <- _gensym "setCarDoSet"
 
+ -- Code to all into next continuation from copts, if one exists
+ let finalContinuation = case copts of
+       (CompileOptions _ _ _ (Just nextFunc)) -> "continueEval e (makeCPS e c " ++ nextFunc ++ ")\n"
+       _ -> "continueEval e c\n"
+
+ -- Entry point that allows set-car! to be redefined
  entryPt <- compileSpecialFormEntryPoint "set-car!" symGetVar copts
+
+ -- Function to read existing var
  compGetVar <- return $ AstFunction symGetVar " env cont idx _ " [
     AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
     AstValue $ "  " ++ symObj ++ " env cont result Nothing "]
+
+ -- Compiled version of argObj
  compiledObj <- compileExpr env argObj symCompiledObj Nothing 
+
+ -- Function to check looked-up var and call into appropriate handlers; based on code from Core
+ --
+ -- This is so verbose because we need to have overloads of symObj to deal with many possible inputs.
+ -- FUTURE: consider making these functions part of the runtime.
  compObj <- return $ AstValue $ "" ++
               symObj ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
               symObj ++ " _ _ obj@(List []) _ = throwError $ TypeMismatch \"pair\" obj\n" ++
 -- TODO: below, we want to make sure obj is of the right type. if so, compile obj and call into the "set" 
 --       function below to do the actual set-car
-              symObj ++ " e c obj@(List (_ : _)) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\")\n" ++
-              symObj ++ " e c obj@(DottedList _ _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\")\n" ++
+              symObj ++ " e c obj@(List (_ : _)) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
+              symObj ++ " e c obj@(DottedList _ _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
               symObj ++ " _ _ obj _ = throwError $ TypeMismatch \"pair\" obj\n"
+
+ -- Function to do the actual (set!), based on code from Core
+ --
+ -- This is so verbose because we need to have overloads of symObj to deal with many possible inputs.
+ -- FUTURE: consider making these functions part of the runtime.
  compDoSet <- return $ AstValue $ "" ++
               symDoSet ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-              symDoSet ++ " e c obj (Just [List (_ : ls)]) = setVar e \"" ++ var ++ "\" (List (obj : ls)) >>= continueEval e c\n" ++
-              symDoSet ++ " e c obj (Just [DottedList (_ : ls) l]) = setVar e \"" ++ var ++ "\" (DottedList (obj : ls) l) >>= continueEval e c\n" ++
+              symDoSet ++ " e c obj (Just [List (_ : ls)]) = setVar e \"" ++ var ++ "\" (List (obj : ls)) >>= " ++ finalContinuation ++
+              symDoSet ++ " e c obj (Just [DottedList (_ : ls) l]) = setVar e \"" ++ var ++ "\" (DottedList (obj : ls) l) >>= " ++ finalContinuation ++
               symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
+
+ -- Return a list of all the compiled code
  return $ [entryPt, compGetVar, compObj, compDoSet] ++ compiledObj
 
 -- TODO: eval env cont args@(List [Atom "set-car!" , nonvar , _ ]) = do
