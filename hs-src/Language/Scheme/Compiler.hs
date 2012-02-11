@@ -457,11 +457,18 @@ compile env args@(List [Atom "vector-set!", Atom var, i, object]) copts = do
     AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
     AstValue $ "  " ++ symCompiledIdx ++ " env cont result Nothing "]
  -- Compiled version of args
+ -- TODO: this is all wrong, need to get all args to the update function, somehow...
+ -- need to:
+ -- - accept vec as param to compiledIdx
+ -- - pass vec as arg to compiledObj (via makeCPSWArgs), idx as the 'result' 
+ -- - pass vec/idx as args to compiledUpdate, obj as the 'result'
+ -- - switch order of params in compiledUpdate to make everything work
+ --
  compiledIdx <- compileExpr env i symCompiledIdx (Just symCompiledObj) 
  compiledObj <- compileExpr env object symCompiledObj (Just symUpdateVec)
  -- Actual update
  compiledUpdate <- return $ AstFunction symUpdateVec " env cont vec (Just [idx, obj]) " [
-    AstValue $ "  result <- updateVector vec idx obj >>= setVar e \"" ++ var ++ "\"",
+    AstValue $ "  result <- updateVector vec idx obj >>= setVar env \"" ++ var ++ "\"",
     createAstCont copts "result" ""]
 
  return $ [entryPt, compGetVar, compiledUpdate] ++ compiledIdx ++ compiledObj

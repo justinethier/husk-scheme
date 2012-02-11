@@ -148,3 +148,8 @@
 (define f '(1 . 2))
 (set-car! f "a")
 (assert-equal 5.3 '("a" . 2) f)
+(define v (make-vector 6))
+(assert-equal 5.4 '#(0 1 4 9 16 25) (for-each (lambda (i)
+                                       (vector-set! v i (* i i)))
+                                      '(0 1 2 3 4 5)))
+

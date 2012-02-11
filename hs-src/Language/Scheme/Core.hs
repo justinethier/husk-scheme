@@ -20,6 +20,7 @@ module Language.Scheme.Core
     , continueEval
     , showBanner
     , substr
+    , updateVector
     , version
     ) where
 import qualified Language.Scheme.FFI
@@ -527,9 +528,6 @@ eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
             updateVector vec idx obj >>= setVar e var >>= continueEval e c
         cpsUpdateVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateVec"
 
-        updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
-        updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec // [(fromInteger idx, obj)]
-        updateVector v _ _ = throwError $ TypeMismatch "vector" v
 eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
  bound <- liftIO $ isRecBound env "vector-set!"
  if bound
@@ -611,6 +609,11 @@ substr (String str, Char char, Number ii) = do
 substr (String _, Char _, n) = throwError $ TypeMismatch "number" n
 substr (String _, c, _) = throwError $ TypeMismatch "character" c
 substr (s, _, _) = throwError $ TypeMismatch "string" s
+
+-- |A helper function for the special form (vector-set!)
+updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
+updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec // [(fromInteger idx, obj)]
+updateVector v _ _ = throwError $ TypeMismatch "vector" v
 
 {- Prepare for apply by evaluating each function argument,
    and then execute the function via 'apply' -}
