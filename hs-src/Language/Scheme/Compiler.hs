@@ -272,19 +272,19 @@ compile env args@(List [Atom "set!", Atom var, form]) copts@(CompileOptions this
 
 -- TODO: need to store var in huskc's env for macro processing
 
- -- Entry point; ensure var is not rebound
- f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"set!\"",
-       AstValue $ "  if bound ",
-       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do " ++ symDefine ++ " env cont (Nil \"\") []" ]
+ entryPt <- compileSpecialFormEntryPoint "set!" symDefine copts
  compDefine <- compileExpr env form symDefine $ Just symMakeDefine
  compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
     AstValue $ "  _ <- setVar env \"" ++ var ++ "\" result",
     createAstCont copts "result" ""]
- return $ [createAstFunc copts f] ++ compDefine ++ [compMakeDefine]
+ return $ [entryPt] ++ compDefine ++ [compMakeDefine]
 
--- TODO: eval env cont args@(List [Atom "set!", nonvar, _]) = do 
--- TODO: eval env cont fargs@(List (Atom "set!" : args)) = do
+compile env (List [Atom "set!", nonvar, _]) copts = do 
+ f <- compileSpecialForm "set!" ("throwError $ TypeMismatch \"variable\" $ String \"" ++ (show nonvar) ++ "\"")  copts
+ return [f]
+compile env (List (Atom "set!" : args)) copts = do
+ f <- compileSpecialForm "set!" "throwError $ NumArgs 2 args" copts
+ return [f]
 
 compile env args@(List [Atom "define", Atom var, form]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
  Atom symDefine <- _gensym "defineFuncDefine"
@@ -398,16 +398,20 @@ mfunc env cont lisp func = do
 -}
 
 
-{- TODO: a helper function to allow special forms to be redefined at runtime...
-compileSpecialFormEntryPoint :: String -> String -> CompileOptions
-compileSpecialFormEntryPoint formName nextFunction copts = do
+-- TODO: a helper function to allow special forms to be redefined at runtime...
+compileSpecialFormEntryPoint :: String -> String -> CompOpts -> IOThrowsError HaskAST
+compileSpecialFormEntryPoint formName formSym copts = do
+ compileSpecialForm formName ("do " ++ formSym ++ " env cont (Nil \"\") []") copts
 
- f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"set!\"",
+compileSpecialForm :: String -> String -> CompOpts -> IOThrowsError HaskAST
+compileSpecialForm formName formCode copts = do
+ f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"" ++ formName ++ "\"",
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do " ++ symDefine ++ " env cont (Nil \"\") []" ]
+       AstValue $ "     else " ++ formCode]
  return $ createAstFunc copts f
--}
+
+
 
 -- Compile an intermediate expression (such as an arg to if) and 
 -- call into the next continuation with it's value
