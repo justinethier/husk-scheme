@@ -368,10 +368,40 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOpt
        ]
  return $ [createAstFunc copts f] ++ compiledBody
 
+compile env args@(List (Atom "lambda" : DottedList fparams varargs : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
+ Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
+ compiledParams <- compileLambdaList fparams
 
+-- TODO: need to extend Env below when compiling body?
+-- TODO: need to bind lambda params in the extended env, for purposes of macro processing
 
--- TODO: eval env cont args@(List (Atom "lambda" : DottedList fparams varargs : fbody)) = do
--- TODO: eval env cont args@(List (Atom "lambda" : varargs@(Atom _) : fbody)) = do
+ compiledBody <- compileBlock symCallfunc Nothing env [] fbody
+
+ -- Entry point; ensure var is not rebound
+ f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
+       AstValue $ "  if bound ",
+       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+       AstValue $ "     else do result <- makeHVarargs (" ++ astToHaskellStr varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
+       createAstCont copts "result" "           "
+       ]
+ return $ [createAstFunc copts f] ++ compiledBody
+
+compile env args@(List (Atom "lambda" : varargs@(Atom _) : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
+ Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
+
+-- TODO: need to extend Env below when compiling body?
+-- TODO: need to bind lambda params in the extended env, for purposes of macro processing
+
+ compiledBody <- compileBlock symCallfunc Nothing env [] fbody
+
+ -- Entry point; ensure var is not rebound
+ f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
+       AstValue $ "  if bound ",
+       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+       AstValue $ "     else do result <- makeHVarargs (" ++ astToHaskellStr varargs ++ ") env [] " ++ symCallfunc,
+       createAstCont copts "result" "           "
+       ]
+ return $ [createAstFunc copts f] ++ compiledBody
 compile env args@(List [Atom "string-set!", Atom var, i, character]) copts = do
  Atom symDefine <- _gensym "stringSetFunc"
  Atom symMakeDefine <- _gensym "stringSetFuncMakeSet"
