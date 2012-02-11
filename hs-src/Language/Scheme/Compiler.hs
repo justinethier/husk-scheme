@@ -283,7 +283,7 @@ compile env (List [Atom "set!", nonvar, _]) copts = do
  f <- compileSpecialForm "set!" ("throwError $ TypeMismatch \"variable\" $ String \"" ++ (show nonvar) ++ "\"")  copts
  return [f]
 compile env (List (Atom "set!" : args)) copts = do
- f <- compileSpecialForm "set!" "throwError $ NumArgs 2 args" copts -- TODO: add args to error message
+ f <- compileSpecialForm "set!" ("throwError $ NumArgs 2 $ [String \"" ++ (show args) ++ "\"]") copts -- TODO: Cheesy to use a string, but fine for now...
  return [f]
 
 compile env args@(List [Atom "define", Atom var, form]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
