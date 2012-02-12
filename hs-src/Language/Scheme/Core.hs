@@ -19,6 +19,7 @@ module Language.Scheme.Core
     , apply
     , continueEval
     , showBanner
+    , substr
     , version
     ) where
 import qualified Language.Scheme.FFI

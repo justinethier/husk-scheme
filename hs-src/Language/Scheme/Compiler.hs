@@ -369,7 +369,6 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOpt
 
 -- TODO: eval env cont args@(List (Atom "lambda" : DottedList fparams varargs : fbody)) = do
 -- TODO: eval env cont args@(List (Atom "lambda" : varargs@(Atom _) : fbody)) = do
-{- TODO:
 compile env args@(List [Atom "string-set!", Atom var, i, character]) copts = do
  Atom symDefine <- _gensym "stringSetFunc"
  Atom symMakeDefine <- _gensym "stringSetFuncMakeSet"
@@ -378,11 +377,10 @@ compile env args@(List [Atom "string-set!", Atom var, i, character]) copts = do
  compDefine <- compileExpr env i symDefine $ Just symMakeDefine
  compMakeDefine <- return $ AstFunction symMakeDefine " env cont idx _ " [
     AstValue $ "  tmp <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  result <- substr (tmp (" ++ astToHaskellStr(character) ++ ") idx)",
+    AstValue $ "  result <- substr (tmp, (" ++ astToHaskellStr(character) ++ "), idx)",
     AstValue $ "  _ <- setVar env \"" ++ var ++ "\" result",
     createAstCont copts "result" ""]
  return $ [entryPt] ++ compDefine ++ [compMakeDefine]
--}
 -- string-set! code from Core:
 ---  else meval env (makeCPS env cont cpsStr) i
 --- where
