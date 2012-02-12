@@ -394,36 +394,32 @@ compile env args@(List [Atom "set-car!", Atom var, argObj]) copts = do
 
 -- create a function to pass getVar
 -- call into a function to simulate cpsObj (need to overload compiled func)
-   TBD: create this func each time, or make it a single runtime func?
+--   TBD: create this func each time, or make it a single runtime func?
 -- the new func to call into cpsSet
+ Atom symGetVar <- _gensym "stringSetGetVar"
+ Atom symCompiledObj <- _gensym "stringSetCompiledObj"
+ Atom symObj <- _gensym "stringSetObj"
+ Atom symDoSet <- _gensym "stringSetDoSet"
 
- Atom symDefine <- _gensym "stringSetFunc"
- Atom symMakeDefine <- _gensym "stringSetFuncMakeSet"
-
- entryPt <- compileSpecialFormEntryPoint "string-set!" symDefine copts
- compDefine <- compileExpr env i symDefine $ Just symMakeDefine
- compMakeDefine <- return $ AstFunction symMakeDefine " env cont idx _ " [
-    AstValue $ "  tmp <- getVar env \"" ++ var ++ "\"",
-    -- TODO: not entirely correct below; should compile the character argument rather
-    --       than directly inserting it into the compiled code...
-    AstValue $ "  result <- substr (tmp, (" ++ astToHaskellStr(character) ++ "), idx)",
-    AstValue $ "  _ <- setVar env \"" ++ var ++ "\" result",
-    createAstCont copts "result" ""]
- return $ [entryPt] ++ compDefine ++ [compMakeDefine]
--- code to port from the interpreter:
---  else continueEval env (makeCPS env cont cpsObj) =<< getVar env var
--- where
---        cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
---        cpsObj _ _ obj@(List []) _ = throwError $ TypeMismatch "pair" obj
---        cpsObj e c obj@(List (_ : _)) _ = meval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
---        cpsObj e c obj@(DottedList _ _) _ =  meval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
---        cpsObj _ _ obj _ = throwError $ TypeMismatch "pair" obj
---
+ entryPt <- compileSpecialFormEntryPoint "string-set!" symGetVar copts
+ compGetVar <- return $ AstFunction symMakeDefine " env cont result _ " [
+    AstValue $ "  " ++ symCompiledObj ++ " env cont result Nothing "]
+ compiledObj <- compileExpr env argObj symObj Nothing 
+ compObj <- return $ AstValue "" ++
+              symObj ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n"
+              symObj ++ " _ _ obj@(List []) _ = throwError $ TypeMismatch \"pair\" obj\n"
+              symObj ++ " e c obj@(List (_ : _)) _ = " ++ symDoSet ++ " e c obj Nothing\n"
+              symObj ++ " e c obj@(DottedList _ _) _ = " ++ symDoSet ++ " e c obj Nothing\n"
+              symObj ++ " _ _ obj _ = throwError $ TypeMismatch \"pair\" obj\n"
+ compDoSet <- 
+-- TODO:
 --        cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
 --        cpsSet e c obj (Just [List (_ : ls)]) = setVar e var (List (obj : ls)) >>= continueEval e c -- Wrong constructor? Should it be DottedList?
 --        cpsSet e c obj (Just [DottedList (_ : ls) l]) = setVar e var (DottedList (obj : ls) l) >>= continueEval e c
 --        cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
+ return $ [entryPt] ++ compGetVar
 -}
+
 -- TODO: eval env cont args@(List [Atom "set-car!" , nonvar , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "set-car!" : args)) = do
 -- TODO: eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
