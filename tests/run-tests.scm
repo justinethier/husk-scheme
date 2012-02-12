@@ -1,7 +1,9 @@
 (load "skim-unit.scm")
 
-; TODO: @echo "0" > $(UNIT_TEST_DIR)/scm-unit.tmp
-; TODO: @echo "0" >> $(UNIT_TEST_DIR)/scm-unit.tmp
+(define p (open-output-file "scm-unit.tmp"))
+(display "0\n0\n" p)
+(close-output-port p)
+
 (let () (load "t-extensions.scm"))
 (let () (load "t-backquote.scm"))
 (let () (load "t-case.scm"))
