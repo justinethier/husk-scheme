@@ -271,7 +271,10 @@ compile env args@(List [Atom "set!", Atom var, form]) copts@(CompileOptions this
  Atom symMakeDefine <- _gensym "setFuncMakeSet"
 
  -- Store var in huskc's env for macro processing
- _ <- defineVar env var form
+ -- TODO: changed this to a 'defineVar' for now, because without lambda forms inserting
+ --       defined variables, using setVar will cause an error when trying to set a
+ --       lambda var...
+ _ <- defineVar env var form -- TODO: setVar (per above comment)
 
  entryPt <- compileSpecialFormEntryPoint "set!" symDefine copts
  compDefine <- compileExpr env form symDefine $ Just symMakeDefine
@@ -350,7 +353,7 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOpt
  compiledParams <- compileLambdaList fparams
 
 -- TODO: need to extend Env below when compiling body?
--- TODO: need to bind lambda params in the extended env, for purposes of macro processing?
+-- TODO: need to bind lambda params in the extended env, for purposes of macro processing
 
  compiledBody <- compileBlock symCallfunc Nothing env [] fbody
 
@@ -377,20 +380,12 @@ compile env args@(List [Atom "string-set!", Atom var, i, character]) copts = do
  compDefine <- compileExpr env i symDefine $ Just symMakeDefine
  compMakeDefine <- return $ AstFunction symMakeDefine " env cont idx _ " [
     AstValue $ "  tmp <- getVar env \"" ++ var ++ "\"",
+    -- TODO: not entirely correct below; should compile the character argument rather
+    --       than directly inserting it into the compiled code...
     AstValue $ "  result <- substr (tmp, (" ++ astToHaskellStr(character) ++ "), idx)",
     AstValue $ "  _ <- setVar env \"" ++ var ++ "\" result",
     createAstCont copts "result" ""]
  return $ [entryPt] ++ compDefine ++ [compMakeDefine]
--- string-set! code from Core:
----  else meval env (makeCPS env cont cpsStr) i
---- where
----        cpsStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
----        cpsStr e c idx _ = (meval e (makeCPSWArgs e c cpsSubStr $ [idx]) =<< getVar e var) 
----
----        cpsSubStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
----        cpsSubStr e c str (Just [idx]) =
----            substr (str, character, idx) >>= setVar e var >>= continueEval e c
----        cpsSubStr _ _ _ _ = throwError $ InternalError "Invalid argument to cpsSubStr"
 
 -- TODO: eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "string-set!" : args)) = do 
