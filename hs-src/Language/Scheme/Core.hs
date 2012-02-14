@@ -33,6 +33,7 @@ import Language.Scheme.Variables
 import Control.Monad.Error
 import Data.Array
 import qualified Data.Map
+import qualified System.Exit
 import System.IO
 
 version :: String
@@ -762,7 +763,7 @@ primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrim
 {- These functions have access to the current environment via the
 current continuation, which is passed as the first LispVal argument. -}
 --
-evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
+evalfuncExitSuccess, evalfuncExitFail, evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
 
 {-
  - A (somewhat) simplified implementation of dynamic-wind
@@ -864,6 +865,13 @@ evalfuncCallCC [cont@(Continuation _ _ _ _ _), func] = do
 evalfuncCallCC (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncCallCC _ = throwError $ NumArgs 1 []
 
+evalfuncExitFail _ = do
+  _ <- liftIO $ System.Exit.exitFailure
+  return $ Nil ""
+evalfuncExitSuccess _ = do
+  _ <- liftIO $ System.Exit.exitSuccess
+  return $ Nil ""
+
 {- Primitive functions that extend the core evaluator -}
 evalFunctions :: [(String, [LispVal] -> IOThrowsError LispVal)]
 evalFunctions =  [  ("apply", evalfuncApply)
@@ -872,7 +880,10 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("dynamic-wind", evalfuncDynamicWind)
                   , ("eval", evalfuncEval)
                   , ("load", evalfuncLoad)
-                  , ("load-ffi", Language.Scheme.FFI.evalfuncLoadFFI) -- Non-standard extension
+               -- Non-standard extensions
+                  , ("load-ffi", Language.Scheme.FFI.evalfuncLoadFFI)
+                  , ("exit-fail", evalfuncExitFail)
+                  , ("exit-success", evalfuncExitSuccess)
                 ]
 {- I/O primitives
 Primitive functions that execute within the IO monad -}
