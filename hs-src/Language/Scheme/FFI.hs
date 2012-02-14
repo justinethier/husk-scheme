@@ -82,8 +82,13 @@ evalfuncLoadFFI [(Continuation env _ _ _ _), String moduleName, String externalF
 #if __GLASGOW_HASKELL__ < 700
     GHC.setContext [] [m]
 #elif __GLASGOW_HASKELL__ == 702
-    (_,oi) <- GHC.getContext
-    GHC.setContext [m] oi
+    -- Fix from dflemstr:
+    -- http://stackoverflow.com/questions/9198140/ghc-api-how-to-dynamically-load-haskell-code-from-a-compiled-module-using-ghc
+    GHC.setContext [] 
+      -- import qualified Module
+      [ (GHC.simpleImportDecl . GHC.mkModuleName $ moduleName)
+        {GHC.ideclQualified = True}
+      ]
 #elif __GLASGOW_HASKELL__ >= 704
 -- TODO:
 --    interactImport <- GHC.getContext
@@ -92,7 +97,7 @@ evalfuncLoadFFI [(Continuation env _ _ _ _), String moduleName, String externalF
 #else
     GHC.setContext [] [(m, Nothing)]
 #endif
-    fetched <- GHC.compileExpr (moduleName ++ "." ++ externalFuncName)
+    fetched <- GHC.compileExpr $ moduleName ++ "." ++ externalFuncName
     return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> IOThrowsError LispVal)
   defineVar env internalFuncName (IOFunc result) -- >>= continueEval env cont
 
