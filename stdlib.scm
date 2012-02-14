@@ -373,6 +373,7 @@
 (define (error reason . args)
     (display "Error: ")
     (display reason)
+    (newline)
     (for-each (lambda (arg) 
                 (display " ")
       	  (write arg))
