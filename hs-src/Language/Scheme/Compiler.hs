@@ -444,34 +444,25 @@ compile env args@(List [Atom "set-car!", Atom var, argObj]) copts = do
 -- TODO: eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "set-cdr!" : args)) = do
 compile env args@(List [Atom "vector-set!", Atom var, i, object]) copts = do
- Atom symGetVar <- _gensym "vectorSetGetVar"
  Atom symCompiledIdx <- _gensym "vectorSetIdx"
  Atom symCompiledObj <- _gensym "vectorSetObj"
  Atom symUpdateVec <- _gensym "vectorSetUpdate"
+ Atom symIdxWrapper <- _gensym "vectorSetIdxWrapper"
 
  -- Entry point that allows this form to be redefined
- entryPt <- compileSpecialFormEntryPoint "vector-set!" symGetVar copts
-
- -- Function to read existing var
- compGetVar <- return $ AstFunction symGetVar " env cont idx _ " [
-    AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  " ++ symCompiledIdx ++ " env cont result Nothing "]
- -- Compiled version of args
- -- TODO: this is all wrong, need to get all args to the update function, somehow...
- -- need to:
- -- - accept vec as param to compiledIdx
- -- - pass vec as arg to compiledObj (via makeCPSWArgs), idx as the 'result' 
- -- - pass vec/idx as args to compiledUpdate, obj as the 'result'
- -- - switch order of params in compiledUpdate to make everything work
- --
- compiledIdx <- compileExpr env i symCompiledIdx (Just symCompiledObj) 
- compiledObj <- compileExpr env object symCompiledObj (Just symUpdateVec)
- -- Actual update
- compiledUpdate <- return $ AstFunction symUpdateVec " env cont vec (Just [idx, obj]) " [
+ entryPt <- compileSpecialFormEntryPoint "vector-set!" symCompiledIdx copts
+ -- Compile index, then use a wrapper to pass it as an arg while compiling obj
+ compiledIdx <- compileExpr env i symCompiledIdx (Just symIdxWrapper) 
+ compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
+    AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") Nothing " ]
+ compiledObj <- compileExpr env object symCompiledObj Nothing
+ -- Do actual update
+ compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
+    AstValue $ "  vec <- getVar env \"" ++ var ++ "\"",
     AstValue $ "  result <- updateVector vec idx obj >>= setVar env \"" ++ var ++ "\"",
     createAstCont copts "result" ""]
 
- return $ [entryPt, compGetVar, compiledUpdate] ++ compiledIdx ++ compiledObj
+ return $ [entryPt, compiledIdxWrapper, compiledUpdate] ++ compiledIdx ++ compiledObj
 
 -- TODO: eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
 -- TODO: eval env cont fargs@(List (Atom "vector-set!" : args)) = do 
