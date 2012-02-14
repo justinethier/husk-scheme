@@ -1,5 +1,7 @@
 v3.5.3
 ------
+Fixed the FFI to work again in both GHC 7.2.2 and GHC 7.4.1
+
 Compiler - added let-syntax, letrec-syntax, set-car!, vector-set!
 Allow any redefinition of let-syntax and letrec-syntax (huski).
 
