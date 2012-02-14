@@ -3,6 +3,8 @@ v3.5.3
 Compiler - added let-syntax, letrec-syntax, set-car!, vector-set!
 Allow any redefinition of let-syntax and letrec-syntax (huski).
 
+Implemented SRFI 23 - added an (error) function
+
 v3.5.2.x
 ------
 This is a series of quick bug-fix releases that allows husk to build under GHC 7.4.1.

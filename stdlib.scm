@@ -368,6 +368,18 @@
     (close-output-port opened-file)
     result))
 
+;; SRFI 23 - Error reporting mechanism
+;; based on code from: http://srfi.schemers.org/srfi-23/srfi-23.html
+(define (error reason . args)
+    (display "Error: ")
+    (display reason)
+    (for-each (lambda (arg) 
+                (display " ")
+      	  (write arg))
+      	args)
+    (newline)
+    (exit-fail))
+
 ;; Hashtable derived forms
 (define hash-table-walk
   (lambda (ht proc)
