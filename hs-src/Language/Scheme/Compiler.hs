@@ -1,8 +1,5 @@
-
--- TODO items: lambda params, define, a simple test suite
-
 {- |
-Module      : Language.Scheme.Core
+Module      : Language.Scheme.Compiler
 Copyright   : Justin Ethier
 Licence     : MIT (see LICENSE in the distribution)
 
@@ -14,6 +11,13 @@ This module contains an experimental compiler of Scheme to Haskell
 
 The compiler performs the following transformations:
 Scheme AST (LispVal) -> Haskell AST (HaskAST) -> Compiled Code (String)
+
+The GHC compiler is then used to create a native executable.
+
+At present, the focus has just been on creating a compiler that will
+generate correct, working code. Many optimizations could and need to
+be made for time and space...
+
 -}
 
 module Language.Scheme.Compiler where 
@@ -107,7 +111,6 @@ astToHaskellStr (DottedList ls l) =
 header :: [String]
 header = [
    "module Main where "
--- Currently not used: , "import Language.Scheme.Compiler.Helpers "
  , "import Language.Scheme.Core "
  , "import Language.Scheme.Numerical "
  , "import Language.Scheme.Primitives "
