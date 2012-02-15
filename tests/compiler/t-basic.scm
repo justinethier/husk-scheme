@@ -148,6 +148,10 @@
 (define f '(1 2 3 4))
 (set-car! f 8)
 (assert-equal 5.2 '(8 2 3 4) f)
+(define x (list 'a 'b 'c))
+(set-cdr! x 4)
+(assert-equal 5.2.1 '(a . 4) x)
+
 (define f '(1 . 2))
 (set-car! f "a")
 (assert-equal 5.3 '("a" . 2) f)
