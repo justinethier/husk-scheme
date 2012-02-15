@@ -150,13 +150,13 @@
 (assert-equal 5.2 '(8 2 3 4) f)
 (define x (list 'a 'b 'c))
 (set-cdr! x 4)
-(assert-equal 5.2.1 '(a . 4) x)
+(assert-equal 5.3 '(a . 4) x)
 
 (define f '(1 . 2))
 (set-car! f "a")
-(assert-equal 5.3 '("a" . 2) f)
+(assert-equal 5.4 '("a" . 2) f)
 (define v (make-vector 6))
-(assert-equal 5.4 '#(0 1 4 9 16 25) (for-each (lambda (i)
+(assert-equal 5.5 '#(0 1 4 9 16 25) (for-each (lambda (i)
                                        (vector-set! v i (* i i)))
                                       '(0 1 2 3 4 5)))
 
