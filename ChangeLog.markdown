@@ -2,7 +2,7 @@ v3.5.3
 ------
 Fixed the FFI to work again in both GHC 7.2.2 and GHC 7.4.1
 
-Compiler - added let-syntax, letrec-syntax, set-car!, vector-set!, all versions of lambda (dotted list, atom)
+Compiler - added let-syntax, letrec-syntax, set-car!, set-cdr!, vector-set!, all versions of lambda (dotted list, atom)
 Allow any redefinition of let-syntax and letrec-syntax (huski).
 
 Implemented SRFI 23 - added an (error) function
