@@ -35,8 +35,55 @@ Maintainer  : github.com/justinethier
 <hr />
 <div id="page">
 	<div id="content">
+        <div>
+            <!-- <h2>Contents</h2> -->
+            <div><a href="#section-features">Features</a></div>
+            <div><a href="#section-usage">Usage</a></div>
+            <div><a href="#section-lang-ref">Scheme Language Reference</a></div>
+            <div><a href="#section-api">Haskell API</a></div>
+            <div><a href="#section-ffi">Foreign Function Interface</a></div>
+        </div>
+
+        <br />
+        <br />
+
 		<div>
-            <h2 class="title">Usage</h2>
+            <h2 id="section-features" class="title">Features</h2>
+            <p>
+husk includes most features from R<sup>5</sup>RS, including:
+
+<br />
+<ul>
+<li> Primitive data types and their standard forms, including string, char, numbers (integer, rational, floating point, and complex), list, pair, vector, and symbols
+</li><li> Proper tail recursion
+</li><li> Proper lexical scoping
+</li><li> Conditionals: if, case, cond
+</li><li> Sequencing: begin
+</li><li> Iteration: do
+</li><li> Quasi-quotation
+</li><li> Delayed Execution: delay, force
+</li><li> Binding constructs: let, named let, let*, letrec
+</li><li> Assignment operations
+</li><li> Basic IO functions
+</li><li> Standard library of Scheme functions
+</li><li> Read-Eval-Print-Loop (REPL) interpreter, with input driven by Haskeline to provide a rich user experience
+</li><li> Full numeric tower: includes support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types and other constraints from the R<sup>5</sup>RS specification
+</li><li> Continuations: First-class continuations of unlimited extent, call/cc, and call-with-values
+</li><li> Hygienic Macros: High-level macros via define-syntax, let-syntax, and letrec-syntax
+</li>
+</ul>
+<br />
+As well as the following approved extensions:
+<ul>
+    <li>Hash tables, as specified by <a href="http://srfi.schemers.org/srfi-69/srfi-69.html">SRFI 69</a></li>
+</ul>
+<br />
+And the following R<sup>7</sup>RS draft features:
+<ul>
+    <li>Nested block comments using #| and |#</li>
+</ul>
+</p>
+            <h2 id="section-usage" class="title">Usage</h2>
             <p>
                 The interpreter may be invoked by running it directly from the command line:
 
@@ -51,7 +98,7 @@ Maintainer  : github.com/justinethier
                 {% endhighlight %}
 </p>
 
-<h2 class="title">Scheme Language Reference</h2>
+<h2 id="section-lang-ref" class="title">Scheme Language Reference</h2>
 <p>
 For full R<sup>5</sup>RS language documentation and API, please see the <a href="http://schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-2.html#%_toc_start">online reference at schemers.org</a>.
 
@@ -63,22 +110,24 @@ The goal of husk is to implement the full R<sup>5</sup>RS Scheme language, excep
 <p> gensym, others? </p>
 -->
 
-<h2 class="title">API</h2>
+<h2 id="section-api" class="title">Haskell API</h2>
 <p>
-A Haskell API is also provided to allow you to embed a Scheme interpreter within a Haskell program. The key API modules are:
+A Haskell API is provided to allow you to embed a Scheme interpreter within a Haskell program. The key API modules are:
 
 <ul>
     <li><strong>Language.Scheme.Core</strong> - Contains functions to evaluate (execute) Scheme code</li>
     <li><strong>Language.Scheme.Types</strong> - Contains Haskell data types used to represent Scheme primitives</li>
 </ul>
 
-For more information, run <strong>make doc</strong> to generate API documentation from the source code. Also, see <strong>shell.hs</strong> in the husk source code for a quick example of how you might get started.
-<!--
-<br /><strong>TODO: should just build the docs and post them here</strong>
--->
+The full API documentation is available online as part of <a href="http://hackage.haskell.org/package/husk-scheme">the latest release on Hackage</a>. You may also run <strong>make doc</strong> to generate API documentation directly from the source code. 
+
+<br />
+<br />
+
+Finally, see <strong>shell.hs</strong> in the husk source code for a quick example of how you might get started using the API.
 </p>
 
-<h2 class="title">Foreign Function Interface</h2>
+<h2 id="section-ffi" class="title">Foreign Function Interface</h2>
 <p>
 A foreign function interface (FFI) is provided to allow husk to call into arbitrary Haskell code. The interface is currently available via the <strong>load-ffi</strong> function:
 
