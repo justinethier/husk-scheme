@@ -105,8 +105,8 @@ showHelp _ = do
   putStrLn "  --help                Display this information"
   putStrLn "  --version             Display husk version information"
   putStrLn "  --output filename     Write executable to the given filename"
-  putStrLn "  --dynamic             Use dynamic linking for the compiled executable"
-  putStrLn "                        (Requires shared libraries built via --enable-shared)"
+  putStrLn "  --dynamic             Use dynamic Haskell libraries, if available"
+  putStrLn "                        (Requires libraries built via --enable-shared)"
   putStrLn "  --extra args          Pass extra arguments directly to ghc"
   putStrLn ""
   exitWith ExitSuccess
