@@ -38,7 +38,7 @@ main = do
   args <- getArgs
   let (actions, nonOpts, msgs) = getOpt Permute options args
   opts <- foldl (>>=) (return defaultOptions) actions
-  let Options {optOutput = output, optCustomOptions = extra} = opts
+  let Options {optOutput = output, optDynamic = dynamic, optCustomOptions = extra} = opts
 
   if null nonOpts
      then showUsage
@@ -50,7 +50,7 @@ main = do
             extraOpts = case extra of
               Just args -> args
               Nothing -> ""
-        process inFile outExec extraOpts
+        process inFile outExec dynamic extraOpts
 
 -- 
 -- For an explanation of the command line options code, see:
@@ -60,6 +60,7 @@ main = do
 -- |Data type to handle command line options that take parameters
 data Options = Options {
     optOutput :: Maybe String, -- Executable file to write
+    optDynamic :: Bool, -- Flag for dynamic linking of compiled executable
     optCustomOptions :: Maybe String -- Custom options to ghc
     }
 
@@ -67,6 +68,7 @@ data Options = Options {
 defaultOptions :: Options
 defaultOptions = Options {
     optOutput = Nothing,
+    optDynamic = False,
     optCustomOptions = Nothing 
     }
 
@@ -76,12 +78,15 @@ options = [
   Option ['V'] ["version"] (NoArg showVersion) "show version number",
   Option ['h', '?'] ["help"] (NoArg showHelp) "show usage information",
   Option ['o'] ["output"] (ReqArg writeExec "FILE") "output file to write",
+  Option ['d'] ["dynamic"] (NoArg getDynamic) "use dynamic linking for the compiled executable",
   Option ['x'] ["extra"] (ReqArg getExtraArgs "Args") "extra arguments to ghc"
   ]
 
 -- |Determine executable file to write. 
 --  This version just takes a name from the command line option
 writeExec arg opt = return opt { optOutput = Just arg }
+
+getDynamic opt = return opt { optDynamic = True }
 
 getExtraArgs arg opt = return opt { optCustomOptions = Just arg }
 
@@ -100,6 +105,8 @@ showHelp _ = do
   putStrLn "  --help                Display this information"
   putStrLn "  --version             Display husk version information"
   putStrLn "  --output filename     Write executable to the given filename"
+  putStrLn "  --dynamic             Use dynamic linking for the compiled executable"
+  putStrLn "                        (Requires shared libraries built via --enable-shared)"
   putStrLn "  --extra args          Pass extra arguments directly to ghc"
   putStrLn ""
   exitWith ExitSuccess
@@ -112,13 +119,13 @@ showVersion _ = do
   exitWith ExitSuccess
 
 -- |High level code to compile the given file
-process :: String -> String -> String -> IO ()
-process inFile outExec extraArgs = do
+process :: String -> String -> Bool -> String -> IO ()
+process inFile outExec dynamic extraArgs = do
   env <- liftIO $ nullEnv
   stdlib <- getDataFileName "stdlib.scm"
   result <- (runIOThrows $ liftM show $ compileSchemeFile env stdlib inFile)
   case result of
-   "" -> compileHaskellFile outExec extraArgs
+   "" -> compileHaskellFile outExec dynamic extraArgs
    _ -> putStrLn result
 
 -- |Compile a scheme file to haskell
@@ -138,10 +145,11 @@ compileSchemeFile env stdlib filename = do
      else throwError $ Default "Empty file" --putStrLn "empty file"
 
 -- |Compile the intermediate haskell file using GHC
-compileHaskellFile :: String -> String -> IO() --ThrowsError LispVal
-compileHaskellFile filename extraArgs = do
+compileHaskellFile :: String -> Bool -> String -> IO() --ThrowsError LispVal
+compileHaskellFile filename dynamic extraArgs = do
   let ghc = "ghc" -- Need to make configurable??
-  compileStatus <- system $ ghc ++ " " ++ extraArgs ++ " -cpp --make -package ghc -fglasgow-exts -o " ++ filename ++ " _tmp.hs"
+      dynamicArg = if dynamic then "-dynamic" else ""
+  compileStatus <- system $ ghc ++ " " ++ dynamicArg ++ " " ++ extraArgs ++ " -cpp --make -package ghc -fglasgow-exts -o " ++ filename ++ " _tmp.hs"
 
 -- TODO: delete intermediate hs files if requested
 
