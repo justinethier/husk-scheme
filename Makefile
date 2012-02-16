@@ -32,6 +32,7 @@ husk-small: hs-src/Interpreter/shell.hs hs-src/Language/Scheme/Core.hs hs-src/La
 # Create files for distribution
 dist:
 	runhaskell Setup.hs configure --prefix=$(HOME) --user && runhaskell Setup.hs build && runhaskell Setup.hs install && runhaskell Setup.hs sdist
+# Note: Use --enable-shared in the configure above, if dynamic linking will be used
 
 # Create API documentation
 doc:
