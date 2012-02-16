@@ -38,7 +38,7 @@ main = do
   args <- getArgs
   let (actions, nonOpts, msgs) = getOpt Permute options args
   opts <- foldl (>>=) (return defaultOptions) actions
-  let Options {optOutput = output} = opts
+  let Options {optOutput = output, optCustomOptions = extra} = opts
 
   if null nonOpts
      then showUsage
@@ -47,7 +47,10 @@ main = do
             outExec = case output of
               Just inFile -> inFile
               Nothing -> dropExtension inFile
-        process inFile outExec
+            extraOpts = case extra of
+              Just args -> args
+              Nothing -> ""
+        process inFile outExec extraOpts
 
 -- 
 -- For an explanation of the command line options code, see:
@@ -56,13 +59,15 @@ main = do
 
 -- |Data type to handle command line options that take parameters
 data Options = Options {
-    optOutput :: Maybe String -- Executable file to write
+    optOutput :: Maybe String, -- Executable file to write
+    optCustomOptions :: Maybe String -- Custom options to ghc
     }
 
 -- |Default values for the command line options
 defaultOptions :: Options
 defaultOptions = Options {
-    optOutput = Nothing 
+    optOutput = Nothing,
+    optCustomOptions = Nothing 
     }
 
 -- |Command line options
@@ -70,12 +75,15 @@ options :: [OptDescr (Options -> IO Options)]
 options = [
   Option ['V'] ["version"] (NoArg showVersion) "show version number",
   Option ['h', '?'] ["help"] (NoArg showHelp) "show usage information",
-  Option ['o'] ["output"] (ReqArg writeExec "FILE") "output file to write"
+  Option ['o'] ["output"] (ReqArg writeExec "FILE") "output file to write",
+  Option ['x'] ["extra"] (ReqArg getExtraArgs "Args") "extra arguments to ghc"
   ]
 
 -- |Determine executable file to write. 
 --  This version just takes a name from the command line option
 writeExec arg opt = return opt { optOutput = Just arg }
+
+getExtraArgs arg opt = return opt { optCustomOptions = Just arg }
 
 -- TODO: would nice to have this as well as a 'real' usage printout, perhaps via --help
 
@@ -92,6 +100,7 @@ showHelp _ = do
   putStrLn "  --help                Display this information"
   putStrLn "  --version             Display husk version information"
   putStrLn "  --output filename     Write executable to the given filename"
+  putStrLn "  --extra args          Pass extra arguments directly to ghc"
   putStrLn ""
   exitWith ExitSuccess
 
@@ -103,13 +112,13 @@ showVersion _ = do
   exitWith ExitSuccess
 
 -- |High level code to compile the given file
-process :: String -> String -> IO ()
-process inFile outExec = do
+process :: String -> String -> String -> IO ()
+process inFile outExec extraArgs = do
   env <- liftIO $ nullEnv
   stdlib <- getDataFileName "stdlib.scm"
   result <- (runIOThrows $ liftM show $ compileSchemeFile env stdlib inFile)
   case result of
-   "" -> compileHaskellFile outExec
+   "" -> compileHaskellFile outExec extraArgs
    _ -> putStrLn result
 
 -- |Compile a scheme file to haskell
@@ -129,10 +138,10 @@ compileSchemeFile env stdlib filename = do
      else throwError $ Default "Empty file" --putStrLn "empty file"
 
 -- |Compile the intermediate haskell file using GHC
-compileHaskellFile :: String -> IO() --ThrowsError LispVal
-compileHaskellFile filename = do
+compileHaskellFile :: String -> String -> IO() --ThrowsError LispVal
+compileHaskellFile filename extraArgs = do
   let ghc = "ghc" -- Need to make configurable??
-  compileStatus <- system $ ghc ++ " -cpp --make -package ghc -fglasgow-exts -o " ++ filename ++ " _tmp.hs"
+  compileStatus <- system $ ghc ++ " " ++ extraArgs ++ " -cpp --make -package ghc -fglasgow-exts -o " ++ filename ++ " _tmp.hs"
 
 -- TODO: delete intermediate hs files if requested
 
