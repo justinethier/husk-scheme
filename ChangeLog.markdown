@@ -1,8 +1,8 @@
 v3.5.4
 ------
 
-- Prevent divide-by-zero errors when dividing by a single number, or processing a rational number with 0 as the denominator.
-- Removed unnecessary dependency on /dev/null.
+- Removed an unnecessary dependency on `/dev/null` to allow `huski` to interpret files when run on Windows.
+- Prevent divide-by-zero errors when dividing by a single number, or processing a rational number with zero as the denominator.
 
 v3.5.3
 ------
