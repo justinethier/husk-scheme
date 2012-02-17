@@ -77,6 +77,7 @@ options :: [OptDescr (Options -> IO Options)]
 options = [
   Option ['V'] ["version"] (NoArg showVersion) "show version number",
   Option ['h', '?'] ["help"] (NoArg showHelp) "show usage information",
+  Option [] ["debug"] (NoArg showDebug) "show debug information",
   Option ['o'] ["output"] (ReqArg writeExec "FILE") "output file to write",
   Option ['d'] ["dynamic"] (NoArg getDynamic) "use dynamic linking for the compiled executable",
   Option ['x'] ["extra"] (ReqArg getExtraArgs "Args") "extra arguments to ghc"
@@ -108,6 +109,14 @@ showHelp _ = do
   putStrLn "  --dynamic             Use dynamic Haskell libraries, if available"
   putStrLn "                        (Requires libraries built via --enable-shared)"
   putStrLn "  --extra args          Pass extra arguments directly to ghc"
+  putStrLn ""
+  exitWith ExitSuccess
+
+-- |Print debug information
+showDebug :: Options -> IO Options
+showDebug _ = do
+  stdlib <- getDataFileName "stdlib.scm"
+  putStrLn $ "stdlib: " ++ stdlib
   putStrLn ""
   exitWith ExitSuccess
 
