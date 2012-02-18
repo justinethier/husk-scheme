@@ -33,26 +33,26 @@ flushStr str = putStr str >> hFlush stdout
 
 runOne :: [String] -> IO ()
 runOne args = do
-  {- Use this to suppress unwanted output.
-     Makes this unix-specific, but as of now
-     everything else is anyway, so... -}
-  nullIO <- openFile "/dev/null" WriteMode
-
   stdlib <- getDataFileName "stdlib.scm"
   env <- primitiveBindings >>= flip extendEnv
                                    [((varNamespace, "args"),
                                     List $ map String $ drop 1 args)]
   _ <- evalString env $ "(load \"" ++ stdlib ++ "\")" -- Load standard library
-  (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
-     >>= hPutStr nullIO
+  result <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
+  case result of
+    "" -> putStr result
+    _  -> putStrLn result 
 
   -- Call into (main) if it exists...
   alreadyDefined <- liftIO $ isBound env "main"
   let argv = List $ map String $ args
   if alreadyDefined
-     then (runIOThrows $ liftM show $ evalLisp env
-            (List [Atom "main", List [Atom "quote", argv]])) >>= hPutStr stderr
-     else (runIOThrows $ liftM show $ evalLisp env (Nil "")) >>= hPutStr stderr
+     then do 
+            mainResult <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "main", List [Atom "quote", argv]]))
+            case mainResult of
+              "" -> putStr mainResult
+              _  -> putStrLn mainResult
+     else putStr "" 
 
 runRepl :: IO ()
 runRepl = do
