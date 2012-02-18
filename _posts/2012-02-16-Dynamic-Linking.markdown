@@ -12,15 +12,16 @@ By default, Haskell executables are statically linked. This is all well and good
     justin@ubuntu:~$ ls -l t-basic
     -rwxrwxr-x 1 justin justin 42357805 2012-02-16 14:38 t-basic
 
-That's right, a 42 megabyte executable for just a few unit tests! But it is possible to enable dynamic linking with a bit of effort. The main catch is that we need to recompile each of the packages we are using:
+That's right, a 42 megabyte executable for just a few unit tests! But it is possible to enable dynamic linking with a bit of effort. The main catch is that we need to recompile each of the packages that husk depends on:
 
     cabal update
-    cabal install mtl transformers utf8-string terminfo text parsec haskeline --enable-shared --reinstall
+    cabal install mtl transformers utf8-string terminfo text \
+                  parsec haskeline --enable-shared --reinstall
     cabal install husk-scheme --enable-shared --reinstall
 
 The key thing to remember is the `--enable-shared` directive which builds a shared library. Fortunately the base packages already come with shared libraries so they do not need to be recompiled.
 
-Anyway, now let's rebuild that test suite and see what we get. The `-d` flag instructs `huskc` to create a dynamically linked executable:
+Anyway, now let's rebuild that test suite. The `-d` flag is a new feature in version 3.5.3 that instructs `huskc` to create a dynamically linked executable:
 
     justin@ubuntu:~$ huskc -d t-basic.scm 
     ...
@@ -37,4 +38,4 @@ Sweet, with dynamic linking our compiled executable is now less than 3 megs. And
 
 So we took an executable that was orginally over 42 megs, and managed to strip it down all the way to 2 megs. Not bad!
 
-Now, all that said, most of the time static linking works fine, and it is certainly convenient since this is how everything works out-of-the-box. But sometimes you just need to know how to work around these types of limitations.
+Now, all that said, most of the time static linking works fine, and is convenient since this is how everything works out-of-the-box. But sometimes default behavior is just not good enough.
