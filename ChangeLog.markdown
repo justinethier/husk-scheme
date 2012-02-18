@@ -1,3 +1,8 @@
+v3.5.4
+------
+
+- Prevent divide-by-zero errors when dividing by a single number, or processing a rational number with 0 as the denominator.
+
 v3.5.3
 ------
 This release adds full support for GHC 7.2.2 / 7.4.1 as well as a number of small enhancements.

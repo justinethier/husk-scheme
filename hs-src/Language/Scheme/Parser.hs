@@ -179,7 +179,11 @@ parseRationalNumber = do
       num <- many1 (digit)
       if (length sign) > 1
          then pzero
-         else return $ Rational $ n % (read $ sign ++ num)
+         else do
+             let pdenominator = read $ sign ++ num
+             if pdenominator == 0
+                then return $ Number 0 -- TODO: Prevents a div-by-zero error, but not really correct either
+                else return $ Rational $ n % pdenominator
     _ -> pzero
 
 parseComplexNumber :: Parser LispVal
