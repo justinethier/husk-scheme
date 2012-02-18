@@ -2,6 +2,7 @@ v3.5.4
 ------
 
 - Prevent divide-by-zero errors when dividing by a single number, or processing a rational number with 0 as the denominator.
+- Removed unnecessary dependency on /dev/null.
 
 v3.5.3
 ------
