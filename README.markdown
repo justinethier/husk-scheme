@@ -6,99 +6,11 @@ husk may be used as either a stand-alone interpreter or as an extension language
 
 Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy: the core language consists of a small number of fundamental forms which may be used to implement other built-in forms. Scheme is an excellent language for writing small, elegant programs, and may also be used to write scripts or embed scripting functionality within a larger application.
 
-Feature List
-------------
-husk includes most features from R<sup>5</sup>RS, including:
-
-- Primitive data types and their standard forms, including string, char, numbers (integer, rational, floating point, and complex), list, pair, vector, and symbols
-- Proper tail recursion
-- Proper lexical scoping
-- Conditionals: if, case, cond
-- Sequencing: begin
-- Iteration: do
-- Quasi-quotation
-- Delayed Execution: delay, force
-- Binding constructs: let, named let, let*, letrec
-- Assignment operations
-- Basic IO functions
-- Standard library of Scheme functions
-- Read-Eval-Print-Loop (REPL) interpreter, with input driven by Haskeline to provide a rich user experience
-- Full numeric tower: includes support for parsing/storing types (exact, inexact, etc), support for operations on these types as well as mixing types and other constraints from the R<sup>5</sup>RS specification.
-- Continuations: First-class continuations of unlimited extent, call/cc, and call-with-values.
-- Hygienic Macros: High-level macros via define-syntax, let-syntax, and letrec-syntax - *Note this is still somewhat of a work in progress* - Macro support has improve significantly in the last few releases, and it works well enough that almost all derived forms are implemented as macros in our standard library, but you may still run into problems when defining your own macros.
-
-As well as the following approved extensions:
-
-- Hash tables, as specified by [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html)
-
-And the following R<sup>7</sup>RS draft features:
-
-- Nested block comments using `#|` and `|#`
-
 Installation
 ------------
 husk may be installed using [cabal](http://www.haskell.org/cabal/) - just run the following command:
 
     cabal install husk-scheme
-
-Usage
------
-
-The interpreter may be invoked by running it directly from the command line:
-
-    ./huski
-
-Alternatively, you may run an individual scheme program:
-
-    ./huski my-scheme-file.scm
-
-API
----
-
-A Haskell API is also provided to allow you to embed a Scheme interpreter within a Haskell program. The key API modules are:
-
-- `Language.Scheme.Core` - Contains functions to evaluate (execute) Scheme code.
-- `Language.Scheme.Types` - Contains Haskell data types used to represent Scheme primitives.
-
-For more information, run `make doc` to generate API documentation from the source code. Also, see `shell.hs` for a quick example of how you might get started.
-
-Foreign Function Interface
---------------------------
-
-A foreign function interface (FFI) is provided to allow husk to call into arbitrary Haskell code. The interface is currently available via the `load-ffi` function:
-
-    (load-ffi "Language.Scheme.Plugins.CPUTime" "precision" "cpu-time:precision")
-
-`load-ffi` accepts the following string arguments:
-
-- Name of a Haskell module to dynamically load
-- Haskell function to load from that module
-- Name to use for the function after it is loaded into husk
-
-From the previous example, once `cpu-time:precision` is loaded, it may be called directly from husk just like a regular Scheme function:
-
-    (cpu-time:precision)
-
-Any Haskell function loaded via the FFI must be of the following type:
-
-    [LispVal] -> IOThrowsError LispVal
-
-See husk's `Language.Scheme.Plugins.CPUTime` module for an example of how to use the husk FFI.
-
-Development
------------
-
-The following packages are required to build husk scheme:
-
-- [GHC](http://www.haskell.org/ghc/)
-- [cabal-install](http://hackage.haskell.org/trac/hackage/wiki/CabalInstall) may be used to build, deploy, and generate packages for husk.
-- [Haskeline](http://trac.haskell.org/haskeline) - which may be installed using cabal: `cabal install haskeline`
-
-The `tests` directory contains unit tests for much of the scheme code. All tests may be executed via the `make test` command.
-
-The `examples` directory contains example scheme programs.
-
-Patches are welcome! Please send them via a pull request on github. Also, when making code changes please try to add at least one test case for your change, and ensure that the change does not break any existing unit tests.
 
 License
 -------
@@ -112,5 +24,5 @@ husk scheme is developed by [Justin Ethier](http://github.com/justinethier).
 
 The interpreter is based on code from the book [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) written by Jonathan Tang and hosted / maintained by Wikibooks.
 
-If you would like to request changes, report bug fixes, or contact me, visit the project web site at [GitHub](http://github.com/justinethier/husk-scheme).
+For more information, please visit the project web site at [GitHub](http://justinethier.github.com/husk-scheme).
 
