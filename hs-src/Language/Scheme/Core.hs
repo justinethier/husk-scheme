@@ -18,6 +18,9 @@ module Language.Scheme.Core
     , primitiveBindings
     , apply
     , continueEval
+-- TODO: we are starting to get some cruft here with utility functions.
+--       they should be relocated to a new Util module...
+    , escapeBackslashes
     , showBanner
     , substr
     , updateVector
@@ -52,6 +55,12 @@ showBanner = do
   putStrLn " (c) 2010-2012 Justin Ethier                                             "
   putStrLn $ " Version " ++ version ++ " "
   putStrLn "                                                                         "
+
+-- |A utility function to escape backslashes in the given string
+escapeBackslashes :: String -> String
+escapeBackslashes s = foldr step [] s
+  where step x xs  | x == '\\'  = '\\' : '\\' : xs
+                   | otherwise =  x : xs 
 
 
 {- |Evaluate a string containing Scheme code.
