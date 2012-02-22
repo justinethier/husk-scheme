@@ -14,23 +14,30 @@ Macros That Work by William Clinger and Jonathan Rees. During
 transformation, the following components are considered:
 
  - Pattern (part of a rule that matches input)
+
  - Transform (what the macro "expands" into)
+
  - Literal Identifiers (from the macro definition)
+
  - Input (the actual code in the user's program)
+
  - Environments of macro definition and macro use
 
 At a high level, macro transformation is broken down into the following steps:
 
- 0) Walk the input code looking for a macro definition or macro call. If a macro call is found -
- 1) Search for a rule that matches the input.
-    During this process, any pattern variables in the input are loaded into a temporary environment
- 2) If a rule matches,
- 3) Transcribe the rule's template by walking the template, inserting pattern variables 
-    and renaming free identifiers as needed.
- 4) Walk the expanded code, checking for each of the cases from Macros That Work. If a 
-    case is found (such as a macro call or procedure abstraction) then the appropriate 
-    handler will be called to deal with it.
+ (0) Walk the input code looking for a macro definition or macro call. If a macro call is found -
 
+ (1) Search for a rule that matches the input.
+     During this process, any pattern variables in the input are loaded into a temporary environment
+
+ (2) If a rule matches,
+
+ (3) Transcribe the rule's template by walking the template, inserting pattern variables 
+     and renaming free identifiers as needed.
+
+ (4) Walk the expanded code, checking for each of the cases from Macros That Work. If a 
+     case is found (such as a macro call or procedure abstraction) then the appropriate 
+     handler will be called to deal with it.
 -}
 
 module Language.Scheme.Macro
@@ -94,7 +101,7 @@ import Data.Array
 --needToExtendEnv _ = False 
 
 -- |macroEval
---  Search for macro's in the AST, and transform any that are found.
+--  Search for macros in the AST, and transform any that are found.
 macroEval :: Env -> LispVal -> IOThrowsError LispVal
 
 {- Inspect code for macros
