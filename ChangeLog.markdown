@@ -1,3 +1,8 @@
+v3.5.3.2
+--------
+
+- Modified huski to escape baskslashes in the path to the standard library, to guarantee stdlib is loaded when husk is installed on a Windows machine.
+
 v3.5.3.1
 --------
 
