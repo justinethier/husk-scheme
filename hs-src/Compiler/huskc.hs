@@ -132,7 +132,7 @@ process :: String -> String -> Bool -> String -> IO ()
 process inFile outExec dynamic extraArgs = do
   env <- liftIO $ nullEnv
   stdlib <- getDataFileName "stdlib.scm"
-  result <- (runIOThrows $ liftM show $ compileSchemeFile env (stdlib) inFile) -- escapeBackslashes should not be needed, since not evaluating a string containing (load)
+  result <- (runIOThrows $ liftM show $ compileSchemeFile env (stdlib) inFile)
   case result of
    "" -> compileHaskellFile outExec dynamic extraArgs
    _ -> putStrLn result

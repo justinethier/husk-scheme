@@ -40,7 +40,7 @@ import qualified System.Exit
 import System.IO
 
 version :: String
-version = "3.5.3.1"
+version = "3.5.3.2"
 
 showBanner :: IO ()
 showBanner = do
