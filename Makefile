@@ -7,6 +7,10 @@
 # Make file used to build husk and run test cases.
 #
 
+SRC=$(wildcard hs-src/Language/Scheme/*.hs hs-src/Language/Scheme/Macro/*.hs)
+HUSKC_SRC=$(wildcard hs-src/Compiler/*.hs)
+HUSKI_SRC=$(wildcard hs-src/Interpreter/*.hs)
+
 HUSKC = huskc
 HUSKI = huski
 UNIT_TEST_DIR = tests
@@ -15,8 +19,8 @@ husk: huski huskc
 
 # Run a "simple" build using GHC directly 
 # ghc options for profiling: -prof -auto-all -rtsopts 
-huski: hs-src/Interpreter/shell.hs hs-src/Language/Scheme/Core.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Types.hs hs-src/Language/Scheme/Variables.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Macro/Matches.hs hs-src/Language/Scheme/FFI.hs
-	ghc -cpp -Wall --make -package parsec -package ghc -fglasgow-exts -o huski hs-src/Interpreter/shell.hs hs-src/Language/Scheme/Core.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Types.hs hs-src/Language/Scheme/Variables.hs Paths_husk_scheme.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Macro/Matches.hs hs-src/Language/Scheme/FFI.hs
+huski: $(SRC) $(HUSKI_SRC) 
+	ghc -cpp -Wall --make -package parsec -package ghc -fglasgow-exts -o huski $(SRC) $(HUSKI_SRC) 
 
 huskc: hs-src/Compiler/huskc.hs hs-src/Language/Scheme/Core.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Types.hs hs-src/Language/Scheme/Variables.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Macro/Matches.hs hs-src/Language/Scheme/FFI.hs hs-src/Language/Scheme/Compiler.hs
 	ghc -cpp -Wall --make -package parsec -package ghc -fglasgow-exts -o huskc hs-src/Compiler/huskc.hs hs-src/Language/Scheme/Macro.hs hs-src/Language/Scheme/Numerical.hs hs-src/Language/Scheme/Parser.hs hs-src/Language/Scheme/Types.hs hs-src/Language/Scheme/Variables.hs Paths_husk_scheme.hs hs-src/Language/Scheme/Primitives.hs hs-src/Language/Scheme/Macro/Matches.hs hs-src/Language/Scheme/FFI.hs hs-src/Language/Scheme/Compiler.hs
