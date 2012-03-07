@@ -30,7 +30,7 @@ main = do
   putStrLn ""
   putStrLn "!!! This version of huskc is Experimental !!!"
   putStrLn ""
-  putStrLn "It is recommended you consult the issue list prior to use:"
+  putStrLn "You might want to consult the issue list before use:"
   putStrLn "https://github.com/justinethier/husk-scheme/issues"
   putStrLn ""
 
@@ -134,8 +134,8 @@ process inFile outExec dynamic extraArgs = do
   stdlib <- getDataFileName "stdlib.scm"
   result <- (runIOThrows $ liftM show $ compileSchemeFile env (stdlib) inFile)
   case result of
-   "" -> compileHaskellFile outExec dynamic extraArgs
-   _ -> putStrLn result
+   Just errMsg -> putStrLn errMsg
+   _ -> compileHaskellFile outExec dynamic extraArgs
 
 -- |Compile a scheme file to haskell
 compileSchemeFile :: Env -> String -> String -> IOThrowsError LispVal

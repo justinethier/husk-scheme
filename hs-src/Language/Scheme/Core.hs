@@ -81,7 +81,7 @@ evalString env "(* 3 9)"
 @
 -}
 evalString :: Env -> String -> IO String
-evalString env expr = runIOThrows $ liftM show $ (liftThrows $ readExpr expr) >>= meval env (makeNullContinuation env)
+evalString env expr = runIOThrowsREPL $ liftM show $ (liftThrows $ readExpr expr) >>= meval env (makeNullContinuation env)
 
 -- |Evaluate a string and print results to console
 evalAndPrint :: Env -> String -> IO ()

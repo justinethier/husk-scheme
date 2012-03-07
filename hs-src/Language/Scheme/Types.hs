@@ -95,12 +95,12 @@ liftThrows (Right val) = return val
 -- |Execute an IO action and return result or an error message.
 --  This is intended for use by a REPL, where a result is always
 --  needed regardless of type.
-runIOThrows :: IOThrowsError String -> IO String
-runIOThrows action = runErrorT (trapError action) >>= return . extractValue
+runIOThrowsREPL :: IOThrowsError String -> IO String
+runIOThrowsREPL action = runErrorT (trapError action) >>= return . extractValue
 
 -- |Execute an IO action and return error or Nothing if no error was thrown.
-runIOThrows' :: IOThrowsError String -> IO (Maybe String)
-runIOThrows' action = do
+runIOThrows :: IOThrowsError String -> IO (Maybe String)
+runIOThrows action = do
     runState <- runErrorT action
     case runState of
         Left err -> return $ Just (show err)

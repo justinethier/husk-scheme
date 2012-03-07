@@ -39,7 +39,7 @@ runOne args = do
                                    [((varNamespace, "args"),
                                     List $ map String $ drop 1 args)]
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" -- Load standard library
-  result <- (runIOThrows' $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
+  result <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
   case result of
     Just errMsg -> putStrLn errMsg
     _  -> do 
@@ -47,7 +47,7 @@ runOne args = do
       alreadyDefined <- liftIO $ isBound env "main"
       let argv = List $ map String $ args
       when alreadyDefined (do 
-        mainResult <- (runIOThrows' $ liftM show $ evalLisp env (List [Atom "main", List [Atom "quote", argv]]))
+        mainResult <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "main", List [Atom "quote", argv]]))
         case mainResult of
           Just errMsg -> putStrLn errMsg
           _  -> return ())
