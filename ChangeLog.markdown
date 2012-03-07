@@ -1,3 +1,10 @@
+v3.5.4
+--------
+
+- Enhanced `huski` and `huskc` to print errors to console when a runtime exception occurs,
+and to not print any results to console unless the user calls and I/O function
+such as `write` or `display`.
+
 v3.5.3.2
 --------
 
