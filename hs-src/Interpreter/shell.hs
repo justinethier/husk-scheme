@@ -16,6 +16,7 @@ import Paths_husk_scheme
 import Language.Scheme.Core      -- Scheme Interpreter
 import Language.Scheme.Types     -- Scheme data types
 import Language.Scheme.Variables -- Scheme variable operations
+--import Control.Monad (when)
 import Control.Monad.Error
 import System.IO
 import System.Environment
@@ -38,21 +39,18 @@ runOne args = do
                                    [((varNamespace, "args"),
                                     List $ map String $ drop 1 args)]
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" -- Load standard library
-  result <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
+  result <- (runIOThrows' $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
   case result of
-    "" -> putStr result
-    _  -> putStrLn result 
-
-  -- Call into (main) if it exists...
-  alreadyDefined <- liftIO $ isBound env "main"
-  let argv = List $ map String $ args
-  if alreadyDefined
-     then do 
-            mainResult <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "main", List [Atom "quote", argv]]))
-            case mainResult of
-              "" -> putStr mainResult
-              _  -> putStrLn mainResult
-     else putStr "" 
+    Just errMsg -> putStrLn errMsg
+    _  -> do 
+      -- Call into (main) if it exists...
+      alreadyDefined <- liftIO $ isBound env "main"
+      let argv = List $ map String $ args
+      when alreadyDefined (do 
+        mainResult <- (runIOThrows' $ liftM show $ evalLisp env (List [Atom "main", List [Atom "quote", argv]]))
+        case mainResult of
+          Just errMsg -> putStrLn errMsg
+          _  -> return ())
 
 runRepl :: IO ()
 runRepl = do
