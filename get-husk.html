@@ -59,6 +59,7 @@ Maintainer  : github.com/justinethier
             <p>
                 The easiest way to install husk is via <a href="http://www.haskell.org/cabal/">Cabal</a>:
                 {% highlight console %}
+cabal update
 cabal install husk-scheme
                 {% endhighlight %}
             </p>
@@ -83,13 +84,13 @@ cabal install husk-scheme
 
                 Once husk has been downloaded and dependencies have been met, the following commands may be used to build, install, and optionally test the husk executable and libraries:
                 {% highlight console %}
-make clean
+# Build and Install husk to your HOME directory
+make all
+make install
 
-# Install husk to your HOME directory
-make dist
-
-# An optional step to run all the built-in unit tests
+# Optional steps to run all the built-in unit tests
 make test
+make testc
                 {% endhighlight %}
             </p>
 		</div>
