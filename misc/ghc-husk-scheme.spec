@@ -1,38 +1,45 @@
-# Copyright (c) 2011 Justin Ethier
+# Copyright (c) 2012 Justin Ethier
 # This file and all modifications and additions to the pristine
 # package are under the same license as the package itself.
 #
-# Please submit bugfixes or comments Justin Ethier via https://github.com/justinethier/husk-scheme
+# Please submit bugfixes or comments to Justin Ethier via https://github.com/justinethier/husk-scheme
  
 # norootforbuild
  
 %define pkg_name husk-scheme
 %define ghc_version %(ghc --numeric-version)
- 
-%define pkg_libdir %{_libdir}/ghc-%{ghc_version}/%{pkg_name}-%{version}
-%define pkg_docdir %{_datadir}/doc/ghc/libraries/%{pkg_name}-%{version}
+
+%global common_summary An R5RS-compatible Scheme written in Haskell
+
+%global common_description An R5RS Scheme interpreter, compiler, and library written in Haskell. \
+Provides advanced features including continuations, \
+non-hygienic macros, a Haskell FFI, and the full numeric tower.\
+
+#%define pkg_libdir %{_libdir}/ghc-%{ghc_version}/%{pkg_name}-%{version}
+#%define pkg_docdir %{_datadir}/doc/ghc/libraries/%{pkg_name}-%{version}
  
 # ghc does not emit debug information
 %define debug_package %{nil}
  
 Name:           ghc-%{pkg_name}
 Version:        3.4
-Release:        0
-Summary:        A dialect of R5RS Scheme written in Haskell.
+Release:        1%{?dist}
+Summary:        %{common_summary}
 Group:          Compilers/Interpreters, Language
 License:        MIT
-URL:            https://github.com/justinethier/husk-scheme
-Source0:        %{pkg_name}/%{version}/%{pkg_name}-%{version}.tar.bz2
+URL:            http://hackage.haskell.org/package/%{pkg_name}
+Source0:        http://hackage.haskell.org/packages/archive/%{pkg_name}/%{version}/%{pkg_name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
-BuildRequires:  ghc, ghc-doc #, ghc-prof
+ExclusiveArch:  %{ghc_arches}
+BuildRequires:  ghc-Cabal-devel
+BuildRequires:  ghc-rpm-macros
+#?? BuildRequires:  hscolour
+BuildRequires:  ghc, ghc-doc, ghc-prof
 BuildRequires:  ghc-parsec-devel ghc-haskeline-devel ghc-ghc-paths-devel
 BuildRequires:  ghc-ghc-devel
 
 %description
-A R5RS Scheme interpreter and library written in Haskell. 
-Provides advanced features including continuations, 
-non-hygienic macros, a Haskell FFI, and the full numeric tower.
- 
+%{common_description}
  
 %package devel
 Summary:        Haskell %{pkg_name} library
@@ -43,7 +50,8 @@ Requires(preun): ghc = %{ghc_version}
 Requires:       ghc, ghc-doc, ghc-parsec-devel ghc-haskeline-devel ghc-ghc-paths-devel, ghc-ghc-devel
 
 %description devel
-A R5RS Scheme interpreter and library written in Haskell. 
+%{common_description}
+
 Provides advanced features including continuations, 
 non-hygienic macros, a Haskell FFI, and the full numeric tower.
  
@@ -60,9 +68,7 @@ Requires(postun): ghc-doc = %{ghc_version}
 Requires:       ghc, ghc-doc, ghc-parsec-devel ghc-haskeline-devel ghc-ghc-paths-devel, ghc-ghc-devel
  
 %description doc
-A R5RS Scheme interpreter and library written in Haskell. 
-Provides advanced features including continuations, 
-non-hygienic macros, a Haskell FFI, and the full numeric tower.
+%{common_description}
  
 This package contains development documentation files for the %{name} library.
  
@@ -75,9 +81,7 @@ Requires:       ghc-prof = %{ghc_version}
 Requires:       ghc, ghc-doc, ghc-parsec-devel ghc-haskeline-devel ghc-ghc-paths-devel, ghc-ghc-devel
  
 %description prof
-A R5RS Scheme interpreter and library written in Haskell. 
-Provides advanced features including continuations, 
-non-hygienic macros, a Haskell FFI, and the full numeric tower.
+%{common_description}
  
 This package contains profiling libraries for %{name}.
  
