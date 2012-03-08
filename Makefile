@@ -30,10 +30,9 @@ doc:
 	# Create API documentation
 	cabal haddock 
 
-# TODO:
 # Build an RPM
-#rpm:
-#	rpmbuild
+rpm:
+	rpmbuild -ba misc/ghc-husk-scheme.spec
 
 # Run all unit tests
 test: stdlib.scm

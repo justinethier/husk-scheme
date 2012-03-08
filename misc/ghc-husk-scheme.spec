@@ -15,7 +15,7 @@ Provides advanced features including continuations, \
 non-hygienic macros, a Haskell FFI, and the full numeric tower.\
  
 # ghc does not emit debug information
-%define debug_package %{nil}
+#% define debug_package % {nil}
  
 Name:           ghc-%{pkg_name}
 Version:        3.5.3.2
