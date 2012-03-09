@@ -27,14 +27,12 @@ License:        MIT
 URL:            http://hackage.haskell.org/package/%{pkg_name}
 Source0:        http://hackage.haskell.org/packages/archive/%{pkg_name}/%{version}/%{pkg_name}-%{version}.tar.gz
 ExclusiveArch:  %{ghc_arches}
-
-# TODO: cut all of these over to -prof versions instead of -devel, if possible.
-# see guidelines at: https://fedoraproject.org/wiki/Packaging:Haskell
+# See guidelines at: https://fedoraproject.org/wiki/Packaging:Haskell
 BuildRequires:  ghc-Cabal-devel
 BuildRequires:  ghc-rpm-macros
 BuildRequires:  ghc, ghc-prof
-BuildRequires:  ghc-parsec-devel, ghc-haskeline-devel, ghc-ghc-paths-devel
-BuildRequires:  ghc-ghc-devel, ghc-mtl-prof, ghc-transformers-prof
+BuildRequires:  ghc-parsec-prof, ghc-haskeline-prof, ghc-ghc-paths-prof
+BuildRequires:  ghc-ghc-prof, ghc-mtl-prof, ghc-transformers-prof
 #?? BuildRequires:  hscolour
 
 %description
