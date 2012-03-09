@@ -4,19 +4,19 @@
 #
 # Please submit bugfixes or comments to Justin Ethier via https://github.com/justinethier/husk-scheme
  
-# norootforbuild
- 
-%define pkg_name husk-scheme
+%global pkg_name husk-scheme
 
 %global common_summary An R5RS-compatible Scheme written in Haskell
 
 %global common_description An R5RS Scheme interpreter, compiler, and library written in Haskell. \
-Provides advanced features including continuations, \
-non-hygienic macros, a Haskell FFI, and the full numeric tower.\
- 
-# ghc does not emit debug information
-#% define debug_package % {nil}
- 
+Advanced features are provided including continuations, \
+non-hygienic macros, a Haskell FFI, and the full numeric tower.
+
+%global pkg_libdir %{_libdir}/ghc-%{ghc_version}/%{pkg_name}-%{version}
+%global pkg_docdir %{_docdir}/ghc/libraries/%{pkg_name}
+# Debuginfo packages should not be built for GHC binaries, since they will be empty anyway
+%global debug_package %{nil}
+
 Name:           ghc-%{pkg_name}
 Version:        3.5.3.2
 Release:        1%{?dist}
@@ -26,53 +26,60 @@ Group:          Compilers/Interpreters, Language
 License:        MIT
 URL:            http://hackage.haskell.org/package/%{pkg_name}
 Source0:        http://hackage.haskell.org/packages/archive/%{pkg_name}/%{version}/%{pkg_name}-%{version}.tar.gz
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
+#BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 ExclusiveArch:  %{ghc_arches}
+
+# TODO: cut all of these over to -prof versions instead of -devel, if possible.
+# see guidelines at: https://fedoraproject.org/wiki/Packaging:Haskell
 BuildRequires:  ghc-Cabal-devel
 BuildRequires:  ghc-rpm-macros
-#?? BuildRequires:  hscolour
-BuildRequires:  ghc, ghc-doc, ghc-prof
-BuildRequires:  ghc-parsec-devel ghc-haskeline-devel ghc-ghc-paths-devel
+BuildRequires:  ghc, ghc-prof
+BuildRequires:  ghc-parsec-devel, ghc-haskeline-devel, ghc-ghc-paths-devel
 BuildRequires:  ghc-ghc-devel
+#, ghc-mtl-prof, ghc-transformers-prof
+#?? BuildRequires:  hscolour
 
 %description
 %{common_description}
  
 
 %prep
-%setup -q
+#%setup -q
+%setup -q -n %{pkg_name}-%{version}
 
 
 %build
 %ghc_lib_build
-
+%cabal haddock
 
 %install
 %ghc_lib_install
 
-
-# library subpackage
-%ghc_package
-
-%ghc_description
-
-
-# devel subpackage
-%ghc_devel_package
-
-%ghc_devel_description
-
-
-%ghc_devel_post_postun
-
-
-%files
-%doc LICENSE
-%attr(755,root,root) %{_bindir}/%{name}
-
-
-%ghc_files
-
+# TODO: add these back? If so, macros require a preceding percentage char...
+#
+## library subpackage
+# ghc_package
+## ghc_lib_package
+#
+# ghc_description
+#
+#
+## devel subpackage
+# ghc_devel_package
+#
+# ghc_devel_description
+#
+#
+# ghc_devel_post_postun
+#
+#
+# files
+# doc LICENSE
+# attr(755,root,root) %{_bindir}/%{name}
+#
+#
+# ghc_files
+#
 
 %changelog
 * Thu Mar  8 2012 Fedora Haskell SIG <haskell-devel@lists.fedoraproject.org>
