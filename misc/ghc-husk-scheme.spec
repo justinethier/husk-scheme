@@ -22,11 +22,10 @@ Version:        3.5.3.2
 Release:        1%{?dist}
 Summary:        %{common_summary}
 
-Group:          Compilers/Interpreters, Language
+Group:          System Environment/Libraries
 License:        MIT
 URL:            http://hackage.haskell.org/package/%{pkg_name}
 Source0:        http://hackage.haskell.org/packages/archive/%{pkg_name}/%{version}/%{pkg_name}-%{version}.tar.gz
-#BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 ExclusiveArch:  %{ghc_arches}
 
 # TODO: cut all of these over to -prof versions instead of -devel, if possible.
@@ -35,8 +34,7 @@ BuildRequires:  ghc-Cabal-devel
 BuildRequires:  ghc-rpm-macros
 BuildRequires:  ghc, ghc-prof
 BuildRequires:  ghc-parsec-devel, ghc-haskeline-devel, ghc-ghc-paths-devel
-BuildRequires:  ghc-ghc-devel
-#, ghc-mtl-prof, ghc-transformers-prof
+BuildRequires:  ghc-ghc-devel, ghc-mtl-prof, ghc-transformers-prof
 #?? BuildRequires:  hscolour
 
 %description
@@ -44,16 +42,17 @@ BuildRequires:  ghc-ghc-devel
  
 
 %prep
-#%setup -q
 %setup -q -n %{pkg_name}-%{version}
 
 
 %build
 %ghc_lib_build
 %cabal haddock
+#ghc_gen_scripts
 
 %install
 %ghc_lib_install
+#ghc_install_scripts
 
 # TODO: add these back? If so, macros require a preceding percentage char...
 #
@@ -73,9 +72,9 @@ BuildRequires:  ghc-ghc-devel
 # ghc_devel_post_postun
 #
 #
-# files
-# doc LICENSE
-# attr(755,root,root) %{_bindir}/%{name}
+%files
+%doc LICENSE
+%attr(755,root,root) %{_bindir}/%{name}
 #
 #
 # ghc_files
