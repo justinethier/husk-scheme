@@ -11,7 +11,7 @@ SRC=$(wildcard hs-src/Language/Scheme/*.hs hs-src/Language/Scheme/Macro/*.hs)
 HUSKC_SRC=$(wildcard hs-src/Compiler/*.hs)
 HUSKI_SRC=$(wildcard hs-src/Interpreter/*.hs)
 
-GHCOPTS=-cpp -Wall --make -package parsec -package ghc -fglasgow-exts
+GHCOPTS=-Wall --make -package parsec -package ghc
 
 HUSKC = huskc
 HUSKI = huski

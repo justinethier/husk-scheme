@@ -1,3 +1,5 @@
+{-# Language ExistentialQuantification #-}
+
 {- |
 Module      : Language.Scheme.Primitives
 Copyright   : Justin Ethier
