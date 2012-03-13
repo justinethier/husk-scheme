@@ -24,6 +24,7 @@ Source-Repository head
 
 Library
   Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc, ghc-paths
+  Extensions:      ExistentialQuantification
   Hs-Source-Dirs:  hs-src
   Exposed-Modules: Language.Scheme.Core
                    Language.Scheme.Types
@@ -40,10 +41,12 @@ Library
 
 Executable         huski
   Build-Depends:   husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc, ghc-paths
+  Extensions:      ExistentialQuantification
   Main-is:         shell.hs
   Hs-Source-Dirs:  hs-src/Interpreter
 
 Executable huskc
   Build-Depends: husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc, ghc-paths, process, filepath
+  Extensions:      ExistentialQuantification
   Main-is: huskc.hs
   Hs-Source-Dirs: hs-src/Compiler
