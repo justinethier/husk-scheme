@@ -302,6 +302,10 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
             _ -> cpsUnquoteList e c (head unEvaled) (Just [List (tail unEvaled), List $ acc ++ [val] ])
         cpsUnquoteFld _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteFld"
 
+eval env cont args@(List [Atom "expand" , _body]) = do
+ -- TODO: if bound
+  Language.Scheme.Macro.macroEval env _body >>= continueEval env cont
+ 
 -- A rudimentary implementation of let-syntax
 eval env cont args@(List (Atom "let-syntax" : List _bindings : _body)) = do
  bound <- liftIO $ isRecBound env "let-syntax"
