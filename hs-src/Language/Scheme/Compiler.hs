@@ -212,6 +212,10 @@ compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astT
 --
 compile _ (List [Atom "quasiquote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
 
+compile env args@(List [Atom "expand",  _body]) copts = do
+  -- TODO: check if expand has been rebound?
+  val <- Language.Scheme.Macro.macroEval env _body
+  compileScalar (" return $ " ++ astToHaskellStr val) copts
 
 compile env args@(List (Atom "let-syntax" : List _bindings : _body)) copts = do
   -- TODO: check if let-syntax has been rebound?
