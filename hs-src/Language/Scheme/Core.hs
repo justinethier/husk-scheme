@@ -304,7 +304,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
 
 -- A rudimentary implementation of let-syntax
 eval env cont args@(List (Atom "let-syntax" : List _bindings : _body)) = do
- bound <- liftIO $ isRecBound env "define-syntax"
+ bound <- liftIO $ isRecBound env "let-syntax"
  if bound
   then prepareApply env cont args -- if bound to a variable in this scope; call into it
   else do 
@@ -317,7 +317,7 @@ eval env cont args@(List (Atom "let-syntax" : List _bindings : _body)) = do
      e -> continueEval bodyEnv cont e
 
 eval env cont args@(List (Atom "letrec-syntax" : List _bindings : _body)) = do
- bound <- liftIO $ isRecBound env "define-syntax"
+ bound <- liftIO $ isRecBound env "letrec-syntax"
  if bound
   then prepareApply env cont args -- if bound to a variable in this scope; call into it
   else do 
