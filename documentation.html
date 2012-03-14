@@ -43,6 +43,7 @@ Maintainer  : github.com/justinethier
             <div><a href="#section-lang-ref">Scheme Language Reference</a></div>
             <div><a href="#section-api">Haskell API</a></div>
             <div><a href="#section-ffi">Foreign Function Interface</a></div>
+            <div><a href="#section-macros">Macro Debugging</a></div>
         </div>
 
         <br />
@@ -116,8 +117,8 @@ The goal of husk is to implement the full R<sup>5</sup>RS Scheme language, excep
 A Haskell API is provided to allow you to embed a Scheme interpreter within a Haskell program. The key API modules are:
 
 <ul>
-    <li><strong>Language.Scheme.Core</strong> - Contains functions to evaluate (execute) Scheme code</li>
-    <li><strong>Language.Scheme.Types</strong> - Contains Haskell data types used to represent Scheme primitives</li>
+    <li><a href="http://hackage.haskell.org/packages/archive/husk-scheme/latest/doc/html/Language-Scheme-Core.html">Language.Scheme.Core</a> - Contains functions to evaluate (execute) Scheme code</li>
+    <li><a href="http://hackage.haskell.org/packages/archive/husk-scheme/latest/doc/html/Language-Scheme-Types.html">Language.Scheme.Types</a> - Contains Haskell data types used to represent Scheme primitives</li>
 </ul>
 
 The full API documentation is available online as part of <a href="http://hackage.haskell.org/package/husk-scheme">the latest release on Hackage</a>. You may also run <strong>make doc</strong> to generate API documentation directly from the source code. 
@@ -156,7 +157,27 @@ Any Haskell function loaded via the FFI must be of the following type:
     [LispVal] -> IOThrowsError LispVal
                 {% endhighlight %}
 
-See husk's <strong>Language.Scheme.Plugins.CPUTime</strong> module for an example of how to use the husk FFI.
+See husk's <a href="http://hackage.haskell.org/packages/archive/husk-scheme/3.5.2.1/doc/html/Language-Scheme-Plugins-CPUTime.html">Language.Scheme.Plugins.CPUTime</a> module for an example of how to use the husk FFI.
+</p>
+
+<h2 id="section-macros" class="title">Macro Debugging</h2>
+<p>
+A non-standard special form <strong>expand</strong> has been provided to allow you to see the expanded code for a macro. For example, we can see that the <strong>let*</strong> expression
+
+                {% highlight scheme %}
+(expand 
+  (let* ((x 42)
+         (y x))
+    y))
+                {% endhighlight %}
+
+is transformed into
+
+                {% highlight scheme %}
+((lambda (x30) ((lambda (y34) ((lambda () y34))) x30)) 42)
+                {% endhighlight %}
+                 
+Note that any variables in the expanded code are renamed by husk's macro hygiene algorithm.
 </p>
 		</div>
 	</div>
