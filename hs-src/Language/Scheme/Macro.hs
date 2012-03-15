@@ -100,9 +100,11 @@ import Data.Array
 --needToExtendEnv (List [Atom "define-syntax", Atom _, (List (Atom "syntax-rules" : (List _ : _)))]) = True
 --needToExtendEnv _ = False 
 
--- |macroEval
---  Search for macros in the AST, and transform any that are found.
-macroEval :: Env -> LispVal -> IOThrowsError LispVal
+-- |Searches for macros in the AST and transforms any that are found.
+macroEval :: Env        -- ^Current environment for the AST
+          -> LispVal    -- ^AST to search
+          -> IOThrowsError LispVal -- ^Transformed AST containing expanded
+                                   --  macros if any were found
 
 {- Inspect code for macros
  -
@@ -553,7 +555,10 @@ identifierMatches defEnv useEnv ident = do
 --  recursively expanding macro calls as they are encountered.
 --
 -- It is essentially a wrapper for the function walkExpanded which is internal to this module.
-expand :: Env -> Bool -> LispVal -> IOThrowsError LispVal
+expand :: Env       -- ^Environment of the code being expanded
+       -> Bool      -- ^True if the macro was defined within another macro
+       -> LispVal   -- ^Code to expand
+       -> IOThrowsError LispVal -- ^Expanded code
 expand env dim code = do
   renameEnv <- liftIO $ nullEnv
   cleanupEnv <- liftIO $ nullEnv
@@ -567,7 +572,7 @@ expand env dim code = do
 
   walkExpanded env env env renameEnv cleanupEnv dim True False (List []) code
 
--- |Walk expanded code per Clinger
+-- |Walk expanded code per Clinger's algorithm from Macros That Work
 walkExpanded :: Env -> Env -> Env -> Env -> Env -> Bool -> Bool -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
 walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (List l : ls)) = do
   lst <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQuoted (List []) (List l)
