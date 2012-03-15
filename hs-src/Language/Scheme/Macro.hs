@@ -15,7 +15,7 @@ transformation, the following components are considered:
 
  - Pattern (part of a rule that matches input)
 
- - Transform (what the macro "expands" into)
+ - Transform (what the macro expands into)
 
  - Literal Identifiers (from the macro definition)
 
