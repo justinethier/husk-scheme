@@ -126,13 +126,13 @@ updateContEnv _ val = do
 -}
 
 {- |A support function for eval; eval calls into this function instead of 
- -  returning values directly. continueEval then uses the continuation 
- -  argument to manage program control flow.
- - -}
+    returning values directly. continueEval then uses the continuation 
+    argument to manage program control flow.
+ -}
 continueEval :: Env     -- ^ Current environment
              -> LispVal -- ^ Current continuation
              -> LispVal -- ^ Value of previous computation
-             -> IOThrowsError LispVal
+             -> IOThrowsError LispVal -- ^ Final value of computation
 
 {- Passing a higher-order function as the continuation; just evaluate it. This is
  - done to enable an 'eval' function to be broken up into multiple sub-functions,

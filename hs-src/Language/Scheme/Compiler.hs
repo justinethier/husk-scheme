@@ -11,7 +11,7 @@ This module contains an experimental Scheme to Haskell compiler.
 
 The compiler performs the following transformations:
 
-Scheme AST (LispVal) => Haskell AST (HaskAST) => Compiled Code (String)
+> Scheme AST (LispVal) => Haskell AST (HaskAST) => Compiled Code (String)
 
 The GHC compiler is then used to create a native executable.
 
