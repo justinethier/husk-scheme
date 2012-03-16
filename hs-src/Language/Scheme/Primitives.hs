@@ -9,7 +9,12 @@ Maintainer  : github.com/justinethier
 Stability   : experimental
 Portability : portable
 
-This module contains Primitive functions written in Haskell.
+This module contains primitive functions written in Haskell.
+Most of these map directly to an equivalent Scheme function.
+
+Primitives are divided up into two main categories - pure
+functions and impure ones that execute within the IO monad.
+
 -}
 
 module Language.Scheme.Primitives where
@@ -120,13 +125,13 @@ readAll [String filename] = liftM List $ load filename
 readAll [] = throwError $ NumArgs 1 []
 readAll args@(_ : _) = throwError $ NumArgs 1 args
 
--- Version of gensym that can be conveniently called from Haskell
+-- |Version of gensym that can be conveniently called from Haskell.
 _gensym :: String -> IOThrowsError LispVal
 _gensym prefix = do
     u <- liftIO $ newUnique
     return $ Atom $ prefix ++ (show $ Number $ toInteger $ hashUnique u)
 
--- Non-standard function, generate a (reasonably) unique symbol given an optional prefix
+-- |Non-standard function to generate a (reasonably) unique symbol given an optional prefix.
 gensym :: [LispVal] -> IOThrowsError LispVal
 gensym [String prefix] = _gensym prefix
 gensym [] = _gensym " g"
