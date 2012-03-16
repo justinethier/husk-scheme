@@ -12,19 +12,20 @@ This module contains Core functionality, primarily Scheme expression evaluation.
 
 module Language.Scheme.Core
     (
+    -- * Scheme code evaluation
       evalLisp
     , evalString
     , evalAndPrint
-    , primitiveBindings
     , apply
     , continueEval
--- TODO: we are starting to get some cruft here with utility functions.
---       they should be relocated to a new Util module...
+    -- * Core data
+    , primitiveBindings
+    , version
+    -- * Utility functions
     , escapeBackslashes
     , showBanner
     , substr
     , updateVector
-    , version
     ) where
 import qualified Language.Scheme.FFI
 import qualified Language.Scheme.Macro
