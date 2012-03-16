@@ -17,12 +17,85 @@ functions and impure ones that execute within the IO monad.
 
 -}
 
-module Language.Scheme.Primitives where
+module Language.Scheme.Primitives (
+ -- * IO Primitives
+ -- ** Standard functions
+   makePort 
+ , closePort
+ , currentOutputPort 
+ , currentInputPort 
+ , isOutputPort 
+ , isInputPort
+ , readProc 
+ , readCharProc 
+ , writeProc 
+ , writeCharProc
+ , readContents
+ , load
+ , readAll
+ -- ** Symbol generation
+ , _gensym
+ , gensym
+ -- * Pure functions
+ , car
+ , cdr 
+ , cons
+ , equal 
+ , buildVector 
+ , vectorLength 
+ , vectorRef 
+ , vectorToList 
+ , listToVector
+ , makeVector
+ , hashTblExists 
+ , hashTblRef
+ , hashTblSize 
+ , hashTbl2List
+ , hashTblKeys
+ , hashTblValues 
+ , hashTblCopy
+ , hashTblMake
+ , buildString
+ , makeString
+ , doMakeString
+ , stringLength
+ , stringRef
+ , substring
+ , stringCIEquals 
+ , stringCIBoolBinop 
+ , stringAppend 
+ , stringToNumber
+ , stringToList 
+ , listToString
+ , stringCopy 
+ , symbol2String 
+ , string2Symbol
+ --data Unpacker = forall a . Eq a => AnyUnpacker (LispVal -> ThrowsError a)
+ , unpackEquals 
+ , boolBinop 
+ , unaryOp 
+ , strBoolBinop 
+ , boolBoolBinop
+ , unpackStr 
+ , unpackBool
+ -- ** Predicates
+ , isHashTbl
+ , isChar 
+ , isString 
+ , isBoolean 
+ , isDottedList 
+ , isProcedure 
+ , isList 
+ , isVector 
+ , isNull 
+ , isEOFObject 
+ , isSymbol 
+ ) where
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Types
 import Control.Monad.Error
-import Data.Char
+import Data.Char hiding (isSymbol)
 import Data.Array
 import Data.Unique
 import qualified Data.Map
