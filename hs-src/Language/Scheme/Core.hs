@@ -307,7 +307,7 @@ eval env cont args@(List [Atom "expand" , _body]) = do
  bound <- liftIO $ isRecBound env "expand"
  if bound
   then prepareApply env cont args -- if bound to a variable in this scope; call into it
-  else Language.Scheme.Macro.macroEval env _body >>= continueEval env cont
+  else Language.Scheme.Macro.expand env False _body >>= continueEval env cont
  
 -- A rudimentary implementation of let-syntax
 eval env cont args@(List (Atom "let-syntax" : List _bindings : _body)) = do
