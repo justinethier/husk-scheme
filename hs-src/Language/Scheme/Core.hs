@@ -39,9 +39,11 @@ import qualified Data.Map
 import qualified System.Exit
 import System.IO
 
+-- |husk version number
 version :: String
 version = "3.5.4"
 
+-- |A utility function to display the husk console banner
 showBanner :: IO ()
 showBanner = do
   putStrLn "  _               _        __                 _                          "
@@ -768,7 +770,7 @@ apply _ func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List
 
 {- |Environment containing the primitive forms that are built into the Scheme language. Note that this only includes
 forms that are implemented in Haskell; derived forms implemented in Scheme (such as let, list, etc) are available
-in the standard library which must be pulled into the environment using (load). -}
+in the standard library which must be pulled into the environment using /(load)/. -}
 primitiveBindings :: IO Env
 primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrimitives
                                                ++ map (domakeFunc EvalFunc) evalFunctions

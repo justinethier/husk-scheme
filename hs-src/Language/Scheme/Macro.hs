@@ -25,17 +25,17 @@ transformation, the following components are considered:
 
 At a high level, macro transformation is broken down into the following steps:
 
- (0) Walk the input code looking for a macro definition or macro call. If a macro call is found -
+ (0) Walk the input code looking for a macro definition or macro call.
+ 
+ (1) If a macro call is found, search for a rule that matches the input.
+     During this process any pattern variables in the input are loaded 
+     into a temporary environment
 
- (1) Search for a rule that matches the input.
-     During this process, any pattern variables in the input are loaded into a temporary environment
+ (2) If a rule matches, transcribe the rule's template by walking the 
+     template, inserting pattern variables and renaming free identifiers 
+     as needed.
 
- (2) If a rule matches,
-
- (3) Transcribe the rule's template by walking the template, inserting pattern variables 
-     and renaming free identifiers as needed.
-
- (4) Walk the expanded code, checking for each of the cases from Macros That Work. If a 
+ (3) Walk the expanded code, checking for each of the cases from Macros That Work. If a 
      case is found (such as a macro call or procedure abstraction) then the appropriate 
      handler will be called to deal with it.
 -}
