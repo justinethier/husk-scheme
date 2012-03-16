@@ -12,26 +12,23 @@ Portability : portable
 This module contains primitive functions written in Haskell.
 Most of these map directly to an equivalent Scheme function.
 
-Primitives are divided up into two main categories - pure
-functions and impure ones that execute within the IO monad.
-
 -}
 
 module Language.Scheme.Primitives (
  -- * Pure functions
- -- ** Standard
+ -- ** List
    car
  , cdr 
  , cons
  , equal 
- -- ** Vectors
+ -- ** Vector
  , buildVector 
  , vectorLength 
  , vectorRef 
  , vectorToList 
  , listToVector
  , makeVector
- -- ** Hash tables
+ -- ** Hash Table
  , hashTblExists 
  , hashTblRef
  , hashTblSize 
@@ -40,7 +37,7 @@ module Language.Scheme.Primitives (
  , hashTblValues 
  , hashTblCopy
  , hashTblMake
- -- ** Strings
+ -- ** String
  , buildString
  , makeString
  , doMakeString
@@ -57,7 +54,7 @@ module Language.Scheme.Primitives (
  , symbol2String 
  , string2Symbol
  --data Unpacker = forall a . Eq a => AnyUnpacker (LispVal -> ThrowsError a)
- -- ** Predicates
+ -- ** Predicate
  , isHashTbl
  , isChar 
  , isString 
@@ -78,7 +75,9 @@ module Language.Scheme.Primitives (
  , unpackStr 
  , unpackBool
  -- * Impure functions
- -- ** Standard
+ -- |All of these functions must be executed within the IO monad.
+ 
+ -- ** Input / Output 
  , makePort 
  , closePort
  , currentOutputPort 
@@ -93,8 +92,8 @@ module Language.Scheme.Primitives (
  , load
  , readAll
  -- ** Symbol generation
- , _gensym
  , gensym
+ , _gensym
  ) where
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
@@ -209,7 +208,8 @@ _gensym prefix = do
     u <- liftIO $ newUnique
     return $ Atom $ prefix ++ (show $ Number $ toInteger $ hashUnique u)
 
--- |Non-standard function to generate a (reasonably) unique symbol given an optional prefix.
+-- |Generate a (reasonably) unique symbol, given an optional prefix.
+--  This function is provided even though it is not part of R5RS.
 gensym :: [LispVal] -> IOThrowsError LispVal
 gensym [String prefix] = _gensym prefix
 gensym [] = _gensym " g"
