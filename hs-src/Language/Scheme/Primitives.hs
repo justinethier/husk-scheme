@@ -18,35 +18,20 @@ functions and impure ones that execute within the IO monad.
 -}
 
 module Language.Scheme.Primitives (
- -- * IO Primitives
- -- ** Standard functions
-   makePort 
- , closePort
- , currentOutputPort 
- , currentInputPort 
- , isOutputPort 
- , isInputPort
- , readProc 
- , readCharProc 
- , writeProc 
- , writeCharProc
- , readContents
- , load
- , readAll
- -- ** Symbol generation
- , _gensym
- , gensym
  -- * Pure functions
- , car
+ -- ** Standard
+   car
  , cdr 
  , cons
  , equal 
+ -- ** Vectors
  , buildVector 
  , vectorLength 
  , vectorRef 
  , vectorToList 
  , listToVector
  , makeVector
+ -- ** Hash tables
  , hashTblExists 
  , hashTblRef
  , hashTblSize 
@@ -55,6 +40,7 @@ module Language.Scheme.Primitives (
  , hashTblValues 
  , hashTblCopy
  , hashTblMake
+ -- ** Strings
  , buildString
  , makeString
  , doMakeString
@@ -71,13 +57,6 @@ module Language.Scheme.Primitives (
  , symbol2String 
  , string2Symbol
  --data Unpacker = forall a . Eq a => AnyUnpacker (LispVal -> ThrowsError a)
- , unpackEquals 
- , boolBinop 
- , unaryOp 
- , strBoolBinop 
- , boolBoolBinop
- , unpackStr 
- , unpackBool
  -- ** Predicates
  , isHashTbl
  , isChar 
@@ -90,6 +69,32 @@ module Language.Scheme.Primitives (
  , isNull 
  , isEOFObject 
  , isSymbol 
+ -- ** Utility functions
+ , unpackEquals 
+ , boolBinop 
+ , unaryOp 
+ , strBoolBinop 
+ , boolBoolBinop
+ , unpackStr 
+ , unpackBool
+ -- * Impure functions
+ -- ** Standard
+ , makePort 
+ , closePort
+ , currentOutputPort 
+ , currentInputPort 
+ , isOutputPort 
+ , isInputPort
+ , readProc 
+ , readCharProc 
+ , writeProc 
+ , writeCharProc
+ , readContents
+ , load
+ , readAll
+ -- ** Symbol generation
+ , _gensym
+ , gensym
  ) where
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
