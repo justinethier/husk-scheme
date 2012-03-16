@@ -205,11 +205,7 @@ eval env cont val@(Rational _) = continueEval env cont val
 eval env cont val@(Number _) = continueEval env cont val
 eval env cont val@(Bool _) = continueEval env cont val
 eval env cont val@(HashTable _) = continueEval env cont val
-eval env cont val@(Vector _) = do
-    -- TODO: Issue #35 - not good enough to just return, need to ensure only constants (?) are part
-    --       of the vector
-    continueEval env cont val
---    throwError $ Default $ "Illegal expression (should be quoted): " ++ show val
+eval env cont val@(Vector _) = continueEval env cont val
 eval env cont (Atom a) = continueEval env cont =<< getVar env a
 
 -- Quote an expression by simply passing along the value
