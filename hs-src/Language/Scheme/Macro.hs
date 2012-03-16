@@ -15,7 +15,7 @@ transformation, the following components are considered:
 
  - Pattern (part of a rule that matches input)
 
- - Transform (what the macro "expands" into)
+ - Transform (what the macro expands into)
 
  - Literal Identifiers (from the macro definition)
 
@@ -25,17 +25,17 @@ transformation, the following components are considered:
 
 At a high level, macro transformation is broken down into the following steps:
 
- (0) Walk the input code looking for a macro definition or macro call. If a macro call is found -
+ (0) Walk the input code looking for a macro definition or macro call.
+ 
+ (1) If a macro call is found, search for a rule that matches the input.
+     During this process any pattern variables in the input are loaded 
+     into a temporary environment
 
- (1) Search for a rule that matches the input.
-     During this process, any pattern variables in the input are loaded into a temporary environment
+ (2) If a rule matches, transcribe the rule's template by walking the 
+     template, inserting pattern variables and renaming free identifiers 
+     as needed.
 
- (2) If a rule matches,
-
- (3) Transcribe the rule's template by walking the template, inserting pattern variables 
-     and renaming free identifiers as needed.
-
- (4) Walk the expanded code, checking for each of the cases from Macros That Work. If a 
+ (3) Walk the expanded code, checking for each of the cases from Macros That Work. If a 
      case is found (such as a macro call or procedure abstraction) then the appropriate 
      handler will be called to deal with it.
 -}
@@ -100,9 +100,11 @@ import Data.Array
 --needToExtendEnv (List [Atom "define-syntax", Atom _, (List (Atom "syntax-rules" : (List _ : _)))]) = True
 --needToExtendEnv _ = False 
 
--- |macroEval
---  Search for macros in the AST, and transform any that are found.
-macroEval :: Env -> LispVal -> IOThrowsError LispVal
+-- |Searches for macros in the AST and transforms any that are found.
+macroEval :: Env        -- ^Current environment for the AST
+          -> LispVal    -- ^AST to search
+          -> IOThrowsError LispVal -- ^Transformed AST containing expanded
+                                   --  macros if any were found
 
 {- Inspect code for macros
  -
@@ -553,7 +555,10 @@ identifierMatches defEnv useEnv ident = do
 --  recursively expanding macro calls as they are encountered.
 --
 -- It is essentially a wrapper for the function walkExpanded which is internal to this module.
-expand :: Env -> Bool -> LispVal -> IOThrowsError LispVal
+expand :: Env       -- ^Environment of the code being expanded
+       -> Bool      -- ^True if the macro was defined within another macro
+       -> LispVal   -- ^Code to expand
+       -> IOThrowsError LispVal -- ^Expanded code
 expand env dim code = do
   renameEnv <- liftIO $ nullEnv
   cleanupEnv <- liftIO $ nullEnv
@@ -567,7 +572,7 @@ expand env dim code = do
 
   walkExpanded env env env renameEnv cleanupEnv dim True False (List []) code
 
--- |Walk expanded code per Clinger
+-- |Walk expanded code per Clinger's algorithm from Macros That Work
 walkExpanded :: Env -> Env -> Env -> Env -> Env -> Bool -> Bool -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
 walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (List l : ls)) = do
   lst <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQuoted (List []) (List l)

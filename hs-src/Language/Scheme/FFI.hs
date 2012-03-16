@@ -22,7 +22,9 @@ import qualified GHC.Paths (libdir)
 import qualified DynFlags
 import qualified Unsafe.Coerce (unsafeCoerce)
 
+-- |Load a Haskell function into husk using the GHC API.
 evalfuncLoadFFI :: [LispVal] -> IOThrowsError LispVal
+
 {-
  - |Load a Haskell function into husk using the foreign function inteface (FFI)
  -

@@ -10,11 +10,58 @@ Portability : portable
 This module implements the numerical tower.
 -}
 
-module Language.Scheme.Numerical where
+module Language.Scheme.Numerical (
+   numericBinop
+-- , foldlM
+-- , foldl1M
+ , numSub
+ , numMul
+ , numDiv
+ , numAdd
+ , numBoolBinopEq
+ , numBoolBinopGt
+ , numBoolBinopGte
+ , numBoolBinopLt
+ , numBoolBinopLte
+ , numCast
+ , numFloor
+ , numCeiling
+ , numTruncate
+ , numRound
+ , numSin
+ , numCos
+ , numTan
+ , numAsin 
+ , numAcos
+ , numAtan
+ , numExpt
+ , numSqrt
+ , numExp
+ , numLog
+ , buildComplex
+ , numMakePolar
+ , numRealPart
+ , numImagPart
+ , numMagnitude
+ , numAngle
+ , numMakeRectangular
+ , numDenominator
+ , numNumerator
+ , numInexact2Exact
+ , numExact2Inexact 
+ , num2String
+ , isComplex
+ , isReal 
+ , isRational
+ , isInteger
+ , isNumber
+ , isFloatAnInteger
+ , unpackNum
+) where
 import Language.Scheme.Types
 import Data.Complex
 import Control.Monad.Error
-import Data.Char
+import Data.Char hiding (isNumber)
 import Numeric
 import Data.Ratio
 import Text.Printf
@@ -355,7 +402,7 @@ numInexact2Exact [c@(Complex _)] = numRound [c]
 numInexact2Exact [badType] = throwError $ TypeMismatch "number" badType
 numInexact2Exact badArgList = throwError $ NumArgs 1 badArgList
 
--- Convert a number to a string; radix is optional, defaults to base 10
+-- |Convert a number to a string; radix is optional, defaults to base 10
 num2String :: [LispVal] -> ThrowsError LispVal
 num2String [(Number n)] = return $ String $ show n
 num2String [(Number n), (Number radix)] = do
@@ -407,13 +454,16 @@ isInteger ([Rational n]) = do
 isInteger ([n@(Float _)]) = return $ Bool $ isFloatAnInteger n
 isInteger _ = return $ Bool False
 
+-- |A utility function to determine if given value is a floating point
+--  number representing an whole number (integer).
 isFloatAnInteger :: LispVal -> Bool
 isFloatAnInteger (Float n) = (floor n) == (ceiling n)
 isFloatAnInteger _ = False
 
 -- - end Numeric operations section ---
 
-
+-- |Extract an integer from the given value, throwing a type error if
+--  the wrong type is passed.
 unpackNum :: LispVal -> ThrowsError Integer
 unpackNum (Number n) = return n
 unpackNum notNum = throwError $ TypeMismatch "number" notNum

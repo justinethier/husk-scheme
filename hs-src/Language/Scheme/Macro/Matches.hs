@@ -40,7 +40,7 @@ fill l len
 -- |Get an element at given location in the nested list
 getData :: LispVal -- ^ The nested list to read from
         -> [Int]   -- ^ Location to read an element from, all numbers are 0-based
-        -> LispVal -- ^ Value read, or "Nil" if none
+        -> LispVal -- ^ Value read, or 'Nil' if none
 getData (List lData) (i:is) = do
   if length lData < i
      then Nil "" -- Error: there are not enough elements in the list
@@ -54,8 +54,9 @@ getData val _ = val -- Should never be reached, just give up and return val
 
 -- |Add an element to the given nested list
 setData :: LispVal -- ^ The nested list to modify
-        -> [Int]   -- ^ Location to insert the new element, from top-most -> leaf 
-                   --   (EG: [1, 2] means add to the second top-most list, at its 3rd position)
+        -> [Int]   -- ^ Location to insert the new element, from top-most to the leaf.
+                   --   For example [1, 2] means add to the second top-most list, at
+                   --   its 3rd position.
         -> LispVal -- ^ Value to insert 
         -> LispVal -- ^ Resulant list
 setData (List lData) (i:is) val = do

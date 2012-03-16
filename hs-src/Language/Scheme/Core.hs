@@ -39,9 +39,11 @@ import qualified Data.Map
 import qualified System.Exit
 import System.IO
 
+-- |husk version number
 version :: String
 version = "3.5.4"
 
+-- |A utility function to display the husk console banner
 showBanner :: IO ()
 showBanner = do
   putStrLn "  _               _        __                 _                          "
@@ -125,13 +127,14 @@ updateContEnv _ val = do
     return val
 -}
 
-{- |continueEval is a support function for eval.
- -
- - Transformed eval section into CPS by calling into this instead of returning from eval.
- - This function uses the cont argument to determine whether to keep going or to finally
- - return a result.
- - -}
-continueEval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+{- |A support function for eval; eval calls into this function instead of 
+    returning values directly. continueEval then uses the continuation 
+    argument to manage program control flow.
+ -}
+continueEval :: Env     -- ^ Current environment
+             -> LispVal -- ^ Current continuation
+             -> LispVal -- ^ Value of previous computation
+             -> IOThrowsError LispVal -- ^ Final value of computation
 
 {- Passing a higher-order function as the continuation; just evaluate it. This is
  - done to enable an 'eval' function to be broken up into multiple sub-functions,
@@ -613,7 +616,7 @@ eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 eval env cont args@(List (_ : _)) = mprepareApply env cont args
 eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
--- |A helper function for the special form (string-set!)
+-- |A helper function for the special form /(string-set!)/
 substr :: (LispVal, LispVal, LispVal) -> IOThrowsError LispVal 
 substr (String str, Char char, Number ii) = do
                       return $ String $ (take (fromInteger ii) . drop 0) str ++
@@ -623,7 +626,7 @@ substr (String _, Char _, n) = throwError $ TypeMismatch "number" n
 substr (String _, c, _) = throwError $ TypeMismatch "character" c
 substr (s, _, _) = throwError $ TypeMismatch "string" s
 
--- |A helper function for the special form (vector-set!)
+-- |A helper function for the special form /(vector-set!)/
 updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
 updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec // [(fromInteger idx, obj)]
 updateVector v _ _ = throwError $ TypeMismatch "vector" v
@@ -763,7 +766,7 @@ apply _ func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List
 
 {- |Environment containing the primitive forms that are built into the Scheme language. Note that this only includes
 forms that are implemented in Haskell; derived forms implemented in Scheme (such as let, list, etc) are available
-in the standard library which must be pulled into the environment using (load). -}
+in the standard library which must be pulled into the environment using /(load)/. -}
 primitiveBindings :: IO Env
 primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrimitives
                                                ++ map (domakeFunc EvalFunc) evalFunctions
