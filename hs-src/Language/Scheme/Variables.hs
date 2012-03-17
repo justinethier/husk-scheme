@@ -7,11 +7,32 @@ Maintainer  : github.com/justinethier
 Stability   : experimental
 Portability : portable
 
-This module contains code for working with Scheme variables.
+This module contains code for working with Scheme variables,
+and the environments that contain them.
 
 -}
 
-module Language.Scheme.Variables where
+module Language.Scheme.Variables 
+    (
+    -- * Environments
+      printEnv
+    , copyEnv
+    , extendEnv
+    , findNamespacedEnv
+    -- * Getters
+    , getVar
+    , getNamespacedVar 
+    -- * Setters
+    , defineVar
+    , setVar
+    , setNamespacedVar
+    , defineNamespacedVar
+    -- * Predicates
+    , isBound
+    , isRecBound
+    , isNamespacedBound
+    , isNamespacedRecBound 
+    ) where
 import Language.Scheme.Types
 import Control.Monad.Error
 import Data.IORef
@@ -51,7 +72,8 @@ isNamespacedRecBoundWUpper upperEnvRef envRef namespace var = do
 -}
 
 -- |Show the contents of an environment
-printEnv :: Env -> IO String
+printEnv :: Env         -- ^Environment
+         -> IO String   -- ^Contents of the env as a string
 printEnv env = do
   binds <- liftIO $ readIORef $ bindings env
   l <- mapM showVar $ Data.Map.toList binds 
@@ -62,7 +84,8 @@ printEnv env = do
     return $ name ++ ": " ++ show v
 
 -- |Create a deep copy of an environment
-copyEnv :: Env -> IO Env
+copyEnv :: Env      -- ^ Source environment
+        -> IO Env   -- ^ A copy of the source environment
 copyEnv env = do
   binds <- liftIO $ readIORef $ bindings env
 --  bindingList <- mapM addBinding binds >>= newIORef
@@ -77,15 +100,22 @@ copyEnv env = do
 -- |Extend given environment by binding a series of values to a new environment.
 
 -- TODO: should be able to use Data.Map.fromList to ease construction of new Env
-extendEnv :: Env -> [((String, String), LispVal)] -> IO Env
+extendEnv :: Env -- ^ Environment 
+          -> [((String, String), LispVal)] -- ^ Extensions to the environment
+          -> IO Env -- ^ Extended environment
 extendEnv envRef abindings = do bindinglistT <- (mapM addBinding abindings) -- >>= newIORef
                                 bindinglist <- newIORef $ Data.Map.fromList bindinglistT
                                 return $ Environment (Just envRef) bindinglist
  where addBinding ((namespace, name), val) = do ref <- newIORef val
                                                 return ((namespace, name), ref)
 
--- Recursively search environments to find one that contains var
-findNamespacedEnv :: Env -> String -> String -> IO (Maybe Env)
+-- |Recursively search environments to find one that contains the given variable.
+findNamespacedEnv 
+    :: Env      -- ^Environment to begin the search; 
+                --  parent env's will be searched as well.
+    -> String   -- ^Namespace
+    -> String   -- ^Variable
+    -> IO (Maybe Env) -- ^Environment, or Nothing if there was no match.
 findNamespacedEnv envRef namespace var = do
   found <- liftIO $ isNamespacedBound envRef namespace var
   if found
@@ -95,20 +125,34 @@ findNamespacedEnv envRef namespace var = do
                Nothing -> return Nothing
 
 -- |Determine if a variable is bound in the default namespace
-isBound :: Env -> String -> IO Bool
+isBound :: Env      -- ^ Environment
+        -> String   -- ^ Variable
+        -> IO Bool  -- ^ True if the variable is bound
 isBound envRef var = isNamespacedBound envRef varNamespace var
 
--- |Determine if a variable is bound in the default namespace, in this env or a parent
-isRecBound :: Env -> String -> IO Bool
+-- |Determine if a variable is bound in the default namespace, 
+--  in this environment or one of its parents.
+isRecBound :: Env      -- ^ Environment
+           -> String   -- ^ Variable
+           -> IO Bool  -- ^ True if the variable is bound
 isRecBound envRef var = isNamespacedRecBound envRef varNamespace var
 
 -- |Determine if a variable is bound in a given namespace
-isNamespacedBound :: Env -> String -> String -> IO Bool
+isNamespacedBound 
+    :: Env      -- ^ Environment
+    -> String   -- ^ Namespace
+    -> String   -- ^ Variable
+    -> IO Bool  -- ^ True if the variable is bound
 isNamespacedBound envRef namespace var = 
     (readIORef $ bindings envRef) >>= return . Data.Map.member (namespace, var)
 
--- TODO: should isNamespacedBound be replaced with this? Probably, but one step at a time...
-isNamespacedRecBound :: Env -> String -> String -> IO Bool
+-- |Determine if a variable is bound in a given namespace
+--  or a parent of the given environment.
+isNamespacedRecBound 
+    :: Env      -- ^ Environment
+    -> String   -- ^ Namespace
+    -> String   -- ^ Variable
+    -> IO Bool  -- ^ True if the variable is bound
 isNamespacedRecBound envRef namespace var = do
   env <- findNamespacedEnv envRef namespace var
   case env of
@@ -116,11 +160,16 @@ isNamespacedRecBound envRef namespace var = do
     Nothing -> return False
 
 -- |Retrieve the value of a variable defined in the default namespace
-getVar :: Env -> String -> IOThrowsError LispVal
+getVar :: Env       -- ^ Environment
+       -> String    -- ^ Variable
+       -> IOThrowsError LispVal -- ^ Contents of the variable
 getVar envRef var = getNamespacedVar envRef varNamespace var
 
 -- |Retrieve the value of a variable defined in a given namespace
-getNamespacedVar :: Env -> String -> String -> IOThrowsError LispVal
+getNamespacedVar :: Env     -- ^ Environment
+                 -> String  -- ^ Namespace
+                 -> String  -- ^ Variable
+                 -> IOThrowsError LispVal -- ^ Contents of the variable
 getNamespacedVar envRef
                  namespace
                  var = do binds <- liftIO $ readIORef $ bindings envRef
@@ -132,14 +181,28 @@ getNamespacedVar envRef
 
 
 -- |Set a variable in the default namespace
-setVar, defineVar :: Env -> String -> LispVal -> IOThrowsError LispVal
+setVar
+    :: Env      -- ^ Environment
+    -> String   -- ^ Variable
+    -> LispVal  -- ^ Value
+    -> IOThrowsError LispVal -- ^ Value
 setVar envRef var value = setNamespacedVar envRef varNamespace var value
 
--- ^Bind a variable in the default namespace
+-- |Bind a variable in the default namespace
+defineVar
+    :: Env      -- ^ Environment
+    -> String   -- ^ Variable
+    -> LispVal  -- ^ Value
+    -> IOThrowsError LispVal -- ^ Value
 defineVar envRef var value = defineNamespacedVar envRef varNamespace var value
 
 -- |Set a variable in a given namespace
-setNamespacedVar :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
+setNamespacedVar 
+    :: Env      -- ^ Environment 
+    -> String   -- ^ Namespace
+    -> String   -- ^ Variable
+    -> LispVal  -- ^ Value
+    -> IOThrowsError LispVal   -- ^ Value
 setNamespacedVar envRef
                  namespace
                  var value = do env <- liftIO $ readIORef $ bindings envRef
@@ -152,7 +215,12 @@ setNamespacedVar envRef
                                               Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
 
 -- |Bind a variable in the given namespace
-defineNamespacedVar :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
+defineNamespacedVar
+    :: Env      -- ^ Environment 
+    -> String   -- ^ Namespace
+    -> String   -- ^ Variable
+    -> LispVal  -- ^ Value
+    -> IOThrowsError LispVal   -- ^ Value
 defineNamespacedVar envRef
                     namespace
                     var value = do
