@@ -11,7 +11,38 @@ Portability : portable
 This module implements parsing of Scheme code.
 -}
 
-module Language.Scheme.Parser where
+module Language.Scheme.Parser 
+    (
+      lispDef
+    -- *Higher level parsing
+    , mainParser
+    , readOrThrow
+    , readExpr
+    , readExprList 
+    -- *Low level parsing
+    , symbol
+    , parseExpr 
+    , parseAtom
+    , parseBool
+    , parseChar
+    , parseOctalNumber 
+    , parseBinaryNumber
+    , parseHexNumber
+    , parseDecimalNumber
+    , parseNumber 
+    , parseRealNumber
+    , parseRationalNumber 
+    , parseComplexNumber 
+    , parseEscapedChar 
+    , parseString 
+    , parseVector
+    , parseList
+    , parseDottedList
+    , parseQuoted
+    , parseQuasiQuoted 
+    , parseUnquoted 
+    , parseUnquoteSpliced 
+    )where
 import Language.Scheme.Types
 import Control.Monad.Error
 import qualified Data.Char as Char
@@ -32,6 +63,7 @@ import qualified Text.Parsec.Token as P
 --
 --import Data.Functor.Identity (Identity)
 
+-- |Language definition for Scheme
 lispDef :: LanguageDef ()
 lispDef 
   = emptyDef    
@@ -315,14 +347,18 @@ mainParser = do
 -- FUTURE? (seemed to break test cases, but is supposed to be best practice?)    eof
     return x
 
+-- |Use a parser to parse the given text, throwing an error
+--  if there is a problem parsing the text.
 readOrThrow :: Parser a -> String -> ThrowsError a
 readOrThrow parser input = case parse parser "lisp" input of
   Left err -> throwError $ Parser err
   Right val -> return val
 
+-- |Parse an expression from a string of text
 readExpr :: String -> ThrowsError LispVal
 readExpr = readOrThrow mainParser
 
+-- |Parse many expressions from a string of text
 readExprList :: String -> ThrowsError [LispVal]
 readExprList = readOrThrow (endBy mainParser whiteSpace)
 
