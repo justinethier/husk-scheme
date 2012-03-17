@@ -11,7 +11,39 @@ This module contains top-level data type definitions, environments, error types,
 
 -}
 
-module Language.Scheme.Types where
+module Language.Scheme.Types
+{-    (
+      Env
+--    , Environment
+    , parentEnv
+    , bindings
+    , nullEnv 
+    , macroNamespace
+    , varNamespace
+    , LispError
+    , ThrowsError 
+    , trapError
+    , extractValue 
+    , IOThrowsError 
+    , liftThrows 
+    , runIOThrowsREPL 
+    , runIOThrows 
+    , LispVal
+    , DeferredCode
+    , DynamicWinders   
+    , before 
+    , after 
+    , showDWVal 
+    , makeNullContinuation 
+    , makeCPS 
+    , makeCPSWArgs 
+    , eqv 
+    , eqvList
+    , eqVal 
+    , showVal
+    , unwordsList
+    ) -}
+ where
 import Data.Complex
 import Control.Monad.Error
 import Data.Array
