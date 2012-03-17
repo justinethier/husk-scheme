@@ -42,9 +42,9 @@ At a high level, macro transformation is broken down into the following steps:
 
 module Language.Scheme.Macro
     (
-      macroEval
+      expand
+    , macroEval
     , loadMacros  
-    , expand
     ) where
 import Language.Scheme.Types
 import Language.Scheme.Variables
@@ -100,11 +100,13 @@ import Data.Array
 --needToExtendEnv (List [Atom "define-syntax", Atom _, (List (Atom "syntax-rules" : (List _ : _)))]) = True
 --needToExtendEnv _ = False 
 
--- |Searches for macros in the AST and transforms any that are found.
+-- |Examines the input AST to see if it is a macro call. 
+--  If a macro call is found, the code is expanded.
+--  Otherwise the input is returned unchanged.
 macroEval :: Env        -- ^Current environment for the AST
           -> LispVal    -- ^AST to search
-          -> IOThrowsError LispVal -- ^Transformed AST containing expanded
-                                   --  macros if any were found
+          -> IOThrowsError LispVal -- ^Transformed AST containing an
+                                   -- expanded macro if found
 
 {- Inspect code for macros
  -
@@ -553,8 +555,6 @@ identifierMatches defEnv useEnv ident = do
 
 -- |This function walks the given block of code using the macro expansion algorithm,
 --  recursively expanding macro calls as they are encountered.
---
--- It is essentially a wrapper for the function walkExpanded which is internal to this module.
 expand :: Env       -- ^Environment of the code being expanded
        -> Bool      -- ^True if the macro was defined within another macro
        -> LispVal   -- ^Code to expand
