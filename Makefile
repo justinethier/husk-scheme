@@ -70,7 +70,7 @@ huski: $(SRC) $(HUSKI_SRC)
 	ghc -fglasgow-exts $(GHCOPTS) -o huski $(SRC) $(HUSKI_SRC) 
 
 huskc: $(SRC) $(HUSKC_SRC)
-	ghc -fglasgow-exts $(GHCOPTS) -o huskc $(SRC) $(HUSKI_SRC) 
+	ghc -fglasgow-exts $(GHCOPTS) -o huskc $(SRC) $(HUSKC_SRC) 
 
 # An experimental target to create a smaller, dynamically linked executable using GHC directly 
 # See: http://stackoverflow.com/questions/699908/making-small-haskell-executables
