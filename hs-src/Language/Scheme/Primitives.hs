@@ -84,6 +84,7 @@ module Language.Scheme.Primitives (
  , currentInputPort 
  , isOutputPort 
  , isInputPort
+ , isCharReady
  , readProc 
  , readCharProc 
  , writeProc 
@@ -134,6 +135,16 @@ isInputPort _ = return $ Bool False
 
 isOutputPort [Port port] = liftM Bool $ liftIO $ hIsWritable port
 isOutputPort _ = return $ Bool False
+
+isCharReady :: [LispVal] -> IOThrowsError LispVal
+isCharReady [Port port] = do --liftM Bool $ liftIO $ hReady port
+    result <- liftIO $ try (liftIO $ hReady port)
+    case result of
+        Left e -> if isEOFError e
+                     then return $ Bool False
+                     else throwError $ Default "I/O error reading from port" -- FUTURE: ioError e
+        Right _ -> return $ Bool True
+isCharReady _ = return $ Bool False
 
 readProc :: [LispVal] -> IOThrowsError LispVal
 readProc [] = readProc [Port stdin]

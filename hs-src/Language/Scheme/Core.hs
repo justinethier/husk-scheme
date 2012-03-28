@@ -910,6 +910,7 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("close-output-port", closePort),
                 ("input-port?", isInputPort),
                 ("output-port?", isOutputPort),
+                ("char-ready?", isCharReady),
 
                -- The following optional procedures are NOT implemented:
                --
@@ -920,8 +921,6 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                --
                {- Consideration may be given in a future release, but keep in mind
                the impact to the other I/O functions. -}
-
--- FUTURE: not currently supported: char-ready?
 
                 ("current-input-port", currentInputPort),
                 ("current-output-port", currentOutputPort),
