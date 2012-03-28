@@ -1,3 +1,8 @@
+v3.5.5
+--------
+
+- Implemented `char-ready?`
+
 v3.5.4
 --------
 
