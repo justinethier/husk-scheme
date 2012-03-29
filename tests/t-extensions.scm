@@ -9,6 +9,6 @@
 (unit-test-start "non-standard extensions")
 
 (assert/equal (gensym "test")
-  'test2)
+  'test4)
 
 (unit-test-handler-results)

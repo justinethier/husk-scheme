@@ -99,12 +99,11 @@
 (assert/equal (make-rectangular 1/3 2) 1/3+2i)
 (assert/equal (make-rectangular 1/3 2/3) 1/3+2/3i)
 
-; FUTURE: Issue #10
-;(gcd 32 -36)                    ===>  4
-;(gcd)                           ===>  0
-;(lcm 32 -36)                    ===>  288
-;(lcm 32.0 -36)                  ===>  288.0  ; inexact
-;(lcm)                           ===>  1
+(assert/equal (gcd 32 -36)      4)
+(assert/equal (gcd)             0)
+(assert/equal (lcm 32 -36)      288)
+(assert/equal (lcm 32.0 -36)    288.0)  ; inexact
+(assert/equal (lcm)             1)
 
 (assert/equal (exact->inexact 2) 2.0)
 (assert/equal (inexact->exact 2.0) 2)
