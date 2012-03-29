@@ -18,6 +18,7 @@ module Language.Scheme.Numerical (
  , numMul
  , numDiv
  , numAdd
+ , numMod
  , numBoolBinopEq
  , numBoolBinopGt
  , numBoolBinopGte
@@ -59,11 +60,13 @@ module Language.Scheme.Numerical (
  , unpackNum
 ) where
 import Language.Scheme.Types
-import Data.Complex
+
 import Control.Monad.Error
 import Data.Char hiding (isNumber)
-import Numeric
+import Data.Complex
+import Data.Fixed
 import Data.Ratio
+import Numeric
 import Text.Printf
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError LispVal
@@ -140,6 +143,15 @@ numDiv aparams = do
                                                        then throwError $ DivideByZero
                                                        else return $ Complex $ a / b
         doDiv _ = throwError $ Default "Unexpected error in /"
+
+numMod [] = return $ Number 1
+numMod aparams = do
+  foldl1M (\ a b -> doMod =<< (numCast [a, b])) aparams
+  where doMod (List [(Number a), (Number b)]) = return $ Number $ mod' a b
+        doMod (List [(Float a), (Float b)]) = return $ Float $ mod' a b
+        doMod (List [(Rational a), (Rational b)]) = return $ Rational $ mod' a b
+        doMod (List [(Complex a), (Complex b)]) = return $ Default "modulo not implemented for complex numbers" 
+        doMod _ = throwError $ Default "Unexpected error in modulo"
 
 numBoolBinopEq :: [LispVal] -> ThrowsError LispVal
 numBoolBinopEq [] = throwError $ NumArgs 0 []

@@ -942,7 +942,7 @@ primitives = [("+", numAdd),
               ("-", numSub),
               ("*", numMul),
               ("/", numDiv),
-              ("modulo", numericBinop mod),
+              ("modulo", numMod),
               ("quotient", numericBinop quot),
               ("remainder", numericBinop rem),
 
