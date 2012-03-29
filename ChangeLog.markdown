@@ -1,7 +1,7 @@
 v3.5.5
 --------
 
-- Implemented `char-ready?`
+- Implemented `char-ready?`, `gcd`, and `lcm`.
 
 v3.5.4
 --------

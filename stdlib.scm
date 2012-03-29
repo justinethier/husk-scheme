@@ -413,6 +413,12 @@
              (lambda (key value) (set! acc (f key value acc))))
       acc))
 
+; Implementations of gcd and lcm using Euclid's algorithm
+;
+; Also note that each form is written to accept either 0 or
+; 2 arguments, per R5RS. This could probably be generalized
+; even further, if necessary.
+;
 (define gcd '())
 (let ()
   (define (gcd/main a b)
