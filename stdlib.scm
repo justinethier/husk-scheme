@@ -413,19 +413,28 @@
              (lambda (key value) (set! acc (f key value acc))))
       acc))
 
+(define gcd '())
+(let ()
+  (define (gcd/main a b)
+    (if (= b 0)
+      (abs a)
+      (gcd b (modulo a b))))
+  (define (gcd/entry . nums)
+    (if (eqv? nums '())
+      0
+      (gcd/main (car nums) (cadr nums))))
+  (set! gcd gcd/entry))
 
-; FUTURE: Issue #10: from numeric section -
-; gcd
-;(define (gcd . nums) 
-;  (if (eqv? nums '())
-;    0
-;    TBD...))
+(define lcm '())
+(let ()
+  (define (lcm/main a b)
+    (abs (/ (* a b) (gcd a b))))
+  (define (lcm/entry . nums)
+    (if (eqv? nums '())
+      1
+      (lcm/main (car nums) (cadr nums))))
+  (set! lcm lcm/entry))  
 
-; Limited form of gcd from: http://www.dreamincode.net/code/snippet1358.htm
-(define (gcd a b)
-    (if (= b 0) a
-            (gcd b (modulo a b))))
-; lcm
 ; rationalize
 ; 
 
