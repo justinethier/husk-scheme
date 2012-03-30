@@ -420,27 +420,32 @@
 ; even further, if necessary.
 ;
 (define gcd '())
-(define gcd* '())
+(define lcm '())
+
 (let ()
+  ; Main GCD algorithm
   (define (gcd/main a b)
     (if (= b 0)
       (abs a)
       (gcd/main b (modulo a b))))
+
+  ; A helper function to reduce the input list
   (define (gcd/entry . nums)
     (if (eqv? nums '())
       0
       (fold gcd/main (car nums) (cdr nums))))
-  (set! gcd gcd/entry)
-  (set! gcd* gcd/main))
 
-(define lcm '())
-(let ()
+  ; Main LCM algorithm
   (define (lcm/main a b)
-    (abs (/ (* a b) (gcd a b))))
+    (abs (/ (* a b) (gcd/main a b))))
+
+  ; A helper function to reduce the input list
   (define (lcm/entry . nums)
     (if (eqv? nums '())
       1
       (fold lcm/main (car nums) (cdr nums))))
+
+  (set! gcd gcd/entry)
   (set! lcm lcm/entry))  
 
 ; rationalize

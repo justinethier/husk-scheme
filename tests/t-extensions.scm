@@ -8,8 +8,9 @@
 ;;
 (unit-test-start "non-standard extensions")
 
-(assert/equal (gensym "test")
-  'test6)
+(assert/equal 
+  (gensym "test")
+  'test4)
 
 (assert/equal 
   (expand (let () 1)) 
