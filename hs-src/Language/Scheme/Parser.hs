@@ -55,6 +55,7 @@ import Text.Parsec.Language
 import Text.Parsec.Prim (ParsecT)
 import qualified Text.Parsec.Token as P
 
+import Debug.Trace
 -- This was added by pull request #63 as part of a series of fixes
 -- to get husk to build on ghc 7.2.2
 --
@@ -174,7 +175,7 @@ parseNumber = parseDecimalNumber <|>
               parseOctalNumber <?>
               "Unable to parse number"
 
--- |Parser a floating point number
+-- |Parse a floating point number
 parseRealNumber :: Parser LispVal
 parseRealNumber = do
   sign <- many (oneOf "-+")
@@ -182,25 +183,36 @@ parseRealNumber = do
   _ <- char '.'
   frac <- many1 (digit)
   let dec = num ++ "." ++ frac
-  case (length sign) of
+  f <- case (length sign) of
      0 -> do
-              let numbr = fst $ Numeric.readFloat dec !! 0
--- expnt <- try (char 'e')
-              return $ Float $ numbr
-{- FUTURE: Issue #14: parse numbers in format #e1e10
- -
-              expnt <- try (char 'e')
-              case expnt of
---                'e' -> return $ Float $ numbr
-                _ -> return $ Float $ numbr
-return $ Float $ fst $ Numeric.readFloat dec !! 0 -}
-
--- TODO: this is a hack, but need to support the + sign as well as the minus.
-
+--              let numbr =
+              return $ fst $ Numeric.readFloat dec !! 0
+--              return $ Float $ numbr
+          -- Bit of a hack, but need to support the + sign as well as the minus.
      1 -> if sign == "-" 
-             then return $ Float $ (*) (-1.0) $ fst $ Numeric.readFloat dec !! 0
-             else return $ Float $ fst $ Numeric.readFloat dec !! 0
+             then return $ {-Float $-} (*) (-1.0) $ fst $ Numeric.readFloat dec !! 0
+             else return $ {-Float $-} fst $ Numeric.readFloat dec !! 0
      _ -> pzero
+  result <- parseRealNumberExponent f
+  return $ Float result -- $ f -- * (fromInteger $ 10 ** exp) 
+
+
+-- TODO: Issue #14: also parse numbers in format #e1e10
+
+
+-- Parse the exponent section of a floating point number
+-- in scientific notation. Eg "e10" from "1.0e10"
+parseRealNumberExponent :: Double -> Parser Double
+parseRealNumberExponent n = do 
+  exp <- many $ oneOf "e"
+  case (length exp) of
+    0 -> return n
+    1 -> do
+      num <- try (parseDecimalNumber)
+      case num of
+        Number exp -> return $ n * (10 ** (fromInteger exp))
+        _ -> pzero
+    _ -> pzero
 
 parseRationalNumber :: Parser LispVal
 parseRationalNumber = do
