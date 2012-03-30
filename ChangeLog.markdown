@@ -2,6 +2,7 @@ v3.5.5
 --------
 
 - Implemented `char-ready?`, `rationalize`, `gcd`, and `lcm`.
+- Modified `numerator` and `denominator` to add support for integers and floating point numbers.
 
 v3.5.4
 --------
