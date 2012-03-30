@@ -8,9 +8,15 @@
 ;;
 (unit-test-start "non-standard extensions")
 
-(assert/equal 
-  (gensym "test")
-  'test4)
+; It is difficult to test this directly since adding additional
+; code can affect the number appended to the symbol.
+;
+; Anyway, gensym has to work in order for macro hygiene, so
+; this is validated indirectly by those test cases.
+;
+;(assert/equal 
+;  (gensym "test")
+;  'test4)
 
 (assert/equal 
   (expand (let () 1)) 
