@@ -150,7 +150,7 @@ numMod aparams = do
   where doMod (List [(Number a), (Number b)]) = return $ Number $ mod' a b
         doMod (List [(Float a), (Float b)]) = return $ Float $ mod' a b
         doMod (List [(Rational a), (Rational b)]) = return $ Rational $ mod' a b
-        doMod (List [(Complex a), (Complex b)]) = return $ Default "modulo not implemented for complex numbers" 
+        doMod (List [(Complex a), (Complex b)]) = throwError $ Default "modulo not implemented for complex numbers" 
         doMod _ = throwError $ Default "Unexpected error in modulo"
 
 numBoolBinopEq :: [LispVal] -> ThrowsError LispVal
