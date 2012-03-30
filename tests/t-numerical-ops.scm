@@ -62,11 +62,9 @@
 (assert/equal (remainder -13 -4) -1)
 ;FUTURE: - support for inexact - (remainder -13 -4.0)            ===>  -1.0  ; inexact
 
-(assert/equal (numerator (/ 6 4))        3)
-(assert/equal (denominator (/ 6 4))      2)
-;Issue #26 - numerator and denominator do not handle real numbers:
-;(assert/equal (denominator
-;    (exact->inexact (/ 6 4)))           2.0)
+(assert/equal (numerator   (/ 6 4))                     3)
+(assert/equal (denominator (/ 6 4))                     2)
+(assert/equal (denominator (exact->inexact (/ 6 4)))    2.0)
 
 (assert/equal (floor -4.3)      -5.0)
 (assert/equal (floor -4.3+-4.3i)      -5.0+-5.0i)
@@ -85,7 +83,9 @@
 (assert/equal (round 7/2)       4)    ; exact
 (assert/equal (round 7)         7)
 
-;FUTURE: Issue #25 - implement rationalize
+(assert/equal (rationalize 0.5) 1/2)
+(assert/equal (rationalize 2.5) 5/2)
+;FUTURE: Issue #25 - Exact syntax from the spec 
 ;(assert/equal (rationalize
 ;    (inexact->exact .3) 1/10)        1/3)    ; exact
 ;(assert/equal (rationalize .3 1/10)                #i1/3)  ; inexact
