@@ -399,11 +399,16 @@ numImagPart badArgList = throwError $ NumArgs 1 badArgList
 
 
 numNumerator, numDenominator :: [LispVal] -> ThrowsError LispVal
+numNumerator [n@(Number _)] = return n
 numNumerator [(Rational r)] = return $ Number $ numerator r
+numNumerator [(Float f)] = return $ Float $ fromInteger . numerator . toRational $ f
+--numNumerator [(Float f)] = return $ Float $ fromInteger $ numerator $ toRational f
 numNumerator [x] = throwError $ TypeMismatch "rational number" x
 numNumerator badArgList = throwError $ NumArgs 1 badArgList
 
+numDenominator [n@(Number _)] = return $ Number 1
 numDenominator [(Rational r)] = return $ Number $ denominator r
+numDenominator [(Float f)] = return $ Float $ fromInteger $ denominator $ toRational f
 numDenominator [x] = throwError $ TypeMismatch "rational number" x
 numDenominator badArgList = throwError $ NumArgs 1 badArgList
 
