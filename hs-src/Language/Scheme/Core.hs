@@ -945,6 +945,7 @@ primitives = [("+", numAdd),
               ("modulo", numMod),
               ("quotient", numericBinop quot),
               ("remainder", numericBinop rem),
+              ("rationalize", numRationalize),
 
               ("round", numRound),
               ("floor", numFloor),

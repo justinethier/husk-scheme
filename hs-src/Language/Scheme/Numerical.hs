@@ -19,6 +19,7 @@ module Language.Scheme.Numerical (
  , numDiv
  , numAdd
  , numMod
+ , numRationalize
  , numBoolBinopEq
  , numBoolBinopGt
  , numBoolBinopGte
@@ -224,6 +225,13 @@ numCast [a, b] = case a of
                _ -> doThrowError a
   where doThrowError num = throwError $ TypeMismatch "number" num
 numCast _ = throwError $ Default "Unexpected error in numCast"
+
+numRationalize :: [LispVal] -> ThrowsError LispVal
+numRationalize [(Number n)] = return $ Rational $ toRational n
+numRationalize [(Float n)] = return $ Rational $ toRational n
+numRationalize [n@(Rational _)] = return n
+numRationalize [x] = throwError $ TypeMismatch "number" x
+numRationalize badArgList = throwError $ NumArgs 1 badArgList
 
 numRound, numFloor, numCeiling, numTruncate :: [LispVal] -> ThrowsError LispVal
 numRound [n@(Number _)] = return n
