@@ -420,16 +420,18 @@
 ; even further, if necessary.
 ;
 (define gcd '())
+(define gcd* '())
 (let ()
   (define (gcd/main a b)
     (if (= b 0)
       (abs a)
-      (gcd b (modulo a b))))
+      (gcd/main b (modulo a b))))
   (define (gcd/entry . nums)
     (if (eqv? nums '())
       0
-      (gcd/main (car nums) (cadr nums))))
-  (set! gcd gcd/entry))
+      (fold gcd/main (car nums) (cdr nums))))
+  (set! gcd gcd/entry)
+  (set! gcd* gcd/main))
 
 (define lcm '())
 (let ()
@@ -438,7 +440,7 @@
   (define (lcm/entry . nums)
     (if (eqv? nums '())
       1
-      (lcm/main (car nums) (cadr nums))))
+      (fold lcm/main (car nums) (cdr nums))))
   (set! lcm lcm/entry))  
 
 ; rationalize
