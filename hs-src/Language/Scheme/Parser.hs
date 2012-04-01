@@ -42,7 +42,7 @@ module Language.Scheme.Parser
     , parseQuasiQuoted 
     , parseUnquoted 
     , parseUnquoteSpliced 
-    )where
+    ) where
 import Language.Scheme.Types
 import Control.Monad.Error
 import qualified Data.Char as Char
@@ -55,7 +55,6 @@ import Text.Parsec.Language
 import Text.Parsec.Prim (ParsecT)
 import qualified Text.Parsec.Token as P
 
-import Debug.Trace
 -- This was added by pull request #63 as part of a series of fixes
 -- to get husk to build on ghc 7.2.2
 --
@@ -168,6 +167,7 @@ parseDecimalNumber = do
      then pzero
      else return $ (Number . read) $ sign ++ num
 
+-- |Parse an integer in any base
 parseNumber :: Parser LispVal
 parseNumber = parseDecimalNumber <|>
               parseHexNumber <|>
