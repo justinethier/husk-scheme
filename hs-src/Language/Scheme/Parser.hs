@@ -184,27 +184,20 @@ parseRealNumber = do
   frac <- many1 (digit)
   let dec = num ++ "." ++ frac
   f <- case (length sign) of
-     0 -> do
---              let numbr =
-              return $ fst $ Numeric.readFloat dec !! 0
---              return $ Float $ numbr
+     0 -> return $ fst $ Numeric.readFloat dec !! 0
           -- Bit of a hack, but need to support the + sign as well as the minus.
      1 -> if sign == "-" 
-             then return $ {-Float $-} (*) (-1.0) $ fst $ Numeric.readFloat dec !! 0
-             else return $ {-Float $-} fst $ Numeric.readFloat dec !! 0
+             then return $ (*) (-1.0) $ fst $ Numeric.readFloat dec !! 0
+             else return $ fst $ Numeric.readFloat dec !! 0
      _ -> pzero
   result <- parseRealNumberExponent f
-  return $ Float result -- $ f -- * (fromInteger $ 10 ** exp) 
+  return $ Float result
 
-
--- TODO: Issue #14: also parse numbers in format #e1e10
-
-
--- Parse the exponent section of a floating point number
--- in scientific notation. Eg "e10" from "1.0e10"
+-- | Parse the exponent section of a floating point number
+--   in scientific notation. Eg "e10" from "1.0e10"
 parseRealNumberExponent :: Double -> Parser Double
 parseRealNumberExponent n = do 
-  exp <- many $ oneOf "e"
+  exp <- many $ oneOf "Ee"
   case (length exp) of
     0 -> return n
     1 -> do
