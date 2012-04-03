@@ -32,4 +32,32 @@
 (assert/equal (list= eq?)             #t)       ; Trivial cases
 (assert/equal (list= eq? '(a))        #t)
 
+; Selectors
+(assert/equal (take '(a b c d e)  2) '(a b))
+(assert/equal (drop '(a b c d e)  2) '(c d e))
+(assert/equal (take '(1 2 3 . d) 2)  '(1 2))
+(assert/equal (drop '(1 2 3 . d) 2)  '(3 . d))
+(assert/equal (take '(1 2 3 . d) 3)  '(1 2 3))
+(assert/equal (drop '(1 2 3 . d) 3)  'd)
+;For a legal i, take and drop partition the list in a manner which can be inverted with append:
+(assert/equal (append (take (list 1 2 3 4 5 6) 3) (drop (list 1 2 3 4 5 6) 3)) (list 1 2 3 4 5 6))
+
+(assert/equal (take-right '(a b c d e) 2) '(d e))
+(assert/equal (drop-right '(a b c d e) 2) '(a b c))
+(assert/equal (take-right '(1 2 3 . d) 2) '(2 3 . d))
+(assert/equal (drop-right '(1 2 3 . d) 2) '(1))
+(assert/equal (take-right '(1 2 3 . d) 0) 'd)
+(assert/equal (drop-right '(1 2 3 . d) 0) '(1 2 3))
+;For a legal i, take-right and drop-right partition the list in a manner which can be inverted with append:
+(let ((flist (list 1 2 3 4 5 6))
+      (i 2))
+    (assert/equal (append (take flist i) (drop flist i)) flist))
+; TODO: (take! (circular-list 1 3 5) 8) => (1 3)
+; TODO: (take! (circular-list 1 3 5) 8) => (1 3 5 1 3 5 1 3)
+
+; TODO: (assert/equal (split-at '(a b c d e f g h) 3) '(a b c))
+(assert/equal (last '(a b c)) 'c)
+(assert/equal (last-pair '(a b c)) '(c))
+
+
 (unit-test-handler-results)
