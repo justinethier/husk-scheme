@@ -1,11 +1,11 @@
-;
-; husk-scheme
-; http://github.com/justinethier/husk-scheme
-;
-; Written by Justin Ethier
-;
-; Standard library of scheme functions
-;
+;;;
+;;; husk-scheme
+;;; http://justinethier.github.com/husk-scheme
+;;;
+;;; Written by Justin Ethier
+;;;
+;;; Standard library of scheme functions
+;;;
 (define call/cc call-with-current-continuation)
 
 (define (caar pair) (car (car pair)))
