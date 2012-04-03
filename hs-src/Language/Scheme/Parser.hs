@@ -167,9 +167,20 @@ parseDecimalNumber = do
      then pzero
      else return $ (Number . read) $ sign ++ num
 
+-- |Parser for a base 10 Integer that will also
+--  check to see if the number is followed by
+--  an exponent (scientific notation). If so,
+--  the integer is converted to a float of the
+--  given magnitude.
+parseDecimalNumberMaybeExponent :: Parser LispVal
+parseDecimalNumberMaybeExponent = do
+  num <- parseDecimalNumber
+  result <- parseNumberExponent num
+  return result
+
 -- |Parse an integer in any base
 parseNumber :: Parser LispVal
-parseNumber = parseDecimalNumber <|>
+parseNumber = parseDecimalNumberMaybeExponent <|>
               parseHexNumber <|>
               parseBinaryNumber <|>
               parseOctalNumber <?>
@@ -184,28 +195,32 @@ parseRealNumber = do
   frac <- many1 (digit)
   let dec = num ++ "." ++ frac
   f <- case (length sign) of
-     0 -> return $ fst $ Numeric.readFloat dec !! 0
+     0 -> return $ Float $ fst $ Numeric.readFloat dec !! 0
           -- Bit of a hack, but need to support the + sign as well as the minus.
      1 -> if sign == "-" 
-             then return $ (*) (-1.0) $ fst $ Numeric.readFloat dec !! 0
-             else return $ fst $ Numeric.readFloat dec !! 0
+             then return $ Float $ (*) (-1.0) $ fst $ Numeric.readFloat dec !! 0
+             else return $ Float $ fst $ Numeric.readFloat dec !! 0
      _ -> pzero
-  result <- parseRealNumberExponent f
-  return $ Float result
+  result <- parseNumberExponent f
+  return result
 
 -- | Parse the exponent section of a floating point number
 --   in scientific notation. Eg "e10" from "1.0e10"
-parseRealNumberExponent :: Double -> Parser Double
-parseRealNumberExponent n = do 
+parseNumberExponent :: LispVal -> Parser LispVal
+parseNumberExponent n = do 
   exp <- many $ oneOf "Ee"
   case (length exp) of
     0 -> return n
     1 -> do
       num <- try (parseDecimalNumber)
       case num of
-        Number exp -> return $ n * (10 ** (fromInteger exp))
+        Number exp -> buildResult n exp
         _ -> pzero
     _ -> pzero
+ where 
+  buildResult (Number num) exp = return $ Float $ (fromIntegral num) * (10 ** (fromIntegral exp))
+  buildResult (Float num) exp = return $ Float $ num * (10 ** (fromIntegral exp))
+  buildResult num _ = pzero
 
 parseRationalNumber :: Parser LispVal
 parseRationalNumber = do
