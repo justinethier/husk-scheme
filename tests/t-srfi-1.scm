@@ -60,4 +60,8 @@
 (assert/equal (last-pair '(a b c)) '(c))
 
 
+
+; TODO: add a list here of all functions that are untested
+
+
 (unit-test-handler-results)
