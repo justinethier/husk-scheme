@@ -1,6 +1,7 @@
 v3.5.5
 --------
 
+- Enhanced the parser to read numbers in scientific notation such as `1e3` and `4.2e1`.
 - Implemented `char-ready?`, `rationalize`, `gcd`, and `lcm`.
 - Modified `numerator` and `denominator` to add support for integers and floating point numbers.
 
