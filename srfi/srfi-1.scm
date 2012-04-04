@@ -242,9 +242,44 @@
 ;;;
 ;;; The SRFI discussion record contains more discussion on this topic.
 
+
+; JAE - These are the necessary helper constructs
+; 
+; TBD: Should these be moved to another file, and/or
+;      encapsulated to only this srfi ??
 (define (check-arg pred val caller)
   (let lp ((val val))
     (if (pred val) val (lp (error "Bad argument" val pred caller)))))
+
+; TODO: unfortunately the original version of this was written using an
+; explicit-renaming low level macro system, so it is not portable to R5RS.
+; See: http://www.scsh.net/mail-archive/scsh-users/1996-04/msg00010.html
+;
+;;; (LET-OPTIONALS args ((var1 default1) ...) body1 ...)
+;;; ;;; The expander is defined in the code above.
+;
+;(define-syntax let-optionals expand-let-optionals)
+
+;;; (:optional rest-arg default-exp)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; This form is for evaluating optional arguments and their defaults
+;;; in simple procedures that take a *single* optional argument. It is
+;;; a macro so that the default will not be computed unless it is needed.
+;;; 
+;;; REST-ARG is a rest list from a lambda -- e.g., R in
+;;;     (lambda (a b . r) ...)
+;;; - If REST-ARG has 0 elements, evaluate DEFAULT-EXP and return that.
+;;; - If REST-ARG has 1 element, return that element.
+;;; - If REST-ARG has >1 element, error.
+
+(define-syntax :optional
+  (syntax-rules ()
+    ((:optional rest default-exp)
+     (let ((maybe-arg rest))
+       (cond ((null? maybe-arg) default-exp)
+             ((null? (cdr maybe-arg)) (car maybe-arg))
+             (else (error "too many optional arguments" maybe-arg)))))))
+
 
 ;;; Constructors
 ;;;;;;;;;;;;;;;;

@@ -448,6 +448,14 @@
   (set! gcd gcd/entry)
   (set! lcm lcm/entry))  
 
-; rationalize
-; 
+; SRFI 8
+; Reference implementation from: http://srfi.schemers.org/srfi-8/srfi-8.html
+;
+; FUTURE: This may be moved into its own file
+;
+(define-syntax receive
+    (syntax-rules ()
+        ((receive formals expression body ...)
+         (call-with-values (lambda () expression)
+             (lambda formals body ...)))))
 

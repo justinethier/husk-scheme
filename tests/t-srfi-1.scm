@@ -18,13 +18,17 @@
 (assert/equal (cons* 1) 1)
 (assert/equal (make-list 4 'c) '(c c c c))
 (assert/equal (list-tabulate 4 values) '(0 1 2 3))
+(assert/equal (list-copy (list 1 2 3 4.4 "5")) (list 1 2 3 4.4 "5"))
+; TODO: (circular-list 'z 'q) => (z q z q z q ...)
+; TODO: need to replace let-optional in iota:
 ; TODO: (assert/equal (iota 5) '(0 1 2 3 4))
 ; TODO: (assert/equal (iota 5 0 -0.1) '(0 -0.1 -0.2 -0.3 -0.4))
 
 ; Predicates
 (assert/equal (proper-list? (list))       #t)
 (assert/equal (proper-list? '(1 . 2))      #f)
-; circular-list?
+;TODO: circular-list? with a true result
+(assert/equal (circular-list? (list))       #f)
 (assert/equal (dotted-list? (list))       #f)
 (assert/equal (dotted-list? '(1 . 2))     #t)
 (assert/equal (null-list? '())        #t)
@@ -33,6 +37,7 @@
 (assert/equal (list= eq? '(a))        #t)
 
 ; Selectors
+; TODO: car+cdr, take!, drop-right!, split-at!
 (assert/equal (take '(a b c d e)  2) '(a b))
 (assert/equal (drop '(a b c d e)  2) '(c d e))
 (assert/equal (take '(1 2 3 . d) 2)  '(1 2))
@@ -55,7 +60,7 @@
 ; TODO: (take! (circular-list 1 3 5) 8) => (1 3)
 ; TODO: (take! (circular-list 1 3 5) 8) => (1 3 5 1 3 5 1 3)
 
-; TODO: (assert/equal (split-at '(a b c d e f g h) 3) '(a b c))
+(assert/equal (split-at '(a b c d e f g h) 3) '(a b c))
 (assert/equal (last '(a b c)) 'c)
 (assert/equal (last-pair '(a b c)) '(c))
 
