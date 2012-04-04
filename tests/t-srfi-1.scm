@@ -37,7 +37,9 @@
 (assert/equal (list= eq? '(a))        #t)
 
 ; Selectors
-; TODO: car+cdr, take!, drop-right!, split-at!
+; TODO: take!, drop-right!, split-at!
+(assert/equal (car+cdr '(a b c d)) 'a)
+(assert/equal (first '(a b c d)) 'a)
 (assert/equal (take '(a b c d e)  2) '(a b))
 (assert/equal (drop '(a b c d e)  2) '(c d e))
 (assert/equal (take '(1 2 3 . d) 2)  '(1 2))
@@ -64,9 +66,38 @@
 (assert/equal (last '(a b c)) 'c)
 (assert/equal (last-pair '(a b c)) '(c))
 
+; Misc
+(assert/equal (length+ '(a b c)) 3)
+; TODO: append! concatenate! reverse! append-reverse!
+(assert/equal (concatenate '((1) (2) (3) (4) (5))) '(1 2 3 4 5)) 
+(assert/equal (append-reverse '(4 3 2 1) '(5)) '(1 2 3 4 5)) 
+(assert/equal (append-reverse '(4 3 2 1) '(5)) (append (reverse '(4 3 2 1)) '(5)))
+
+; TODO:
+;(assert/equal (zip '(one two three) 
+;                   '(1 2 3)
+;                   '(odd even odd even odd even odd even))
+;             '((one 1 odd) (two 2 even) (three 3 odd)))
+;
+;(assert/equal (zip '(1 2 3)) '((1) (2) (3)))
+;(assert/equal (zip '(3 1 4 1) (circular-list #f #t)) 
+;             '((3 #f) (1 #t) (4 #f) (1 #t)))
+(assert/equal (unzip2 '((1 one) (2 two) (3 three)))
+             '(1 2 3))
+(assert/equal (count even? '(3 1 4 1 5 9 2 5 6)) 3)
+;TODO: (assert/equal (count < '(1 2 4 8) '(2 4 6 8 10 12 14 16)) 3)
+;TODO: (assert/equal (count < '(3 1 4 1) (circular-list 1 10)) 2)
 
 
-; TODO: add a list here of all functions that are untested
+; TODO:
+;
+; Fold / Unfold / Map
+; Filtering and partitioning
+; Searching
+; Deleting
+; Association lists
+; Set operations on lists
+; Primitive side-effects
 
 
 (unit-test-handler-results)
