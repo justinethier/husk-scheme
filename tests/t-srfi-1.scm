@@ -9,7 +9,7 @@
 (unit-test-start "SRFI 1: List Library")
 
 ; TODO: (import srfi-1)
-; Note - can test these in chicken using: (require-extension srfi-1)
+; Note - can test these in chicken using: (require-extension (srfi 1))
 
 (load "../srfi/srfi-1.scm")
 
