@@ -14,12 +14,17 @@
 
 (define (find-extension id)
   (define (lookup exts)
+    (write exts)
     (if (null? exts)
-	(error "extension not found - please contact your vendor" id)
-	(let ((ext (car exts)))
-	  (if ((car ext) (cadr ext) id)
-	      ((caddr ext))
-	      (lookup (cdr exts)) ) ) ) )
+	  (write (list "extension not found - please contact your vendor" id))
+;	  (error "extension not found - please contact your vendor" id)
+	  (if ((car (car exts)) (cadr (car exts)) id)
+	      ((caddr (car exts)))
+	      (lookup (cdr exts)) ) ) )
+;	  (let ((ext (car exts)))
+;	    (if ((car ext) (cadr ext) id)
+;	        ((caddr ext))
+;	        (lookup (cdr exts)) ) ) ) )
   (lookup available-extensions) )
 
 (define-syntax require-extension 
@@ -35,3 +40,6 @@
 ;
 ;   (register-extension '(srfi 1) (lambda () (load "/usr/local/lib/scheme/srfi-1.scm")))
 (register-extension '(srfi 1) (lambda () (load "srfi/srfi-1.scm"))) ; TESTING
+(find-extension '(srfi 1))
+;(require-extension (srfi 1))
+xcons ; should be defined now
