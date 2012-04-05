@@ -14,17 +14,12 @@
 
 (define (find-extension id)
   (define (lookup exts)
-    (write exts)
     (if (null? exts)
-	  (write (list "extension not found - please contact your vendor" id))
-;	  (error "extension not found - please contact your vendor" id)
-	  (if ((car (car exts)) (cadr (car exts)) id)
-	      ((caddr (car exts)))
-	      (lookup (cdr exts)) ) ) )
-;	  (let ((ext (car exts)))
-;	    (if ((car ext) (cadr ext) id)
-;	        ((caddr ext))
-;	        (lookup (cdr exts)) ) ) ) )
+	  (write (list "extension not found - please contact your vendor " id))
+	  (let ((ext (car exts)))
+	    (if ((car ext) (cadr ext) id)
+	        (caddr ext) ; Return a string instead of calling a function ((caddr ext))
+	        (lookup (cdr exts)) ) ) ) )
   (lookup available-extensions) )
 
 (define-syntax require-extension 
@@ -39,7 +34,11 @@
 ; Example of registering extensions:
 ;
 ;   (register-extension '(srfi 1) (lambda () (load "/usr/local/lib/scheme/srfi-1.scm")))
-(register-extension '(srfi 1) (lambda () (load "srfi/srfi-1.scm"))) ; TESTING
-(find-extension '(srfi 1))
+(register-extension '(srfi 1) "srfi/srfi-1.scm") ; TESTING
+(write "preparing...")
+(write (string-append "found: " (find-extension 1)))
+(write (string-append "found: " (find-extension '(srfi 1))))
+(load (find-extension '(srfi 1)))
+(write xcons)
 ;(require-extension (srfi 1))
-xcons ; should be defined now
+;xcons ; should be defined now
