@@ -1,7 +1,12 @@
-;;;; Reference implementation for SRFI-55
-;;;; from http://srfi.schemers.org/srfi-55/srfi-55.html
-;
-; Requirements: SRFI-23 (error reporting)
+;;;
+;;; husk-scheme
+;;; http://justinethier.github.com/husk-scheme
+;;;
+;;; Reference implementation for SRFI-55
+;;; from http://srfi.schemers.org/srfi-55/srfi-55.html
+;;;
+;;; Requirements: SRFI-23 (error reporting)
+;;;
 
 (define available-extensions '())
 
@@ -49,5 +54,3 @@
 ;(load (find-extension '(srfi 1)))
 (require-extension (srfi 1))
 (write xcons)
-;(require-extension (srfi 1))
-;xcons ; should be defined now
