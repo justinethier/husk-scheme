@@ -32,13 +32,15 @@ main = do args <- getArgs
 flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
 
+-- |Execute a single scheme file from the command line
 runOne :: [String] -> IO ()
 runOne args = do
-  stdlib <- getDataFileName "stdlib.scm"
   env <- primitiveBindings >>= flip extendEnv
                                    [((varNamespace, "args"),
                                     List $ map String $ drop 1 args)]
-  _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" -- Load standard library
+  -- Load standard library
+  _ <- loadLibraries env
+
   result <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
   case result of
     Just errMsg -> putStrLn errMsg
@@ -52,11 +54,31 @@ runOne args = do
           Just errMsg -> putStrLn errMsg
           _  -> return ())
 
+-- |Load standard libraries into the given environment
+loadLibraries :: Env -> IO ()
+loadLibraries env = do
+  stdlib <- getDataFileName "stdlib.scm"
+  srfi55 <- getDataFileName "srfi/srfi-55.scm" -- (require-extension)
+  -- Load standard library
+  _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
+  -- Load (require-extension), which can be used to load other SRFI's
+  _ <- evalString env $ "(load \"" ++ (escapeBackslashes srfi55) ++ "\")"
+  registerSRFI env 1
+
+-- |Register the given SRFI
+registerSRFI :: Env -> Integer -> IO ()
+registerSRFI env num = do
+ filename <- getDataFileName $ "srfi/srfi-" ++ show num ++ ".scm"
+ _ <- evalString env $ "(register-extension '(srfi " ++ show num ++ ") \"" ++ 
+  (escapeBackslashes filename) ++ "\")"
+ return ()
+
+-- |Start the REPL (interactive interpreter)
 runRepl :: IO ()
 runRepl = do
-    stdlib <- getDataFileName "stdlib.scm"
     env <- primitiveBindings
-    _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" -- Load standard library into the REPL
+    _ <- loadLibraries env
+
     runInputT defaultSettings (loop env)
     where
         loop :: Env -> InputT IO ()

@@ -8,6 +8,14 @@
 ;;; Requirements: SRFI-23 (error reporting)
 ;;;
 
+; 
+; Example of registering extensions:
+;    (register-extension '(srfi 1) "srfi/srfi-1.scm")
+; Example of loading an extension:
+;   (require-extension (srfi 1))
+;
+
+
 (define available-extensions '())
 
 (define (register-extension id action . compare)
@@ -34,7 +42,7 @@
 ; cause the load to be ineffective because the outer scope will
 ; not be affected
     ((_ (srfi id ...))
-     (load (find-extension '(srfi id) ...)) ) ; Maybe we could have a load-all that accepts a list?
+     (load (find-extension '(srfi id) ...)) ) ; TODO: Maybe we could have a load-all that accepts a list?
     ))
 ;    ((_ "internal" (srfi id ...))
 ;     (begin (find-extension '(srfi id) ...)) )
@@ -43,14 +51,3 @@
 ;    ((_ clause ...)
 ;     (begin (require-extension "internal" clause) ...)) ) )
 
-; Example of registering extensions:
-;
-;   (register-extension '(srfi 1) (lambda () (load "/usr/local/lib/scheme/srfi-1.scm")))
-(register-extension '(srfi 1) "srfi/srfi-1.scm") ; TESTING, this would need to be called by the shell/compiler at startup
-                                                 ; to provide the actual path to the library
-(write "preparing...")
-; TODO: (write (string-append "found: " (find-extension 1)))
-(write (string-append "found: " (find-extension '(srfi 1))))
-;(load (find-extension '(srfi 1)))
-(require-extension (srfi 1))
-(write xcons)
