@@ -7,11 +7,7 @@
 ;; Test cases for SRFI-1
 ;;
 (unit-test-start "SRFI 1: List Library")
-
-; TODO: (import srfi-1)
-; Note - can test these in chicken using: (require-extension (srfi 1))
-
-(load "../srfi/srfi-1.scm")
+(require-extension (srfi 1))
 
 ; Constructors
 (assert/equal (cons* 1 2 3 4) '(1 2 3 . 4))
