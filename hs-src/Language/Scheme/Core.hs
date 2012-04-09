@@ -932,6 +932,12 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("display", writeProc (\ port obj -> case obj of
                                                         String str -> hPutStr port str
                                                         _ -> hPutStr port $ show obj)),
+
+                -- From SRFI 96
+                ("file-exists?", fileExists),
+                ("delete-file", deleteFile),
+
+                -- Other I/O functions
                 ("read-contents", readContents),
                 ("read-all", readAll),
                 ("gensym", gensym)]

@@ -92,6 +92,8 @@ module Language.Scheme.Primitives (
  , readContents
  , load
  , readAll
+ , fileExists
+ , deleteFile
  -- ** Symbol generation
  , gensym
  , _gensym
@@ -195,6 +197,14 @@ writeCharProc [obj@(Char _), Port port] = do
 writeCharProc other = if length other == 2
                      then throwError $ TypeMismatch "(character port)" $ List other
                      else throwError $ NumArgs 2 other
+
+fileExists, deleteFile :: [LispVal] -> IOThrowsError LispVal
+fileExists [String filename] = throwError $ Default "Not Implemented" -- TODO !!!
+fileExists [] = throwError $ NumArgs 1 []
+fileExists args@(_ : _) = throwError $ NumArgs 1 args
+deleteFile [String filename] = throwError $ Default "Not Implemented" -- TODO !!!
+deleteFile [] = throwError $ NumArgs 1 []
+deleteFile args@(_ : _) = throwError $ NumArgs 1 args
 
 readContents :: [LispVal] -> IOThrowsError LispVal
 readContents [String filename] = liftM String $ liftIO $ readFile filename
