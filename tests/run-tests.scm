@@ -28,5 +28,6 @@
 (let () (load "t-macro-hygiene.scm"))
 (let () (load "t-macro-ref-trans.scm"))
 (let () (load "t-srfi-1.scm"))
+(let () (load "t-io.scm"))
 (let () (load "summarize.scm"))
 ; TODO: @rm -f $(UNIT_TEST_DIR)/scm-unit.tmp
