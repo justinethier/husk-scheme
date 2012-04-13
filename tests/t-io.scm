@@ -30,5 +30,9 @@
   (assert/equal data *list-data*))
 
 (close-input-port ifp)
+(assert/equal (file-exists? *filename*) #t)
+(assert/equal (delete-file *filename*) #t)
+(assert/equal (delete-file *filename*) #f)
+(assert/equal (file-exists? *filename*) #f)
 
 (unit-test-handler-results)

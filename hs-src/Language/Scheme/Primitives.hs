@@ -101,13 +101,14 @@ module Language.Scheme.Primitives (
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Types
+import qualified Control.Exception
 import Control.Monad.Error
 import Data.Char hiding (isSymbol)
 import Data.Array
 import Data.Unique
 import qualified Data.Map
 import System.IO
-import System.Directory (doesFileExist)
+import System.Directory (doesFileExist, removeFile)
 import System.IO.Error
 
 ---------------------------------------------------
@@ -205,7 +206,11 @@ fileExists [String filename] = do
 fileExists [] = throwError $ NumArgs 1 []
 fileExists args@(_ : _) = throwError $ NumArgs 1 args
 
-deleteFile [String filename] = throwError $ Default "Not Implemented" -- TODO !!!
+deleteFile [String filename] = do
+    output <- liftIO $ try(liftIO $ removeFile filename)
+    case output of
+        Left _ -> return $ Bool False
+        Right _ -> return $ Bool True
 deleteFile [] = throwError $ NumArgs 1 []
 deleteFile args@(_ : _) = throwError $ NumArgs 1 args
 
