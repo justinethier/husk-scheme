@@ -18,7 +18,7 @@
 (assert/equal (input-port? ofp) #f)
 (write *list-data* ofp)
 (close-output-port ofp)
-;(assert/equal (output-port? ofp) #f)
+(assert/equal (file-exists? *filename*) #t)
 
 (define ifp (open-input-file *filename*))
 (assert/equal (output-port? ifp) #f)
