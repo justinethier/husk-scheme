@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {- |
 Module      : Language.Scheme.Types
 Copyright   : Justin Ethier
@@ -29,6 +30,8 @@ module Language.Scheme.Types
     , runIOThrowsREPL 
     , runIOThrows 
     , LispVal
+    , toOpaque
+    , fromOpaque
     , DeferredCode
     , DynamicWinders   
     , before 
@@ -47,6 +50,7 @@ module Language.Scheme.Types
 import Data.Complex
 import Control.Monad.Error
 import Data.Array
+import Data.Dynamic
 import Data.IORef
 import qualified Data.Map
 import System.IO
@@ -188,6 +192,8 @@ data LispVal = Atom String
  | EvalFunc ([LispVal] -> IOThrowsError LispVal)
  {- ^Function within the IO monad with access to
  the current environment and continuation. -}
+ | Opaque Dynamic
+ -- ^Opaque Haskell value.
  | Port Handle
  -- ^I/O port
  | Continuation { closure :: Env                       -- Environment of the continuation
@@ -213,6 +219,19 @@ data LispVal = Atom String
  | EOF
  | Nil String
  -- ^Internal use only; do not use this type directly.
+
+-- |Convert a Haskell value to an opaque Lisp value.
+toOpaque :: Typeable a => a -> LispVal
+toOpaque = Opaque . toDyn
+
+-- |Convert an opaque Lisp value back into a Haskell value of the appropriate
+--  type, or produce a TypeMismatch error.
+fromOpaque :: forall a. Typeable a => LispVal -> ThrowsError a
+fromOpaque (Opaque o) | isJust $ fromDynamic o = fromJust $ fromDynamic o
+fromOpaque badArg = throwError $ TypeMismatch (show $ toOpaque (undefined :: a)) badArg
+
+--fromOpaque (Opaque (fromDynamic -> Just v)) = return v
+--fromOpaque badArg = throwError $ TypeMismatch (show $ toOpaque (undefined :: a)) badArg
 
 -- |Container to hold code that is passed to a continuation for deferred execution
 data DeferredCode =
@@ -359,6 +378,7 @@ showVal (HFunc {hparams = args, hvararg = varargs, hbody = _, hclosure = _}) =
 showVal (Port _) = "<IO port>"
 showVal (IOFunc _) = "<IO primitive>"
 showVal (EvalFunc _) = "<procedure>"
+showVal (Opaque d) = "<Haskell " ++ show (dynTypeRep d) ++ ">"
 
 -- |Convert a list of Lisp objects into a space-separated string
 unwordsList :: [LispVal] -> String
