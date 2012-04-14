@@ -1,3 +1,6 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns #-}
+
 {- |
 Module      : Language.Scheme.Types
 Copyright   : Justin Ethier
@@ -44,13 +47,14 @@ module Language.Scheme.Types
     , unwordsList
     ) -}
  where
-import Data.Complex
 import Control.Monad.Error
 import Data.Array
+import Data.Complex
+import Data.Dynamic
 import Data.IORef
 import qualified Data.Map
-import System.IO
 import Data.Ratio
+import System.IO
 import Text.ParserCombinators.Parsec hiding (spaces)
 
 -- Environment management
@@ -211,8 +215,20 @@ data LispVal = Atom String
      --   because syntax objects are stored in the same environments and 
      --   manipulated by the same functions as regular variables.
  | EOF
+ | Opaque Dynamic
+ -- ^An opaque data type used to pass around native Haskell
+ --  data types.
  | Nil String
  -- ^Internal use only; do not use this type directly.
+
+-- |Helper to convert to opaque
+toOpaque :: Typeable a => a -> LispVal
+toOpaque = Opaque . toDyn
+
+-- |Helper to unpack an opaque type
+fromOpaque :: forall a. Typeable a => LispVal -> ThrowsError a
+fromOpaque (Opaque (fromDynamic -> Just v)) = return v
+fromOpaque badArg = throwError $ TypeMismatch (show $ toOpaque (undefined :: a)) badArg
 
 -- |Container to hold code that is passed to a continuation for deferred execution
 data DeferredCode =
@@ -329,6 +345,7 @@ instance Eq LispVal where
 -- |Create a textual description of a 'LispVal'
 showVal :: LispVal -> String
 showVal (Nil _) = ""
+showVal (Opaque _) = "<opaque>"
 showVal (EOF) = "#!EOF"
 showVal (String contents) = "\"" ++ contents ++ "\""
 showVal (Char chr) = [chr]
