@@ -11,7 +11,7 @@ store arbitrary haskell data within a LispVal.
 
 Written by Josh Triplett (https://github.com/joshtriplett).
 
-To build, run: ghc Opaque.hs
+To build, use: ghc Opaque.hs
 
 -}
 
