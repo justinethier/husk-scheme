@@ -9,7 +9,7 @@ Portability : portable
 This file provides an example of how to use Opaque types to
 store arbitrary haskell data within a LispVal.
 
-Written by Josh Triplett (https://github.com/joshtriplett).
+Written by Josh Triplett (josh@joshtriplett.org)
 
 To build, use: ghc Opaque.hs
 
