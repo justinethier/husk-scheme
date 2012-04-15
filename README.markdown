@@ -8,9 +8,12 @@ Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design p
 
 Installation
 ------------
-husk may be installed using [cabal](http://www.haskell.org/cabal/) - just run the following command:
+husk may be installed using [cabal](http://www.haskell.org/cabal/):
 
+    cabal update
     cabal install husk-scheme
+
+husk supports all recent versions of GHC, including 6.10, 7.0, 7.2, and 7.4. It has been tested on Windows and Linux.
 
 License
 -------
