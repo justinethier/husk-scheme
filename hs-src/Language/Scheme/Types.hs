@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns #-}
 {- |
 Module      : Language.Scheme.Types
 Copyright   : Justin Ethier
@@ -47,14 +48,15 @@ module Language.Scheme.Types
     , unwordsList
     ) -}
  where
-import Data.Complex
 import Control.Monad.Error
+import Data.Complex
 import Data.Array
 import Data.Dynamic
 import Data.IORef
 import qualified Data.Map
-import System.IO
+-- import Data.Maybe
 import Data.Ratio
+import System.IO
 import Text.ParserCombinators.Parsec hiding (spaces)
 
 -- Environment management
@@ -227,11 +229,12 @@ toOpaque = Opaque . toDyn
 -- |Convert an opaque Lisp value back into a Haskell value of the appropriate
 --  type, or produce a TypeMismatch error.
 fromOpaque :: forall a. Typeable a => LispVal -> ThrowsError a
-fromOpaque (Opaque o) | isJust $ fromDynamic o = fromJust $ fromDynamic o
-fromOpaque badArg = throwError $ TypeMismatch (show $ toOpaque (undefined :: a)) badArg
+-- fromOpaque (Opaque o) | isJust $ fromDynamic o = fromJust $ fromDynamic o
+-- fromOpaque badArg = throwError $ TypeMismatch (show $ toOpaque (undefined :: a)) badArg
 
---fromOpaque (Opaque (fromDynamic -> Just v)) = return v
---fromOpaque badArg = throwError $ TypeMismatch (show $ toOpaque (undefined :: a)) badArg
+-- Old version that used ViewPatterns
+fromOpaque (Opaque (fromDynamic -> Just v)) = return v
+fromOpaque badArg = throwError $ TypeMismatch (show $ toOpaque (undefined :: a)) badArg
 
 -- |Container to hold code that is passed to a continuation for deferred execution
 data DeferredCode =
