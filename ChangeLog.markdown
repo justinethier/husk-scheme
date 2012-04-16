@@ -1,7 +1,7 @@
 v3.5.5
 --------
 
-- Added a new LispVal type called `Opaque` for Haskell integration, courtesy of Josh Triplett. The Opaque type allows a native Haskell function to package an arbitrary Haskell type for use by other native Haskell code called by husk. See examples/ffi/Opaque.hs for an example of how to use this feature.
+- Added a new LispVal type called `Opaque` for Haskell integration, courtesy of Josh Triplett. The Opaque type allows a native Haskell function to package an arbitrary Haskell type for use by other native code called by husk. See `examples/ffi/Opaque.hs` for an example of how to use this feature.
 - Enhanced the parser to read numbers in scientific notation such as `1e3` and `4.2e1`.
 - Implemented `file-exists?`, `delete-file`, `char-ready?`, `rationalize`, `gcd`, and `lcm`.
 - Modified `numerator` and `denominator` to add support for integers and floating point numbers.
