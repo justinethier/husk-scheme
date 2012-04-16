@@ -30,4 +30,5 @@
 (let () (load "t-srfi-1.scm"))
 (let () (load "t-io.scm"))
 (let () (load "summarize.scm"))
-; TODO: @rm -f $(UNIT_TEST_DIR)/scm-unit.tmp
+
+(delete-file "scm-unit.tmp")
