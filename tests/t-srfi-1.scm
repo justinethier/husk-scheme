@@ -88,12 +88,65 @@
 ; TODO:
 ;
 ; Fold / Unfold / Map
-; Filtering and partitioning
-; Searching
-; Deleting
-; Association lists
-; Set operations on lists
-; Primitive side-effects
+;TODO: fold       unfold       pair-fold       reduce 
+;TODO: fold-right unfold-right pair-fold-right reduce-right 
+;TODO: append-map append-map!
+;TODO: map! pair-for-each filter-map map-in-order
 
+; Filtering and partitioning
+;TODO: filter  partition  remove
+;TODO: filter! partition! remove! 
+
+; Searching
+; TODO: find find-tail 
+; TODO: any every
+; TODO: list-index
+; TODO: take-while drop-while take-while!
+; TODO: span break span! break!
+
+; Deleting
+;TODO: delete
+;TODO: delete! delete-duplicates!
+(assert/equal (delete-duplicates '(a b a c a b c z)) '(a b c z))
+(assert/equal (delete-duplicates '((a . 3) (b . 7) (a . 9) (c . 1))
+                   (lambda (x y) (eq? (car x) (car y))))
+    '((a . 3) (b . 7) (c . 1)))
+
+; Association lists
+;TODO: alist-cons
+;TODO: alist-copy
+;TODO: alist-delete 
+;TODO: alist-delete!
+
+; Set operations on lists
+(assert/equal #t (lset<= eq? '(a) '(a b a) '(a b c c)))
+(assert/equal #t (lset<= eq?))
+(assert/equal #t (lset<= eq? '(a)))
+(assert/equal (lset= eq? '(b e a) '(a e b) '(e e b a))  #t)
+(assert/equal (lset= eq?) #t)
+(assert/equal (lset= eq? '(a)) #t)
+(assert/equal (lset-adjoin eq? '(a b c d c e) 'a 'e 'i 'o 'u) '(u o i a b c d c e))
+(assert/equal (lset-union eq? '(a b c d e) '(a e i o u)) '(u o i a b c d e))
+;; Repeated elements in LIST1 are preserved.
+(assert/equal (lset-union eq? '(a a c) '(x a x)) '(x a a c))
+;; Trivial cases
+(assert/equal (lset-union eq?) '())
+(assert/equal (lset-union eq? '(a b c)) '(a b c))
+(assert/equal (lset-intersection eq? '(a b c d e) '(a e i o u)) '(a e))
+;; Repeated elements in LIST1 are preserved.
+(assert/equal (lset-intersection eq? '(a x y a) '(x a x z)) '(a x a))
+(assert/equal (lset-intersection eq? '(a b c)) '(a b c))     ; Trivial case
+(assert/equal (lset-difference eq? '(a b c d e) '(a e i o u)) '(b c d))
+(assert/equal (lset-difference eq? '(a b c)) '(a b c)) ; Trivial case
+(assert/equal (lset-xor eq? '(a b c d e) '(a e i o u)) (reverse '(d c b i o u)))
+(assert/equal (lset-xor eq?) '())
+(assert/equal (lset-xor eq? '(a b c d e)) '(a b c d e))
+
+; TODO: lset-diff+intersection
+; TODO: lset-union!       
+; TODO: lset-intersection!
+; TODO: lset-difference!  
+; TODO: lset-xor!         
+; TODO: lset-diff+intersection!
 
 (unit-test-handler-results)
