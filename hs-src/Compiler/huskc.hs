@@ -132,21 +132,34 @@ process :: String -> String -> Bool -> String -> IO ()
 process inFile outExec dynamic extraArgs = do
   env <- liftIO $ nullEnv
   stdlib <- getDataFileName "stdlib.scm"
-  result <- (runIOThrows $ liftM show $ compileSchemeFile env (stdlib) inFile)
+  srfi55 <- getDataFileName "srfi/srfi-55.scm" -- (require-extension)
+  result <- (runIOThrows $ liftM show $ compileSchemeFile env stdlib srfi55 inFile)
   case result of
    Just errMsg -> putStrLn errMsg
    _ -> compileHaskellFile outExec dynamic extraArgs
 
+-- TODO: this is also used in shell.hs - find a common place to put them both
+-- |Register the given SRFI
+registerSRFI :: Env -> Integer -> IO ()
+registerSRFI env num = do
+ filename <- getDataFileName $ "srfi/srfi-" ++ show num ++ ".scm"
+ _ <- Language.Scheme.Core.evalString env $ "(register-extension '(srfi " ++ show num ++ ") \"" ++ 
+  (Language.Scheme.Core.escapeBackslashes filename) ++ "\")"
+ return () 
+
 -- |Compile a scheme file to haskell
-compileSchemeFile :: Env -> String -> String -> IOThrowsError LispVal
-compileSchemeFile env stdlib filename = do
+compileSchemeFile :: Env -> String -> String -> String -> IOThrowsError LispVal
+compileSchemeFile env stdlib srfi55 filename = do
   -- TODO: it is only temporary to compile the standard library each time. It should be 
   --       precompiled and just added during the ghc compilation
-  libsC <- compileLisp env stdlib "run" (Just "exec")
+  libsC <- compileLisp env stdlib "run" (Just "exec55")
+  libSrfi55C <- compileLisp env srfi55 "exec55" (Just "exec")
+  _ <- liftIO $ registerSRFI env 1
   execC <- compileLisp env filename "exec" Nothing
   outH <- liftIO $ openFile "_tmp.hs" WriteMode
   _ <- liftIO $ writeList outH header
   _ <- liftIO $ writeList outH $ map show libsC
+  _ <- liftIO $ writeList outH $ map show libSrfi55C
   _ <- liftIO $ writeList outH $ map show execC
   _ <- liftIO $ hClose outH
   if not (null execC)

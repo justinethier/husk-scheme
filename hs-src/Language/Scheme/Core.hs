@@ -42,7 +42,7 @@ import System.IO
 
 -- |husk version number
 version :: String
-version = "3.5.4"
+version = "3.5.5"
 
 -- |A utility function to display the husk console banner
 showBanner :: IO ()
@@ -932,6 +932,12 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("display", writeProc (\ port obj -> case obj of
                                                         String str -> hPutStr port str
                                                         _ -> hPutStr port $ show obj)),
+
+                -- From SRFI 96
+                ("file-exists?", fileExists),
+                ("delete-file", deleteFile),
+
+                -- Other I/O functions
                 ("read-contents", readContents),
                 ("read-all", readAll),
                 ("gensym", gensym)]

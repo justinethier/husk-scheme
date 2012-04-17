@@ -92,6 +92,8 @@ module Language.Scheme.Primitives (
  , readContents
  , load
  , readAll
+ , fileExists
+ , deleteFile
  -- ** Symbol generation
  , gensym
  , _gensym
@@ -99,13 +101,14 @@ module Language.Scheme.Primitives (
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Types
+import qualified Control.Exception
 import Control.Monad.Error
 import Data.Char hiding (isSymbol)
 import Data.Array
 import Data.Unique
 import qualified Data.Map
 import System.IO
-import System.Directory (doesFileExist)
+import System.Directory (doesFileExist, removeFile)
 import System.IO.Error
 
 ---------------------------------------------------
@@ -195,6 +198,21 @@ writeCharProc [obj@(Char _), Port port] = do
 writeCharProc other = if length other == 2
                      then throwError $ TypeMismatch "(character port)" $ List other
                      else throwError $ NumArgs 2 other
+
+fileExists, deleteFile :: [LispVal] -> IOThrowsError LispVal
+fileExists [String filename] = do
+    exists <- liftIO $ doesFileExist filename
+    return $ Bool exists
+fileExists [] = throwError $ NumArgs 1 []
+fileExists args@(_ : _) = throwError $ NumArgs 1 args
+
+deleteFile [String filename] = do
+    output <- liftIO $ try(liftIO $ removeFile filename)
+    case output of
+        Left _ -> return $ Bool False
+        Right _ -> return $ Bool True
+deleteFile [] = throwError $ NumArgs 1 []
+deleteFile args@(_ : _) = throwError $ NumArgs 1 args
 
 readContents :: [LispVal] -> IOThrowsError LispVal
 readContents [String filename] = liftM String $ liftIO $ readFile filename
