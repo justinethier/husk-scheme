@@ -193,8 +193,6 @@
            (for-each func (cdr lst)))))
 
 (define (map func lst)        (foldr (lambda (x y) (cons (func x) y)) '() lst))
-(define (filter pred lst)     (foldr (lambda (x y) (if (pred x) (cons x y) y)) '() lst))
-
 
 (define (list-tail lst k) 
         (if (zero? k)
