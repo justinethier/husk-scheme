@@ -104,6 +104,15 @@
 ;TODO: filter! partition! remove! 
 
 ; Searching
+;; Proper list -- success
+(assert/equal (find even? '(1 2 3)) 2)
+(assert/equal (find even? '(1 2 3 4)) 2)
+(assert/equal (find even? '(3 1 4 1 5 9)) 4)
+(assert/equal (any  even? '(1 2 3)) #t)
+
+;; proper list -- failure
+(assert/equal (find even? '(1 7 3)) #f)
+(assert/equal (any  even? '(1 7 3)) #f)
 ; TODO: find find-tail 
 ; TODO: any every
 ; TODO: list-index
