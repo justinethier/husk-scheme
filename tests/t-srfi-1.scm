@@ -88,13 +88,19 @@
 ; TODO:
 ;
 ; Fold / Unfold / Map
+; TODO: a lot of these functions are in stdlib right now...
 ;TODO: fold       unfold       pair-fold       reduce 
 ;TODO: fold-right unfold-right pair-fold-right reduce-right 
 ;TODO: append-map append-map!
 ;TODO: map! pair-for-each filter-map map-in-order
 
 ; Filtering and partitioning
-;TODO: filter  partition  remove
+(assert/equal (filter even? '(1 2 3 4)) 
+			  '(2 4))
+(assert/equal (filter even? '(0 7 8 8 43 -4)) '(0 8 8 -4))
+(assert/equal (partition symbol? '(one 2 3 four five 6))
+             '(one four five))
+(assert/equal  (remove even? '(0 7 8 8 43 -4)) '(7 43))
 ;TODO: filter! partition! remove! 
 
 ; Searching
@@ -105,8 +111,8 @@
 ; TODO: span break span! break!
 
 ; Deleting
-;TODO: delete
 ;TODO: delete! delete-duplicates!
+(assert/equal (delete 1 (list 1 2 1 3 'a)) '(2 3 a))
 (assert/equal (delete-duplicates '(a b a c a b c z)) '(a b c z))
 (assert/equal (delete-duplicates '((a . 3) (b . 7) (a . 9) (c . 1))
                    (lambda (x y) (eq? (car x) (car y))))

@@ -226,9 +226,6 @@
 (assert/equal (map (curry + 2) '(1 2 3 4)) 
 			  '(3 4 5 6))
 
-(assert/equal (filter even? '(1 2 3 4)) 
-			  '(2 4))
-
 (assert/equal (zero? 0) #t)
 (assert/equal (length '(0 1 2 3)) 4)
 (assert/equal (member 1 '(1 2 3 4)) '(1 2 3 4))
