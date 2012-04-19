@@ -16,6 +16,7 @@ Tested-with:         GHC == 7.2.2, GHC == 7.0.2, GHC == 6.12.3, GHC == 6.10.4
 
 Extra-Source-Files:  README.markdown
                      LICENSE
+                     AUTHORS
 Data-Files:          stdlib.scm srfi/srfi-1.scm srfi/srfi-55.scm
 
 Source-Repository head
