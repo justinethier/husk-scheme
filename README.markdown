@@ -10,7 +10,7 @@ Installation
 ------------
 The Glasgow Haskell Compiler (GHC) is required to build, install, and run husk. All recent versions of GHC are supported, including 6.10, 7.0, 7.2, and 7.4. The easiest way to get GHC is via the [Haskell Platform](http://hackage.haskell.org/platform/).
 
-husk has been tested on Windows and Linux.
+husk has been tested on Windows, Linux, and FreeBSD.
 
 husk may be installed using [cabal](http://www.haskell.org/cabal/):
 
