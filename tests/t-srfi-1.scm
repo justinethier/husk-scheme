@@ -109,15 +109,21 @@
 (assert/equal (find even? '(1 2 3 4)) 2)
 (assert/equal (find even? '(3 1 4 1 5 9)) 4)
 (assert/equal (any  even? '(1 2 3)) #t)
-
 ;; proper list -- failure
 (assert/equal (find even? '(1 7 3)) #f)
 (assert/equal (any  even? '(1 7 3)) #f)
-; TODO: find find-tail 
-; TODO: any every
-; TODO: list-index
-; TODO: take-while drop-while take-while!
-; TODO: span break span! break!
+(assert/equal (find-tail even? '(3 1 37 -8 -5 0 0)) '(-8 -5 0 0))
+(assert/equal (find-tail even? '(3 1 37 -5)) #f)
+(assert/equal (every even? (list 2 4)) #t)
+(assert/equal (every even? (list 2 5)) #f)
+(assert/equal (list-index even? '(3 1 4 1 5 9)) 2)
+(assert/equal (list-index < '(3 1 4 1 5 9 2 5 6) '(2 7 1 8 2)) 1)
+(assert/equal (list-index = '(3 1 4 1 5 9 2 5 6) '(2 7 1 8 2)) #f)
+(assert/equal (take-while even? '(2 18 3 10 22 9)) '(2 18))
+(assert/equal (drop-while even? '(2 18 3 10 22 9)) '(3 10 22 9))
+(assert/equal (span even? '(2 18 3 10 22 9)) '(2 18))
+(assert/equal (break even? '(3 1 4 1 5 9)) '(3 1))
+; TODO: take-while! span! break!
 
 ; Deleting
 ;TODO: delete! delete-duplicates!
