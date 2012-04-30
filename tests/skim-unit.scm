@@ -17,8 +17,14 @@
 
 (define (unit-test-handler expected actual) 
   (if (not (eqv? expected actual))
-    (begin (write (list "Test failed; expected value:" expected ", actual value:" actual))
-           (set! fail-count (+ fail-count 1)))
+    (begin 
+        (display "Test failed; expected value: [")
+        (display expected) 
+        (display "], actual value: [") 
+        (display actual)
+        (display "]")
+        (newline)
+        (set! fail-count (+ fail-count 1)))
     (set! pass-count (+ pass-count 1))))
 
 (define (assert proc) (unit-test-handler #t (proc)))
