@@ -30,9 +30,8 @@
 (assert/equal (list-tabulate 4 values) '(0 1 2 3))
 (assert/equal (list-copy (list 1 2 3 4.4 "5")) (list 1 2 3 4.4 "5"))
 ; TODO: (circular-list 'z 'q) => (z q z q z q ...)
-; TODO: need to replace let-optional in iota:
-; TODO: (assert/equal (iota 5) '(0 1 2 3 4))
-; TODO: (assert/equal (iota 5 0 -0.1) '(0 -0.1 -0.2 -0.3 -0.4))
+(assert/equal (iota 5) '(0 1 2 3 4))
+(assert/equal (iota 5 0 -0.5) '(0.0 -0.5 -1.0 -1.5 -2.0))
 
 ; Predicates
 (assert/equal (proper-list? (list))       #t)

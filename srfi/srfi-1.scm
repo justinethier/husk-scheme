@@ -343,7 +343,20 @@
 (define (iota count . maybe-start+step)
   (check-arg integer? count iota)
   (if (< count 0) (error "Negative step count" iota count))
-  (let-optionals maybe-start+step ((start 0) (step 1))
+
+; JAE
+;
+; Replaced the let-optionals macro below with code that is
+; almost equivalent - but the caller must specify either
+; both parameters or none at all.
+;
+;  (let-optionals maybe-start+step ((start 0) (step 1))
+  (let ((start 0) (step 1))
+    (if (not (null? maybe-start+step))
+      (begin
+        (set! start (first maybe-start+step))
+        (set! step (second maybe-start+step))))
+;/JAE
     (check-arg number? start iota)
     (check-arg number? step iota)
     (let loop ((n 0) (r '()))
