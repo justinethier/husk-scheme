@@ -58,10 +58,8 @@
 	  accum
 	  (foldl func (func (car lst) accum) (cdr lst))))
 
-(define fold foldl)
-
-(define (sum . lst)     (fold + 0 lst))
-(define (product . lst) (fold * 1 lst))
+(define (sum . lst)     (foldl + 0 lst))
+(define (product . lst) (foldl * 1 lst))
 
 ; Forms from R5RS for and/or
 (define-syntax and
@@ -84,8 +82,8 @@
       (* num -1)
       num))
 
-(define (max first . rest) (fold (lambda (old new) (if (> old new) old new)) first rest))
-(define (min first . rest) (fold (lambda (old new) (if (< old new) old new)) first rest))
+(define (max first . rest) (foldl (lambda (old new) (if (> old new) old new)) first rest))
+(define (min first . rest) (foldl (lambda (old new) (if (< old new) old new)) first rest))
 
 (define zero?        (curry = 0))
 (define positive?    (curry < 0))
@@ -93,8 +91,8 @@
 (define (odd? num)   (= (modulo num 2) 1))
 (define (even? num)  (= (modulo num 2) 0))
 
-(define (length lst)    (fold (lambda (x y) (+ y 1)) 0 lst))
-(define (reverse lst)   (fold (flip cons) '() lst))
+(define (length lst)    (foldl (lambda (x y) (+ y 1)) 0 lst))
+(define (reverse lst)   (foldl (flip cons) '() lst))
 
 (define-syntax begin
   (syntax-rules ()
@@ -172,9 +170,9 @@
 (define (member obj lst) (my-mem-helper obj lst equal?))
 
 (define (mem-helper pred op)  (lambda (next acc) (if (and (not acc) (pred (op next))) next acc)))
-(define (assq obj alist)      (fold (mem-helper (curry eq? obj) car) #f alist))
-(define (assv obj alist)      (fold (mem-helper (curry eqv? obj) car) #f alist))
-(define (assoc obj alist)     (fold (mem-helper (curry equal? obj) car) #f alist))
+(define (assq obj alist)      (foldl (mem-helper (curry eq? obj) car) #f alist))
+(define (assv obj alist)      (foldl (mem-helper (curry eqv? obj) car) #f alist))
+(define (assoc obj alist)     (foldl (mem-helper (curry equal? obj) car) #f alist))
 
 ; FUTURE: on map and for-each - Support variable number of args, per spec:
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4
@@ -207,7 +205,7 @@
         lst
         (if (null? (cdr lst))
             (car lst)
-            (fold (lambda (a b) (append-2 b a)) (car lst) (cdr lst))))))
+            (foldl (lambda (a b) (append-2 b a)) (car lst) (cdr lst))))))
 
 ; Let forms
 ;
@@ -425,7 +423,7 @@
   (define (gcd/entry . nums)
     (if (eqv? nums '())
       0
-      (fold gcd/main (car nums) (cdr nums))))
+      (foldl gcd/main (car nums) (cdr nums))))
 
   ; Main LCM algorithm
   (define (lcm/main a b)
@@ -435,7 +433,7 @@
   (define (lcm/entry . nums)
     (if (eqv? nums '())
       1
-      (fold lcm/main (car nums) (cdr nums))))
+      (foldl lcm/main (car nums) (cdr nums))))
 
   (set! gcd gcd/entry)
   (set! lcm lcm/entry))  

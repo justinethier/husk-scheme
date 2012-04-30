@@ -268,7 +268,7 @@
                #(0 1 4 9 16 25))
 
 ; Fix for issue #40 - arguments reversed in fold function:
-(assert/equal (fold (lambda (x y) x) 8 (list 1 2 3)) 3)
+(assert/equal (foldl (lambda (x y) x) 8 (list 1 2 3)) 3)
 
 ; See: http://en.wikibooks.org/wiki/Talk:Haskell/Write_Yourself_a_Scheme_in_48_Hours 
 ; Environment bug:
