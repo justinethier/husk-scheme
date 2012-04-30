@@ -105,7 +105,10 @@
 ;TODO: unfold       pair-fold
 (assert/equal (reduce + 0 '(1 2 3 4)) (+ 1 2 3 4))
 
-;TODO: unfold-right pair-fold-right reduce-right 
+; TODO: (pair-fold (lambda (pair tail) (set-cdr! pair tail) pair) '() lis))
+(assert/equal (pair-fold-right cons '() '(a b c)) '((a b c) (b c) (c)))
+
+;TODO: unfold-right reduce-right 
 
 (assert/equal (fold-right cons '() '(a b c)) '(a b c))       ; Copy LIS.
 (assert/equal (fold-right (lambda (x l) (if (even? x) (cons x l) l)) '() '(1 2 3 4)) '(2 4)) ;; Filter the even numbers out of LIS.
