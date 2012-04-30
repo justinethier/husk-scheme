@@ -102,7 +102,11 @@
 (assert/equal (fold + 0 '(1 2 3 4)) (+ 1 2 3 4))
 
 
-;TODO: unfold       pair-fold
+;TODO: pair-fold
+(assert/equal (unfold null-list? car cdr '(a b c)) '(a b c))
+(assert/equal (unfold null-list? car cdr '(1)
+                (lambda (x) '(2 3 4)))
+              '(1 2 3 4))
 (assert/equal (reduce + 0 '(1 2 3 4)) (+ 1 2 3 4))
 
 ; TODO: (pair-fold (lambda (pair tail) (set-cdr! pair tail) pair) '() lis))

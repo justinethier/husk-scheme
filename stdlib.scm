@@ -60,11 +60,6 @@
 
 (define fold foldl)
 
-(define (unfold func init pred)
-  (if (pred init)
-      (cons init '())
-      (cons init (unfold func (func init) pred))))
-
 (define (sum . lst)     (fold + 0 lst))
 (define (product . lst) (fold * 1 lst))
 
