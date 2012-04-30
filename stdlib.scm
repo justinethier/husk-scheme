@@ -59,7 +59,6 @@
 	  (foldl func (func (car lst) accum) (cdr lst))))
 
 (define fold foldl)
-(define reduce fold)
 
 (define (unfold func init pred)
   (if (pred init)

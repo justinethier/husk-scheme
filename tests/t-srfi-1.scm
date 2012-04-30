@@ -21,6 +21,7 @@
 ; lset-difference!  
 ; lset-xor!         
 ; lset-diff+intersection!
+; map! append-map!
 
 ; Constructors
 (assert/equal (cons* 1 2 3 4) '(1 2 3 . 4))
@@ -98,10 +99,22 @@
 ;
 ; Fold / Unfold / Map
 ; TODO: a lot of these functions are in stdlib right now...
-;TODO: fold       unfold       pair-fold       reduce 
-;TODO: fold-right unfold-right pair-fold-right reduce-right 
-;TODO: append-map append-map!
-;TODO: map! pair-for-each filter-map map-in-order
+(assert/equal (fold + 0 '(1 2 3 4)) (+ 1 2 3 4))
+
+
+;TODO: unfold       pair-fold
+(assert/equal (reduce + 0 '(1 2 3 4)) (+ 1 2 3 4))
+
+;TODO: unfold-right pair-fold-right reduce-right 
+
+(assert/equal (fold-right cons '() '(a b c)) '(a b c))       ; Copy LIS.
+(assert/equal (fold-right (lambda (x l) (if (even? x) (cons x l) l)) '() '(1 2 3 4)) '(2 4)) ;; Filter the even numbers out of LIS.
+(assert/equal (fold-right cons* '() '(a b c) '(1 2 3 4 5)) '(a 1 b 2 c 3))
+
+;TODO: append-map
+;TODO: pair-for-each filter-map map-in-order
+
+
 
 ; Filtering and partitioning
 (assert/equal (filter even? '(1 2 3 4)) 
