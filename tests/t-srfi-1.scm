@@ -9,6 +9,19 @@
 (unit-test-start "SRFI 1: List Library")
 (require-extension (srfi 1))
 
+; TODO: linear update functions will not be supported now:
+; take!, drop-right!, split-at!
+; append! concatenate! reverse! append-reverse!
+; filter! partition! remove! 
+; take-while! span! break!
+; delete! delete-duplicates!
+; alist-delete!
+; lset-union!       
+; lset-intersection!
+; lset-difference!  
+; lset-xor!         
+; lset-diff+intersection!
+
 ; Constructors
 (assert/equal (cons* 1 2 3 4) '(1 2 3 . 4))
 (assert/equal (cons* 1) 1)
@@ -33,7 +46,6 @@
 (assert/equal (list= eq? '(a))        #t)
 
 ; Selectors
-; TODO: take!, drop-right!, split-at!
 (assert/equal (car+cdr '(a b c d)) 'a)
 (assert/equal (first '(a b c d)) 'a)
 (assert/equal (take '(a b c d e)  2) '(a b))
@@ -55,8 +67,6 @@
 (let ((flist (list 1 2 3 4 5 6))
       (i 2))
     (assert/equal (append (take flist i) (drop flist i)) flist))
-; TODO: (take! (circular-list 1 3 5) 8) => (1 3)
-; TODO: (take! (circular-list 1 3 5) 8) => (1 3 5 1 3 5 1 3)
 
 (assert/equal (split-at '(a b c d e f g h) 3) '(a b c))
 (assert/equal (last '(a b c)) 'c)
@@ -64,7 +74,6 @@
 
 ; Misc
 (assert/equal (length+ '(a b c)) 3)
-; TODO: append! concatenate! reverse! append-reverse!
 (assert/equal (concatenate '((1) (2) (3) (4) (5))) '(1 2 3 4 5)) 
 (assert/equal (append-reverse '(4 3 2 1) '(5)) '(1 2 3 4 5)) 
 (assert/equal (append-reverse '(4 3 2 1) '(5)) (append (reverse '(4 3 2 1)) '(5)))
@@ -101,7 +110,6 @@
 (assert/equal (partition symbol? '(one 2 3 four five 6))
              '(one four five))
 (assert/equal  (remove even? '(0 7 8 8 43 -4)) '(7 43))
-;TODO: filter! partition! remove! 
 
 ; Searching
 ;; Proper list -- success
@@ -123,10 +131,8 @@
 (assert/equal (drop-while even? '(2 18 3 10 22 9)) '(3 10 22 9))
 (assert/equal (span even? '(2 18 3 10 22 9)) '(2 18))
 (assert/equal (break even? '(3 1 4 1 5 9)) '(3 1))
-; TODO: take-while! span! break!
 
 ; Deleting
-;TODO: delete! delete-duplicates!
 (assert/equal (delete 1 (list 1 2 1 3 'a)) '(2 3 a))
 (assert/equal (delete-duplicates '(a b a c a b c z)) '(a b c z))
 (assert/equal (delete-duplicates '((a . 3) (b . 7) (a . 9) (c . 1))
@@ -137,7 +143,6 @@
 ;TODO: alist-cons
 ;TODO: alist-copy
 ;TODO: alist-delete 
-;TODO: alist-delete!
 
 ; Set operations on lists
 (assert/equal #t (lset<= eq? '(a) '(a b a) '(a b c c)))
@@ -162,12 +167,5 @@
 (assert/equal (lset-xor eq? '(a b c d e) '(a e i o u)) (reverse '(d c b i o u)))
 (assert/equal (lset-xor eq?) '())
 (assert/equal (lset-xor eq? '(a b c d e)) '(a b c d e))
-
-; TODO: lset-diff+intersection
-; TODO: lset-union!       
-; TODO: lset-intersection!
-; TODO: lset-difference!  
-; TODO: lset-xor!         
-; TODO: lset-diff+intersection!
 
 (unit-test-handler-results)
