@@ -95,32 +95,64 @@
 ;TODO: (assert/equal (count < '(3 1 4 1) (circular-list 1 10)) 2)
 
 
-; TODO:
-;
 ; Fold / Unfold / Map
-; TODO: a lot of these functions are in stdlib right now...
 (assert/equal (fold + 0 '(1 2 3 4)) (+ 1 2 3 4))
-
-
-;TODO: pair-fold
 (assert/equal (unfold null-list? car cdr '(a b c)) '(a b c))
 (assert/equal (unfold null-list? car cdr '(1)
                 (lambda (x) '(2 3 4)))
               '(1 2 3 4))
 (assert/equal (reduce + 0 '(1 2 3 4)) (+ 1 2 3 4))
+(assert/equal
+    (pair-fold-right cons '() '(a b c))
+   '((a b c) (b c) (c)))
+(assert/equal 
+    (unfold-right null-list? car cdr '(9 8 7 6 5 4 3 2 1))
+   '(1 2 3 4 5 6 7 8 9))
+(assert/equal 
+    (reduce-right append '() '((1) (2) (3)))
+   '(1 2 3))
+(assert/equal 
+    (fold-right cons '() '(a b c))
+   '(a b c)) ;; Copy LIS.
+(assert/equal 
+    (fold-right (lambda (x l) (if (even? x) (cons x l) l)) '() '(1 2 3 4))
+   '(2 4)) ;; Filter the even numbers out of LIS.
+(assert/equal 
+    (fold-right cons* '() '(a b c) '(1 2 3 4 5))
+   '(a 1 b 2 c 3))
+(assert/equal
+    (append-map (lambda (x) (list x (- x))) '(1 3 8))
+   '(1 -1 3 -3 8 -8))
+(assert/equal
+    (filter-map (lambda (x) (and (number? x) (* x x))) '(a 1 b 3 c 7))
+   '(1 9 49))
+(assert/equal 
+    (map-in-order cadr '((a b) (d e) (g h)))
+   '(b e h))
+(assert/equal
+    (map-in-order (lambda (n) (inexact->exact (expt n n)))
+        '(1 2 3 4 5))
+   '(1 4 27 256 3125))
+(assert/equal
+    (map-in-order + '(1 2 3) '(4 5 6))
+   '(5 7 9))
+(assert/equal
+    (let ((count 0))
+      (map (lambda (ignored)
+               (set! count (+ count 1))
+                        count)
+             '(a b)))
+   '(1 2))
+(let ((tmp '()))
+    (pair-for-each (lambda (pair) (set! tmp (append tmp pair))) '(a b c))
+    (assert/equal tmp '(a b c b c c)))
 
-; TODO: (pair-fold (lambda (pair tail) (set-cdr! pair tail) pair) '() lis))
-(assert/equal (pair-fold-right cons '() '(a b c)) '((a b c) (b c) (c)))
 
-;TODO: unfold-right reduce-right 
-
-(assert/equal (fold-right cons '() '(a b c)) '(a b c))       ; Copy LIS.
-(assert/equal (fold-right (lambda (x l) (if (even? x) (cons x l) l)) '() '(1 2 3 4)) '(2 4)) ;; Filter the even numbers out of LIS.
-(assert/equal (fold-right cons* '() '(a b c) '(1 2 3 4 5)) '(a 1 b 2 c 3))
-
-;TODO: append-map
-;TODO: pair-for-each filter-map map-in-order
-
+; TODO: this illustrates a bug in husk, since the result is not simplified to (3 2 1)
+;(assert/equal
+;    (pair-fold (lambda (pair tail) (set-cdr! pair tail) pair) '() '(1 2 3))
+;   '(3 . (2 . (1 . ()))))
+(assert/equal #t #f)
 
 
 ; Filtering and partitioning
