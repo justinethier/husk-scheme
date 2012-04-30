@@ -140,9 +140,17 @@
     '((a . 3) (b . 7) (c . 1)))
 
 ; Association lists
-;TODO: alist-cons
-;TODO: alist-copy
-;TODO: alist-delete 
+(define e '((a 1) (b 2) (c 3)))
+(assert/equal (assq 'a e)                             '(a 1))
+(assert/equal (assq 'b e)                             '(b 2))
+(assert/equal (assq 'd e)                             '#f)
+;TODO: (assert/equal (assq (list 'a) '(((a)) ((b)) ((c))))   '#f)
+(assert/equal (assoc (list 'a) '(((a)) ((b)) ((c))))  '((a)))
+(assert/equal (assv 5 '((2 3) (5 7) (11 13)))    '(5 7))
+
+(assert/equal (alist-cons 'a 0 (list '(1 . 2) '(3 4))) '((a . 0) (1 . 2) (3 4)))
+(assert/equal (alist-copy (list '(1 2) '(3 4))) '((1 2) (3 4)))
+(assert/equal (alist-delete 1 '((1 . 2))) '())
 
 ; Set operations on lists
 (assert/equal #t (lset<= eq? '(a) '(a b a) '(a b c c)))
