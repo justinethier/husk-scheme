@@ -9,6 +9,16 @@
 (unit-test-start "SRFI 1: List Library")
 (require-extension (srfi 1))
 
+; TODO: not sure why these two are not working:
+; zip, count
+
+; TODO: circular lists are not supported, and probably will not
+;       be until (if?) memory model is fixed to be more than
+;       just strings as vars
+;
+; TODO: (circular-list 'z 'q) => (z q z q z q ...)
+; TODO: circular-list? with a true result
+
 ; TODO: linear update functions will not be supported now:
 ; take!, drop-right!, split-at!
 ; append! concatenate! reverse! append-reverse!
@@ -29,14 +39,12 @@
 (assert/equal (make-list 4 'c) '(c c c c))
 (assert/equal (list-tabulate 4 values) '(0 1 2 3))
 (assert/equal (list-copy (list 1 2 3 4.4 "5")) (list 1 2 3 4.4 "5"))
-; TODO: (circular-list 'z 'q) => (z q z q z q ...)
 (assert/equal (iota 5) '(0 1 2 3 4))
 (assert/equal (iota 5 0 -0.5) '(0.0 -0.5 -1.0 -1.5 -2.0))
 
 ; Predicates
 (assert/equal (proper-list? (list))       #t)
 (assert/equal (proper-list? '(1 . 2))      #f)
-;TODO: circular-list? with a true result
 (assert/equal (circular-list? (list))       #f)
 (assert/equal (dotted-list? (list))       #f)
 (assert/equal (dotted-list? '(1 . 2))     #t)
@@ -148,7 +156,6 @@
 (assert/equal
     (pair-fold (lambda (pair tail) (set-cdr! pair tail) pair) '() '(1 2 3))
    '(3 2 1))
-(assert/equal #t #f)
 
 
 ; Filtering and partitioning
