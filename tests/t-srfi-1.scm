@@ -145,12 +145,9 @@
 (let ((tmp '()))
     (pair-for-each (lambda (pair) (set! tmp (append tmp pair))) '(a b c))
     (assert/equal tmp '(a b c b c c)))
-
-
-; TODO: this illustrates a bug in husk, since the result is not simplified to (3 2 1)
-;(assert/equal
-;    (pair-fold (lambda (pair tail) (set-cdr! pair tail) pair) '() '(1 2 3))
-;   '(3 . (2 . (1 . ()))))
+(assert/equal
+    (pair-fold (lambda (pair tail) (set-cdr! pair tail) pair) '() '(1 2 3))
+   '(3 2 1))
 (assert/equal #t #f)
 
 
