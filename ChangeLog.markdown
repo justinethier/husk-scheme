@@ -1,7 +1,7 @@
 v3.5.5
 --------
 
-- Added partial support for SRFI-1 (List Library), which can be loaded using `(require-extension (srfi 1))`. 
+- Added support for SRFI-1 (List Library), which can be loaded using `(require-extension (srfi 1))`. Note that linear update functions (such as `map!`, `take!`, etc) are not supported at this time.
 - Added a new LispVal type called `Opaque` for Haskell integration, courtesy of Josh Triplett. The Opaque type allows a native Haskell function to package an arbitrary Haskell type for use by other native code called by husk. See `examples/ffi/Opaque.hs` for an example of how to use this feature.
 - Implemented `file-exists?`, `delete-file`, `char-ready?`, `rationalize`, `gcd`, and `lcm`.
 - Enhanced the parser to read numbers in scientific notation such as `1e3` and `4.2e1`.
@@ -17,7 +17,7 @@ such as `write` or `display`.
 - Added a special form `expand` that can be used to see the result of a macro
 expansion, for debugging purposes. For example: `(expand (let ((x 1)) x))`.
 - Allow a list to be enclosed by matched brackets as well as parentheses. For example: `(+ 1 2 [+ 3 4])`.
-- Internal change - cleaned up code by using Language pragmas instead of explicitly using extentions in the cabal and make files.
+- Internal change - cleaned up code by using Language pragmas instead of explicitly using extensions in the cabal and make files.
 
 v3.5.3.2
 --------
