@@ -17,21 +17,6 @@
 ;;;
 
 
-;; TODO: cross-reference functions here with those in stdlib.
-; there are some in stdlib from Tang that really belong here
-
-; TODO: add srfi file(s) to the installation and
-; add a simplified version of (import) that will 
-; just take the name of the SRFI and (load) that
-; srfi file. No need to implement full module/library
-; semantics just yet. But this will be a first step...
-;
-; A simple way to do this is via SRFI 55's require-extension:
-; http://srfi.schemers.org/srfi-55/srfi-55.html
-;
-
-
-
 ;;; SRFI-1 list-processing library 			-*- Scheme -*-
 ;;; Reference implementation
 ;;;
