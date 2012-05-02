@@ -1677,9 +1677,3 @@
 			    (not (any (lambda (lis) (member elt lis =))
 				      lists)))
 			  lis1))))
-
-; TODO: not sure this will be so good for the compiler, maybe
-; should just return an atom or something...
-(display "Loaded SRFI 1 - List library")
-(newline)
-
