@@ -7,6 +7,7 @@ v3.5.5
 - Enhanced the parser to read numbers in scientific notation such as `1e3` and `4.2e1`.
 - Modified `numerator` and `denominator` to add support for integers and floating point numbers.
 - Fixed a bug in `set-cdr!` where an unsimplified list may be output. For example, `(3 . (2 . (1 . ())))` instead of `(3 2 1)`.
+- Allow `apply` to receive multiple arguments, as long as the last one is a list.
 
 v3.5.4
 --------

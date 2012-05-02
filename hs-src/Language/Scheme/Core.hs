@@ -823,7 +823,16 @@ evalfuncCallWValues [cont@(Continuation env _ _ _ _), producer, consumer] = do
 evalfuncCallWValues (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
 evalfuncCallWValues _ = throwError $ NumArgs 2 []
 
-evalfuncApply [cont@(Continuation _ _ _ _ _), func, List args] = apply cont func args
+--evalfuncApply [cont@(Continuation _ _ _ _ _), func, List args] = apply cont func args
+evalfuncApply (cont@(Continuation _ _ _ _ _) : func : args) = do
+  let aRev = reverse args
+
+  if null args
+     then throwError $ NumArgs 2 args
+     else case head aRev of
+            List aLastElems -> do
+              apply cont func $ (init args) ++ aLastElems
+            other -> throwError $ TypeMismatch "List" other
 evalfuncApply (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
 evalfuncApply _ = throwError $ NumArgs 2 []
 

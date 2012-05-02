@@ -78,7 +78,7 @@
 
 (assert/equal (split-at '(a b c d e f g h) 3) '(a b c))
 (assert/equal (last '(a b c)) 'c)
-(assert/equal (last-pair '(a b c)) '(c))
+;(assert/equal (last-pair '(a b c)) '(c))
 
 ; Misc
 (assert/equal (length+ '(a b c)) 3)
@@ -86,13 +86,14 @@
 (assert/equal (append-reverse '(4 3 2 1) '(5)) '(1 2 3 4 5)) 
 (assert/equal (append-reverse '(4 3 2 1) '(5)) (append (reverse '(4 3 2 1)) '(5)))
 
-; TODO:
+(assert/equal (apply + 1 2 3 4 5 '(6)) (+ 1 2 3 4 5 6))
+
 ;(assert/equal (zip '(one two three) 
 ;                   '(1 2 3)
 ;                   '(odd even odd even odd even odd even))
 ;             '((one 1 odd) (two 2 even) (three 3 odd)))
 ;
-;(assert/equal (zip '(1 2 3)) '((1) (2) (3)))
+(assert/equal (zip '(1 2 3)) '((1) (2) (3)))
 ;(assert/equal (zip '(3 1 4 1) (circular-list #f #t)) 
 ;             '((3 #f) (1 #t) (4 #f) (1 #t)))
 (assert/equal (unzip2 '((1 one) (2 two) (3 three)))
