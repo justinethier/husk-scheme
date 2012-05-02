@@ -1,0 +1,114 @@
+---
+title: husk scheme
+menu: get-husk
+---
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+
+husk scheme
+
+Copyright   : Justin Ethier
+Licence     : MIT (see LICENSE in the distribution)
+Maintainer  : github.com/justinethier
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>husk λ scheme</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link href="default.css" rel="stylesheet" type="text/css" />
+    <link href="pygments.css" rel="stylesheet" type="text/css" />
+<!--
+	<script type="text/javascript" src="syntax-highlighter/scripts/shCore.js"></script>
+	<script type="text/javascript" src="syntax-highlighter/scripts/shBrushBash.js"></script>
+	<link type="text/css" rel="stylesheet" href="syntax-highlighter/styles/shThemeRDark.css"/>
+	<script type="text/javascript">SyntaxHighlighter.all();</script>
+    -->
+    {% include google-analytics.html %}
+</head>
+<body>
+<div id="header">
+<!--
+	<div id="logo">
+        <h1>
+            <img src="images/husk-scheme.png" width="350" alt="husk scheme" />
+        </h1>
+		<h2></h2>
+	</div>
+    
+	<div id="search">
+		<form id="searchform" method="get" action="">
+			<fieldset>
+			<legend>Search</legend>
+			<input id="searchinput" type="text" name="searchinput" value="" />
+			<input id="searchsubmit" type="submit" value="Search" />
+			</fieldset>
+		</form>
+	</div>
+-->
+</div>
+    {% include menu.html %}
+<hr />
+<div id="page">
+	<div id="content">
+		<div>
+			<h2 class="title">Before you Install</h2>
+            <p>
+                The Glasgow Haskell Compiler (GHC) is required to build, install, and run husk. All recent versions of GHC are supported, including 6.10, 7.0, 7.2, and 7.4. The easiest way to get GHC is via the <a href="http://hackage.haskell.org/platform/">Haskell Platform</a>.
+                
+                <br />
+                <br />
+                
+                husk has been tested to work on Windows, Linux, and FreeBSD. 
+            </p>
+			<h2 class="title">Install using Cabal</h2>
+            <p>
+                The recommended installation method is to use <a href="http://www.haskell.org/cabal/">Cabal</a>:
+                {% highlight console %}
+cabal update
+cabal install husk-scheme
+                {% endhighlight %}
+            </p>
+            <h2 class="title">Build from Source</h2>
+            <p>
+                Alternatively, husk may be built from source. The first thing you need to do is download the latest version of husk from <a href="https://github.com/justinethier/husk-scheme/downloads">here</a>.
+
+                <p>
+                
+                Before building husk, all of the required dependencies must be available. On Fedora these dependencies are:
+                <ul>
+                    <li>ghc</li>
+                    <li>ghc-doc</li>
+                    <li>ghc-parsec-devel</li>
+                    <li>ghc-haskeline-devel</li>
+                    <li>ghc-ghc-paths-devel</li>
+                    <li>ghc-ghc-devel</li>
+                </ul>
+
+                The same packages are necessary regardless of your platform, but the names may differ.
+                </p>
+
+                Once husk has been downloaded and dependencies have been met, the following commands may be used to build, install, and optionally test the husk executable and libraries:
+                {% highlight console %}
+# Build and Install husk to your HOME directory
+make all
+make install
+
+# Optional steps to run all the built-in unit tests
+make test
+make testc
+                {% endhighlight %}
+            </p>
+		</div>
+	</div>
+    {% include sidebar.html %}
+</div>
+<hr />
+<div id="footer">
+    {% include footer.html %}
+</div>
+</body>
+</html>

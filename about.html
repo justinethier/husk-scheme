@@ -1,0 +1,72 @@
+---
+title: husk scheme
+menu: about
+---
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+
+husk scheme
+
+Copyright   : Justin Ethier
+Licence     : MIT (see LICENSE in the distribution)
+Maintainer  : github.com/justinethier
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>husk λ scheme</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link href="default.css" rel="stylesheet" type="text/css" />
+    <link href="pygments.css" rel="stylesheet" type="text/css" />
+<!--
+	<script type="text/javascript" src="syntax-highlighter/scripts/shCore.js"></script>
+	<script type="text/javascript" src="syntax-highlighter/scripts/shBrushBash.js"></script>
+	<link type="text/css" rel="stylesheet" href="syntax-highlighter/styles/shThemeRDark.css"/>
+	<script type="text/javascript">SyntaxHighlighter.all();</script>
+    -->
+    {% include google-analytics.html %}
+</head>
+<body>
+<div id="header">
+</div>
+    {% include menu.html %}
+<hr />
+<div id="page">
+	<div id="content">
+		<div>
+        <h1 class="title">About</h1>
+        <p>
+            husk scheme is developed by <a href="http://github.com/justinethier">Justin Ethier</a>.
+        </p>
+        <p>
+            The original goal of the husk project was to teach myself Scheme, Haskell, and functional programming by going though Jonathan Tang's excellent tutorial, <a href="http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours">Write Yourself a Scheme in 48 Hours</a>. Ultimately husk went far beyond the content in Jonathan's tutorial and a (mostly) fully-functional Scheme interpreter and macro subsystem were developed.
+        </p>
+        <p>
+            At its core husk is still a learning project, although over time I would like it to become more than just a toy Scheme. Husk has the potential to be useful for real-world applications by providing R<sup>5</sup>RS compatibility and an interface to Haskell libraries, even if it is unlikely to approach the speed of native C implementations such as Chicken. I hope you will be interested in experimenting and playing around with husk as it continues to improve!
+        </p>
+
+        <h2 class="title">Contributing</h2>
+        <p>
+            Patches, bug reports, and feedback are all welcome! Just sent me a <a href="http://github.com/justinethier/husk-scheme">pull request on github</a> or enter a <a href="http://github.com/justinethier/husk-scheme/issues">new issue</a>. 
+        </p>
+        <p>
+            When making code changes please try to add at least one test case for your change, and ensure that the change does not break any existing unit tests.
+        </p>
+
+        <h2 class="title">License</h2>
+        <p>
+            husk scheme is available under the <a href="http://www.opensource.org/licenses/mit-license.php)">MIT license</a>.
+        </p>
+		</div>
+	</div>
+    {% include sidebar.html %}
+</div>
+<hr />
+<div id="footer">
+    {% include footer.html %}
+</div>
+</body>
+</html>

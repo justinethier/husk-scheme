@@ -1,0 +1,62 @@
+---
+title: husk scheme
+menu: news
+---
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+
+husk scheme
+
+Copyright   : Justin Ethier
+Licence     : MIT (see LICENSE in the distribution)
+Maintainer  : github.com/justinethier
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>husk λ scheme</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link href="default.css" rel="stylesheet" type="text/css" />
+    <link href="pygments.css" rel="stylesheet" type="text/css" />
+<!--
+	<script type="text/javascript" src="syntax-highlighter/scripts/shCore.js"></script>
+	<script type="text/javascript" src="syntax-highlighter/scripts/shBrushBash.js"></script>
+	<link type="text/css" rel="stylesheet" href="syntax-highlighter/styles/shThemeRDark.css"/>
+	<script type="text/javascript">SyntaxHighlighter.all();</script>
+    -->
+    {% include google-analytics.html %}
+</head>
+<body>
+<div id="header">
+</div>
+    {% include menu.html %}
+<hr />
+<div id="page">
+	<div id="content">
+		<div>
+            <h1 class="title">News and Updates</h1>
+            <p>
+			<ul>
+                {% for post in site.posts %}
+                <li>
+                    <h3>
+                        <span>{{post.date | date: "%b %d %Y" }}: </span>
+                        <a href="./{{post.url}}">{{post.title}}</a>
+                    </h3> 
+                </li>
+                {% endfor %}
+			</ul>
+            </p>
+		</div>
+	</div>
+    {% include sidebar.html %}
+</div>
+<hr />
+<div id="footer">
+    {% include footer.html %}
+</div>
+</body>
+</html>

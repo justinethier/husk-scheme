@@ -1,0 +1,59 @@
+---
+title: husk scheme
+menu: index
+---
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+
+husk scheme
+
+Copyright   : Justin Ethier
+Licence     : MIT (see LICENSE in the distribution)
+Maintainer  : github.com/justinethier
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>husk λ scheme</title>
+    <meta name="keywords" content="" />
+    <meta name="description" content="" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link href="default.css" rel="stylesheet" type="text/css" />
+    {% include google-analytics.html %}
+</head>
+<body>
+<div id="header">
+</div>
+{% include menu.html %}
+<hr />
+<div id="page">
+	<div id="content">
+		<div>
+			<h1 class="title">What is husk?</h1>
+            <p>
+            <strong>husk</strong> is a dialect of Scheme written in Haskell that adheres to the <a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/">R<sup>5</sup>RS standard</a>. husk may be used as either a stand-alone interpreter or as an extension language within a larger Haskell application. Advanced features are provided including:
+
+            <ul>
+            <li>Continuations: First-class continuations of unlimited extent</li>
+            <li>Hygienic macros</li>
+            <li>A foreign function interface (FFI) to Haskell</li>
+            <li>Full numeric tower providing support for real, rational, and complex numbers</li>
+            </ul>
+            <p>husk scheme is available under the <a href="http://www.opensource.org/licenses/mit-license.php">MIT license</a>.</p>
+            </p>
+
+<h2>Background</h2>
+<p>
+Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy, with the core language consisting of a small number of fundamental forms. Scheme is an excellent language for writing small, elegant programs, and may also be used to develop domain-specific languages or embed scripting functionality within a larger application.
+</p>
+		</div>
+	</div>
+    {% include sidebar.html %}
+</div>
+<hr />
+<div id="footer">
+    {% include footer.html %}
+</div>
+</body>
+</html>
