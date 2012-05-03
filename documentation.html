@@ -34,6 +34,7 @@ Maintainer  : github.com/justinethier
         <div>
             <!-- <h2>Contents</h2> -->
             <div><a href="#section-features">Features</a></div>
+            <div><a href="#section-libs">Libraries and Extensions</a></div>
             <div><a href="#section-usage">Usage</a></div>
             <div><a href="#section-lang-ref">Scheme Language Reference</a></div>
             <div><a href="#section-api">Haskell API</a></div>
@@ -70,14 +71,22 @@ husk includes most features from R<sup>5</sup>RS, including:
 </li>
 </ul>
 <br />
-As well as the following approved extensions:
-<ul>
-    <li>Hash tables, as specified by <a href="http://srfi.schemers.org/srfi-69/srfi-69.html">SRFI 69</a></li>
-</ul>
-<br />
 And the following R<sup>7</sup>RS draft features:
 <ul>
     <li>Nested block comments using #| and |#</li>
+</ul>
+</p>
+            <h2 id="section-libs" class="title">Libraries and Extensions</h2>
+<p>
+The following standard libraries are supported:
+<ul>
+    <li>
+        <a href="http://srfi.schemers.org/srfi-1/srfi-1.html">SRFI 1</a>: List Library - a comprehensive set of list-processing procedures. 
+        This library is not included by default, it must be loaded using 
+        <strong>(require-extension (srfi 1))</strong>.
+    </li>
+    <li><a href="http://srfi.schemers.org/srfi-55/srfi-55.html">SRFI 55</a>: <strong>require-extension</strong> - an extremely simple facility for making an extension or library available to a Scheme toplevel environment.</li>
+    <li><a href="http://srfi.schemers.org/srfi-69/srfi-69.html">SRFI 69</a>: Hash tables.</li>
 </ul>
 </p>
             <h2 id="section-usage" class="title">Usage</h2>
