@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Released Version 3.5.5 
-excerpt: TODO
+excerpt: A major addition in this release is support for the SRFI-1 List Library...
 ---
 # {{ page.title }}
 
