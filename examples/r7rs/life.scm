@@ -1,4 +1,5 @@
 ; Example from draft 6 of R7RS
+; Note: husk does not support this yet!
 (define-library (example grid)
     (export make rows cols ref each
             (rename put! set!))

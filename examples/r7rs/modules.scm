@@ -1,5 +1,4 @@
-; TODO: format this like in the spec
-
+; An old module example that is not supported
 (module (stack)
     (export make push! pop! empty!)
     (import (scheme))
