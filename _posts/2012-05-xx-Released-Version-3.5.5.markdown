@@ -5,15 +5,11 @@ excerpt: TODO
 ---
 # {{ page.title }}
 
-TODO: (This release includes an incremental set of improvements:)
+A major addition in this release is support for the SRFI-1 List Library, which can be loaded using `(require-extension (srfi 1))`. Note that linear update functions (EG: `map!`) and circular lists are not supported at this time.
 
-TODO: this is a big deal, should not just be a bullet point:
-Added support for SRFI-1 (List Library), which can be loaded using `(require-extension (srfi 1))`. Note that linear update functions (such as `map!`, `take!`, etc) and circular lists are not supported at this time.
+There are many other important changes as well, including:
 
-Same with this one, or not??
 - Added a new LispVal type called `Opaque` for Haskell integration, courtesy of Josh Triplett. The Opaque type allows a native Haskell function to package an arbitrary Haskell type for use by other native code called by husk. See `examples/ffi/Opaque.hs` for an example of how to use this feature.
-
-
 - Implemented `file-exists?`, `delete-file`, `char-ready?`, `rationalize`, `gcd`, and `lcm`.
 - Enhanced the parser to read numbers in scientific notation such as `1e3` and `4.2e1`.
 - Modified `numerator` and `denominator` to add support for integers and floating point numbers.
