@@ -1,0 +1,5 @@
+(import (scheme base)
+        (scheme write)
+        (hello world))
+(write hello)
+(newline)
