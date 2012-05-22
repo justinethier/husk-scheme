@@ -23,8 +23,12 @@ Source-Repository head
     Type:            git
     Location:        git://github.com/justinethier/husk-scheme.git
 
+flag useffi
+    description: Turn off FFI to decrease build times and minimize executable sizes
+    default: True
+
 Library
-  Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc, ghc-paths
+  Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc-paths
   Extensions:      ExistentialQuantification
   Hs-Source-Dirs:  hs-src
   Exposed-Modules: Language.Scheme.Core
@@ -33,21 +37,30 @@ Library
                    Language.Scheme.Compiler
                    Language.Scheme.Plugins.CPUTime
 -- Other-Modules:
-                   Language.Scheme.FFI
                    Language.Scheme.Macro
                    Language.Scheme.Macro.Matches
                    Language.Scheme.Numerical
                    Language.Scheme.Parser
                    Language.Scheme.Primitives
+  if flag(useffi)
+    Build-Depends: ghc
+    Exposed-Modules:  Language.Scheme.FFI
+    cpp-options: -DUseFfi
 
 Executable         huski
-  Build-Depends:   husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc, ghc-paths
+  Build-Depends:   husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc-paths
+  if flag(useffi)
+    Build-Depends: ghc
+    cpp-options: -DUseFfi
   Extensions:      ExistentialQuantification
   Main-is:         shell.hs
   Hs-Source-Dirs:  hs-src/Interpreter
 
 Executable huskc
-  Build-Depends: husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc, ghc-paths, process, filepath
+  Build-Depends: husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc-paths, process, filepath
+  if flag(useffi)
+    Build-Depends: ghc
+    cpp-options: -DUseFfi
   Extensions:      ExistentialQuantification
   Main-is: huskc.hs
   Hs-Source-Dirs: hs-src/Compiler

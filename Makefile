@@ -19,7 +19,7 @@ UNIT_TEST_DIR = tests
 
 all: config build
 config:
-	cabal configure --prefix=$(HOME) --user
+	cabal configure --prefix=$(HOME) --user #-f-useffi
 build:
 	cabal build
 install:

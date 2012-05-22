@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 {- |
 Module      : Language.Scheme.Core
 Copyright   : Justin Ethier
@@ -27,7 +29,9 @@ module Language.Scheme.Core
     , substr
     , updateVector
     ) where
+#ifdef UseFfi
 import qualified Language.Scheme.FFI
+#endif
 import qualified Language.Scheme.Macro
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
@@ -906,7 +910,9 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("eval", evalfuncEval)
                   , ("load", evalfuncLoad)
                -- Non-standard extensions
+#ifdef UseFfi
                   , ("load-ffi", Language.Scheme.FFI.evalfuncLoadFFI)
+#endif
                   , ("exit-fail", evalfuncExitFail)
                   , ("exit-success", evalfuncExitSuccess)
                 ]
