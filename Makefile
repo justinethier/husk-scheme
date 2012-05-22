@@ -23,7 +23,7 @@ config:
 build:
 	cabal build
 install:
-	cabal install
+	cabal install #-f-useffi
 sdist:
 	cabal sdist
 doc:
