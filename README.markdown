@@ -19,15 +19,9 @@ husk may be installed using [cabal](http://www.haskell.org/cabal/):
 
 License
 -------
+Copyright (C) [Justin Ethier](http://github.com/justinethier)
 
 husk scheme is available under the [MIT license](http://www.opensource.org/licenses/mit-license.php).
 
-Credits
--------
-
-husk scheme is developed by [Justin Ethier](http://github.com/justinethier).
-
 The interpreter is based on code from the book [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) written by Jonathan Tang and hosted / maintained by Wikibooks.
-
-For more information, please visit the [project web site](http://justinethier.github.com/husk-scheme).
 
