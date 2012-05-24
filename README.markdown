@@ -19,7 +19,7 @@ husk may be installed using [cabal](http://www.haskell.org/cabal/):
 
 License
 -------
-Copyright (C) [Justin Ethier](http://github.com/justinethier)
+Copyright (C) 2010 [Justin Ethier](http://github.com/justinethier)
 
 husk scheme is available under the [MIT license](http://www.opensource.org/licenses/mit-license.php).
 
