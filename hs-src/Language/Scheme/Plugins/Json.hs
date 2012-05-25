@@ -6,8 +6,9 @@ import Language.Scheme.Types
 
 -- ideas from http://therning.org/magnus/archives/719
 instance JSON LispVal where
-  showJSON (String s) = toJSString s
+  showJSON (String s) = JSString $ toJSString s
 
---  readJSON (JSString str) = String str
+  readJSON (JSString str) = return $ String $ fromJSString str
 
--- putStrLn $ encode $ toJSON $ String "test"
+test :: IO ()
+test = putStrLn $ encode $ toJSON $ String "test"
