@@ -11,4 +11,8 @@ instance JSON LispVal where
   readJSON (JSString str) = return $ String $ fromJSString str
 
 test :: IO ()
-test = putStrLn $ encode $ toJSON $ String "test"
+test = do
+    let x = decode  "\"true\"" :: Result LispVal
+    case x of
+        Ok x -> putStrLn $ encode x
+        Error msg -> putStrLn $ "An error occurred: " ++ msg
