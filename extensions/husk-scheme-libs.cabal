@@ -1,0 +1,39 @@
+Name:                husk-scheme-libs
+Version:             3.5.5
+Synopsis:            Extra libraries for the husk Scheme platform.
+Description:         Extra libraries for the husk Scheme platform.
+License:             MIT
+License-file:        LICENSE
+Author:              Justin Ethier
+Maintainer:          Justin Ethier <github.com/justinethier>
+Homepage:            http://justinethier.github.com/husk-scheme
+Cabal-Version:       >= 1.8
+Build-Type:          Simple
+Category:            Compilers/Interpreters, Language
+Tested-with:         GHC == 7.2.2, GHC == 7.0.2, GHC == 6.12.3, GHC == 6.10.4
+
+License:             MIT
+License-file:        LICENSE
+Author:              Justin Ethier
+Maintainer:          Justin Ethier <github.com/justinethier>
+Homepage:            http://justinethier.github.com/husk-scheme
+Cabal-Version:       >= 1.8
+Build-Type:          Simple
+Category:            Compilers/Interpreters, Language
+Tested-with:         GHC == 7.2.2, GHC == 7.0.2, GHC == 6.12.3, GHC == 6.10.4
+
+-- Extra-Source-Files:  README.markdown
+--                      LICENSE
+--                      AUTHORS
+-- Data-Files:          stdlib.scm srfi/srfi-1.scm srfi/srfi-55.scm
+
+Source-Repository head
+    Type:            git
+    Location:        git://github.com/justinethier/husk-scheme.git
+
+Library
+  Build-Depends:   base >= 2.0 && < 5, array, containers, json, husk-scheme, mtl, transformers
+-- , parsec, directory, ghc-paths
+--  Extensions:      ExistentialQuantification
+--  Hs-Source-Dirs:  hs-src
+  Exposed-Modules: Language.Scheme.Plugins.Json
