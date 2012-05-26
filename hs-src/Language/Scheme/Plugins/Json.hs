@@ -12,17 +12,15 @@ instance JSON LispVal where
   showJSON (List []) = JSNull
   showJSON (String s) = JSString $ toJSString s
   showJSON (Bool b) = JSBool b
---  showJSON (Number n) = JSRational False $ fromInteger n 
-  showJSON (Rational n) = JSRational True n -- TODO: is this ok??
---  showJSON (Float n) = JSRational True $ toRational n 
+  showJSON (Number n) = JSRational True $ fromInteger n 
+  showJSON (Float n) = JSRational False $ toRational n 
   showJSON (List l) = showJSONs l
 
   readJSON (JSNull) = return $ List []
   readJSON (JSString str) = return $ String $ fromJSString str
   readJSON (JSBool b) = return $ Bool b
-  readJSON (JSRational isFloat num) = do
-    return $ Rational num -- TODO: need to take isFloat bool into account
-                          -- and create instances of int, float, or rational
+  readJSON (JSRational True num) = return $ Number $ numerator num
+  readJSON (JSRational False num) = return $ Float $ fromRational num
   readJSON (JSArray a) = do
     result <- mapM readJSON a
     return $ List $ result
@@ -35,7 +33,7 @@ _test = do
     _testDecodeEncode "null"
     _testDecodeEncode "1"
     _testDecodeEncode "1.5"
-    _testDecodeEncode "[1, 2, 3, 1.5]"
+    _testDecodeEncode "[1.1, 2, 3, 1.5]"
 
 _testDecodeEncode :: String -> IO ()
 _testDecodeEncode str = do
