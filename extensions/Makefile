@@ -27,3 +27,6 @@ doc:
 #test: stdlib.scm
 #	$(HUSKI) $(UNIT_TEST_DIR)/r5rs_pitfall.scm
 #	@cd $(UNIT_TEST_DIR) ; $(HUSKI) run-tests.scm
+
+clean:
+	rm -rf dist
