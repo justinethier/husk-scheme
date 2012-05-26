@@ -2,6 +2,7 @@
 
 module Language.Scheme.Plugins.Json where 
 
+import Control.Monad.Error
 import Data.Ratio
 import Text.JSON
 import Text.JSON.Generic
@@ -15,6 +16,7 @@ instance JSON LispVal where
   showJSON (Number n) = JSRational True $ fromInteger n 
   showJSON (Float n) = JSRational False $ toRational n 
   showJSON (List l) = showJSONs l
+  -- TODO: JSObject
 
   readJSON (JSNull) = return $ List []
   readJSON (JSString str) = return $ String $ fromJSString str
@@ -24,7 +26,15 @@ instance JSON LispVal where
   readJSON (JSArray a) = do
     result <- mapM readJSON a
     return $ List $ result
-  -- JSObject
+  -- TODO: JSObject
+
+-- |Wrapper for Text.JSON.decode
+jsDecode :: [LispVal] -> IOThrowsError LispVal
+jsDecode [String json] = do
+    let r = decode json :: Result LispVal
+    case r of
+        Ok result -> return result
+        Error msg -> throwError $ Default $ "JSON Parse Error: " ++ msg
 
 _test :: IO ()
 _test = do
