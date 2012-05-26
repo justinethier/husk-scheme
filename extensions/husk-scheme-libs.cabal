@@ -33,7 +33,6 @@ Source-Repository head
 
 Library
   Build-Depends:   base >= 2.0 && < 5, array, containers, json, husk-scheme, mtl, transformers
--- , parsec, directory, ghc-paths
 --  Extensions:      ExistentialQuantification
 --  Hs-Source-Dirs:  hs-src
   Exposed-Modules: Language.Scheme.Plugins.Json
