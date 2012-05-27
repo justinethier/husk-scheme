@@ -36,6 +36,10 @@ jsDecode [String json] = do
         Ok result -> return result
         Error msg -> throwError $ Default $ "JSON Parse Error: " ++ msg
 
+-- TODO:
+-- jsEncode :: [LispVal] -> IOThrowsError LispVal
+-- jsEncode [val] = do
+
 _test :: IO ()
 _test = do
     _testDecodeEncode "\"test\""
