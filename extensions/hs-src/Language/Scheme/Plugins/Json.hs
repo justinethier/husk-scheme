@@ -3,10 +3,18 @@
 module Language.Scheme.Plugins.Json where 
 
 import Control.Monad.Error
+import Data.Array
 import Data.Ratio
 import Text.JSON
 import Text.JSON.Generic
 import Language.Scheme.Types
+
+-- TODO:
+-- vector2Assoc :: Vector -> [(String, LispVal)]
+-- vector2Assoc v = do
+--     let ls = elems v
+--     map (\x -> (head x, tail x
+
 
 -- ideas from http://therning.org/magnus/archives/719
 instance JSON LispVal where
@@ -17,6 +25,11 @@ instance JSON LispVal where
   showJSON (Number n) = JSRational True $ fromInteger n 
   showJSON (Float n) = JSRational False $ toRational n 
   showJSON (List l) = showJSONs l
+--  showJSON (Vector v) = do
+--    let ls = elems v
+--    result <- map showJSON ls
+--    return $ JSArray result
+
   -- TODO: JSObject
 
   readJSON (JSNull) = return $ List []
@@ -28,6 +41,15 @@ instance JSON LispVal where
     result <- mapM readJSON a
     return $ List $ result
   -- TODO: JSObject
+--   readJSON (JSObject o) = do
+--     let f (x,y) = do y' <- readJSON y; return $ List [String x, y'] --(x,y')
+--     --toJSObject `fmap` 
+--     return $ List $ map f (fromJSObject o)
+-- --    ls <- fromJSObject o
+-- --    let result = map (\(key, val) -> List [String key, readJSON val]) $ fromJSObject o
+-- --    return $ List result
+-- --
+-- --(String, JSValue) -> (String
 
 -- |Wrapper for Text.JSON.decode
 jsDecode :: [LispVal] -> IOThrowsError LispVal
@@ -38,9 +60,9 @@ jsDecode [String json] = do
         Error msg -> throwError $ Default $ "JSON Parse Error: " ++ msg
 
 -- |Wrapper for Text.JSON.encode
-jsEncode :: [LispVal] -> IOThrowsError LispVal
-jsEncode [val] = do
-    return $ String $ encode val
+jsEncode, jsEncodeStrict :: [LispVal] -> IOThrowsError LispVal
+jsEncode [val] = return $ String $ encode val
+jsEncodeStrict [val] = return $ String $ encodeStrict val
 
 _test :: IO ()
 _test = do
