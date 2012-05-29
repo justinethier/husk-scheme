@@ -22,9 +22,8 @@ Build-Type:          Simple
 Category:            Compilers/Interpreters, Language
 Tested-with:         GHC == 7.2.2, GHC == 7.0.2, GHC == 6.12.3, GHC == 6.10.4
 
--- Extra-Source-Files:  README.markdown
---                      LICENSE
---                      AUTHORS
+Extra-Source-Files:  LICENSE
+--                      AUTHORS README.markdown
 -- Data-Files:          stdlib.scm srfi/srfi-1.scm srfi/srfi-55.scm
 
 Source-Repository head
@@ -34,5 +33,5 @@ Source-Repository head
 Library
   Build-Depends:   base >= 2.0 && < 5, array, containers, json, husk-scheme, mtl, transformers
 --  Extensions:      ExistentialQuantification
---  Hs-Source-Dirs:  hs-src
+  Hs-Source-Dirs:  hs-src
   Exposed-Modules: Language.Scheme.Plugins.Json

@@ -12,6 +12,7 @@ import Language.Scheme.Types
 instance JSON LispVal where
   showJSON (List []) = JSNull
   showJSON (String s) = JSString $ toJSString s
+  showJSON (Atom s) = JSString $ toJSString s
   showJSON (Bool b) = JSBool b
   showJSON (Number n) = JSRational True $ fromInteger n 
   showJSON (Float n) = JSRational False $ toRational n 
@@ -36,9 +37,10 @@ jsDecode [String json] = do
         Ok result -> return result
         Error msg -> throwError $ Default $ "JSON Parse Error: " ++ msg
 
--- TODO:
--- jsEncode :: [LispVal] -> IOThrowsError LispVal
--- jsEncode [val] = do
+-- |Wrapper for Text.JSON.encode
+jsEncode :: [LispVal] -> IOThrowsError LispVal
+jsEncode [val] = do
+    return $ String $ encode val
 
 _test :: IO ()
 _test = do
