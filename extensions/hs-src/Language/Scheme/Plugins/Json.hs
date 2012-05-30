@@ -40,16 +40,13 @@ instance JSON LispVal where
   readJSON (JSArray a) = do
     result <- mapM readJSON a
     return $ List $ result
-  -- TODO: JSObject
---   readJSON (JSObject o) = do
---     let f (x,y) = do y' <- readJSON y; return $ List [String x, y'] --(x,y')
---     --toJSObject `fmap` 
---     return $ List $ map f (fromJSObject o)
--- --    ls <- fromJSObject o
--- --    let result = map (\(key, val) -> List [String key, readJSON val]) $ fromJSObject o
--- --    return $ List result
--- --
--- --(String, JSValue) -> (String
+  readJSON (JSObject o) = do
+    let f (x,y) = do 
+        y' <- readJSON y
+        return $ List [Atom x, y']
+
+    ls <- mapM f (fromJSObject o)
+    return $ Vector $ (listArray (0, length ls - 1)) ls
 
 -- |Wrapper for Text.JSON.decode
 jsDecode :: [LispVal] -> IOThrowsError LispVal
