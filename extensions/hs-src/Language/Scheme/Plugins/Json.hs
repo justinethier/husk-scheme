@@ -25,12 +25,14 @@ instance JSON LispVal where
   showJSON (Number n) = JSRational True $ fromInteger n 
   showJSON (Float n) = JSRational False $ toRational n 
   showJSON (List l) = showJSONs l
---  showJSON (Vector v) = do
---    let ls = elems v
---    result <- map showJSON ls
---    return $ JSArray result
-
-  -- TODO: JSObject
+  showJSON (Vector v) = do
+    let ls = elems v
+        f (List [Atom x, y]) = do
+            (x, showJSON y)
+    -- Take ls as an association list
+    -- The alist is then changed into the form [(String, x)]
+    -- and packaged into a JSObject
+    JSObject $ toJSObject $ map f ls
 
   readJSON (JSNull) = return $ List []
   readJSON (JSString str) = return $ String $ fromJSString str
