@@ -1,5 +1,5 @@
-(load-ffi "Language.Scheme.Plugins.Json" "jsDecode" "json:decode")
-(load-ffi "Language.Scheme.Plugins.Json" "jsEncode" "json:encode")
+(load-ffi "Language.Scheme.Plugins.JSON" "jsDecode" "json:decode")
+(load-ffi "Language.Scheme.Plugins.JSON" "jsEncode" "json:encode")
 
 (write (json:encode '()))
 (write (json:encode '(test 1 2 3)))

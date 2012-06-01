@@ -1,6 +1,6 @@
 -- Testing integration with Text.JSON
 
-module Language.Scheme.Plugins.Json where 
+module Language.Scheme.Plugins.JSON where 
 
 import Control.Monad.Error
 import Data.Array
@@ -50,15 +50,16 @@ instance JSON LispVal where
     return $ Vector $ (listArray (0, length ls - 1)) ls
 
 -- |Wrapper for Text.JSON.decode
-jsDecode, 
-  -- |Wrapper for Text.JSON.decodeStrict
-  jsDecodeStrict :: [LispVal] -> IOThrowsError LispVal
+jsDecode :: [LispVal] -> IOThrowsError LispVal
 jsDecode [String json] = do
     let r = decode json :: Result LispVal
     case r of
         Ok result -> return result
         Error msg -> throwError $ Default msg
 jsDecode invalid = throwError $ TypeMismatch "string" $ List invalid
+
+-- |Wrapper for Text.JSON.decodeStrict
+jsDecodeStrict :: [LispVal] -> IOThrowsError LispVal
 jsDecodeStrict [String json] = do
     let r = decodeStrict json :: Result LispVal
     case r of
@@ -67,10 +68,11 @@ jsDecodeStrict [String json] = do
 jsDecodeStrict invalid = jsDecode invalid
 
 -- |Wrapper for Text.JSON.encode
-jsEncode, 
-  -- |Wrapper for Text.JSON.encodeStrict
-  jsEncodeStrict :: [LispVal] -> IOThrowsError LispVal
+jsEncode :: [LispVal] -> IOThrowsError LispVal
 jsEncode [val] = return $ String $ encode val
+
+-- |Wrapper for Text.JSON.encodeStrict
+jsEncodeStrict :: [LispVal] -> IOThrowsError LispVal
 jsEncodeStrict [val] = return $ String $ encodeStrict val
 
 _test :: IO ()
