@@ -7,14 +7,8 @@ import Data.Array
 import Data.Ratio
 import Text.JSON
 import Text.JSON.Generic
+import qualified Language.Scheme.Numerical
 import Language.Scheme.Types
-
--- TODO:
--- vector2Assoc :: Vector -> [(String, LispVal)]
--- vector2Assoc v = do
---     let ls = elems v
---     map (\x -> (head x, tail x
-
 
 -- ideas from http://therning.org/magnus/archives/719
 instance JSON LispVal where
@@ -33,12 +27,17 @@ instance JSON LispVal where
     -- The alist is then changed into the form [(String, x)]
     -- and packaged into a JSObject
     JSObject $ toJSObject $ map f ls
+  showJSON a = JSNull -- TODO (?): fail $ "Unable to convert to JSON: " ++ show a
 
   readJSON (JSNull) = return $ List []
   readJSON (JSString str) = return $ String $ fromJSString str
   readJSON (JSBool b) = return $ Bool b
-  readJSON (JSRational True num) = return $ Number $ numerator num
-  readJSON (JSRational False num) = return $ Float $ fromRational num
+  readJSON (JSRational _ num) = do
+    let numer = numerator num
+    let denom = denominator num
+    case (numer >= denom) && ((mod numer denom) == 0) of
+        True -> return $ Number $ numerator num
+        _ -> return $ Float $ fromRational num
   readJSON (JSArray a) = do
     result <- mapM readJSON a
     return $ List $ result
@@ -51,15 +50,26 @@ instance JSON LispVal where
     return $ Vector $ (listArray (0, length ls - 1)) ls
 
 -- |Wrapper for Text.JSON.decode
-jsDecode :: [LispVal] -> IOThrowsError LispVal
+jsDecode, 
+  -- |Wrapper for Text.JSON.decodeStrict
+  jsDecodeStrict :: [LispVal] -> IOThrowsError LispVal
 jsDecode [String json] = do
     let r = decode json :: Result LispVal
     case r of
         Ok result -> return result
-        Error msg -> throwError $ Default $ "JSON Parse Error: " ++ msg
+        Error msg -> throwError $ Default msg
+jsDecode invalid = throwError $ TypeMismatch "string" $ List invalid
+jsDecodeStrict [String json] = do
+    let r = decodeStrict json :: Result LispVal
+    case r of
+        Ok result -> return result
+        Error msg -> throwError $ Default msg
+jsDecodeStrict invalid = jsDecode invalid
 
 -- |Wrapper for Text.JSON.encode
-jsEncode, jsEncodeStrict :: [LispVal] -> IOThrowsError LispVal
+jsEncode, 
+  -- |Wrapper for Text.JSON.encodeStrict
+  jsEncodeStrict :: [LispVal] -> IOThrowsError LispVal
 jsEncode [val] = return $ String $ encode val
 jsEncodeStrict [val] = return $ String $ encodeStrict val
 
@@ -71,6 +81,7 @@ _test = do
     _testDecodeEncode "1"
     _testDecodeEncode "1.5"
     _testDecodeEncode "[1.1, 2, 3, 1.5]"
+    _testDecodeEncode "[1.1, 2, {\"a\": 3}, 1.5]"
 
 _testDecodeEncode :: String -> IO ()
 _testDecodeEncode str = do
