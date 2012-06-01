@@ -2,6 +2,6 @@
 (load-ffi "Language.Scheme.Plugins.Json" "jsEncode" "json:encode")
 
 (write (json:encode '()))
-(newline)
 (write (json:encode '(test 1 2 3)))
-(newline)
+(write (json:encode '#((a 1) (b 2) (c 3) (d (1 2 3 4 #((e 5)))))))
+(json:decode 'blah)
