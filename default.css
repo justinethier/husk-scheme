@@ -202,7 +202,7 @@ html>body #menu a {
 }
 
 #menu li.active {
-	background: /*#EDEBD5*/ #FFFFFF url(images/img05.gif) no-repeat;
+	background: /*#EDEBD5*/ #F8F7EE url(images/img05.gif) no-repeat;
 }
 
 #menu li.active a {
