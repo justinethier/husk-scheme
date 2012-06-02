@@ -26,7 +26,7 @@ instance JSON LispVal where
   showJSON (String s) = JSString $ toJSString s
   showJSON (Atom s) = JSString $ toJSString s
   showJSON (Bool b) = JSBool b
-  showJSON (Number n) = JSRational True $ fromInteger n 
+  showJSON (Number n) = JSRational False $ fromIntegral n 
   showJSON (Float n) = JSRational False $ toRational n 
   showJSON (List l) = showJSONs l
   showJSON (Vector v) = do
@@ -43,10 +43,12 @@ instance JSON LispVal where
   readJSON (JSString str) = return $ String $ fromJSString str
   readJSON (JSBool b) = return $ Bool b
   readJSON (JSRational _ num) = do
-    let numer = numerator num
-    let denom = denominator num
+    -- TODO: this seems to return -1.0 for a string of "-1". 
+    --       why is it not converting back to an integer?
+    let numer = abs $ numerator num
+    let denom = abs $ denominator num
     case (numer >= denom) && ((mod numer denom) == 0) of
-        True -> return $ Number $ numerator num
+        True -> return $ Number $ round num
         _ -> return $ Float $ fromRational num
   readJSON (JSArray a) = do
     result <- mapM readJSON a

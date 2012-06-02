@@ -473,8 +473,8 @@ isInteger ([Number _]) = return $ Bool True
 isInteger ([Complex n]) = do
   return $ Bool $ (isFloatAnInteger $ Float $ realPart n) && (isFloatAnInteger $ Float $ imagPart n)
 isInteger ([Rational n]) = do
-    let numer = numerator n
-    let denom = denominator n
+    let numer = abs $ numerator n
+    let denom = abs $ denominator n
     return $ Bool $ (numer >= denom) && ((mod numer denom) == 0)
 isInteger ([n@(Float _)]) = return $ Bool $ isFloatAnInteger n
 isInteger _ = return $ Bool False

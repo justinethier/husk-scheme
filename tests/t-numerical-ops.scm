@@ -21,7 +21,8 @@
 (assert/equal (integer? 3.2) #f)
 (assert/equal (integer? 8/4) #t)
 (assert/equal (integer? 8/5) #f)
-
+(assert/equal (integer? -2/2) #t)
+(assert/equal (integer? -23/2) #f)
 
 (assert/equal (max 3 4) 4)
 (assert/equal (max 3.9 4) 4) ; Technically not to spec, which says 4.0

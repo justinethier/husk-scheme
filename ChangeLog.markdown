@@ -1,3 +1,8 @@
+v3.5.6
+--------
+
+- Fixed a bug where `integer?` will return false for negative rational numbers that are integers. For example, `(integer? -2/2)` should evaluate to `#t`.
+
 v3.5.5
 --------
 
