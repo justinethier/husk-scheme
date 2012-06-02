@@ -43,8 +43,6 @@ instance JSON LispVal where
   readJSON (JSString str) = return $ String $ fromJSString str
   readJSON (JSBool b) = return $ Bool b
   readJSON (JSRational _ num) = do
-    -- TODO: this seems to return -1.0 for a string of "-1". 
-    --       why is it not converting back to an integer?
     let numer = abs $ numerator num
     let denom = abs $ denominator num
     case (numer >= denom) && ((mod numer denom) == 0) of
