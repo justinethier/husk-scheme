@@ -1,4 +1,14 @@
--- Testing integration with Text.JSON
+{- |
+Module      : Language.Scheme.Plugins.JSON
+Copyright   : Justin Ethier
+Licence     : MIT (see LICENSE in the distribution)
+
+Maintainer  : github.com/justinethier
+Portability : portable
+
+This file implements an interface to Text.JSON that may
+be called directly from husk using the FFI.
+-}
 
 module Language.Scheme.Plugins.JSON where 
 
