@@ -50,7 +50,7 @@ import Data.Array
 import qualified Data.Char as Char
 import Data.Complex
 import Data.Ratio
-import Data.Map
+import qualified Data.Map
 import Numeric
 import Text.ParserCombinators.Parsec hiding (spaces)
 import Text.Parsec.Language
@@ -284,8 +284,16 @@ parseVector = do
 
 parseHashTable :: Parser LispVal
 parseHashTable = do
-  -- TODO: read key/values from an alist
-  return $ HashTable $ Data.Map.fromList []
+  let f (List [a, b]) = (a, b)
+
+  -- TODO: need a more robust way to read key/values from an alist
+  --       the right metaphor is probably either a filter or 
+  --       explicit recursion. that way if a non-alist member
+  --       is found, the entire process can abort and the parser
+  --       action can fail (via pzero?)...
+  vals <- sepBy parseExpr whiteSpace
+  let mvals = map f vals
+  return $ HashTable $ Data.Map.fromList mvals -- $ map f vals
 
 parseList :: Parser LispVal
 parseList = liftM List $ sepBy parseExpr whiteSpace
