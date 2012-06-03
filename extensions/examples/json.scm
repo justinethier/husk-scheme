@@ -35,6 +35,7 @@
      ]
   }")
 
+; Look up city from the JSON record
 (write
     (assq 'city (vector->list (cadr (assq 'address (vector->list (json:decode address-rec)))))))
 

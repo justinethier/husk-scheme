@@ -36,6 +36,7 @@ module Language.Scheme.Parser
     , parseEscapedChar 
     , parseString 
     , parseVector
+    , parseHashTable
     , parseList
     , parseDottedList
     , parseQuoted
@@ -45,11 +46,12 @@ module Language.Scheme.Parser
     ) where
 import Language.Scheme.Types
 import Control.Monad.Error
+import Data.Array
 import qualified Data.Char as Char
 import Data.Complex
-import Data.Array
-import Numeric
 import Data.Ratio
+import Data.Map
+import Numeric
 import Text.ParserCombinators.Parsec hiding (spaces)
 import Text.Parsec.Language
 import Text.Parsec.Prim (ParsecT)
@@ -280,6 +282,11 @@ parseVector = do
   vals <- sepBy parseExpr whiteSpace
   return $ Vector (listArray (0, (length vals - 1)) vals)
 
+parseHashTable :: Parser LispVal
+parseHashTable = do
+  -- TODO: read key/values from an alist
+  return $ HashTable $ Data.Map.fromList []
+
 parseList :: Parser LispVal
 parseList = liftM List $ sepBy parseExpr whiteSpace
 -- TODO: wanted to use endBy (or a variant) above, but it causes an error such that dotted lists are not parsed
@@ -335,6 +342,10 @@ parseUnquoteSpliced = do
   x <- parseExpr
   return $ List [Atom "unquote-splicing", x]
 
+-- FUTURE: should be able to use the grammar from R5RS
+-- to make parsing more efficient (mostly by minimizing
+-- or eliminating the number of try's below)
+
 -- |Parse an expression
 parseExpr :: Parser LispVal
 parseExpr =
@@ -346,6 +357,10 @@ parseExpr =
   <|> parseUnquoteSpliced
   <|> do _ <- try (lexeme $ string "#(")
          x <- parseVector
+         _ <- lexeme $ char ')'
+         return x
+  <|> do _ <- try (lexeme $ string "#hash(")
+         x <- parseHashTable
          _ <- lexeme $ char ')'
          return x
   <|> try (parseAtom)
