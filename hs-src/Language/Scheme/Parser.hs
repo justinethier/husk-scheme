@@ -282,18 +282,25 @@ parseVector = do
   vals <- sepBy parseExpr whiteSpace
   return $ Vector (listArray (0, (length vals - 1)) vals)
 
+-- |Parse a hash table. The table is either empty or is made up of
+--  an alist (associative list)
 parseHashTable :: Parser LispVal
 parseHashTable = do
-  let f (List [a, b]) = (a, b)
-
-  -- TODO: need a more robust way to read key/values from an alist
-  --       the right metaphor is probably either a filter or 
-  --       explicit recursion. that way if a non-alist member
-  --       is found, the entire process can abort and the parser
-  --       action can fail (via pzero?)...
+  -- This function uses explicit recursion to loop over the parsed list:
+  -- As long as it is an alist, the members are appended to an accumulator
+  -- so they can be added to the hash table. However, if the input list is
+  -- determined not to be an alist, Nothing is returned, letting the parser
+  -- know that a valid hashtable was not read.
+  let f :: [(LispVal, LispVal)] -> [LispVal] -> Maybe [(LispVal, LispVal)]
+      f acc [] = Just acc
+      f acc (List [a, b] :ls) = f (acc ++ [(a, b)]) ls
+      f acc (DottedList [a] b :ls) = f (acc ++ [(a, b)]) ls
+      f acc (l:ls) = Nothing
   vals <- sepBy parseExpr whiteSpace
-  let mvals = map f vals
-  return $ HashTable $ Data.Map.fromList mvals -- $ map f vals
+  let mvals = f [] vals
+  case mvals of
+    Just m -> return $ HashTable $ Data.Map.fromList m
+    Nothing -> pzero
 
 parseList :: Parser LispVal
 parseList = liftM List $ sepBy parseExpr whiteSpace

@@ -65,4 +65,11 @@
 (assert/equal (hash-table-fold ht + 0)
               14)
 
+; Tests using literal syntax
+(define ht2 #hash((a 1)))
+(assert/equal (hash-table-ref ht2 'a) 1)
+
+(define ht2 #hash((a 1) (b 2) (c 3) (d "four") (e . 5)))
+(assert/equal (hash-table-ref ht2 'e) 5)
+
 (unit-test-handler-results)
