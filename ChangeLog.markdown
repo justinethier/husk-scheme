@@ -2,7 +2,7 @@ v3.5.6
 --------
 
 - Allow a hash table to be defined directly using `#hash(alist)` - for example, `#hash()` for an empty table or `#hash((a 1) (b . 2))` for a table with two elements. This is not part of R<sup>5</sup>RS but seems less clumsy than the standard way, and a similar language feature is provided by Racket.
-- Fixed a bug where `integer?` will return false for negative rational numbers that are integers. For example, `(integer? -2/2)` should evaluate to `#t`.
+- Fixed a bug where `integer?` will always return false for negative rational numbers. For example, `(integer? -2/2)` should evaluate to `#t`.
 
 v3.5.5
 --------
