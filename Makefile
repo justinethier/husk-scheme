@@ -12,6 +12,8 @@ HUSKC_SRC=$(wildcard hs-src/Compiler/*.hs)
 HUSKI_SRC=$(wildcard hs-src/Interpreter/*.hs)
 
 GHCOPTS=-Wall --make -package parsec -package ghc
+GHCFLAGS=
+#GHCFLAGS=-f-useffi
 
 HUSKC = huskc
 HUSKI = huski
@@ -19,11 +21,11 @@ UNIT_TEST_DIR = tests
 
 all: config build
 config:
-	cabal configure --prefix=$(HOME) --user #-f-useffi
+	cabal configure --prefix=$(HOME) --user $(GHCFLAGS)
 build:
 	cabal build
 install:
-	cabal install #-f-useffi
+	cabal install $(GHCFLAGS)
 sdist:
 	cabal sdist
 doc:
@@ -56,9 +58,9 @@ clean:
 	find . -type f -name "*.o" -exec rm -f {} \;
 
 
-#
+###########################################################
 # Legacy directives
-#
+###########################################################
 
 
 husk: huski huskc
