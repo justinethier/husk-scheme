@@ -1,3 +1,12 @@
+;;; 
+;;; husk-scheme
+;;; http://github.com/justinethier/husk-scheme
+;;;
+;;; Written by Justin Ethier
+;;;
+;;; An example of how to use the JSON module
+;;;
+
 ; Dynamically load functions from the JSON module
 ; This takes Haskell a few moments...
 (load-ffi "Language.Scheme.Plugins.JSON" "jsDecode" "json:decode")
@@ -5,11 +14,12 @@
 (load-ffi "Language.Scheme.Plugins.JSON" "jsEncode" "json:encode")
 (load-ffi "Language.Scheme.Plugins.JSON" "jsEncodeStrict" "json:encode-strict")
 
+; Convert s-expressions to JSON
 (write (json:encode '()))
 (write (json:encode '(test 1 2 3)))
 (write (json:encode '#((a 1) (b 2) (c 3) (d (1 2 3 4 #((e 5)))))))
-;(json:decode 'blah)
 
+; A JSON record...
 (define address-rec 
  "{
      \"firstName\": \"John\",
@@ -39,11 +49,11 @@
 (write
     (assq 'city (vector->list (cadr (assq 'address (vector->list (json:decode address-rec)))))))
 
-; Just thinking, since hashtables are more efficient than alists,
-; why does scheme have built-in vectors via #() but only clumsy
-; library support for hashtables? what would a native hashtable
-; syntax look like? or at least, a simple syntax for representing
-; hashtables?
-;
-; #h((a 1) (b 2) (c 3))
-;
+; Or, make it easier by loading address into a hash table
+(define ht-address 
+    (alist->hash-table 
+        (vector->list
+            (json:decode-strict address-rec))))
+(write (hash-table-ref ht-address 'firstName))
+(write (hash-table-ref ht-address 'lastName))
+(write (hash-table-ref ht-address 'age))
