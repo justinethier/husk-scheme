@@ -109,20 +109,21 @@ astToHaskellStr (List ls) = "List [" ++ joinL (map astToHaskellStr ls) "," ++ "]
 astToHaskellStr (DottedList ls l) = 
   "DottedList [" ++ joinL (map astToHaskellStr ls) "," ++ "] $ " ++ astToHaskellStr l
 
-header :: [String]
+headerModule, headerImports :: [String]
+headerModule = ["module Main where "]
+headerImports = [
+   "Language.Scheme.Core "
+ , "Language.Scheme.Numerical "
+ , "Language.Scheme.Primitives "
+ , "Language.Scheme.Types     -- Scheme data types "
+ , "Language.Scheme.Variables -- Scheme variable operations "
+ , "Control.Monad.Error "
+ , "Data.Array "
+ , "Data.Complex "
+ , "Data.Ratio "
+ , "System.IO "]
 header = [
-   "module Main where "
- , "import Language.Scheme.Core "
- , "import Language.Scheme.Numerical "
- , "import Language.Scheme.Primitives "
- , "import Language.Scheme.Types     -- Scheme data types "
- , "import Language.Scheme.Variables -- Scheme variable operations "
- , "import Control.Monad.Error "
- , "import Data.Array "
- , "import Data.Complex "
- , "import Data.Ratio "
- , "import System.IO "
- , " "
+   " "
 -- TODO: eventually these make func's will be moved out into their own module
  , ""
  , "--makeNormalFunc :: Env -> [LispVal] -> String -> IOThrowsError LispVal "

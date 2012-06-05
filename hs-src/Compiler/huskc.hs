@@ -157,6 +157,8 @@ compileSchemeFile env stdlib srfi55 filename = do
   _ <- liftIO $ registerSRFI env 1
   execC <- compileLisp env filename "exec" Nothing
   outH <- liftIO $ openFile "_tmp.hs" WriteMode
+  _ <- liftIO $ writeList outH headerModule
+  _ <- liftIO $ writeList outH $ map (\mod -> "import " ++ mod ++ " ") headerImports
   _ <- liftIO $ writeList outH header
   _ <- liftIO $ writeList outH $ map show libsC
   _ <- liftIO $ writeList outH $ map show libSrfi55C
