@@ -563,13 +563,18 @@ compile env args@(List [Atom "vector-set!", Atom var, i, object]) copts = do
 -- TODO: eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
 -- TODO: eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 
--- TODO: build this up based on vector-set! above...
-compile env args@(List [Atom "load-ffi", moduleName, externalFuncName, internalFuncName]) copts = do
--- Atom sym <- _gensym "loadFfi"
---     -- basically want to compile to the code:
---     -- defineVar env " ++ internalFuncName ++ " " ++ moduleName ++ externalFuncName
---     -- and then pass along moduleName as another top-level import
-  throwError $ Default "Not implemented"
+-- FUTURE: eventually it should be possible to evaluate the args instead of assuming
+-- that they are all strings, but lets keep it simple for now
+compile env args@(List [Atom "load-ffi", 
+                        String moduleName, 
+                        String externalFuncName, 
+                        String internalFuncName]) copts = do
+  Atom symLoadFFI <- _gensym "loadFFI"
+-- TODO: need to pass along moduleName as another top-level import
+  compiledFunction <- return $ AstFunction symLoadFFI " env cont obj _ " [
+    AstValue $ "  result <- defineVar env \"" ++ internalFuncName ++ "\" " ++ moduleName ++ "." ++ externalFuncName,
+    createAstCont copts "result" ""]
+  return [compiledFunction]
 
 compile env args@(List (_ : _)) copts = mfunc env args compileApply copts 
 compile _ badForm _ = throwError $ BadSpecialForm "Unrecognized special form" badForm
