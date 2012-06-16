@@ -563,15 +563,13 @@ compile env args@(List [Atom "vector-set!", Atom var, i, object]) copts = do
 -- TODO: eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
 -- TODO: eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 
--- TODO:
--- compile env args@(List [Atom "load-ffi", 
---     String moduleName, 
---     String externalFuncName, 
---     String internalFuncName]) copts = do
---     compile env (List [Atom "define", String  internalFuncName, ]) copts
+-- TODO: build this up based on vector-set! above...
+compile env args@(List [Atom "load-ffi", moduleName, externalFuncName, internalFuncName]) copts = do
+-- Atom sym <- _gensym "loadFfi"
 --     -- basically want to compile to the code:
 --     -- defineVar env " ++ internalFuncName ++ " " ++ moduleName ++ externalFuncName
 --     -- and then pass along moduleName as another top-level import
+  throwError $ Default "Not implemented"
 
 compile env args@(List (_ : _)) copts = mfunc env args compileApply copts 
 compile _ badForm _ = throwError $ BadSpecialForm "Unrecognized special form" badForm
