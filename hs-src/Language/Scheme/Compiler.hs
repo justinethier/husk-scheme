@@ -581,6 +581,7 @@ compile env args@(List [Atom "load-ffi",
                         String moduleName, 
                         String externalFuncName, 
                         String internalFuncName]) copts = do
+--  Atom symLoadFFIEntryPt <- _gensym "loadFFIEntryPt"
   Atom symLoadFFI <- _gensym "loadFFI"
 
   -- Need to pass along moduleName as another top-level import
@@ -589,10 +590,11 @@ compile env args@(List [Atom "load-ffi",
   case imports of
     List l -> setNamespacedVar env "internal" "imports" $ List $ l ++ [String moduleName]
 
+  entryPt <- compileSpecialFormEntryPoint "load-ffi" symLoadFFI copts
   compiledFunction <- return $ AstFunction symLoadFFI " env cont obj _ " [
     AstValue $ "  result <- defineVar env \"" ++ internalFuncName ++ "\" " ++ moduleName ++ "." ++ externalFuncName,
     createAstCont copts "result" ""]
-  return [compiledFunction]
+  return [entryPt, compiledFunction]
 
 compile env args@(List (_ : _)) copts = mfunc env args compileApply copts 
 compile _ badForm _ = throwError $ BadSpecialForm "Unrecognized special form" badForm
