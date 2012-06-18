@@ -150,20 +150,25 @@ registerSRFI env num = do
 -- |Compile a scheme file to haskell
 compileSchemeFile :: Env -> String -> String -> String -> IOThrowsError LispVal
 compileSchemeFile env stdlib srfi55 filename = do
+  let conv :: LispVal -> String
+      conv (String s) = s
   -- TODO: it is only temporary to compile the standard library each time. It should be 
   --       precompiled and just added during the ghc compilation
   libsC <- compileLisp env stdlib "run" (Just "exec55")
   libSrfi55C <- compileLisp env srfi55 "exec55" (Just "exec")
   _ <- liftIO $ registerSRFI env 1
+
+  -- Initialize the compiler module and begin
+  _ <- initializeCompiler env
   execC <- compileLisp env filename "exec" Nothing
 
--- TODO: append any additional import modules
---  imports <- getNamespacedVar env "internal" "imports"
---  moreHeaderImports <- mapM (\String mod -> mod) imports
+  -- Append any additional import modules
+  List imports <- getNamespacedVar env "internal" "imports"
+  let moreHeaderImports = map conv imports
 
   outH <- liftIO $ openFile "_tmp.hs" WriteMode
   _ <- liftIO $ writeList outH headerModule
-  _ <- liftIO $ writeList outH $ map (\mod -> "import " ++ mod ++ " ") $ headerImports -- ++ moreHeaderImports
+  _ <- liftIO $ writeList outH $ map (\mod -> "import " ++ mod ++ " ") $ headerImports ++ moreHeaderImports
   _ <- liftIO $ writeList outH header
   _ <- liftIO $ writeList outH $ map show libsC
   _ <- liftIO $ writeList outH $ map show libSrfi55C
