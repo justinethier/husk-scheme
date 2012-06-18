@@ -165,10 +165,11 @@ header = [
 --  it will be appended to by (load-ffi) instances, and then the
 --  imports can be added later on...
 --
--- initializeCompiler :: Env -> IOThrowsError [HaskAST]
--- initializeCompiler env = do
---     _ <- 
---  _ <- defineVar env var form
+initializeCompiler :: Env -> IOThrowsError [HaskAST]
+initializeCompiler env = do
+-- TODO: use a unique namespace
+  _ <- defineNamespacedVar env "internal" "imports" $ List []
+  return []
 
 
 compileLisp :: Env -> String -> String -> Maybe String -> IOThrowsError [HaskAST]
@@ -581,7 +582,13 @@ compile env args@(List [Atom "load-ffi",
                         String externalFuncName, 
                         String internalFuncName]) copts = do
   Atom symLoadFFI <- _gensym "loadFFI"
--- TODO: need to pass along moduleName as another top-level import
+
+  -- Need to pass along moduleName as another top-level import
+-- TODO: only append module again if it is not already in the list
+  imports <- getNamespacedVar env "internal" "imports"
+  case imports of
+    List l -> setNamespacedVar env "internal" "imports" $ List $ l ++ [String moduleName]
+
   compiledFunction <- return $ AstFunction symLoadFFI " env cont obj _ " [
     AstValue $ "  result <- defineVar env \"" ++ internalFuncName ++ "\" " ++ moduleName ++ "." ++ externalFuncName,
     createAstCont copts "result" ""]
