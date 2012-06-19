@@ -581,22 +581,20 @@ compile env args@(List [Atom "load-ffi",
                         String moduleName, 
                         String externalFuncName, 
                         String internalFuncName]) copts = do
---  Atom symLoadFFIEntryPt <- _gensym "loadFFIEntryPt"
   Atom symLoadFFI <- _gensym "loadFFI"
 
-  -- Need to pass along moduleName as another top-level import
--- TODO: only append module again if it is not already in the list
-  imports <- getNamespacedVar env "internal" "imports"
-  case imports of
-    List l -> setNamespacedVar env "internal" "imports" $ List $ l ++ [String moduleName]
+  -- Only append module again if it is not already in the list
+  List l <- getNamespacedVar env "internal" "imports"
+  if not ((String moduleName) `elem` l)
+      then setNamespacedVar env "internal" "imports" $ List $ l ++ [String moduleName]
+      else return $ String ""
 
-  entryPt <- compileSpecialFormEntryPoint " load-ffi" symLoadFFI copts -- TODO: probably should not use this
-  compiledFunction <- return $ AstFunction symLoadFFI " env cont obj _ " [
+  -- Pass along moduleName as another top-level import
+  return [createAstFunc copts [
     AstValue $ "  result <- defineVar env \"" ++ 
         internalFuncName ++ "\" $ IOFunc " ++ 
         moduleName ++ "." ++ externalFuncName,
-    createAstCont copts "result" ""]
-  return [entryPt, compiledFunction]
+    createAstCont copts "result" ""]]
 
 compile env args@(List (_ : _)) copts = mfunc env args compileApply copts 
 compile _ badForm _ = throwError $ BadSpecialForm "Unrecognized special form" badForm
