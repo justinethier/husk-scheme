@@ -590,9 +590,11 @@ compile env args@(List [Atom "load-ffi",
   case imports of
     List l -> setNamespacedVar env "internal" "imports" $ List $ l ++ [String moduleName]
 
-  entryPt <- compileSpecialFormEntryPoint "load-ffi" symLoadFFI copts
+  entryPt <- compileSpecialFormEntryPoint " load-ffi" symLoadFFI copts -- TODO: probably should not use this
   compiledFunction <- return $ AstFunction symLoadFFI " env cont obj _ " [
-    AstValue $ "  result <- defineVar env \"" ++ internalFuncName ++ "\" " ++ moduleName ++ "." ++ externalFuncName,
+    AstValue $ "  result <- defineVar env \"" ++ 
+        internalFuncName ++ "\" $ IOFunc " ++ 
+        moduleName ++ "." ++ externalFuncName,
     createAstCont copts "result" ""]
   return [entryPt, compiledFunction]
 
