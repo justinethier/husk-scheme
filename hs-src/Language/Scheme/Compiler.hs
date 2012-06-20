@@ -32,6 +32,7 @@ import Control.Monad.Error
 import qualified Data.Array
 import Data.Complex
 import qualified Data.List
+import qualified Data.Map
 import Data.Ratio
 import System.IO
 import Debug.Trace
@@ -101,6 +102,10 @@ astToHaskellStr (Rational r) = "Rational $ (" ++ (show $ numerator r) ++ ") % ("
 astToHaskellStr (Float f) = "Float (" ++ show f ++ ")"
 astToHaskellStr (Bool True) = "Bool True"
 astToHaskellStr (Bool False) = "Bool False"
+astToHaskellStr (HashTable ht) = do
+ let ls = Data.Map.toList ht 
+     conv (a, b) = "(" ++ astToHaskellStr a ++ "," ++ astToHaskellStr b ++ ")"
+ "HashTable $ Data.Map.fromList $ [" ++ joinL (map conv ls) "," ++ "]"
 astToHaskellStr (Vector v) = do
   let ls = Data.Array.elems v
       size = (length ls) - 1
@@ -120,6 +125,7 @@ headerImports = [
  , "Control.Monad.Error "
  , "Data.Array "
  , "Data.Complex "
+ , " qualified Data.Map "
  , "Data.Ratio "
  , "System.IO "]
 header = [
@@ -215,6 +221,7 @@ compile _ (Number n) copts = compileScalar ("  return $ Number (" ++ (show n) ++
 compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
 -- TODO: eval env cont val@(HashTable _) = continueEval env cont val
 compile _ v@(Vector _) copts = compileScalar (" return $ " ++ astToHaskellStr v) copts
+compile _ ht@(HashTable _) copts = compileScalar (" return $ " ++ astToHaskellStr ht) copts
 compile _ (Atom a) copts = compileScalar ("  getVar env \"" ++ a ++ "\"") copts 
 
 compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
