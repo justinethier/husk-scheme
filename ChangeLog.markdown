@@ -3,6 +3,7 @@ v3.5.6
 
 - Enhanced the compiler to accept `load-ffi` as a special form, so a compiled version of a program does not have to wait for a module to be dynamically loaded. Instead, the module is included at compile time.
 - Allow a hash table to be defined directly using `#hash(alist)` - for example, `#hash()` for an empty table or `#hash((a 1) (b . 2))` for a table with two elements. This is not part of R<sup>5</sup>RS but seems less clumsy than the standard way, and a similar language feature is provided by Racket.
+- Added support for `hash-table-set!` and `hash-table-delete!` to the compiler.
 - Fixed a bug where `integer?` will always return false for negative rational numbers. For example, `(integer? -2/2)` should evaluate to `#t`.
 
 v3.5.5

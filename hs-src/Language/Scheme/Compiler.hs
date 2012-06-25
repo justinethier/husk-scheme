@@ -599,7 +599,23 @@ compile env args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) copts =
  return $ [entryPt, compiledIdxWrapper, compiledUpdate] ++ compiledIdx ++ compiledObj
 -- TODO: eval env cont args@(List [Atom "hash-table-set!" , nonvar , _ , _]) = do
 -- TODO: eval env cont fargs@(List (Atom "hash-table-set!" : args)) = do
--- TODO: eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
+
+compile env args@(List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
+ Atom symCompiledIdx <- _gensym "hashTableDeleteIdx"
+ Atom symDoDelete <- _gensym "hashTableDelete"
+
+ -- Entry point that allows this form to be redefined
+ entryPt <- compileSpecialFormEntryPoint "hash-table-delete!" symCompiledIdx copts
+ -- Compile index, then use a wrapper to pass it as an arg while compiling obj
+ compiledIdx <- compileExpr env rkey symCompiledIdx (Just symDoDelete) 
+ -- Do actual update
+ compiledUpdate <- return $ AstFunction symDoDelete " env cont rkey _ " [
+    -- TODO: this should be more robust, than just assuming ht is a HashTable
+    AstValue $ "  HashTable ht <- getVar env \"" ++ var ++ "\"",
+    AstValue $ "  result <- setVar env \"" ++ var ++ "\" (HashTable $ Data.Map.delete rkey ht) ",
+    createAstCont copts "result" ""]
+
+ return $ [entryPt, compiledUpdate] ++ compiledIdx
 -- TODO: eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 
 -- FUTURE: eventually it should be possible to evaluate the args instead of assuming
