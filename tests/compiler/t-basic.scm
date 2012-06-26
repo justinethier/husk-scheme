@@ -20,7 +20,7 @@
        (display #\newline)))))
 
 (assert-equal 1.1 1 1)
-(assert-equal 1.2 1 2)
+(assert-equal 1.2 2 2)
 
 1
 (if 1 2 3)
