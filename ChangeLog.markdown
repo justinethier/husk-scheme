@@ -3,19 +3,19 @@ v3.5.6
 
 - Enhanced the compiler to accept `load-ffi` as a special form, so a compiled version of a program does not have to wait for a module to be dynamically loaded. Instead, the module is included at compile time. This offers a nice speed improvement:
 
-    justin@ubuntu:~/Documents/husk-scheme/examples/ffi$ time huski ffi-cputime.scm 
-    Seconds of CPU time spent: 2.756171
-    
-    real    0m3.034s
-    user    0m0.572s
-    sys     0m2.216s
+     justin@ubuntu:~/Documents/husk-scheme/examples/ffi$ time huski ffi-cputime.scm 
+     Seconds of CPU time spent: 2.756171
+     
+     real    0m3.034s
+     user    0m0.572s
+     sys     0m2.216s
 
-    justin@ubuntu:~/Documents/husk-scheme/examples/ffi$ time ./ffi-cputime 
-    Seconds of CPU time spent: 2.4001e-2
-    
-    real    0m0.070s
-    user    0m0.000s
-    sys     0m0.036s
+     justin@ubuntu:~/Documents/husk-scheme/examples/ffi$ time ./ffi-cputime 
+     Seconds of CPU time spent: 2.4001e-2
+     
+     real    0m0.070s
+     user    0m0.000s
+     sys     0m0.036s
 
 - Allow a hash table to be defined directly using `#hash(alist)` - for example, `#hash()` for an empty table or `#hash((a 1) (b . 2))` for a table with two elements. This is not part of R<sup>5</sup>RS but seems less clumsy than the standard way, and a similar language feature is provided by Racket.
 - Added support for `hash-table-set!` and `hash-table-delete!` to the compiler.
