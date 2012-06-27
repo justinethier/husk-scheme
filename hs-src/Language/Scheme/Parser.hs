@@ -54,7 +54,7 @@ import qualified Data.Map
 import Numeric
 import Text.ParserCombinators.Parsec hiding (spaces)
 import Text.Parsec.Language
-import Text.Parsec.Prim (ParsecT)
+--import Text.Parsec.Prim (ParsecT)
 import qualified Text.Parsec.Token as P
 
 -- This was added by pull request #63 as part of a series of fixes
@@ -210,19 +210,19 @@ parseRealNumber = do
 --   in scientific notation. Eg "e10" from "1.0e10"
 parseNumberExponent :: LispVal -> Parser LispVal
 parseNumberExponent n = do 
-  exp <- many $ oneOf "Ee"
-  case (length exp) of
+  expnt <- many $ oneOf "Ee"
+  case (length expnt) of
     0 -> return n
     1 -> do
       num <- try (parseDecimalNumber)
       case num of
-        Number exp -> buildResult n exp
+        Number nexp -> buildResult n nexp
         _ -> pzero
     _ -> pzero
  where 
-  buildResult (Number num) exp = return $ Float $ (fromIntegral num) * (10 ** (fromIntegral exp))
-  buildResult (Float num) exp = return $ Float $ num * (10 ** (fromIntegral exp))
-  buildResult num _ = pzero
+  buildResult (Number num) nexp = return $ Float $ (fromIntegral num) * (10 ** (fromIntegral nexp))
+  buildResult (Float num) nexp = return $ Float $ num * (10 ** (fromIntegral nexp))
+  buildResult _ _ = pzero
 
 parseRationalNumber :: Parser LispVal
 parseRationalNumber = do
@@ -295,7 +295,7 @@ parseHashTable = do
       f acc [] = Just acc
       f acc (List [a, b] :ls) = f (acc ++ [(a, b)]) ls
       f acc (DottedList [a] b :ls) = f (acc ++ [(a, b)]) ls
-      f acc (l:ls) = Nothing
+      f _ (_:_) = Nothing
   vals <- sepBy parseExpr whiteSpace
   let mvals = f [] vals
   case mvals of

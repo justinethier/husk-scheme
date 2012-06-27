@@ -90,7 +90,7 @@ numerical types they accept. Within reason, a user should not have to know
 what numerical type they are passing when using these functions -}
 
 
-numAdd, numSub, numMul, numDiv :: [LispVal] -> ThrowsError LispVal
+numAdd, numSub, numMul, numDiv, numMod :: [LispVal] -> ThrowsError LispVal
 numAdd [] = return $ Number 0
 numAdd aparams = do
   foldl1M (\ a b -> doAdd =<< (numCast [a, b])) aparams
@@ -151,7 +151,7 @@ numMod aparams = do
   where doMod (List [(Number a), (Number b)]) = return $ Number $ mod' a b
         doMod (List [(Float a), (Float b)]) = return $ Float $ mod' a b
         doMod (List [(Rational a), (Rational b)]) = return $ Rational $ mod' a b
-        doMod (List [(Complex a), (Complex b)]) = throwError $ Default "modulo not implemented for complex numbers" 
+        doMod (List [(Complex _), (Complex _)]) = throwError $ Default "modulo not implemented for complex numbers" 
         doMod _ = throwError $ Default "Unexpected error in modulo"
 
 numBoolBinopEq :: [LispVal] -> ThrowsError LispVal
@@ -406,7 +406,7 @@ numNumerator [(Float f)] = return $ Float $ fromInteger . numerator . toRational
 numNumerator [x] = throwError $ TypeMismatch "rational number" x
 numNumerator badArgList = throwError $ NumArgs 1 badArgList
 
-numDenominator [n@(Number _)] = return $ Number 1
+numDenominator [Number _] = return $ Number 1
 numDenominator [(Rational r)] = return $ Number $ denominator r
 numDenominator [(Float f)] = return $ Float $ fromInteger $ denominator $ toRational f
 numDenominator [x] = throwError $ TypeMismatch "rational number" x

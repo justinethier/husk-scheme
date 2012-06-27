@@ -101,7 +101,7 @@ module Language.Scheme.Primitives (
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Types
-import qualified Control.Exception
+--import qualified Control.Exception
 import Control.Monad.Error
 import Data.Char hiding (isSymbol)
 import Data.Array
