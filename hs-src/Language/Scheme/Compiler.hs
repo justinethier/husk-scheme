@@ -23,8 +23,8 @@ be made for time and space...
 
 module Language.Scheme.Compiler where 
 import qualified Language.Scheme.Macro
-import Language.Scheme.Numerical
-import Language.Scheme.Parser
+-- import Language.Scheme.Numerical
+-- import Language.Scheme.Parser
 import Language.Scheme.Primitives
 import Language.Scheme.Types
 import Language.Scheme.Variables
@@ -34,8 +34,8 @@ import Data.Complex
 import qualified Data.List
 import qualified Data.Map
 import Data.Ratio
-import System.IO
-import Debug.Trace
+-- import System.IO
+-- import Debug.Trace
 
 -- A type to store options passed to compile
 -- eventually all of this might be able to be integrated into a Compile monad
@@ -50,14 +50,14 @@ defaultCompileOptions :: String -> CompOpts
 defaultCompileOptions thisFunc = CompileOptions thisFunc False False Nothing
 
 createAstFunc :: CompOpts -> [HaskAST] -> HaskAST 
-createAstFunc (CompileOptions thisFunc useVal useArgs _) body = do
+createAstFunc (CompileOptions thisFunc useVal useArgs _) funcBody = do
   let val = case useVal of
               True -> "value"
               _ -> "_"
       args = case useArgs of
                True -> "(Just args)"
                _ -> "_"
-  AstFunction thisFunc (" env cont " ++ val ++ " " ++ args ++ " ") body
+  AstFunction thisFunc (" env cont " ++ val ++ " " ++ args ++ " ") funcBody
 
 createAstCont :: CompOpts -> String -> String -> HaskAST
 createAstCont (CompileOptions _ _ _ (Just nextFunc)) var indentation = do
@@ -80,9 +80,9 @@ data HaskAST = AstAssignM String HaskAST
 showValAST :: HaskAST -> String
 showValAST (AstAssignM var val) = "  " ++ var ++ " <- " ++ show val
 showValAST (AstFunction name args code) = do
-  let header = "\n" ++ name ++ args ++ " = do "
-  let body = unwords . map (\x -> "\n" ++ x ) $ map showValAST code
-  header ++ body 
+  let fheader = "\n" ++ name ++ args ++ " = do "
+  let fbody = unwords . map (\x -> "\n" ++ x ) $ map showValAST code
+  fheader ++ fbody 
 showValAST (AstValue v) = v
 
 -- TODO: this is too limiting, this is an 'internal' continuation. most should take a value and pass it along, not args
@@ -90,6 +90,7 @@ showValAST (AstContinuation nextFunc args) = "  continueEval env (makeCPSWArgs e
 
 instance Show HaskAST where show = showValAST
 
+joinL :: forall a. [[a]] -> [a] -> [a]
 joinL ls sep = concat $ Data.List.intersperse sep ls
 
 astToHaskellStr :: LispVal -> String 
@@ -114,7 +115,7 @@ astToHaskellStr (List ls) = "List [" ++ joinL (map astToHaskellStr ls) "," ++ "]
 astToHaskellStr (DottedList ls l) = 
   "DottedList [" ++ joinL (map astToHaskellStr ls) "," ++ "] $ " ++ astToHaskellStr l
 
-headerModule, headerImports :: [String]
+header, headerModule, headerImports :: [String]
 headerModule = ["module Main where "]
 headerImports = [
    "Language.Scheme.Core "
@@ -185,10 +186,10 @@ compileLisp env filename entryPoint exitPoint = load filename >>= compileBlock e
 -- Note: Uses explicit recursion to transform a block of code, because
 --  later lines may depend on previous ones
 compileBlock :: String -> Maybe String -> Env -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST]
-compileBlock symThisFunc symLastFunc env result code@[c] = do
+compileBlock symThisFunc symLastFunc env result [c] = do
   compiled <- mcompile env c $ CompileOptions symThisFunc False False symLastFunc 
   return $ result ++ compiled
-compileBlock symThisFunc symLastFunc env result code@(c:cs) = do
+compileBlock symThisFunc symLastFunc env result (c:cs) = do
   Atom symNextFunc <- _gensym "f"
   compiled <- mcompile env c $ CompileOptions symThisFunc False False (Just symNextFunc)
   compileBlock symNextFunc symLastFunc env (result ++ compiled) cs
@@ -233,12 +234,12 @@ compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astT
 --
 compile _ (List [Atom "quasiquote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
 
-compile env args@(List [Atom "expand",  _body]) copts = do
+compile env (List [Atom "expand",  _body]) copts = do
   -- TODO: check if expand has been rebound?
   val <- Language.Scheme.Macro.expand env False _body
   compileScalar (" return $ " ++ astToHaskellStr val) copts
 
-compile env args@(List (Atom "let-syntax" : List _bindings : _body)) copts = do
+compile env (List (Atom "let-syntax" : List _bindings : _body)) copts = do
   -- TODO: check if let-syntax has been rebound?
   bodyEnv <- liftIO $ extendEnv env []
   _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
@@ -248,7 +249,7 @@ compile env args@(List (Atom "let-syntax" : List _bindings : _body)) copts = do
     List e -> compile bodyEnv (List $ Atom "begin" : e) copts
     e -> compile bodyEnv e copts
 
-compile env args@(List (Atom "letrec-syntax" : List _bindings : _body)) copts = do
+compile env (List (Atom "letrec-syntax" : List _bindings : _body)) copts = do
   -- TODO: check if let-syntax has been rebound?
   bodyEnv <- liftIO $ extendEnv env []
   _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False _bindings
@@ -258,7 +259,7 @@ compile env args@(List (Atom "letrec-syntax" : List _bindings : _body)) copts = 
     List e -> compile bodyEnv (List $ Atom "begin" : e) copts
     e -> compile bodyEnv e copts
 
-compile env args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
+compile env (List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
 --
 -- TODO:
 --
@@ -270,10 +271,10 @@ compile env args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-
   _ <- defineNamespacedVar env macroNamespace keyword $ Syntax (Just env) Nothing False identifiers rules
   compileScalar ("  return $ Nil \"\"") copts 
 
-compile env args@(List [Atom "if", predic, conseq]) copts = 
+compile env (List [Atom "if", predic, conseq]) copts = 
  compile env (List [Atom "if", predic, conseq, Nil ""]) copts
 
-compile env args@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
+compile env (List [Atom "if", predic, conseq, alt]) copts@(CompileOptions _ _ _ nextFunc) = do
  -- FUTURE: think about it, these could probably be part of compileExpr
  Atom symPredicate <- _gensym "ifPredic"
  Atom symCheckPredicate <- _gensym "compiledIfPredicate"
@@ -297,7 +298,7 @@ compile env args@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions t
  -- Join compiled code together
  return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ compConsequence ++ compAlternate
 
-compile env args@(List [Atom "set!", Atom var, form]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
+compile env (List [Atom "set!", Atom var, form]) copts@(CompileOptions _ _ _ _) = do
  Atom symDefine <- _gensym "setFunc"
  Atom symMakeDefine <- _gensym "setFuncMakeSet"
 
@@ -321,7 +322,7 @@ compile env (List (Atom "set!" : args)) copts = do
  f <- compileSpecialForm "set!" ("throwError $ NumArgs 2 $ [String \"" ++ (show args) ++ "\"]") copts -- TODO: Cheesy to use a string, but fine for now...
  return [f]
 
-compile env args@(List [Atom "define", Atom var, form]) copts@(CompileOptions thisFunc _ _ nextFunc) = do
+compile env (List [Atom "define", Atom var, form]) copts@(CompileOptions _ _ _ _) = do
  Atom symDefine <- _gensym "defineFuncDefine"
  Atom symMakeDefine <- _gensym "defineFuncMakeDef"
 
@@ -339,7 +340,7 @@ compile env args@(List [Atom "define", Atom var, form]) copts@(CompileOptions th
     createAstCont copts "result" ""]
  return $ [createAstFunc copts f] ++ compDefine ++ [compMakeDefine]
 
-compile env args@(List (Atom "define" : List (Atom var : fparams) : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
+compile env (List (Atom "define" : List (Atom var : fparams) : fbody)) copts@(CompileOptions _ _ _ _) = do
  Atom symCallfunc <- _gensym "defineFuncEntryPt"
  compiledParams <- compileLambdaList fparams
  compiledBody <- compileBlock symCallfunc Nothing env [] fbody
@@ -358,7 +359,7 @@ compile env args@(List (Atom "define" : List (Atom var : fparams) : fbody)) copt
        ]
  return $ [createAstFunc copts f] ++ compiledBody
 
-compile env args@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
+compile env (List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) copts@(CompileOptions _ _ _ _) = do
  Atom symCallfunc <- _gensym "defineFuncEntryPt"
  compiledParams <- compileLambdaList fparams
  compiledBody <- compileBlock symCallfunc Nothing env [] fbody
@@ -379,7 +380,7 @@ compile env args@(List (Atom "define" : DottedList (Atom var : fparams) varargs 
 
 
 
-compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
+compile env (List (Atom "lambda" : List fparams : fbody)) copts@(CompileOptions _ _ _ _) = do
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
  compiledParams <- compileLambdaList fparams
 
@@ -399,7 +400,7 @@ compile env args@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOpt
        ]
  return $ [createAstFunc copts f] ++ compiledBody
 
-compile env args@(List (Atom "lambda" : DottedList fparams varargs : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
+compile env (List (Atom "lambda" : DottedList fparams varargs : fbody)) copts@(CompileOptions _ _ _ _) = do
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
  compiledParams <- compileLambdaList fparams
 
@@ -417,7 +418,7 @@ compile env args@(List (Atom "lambda" : DottedList fparams varargs : fbody)) cop
        ]
  return $ [createAstFunc copts f] ++ compiledBody
 
-compile env args@(List (Atom "lambda" : varargs@(Atom _) : fbody)) copts@(CompileOptions thisFunc _ _ nextFunc) = do
+compile env (List (Atom "lambda" : varargs@(Atom _) : fbody)) copts@(CompileOptions _ _ _ _) = do
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
 
 -- TODO: need to extend Env below when compiling body?
@@ -433,7 +434,7 @@ compile env args@(List (Atom "lambda" : varargs@(Atom _) : fbody)) copts@(Compil
        createAstCont copts "result" "           "
        ]
  return $ [createAstFunc copts f] ++ compiledBody
-compile env args@(List [Atom "string-set!", Atom var, i, character]) copts = do
+compile env (List [Atom "string-set!", Atom var, i, character]) copts = do
  Atom symDefine <- _gensym "stringSetFunc"
  Atom symMakeDefine <- _gensym "stringSetFuncMakeSet"
 
@@ -451,7 +452,7 @@ compile env args@(List [Atom "string-set!", Atom var, i, character]) copts = do
 -- TODO: eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "string-set!" : args)) = do 
 
-compile env args@(List [Atom "set-car!", Atom var, argObj]) copts = do
+compile env (List [Atom "set-car!", Atom var, argObj]) copts = do
  Atom symGetVar <- _gensym "setCarGetVar"
  Atom symCompiledObj <- _gensym "setCarCompiledObj"
  Atom symObj <- _gensym "setCarObj"
@@ -502,7 +503,7 @@ compile env args@(List [Atom "set-car!", Atom var, argObj]) copts = do
 -- TODO: eval env cont args@(List [Atom "set-car!" , nonvar , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "set-car!" : args)) = do
 
-compile env args@(List [Atom "set-cdr!", Atom var, argObj]) copts = do
+compile env (List [Atom "set-cdr!", Atom var, argObj]) copts = do
  Atom symGetVar <- _gensym "setCdrGetVar"
  Atom symCompiledObj <- _gensym "setCdrCompiledObj"
  Atom symObj <- _gensym "setCdrObj"
@@ -552,7 +553,7 @@ compile env args@(List [Atom "set-cdr!", Atom var, argObj]) copts = do
 
 -- TODO: eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "set-cdr!" : args)) = do
-compile env args@(List [Atom "vector-set!", Atom var, i, object]) copts = do
+compile env (List [Atom "vector-set!", Atom var, i, object]) copts = do
  Atom symCompiledIdx <- _gensym "vectorSetIdx"
  Atom symCompiledObj <- _gensym "vectorSetObj"
  Atom symUpdateVec <- _gensym "vectorSetUpdate"
@@ -576,7 +577,7 @@ compile env args@(List [Atom "vector-set!", Atom var, i, object]) copts = do
 -- TODO: eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
 -- TODO: eval env cont fargs@(List (Atom "vector-set!" : args)) = do 
 
-compile env args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) copts = do
+compile env (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) copts = do
  Atom symCompiledIdx <- _gensym "hashTableSetIdx"
  Atom symCompiledObj <- _gensym "hashTableSetObj"
  Atom symUpdateVec <- _gensym "hashTableSetUpdate"
@@ -600,7 +601,7 @@ compile env args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) copts =
 -- TODO: eval env cont args@(List [Atom "hash-table-set!" , nonvar , _ , _]) = do
 -- TODO: eval env cont fargs@(List (Atom "hash-table-set!" : args)) = do
 
-compile env args@(List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
+compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
  Atom symCompiledIdx <- _gensym "hashTableDeleteIdx"
  Atom symDoDelete <- _gensym "hashTableDelete"
 
@@ -620,17 +621,17 @@ compile env args@(List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
 
 -- FUTURE: eventually it should be possible to evaluate the args instead of assuming
 -- that they are all strings, but lets keep it simple for now
-compile env args@(List [Atom "load-ffi", 
+compile env (List [Atom "load-ffi", 
                         String moduleName, 
                         String externalFuncName, 
                         String internalFuncName]) copts = do
-  Atom symLoadFFI <- _gensym "loadFFI"
+--  Atom symLoadFFI <- _gensym "loadFFI"
 
   -- Only append module again if it is not already in the list
   List l <- getNamespacedVar env "internal" "imports"
-  if not ((String moduleName) `elem` l)
-      then setNamespacedVar env "internal" "imports" $ List $ l ++ [String moduleName]
-      else return $ String ""
+  _ <- if not ((String moduleName) `elem` l)
+          then setNamespacedVar env "internal" "imports" $ List $ l ++ [String moduleName]
+          else return $ String ""
 
   -- Pass along moduleName as another top-level import
   return [createAstFunc copts [
@@ -681,7 +682,7 @@ compileExpr env expr symThisFunc fForNextExpr = do
 
 -- |Compiles each argument to a function call, and then uses apply to call the function
 compileApply :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
-compileApply env args@(List (func : params)) copts@(CompileOptions coptsThis _ _ coptsNext) = do
+compileApply env (List (func : fparams)) (CompileOptions coptsThis _ _ coptsNext) = do
   Atom stubFunc <- _gensym "applyStubF"
   Atom wrapperFunc <- _gensym "applyWrapper"
   Atom nextFunc <- _gensym "applyNextF"
@@ -690,7 +691,7 @@ compileApply env args@(List (func : params)) copts@(CompileOptions coptsThis _ _
   -- Use wrapper to pass high-order function (func) as an argument to apply
   wrapper <- return $ AstFunction wrapperFunc " env cont value _ " [AstValue $ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " [value]) $ Nil \"\""]
   _comp <- mcompile env func $ CompileOptions stubFunc False False Nothing
-  rest <- compileArgs nextFunc False params -- False since no value passed in this time
+  rest <- compileArgs nextFunc False fparams -- False since no value passed in this time
 
   return $ [c, wrapper ] ++ _comp ++ rest
  where 
