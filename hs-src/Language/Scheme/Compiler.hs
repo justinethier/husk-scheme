@@ -209,7 +209,7 @@ compileLambdaList l = do
   serialized <- mapM serialize l 
   return $ "[" ++ concat (Data.List.intersperse "," serialized) ++ "]"
  where serialize (Atom a) = return $ (show a)
-       --serialize _ = throwError $ Default "invalid parameter to lambda list. TODO: output var"
+       serialize a = throwError $ Default $ "invalid parameter to lambda list: " ++ show a
 
 compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
@@ -315,10 +315,10 @@ compile env (List [Atom "set!", Atom var, form]) copts@(CompileOptions _ _ _ _) 
     createAstCont copts "result" ""]
  return $ [entryPt] ++ compDefine ++ [compMakeDefine]
 
-compile env (List [Atom "set!", nonvar, _]) copts = do 
+compile _ (List [Atom "set!", nonvar, _]) copts = do 
  f <- compileSpecialForm "set!" ("throwError $ TypeMismatch \"variable\" $ String \"" ++ (show nonvar) ++ "\"")  copts
  return [f]
-compile env (List (Atom "set!" : args)) copts = do
+compile _ (List (Atom "set!" : args)) copts = do
  f <- compileSpecialForm "set!" ("throwError $ NumArgs 2 $ [String \"" ++ (show args) ++ "\"]") copts -- TODO: Cheesy to use a string, but fine for now...
  return [f]
 
