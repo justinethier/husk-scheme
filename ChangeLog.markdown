@@ -5,9 +5,10 @@ v3.5.6
 
   <pre>
   <code>
-     justin@ubuntu:~/Documents/husk-scheme/examples/ffi$ time huski ffi-cputime.scm 
+     $ time huski ffi-cputime.scm 
      Seconds of CPU time spent: 2.756171
-     justin@ubuntu:~/Documents/husk-scheme/examples/ffi$ time ./ffi-cputime 
+
+     $ time ./ffi-cputime 
      Seconds of CPU time spent: 2.4001e-2
   </code>
   </pre>
