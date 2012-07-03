@@ -183,7 +183,7 @@ compileHaskellFile :: String -> Bool -> String -> IO() --ThrowsError LispVal
 compileHaskellFile filename dynamic extraArgs = do
   let ghc = "ghc" -- Need to make configurable??
       dynamicArg = if dynamic then "-dynamic" else ""
-  compileStatus <- system $ ghc ++ " " ++ dynamicArg ++ " " ++ extraArgs ++ " -cpp --make -package ghc -fglasgow-exts -o " ++ filename ++ " _tmp.hs"
+  compileStatus <- system $ ghc ++ " " ++ dynamicArg ++ " " ++ extraArgs ++ " -cpp --make -package ghc -o " ++ filename ++ " _tmp.hs"
 
 -- TODO: delete intermediate hs files if requested
 
