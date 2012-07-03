@@ -389,3 +389,54 @@ unwordsList = unwords . map showVal
 
 -- |Allow conversion of lispval instances to strings
 instance Show LispVal where show = showVal
+
+
+-- Functions required by the interpreter --
+
+-- |Create a scheme function
+makeFunc :: -- forall (m :: * -> *).
+            (Monad m) =>
+            Maybe String -> Env -> [LispVal] -> [LispVal] -> m LispVal
+makeFunc varargs env fparams fbody = return $ Func (map showVal fparams) varargs fbody env
+
+-- |Create a normal scheme function
+makeNormalFunc :: (Monad m) => Env
+               -> [LispVal]
+               -> [LispVal]
+               -> m LispVal
+makeNormalFunc = makeFunc Nothing
+
+-- |Create a scheme function that can receive any number of arguments
+makeVarargs :: (Monad m) => LispVal -> Env
+                        -> [LispVal]
+                        -> [LispVal]
+                        -> m LispVal
+makeVarargs = makeFunc . Just . showVal
+
+-- Functions required by a compiled program --
+
+-- |Create a haskell function
+makeHFunc ::
+            (Monad m) =>
+            Maybe String 
+         -> Env 
+         -> [String] 
+         -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) 
+--         -> String 
+         -> m LispVal
+makeHFunc varargs env fparams fbody = return $ HFunc fparams varargs fbody env --(map showVal fparams) varargs fbody env
+-- |Create a normal haskell function
+makeNormalHFunc :: (Monad m) =>
+                  Env
+               -> [String]
+               -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal)
+               -> m LispVal
+makeNormalHFunc = makeHFunc Nothing
+
+-- |Create a haskell function that can receive any number of arguments
+makeHVarargs :: (Monad m) => LispVal 
+                        -> Env
+                        -> [String]
+                        -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal)
+                        -> m LispVal
+makeHVarargs = makeHFunc . Just . showVal

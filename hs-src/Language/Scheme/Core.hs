@@ -666,21 +666,6 @@ prepareApply env cont (List (function : functionArgs)) = do
        cpsEvalArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (2)"
 prepareApply _ _ _ = throwError $ Default "Unexpected error in prepareApply"
 
-makeFunc :: -- forall (m :: * -> *).
-            (Monad m) =>
-            Maybe String -> Env -> [LispVal] -> [LispVal] -> m LispVal
-makeFunc varargs env fparams fbody = return $ Func (map showVal fparams) varargs fbody env
-makeNormalFunc :: (Monad m) => Env
-               -> [LispVal]
-               -> [LispVal]
-               -> m LispVal
-makeNormalFunc = makeFunc Nothing
-makeVarargs :: (Monad m) => LispVal -> Env
-                        -> [LispVal]
-                        -> [LispVal]
-                        -> m LispVal
-makeVarargs = makeFunc . Just . showVal
-
 -- |Call into a Scheme function
 apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
 apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do

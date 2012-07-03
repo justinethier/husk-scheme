@@ -131,30 +131,6 @@ headerImports = [
  , "System.IO "]
 header = [
    " "
--- TODO: eventually these make func's will be moved out into their own module
- , ""
- , "--makeNormalFunc :: Env -> [LispVal] -> String -> IOThrowsError LispVal "
- , "makeHFunc ::"
- , "            (Monad m) =>"
- , "            Maybe String "
- , "         -> Env "
- , "         -> [String] "
- , "         -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) "
- , "--         -> String "
- , "         -> m LispVal"
- , "makeHFunc varargs env fparams fbody = return $ HFunc fparams varargs fbody env --(map showVal fparams) varargs fbody env"
- , "makeNormalHFunc :: (Monad m) =>"
- , "                  Env"
- , "               -> [String]"
- , "               -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal)"
- , "               -> m LispVal"
- , "makeNormalHFunc = makeHFunc Nothing"
- , "makeHVarargs :: (Monad m) => LispVal "
- , "                        -> Env"
- , "                        -> [String]"
- , "                        -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal)"
- , "                        -> m LispVal"
- , "makeHVarargs = makeHFunc . Just . showVal"
  , "main :: IO () "
  , "main = do "
  , "  env <- primitiveBindings "
@@ -168,13 +144,11 @@ header = [
 -- , "run :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal "
 
 
--- TODO: define imports var here as an empty list.
---  it will be appended to by (load-ffi) instances, and then the
---  imports can be added later on...
---
+-- Define imports var here as an empty list.
+-- This list is appended to by (load-ffi) instances,
+-- and the imports are explicitly added later on...
 initializeCompiler :: Env -> IOThrowsError [HaskAST]
 initializeCompiler env = do
--- TODO: use a unique namespace
   _ <- defineNamespacedVar env "internal" "imports" $ List []
   return []
 
