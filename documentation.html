@@ -162,6 +162,10 @@ Any Haskell function loaded via the FFI must be of the following type:
                 {% endhighlight %}
 
 See husk's <a href="http://hackage.haskell.org/packages/archive/husk-scheme/3.5.2.1/doc/html/Language-Scheme-Plugins-CPUTime.html">Language.Scheme.Plugins.CPUTime</a> module for an example of how to use the husk FFI.
+
+<br />
+<br />
+Finally, it is possible to disable the FFI by passing the option <strong>-f-useffi</strong> to cabal. With the FFI disabled, husk does not link to the GHC API, which significantly reduces its compiled size. You might want to consider doing this if husk is statically linked and you are not using the FFI. For example, if you are using husk as an extension language in your Haskell application.
 </p>
 
 <h2 id="section-macros" class="title">Macro Debugging</h2>
