@@ -218,11 +218,12 @@ data LispVal = Atom String
      --   application. In any case, it is convenient to define the type here 
      --   because syntax objects are stored in the same environments and 
      --   manipulated by the same functions as regular variables.
- | ERSyntax {
-       ersynClosure :: Env -- TODO: is this needed when Func has an env?
+ | ERSyntax LispVal -- TODO: is this type even needed?
+ --{
+     --  ersynClosure :: Env -- TODO: is this needed when Func has an env?
      -- TODO: rename closure???
-     , ersynTrans :: LispVal -- TODO: Func
-   } -- ^ Syntax for an explicit-renaming macro
+ --    , ersynTrans :: LispVal -- TODO: Func
+ --  } -- ^ Syntax for an explicit-renaming macro
  | EOF
  | Nil String
  -- ^Internal use only; do not use this type directly.
@@ -373,7 +374,7 @@ showVal (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showVal t ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
 showVal (Continuation _ _ _ _ _) = "<continuation>"
 showVal (Syntax _ _ _ _ _) = "<syntax>"
-showVal (ERSyntax _ _) = "<er-macro-transformer syntax>"
+showVal (ERSyntax _) = "<er-macro-transformer syntax>"
 showVal (Func {params = args, vararg = varargs, body = _, closure = _}) =
   "(lambda (" ++ unwords (map show args) ++
     (case varargs of
