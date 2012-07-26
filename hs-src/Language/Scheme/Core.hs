@@ -343,7 +343,22 @@ eval env cont args@(List (Atom "letrec-syntax" : List _bindings : _body)) = do
    case expanded of
      List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing Nothing) $ Nil "" 
      e -> continueEval bodyEnv cont e
-
+{- TODO:
+eval env cont args@(List [Atom "define-syntax", Atom keyword, (List 
+    (Atom "er-macro-transformer" : 
+    transformer@(List (Atom "lambda") : List [Atom _, Atom _, Atom _]
+    
+    TODO: body
+    )))]) = do
+ bound <- liftIO $ isRecBound env "define-syntax"
+ if bound
+  then prepareApply env cont args -- if bound to var in this scope; call it
+  else do 
+    TODO: makeFunc using transformer
+    _ <- defineNamespacedVar env macroNamespace keyword $ 
+            ERSyntax env transformer
+    continueEval env cont $ Nil "" 
+-}
 eval env cont args@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
  bound <- liftIO $ isRecBound env "define-syntax"
  if bound
