@@ -105,6 +105,8 @@ import Data.Array
 --  Otherwise the input is returned unchanged.
 macroEval :: Env        -- ^Current environment for the AST
           -> LispVal    -- ^AST to search
+          -> (Env -> LispVal -> LispVal -> IOThrowsError LispVal) -- ^Eval func:w
+
           -> IOThrowsError LispVal -- ^Transformed AST containing an
                                    -- expanded macro if found
 
@@ -117,28 +119,40 @@ macroEval :: Env        -- ^Current environment for the AST
  -  begins with the keyword for the macro." 
  -
  -}
-macroEval env lisp@(List (Atom x : _)) = do
+macroEval env lisp@(List (Atom x : _)) eval = do
   -- Note: If there is a procedure of the same name it will be shadowed by the macro.
   isDefined <- liftIO $ isNamespacedRecBound env macroNamespace x
   if isDefined
      then do
-       Syntax (Just defEnv) _ definedInMacro identifiers rules <- getNamespacedVar env macroNamespace x
-       renameEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
-                                     -- to hold renamed variables
-       cleanupEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
-                                      -- to hold new symbols introduced by renaming. We
-                                      -- can use this to clean up any left after transformation
+       var <- getNamespacedVar env macroNamespace x
+       case var of
+         ERSyntax er@(Func _ _ _ _) -> do -- TODO: which env to use?
+           expanded <- eval env -- TODO: func env??
+             (makeNullContinuation env)
+             (List [er, lisp, String "TODO", String "TODO"]) 
+           macroEval env expanded eval
 
-       -- Transform the input and then call macroEval again, since a macro may be contained within...
-       expanded <- macroTransform defEnv env env renameEnv cleanupEnv 
-                                  definedInMacro 
-                                 (List identifiers) rules lisp
-       macroEval env expanded -- Useful debug to see all exp's: (trace ("exp = " ++ show expanded) expanded)
---       macroEval env (trace ("exp = " ++ show expanded) expanded)
+         Syntax (Just defEnv) _ definedInMacro identifiers rules -> do
+           renameEnv <- liftIO $ nullEnv -- Local environment used just for this
+                                         -- invocation to hold renamed variables
+           cleanupEnv <- liftIO $ nullEnv -- Local environment used just for 
+                                          -- this invocation to hold new symbols
+                                          -- introduced by renaming. We can use
+                                          -- this to clean up any left after 
+                                          -- transformation
+
+           -- Transform the input and then call macroEval again, 
+           -- since a macro may be contained within...
+           expanded <- macroTransform defEnv env env renameEnv cleanupEnv 
+                                      definedInMacro 
+                                     (List identifiers) rules lisp
+           macroEval env expanded eval
+           -- Useful debug to see all exp's:
+           -- macroEval env (trace ("exp = " ++ show expanded) expanded)
      else return lisp
 
 -- No macro to process, just return code as it is...
-macroEval _ lisp@(_) = return lisp
+macroEval _ lisp@(_) _ = return lisp
 
 {-
  - Given input and syntax-rules, determine if any rule is a match and transform it.

@@ -104,7 +104,7 @@ meval env cont lisp = mfunc env cont lisp eval
 mprepareApply env cont lisp = mfunc env cont lisp prepareApply
 mfunc :: Env -> LispVal -> LispVal -> (Env -> LispVal -> LispVal -> IOThrowsError LispVal) -> IOThrowsError LispVal
 mfunc env cont lisp func = do
-  Language.Scheme.Macro.macroEval env lisp >>= (func env cont) 
+  Language.Scheme.Macro.macroEval env lisp eval >>= (func env cont) 
 {- OBSOLETE:
  old code for updating env's in the continuation chain (see below)
   if False --needToExtendEnv lisp

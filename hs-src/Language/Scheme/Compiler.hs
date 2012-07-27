@@ -621,8 +621,11 @@ mcompile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 mcompile env lisp copts = mfunc env lisp compile copts
 mfunc :: Env -> LispVal -> (Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]) -> CompOpts -> IOThrowsError [HaskAST] 
 mfunc env lisp func copts = do
-  transformed <- Language.Scheme.Macro.macroEval env lisp 
+  transformed <- Language.Scheme.Macro.macroEval env lisp dummy
   func env transformed copts
+       -- TODO: a dummy func until we figure out how to compile er-macro-transformer
+ where dummy :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
+       dummy _ _ lisp = return lisp
 {- TODO: adapt for compilation
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 meval env cont lisp = mfunc env cont lisp eval
