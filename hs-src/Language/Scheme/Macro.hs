@@ -119,7 +119,7 @@ macroEval :: Env        -- ^Current environment for the AST
  -  begins with the keyword for the macro." 
  -
  -}
-macroEval env lisp@(List (Atom x : _)) eval = do
+macroEval env lisp@(List (Atom x : _)) apply = do
   -- Note: If there is a procedure of the same name it will be shadowed by the macro.
   isDefined <- liftIO $ isNamespacedRecBound env macroNamespace x
   if isDefined
@@ -127,11 +127,11 @@ macroEval env lisp@(List (Atom x : _)) eval = do
        var <- getNamespacedVar env macroNamespace x
        case var of
          ERSyntax er@(Func _ _ _ _) -> do -- TODO: which env to use?
-           expanded <- eval 
+           expanded <- apply 
              (makeNullContinuation env)
              er
              [lisp, String "TODO", String "TODO"] 
-           macroEval env expanded eval
+           macroEval env expanded apply
 
          Syntax (Just defEnv) _ definedInMacro identifiers rules -> do
            renameEnv <- liftIO $ nullEnv -- Local environment used just for this
@@ -147,7 +147,7 @@ macroEval env lisp@(List (Atom x : _)) eval = do
            expanded <- macroTransform defEnv env env renameEnv cleanupEnv 
                                       definedInMacro 
                                      (List identifiers) rules lisp
-           macroEval env expanded eval
+           macroEval env expanded apply
            -- Useful debug to see all exp's:
            -- macroEval env (trace ("exp = " ++ show expanded) expanded)
      else return lisp
