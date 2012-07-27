@@ -127,10 +127,23 @@ macroEval env lisp@(List (Atom x : _)) apply = do
        var <- getNamespacedVar env macroNamespace x
        case var of
          ERSyntax er@(Func _ _ _ _) -> do -- TODO: which env to use?
+
+
+{-
+TODO: need to pass in rename and compare functions
+
+rename needs to take a variable in the syntax env and give it a unique name
+in the use env (with the same value). TBD: can it be defined here with a closure 
+to syntax env, to avoid having another parameter?
+
+compare? - will write this later
+
+-}
+           
            expanded <- apply 
              (makeNullContinuation env)
              er
-             [lisp, String "TODO", String "TODO"] 
+             [lisp, IOFunc erRename, IOFunc erCompare] 
            macroEval env expanded apply
 
          Syntax (Just defEnv) _ definedInMacro identifiers rules -> do
@@ -154,6 +167,15 @@ macroEval env lisp@(List (Atom x : _)) apply = do
 
 -- No macro to process, just return code as it is...
 macroEval _ lisp@(_) _ = return lisp
+
+
+---- TODO: a temporary ER section. all of this stuff will be moved later on
+erRename, erCompare :: [LispVal] -> IOThrowsError LispVal
+erRename [Atom a] = return $ Atom a -- TODO: not really correct, just a stub
+erRename _ = throwError $ Default "Not implemented yet"
+erCompare _ = throwError $ Default "Not implemented yet"
+----
+
 
 {-
  - Given input and syntax-rules, determine if any rule is a match and transform it.
