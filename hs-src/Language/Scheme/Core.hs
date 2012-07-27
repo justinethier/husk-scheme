@@ -345,8 +345,8 @@ eval env cont args@(List (Atom "letrec-syntax" : List _bindings : _body)) = do
      e -> continueEval bodyEnv cont e
 
 eval env cont args@(List [Atom "define-syntax", Atom keyword,
-    (List (Atom "er-macro-transformer" : 
-          (Atom "lambda" : List fparams : fbody)))]) = do
+  (List [Atom "er-macro-transformer", 
+    (List (Atom "lambda" : List fparams : fbody))])]) = do
  bound <- liftIO $ isRecBound env "define-syntax"
  if bound
   then prepareApply env cont args -- if bound to var in this scope; call it
