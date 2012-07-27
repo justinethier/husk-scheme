@@ -128,22 +128,7 @@ macroEval env lisp@(List (Atom x : _)) apply = do
        case var of
          ERSyntax er@(Func _ _ _ _) -> do -- TODO: which env to use?
 
-
-{-
-TODO: need to pass in rename and compare functions
-
-rename needs to take a variable in the syntax env and give it a unique name
-in the use env (with the same value). TBD: can it be defined here with a closure 
-to syntax env, to avoid having another parameter?
-
-compare? - will write this later
-
--}
-           
-           expanded <- apply 
-             (makeNullContinuation env)
-             er
-             [lisp, IOFunc erRename, IOFunc erCompare] 
+           expanded <- handleERMacro env lisp er apply
            macroEval env expanded apply
 
          Syntax (Just defEnv) _ definedInMacro identifiers rules -> do
@@ -170,6 +155,31 @@ macroEval _ lisp@(_) _ = return lisp
 
 
 ---- TODO: a temporary ER section. all of this stuff will be moved later on
+handleERMacro :: Env 
+    -> LispVal 
+    -> LispVal 
+    -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Eval func
+    -> IOThrowsError LispVal
+handleERMacro env lisp er@(Func _ _ _ _) apply = do
+
+{-
+TODO: need to pass in rename and compare functions
+
+rename needs to take a variable in the syntax env and give it a unique name
+in the use env (with the same value). TBD: can it be defined here with a closure 
+to syntax env, to avoid having another parameter?
+
+may also need a nullEnv to store renames, since the same var should be renamed
+to the same new name
+
+compare? - will write this later
+
+-}
+           
+    apply 
+      (makeNullContinuation env)
+      er
+      [lisp, IOFunc erRename, IOFunc erCompare] 
 erRename, erCompare :: [LispVal] -> IOThrowsError LispVal
 erRename [Atom a] = return $ Atom a -- TODO: not really correct, just a stub
 erRename _ = throwError $ Default "Not implemented yet"
