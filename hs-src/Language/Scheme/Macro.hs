@@ -160,7 +160,7 @@ handleERMacro :: Env
     -> LispVal 
     -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Eval func
     -> IOThrowsError LispVal
-handleERMacro env lisp er@(Func _ _ _ _) apply = do
+handleERMacro useEnv lisp er@(Func _ _ _ defEnv) apply = do
 
 {-
 TODO: need to pass in rename and compare functions
@@ -177,9 +177,13 @@ compare? - will write this later
 -}
            
     apply 
-      (makeNullContinuation env)
+      (makeNullContinuation useEnv)
       er
       [lisp, IOFunc erRename, IOFunc erCompare] 
+
+-- where
+-- TODO: define rename here, so it has access to defEnv (?)
+
 erRename, erCompare :: [LispVal] -> IOThrowsError LispVal
 erRename [Atom a] = return $ Atom a -- TODO: not really correct, just a stub
 erRename _ = throwError $ Default "Not implemented yet"
