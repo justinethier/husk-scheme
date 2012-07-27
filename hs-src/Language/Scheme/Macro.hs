@@ -105,7 +105,7 @@ import Data.Array
 --  Otherwise the input is returned unchanged.
 macroEval :: Env        -- ^Current environment for the AST
           -> LispVal    -- ^AST to search
-          -> (Env -> LispVal -> LispVal -> IOThrowsError LispVal) -- ^Eval func:w
+          -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Eval func
 
           -> IOThrowsError LispVal -- ^Transformed AST containing an
                                    -- expanded macro if found
@@ -127,9 +127,10 @@ macroEval env lisp@(List (Atom x : _)) eval = do
        var <- getNamespacedVar env macroNamespace x
        case var of
          ERSyntax er@(Func _ _ _ _) -> do -- TODO: which env to use?
-           expanded <- eval env -- TODO: func env??
+           expanded <- eval 
              (makeNullContinuation env)
-             (List [er, lisp, String "TODO", String "TODO"]) 
+             er
+             [lisp, String "TODO", String "TODO"] 
            macroEval env expanded eval
 
          Syntax (Just defEnv) _ definedInMacro identifiers rules -> do

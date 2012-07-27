@@ -624,8 +624,8 @@ mfunc env lisp func copts = do
   transformed <- Language.Scheme.Macro.macroEval env lisp dummy
   func env transformed copts
        -- TODO: a dummy func until we figure out how to compile er-macro-transformer
- where dummy :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-       dummy _ _ lisp = return lisp
+ where dummy :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
+       dummy _ _ (lisp : _) = return lisp
 {- TODO: adapt for compilation
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 meval env cont lisp = mfunc env cont lisp eval
