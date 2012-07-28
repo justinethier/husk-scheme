@@ -126,11 +126,12 @@ macroEval env lisp@(List (Atom x : _)) apply = do
      then do
        var <- getNamespacedVar env macroNamespace x
        case var of
-         ERSyntax er@(Func _ _ _ _) -> do -- TODO: which env to use?
-
-           expanded <- handleERMacro env lisp er apply
+         -- Explicit Renaming
+         ERSyntax transformer@(Func _ _ _ _) -> do
+           expanded <- handleERMacro env lisp transformer apply
            macroEval env expanded apply
 
+         -- Syntax Rules
          Syntax (Just defEnv) _ definedInMacro identifiers rules -> do
            renameEnv <- liftIO $ nullEnv -- Local environment used just for this
                                          -- invocation to hold renamed variables
@@ -160,7 +161,7 @@ handleERMacro :: Env
     -> LispVal 
     -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Eval func
     -> IOThrowsError LispVal
-handleERMacro useEnv lisp er@(Func _ _ _ defEnv) apply = do
+handleERMacro useEnv lisp transformer@(Func _ _ _ defEnv) apply = do
 
 {-
 TODO: need to pass in rename and compare functions
@@ -178,16 +179,16 @@ compare? - will write this later
            
     apply 
       (makeNullContinuation useEnv)
-      er
+      transformer
       [lisp, IOFunc erRename, IOFunc erCompare] 
 
--- where
+ where
 -- TODO: define rename here, so it has access to defEnv (?)
-
-erRename, erCompare :: [LispVal] -> IOThrowsError LispVal
-erRename [Atom a] = return $ Atom a -- TODO: not really correct, just a stub
-erRename _ = throwError $ Default "Not implemented yet"
-erCompare _ = throwError $ Default "Not implemented yet"
+ erRename, erCompare :: [LispVal] -> IOThrowsError LispVal
+ erRename [Atom a] = do
+    return $ Atom a -- TODO: not really correct, just a stub
+ erRename _ = throwError $ Default "Not implemented yet"
+ erCompare _ = throwError $ Default "Not implemented yet"
 ----
 
 
