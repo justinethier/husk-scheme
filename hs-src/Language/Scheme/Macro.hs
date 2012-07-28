@@ -186,6 +186,25 @@ compare? - will write this later
 -- TODO: define rename here, so it has access to defEnv (?)
  erRename, erCompare :: [LispVal] -> IOThrowsError LispVal
  erRename [Atom a] = do
+    -- TODO: is rename a divert from defEnv to useEnv?
+    --
+    -- from clinger's paper "Hygienic Macros Through Explicit Renaming":
+    -- the expression returned by the transformation procedure
+    -- will be expanded in the syntactic environment obtained
+    -- from the syntactic environment of the macro application
+    -- by binding any fresh identifiers in the syntactic
+    -- environment in which the macro was defined. This means
+    -- that a renamed identifier will denote the same thing as
+    -- the original identifier unless the transformation
+    -- procedure that renamed the identifier placed an
+    -- occurrence of it in a binding position.
+    -- The renaming procedure acts as a mathematical function
+    -- in the sense that the idenfiers obtained from any two
+    -- calls with the same argument will be the same in
+    -- the sense of eqv?. It is an error if the renaming
+    -- procedure is called after the transformation
+    -- procedure has returned.
+    -- TODO: can a nullEnv closure be used to store vars?
     return $ Atom a -- TODO: not really correct, just a stub
  erRename _ = throwError $ Default "Not implemented yet"
  erCompare _ = throwError $ Default "Not implemented yet"
