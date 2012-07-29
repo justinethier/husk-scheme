@@ -48,3 +48,12 @@
     (write `(,a ,b ))
     (swap! a b)
     (write `(,a ,b ))) 'a 'b)
+
+; TODO: need a test case for two renamings of
+; the same atom. note that the macro must
+; be defined at macro definition time, since
+; otherwise the atom is just passed through
+; unchanged
+
+; TODO: what about expand? should be able
+; to expand an er macro
