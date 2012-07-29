@@ -30,7 +30,7 @@
     (swap! a b)
     (write `(,a ,b ))) 'a 'b)
 
-(define-syntax swap! ; Wrong! macro is not hygienic
+(define-syntax swap! 
   (er-macro-transformer
     (lambda (form rename compare?)
       (let (
