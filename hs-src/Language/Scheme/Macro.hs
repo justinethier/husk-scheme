@@ -205,7 +205,16 @@ compare? - will write this later
     -- procedure is called after the transformation
     -- procedure has returned.
     -- TODO: can a nullEnv closure be used to store vars?
-    return $ Atom a -- TODO: not really correct, just a stub
+ --   return $ Atom a -- TODO: not really correct, just a stub
+   isDef <- liftIO $ isRecBound defEnv a
+   if isDef
+      then do
+        value <- getVar defEnv a
+        Atom renamed <- _gensym a
+        -- TODO: somehow record that "renamed" should refer to "a" if "a" is renamed again
+        return $ Atom renamed
+      else
+        return $ Atom a
  erRename _ = throwError $ Default "Not implemented yet"
  erCompare _ = throwError $ Default "Not implemented yet"
 ----
@@ -681,10 +690,9 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
 --     || not startOfList
      || a == aa -- Prevent an infinite loop
      -- Preserve keywords encountered in the macro 
-     -- A complete hack I think. This will likely need to be revisited throughout the 3.4.x 
-     -- series of macro-related releases.
+     -- as each of these is really a special form, and renaming them
+     -- would not work because there is nothing to divert back...
      || a == "if"
-     || a == "begin"
      || a == "let-syntax" 
      || a == "letrec-syntax" 
      || a == "define-syntax" 
