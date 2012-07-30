@@ -211,7 +211,10 @@ compare? - will write this later
       then do
         value <- getVar defEnv a
         Atom renamed <- _gensym a
+        _ <- defineVar useEnv renamed value
         -- TODO: somehow record that "renamed" should refer to "a" if "a" is renamed again
+        -- something like this, except need to check if it is bound first
+        --_ <- defineNamespacedVar localEnv "renamed" a $ Atom renamed
         return $ Atom renamed
       else
         return $ Atom a
