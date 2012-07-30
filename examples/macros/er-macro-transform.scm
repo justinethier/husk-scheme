@@ -55,5 +55,22 @@
 ; otherwise the atom is just passed through
 ; unchanged
 
+(define x 1)
+(define-syntax test
+  (er-macro-transformer
+    (lambda (form rename compare?)
+      `((lambda (x)
+         (write x)
+         '1) 
+        2))))
+(test)
+(define-syntax test2
+  (er-macro-transformer
+    (lambda (form rename compare?)
+      `((lambda (x)
+         (write ,(rename 'x))
+         '1) 
+        2))))
+(test2)
 ; TODO: what about expand? should be able
 ; to expand an er macro
