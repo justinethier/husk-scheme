@@ -215,7 +215,7 @@ compare? - will write this later
         return $ Atom renamed
       else
         return $ Atom a
- erRename _ = throwError $ Default "Not implemented yet"
+ erRename form = throwError $ Default $ "Not implemented yet for " ++ show form
  erCompare _ = throwError $ Default "Not implemented yet"
 ----
 
