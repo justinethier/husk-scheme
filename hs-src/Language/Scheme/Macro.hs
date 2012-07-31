@@ -205,11 +205,13 @@ handleERMacro useEnv renameEnv lisp transformer@(Func _ _ _ defEnv) apply = do
              return $ Atom renamed
       else
         return $ Atom a
- erRename form = throwError $ Default $ "Not implemented yet for " ++ show form
+ erRename form = throwError $ Default $ "Unable to rename: " ++ show form
 
 -- TODO:
  erCompare :: [LispVal] -> IOThrowsError LispVal
- erCompare _ = throwError $ Default "Not implemented yet"
+ erCompare values@[a, b] = do
+   return $ Bool $ eqVal a b
+ erCompare form = throwError $ Default $ "Unable to compare: " ++ show form
 ----
 
 
