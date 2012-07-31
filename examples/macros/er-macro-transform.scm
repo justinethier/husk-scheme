@@ -49,12 +49,6 @@
     (swap! a b)
     (write `(,a ,b ))) 'a 'b)
 
-; TODO: need a test case for two renamings of
-; the same atom. note that the macro must
-; be defined at macro definition time, since
-; otherwise the atom is just passed through
-; unchanged
-
 (define x 1)
 (define-syntax test
   (er-macro-transformer
@@ -64,6 +58,8 @@
          '1) 
         2))))
 (test)
+
+; Test case for two renamings of the same atom
 (define-syntax test2
   (er-macro-transformer
     (lambda (form rename compare?)
@@ -75,5 +71,16 @@
          '1) 
         2))))
 (test2)
+
+; Test case for compare
+(define-syntax test3
+  (er-macro-transformer
+    (lambda (form rename compare?)
+      (let ((val (cadr form)))
+        (if (compare? val (rename 'false))
+          `#f
+          `#t)))))
+(write (test3 true))
+(write (test3 false))
 ; TODO: what about expand? should be able
 ; to expand an er macro
