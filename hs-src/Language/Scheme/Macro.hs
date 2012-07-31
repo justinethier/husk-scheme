@@ -207,7 +207,7 @@ handleERMacro useEnv renameEnv lisp transformer@(Func _ _ _ defEnv) apply = do
         return $ Atom a
  erRename form = throwError $ Default $ "Unable to rename: " ++ show form
 
--- TODO:
+ -- The explicit renaming compare function
  erCompare :: [LispVal] -> IOThrowsError LispVal
  erCompare values@[a, b] = do
    return $ Bool $ eqVal a b
@@ -893,6 +893,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv _ True _ (List _)
         -- from the {rename ==> original}. Each new name is unique by definition, so
         -- no conflicts are possible.
         macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
+-- TODO: what about ER Syntax?      _ -> return $ List (Atom a : ts) 
       _ -> throwError $ Default "Unexpected error processing a macro in walkExpandedAtom"
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List result)

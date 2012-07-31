@@ -21,14 +21,14 @@
 
 ; TODO: demonstrates that the 3.5.6 macro walker 
 ; is not compatible with er-macro-transformer
-;(let ((a 'a) (b 'b))
-;    (write `(,a ,b ,tmp))
-;    (swap! a b)
-;    (write `(,a ,b ,tmp)))
-((lambda (a b)
-    (write `(,a ,b ))
+(let ((a 'a) (b 'b))
+    (write `(,a ,b))
     (swap! a b)
-    (write `(,a ,b ))) 'a 'b)
+    (write `(,a ,b)))
+;((lambda (a b)
+;    (write `(,a ,b ))
+;    (swap! a b)
+;    (write `(,a ,b ))) 'a 'b)
 
 (define-syntax swap! 
   (er-macro-transformer
