@@ -128,7 +128,8 @@ macroEval env lisp@(List (Atom x : _)) apply = do
        case var of
          -- Explicit Renaming
          ERSyntax transformer@(Func _ _ _ _) -> do
-           expanded <- handleERMacro env lisp transformer apply
+           renameEnv <- liftIO $ nullEnv -- Local environment used just for this
+           expanded <- handleERMacro env renameEnv lisp transformer apply
            macroEval env expanded apply
 
          -- Syntax Rules
@@ -157,68 +158,57 @@ macroEval _ lisp@(_) _ = return lisp
 
 ---- TODO: a temporary ER section. all of this stuff will be moved later on
 handleERMacro :: Env 
+    -> Env
     -> LispVal 
     -> LispVal 
     -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Eval func
     -> IOThrowsError LispVal
-handleERMacro useEnv lisp transformer@(Func _ _ _ defEnv) apply = do
-
-{-
-TODO: need to pass in rename and compare functions
-
-rename needs to take a variable in the syntax env and give it a unique name
-in the use env (with the same value). TBD: can it be defined here with a closure 
-to syntax env, to avoid having another parameter?
-
-may also need a nullEnv to store renames, since the same var should be renamed
-to the same new name
-
-compare? - will write this later
-
--}
-           
-    apply 
-      (makeNullContinuation useEnv)
-      transformer
-      [lisp, IOFunc erRename, IOFunc erCompare] 
-
+handleERMacro useEnv renameEnv lisp transformer@(Func _ _ _ defEnv) apply = do
+  apply 
+    (makeNullContinuation useEnv)
+    transformer
+    [lisp, IOFunc erRename, IOFunc erCompare] 
  where
--- TODO: define rename here, so it has access to defEnv (?)
- erRename, erCompare :: [LispVal] -> IOThrowsError LispVal
+ -- From clinger's paper "Hygienic Macros Through Explicit Renaming":
+ --
+ -- The expression returned by the transformation procedure
+ -- will be expanded in the syntactic environment obtained
+ -- from the syntactic environment of the macro application
+ -- by binding any fresh identifiers in the syntactic
+ -- environment in which the macro was defined. This means
+ -- that a renamed identifier will denote the same thing as
+ -- the original identifier unless the transformation
+ -- procedure that renamed the identifier placed an
+ -- occurrence of it in a binding position.
+ --
+ -- The renaming procedure acts as a mathematical function
+ -- in the sense that the idenfiers obtained from any two
+ -- calls with the same argument will be the same in
+ -- the sense of eqv?. It is an error if the renaming
+ -- procedure is called after the transformation
+ -- procedure has returned.
+ erRename :: [LispVal] -> IOThrowsError LispVal
  erRename [Atom a] = do
-    -- TODO: is rename a divert from defEnv to useEnv?
-    --
-    -- from clinger's paper "Hygienic Macros Through Explicit Renaming":
-    -- the expression returned by the transformation procedure
-    -- will be expanded in the syntactic environment obtained
-    -- from the syntactic environment of the macro application
-    -- by binding any fresh identifiers in the syntactic
-    -- environment in which the macro was defined. This means
-    -- that a renamed identifier will denote the same thing as
-    -- the original identifier unless the transformation
-    -- procedure that renamed the identifier placed an
-    -- occurrence of it in a binding position.
-    -- The renaming procedure acts as a mathematical function
-    -- in the sense that the idenfiers obtained from any two
-    -- calls with the same argument will be the same in
-    -- the sense of eqv?. It is an error if the renaming
-    -- procedure is called after the transformation
-    -- procedure has returned.
-    -- TODO: can a nullEnv closure be used to store vars?
- --   return $ Atom a -- TODO: not really correct, just a stub
    isDef <- liftIO $ isRecBound defEnv a
    if isDef
       then do
-        value <- getVar defEnv a
-        Atom renamed <- _gensym a
-        _ <- defineVar useEnv renamed value
-        -- TODO: somehow record that "renamed" should refer to "a" if "a" is renamed again
-        -- something like this, except need to check if it is bound first
-        --_ <- defineNamespacedVar localEnv "renamed" a $ Atom renamed
-        return $ Atom renamed
+        isRenamed <- liftIO $ isRecBound renameEnv a
+        if isRenamed
+           then do
+             renamed <- getVar renameEnv a
+             return renamed
+           else do
+             value <- getVar defEnv a
+             Atom renamed <- _gensym a -- Unique name
+             _ <- defineVar useEnv renamed value -- divert value to Use Env
+             _ <- defineVar renameEnv a $ Atom renamed -- Record renamed sym
+             return $ Atom renamed
       else
         return $ Atom a
  erRename form = throwError $ Default $ "Not implemented yet for " ++ show form
+
+-- TODO:
+ erCompare :: [LispVal] -> IOThrowsError LispVal
  erCompare _ = throwError $ Default "Not implemented yet"
 ----
 
