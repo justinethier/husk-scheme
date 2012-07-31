@@ -1,3 +1,5 @@
+; TODO: all of this should be relocated to a new test case file in the test suite
+
 ;;;;
 ;;;; Examples of using er macros. Most of this code is taken from
 ;;;; the Chicken docs
