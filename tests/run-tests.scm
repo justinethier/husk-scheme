@@ -29,6 +29,7 @@
 (let () (load "t-macro-ref-trans.scm"))
 (let () (load "t-srfi-1.scm"))
 (let () (load "t-io.scm"))
+(let () (load "t-er-macro.scm"))
 (let () (load "summarize.scm"))
 
 (delete-file "scm-unit.tmp")
