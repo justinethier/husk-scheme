@@ -156,18 +156,19 @@ macroEval env lisp@(List (Atom x : _)) apply = do
 macroEval _ lisp@(_) _ = return lisp
 
 
----- TODO: a temporary ER section. all of this stuff will be moved later on
-handleERMacro :: Env 
-    -> Env
-    -> LispVal 
-    -> LispVal 
+-- |Handle an explicit renaming macro
+handleERMacro :: 
+       Env -- ^Environment where macro was used
+    -> Env -- ^Temporary environment to store renamed variables
+    -> LispVal -- ^Form to transform
+    -> LispVal -- ^Macro transformer
     -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Eval func
     -> IOThrowsError LispVal
 handleERMacro useEnv renameEnv lisp transformer@(Func _ _ _ defEnv) apply = do
   apply 
     (makeNullContinuation useEnv)
     transformer
-    [lisp, IOFunc erRename, IOFunc erCompare] 
+    [lisp, IOFunc explicitRenamingRename, IOFunc explicitRenamingCompare] 
  where
  -- From clinger's paper "Hygienic Macros Through Explicit Renaming":
  --
@@ -187,8 +188,8 @@ handleERMacro useEnv renameEnv lisp transformer@(Func _ _ _ defEnv) apply = do
  -- the sense of eqv?. It is an error if the renaming
  -- procedure is called after the transformation
  -- procedure has returned.
- erRename :: [LispVal] -> IOThrowsError LispVal
- erRename [Atom a] = do
+ explicitRenamingRename :: [LispVal] -> IOThrowsError LispVal
+ explicitRenamingRename [Atom a] = do
    isDef <- liftIO $ isRecBound defEnv a
    if isDef
       then do
@@ -205,13 +206,14 @@ handleERMacro useEnv renameEnv lisp transformer@(Func _ _ _ defEnv) apply = do
              return $ Atom renamed
       else
         return $ Atom a
- erRename form = throwError $ Default $ "Unable to rename: " ++ show form
+ explicitRenamingRename form = throwError $ Default $ "Unable to rename: " ++ show form
 
  -- The explicit renaming compare function
- erCompare :: [LispVal] -> IOThrowsError LispVal
- erCompare values@[a, b] = do
+ explicitRenamingCompare  :: [LispVal] -> IOThrowsError LispVal
+ explicitRenamingCompare values@[a, b] = do
    return $ Bool $ eqVal a b
- erCompare form = throwError $ Default $ "Unable to compare: " ++ show form
+ explicitRenamingCompare form = throwError $ 
+    Default $ "Unable to compare: " ++ show form
 ----
 
 
@@ -854,7 +856,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
     -- lambda is malformed, just transform as normal atom...
     walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
 
-walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv _ True _ (List _)
+walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result)
     a
     ts 
     False True = do
@@ -893,7 +895,10 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv _ True _ (List _)
         -- from the {rename ==> original}. Each new name is unique by definition, so
         -- no conflicts are possible.
         macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
--- TODO: what about ER Syntax?      _ -> return $ List (Atom a : ts) 
+      ERSyntax _ ->
+        -- Probably should expand inline, but for now trans as a normal atom
+        walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
+          dim False False (List $ result ++ [Atom a]) (List ts)
       _ -> throwError $ Default "Unexpected error processing a macro in walkExpandedAtom"
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List result)
