@@ -355,7 +355,7 @@ eval env cont args@(List [Atom "define-syntax", Atom keyword,
     -- TODO: now just need to figure out initial entry point to the ER func
     --       for now can ignore complications of an ER found during syn-rules transformation
     f <- makeNormalFunc env fparams fbody 
-    _ <- defineNamespacedVar env macroNamespace keyword $ ERSyntax f
+    _ <- defineNamespacedVar env macroNamespace keyword $ SyntaxExplicitRenaming f
     continueEval env cont $ Nil "" 
 
 eval env cont args@(List [Atom "define-syntax", Atom keyword, 

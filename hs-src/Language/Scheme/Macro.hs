@@ -127,7 +127,7 @@ macroEval env lisp@(List (Atom x : _)) apply = do
        var <- getNamespacedVar env macroNamespace x
        case var of
          -- Explicit Renaming
-         ERSyntax transformer@(Func _ _ _ _) -> do
+         SyntaxExplicitRenaming transformer@(Func _ _ _ _) -> do
            renameEnv <- liftIO $ nullEnv -- Local environment used just for this
            expanded <- handleERMacro env renameEnv lisp transformer apply
            macroEval env expanded apply
@@ -895,7 +895,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
         -- from the {rename ==> original}. Each new name is unique by definition, so
         -- no conflicts are possible.
         macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
-      ERSyntax _ ->
+      SyntaxExplicitRenaming _ ->
         -- Probably should expand inline, but for now trans as a normal atom
         walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
           dim False False (List $ result ++ [Atom a]) (List ts)
