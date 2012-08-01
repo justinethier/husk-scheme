@@ -129,7 +129,8 @@ macroEval env lisp@(List (Atom x : _)) apply = do
          -- Explicit Renaming
          SyntaxExplicitRenaming transformer@(Func _ _ _ _) -> do
            renameEnv <- liftIO $ nullEnv -- Local environment used just for this
-           expanded <- handleERMacro env renameEnv lisp transformer apply
+           expanded <- explicitRenamingTransform env renameEnv 
+                                               lisp transformer apply
            macroEval env expanded apply
 
          -- Syntax Rules
@@ -157,14 +158,15 @@ macroEval _ lisp@(_) _ = return lisp
 
 
 -- |Handle an explicit renaming macro
-handleERMacro :: 
+explicitRenamingTransform :: 
        Env -- ^Environment where macro was used
     -> Env -- ^Temporary environment to store renamed variables
     -> LispVal -- ^Form to transform
     -> LispVal -- ^Macro transformer
     -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Eval func
     -> IOThrowsError LispVal
-handleERMacro useEnv renameEnv lisp transformer@(Func _ _ _ defEnv) apply = do
+explicitRenamingTransform useEnv renameEnv lisp 
+                            transformer@(Func _ _ _ defEnv) apply = do
   apply 
     (makeNullContinuation useEnv)
     transformer
