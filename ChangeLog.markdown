@@ -1,3 +1,8 @@
+v3.5.7
+--------
+
+The major change in this release is support for explicit renaming macros. This low-level macro system provides the ability to break macro hygiene, if necessary.
+
 v3.5.6
 --------
 
