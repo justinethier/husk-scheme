@@ -1,9 +1,20 @@
+;
+; An attempt to modify chibi scheme's module meta language
+; to use to implement modules (r7rs libraries) in husk
+;
+
 ;; meta.scm -- meta langauge for describing modules
 ;; Copyright (c) 2009-2012 Alex Shinn.  All rights reserved.
 ;; BSD-style license: http://synthcode.com/license.txt
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; modules
+
+;; JAE - will need stubs for *-environment methods
+(define current-environment (lambda () '()))
+(define interaction-environment (lambda () '()))
+(define make-environment (lambda () '()))
+;; /JAE
 
 (define *this-module* '())
 
@@ -16,7 +27,7 @@
 
 (define (module-exports mod)
   (or (%module-exports mod) (env-exports (module-env mod))))
-
+#|
 (define (module-name->strings ls res)
   (if (null? ls)
       res
@@ -292,3 +303,4 @@
         (cons '(srfi 0) (make-module (list 'cond-expand)
                                      (current-environment)
                                      (list (list 'export 'cond-expand))))))
+|#
