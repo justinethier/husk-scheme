@@ -10,10 +10,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; modules
 
-;; JAE - will need stubs for *-environment methods
+;; JAE - Hacks to get everything to work
 (define current-environment (lambda () '()))
 (define interaction-environment (lambda () '()))
 (define make-environment (lambda () '()))
+(define (string-concatenate l) (apply string-append l)) 
 ;; /JAE
 
 (define *this-module* '())
@@ -26,8 +27,8 @@
 (define (module-meta-data-set! mod x) (vector-set! mod 2 x))
 
 (define (module-exports mod)
-  (or (%module-exports mod) (env-exports (module-env mod))))
-#|
+  (or (%module-exports mod) #| JAE - (env-exports (module-env mod)) |# ))
+
 (define (module-name->strings ls res)
   (if (null? ls)
       res
@@ -44,13 +45,15 @@
 (define (module-name-prefix name)
   (string-concatenate (reverse (cdr (cdr (module-name->strings name '()))))))
 
+; TODO: test this def below:
+; WTF is find-module-file  ?
 (define load-module-definition
   (let ((meta-env (current-environment)))
     (lambda (name)
       (let* ((file (module-name->file name))
              (path (find-module-file file)))
         (if path (load path meta-env))))))
-
+#|
 (define (find-module name)
   (cond
    ((assoc name *modules*) => cdr)
