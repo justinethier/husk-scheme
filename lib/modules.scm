@@ -15,6 +15,7 @@
 (define interaction-environment (lambda () '()))
 (define make-environment (lambda () '()))
 (define (string-concatenate l) (apply string-append l)) 
+(define *modules* '()) ; Just a temporary def, see EOF
 ;; /JAE
 
 (define *this-module* '())
@@ -51,9 +52,14 @@
   (let ((meta-env (current-environment)))
     (lambda (name)
       (let* ((file (module-name->file name))
-             (path (find-module-file file)))
-        (if path (load path meta-env))))))
-#|
+; JAE - TODO: this version prepends a path
+;  to the filename. husk will eventually need
+;  to do this as well...
+;             (path (find-module-file file)))
+;        (if path (load path meta-env))))))
+        )
+        (if file (load file))))))
+
 (define (find-module name)
   (cond
    ((assoc name *modules*) => cdr)
@@ -82,7 +88,7 @@
         (bs (symbol->string b)))
     (if (and (> (string-length bs) (string-length as))
              (string=? as (substring bs 0 (string-length as))))
-        (string->symbol (substring bs (string-length as)))
+        (string->symbol (substring bs (string-length as) (string-length bs)))
         b)))
 
 ;; (define (warn msg . args)
@@ -100,7 +106,7 @@
   (cond ((null? ls) '())
         ((pred (to-id (car ls))) (cons (car ls) (id-filter pred (cdr ls))))
         (else (id-filter pred (cdr ls)))))
-
+#|
 (define (resolve-import x)
   (cond
    ((not (and (pair? x) (list? x)))
