@@ -106,7 +106,9 @@
   (cond ((null? ls) '())
         ((pred (to-id (car ls))) (cons (car ls) (id-filter pred (cdr ls))))
         (else (id-filter pred (cdr ls)))))
-#|
+
+
+; TODO: There is a lot going on here, but does it work?
 (define (resolve-import x)
   (cond
    ((not (and (pair? x) (list? x)))
@@ -152,7 +154,7 @@
     => (lambda (mod) (cons x (%module-exports mod))))
    (else
     (error "couldn't find import" x))))
-
+#|
 (define (eval-module name mod . o)
   (let ((env (if (pair? o) (car o) (make-environment)))
         (meta (module-meta-data mod))
