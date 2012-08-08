@@ -9,3 +9,17 @@ we need a level of indirection so the object can refer back to the variable.
 The obvious solution is to generate a unique memory location for each variable (such as an integer for each, or a gensym) and use a map to store the actual variables, indexed by memory location. memory location would have to be stored with the variable
 
 could this map be part of the env? because if it is truly global then we need to perform garbage collection on it, which severly complicates the implementation.
+
+initial thoughts (there must be a better way):
+- heap as part of env (indexed by mem location)
+- memory location stored when var is created, if applicable
+  how to do when var used in a pure way???
+- define
+  if var has mem addy, assign it to var
+  add var to the heap
+- set!
+  same ops as above
+- var reference
+  if var refers to mem location, get it from the heap
+  may have to search parent env's
+this approach is not so bad (var creation aside), but does not have a garbage collection strategy for the heap
