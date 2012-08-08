@@ -2,5 +2,10 @@ Notes for implementing memory locations for variables
 
 right now variables are stored in a map, and looked up by name. The problem is that when a mutable variable (such as a list) is passed to a set! function, there is no way for that function to update the corresponding variable because it does not know where the list is stored.
 
+------------------
 
-The obvious solution is to generate a unique memory location for each variable (such as an integer for each, or a gensym) and use a global map to store the actual variables, indexed by memory location. could this be part of the env? because if it is truly global then we need to perform garbage collection on it, which severly complicates the implementation.
+we need a level of indirection so the object can refer back to the variable.
+
+The obvious solution is to generate a unique memory location for each variable (such as an integer for each, or a gensym) and use a map to store the actual variables, indexed by memory location. memory location would have to be stored with the variable
+
+could this map be part of the env? because if it is truly global then we need to perform garbage collection on it, which severly complicates the implementation.
