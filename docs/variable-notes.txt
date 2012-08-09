@@ -31,5 +31,5 @@ basic idea is that when a mutator is called with a non-atomic value (such as a v
 
 obviously the performance of this would be HORRIBLE. but it might work as a quick hack
 
-TBD: does this only work once? if you do this twice, will the second lookup fail? may need to hack stablename into huski as a primitive and just play around with it
+TBD: does this only work once? if you do this twice, will the second lookup fail? may need to hack stablename into huski as a primitive and just play around with it.  I think there will definitely be problems after a macro transformation, because the macro code will create new objects on the fly instead of passing the original one through. that should be fixed!
 
