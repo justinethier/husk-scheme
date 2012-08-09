@@ -23,3 +23,13 @@ initial thoughts (there must be a better way):
   if var refers to mem location, get it from the heap
   may have to search parent env's
 this approach is not so bad (var creation aside), but does not have a garbage collection strategy for the heap
+
+-----------------------------
+here's a crazy idea - what if we use Stable Names http://hackage.haskell.org/packages/archive/base/4.5.1.0/doc/html/System-Mem-StableName.html
+
+basic idea is that when a mutator is called with a non-atomic value (such as a vector or list) as an argument, we generate a stable name for it. We then recursively search env's for a matching stable name. If we find it, then we store the result back in that place. 
+
+obviously the performance of this would be HORRIBLE. but it might work as a quick hack
+
+TBD: does this only work once? if you do this twice, will the second lookup fail? may need to hack stablename into huski as a primitive and just play around with it
+
