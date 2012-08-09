@@ -78,6 +78,7 @@ module Language.Scheme.Primitives (
  -- |All of these functions must be executed within the IO monad.
  
  -- ** Input / Output 
+ , stableName -- TODO: testing
  , makePort 
  , closePort
  , currentOutputPort 
@@ -110,11 +111,21 @@ import qualified Data.Map
 import System.IO
 import System.Directory (doesFileExist, removeFile)
 import System.IO.Error
+import System.Mem.StableName
+import Debug.Trace
 
 ---------------------------------------------------
 -- I/O Primitives
 -- These primitives all execute within the IO monad
 ---------------------------------------------------
+
+-- TODO: experimental function
+stableName :: [LispVal] -> IOThrowsError LispVal
+stableName [obj] = do
+  --let name = makeStableName obj
+  d <- makeStableName obj >> hashStableName
+  return $ Number $ toInteger d  
+
 makePort :: IOMode -> [LispVal] -> IOThrowsError LispVal
 makePort mode [String filename] = liftM Port $ liftIO $ openFile filename mode
 makePort _ [] = throwError $ NumArgs 1 []
