@@ -26,6 +26,7 @@ module Language.Scheme.Variables
     , defineVar
     , setVar
     , setNamespacedVar
+    , setNamespacedVarByAddress 
     , defineNamespacedVar
     -- * Predicates
     , isBound
@@ -37,11 +38,7 @@ import Language.Scheme.Types
 import Control.Monad.Error
 import Data.IORef
 import qualified Data.Map
-
-
--- TODO: convert from storing vars in a list to a more efficient
---       data structure using Data.Map
-
+import Debug.Trace
 
 {- Experimental code:
 -- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/
@@ -218,7 +215,35 @@ setNamespacedVar envRef
 -- TODO: function to recursively search env for a memory location,
 -- and if found update the var at that location with the given one.
 -- might make sense to create multiple functions for this (?)
-
+setNamespacedVarByAddress 
+    :: Env      -- ^ Environment 
+    -> String   -- ^ Namespace
+    -> Integer  -- ^ Memory address
+    -> LispVal  -- ^ Value
+    -> IOThrowsError LispVal   -- ^ Value
+setNamespacedVarByAddress envRef namespace mloc value = do
+    env <- liftIO $ readIORef $ bindings envRef
+    result <- lift $ setLoc $ Data.Map.assocs env
+    if result 
+        then return $ Bool True
+        else 
+          case parentEnv envRef of
+            (Just par) -> setNamespacedVarByAddress par namespace mloc value
+            Nothing -> return $ Bool False
+ where 
+  setLoc :: [((String, String), IORef LispVal)] -> IO Bool
+  setLoc [] = return False
+  setLoc (v@((vnamespace, _), a) : vs) 
+   | vnamespace == namespace = do
+     -- Check var in namespace, and change if at requested mem location
+     var <- liftIO $ readIORef a
+     if checkAddress (trace ("checking " ++ show var) var) mloc
+        then do
+          liftIO $ writeIORef a value 
+          -- keep checking
+          setLoc vs
+        else setLoc vs
+   | otherwise = setLoc vs
 
 -- |Bind a variable in the given namespace
 defineNamespacedVar

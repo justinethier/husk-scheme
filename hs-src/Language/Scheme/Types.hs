@@ -59,6 +59,7 @@ import Data.Ratio
 import Data.Unique
 import System.IO
 import Text.ParserCombinators.Parsec hiding (spaces)
+import Debug.Trace
 
 -- Environment management
 
@@ -227,6 +228,9 @@ data LispVal = Atom String
  -- ^Internal use only; do not use this type directly.
 
 
+---------------------------------------------------------------------
+-- TODO: consider adding all of this to a new module such as "Memory"
+
 {- obsolete (unused) code:
 class MemoryAddressField a where
 address :: a -> Maybe Integer
@@ -240,17 +244,24 @@ address :: LispVal -> Maybe Integer
 address (Vector _ loc) = loc
 address _ = Nothing
 
+-- |Check if the given object is stored at the given address
+checkAddress :: LispVal -> Integer -> Bool
+checkAddress (Vector _ (Just vloc)) loc = loc == (trace ("vloc = " ++ show vloc) vloc)
+checkAddress _ _ = (trace "checkAddress - none" False)
+
 -- |Assign a memory address (location) to an object
 assignAddress :: LispVal -> IOThrowsError LispVal
 assignAddress (Vector v Nothing) = do
     u <- liftIO $ newUnique
-    return $ Vector v $ Just (toInteger $ hashUnique u)
+    return $ (trace ("addy = " ++ (show $ hashUnique u)) Vector v $ Just (toInteger $ hashUnique u))
 assignAddress l = return l -- Address already assigned or N/A
 
 -- A simple helper function to create a vector 
 -- that is not allocated to memory
 newVector :: (Array Int LispVal) -> LispVal
 newVector v = Vector v Nothing
+---------------------------------------------------------------------
+
 
 
 -- |Convert a Haskell value to an opaque Lisp value.

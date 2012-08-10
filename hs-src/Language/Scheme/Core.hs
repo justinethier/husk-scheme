@@ -38,11 +38,14 @@ import Language.Scheme.Parser
 import Language.Scheme.Primitives
 import Language.Scheme.Types
 import Language.Scheme.Variables
+import Control.Monad (when)
 import Control.Monad.Error
 import Data.Array
 import qualified Data.Map
+import Data.Maybe (isJust, fromJust)
 import qualified System.Exit
 import System.IO
+import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -432,7 +435,9 @@ eval env cont args@(List [Atom "define", Atom var, form]) = do
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else meval env (makeCPS env cont cpsResult) form
  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-       cpsResult e c result _ = defineVar e var result >>= continueEval e c
+       cpsResult e c result _ = do
+         value <- assignAddress result
+         defineVar e var (trace ("value = " ++ show value) value) >>= continueEval e c
 
 eval env cont args@(List (Atom "define" : List (Atom var : fparams) : fbody )) = do
  bound <- liftIO $ isRecBound env "define"
@@ -562,13 +567,47 @@ eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
         cpsVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsVec"
 
         cpsUpdateVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUpdateVec e c vec (Just [idx, obj]) =
-            updateVector vec idx obj >>= setVar e var >>= continueEval e c
+        cpsUpdateVec e c vec (Just [idx, obj]) = do
+            newVec <- updateVector vec idx obj 
+            case newVec of
+              Vector _ (Just mloc) -> do
+                -- Very expensive because it checks all env's!!!!
+                _ <- setNamespacedVarByAddress e varNamespace (trace ("vector-set, ml = " ++ show mloc) mloc) newVec
+                continueEval e c newVec
+              _ -> setVar e var newVec >>= continueEval e c 
+            --updateVector vec idx obj >>= setVar e var >>= continueEval e c
         cpsUpdateVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateVec"
 
--- TODO: this is an experimental function
---eval env cont args@(List [Atom "vector-set!" , Vector v mloc , i, object]) = do 
+{- possibly incorrect, this is really not the right way to do it because if a var
+  is passed directly to the special form then it could not be part of any ENV
+  that said, this probably should still be handled, although we should not need to
+  worry about setting the var in any ENV's
 
+-- TODO: this is an experimental function that is not 
+--   implemented by the compiler yet!
+eval env cont args@(List [Atom "vector-set!" , vec@(Vector v mloc) , i, object]) = do 
+ bound <- liftIO $ isRecBound env (trace "special vector set" "vector-set!")
+ if bound
+  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
+  else meval env (makeCPS env cont cpsObj) i
+ where
+        cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsObj e c idx _ = meval e (makeCPSWArgs e c cpsVec $ [idx]) object
+
+        cpsVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsVec e c obj (Just [idx]) = do 
+          newVec <- updateVector vec idx obj 
+          -- TODO: would be more elegant:
+          --when (isJust mloc) $ lift $ setNamespacedVarByAddress e varNamespace (fromJust mloc) newVec
+          --continueEval e c newVec
+          case (trace ("vector-set, mloc = " ++ show mloc) mloc) of
+            Just ml -> do 
+                _ <- setNamespacedVarByAddress e varNamespace (trace ("vector-set, ml = " ++ show ml) ml) newVec
+                continueEval e c newVec
+            Nothing -> 
+                continueEval e c newVec
+        cpsVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsVec (2)"
+-}
 
 eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
  bound <- liftIO $ isRecBound env "vector-set!"
