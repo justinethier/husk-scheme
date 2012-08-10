@@ -151,7 +151,8 @@ data LispVal = Atom String
  -- ^List
  | DottedList [LispVal] LispVal
  -- ^Pair
- | Vector (Array Int LispVal)
+ | Vector {vector :: (Array Int LispVal),
+           vectorAddressInMemory :: Maybe Integer }
  -- ^Vector
  | HashTable (Data.Map.Map LispVal LispVal)
  {- ^Hash table.
@@ -223,6 +224,20 @@ data LispVal = Atom String
  | EOF
  | Nil String
  -- ^Internal use only; do not use this type directly.
+
+
+{-
+class MemoryAddressField a where
+address :: a -> Maybe Integer
+instance MemoryAddressField LispVal where
+address (Vector _ loc) = loc
+address _ = Nothing
+-}
+address :: LispVal -> Maybe Integer
+address (Vector _ loc) = loc
+address _ = Nothing
+
+
 
 -- |Convert a Haskell value to an opaque Lisp value.
 toOpaque :: Typeable a => a -> LispVal
@@ -298,7 +313,7 @@ eqv [(String arg1), (String arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
-eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)]
+eqv [(Vector arg1 loc1), (Vector arg2 loc2)] = eqv [List $ (elems arg1), List $ (elems arg2)]
 eqv [(HashTable arg1), (HashTable arg2)] =
   eqv [List $ (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg1),
        List $ (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg2)]
@@ -363,7 +378,7 @@ showVal (Rational contents) = (show (numerator contents)) ++ "/" ++ (show (denom
 showVal (Float contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
-showVal (Vector contents) = "#(" ++ (unwordsList $ Data.Array.elems contents) ++ ")"
+showVal (Vector contents loc) = "#(" ++ (unwordsList $ Data.Array.elems contents) ++ ")"
 showVal (HashTable _) = "<hash-table>"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showVal t ++ ")"
