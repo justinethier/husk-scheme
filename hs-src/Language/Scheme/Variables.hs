@@ -214,6 +214,12 @@ setNamespacedVar envRef
                                               (Just par) -> setNamespacedVar par namespace var value
                                               Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
 
+
+-- TODO: function to recursively search env for a memory location,
+-- and if found update the var at that location with the given one.
+-- might make sense to create multiple functions for this (?)
+
+
 -- |Bind a variable in the given namespace
 defineNamespacedVar
     :: Env      -- ^ Environment 

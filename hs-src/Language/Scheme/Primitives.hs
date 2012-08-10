@@ -272,7 +272,7 @@ cons [x1, x2] = return $ DottedList [x1] x2
 cons badArgList = throwError $ NumArgs 2 badArgList
 
 equal :: [LispVal] -> ThrowsError LispVal
-equal [(Vector arg1), (Vector arg2)] = eqvList equal [List $ (elems arg1), List $ (elems arg2)]
+equal [(Vector arg1 _), (Vector arg2 _)] = eqvList equal [List $ (elems arg1), List $ (elems arg2)] -- TODO: use mem loc?
 equal [l1@(List _), l2@(List _)] = eqvList equal [l1, l2]
 equal [(DottedList xs x), (DottedList ys y)] = equal [List $ xs ++ [x], List $ ys ++ [y]]
 equal [arg1, arg2] = do
@@ -288,28 +288,28 @@ makeVector, buildVector, vectorLength, vectorRef, vectorToList, listToVector :: 
 makeVector [(Number n)] = makeVector [Number n, List []]
 makeVector [(Number n), a] = do
   let l = replicate (fromInteger n) a
-  return $ Vector $ (listArray (0, length l - 1)) l
+  return $ newVector $ (listArray (0, length l - 1)) l
 makeVector [badType] = throwError $ TypeMismatch "integer" badType
 makeVector badArgList = throwError $ NumArgs 1 badArgList
 
 buildVector (o : os) = do
   let lst = o : os
-  return $ Vector $ (listArray (0, length lst - 1)) lst
+  return $ newVector $ (listArray (0, length lst - 1)) lst
 buildVector badArgList = throwError $ NumArgs 1 badArgList
 
-vectorLength [(Vector v)] = return $ Number $ toInteger $ length (elems v)
+vectorLength [(Vector v _)] = return $ Number $ toInteger $ length (elems v)
 vectorLength [badType] = throwError $ TypeMismatch "vector" badType
 vectorLength badArgList = throwError $ NumArgs 1 badArgList
 
-vectorRef [(Vector v), (Number n)] = return $ v ! (fromInteger n)
+vectorRef [(Vector v _), (Number n)] = return $ v ! (fromInteger n)
 vectorRef [badType] = throwError $ TypeMismatch "vector integer" badType
 vectorRef badArgList = throwError $ NumArgs 2 badArgList
 
-vectorToList [(Vector v)] = return $ List $ elems v
+vectorToList [(Vector v _)] = return $ List $ elems v
 vectorToList [badType] = throwError $ TypeMismatch "vector" badType
 vectorToList badArgList = throwError $ NumArgs 1 badArgList
 
-listToVector [(List l)] = return $ Vector $ (listArray (0, length l - 1)) l
+listToVector [(List l)] = return $ newVector $ (listArray (0, length l - 1)) l
 listToVector [badType] = throwError $ TypeMismatch "list" badType
 listToVector badArgList = throwError $ NumArgs 1 badArgList
 
@@ -488,7 +488,7 @@ isProcedure ([EvalFunc _]) = return $ Bool True
 isProcedure _ = return $ Bool False
 
 isVector, isList :: LispVal -> ThrowsError LispVal
-isVector (Vector _) = return $ Bool True
+isVector (Vector _ _) = return $ Bool True
 isVector _ = return $ Bool False
 isList (List _) = return $ Bool True
 isList _ = return $ Bool False

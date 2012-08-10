@@ -213,7 +213,9 @@ eval env cont val@(Rational _) = continueEval env cont val
 eval env cont val@(Number _) = continueEval env cont val
 eval env cont val@(Bool _) = continueEval env cont val
 eval env cont val@(HashTable _) = continueEval env cont val
-eval env cont val@(Vector _) = continueEval env cont val
+eval env cont val@(Vector _ _) = do
+  v <- assignAddress val -- Assign a memory location if necessary
+  continueEval env cont v 
 eval env cont (Atom a) = continueEval env cont =<< getVar env a
 
 -- Quote an expression by simply passing along the value
@@ -243,11 +245,11 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
             List (_ : _) -> doCpsUnquoteList e c val
             DottedList xs x -> do
               doCpsUnquoteList e (makeCPSWArgs e c cpsUnquotePair $ [x] ) $ List xs
-            Vector vec -> do
+            Vector vec mloc -> do
               let len = length (elems vec)
               if len > 0
-                 then doCpsUnquoteList e (makeCPS e c cpsUnquoteVector) $ List $ elems vec
-                 else continueEval e c $ Vector $ listArray (0, -1) []
+                 then doCpsUnquoteList e (makeCPS e c cpsUnquoteVector) $ List $ elems vec -- TODO: incorrect, need to give mloc to the list
+                 else continueEval e c $ Vector (listArray (0, -1) []) mloc
             _ -> meval e c (List [Atom "quote", val])  -- Behave like quote if there is nothing to "unquote"...
 
         {- Unquote a pair
@@ -271,7 +273,7 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
 
         -- Unquote a vector
         cpsUnquoteVector :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquoteVector e c (List vList) _ = continueEval e c (Vector $ listArray (0, (length vList - 1)) vList)
+        cpsUnquoteVector e c (List vList) _ = continueEval e c (newVector $ listArray (0, (length vList - 1)) vList) -- TODO: incorrect, need to give mloc to the list
         cpsUnquoteVector _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteVector"
 
         -- Front-end to cpsUnquoteList, to encapsulate default values in the call
@@ -564,6 +566,10 @@ eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
             updateVector vec idx obj >>= setVar e var >>= continueEval e c
         cpsUpdateVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateVec"
 
+-- TODO: this is an experimental function
+--eval env cont args@(List [Atom "vector-set!" , Vector v mloc , i, object]) = do 
+
+
 eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
  bound <- liftIO $ isRecBound env "vector-set!"
  if bound
@@ -648,7 +654,7 @@ substr (s, _, _) = throwError $ TypeMismatch "string" s
 
 -- |A helper function for the special form /(vector-set!)/
 updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
-updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec // [(fromInteger idx, obj)]
+updateVector (Vector vec mloc) (Number idx) obj = return $ Vector (vec // [(fromInteger idx, obj)]) mloc
 updateVector v _ _ = throwError $ TypeMismatch "vector" v
 
 {- Prepare for apply by evaluating each function argument,

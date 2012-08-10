@@ -107,10 +107,10 @@ astToHaskellStr (HashTable ht) = do
  let ls = Data.Map.toList ht 
      conv (a, b) = "(" ++ astToHaskellStr a ++ "," ++ astToHaskellStr b ++ ")"
  "HashTable $ Data.Map.fromList $ [" ++ joinL (map conv ls) "," ++ "]"
-astToHaskellStr (Vector v) = do
+astToHaskellStr (Vector v mloc) = do
   let ls = Data.Array.elems v
       size = (length ls) - 1
-  "Vector (listArray (0, " ++ show size ++ ")" ++ "[" ++ joinL (map astToHaskellStr ls) "," ++ "])"
+  "Vector (listArray (0, " ++ show size ++ ")" ++ "[" ++ joinL (map astToHaskellStr ls) "," ++ "]) " ++ show mloc
 astToHaskellStr (List ls) = "List [" ++ joinL (map astToHaskellStr ls) "," ++ "]"
 astToHaskellStr (DottedList ls l) = 
   "DottedList [" ++ joinL (map astToHaskellStr ls) "," ++ "] $ " ++ astToHaskellStr l
@@ -195,7 +195,7 @@ compile _ (Rational r) copts = compileScalar ("  return $ Rational $ (" ++ (show
 compile _ (Number n) copts = compileScalar ("  return $ Number (" ++ (show n) ++ ")") copts
 compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
 -- TODO: eval env cont val@(HashTable _) = continueEval env cont val
-compile _ v@(Vector _) copts = compileScalar (" return $ " ++ astToHaskellStr v) copts
+compile _ v@(Vector _ _) copts = compileScalar (" return $ " ++ astToHaskellStr v) copts
 compile _ ht@(HashTable _) copts = compileScalar (" return $ " ++ astToHaskellStr ht) copts
 compile _ (Atom a) copts = compileScalar ("  getVar env \"" ++ a ++ "\"") copts 
 

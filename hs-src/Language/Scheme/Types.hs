@@ -56,6 +56,7 @@ import Data.IORef
 import qualified Data.Map
 -- import Data.Maybe
 import Data.Ratio
+import Data.Unique
 import System.IO
 import Text.ParserCombinators.Parsec hiding (spaces)
 
@@ -226,17 +227,30 @@ data LispVal = Atom String
  -- ^Internal use only; do not use this type directly.
 
 
-{-
+{- obsolete (unused) code:
 class MemoryAddressField a where
 address :: a -> Maybe Integer
 instance MemoryAddressField LispVal where
 address (Vector _ loc) = loc
 address _ = Nothing
 -}
+
+-- |Retrieve memory address of an object, if applicable
 address :: LispVal -> Maybe Integer
 address (Vector _ loc) = loc
 address _ = Nothing
 
+-- |Assign a memory address (location) to an object
+assignAddress :: LispVal -> IOThrowsError LispVal
+assignAddress (Vector v Nothing) = do
+    u <- liftIO $ newUnique
+    return $ Vector v $ Just (toInteger $ hashUnique u)
+assignAddress l = return l -- Address already assigned or N/A
+
+-- A simple helper function to create a vector 
+-- that is not allocated to memory
+newVector :: (Array Int LispVal) -> LispVal
+newVector v = Vector v Nothing
 
 
 -- |Convert a Haskell value to an opaque Lisp value.

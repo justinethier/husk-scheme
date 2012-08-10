@@ -280,7 +280,7 @@ parseString = do
 parseVector :: Parser LispVal
 parseVector = do
   vals <- sepBy parseExpr whiteSpace
-  return $ Vector (listArray (0, (length vals - 1)) vals)
+  return $ newVector (listArray (0, (length vals - 1)) vals)
 
 -- |Parse a hash table. The table is either empty or is made up of
 --  an alist (associative list)

@@ -406,7 +406,7 @@ flagUnmatchedVars :: Env -> Env -> Env -> LispVal -> LispVal -> Bool -> IOThrows
 flagUnmatchedVars defEnv outerEnv localEnv identifiers (DottedList ps p) partOfImproperPattern = do
   flagUnmatchedVars defEnv outerEnv localEnv identifiers (List $ ps ++ [p]) partOfImproperPattern
 
-flagUnmatchedVars defEnv outerEnv localEnv identifiers (Vector p) partOfImproperPattern = do
+flagUnmatchedVars defEnv outerEnv localEnv identifiers (Vector p _) partOfImproperPattern = do
   flagUnmatchedVars defEnv outerEnv localEnv identifiers (List $ elems p) partOfImproperPattern
 
 flagUnmatchedVars _ _ _ _ (List []) _ = return $ Bool True 
@@ -591,7 +591,12 @@ checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellips
         _ <- defineNamespacedVar localEnv "improper pattern" pat $ Bool $ fst flags
         defineNamespacedVar localEnv "improper input" pat $ Bool $ snd flags
 
-checkLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (Vector p) (Vector i) flags =
+-- !!!
+-- TODO: the input vector's memory addresses should be preserved, and are not right now.
+-- one way to preserve them is to add them to the list, if (when?) we add memory location
+-- capabilities for list
+-- !!!
+checkLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (Vector p _) (Vector i _) flags =
   -- For vectors, just use list match for now, since vector input matching just requires a
   -- subset of that behavior. Should be OK since parser would catch problems with trying
   -- to add pair syntax to a vector declaration. -}
@@ -662,9 +667,9 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List r
   lst <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQuoted (List []) (List l)
   walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [lst]) (List ls)
 
-walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List ((Vector v) : vs)) = do
+walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List ((Vector v mloc) : vs)) = do
   List lst <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List []) (List $ elems v)
-  walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [asVector lst]) (List vs)
+  walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [asVector lst mloc]) (List vs)
 
 walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List ((DottedList ds d) : ts)) = do
   List ls <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List []) (List ds)
@@ -970,9 +975,9 @@ cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List resu
   lst <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) (List l)
   cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [lst]) (List ls)
 
-cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List ((Vector v) : vs)) = do
+cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List ((Vector v mloc) : vs)) = do
   List lst <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) (List $ elems v)
-  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [asVector lst]) (List vs)
+  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [asVector lst mloc]) (List vs)
 
 cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List ((DottedList ds d) : ts)) = do
   List ls <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) (List ds)
@@ -1071,7 +1076,10 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
 
 -- Recursively transform a vector by processing it as a list
 -- FUTURE: can this code be consolidated with the list code?
-transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers ellipsisLevel ellipsisIndex (List result) transform@(List ((Vector v) : ts)) = do
+
+-- TODO: not sure if vector mlocs are handled correctly below:
+
+transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers ellipsisLevel ellipsisIndex (List result) transform@(List ((Vector v mloc) : ts)) = do
   let nextHasEllipsis = macroElementMatchesMany transform
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
@@ -1086,13 +1094,13 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
                List t -> transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers 
                            ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                            idx -- Must keep index since it is incremented each time
-                           (List $ result ++ [asVector t]) transform
+                           (List $ result ++ [asVector t Nothing]) transform
                _ -> throwError $ Default "Unexpected error in transformRule"
      else do lst <- transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers ellipsisLevel ellipsisIndex (List []) (List $ elems v)
              case lst of
-                  List l -> transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers ellipsisLevel ellipsisIndex (List $ result ++ [asVector l]) (List ts)
+                  List l -> transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers ellipsisLevel ellipsisIndex (List $ result ++ [asVector l Nothing]) (List ts)
                   Nil _ -> return lst
-                  _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [Vector v]), Number $ toInteger ellipsisLevel]
+                  _ -> throwError $ BadSpecialForm "transformRule: Macro transform error" $ List [lst, (List [newVector v]), Number $ toInteger ellipsisLevel]
 
 -- Recursively transform an improper list
 transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers ellipsisLevel ellipsisIndex (List result) transform@(List (dl@(DottedList _ _) : ts)) = do
@@ -1437,8 +1445,8 @@ calcEllipsisIndex nextHasEllipsis ellipsisLevel ellipsisIndex =
        else ellipsisIndex
 
 -- |Convert a list of lisp values to a vector
-asVector :: [LispVal] -> LispVal
-asVector lst = (Vector $ (listArray (0, length lst - 1)) lst)
+asVector :: [LispVal] -> Maybe Integer -> LispVal
+asVector lst memloc = (Vector $ (listArray (0, length lst - 1)) lst) memloc
 
 -- |Helper function to load macros from a let*-syntax expression
 loadMacros :: Env       -- ^ Parent environment containing the let*-syntax expression
