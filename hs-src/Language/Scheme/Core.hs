@@ -926,7 +926,6 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("input-port?", isInputPort),
                 ("output-port?", isOutputPort),
                 ("char-ready?", isCharReady),
-                ("stable-name", stableName), -- TODO: testing
 
                -- The following optional procedures are NOT implemented:
                --
