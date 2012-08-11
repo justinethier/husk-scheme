@@ -94,10 +94,10 @@ numAdd, numSub, numMul, numDiv, numMod :: [LispVal] -> ThrowsError LispVal
 numAdd [] = return $ Number 0
 numAdd aparams = do
   foldl1M (\ a b -> doAdd =<< (numCast [a, b])) aparams
-  where doAdd (List [(Number a), (Number b)]) = return $ Number $ a + b
-        doAdd (List [(Float a), (Float b)]) = return $ Float $ a + b
-        doAdd (List [(Rational a), (Rational b)]) = return $ Rational $ a + b
-        doAdd (List [(Complex a), (Complex b)]) = return $ Complex $ a + b
+  where doAdd (List [(Number a), (Number b)] _) = return $ Number $ a + b
+        doAdd (List [(Float a), (Float b)] _) = return $ Float $ a + b
+        doAdd (List [(Rational a), (Rational b)] _) = return $ Rational $ a + b
+        doAdd (List [(Complex a), (Complex b)] _) = return $ Complex $ a + b
         doAdd _ = throwError $ Default "Unexpected error in +"
 numSub [] = throwError $ NumArgs 1 []
 numSub [Number n] = return $ Number $ -1 * n
@@ -106,18 +106,18 @@ numSub [Rational n] = return $ Rational $ -1 * n
 numSub [Complex n] = return $ Complex $ -1 * n
 numSub aparams = do
   foldl1M (\ a b -> doSub =<< (numCast [a, b])) aparams
-  where doSub (List [(Number a), (Number b)]) = return $ Number $ a - b
-        doSub (List [(Float a), (Float b)]) = return $ Float $ a - b
-        doSub (List [(Rational a), (Rational b)]) = return $ Rational $ a - b
-        doSub (List [(Complex a), (Complex b)]) = return $ Complex $ a - b
+  where doSub (List [(Number a), (Number b)] _) = return $ Number $ a - b
+        doSub (List [(Float a), (Float b)] _) = return $ Float $ a - b
+        doSub (List [(Rational a), (Rational b)] _) = return $ Rational $ a - b
+        doSub (List [(Complex a), (Complex b)] _) = return $ Complex $ a - b
         doSub _ = throwError $ Default "Unexpected error in -"
 numMul [] = return $ Number 1
 numMul aparams = do
   foldl1M (\ a b -> doMul =<< (numCast [a, b])) aparams
-  where doMul (List [(Number a), (Number b)]) = return $ Number $ a * b
-        doMul (List [(Float a), (Float b)]) = return $ Float $ a * b
-        doMul (List [(Rational a), (Rational b)]) = return $ Rational $ a * b
-        doMul (List [(Complex a), (Complex b)]) = return $ Complex $ a * b
+  where doMul (List [(Number a), (Number b)] _) = return $ Number $ a * b
+        doMul (List [(Float a), (Float b)] _) = return $ Float $ a * b
+        doMul (List [(Rational a), (Rational b)] _) = return $ Rational $ a * b
+        doMul (List [(Complex a), (Complex b)] _) = return $ Complex $ a * b
         doMul _ = throwError $ Default "Unexpected error in *"
 numDiv [] = throwError $ NumArgs 1 []
 numDiv [Number 0] = throwError $ DivideByZero 
@@ -128,19 +128,19 @@ numDiv [Rational n] = return $ Rational $ 1 / n
 numDiv [Complex n] = return $ Complex $ 1 / n
 numDiv aparams = do
   foldl1M (\ a b -> doDiv =<< (numCast [a, b])) aparams
-  where doDiv (List [(Number a), (Number b)]) = if b == 0
+  where doDiv (List [(Number a), (Number b)] _) = if b == 0
                                                    then throwError $ DivideByZero
                                                    else if (mod a b) == 0
                                                            then return $ Number $ div a b
                                                            -- Convert to a rational if the result is not an integer
                                                            else return $ Rational $ (fromInteger a) / (fromInteger b)
-        doDiv (List [(Float a), (Float b)]) = if b == 0.0
+        doDiv (List [(Float a), (Float b)] _) = if b == 0.0
                                                    then throwError $ DivideByZero
                                                    else return $ Float $ a / b
-        doDiv (List [(Rational a), (Rational b)]) = if b == 0
+        doDiv (List [(Rational a), (Rational b)] _) = if b == 0
                                                        then throwError $ DivideByZero
                                                        else return $ Rational $ a / b
-        doDiv (List [(Complex a), (Complex b)]) = if b == 0
+        doDiv (List [(Complex a), (Complex b)] _) = if b == 0
                                                        then throwError $ DivideByZero
                                                        else return $ Complex $ a / b
         doDiv _ = throwError $ Default "Unexpected error in /"
@@ -148,75 +148,75 @@ numDiv aparams = do
 numMod [] = return $ Number 1
 numMod aparams = do
   foldl1M (\ a b -> doMod =<< (numCast [a, b])) aparams
-  where doMod (List [(Number a), (Number b)]) = return $ Number $ mod' a b
-        doMod (List [(Float a), (Float b)]) = return $ Float $ mod' a b
-        doMod (List [(Rational a), (Rational b)]) = return $ Rational $ mod' a b
-        doMod (List [(Complex _), (Complex _)]) = throwError $ Default "modulo not implemented for complex numbers" 
+  where doMod (List [(Number a), (Number b)] _) = return $ Number $ mod' a b
+        doMod (List [(Float a), (Float b)] _) = return $ Float $ mod' a b
+        doMod (List [(Rational a), (Rational b)] _) = return $ Rational $ mod' a b
+        doMod (List [(Complex _), (Complex _)] _) = throwError $ Default "modulo not implemented for complex numbers" 
         doMod _ = throwError $ Default "Unexpected error in modulo"
 
 numBoolBinopEq :: [LispVal] -> ThrowsError LispVal
 numBoolBinopEq [] = throwError $ NumArgs 0 []
 numBoolBinopEq aparams = do
   foldl1M (\ a b -> doOp =<< (numCast [a, b])) aparams
-  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a == b
-        doOp (List [(Float a), (Float b)]) = return $ Bool $ a == b
-        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a == b
-        doOp (List [(Complex a), (Complex b)]) = return $ Bool $ a == b
+  where doOp (List [(Number a), (Number b)] _) = return $ Bool $ a == b
+        doOp (List [(Float a), (Float b)] _) = return $ Bool $ a == b
+        doOp (List [(Rational a), (Rational b)] _) = return $ Bool $ a == b
+        doOp (List [(Complex a), (Complex b)] _) = return $ Bool $ a == b
         doOp _ = throwError $ Default "Unexpected error in ="
 
 numBoolBinopGt :: [LispVal] -> ThrowsError LispVal
 numBoolBinopGt [] = throwError $ NumArgs 0 []
 numBoolBinopGt aparams = do
   foldl1M (\ a b -> doOp =<< (numCast [a, b])) aparams
-  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a > b
-        doOp (List [(Float a), (Float b)]) = return $ Bool $ a > b
-        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a > b
+  where doOp (List [(Number a), (Number b)] _) = return $ Bool $ a > b
+        doOp (List [(Float a), (Float b)] _) = return $ Bool $ a > b
+        doOp (List [(Rational a), (Rational b)] _) = return $ Bool $ a > b
         doOp _ = throwError $ Default "Unexpected error in >"
 
 numBoolBinopGte :: [LispVal] -> ThrowsError LispVal
 numBoolBinopGte [] = throwError $ NumArgs 0 []
 numBoolBinopGte aparams = do
   foldl1M (\ a b -> doOp =<< (numCast [a, b])) aparams
-  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a >= b
-        doOp (List [(Float a), (Float b)]) = return $ Bool $ a >= b
-        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a >= b
+  where doOp (List [(Number a), (Number b)] _) = return $ Bool $ a >= b
+        doOp (List [(Float a), (Float b)] _) = return $ Bool $ a >= b
+        doOp (List [(Rational a), (Rational b)] _) = return $ Bool $ a >= b
         doOp _ = throwError $ Default "Unexpected error in >="
 
 numBoolBinopLt :: [LispVal] -> ThrowsError LispVal
 numBoolBinopLt [] = throwError $ NumArgs 0 []
 numBoolBinopLt aparams = do
   foldl1M (\ a b -> doOp =<< (numCast [a, b])) aparams
-  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a < b
-        doOp (List [(Float a), (Float b)]) = return $ Bool $ a < b
-        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a < b
+  where doOp (List [(Number a), (Number b)] _) = return $ Bool $ a < b
+        doOp (List [(Float a), (Float b)] _) = return $ Bool $ a < b
+        doOp (List [(Rational a), (Rational b)] _) = return $ Bool $ a < b
         doOp _ = throwError $ Default "Unexpected error in <"
 
 numBoolBinopLte :: [LispVal] -> ThrowsError LispVal
 numBoolBinopLte [] = throwError $ NumArgs 0 []
 numBoolBinopLte aparams = do
   foldl1M (\ a b -> doOp =<< (numCast [a, b])) aparams
-  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a <= b
-        doOp (List [(Float a), (Float b)]) = return $ Bool $ a <= b
-        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a <= b
+  where doOp (List [(Number a), (Number b)] _) = return $ Bool $ a <= b
+        doOp (List [(Float a), (Float b)] _) = return $ Bool $ a <= b
+        doOp (List [(Rational a), (Rational b)] _) = return $ Bool $ a <= b
         doOp _ = throwError $ Default "Unexpected error in <="
 
 numCast :: [LispVal] -> ThrowsError LispVal
-numCast [a@(Number _), b@(Number _)] = return $ List [a, b]
-numCast [a@(Float _), b@(Float _)] = return $ List [a, b]
-numCast [a@(Rational _), b@(Rational _)] = return $ List [a, b]
-numCast [a@(Complex _), b@(Complex _)] = return $ List [a, b]
-numCast [(Number a), b@(Float _)] = return $ List [Float $ fromInteger a, b]
-numCast [(Number a), b@(Rational _)] = return $ List [Rational $ fromInteger a, b]
-numCast [(Number a), b@(Complex _)] = return $ List [Complex $ fromInteger a, b]
-numCast [a@(Float _), (Number b)] = return $ List [a, Float $ fromInteger b]
-numCast [a@(Float _), (Rational b)] = return $ List [a, Float $ fromRational b]
-numCast [(Float a), b@(Complex _)] = return $ List [Complex $ a :+ 0, b]
-numCast [a@(Rational _), (Number b)] = return $ List [a, Rational $ fromInteger b]
-numCast [(Rational a), b@(Float _)] = return $ List [Float $ fromRational a, b]
-numCast [(Rational a), b@(Complex _)] = return $ List [Complex $ (fromInteger $ numerator a) / (fromInteger $ denominator a), b]
-numCast [a@(Complex _), (Number b)] = return $ List [a, Complex $ fromInteger b]
-numCast [a@(Complex _), (Float b)] = return $ List [a, Complex $ b :+ 0]
-numCast [a@(Complex _), (Rational b)] = return $ List [a, Complex $ (fromInteger $ numerator b) / (fromInteger $ denominator b)]
+numCast [a@(Number _), b@(Number _)] = return $ newList [a, b]
+numCast [a@(Float _), b@(Float _)] = return $ newList [a, b]
+numCast [a@(Rational _), b@(Rational _)] = return $ newList [a, b]
+numCast [a@(Complex _), b@(Complex _)] = return $ newList [a, b]
+numCast [(Number a), b@(Float _)] = return $ newList [Float $ fromInteger a, b]
+numCast [(Number a), b@(Rational _)] = return $ newList [Rational $ fromInteger a, b]
+numCast [(Number a), b@(Complex _)] = return $ newList [Complex $ fromInteger a, b]
+numCast [a@(Float _), (Number b)] = return $ newList [a, Float $ fromInteger b]
+numCast [a@(Float _), (Rational b)] = return $ newList [a, Float $ fromRational b]
+numCast [(Float a), b@(Complex _)] = return $ newList [Complex $ a :+ 0, b]
+numCast [a@(Rational _), (Number b)] = return $ newList [a, Rational $ fromInteger b]
+numCast [(Rational a), b@(Float _)] = return $ newList [Float $ fromRational a, b]
+numCast [(Rational a), b@(Complex _)] = return $ newList [Complex $ (fromInteger $ numerator a) / (fromInteger $ denominator a), b]
+numCast [a@(Complex _), (Number b)] = return $ newList [a, Complex $ fromInteger b]
+numCast [a@(Complex _), (Float b)] = return $ newList [a, Complex $ b :+ 0]
+numCast [a@(Complex _), (Rational b)] = return $ newList [a, Complex $ (fromInteger $ numerator b) / (fromInteger $ denominator b)]
 numCast [a, b] = case a of
                Number _ -> doThrowError b
                Float _ -> doThrowError b
@@ -369,7 +369,7 @@ buildComplex (Rational x) (Float y) = return $ Complex $ (fromRational x) :+ y
 buildComplex (Float x) (Number y) = return $ Complex $ x :+ (fromInteger y)
 buildComplex (Float x) (Rational y) = return $ Complex $ x :+ (fromRational y)
 buildComplex (Float x) (Float y) = return $ Complex $ x :+ y
-buildComplex x y = throwError $ TypeMismatch "number" $ List [x, y]
+buildComplex x y = throwError $ TypeMismatch "number" $ newList [x, y]
 
 -- Complex number functions
 numMakeRectangular, numMakePolar, numRealPart, numImagPart, numMagnitude, numAngle :: [LispVal] -> ThrowsError LispVal

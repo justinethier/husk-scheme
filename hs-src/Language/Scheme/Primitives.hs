@@ -160,7 +160,7 @@ readProc [Port port] = do
                      else throwError $ Default "I/O error reading from port" -- FUTURE: ioError e
         Right inpStr -> do
             liftThrows $ readExpr inpStr
-readProc args@(_ : _) = throwError $ BadSpecialForm "" $ List args
+readProc args@(_ : _) = throwError $ BadSpecialForm "" $ newList args
 
 readCharProc :: (Handle -> IO Char) -> [LispVal] -> IOThrowsError LispVal
 readCharProc func [] = readCharProc func [Port stdin]
@@ -174,7 +174,7 @@ readCharProc func [Port port] = do
                      else throwError $ Default "I/O error reading from port"
         Right inpChr -> do
             return $ Char inpChr
-readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
+readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ newList args
 
 {- writeProc :: --forall a (m :: * -> *).
              (MonadIO m, MonadError LispError m) =>
@@ -186,7 +186,7 @@ writeProc func [obj, Port port] = do
         Left _ -> throwError $ Default "I/O error writing to port"
         Right _ -> return $ Nil ""
 writeProc _ other = if length other == 2
-                     then throwError $ TypeMismatch "(value port)" $ List other
+                     then throwError $ TypeMismatch "(value port)" $ newList other
                      else throwError $ NumArgs 2 other
 
 writeCharProc :: [LispVal] -> IOThrowsError LispVal
@@ -197,7 +197,7 @@ writeCharProc [obj@(Char _), Port port] = do
         Left _ -> throwError $ Default "I/O error writing to port"
         Right _ -> return $ Nil ""
 writeCharProc other = if length other == 2
-                     then throwError $ TypeMismatch "(character port)" $ List other
+                     then throwError $ TypeMismatch "(character port)" $ newList other
                      else throwError $ NumArgs 2 other
 
 fileExists, deleteFile :: [LispVal] -> IOThrowsError LispVal
@@ -228,7 +228,7 @@ load filename = do
      else throwError $ Default $ "File does not exist: " ++ filename
 
 readAll :: [LispVal] -> IOThrowsError LispVal
-readAll [String filename] = liftM List $ load filename
+readAll [String filename] = liftM newList $ load filename
 readAll [] = throwError $ NumArgs 1 []
 readAll args@(_ : _) = throwError $ NumArgs 1 args
 
@@ -252,29 +252,29 @@ gensym args@(_ : _) = throwError $ NumArgs 1 args
 
 -- List primitives
 car :: [LispVal] -> ThrowsError LispVal
-car [List (x : _)] = return x
+car [List (x : _) _] = return x
 car [DottedList (x : _) _] = return x
 car [badArg] = throwError $ TypeMismatch "pair" badArg
 car badArgList = throwError $ NumArgs 1 badArgList
 
 cdr :: [LispVal] -> ThrowsError LispVal
-cdr [List (_ : xs)] = return $ List xs
+cdr [List (_ : xs) _] = return $ newList xs
 cdr [DottedList [_] x] = return x
 cdr [DottedList (_ : xs) x] = return $ DottedList xs x
 cdr [badArg] = throwError $ TypeMismatch "pair" badArg
 cdr badArgList = throwError $ NumArgs 1 badArgList
 
 cons :: [LispVal] -> ThrowsError LispVal
-cons [x1, List []] = return $ List [x1]
-cons [x, List xs] = return $ List $ x : xs
+cons [x1, List [] _] = return $ newList [x1]
+cons [x, List xs _] = return $ newList $ x : xs
 cons [x, DottedList xs xlast] = return $ DottedList (x : xs) xlast
 cons [x1, x2] = return $ DottedList [x1] x2
 cons badArgList = throwError $ NumArgs 2 badArgList
 
 equal :: [LispVal] -> ThrowsError LispVal
-equal [(Vector arg1 _), (Vector arg2 _)] = eqvList equal [List $ (elems arg1), List $ (elems arg2)] -- TODO: use mem loc?
-equal [l1@(List _), l2@(List _)] = eqvList equal [l1, l2]
-equal [(DottedList xs x), (DottedList ys y)] = equal [List $ xs ++ [x], List $ ys ++ [y]]
+equal [(Vector arg1 _), (Vector arg2 _)] = eqvList equal [newList $ (elems arg1), newList $ (elems arg2)] -- TODO: use mem loc?
+equal [l1@(List _ _), l2@(List _ _)] = eqvList equal [l1, l2]
+equal [(DottedList xs x), (DottedList ys y)] = equal [newList $ xs ++ [x], newList $ ys ++ [y]]
 equal [arg1, arg2] = do
   primitiveEquals <- liftM or $ mapM (unpackEquals arg1 arg2)
                      [AnyUnpacker unpackNum, AnyUnpacker unpackStr, AnyUnpacker unpackBool]
@@ -285,7 +285,7 @@ equal badArgList = throwError $ NumArgs 2 badArgList
 -- ------------ Vector Primitives --------------
 
 makeVector, buildVector, vectorLength, vectorRef, vectorToList, listToVector :: [LispVal] -> ThrowsError LispVal
-makeVector [(Number n)] = makeVector [Number n, List []]
+makeVector [(Number n)] = makeVector [Number n, newList []]
 makeVector [(Number n), a] = do
   let l = replicate (fromInteger n) a
   return $ newVector $ (listArray (0, length l - 1)) l
@@ -305,11 +305,11 @@ vectorRef [(Vector v _), (Number n)] = return $ v ! (fromInteger n)
 vectorRef [badType] = throwError $ TypeMismatch "vector integer" badType
 vectorRef badArgList = throwError $ NumArgs 2 badArgList
 
-vectorToList [(Vector v _)] = return $ List $ elems v
+vectorToList [(Vector v _)] = return $ newList $ elems v
 vectorToList [badType] = throwError $ TypeMismatch "vector" badType
 vectorToList badArgList = throwError $ NumArgs 1 badArgList
 
-listToVector [(List l)] = return $ newVector $ (listArray (0, length l - 1)) l
+listToVector [(List l _)] = return $ newVector $ (listArray (0, length l - 1)) l
 listToVector [badType] = throwError $ TypeMismatch "list" badType
 listToVector badArgList = throwError $ NumArgs 1 badArgList
 
@@ -347,17 +347,17 @@ hashTblSize [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblSize badArgList = throwError $ NumArgs 1 badArgList
 
 hashTbl2List [(HashTable ht)] = do
-  return $ List $ map (\ (k, v) -> List [k, v]) $ Data.Map.toList ht
+  return $ newList $ map (\ (k, v) -> newList [k, v]) $ Data.Map.toList ht
 hashTbl2List [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTbl2List badArgList = throwError $ NumArgs 1 badArgList
 
 hashTblKeys [(HashTable ht)] = do
-  return $ List $ map (\ (k, _) -> k) $ Data.Map.toList ht
+  return $ newList $ map (\ (k, _) -> k) $ Data.Map.toList ht
 hashTblKeys [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblKeys badArgList = throwError $ NumArgs 1 badArgList
 
 hashTblValues [(HashTable ht)] = do
-  return $ List $ map (\ (_, v) -> v) $ Data.Map.toList ht
+  return $ newList $ map (\ (_, v) -> v) $ Data.Map.toList ht
 hashTblValues [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblValues badArgList = throwError $ NumArgs 1 badArgList
 
@@ -456,13 +456,13 @@ stringToNumber [badType] = throwError $ TypeMismatch "string" badType
 stringToNumber badArgList = throwError $ NumArgs 1 badArgList
 
 stringToList :: [LispVal] -> ThrowsError LispVal
-stringToList [(String s)] = return $ List $ map (Char) s
+stringToList [(String s)] = return $ newList $ map (Char) s
 stringToList [badType] = throwError $ TypeMismatch "string" badType
 stringToList badArgList = throwError $ NumArgs 1 badArgList
 
 listToString :: [LispVal] -> ThrowsError LispVal
-listToString [(List [])] = return $ String ""
-listToString [(List l)] = buildString l
+listToString [(List [] _)] = return $ String ""
+listToString [(List l _)] = buildString l
 listToString [badType] = throwError $ TypeMismatch "list" badType
 listToString [] = throwError $ NumArgs 1 []
 listToString args@(_ : _) = throwError $ NumArgs 1 args
@@ -475,8 +475,8 @@ stringCopy badArgList = throwError $ NumArgs 2 badArgList
 isDottedList :: [LispVal] -> ThrowsError LispVal
 isDottedList ([DottedList _ _]) = return $ Bool True
 -- Must include lists as well since they are made up of 'chains' of pairs
-isDottedList ([List []]) = return $ Bool False
-isDottedList ([List _]) = return $ Bool True
+isDottedList ([List [] _]) = return $ Bool False
+isDottedList ([List _ _]) = return $ Bool True
 isDottedList _ = return $ Bool False
 
 isProcedure :: [LispVal] -> ThrowsError LispVal
@@ -490,11 +490,11 @@ isProcedure _ = return $ Bool False
 isVector, isList :: LispVal -> ThrowsError LispVal
 isVector (Vector _ _) = return $ Bool True
 isVector _ = return $ Bool False
-isList (List _) = return $ Bool True
+isList (List _ _) = return $ Bool True
 isList _ = return $ Bool False
 
 isNull :: [LispVal] -> ThrowsError LispVal
-isNull ([List []]) = return $ Bool True
+isNull ([List [] _]) = return $ Bool True
 isNull _ = return $ Bool False
 
 isEOFObject :: [LispVal] -> ThrowsError LispVal

@@ -148,7 +148,8 @@ runIOThrows action = do
 -- |Scheme data types
 data LispVal = Atom String
  -- ^Symbol
- | List [LispVal]
+ | List {list :: [LispVal],
+         listAddressInMemory :: Maybe Integer}
  -- ^List
  | DottedList [LispVal] LispVal
  -- ^Pair
@@ -240,23 +241,35 @@ address _ = Nothing
 
 -- |Retrieve memory address of an object, if applicable
 address :: LispVal -> Maybe Integer
+address (List _ loc) = loc
 address (Vector _ loc) = loc
 address _ = Nothing
 
 -- |Check if the given object is stored at the given address
 checkAddress :: LispVal -> Integer -> Bool
+checkAddress (List _ (Just mloc)) loc = loc == mloc
 checkAddress (Vector _ (Just vloc)) loc = loc == vloc
 checkAddress _ _ = False
 
 -- |Assign a memory address (location) to an object
 assignAddress :: LispVal -> IOThrowsError LispVal
+assignAddress (List x Nothing) = do
+    u <- liftIO $ newUnique
+    return $ List x $ Just (toInteger $ hashUnique u)
 assignAddress (Vector v Nothing) = do
     u <- liftIO $ newUnique
     return $ Vector v $ Just (toInteger $ hashUnique u)
 assignAddress l = return l -- Address already assigned or N/A
 
--- A simple helper function to create a vector 
--- that is not allocated to memory
+-- | Use this helper function to create a vector.
+--   The vector will automatically be allocated to
+--   memory once it is used.
+newList :: [LispVal] -> LispVal
+newList l = List l Nothing
+
+-- | Use this helper function to create a vector.
+--   The vector will automatically be allocated to
+--   memory once it is used.
 newVector :: (Array Int LispVal) -> LispVal
 newVector v = Vector v Nothing
 ---------------------------------------------------------------------
@@ -336,11 +349,11 @@ eqv [(Float arg1), (Float arg2)] = return $ Bool $ arg1 == arg2
 eqv [(String arg1), (String arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
-eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
-eqv [(Vector arg1 loc1), (Vector arg2 loc2)] = eqv [List $ (elems arg1), List $ (elems arg2)]
+eqv [(DottedList xs x), (DottedList ys y)] = eqv [newList $ xs ++ [x], newList $ ys ++ [y]]
+eqv [(Vector arg1 loc1), (Vector arg2 loc2)] = eqv [newList $ (elems arg1), newList $ (elems arg2)]
 eqv [(HashTable arg1), (HashTable arg2)] =
-  eqv [List $ (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg1),
-       List $ (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg2)]
+  eqv [newList $ (map (\ (x, y) -> newList [x, y]) $ Data.Map.toAscList arg1),
+       newList $ (map (\ (x, y) -> newList [x, y]) $ Data.Map.toAscList arg2)]
 --
 -- This comparison function may be too simplistic. Basically we check to see if
 -- functions have the same calling interface. If they do, then we compare the 
@@ -354,7 +367,7 @@ eqv [(HashTable arg1), (HashTable arg2)] =
 eqv [x@(Func _ _ xBody _), y@(Func _ _ yBody _)] = do
   if (show x) /= (show y)
      then return $ Bool False
-     else eqvList eqv [List xBody, List yBody] 
+     else eqvList eqv [newList xBody, newList yBody] 
 eqv [x@(HFunc _ _ _ _), y@(Func _ _ _ _)] = do
   if (show x) /= (show y)
      then return $ Bool False
@@ -364,13 +377,13 @@ eqv [x@(PrimitiveFunc _), y@(PrimitiveFunc _)] = return $ Bool $ (show x) == (sh
 eqv [x@(IOFunc _), y@(IOFunc _)] = return $ Bool $ (show x) == (show y)
 eqv [x@(EvalFunc _), y@(EvalFunc _)] = return $ Bool $ (show x) == (show y)
 -- FUTURE: comparison of two continuations
-eqv [l1@(List _), l2@(List _)] = eqvList eqv [l1, l2]
+eqv [l1@(List _ _), l2@(List _ _)] = eqvList eqv [l1, l2]
 eqv [_, _] = return $ Bool False
 eqv badArgList = throwError $ NumArgs 2 badArgList
 
 -- |Compare two lists of haskell values, using the given comparison function
 eqvList :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
-eqvList eqvFunc [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) &&
+eqvList eqvFunc [(List arg1 _), (List arg2 _)] = return $ Bool $ (length arg1 == length arg2) &&
                                                     (all eqvPair $ zip arg1 arg2)
     where eqvPair (x1, x2) = case eqvFunc [x1, x2] of
                                Left _ -> False
@@ -404,7 +417,7 @@ showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
 showVal (Vector contents loc) = "#(" ++ (unwordsList $ Data.Array.elems contents) ++ ")"
 showVal (HashTable _) = "<hash-table>"
-showVal (List contents) = "(" ++ unwordsList contents ++ ")"
+showVal (List contents _) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showVal t ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
 showVal (Continuation _ _ _ _ _) = "<continuation>"

@@ -293,7 +293,7 @@ parseHashTable = do
   -- know that a valid hashtable was not read.
   let f :: [(LispVal, LispVal)] -> [LispVal] -> Maybe [(LispVal, LispVal)]
       f acc [] = Just acc
-      f acc (List [a, b] :ls) = f (acc ++ [(a, b)]) ls
+      f acc (List [a, b]  _:ls) = f (acc ++ [(a, b)]) ls
       f acc (DottedList [a] b :ls) = f (acc ++ [(a, b)]) ls
       f _ (_:_) = Nothing
   vals <- sepBy parseExpr whiteSpace
@@ -303,7 +303,7 @@ parseHashTable = do
     Nothing -> pzero
 
 parseList :: Parser LispVal
-parseList = liftM List $ sepBy parseExpr whiteSpace
+parseList = liftM newList $ sepBy parseExpr whiteSpace
 -- TODO: wanted to use endBy (or a variant) above, but it causes an error such that dotted lists are not parsed
 
 parseDottedList :: Parser LispVal
@@ -322,8 +322,8 @@ parseDottedList = do
     --         one special case among others. Anyway, for the 3.3 release this is good enough to pass all test
     --         cases. It will be revisited later if necessary.
     --
-    List (Atom "unquote" : _) -> return $ DottedList phead ptail 
-    List ls -> return $ List $ phead ++ ls
+    List (Atom "unquote" : _) _ -> return $ DottedList phead ptail 
+    List ls _ -> return $ newList $ phead ++ ls
     {- Regarding above, see http://community.schemewiki.org/?scheme-faq-language#dottedapp
      
        Note, however, that most Schemes expand literal lists occurring in function applications, 
@@ -337,25 +337,25 @@ parseQuoted :: Parser LispVal
 parseQuoted = do
   _ <- lexeme $ char '\''
   x <- parseExpr
-  return $ List [Atom "quote", x]
+  return $ newList [Atom "quote", x]
 
 parseQuasiQuoted :: Parser LispVal
 parseQuasiQuoted = do
   _ <- lexeme $ char '`'
   x <- parseExpr
-  return $ List [Atom "quasiquote", x]
+  return $ newList [Atom "quasiquote", x]
 
 parseUnquoted :: Parser LispVal
 parseUnquoted = do
   _ <- try (lexeme $ char ',')
   x <- parseExpr
-  return $ List [Atom "unquote", x]
+  return $ newList [Atom "unquote", x]
 
 parseUnquoteSpliced :: Parser LispVal
 parseUnquoteSpliced = do
   _ <- try (lexeme $ string ",@")
   x <- parseExpr
-  return $ List [Atom "unquote-splicing", x]
+  return $ newList [Atom "unquote-splicing", x]
 
 -- FUTURE: should be able to use the grammar from R5RS
 -- to make parsing more efficient (mostly by minimizing
