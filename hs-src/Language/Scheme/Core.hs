@@ -45,7 +45,6 @@ import qualified Data.Map
 import Data.Maybe (isJust, fromJust)
 import qualified System.Exit
 import System.IO
-import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -437,7 +436,7 @@ eval env cont args@(List [Atom "define", Atom var, form]) = do
  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsResult e c result _ = do
          value <- assignAddress result
-         defineVar e var (trace ("value = " ++ show value) value) >>= continueEval e c
+         defineVar e var value >>= continueEval e c
 
 eval env cont args@(List (Atom "define" : List (Atom var : fparams) : fbody )) = do
  bound <- liftIO $ isRecBound env "define"
@@ -572,7 +571,7 @@ eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
             case newVec of
               Vector _ (Just mloc) -> do
                 -- Very expensive because it checks all env's!!!!
-                _ <- setNamespacedVarByAddress e varNamespace (trace ("vector-set, ml = " ++ show mloc) mloc) newVec
+                _ <- setNamespacedVarByAddress e varNamespace mloc newVec
                 continueEval e c newVec
               _ -> setVar e var newVec >>= continueEval e c 
             --updateVector vec idx obj >>= setVar e var >>= continueEval e c
@@ -600,9 +599,9 @@ eval env cont args@(List [Atom "vector-set!" , vec@(Vector v mloc) , i, object])
           -- TODO: would be more elegant:
           --when (isJust mloc) $ lift $ setNamespacedVarByAddress e varNamespace (fromJust mloc) newVec
           --continueEval e c newVec
-          case (trace ("vector-set, mloc = " ++ show mloc) mloc) of
+          case mloc of
             Just ml -> do 
-                _ <- setNamespacedVarByAddress e varNamespace (trace ("vector-set, ml = " ++ show ml) ml) newVec
+                _ <- setNamespacedVarByAddress e varNamespace ml newVec
                 continueEval e c newVec
             Nothing -> 
                 continueEval e c newVec

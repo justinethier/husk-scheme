@@ -38,7 +38,6 @@ import Language.Scheme.Types
 import Control.Monad.Error
 import Data.IORef
 import qualified Data.Map
-import Debug.Trace
 
 {- Experimental code:
 -- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/
@@ -237,7 +236,7 @@ setNamespacedVarByAddress envRef namespace mloc value = do
    | vnamespace == namespace = do
      -- Check var in namespace, and change if at requested mem location
      var <- liftIO $ readIORef a
-     if checkAddress (trace ("checking " ++ show var) var) mloc
+     if checkAddress var mloc
         then do
           liftIO $ writeIORef a value 
           -- keep checking

@@ -59,7 +59,6 @@ import Data.Ratio
 import Data.Unique
 import System.IO
 import Text.ParserCombinators.Parsec hiding (spaces)
-import Debug.Trace
 
 -- Environment management
 
@@ -246,14 +245,14 @@ address _ = Nothing
 
 -- |Check if the given object is stored at the given address
 checkAddress :: LispVal -> Integer -> Bool
-checkAddress (Vector _ (Just vloc)) loc = loc == (trace ("vloc = " ++ show vloc) vloc)
-checkAddress _ _ = (trace "checkAddress - none" False)
+checkAddress (Vector _ (Just vloc)) loc = loc == vloc
+checkAddress _ _ = False
 
 -- |Assign a memory address (location) to an object
 assignAddress :: LispVal -> IOThrowsError LispVal
 assignAddress (Vector v Nothing) = do
     u <- liftIO $ newUnique
-    return $ (trace ("addy = " ++ (show $ hashUnique u)) Vector v $ Just (toInteger $ hashUnique u))
+    return $ Vector v $ Just (toInteger $ hashUnique u)
 assignAddress l = return l -- Address already assigned or N/A
 
 -- A simple helper function to create a vector 
