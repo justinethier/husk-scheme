@@ -221,7 +221,10 @@ eval env cont val@(Vector _ _) = do
 eval env cont (Atom a) = continueEval env cont =<< getVar env a
 
 -- Quote an expression by simply passing along the value
-eval env cont (List [Atom "quote", val]) = continueEval env cont val
+eval env cont (List [Atom "quote", val] _) = do
+    -- TODO: do we need to assign a memory location?
+    -- I think so, but let's get vectors working first
+    continueEval env cont val
 
 {- Unquote an expression; unquoting is different than quoting in that
 it may also be inter-spliced with code that is meant to be evaluated. -}
@@ -239,86 +242,86 @@ and decreases by one inside each unquotation. -}
 {- So the upshoot is that a new nesting level var needs to be threaded through,
 and used to determine whether or not to evaluate an unquote. -}
 --
-eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value Nothing
+eval envi cont (List [Atom "quasiquote", value] _) = cpsUnquote envi cont value Nothing
   where cpsUnquote :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUnquote e c val _ = do
           case val of
-            List [Atom "unquote", vval] -> meval e c vval
-            List (_ : _) -> doCpsUnquoteList e c val
+            List [Atom "unquote", vval] _ -> meval e c vval
+            List (_ : _) _ -> doCpsUnquoteList e c val
             DottedList xs x -> do
-              doCpsUnquoteList e (makeCPSWArgs e c cpsUnquotePair $ [x] ) $ List xs
+              doCpsUnquoteList e (makeCPSWArgs e c cpsUnquotePair $ [x] ) $ newList xs
             Vector vec mloc -> do
               let len = length (elems vec)
               if len > 0
-                 then doCpsUnquoteList e (makeCPS e c cpsUnquoteVector) $ List $ elems vec -- TODO: incorrect, need to give mloc to the list
+                 then doCpsUnquoteList e (makeCPS e c cpsUnquoteVector) $ newList $ elems vec -- TODO: incorrect, need to give mloc to the list
                  else continueEval e c $ Vector (listArray (0, -1) []) mloc
-            _ -> meval e c (List [Atom "quote", val])  -- Behave like quote if there is nothing to "unquote"...
+            _ -> meval e c (newList [Atom "quote", val])  -- Behave like quote if there is nothing to "unquote"...
 
         {- Unquote a pair
         This must be started by unquoting the "left" hand side of the pair,
         then pass a continuation to this function to unquote the right-hand side (RHS).
         This function does the RHS and then calls into a continuation to finish the pair. -}
         cpsUnquotePair :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquotePair e c (List rxs) (Just [rx]) = do
-          cpsUnquote e (makeCPSWArgs e c cpsUnquotePairFinish $ [List rxs]) rx Nothing
+        cpsUnquotePair e c (List rxs _) (Just [rx]) = do
+          cpsUnquote e (makeCPSWArgs e c cpsUnquotePairFinish $ [newList rxs]) rx Nothing
         cpsUnquotePair _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquotePair"
 
         -- Finish unquoting a pair by combining both of the unquoted left/right hand sides.
         cpsUnquotePairFinish :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquotePairFinish e c rx (Just [List rxs]) = do
+        cpsUnquotePairFinish e c rx (Just [List rxs _]) = do
             case rx of
-              List [] -> continueEval e c $ List rxs
-              List rxlst -> continueEval e c $ List $ rxs ++ rxlst
+              List [] _ -> continueEval e c $ newList rxs
+              List rxlst _ -> continueEval e c $ newList $ rxs ++ rxlst
               DottedList rxlst rxlast -> continueEval e c $ DottedList (rxs ++ rxlst) rxlast
               _ -> continueEval e c $ DottedList rxs rx
         cpsUnquotePairFinish _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquotePairFinish"
 
         -- Unquote a vector
         cpsUnquoteVector :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquoteVector e c (List vList) _ = continueEval e c (newVector $ listArray (0, (length vList - 1)) vList) -- TODO: incorrect, need to give mloc to the list
+        cpsUnquoteVector e c (List vList _) _ = continueEval e c (newVector $ listArray (0, (length vList - 1)) vList) -- TODO: incorrect, need to give mloc to the list
         cpsUnquoteVector _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteVector"
 
         -- Front-end to cpsUnquoteList, to encapsulate default values in the call
         doCpsUnquoteList :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-        doCpsUnquoteList e c (List (x : xs)) = cpsUnquoteList e c x $ Just ([List xs, List []])
+        doCpsUnquoteList e c (List (x : xs) _) = cpsUnquoteList e c x $ Just ([newList xs, newList []])
         doCpsUnquoteList _ _ _ = throwError $ InternalError "Unexpected parameters to doCpsUnquoteList"
 
         -- Unquote a list
         cpsUnquoteList :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquoteList e c val (Just ([List unEvaled, List acc])) = do
+        cpsUnquoteList e c val (Just ([List unEvaled _, List acc _])) = do
             case val of
-                List [Atom "unquote-splicing", vvar] -> do
-                    meval e (makeCPSWArgs e c cpsUnquoteSplicing $ [List unEvaled, List acc]) vvar
-                _ -> cpsUnquote e (makeCPSWArgs e c cpsUnquoteFld $ [List unEvaled, List acc]) val Nothing
+                List [Atom "unquote-splicing", vvar] _ -> do
+                    meval e (makeCPSWArgs e c cpsUnquoteSplicing $ [newList unEvaled, newList acc]) vvar
+                _ -> cpsUnquote e (makeCPSWArgs e c cpsUnquoteFld $ [newList unEvaled, newList acc]) val Nothing
         cpsUnquoteList _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteList"
 
         -- Evaluate an expression instead of quoting it
         cpsUnquoteSplicing :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquoteSplicing e c val (Just ([List unEvaled, List acc])) = do
+        cpsUnquoteSplicing e c val (Just ([List unEvaled _, List acc _])) = do
                     case val of
-                        List v -> case unEvaled of
-                                    [] -> continueEval e c $ List $ acc ++ v
-                                    _ -> cpsUnquoteList e c (head unEvaled) (Just [List (tail unEvaled), List $ acc ++ v ])
+                        List v _ -> case unEvaled of
+                                    [] -> continueEval e c $ newList $ acc ++ v
+                                    _ -> cpsUnquoteList e c (head unEvaled) (Just [newList (tail unEvaled), newList $ acc ++ v ])
                         _ -> throwError $ TypeMismatch "proper list" val
         cpsUnquoteSplicing _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteSplicing"
 
         -- Unquote processing for single field of a list
         cpsUnquoteFld :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquoteFld e c val (Just ([List unEvaled, List acc])) = do
+        cpsUnquoteFld e c val (Just ([List unEvaled _, List acc _])) = do
           case unEvaled of
-            [] -> continueEval e c $ List $ acc ++ [val]
-            _ -> cpsUnquoteList e c (head unEvaled) (Just [List (tail unEvaled), List $ acc ++ [val] ])
+            [] -> continueEval e c $ newList $ acc ++ [val]
+            _ -> cpsUnquoteList e c (head unEvaled) (Just [newList (tail unEvaled), newList $ acc ++ [val] ])
         cpsUnquoteFld _ _ _ _ = throwError $ InternalError "Unexpected parameters to cpsUnquoteFld"
 
 -- A special form to assist with debugging macros
-eval env cont args@(List [Atom "expand" , _body]) = do
+eval env cont args@(List [Atom "expand" , _body] _) = do
  bound <- liftIO $ isRecBound env "expand"
  if bound
   then prepareApply env cont args -- if bound to a variable in this scope; call into it
   else Language.Scheme.Macro.expand env False _body >>= continueEval env cont
  
 -- A rudimentary implementation of let-syntax
-eval env cont args@(List (Atom "let-syntax" : List _bindings : _body)) = do
+eval env cont args@(List (Atom "let-syntax" : List _bindings _ : _body) _) = do
  bound <- liftIO $ isRecBound env "let-syntax"
  if bound
   then prepareApply env cont args -- if bound to a variable in this scope; call into it
@@ -326,12 +329,12 @@ eval env cont args@(List (Atom "let-syntax" : List _bindings : _body)) = do
    bodyEnv <- liftIO $ extendEnv env []
    _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
    -- Expand whole body as a single continuous macro, to ensure hygiene
-   expanded <- Language.Scheme.Macro.expand bodyEnv False $ List _body  
+   expanded <- Language.Scheme.Macro.expand bodyEnv False $ newList _body  
    case expanded of
-     List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing Nothing) $ Nil "" 
+     List e _ -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing Nothing) $ Nil "" 
      e -> continueEval bodyEnv cont e
 
-eval env cont args@(List (Atom "letrec-syntax" : List _bindings : _body)) = do
+eval env cont args@(List (Atom "letrec-syntax" : List _bindings _ : _body) _) = do
  bound <- liftIO $ isRecBound env "letrec-syntax"
  if bound
   then prepareApply env cont args -- if bound to a variable in this scope; call into it
@@ -343,14 +346,14 @@ eval env cont args@(List (Atom "letrec-syntax" : List _bindings : _body)) = do
    -- for now...
    _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False _bindings
    -- Expand whole body as a single continuous macro, to ensure hygiene
-   expanded <- Language.Scheme.Macro.expand bodyEnv False $ List _body  
+   expanded <- Language.Scheme.Macro.expand bodyEnv False $ newList _body  
    case expanded of
-     List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing Nothing) $ Nil "" 
+     List e _ -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing Nothing) $ Nil "" 
      e -> continueEval bodyEnv cont e
 
 eval env cont args@(List [Atom "define-syntax", Atom keyword,
   (List [Atom "er-macro-transformer", 
-    (List (Atom "lambda" : List fparams : fbody))])]) = do
+    (List (Atom "lambda" : List fparams _ : fbody) _)] _)] _) = do
  bound <- liftIO $ isRecBound env "define-syntax"
  if bound
   then prepareApply env cont args -- if bound to var in this scope; call it
@@ -363,7 +366,7 @@ eval env cont args@(List [Atom "define-syntax", Atom keyword,
     continueEval env cont $ Nil "" 
 
 eval env cont args@(List [Atom "define-syntax", Atom keyword, 
-    (List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
+    (List (Atom "syntax-rules" : (List identifiers _ : rules)) _)] _) = do
  bound <- liftIO $ isRecBound env "define-syntax"
  if bound
   then prepareApply env cont args -- if bound to a variable in this scope; call into it
@@ -388,7 +391,7 @@ eval env cont args@(List [Atom "define-syntax", Atom keyword,
     _ <- defineNamespacedVar env macroNamespace keyword $ Syntax (Just env) Nothing False identifiers rules
     continueEval env cont $ Nil "" 
 
-eval env cont args@(List [Atom "if", predic, conseq, alt]) = do
+eval env cont args@(List [Atom "if", predic, conseq, alt] _) = do
  bound <- liftIO $ isRecBound env "if"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
@@ -399,7 +402,7 @@ eval env cont args@(List [Atom "if", predic, conseq, alt]) = do
               Bool False -> meval e c alt
               _ -> meval e c conseq
 
-eval env cont args@(List [Atom "if", predic, conseq]) = do
+eval env cont args@(List [Atom "if", predic, conseq] _) = do
  bound <- liftIO $ isRecBound env "if"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
@@ -410,25 +413,25 @@ eval env cont args@(List [Atom "if", predic, conseq]) = do
               Bool False -> continueEval e c $ Nil "" -- Unspecified return value per R5RS
               _ -> meval e c conseq
 
-eval env cont args@(List [Atom "set!", Atom var, form]) = do
+eval env cont args@(List [Atom "set!", Atom var, form] _) = do
  bound <- liftIO $ isRecBound env "set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else meval env (makeCPS env cont cpsResult) form
  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsResult e c result _ = setVar e var result >>= continueEval e c
-eval env cont args@(List [Atom "set!", nonvar, _]) = do 
+eval env cont args@(List [Atom "set!", nonvar, _] _) = do 
  bound <- liftIO $ isRecBound env "set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
-eval env cont fargs@(List (Atom "set!" : args)) = do
+eval env cont fargs@(List (Atom "set!" : args) _) = do
  bound <- liftIO $ isRecBound env "set!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 2 args
 
-eval env cont args@(List [Atom "define", Atom var, form]) = do
+eval env cont args@(List [Atom "define", Atom var, form] _) = do
  bound <- liftIO $ isRecBound env "define"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
@@ -438,42 +441,42 @@ eval env cont args@(List [Atom "define", Atom var, form]) = do
          value <- assignAddress result
          defineVar e var value >>= continueEval e c
 
-eval env cont args@(List (Atom "define" : List (Atom var : fparams) : fbody )) = do
+eval env cont args@(List (Atom "define" : List (Atom var : fparams) _ : fbody ) _) = do
  bound <- liftIO $ isRecBound env "define"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do result <- (makeNormalFunc env fparams fbody >>= defineVar env var)
           continueEval env cont result
 
-eval env cont args@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) = do
+eval env cont args@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody) _) = do
  bound <- liftIO $ isRecBound env "define"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do result <- (makeVarargs varargs env fparams fbody >>= defineVar env var)
           continueEval env cont result
 
-eval env cont args@(List (Atom "lambda" : List fparams : fbody)) = do
+eval env cont args@(List (Atom "lambda" : List fparams _ : fbody) _) = do
  bound <- liftIO $ isRecBound env "lambda"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do result <- makeNormalFunc env fparams fbody
           continueEval env cont result
 
-eval env cont args@(List (Atom "lambda" : DottedList fparams varargs : fbody)) = do
+eval env cont args@(List (Atom "lambda" : DottedList fparams varargs : fbody) _) = do
  bound <- liftIO $ isRecBound env "lambda"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do result <- makeVarargs varargs env fparams fbody
           continueEval env cont result
 
-eval env cont args@(List (Atom "lambda" : varargs@(Atom _) : fbody)) = do
+eval env cont args@(List (Atom "lambda" : varargs@(Atom _) : fbody) _) = do
  bound <- liftIO $ isRecBound env "lambda"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do result <- makeVarargs varargs env [] fbody
           continueEval env cont result
 
-eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
+eval env cont args@(List [Atom "string-set!", Atom var, i, character] _) = do
  bound <- liftIO $ isRecBound env "string-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
@@ -487,72 +490,72 @@ eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
             substr (str, character, idx) >>= setVar e var >>= continueEval e c
         cpsSubStr _ _ _ _ = throwError $ InternalError "Invalid argument to cpsSubStr"
 
-eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do
+eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ] _) = do
  bound <- liftIO $ isRecBound env "string-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
-eval env cont fargs@(List (Atom "string-set!" : args)) = do 
+eval env cont fargs@(List (Atom "string-set!" : args) _) = do 
  bound <- liftIO $ isRecBound env "string-set!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 3 args
 
-eval env cont args@(List [Atom "set-car!", Atom var, argObj]) = do
+eval env cont args@(List [Atom "set-car!", Atom var, argObj] _) = do
  bound <- liftIO $ isRecBound env "set-car!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else continueEval env (makeCPS env cont cpsObj) =<< getVar env var
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsObj _ _ obj@(List []) _ = throwError $ TypeMismatch "pair" obj
-        cpsObj e c obj@(List (_ : _)) _ = meval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
+        cpsObj _ _ obj@(List [] _) _ = throwError $ TypeMismatch "pair" obj
+        cpsObj e c obj@(List (_ : _) _) _ = meval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
         cpsObj e c obj@(DottedList _ _) _ =  meval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
         cpsObj _ _ obj _ = throwError $ TypeMismatch "pair" obj
 
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsSet e c obj (Just [List (_ : ls)]) = setVar e var (List (obj : ls)) >>= continueEval e c -- Wrong constructor? Should it be DottedList?
+        cpsSet e c obj (Just [List (_ : ls) _]) = setVar e var (newList (obj : ls)) >>= continueEval e c -- Wrong constructor? Should it be DottedList?
         cpsSet e c obj (Just [DottedList (_ : ls) l]) = setVar e var (DottedList (obj : ls) l) >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
-eval env cont args@(List [Atom "set-car!" , nonvar , _ ]) = do
+eval env cont args@(List [Atom "set-car!" , nonvar , _ ] _) = do
  bound <- liftIO $ isRecBound env "set-car!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
-eval env cont fargs@(List (Atom "set-car!" : args)) = do
+eval env cont fargs@(List (Atom "set-car!" : args) _) = do
  bound <- liftIO $ isRecBound env "set-car!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 2 args
 
-eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
+eval env cont args@(List [Atom "set-cdr!", Atom var, argObj] _) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else continueEval env (makeCPS env cont cpsObj) =<< getVar env var
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsObj _ _ pair@(List []) _ = throwError $ TypeMismatch "pair" pair
-        cpsObj e c pair@(List (_ : _)) _ = meval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
+        cpsObj _ _ pair@(List [] _) _ = throwError $ TypeMismatch "pair" pair
+        cpsObj e c pair@(List (_ : _) _) _ = meval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
         cpsObj e c pair@(DottedList _ _) _ = meval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
         cpsObj _ _ pair _ = throwError $ TypeMismatch "pair" pair
 
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsSet e c obj (Just [List (l : _)]) = (liftThrows $ cons [l, obj]) >>= setVar e var >>= continueEval e c
+        cpsSet e c obj (Just [List (l : _) _]) = (liftThrows $ cons [l, obj]) >>= setVar e var >>= continueEval e c
         cpsSet e c obj (Just [DottedList (l : _) _]) = (liftThrows $ cons [l, obj]) >>= setVar e var >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
-eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
+eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ] _) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
-eval env cont fargs@(List (Atom "set-cdr!" : args)) = do
+eval env cont fargs@(List (Atom "set-cdr!" : args) _) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 2 args
 
-eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
+eval env cont args@(List [Atom "vector-set!", Atom var, i, object] _) = do
  bound <- liftIO $ isRecBound env "vector-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
@@ -608,18 +611,18 @@ eval env cont args@(List [Atom "vector-set!" , vec@(Vector v mloc) , i, object])
         cpsVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsVec (2)"
 -}
 
-eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
+eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _] _) = do 
  bound <- liftIO $ isRecBound env "vector-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
-eval env cont fargs@(List (Atom "vector-set!" : args)) = do 
+eval env cont fargs@(List (Atom "vector-set!" : args) _) = do 
  bound <- liftIO $ isRecBound env "vector-set!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 3 args
 
-eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
+eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue] _) = do
  bound <- liftIO $ isRecBound env "hash-table-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
@@ -639,18 +642,18 @@ eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
                   setVar env var (HashTable $ Data.Map.insert key value ht) >>= meval e c
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
-eval env cont args@(List [Atom "hash-table-set!" , nonvar , _ , _]) = do
+eval env cont args@(List [Atom "hash-table-set!" , nonvar , _ , _] _) = do
  bound <- liftIO $ isRecBound env "hash-table-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
-eval env cont fargs@(List (Atom "hash-table-set!" : args)) = do
+eval env cont fargs@(List (Atom "hash-table-set!" : args) _) = do
  bound <- liftIO $ isRecBound env "hash-table-set!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 3 args
 
-eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
+eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey] _) = do
  bound <- liftIO $ isRecBound env "hash-table-delete!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
@@ -666,18 +669,18 @@ eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
                   setVar env var (HashTable $ Data.Map.delete key ht) >>= meval e c
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
-eval env cont args@(List [Atom "hash-table-delete!" , nonvar , _]) = do
+eval env cont args@(List [Atom "hash-table-delete!" , nonvar , _] _) = do
  bound <- liftIO $ isRecBound env "hash-table-delete!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else throwError $ TypeMismatch "variable" nonvar
-eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
+eval env cont fargs@(List (Atom "hash-table-delete!" : args) _) = do
  bound <- liftIO $ isRecBound env "hash-table-delete!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 2 args
 
-eval env cont args@(List (_ : _)) = mprepareApply env cont args
+eval env cont args@(List (_ : _) _) = mprepareApply env cont args
 eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 -- |A helper function for the special form /(string-set!)/
@@ -698,15 +701,15 @@ updateVector v _ _ = throwError $ TypeMismatch "vector" v
 {- Prepare for apply by evaluating each function argument,
    and then execute the function via 'apply' -}
 prepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-prepareApply env cont (List (function : functionArgs)) = do
+prepareApply env cont (List (function : functionArgs) _) = do
   eval env (makeCPSWArgs env cont cpsPrepArgs $ functionArgs) function
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsPrepArgs e c func (Just args) =
 -- case (trace ("prep eval of args: " ++ show args) args) of
           case (args) of
             [] -> apply c func [] -- No args, immediately apply the function
-            [a] -> meval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List []]) a
-            (a : as) -> meval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List as]) a
+            [a] -> meval env (makeCPSWArgs e c cpsEvalArgs $ [func, newList [], newList []]) a
+            (a : as) -> meval env (makeCPSWArgs e c cpsEvalArgs $ [func, newList [], newList as]) a
        cpsPrepArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (1)"
         {- Store value of previous argument, evaluate the next arg until all are done
         parg - Previous argument that has now been evaluated
@@ -715,11 +718,11 @@ prepareApply env cont (List (function : functionArgs)) = do
         - List of evaluated parameters
         - List of parameters awaiting evaluation -}
        cpsEvalArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-       cpsEvalArgs e c evaledArg (Just [func, List argsEvaled, List argsRemaining]) =
+       cpsEvalArgs e c evaledArg (Just [func, List argsEvaled _, List argsRemaining _]) =
           case argsRemaining of
             [] -> apply c func (argsEvaled ++ [evaledArg])
-            [a] -> meval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List []]) a
-            (a : as) -> meval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List as]) a
+            [a] -> meval e (makeCPSWArgs e c cpsEvalArgs $ [func, newList (argsEvaled ++ [evaledArg]), newList []]) a
+            (a : as) -> meval e (makeCPSWArgs e c cpsEvalArgs $ [func, newList (argsEvaled ++ [evaledArg]), newList as]) a
 
        cpsEvalArgs _ _ _ (Just _) = throwError $ Default "Unexpected error in function application (1)"
        cpsEvalArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (2)"
@@ -787,7 +790,7 @@ apply cont (Func aparams avarargs abody aclosure) args =
             continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing cwcDynWind) $ Nil ""
 
         bindVarArgs arg env = case arg of
-          Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
+          Just argName -> liftIO $ extendEnv env [((varNamespace, argName), newList $ remainingArgs)]
           Nothing -> return env
 apply cont (HFunc aparams avarargs abody aclosure) args =
   if num aparams /= num args && avarargs == Nothing
@@ -809,9 +812,9 @@ apply cont (HFunc aparams avarargs abody aclosure) args =
             continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing cwcDynWind) $ Nil ""-}
 
         bindVarArgs arg env = case arg of
-          Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
+          Just argName -> liftIO $ extendEnv env [((varNamespace, argName), newList $ remainingArgs)]
           Nothing -> return env
-apply _ func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List (func : args)
+apply _ func args = throwError $ BadSpecialForm "Unable to evaluate form" $ newList (func : args)
 
 {- |Environment containing the primitive forms that are built into the Scheme language. Note that this only includes
 forms that are implemented in Haskell; derived forms implemented in Scheme (such as let, list, etc) are available
@@ -878,7 +881,7 @@ evalfuncApply (cont@(Continuation _ _ _ _ _) : func : args) = do
   if null args
      then throwError $ NumArgs 2 args
      else case head aRev of
-            List aLastElems -> do
+            List aLastElems _ -> do
               apply cont func $ (init args) ++ aLastElems
             other -> throwError $ TypeMismatch "List" other
 evalfuncApply (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument

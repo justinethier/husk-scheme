@@ -37,19 +37,19 @@ runOne :: [String] -> IO ()
 runOne args = do
   env <- primitiveBindings >>= flip extendEnv
                                    [((varNamespace, "args"),
-                                    List $ map String $ drop 1 args)]
+                                    newList $ map String $ drop 1 args)]
   -- Load standard library
   _ <- loadLibraries env
 
-  result <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
+  result <- (runIOThrows $ liftM show $ evalLisp env (newList [Atom "load", String (args !! 0)]))
   case result of
     Just errMsg -> putStrLn errMsg
     _  -> do 
       -- Call into (main) if it exists...
       alreadyDefined <- liftIO $ isBound env "main"
-      let argv = List $ map String $ args
+      let argv = newList $ map String $ args
       when alreadyDefined (do 
-        mainResult <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "main", List [Atom "quote", argv]]))
+        mainResult <- (runIOThrows $ liftM show $ evalLisp env (newList [Atom "main", newList [Atom "quote", argv]]))
         case mainResult of
           Just errMsg -> putStrLn errMsg
           _  -> return ())
