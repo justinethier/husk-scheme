@@ -111,7 +111,7 @@ astToHaskellStr (Vector v mloc) = do
   let ls = Data.Array.elems v
       size = (length ls) - 1
   "Vector (listArray (0, " ++ show size ++ ")" ++ "[" ++ joinL (map astToHaskellStr ls) "," ++ "]) " ++ show mloc
-astToHaskellStr (List ls) = "List [" ++ joinL (map astToHaskellStr ls) "," ++ "]"
+astToHaskellStr (List ls mloc) = "List [" ++ joinL (map astToHaskellStr ls) "," ++ "] " ++ show mloc
 astToHaskellStr (DottedList ls l) = 
   "DottedList [" ++ joinL (map astToHaskellStr ls) "," ++ "] $ " ++ astToHaskellStr l
 
@@ -149,7 +149,7 @@ header = [
 -- and the imports are explicitly added later on...
 initializeCompiler :: Env -> IOThrowsError [HaskAST]
 initializeCompiler env = do
-  _ <- defineNamespacedVar env "internal" "imports" $ List []
+  _ <- defineNamespacedVar env "internal" "imports" $ newList []
   return []
 
 
@@ -199,41 +199,41 @@ compile _ v@(Vector _ _) copts = compileScalar (" return $ " ++ astToHaskellStr 
 compile _ ht@(HashTable _) copts = compileScalar (" return $ " ++ astToHaskellStr ht) copts
 compile _ (Atom a) copts = compileScalar ("  getVar env \"" ++ a ++ "\"") copts 
 
-compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
+compile _ (List [Atom "quote", val] _) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
 
 
 -- TODO: eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value Nothing
 -- 
 -- This is only a temporary solution that does not handle unquoting
 --
-compile _ (List [Atom "quasiquote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
+compile _ (List [Atom "quasiquote", val] _) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
 
-compile env (List [Atom "expand",  _body]) copts = do
+compile env (List [Atom "expand",  _body] _) copts = do
   -- TODO: check if expand has been rebound?
   val <- Language.Scheme.Macro.expand env False _body
   compileScalar (" return $ " ++ astToHaskellStr val) copts
 
-compile env (List (Atom "let-syntax" : List _bindings : _body)) copts = do
+compile env (List (Atom "let-syntax" : List _bindings _ : _body) _) copts = do
   -- TODO: check if let-syntax has been rebound?
   bodyEnv <- liftIO $ extendEnv env []
   _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
   -- Expand whole body as a single continuous macro, to ensure hygiene
-  expanded <- Language.Scheme.Macro.expand bodyEnv False $ List _body  
+  expanded <- Language.Scheme.Macro.expand bodyEnv False $ newList _body  
   case expanded of
-    List e -> compile bodyEnv (List $ Atom "begin" : e) copts
+    List e _ -> compile bodyEnv (newList $ Atom "begin" : e) copts
     e -> compile bodyEnv e copts
 
-compile env (List (Atom "letrec-syntax" : List _bindings : _body)) copts = do
+compile env (List (Atom "letrec-syntax" : List _bindings _ : _body) _) copts = do
   -- TODO: check if let-syntax has been rebound?
   bodyEnv <- liftIO $ extendEnv env []
   _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False _bindings
   -- Expand whole body as a single continuous macro, to ensure hygiene
-  expanded <- Language.Scheme.Macro.expand bodyEnv False $ List _body  
+  expanded <- Language.Scheme.Macro.expand bodyEnv False $ newList _body  
   case expanded of
-    List e -> compile bodyEnv (List $ Atom "begin" : e) copts
+    List e _ -> compile bodyEnv (newList $ Atom "begin" : e) copts
     e -> compile bodyEnv e copts
 
-compile env (List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
+compile env (List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers _ : rules)) _)] _) copts = do
 --
 -- TODO:
 --
@@ -245,10 +245,10 @@ compile env (List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules
   _ <- defineNamespacedVar env macroNamespace keyword $ Syntax (Just env) Nothing False identifiers rules
   compileScalar ("  return $ Nil \"\"") copts 
 
-compile env (List [Atom "if", predic, conseq]) copts = 
- compile env (List [Atom "if", predic, conseq, Nil ""]) copts
+compile env (List [Atom "if", predic, conseq] _) copts = 
+ compile env (newList [Atom "if", predic, conseq, Nil ""]) copts
 
-compile env (List [Atom "if", predic, conseq, alt]) copts@(CompileOptions _ _ _ nextFunc) = do
+compile env (List [Atom "if", predic, conseq, alt] _) copts@(CompileOptions _ _ _ nextFunc) = do
  -- FUTURE: think about it, these could probably be part of compileExpr
  Atom symPredicate <- _gensym "ifPredic"
  Atom symCheckPredicate <- _gensym "compiledIfPredicate"
@@ -272,7 +272,7 @@ compile env (List [Atom "if", predic, conseq, alt]) copts@(CompileOptions _ _ _ 
  -- Join compiled code together
  return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ compConsequence ++ compAlternate
 
-compile env (List [Atom "set!", Atom var, form]) copts@(CompileOptions _ _ _ _) = do
+compile env (List [Atom "set!", Atom var, form] _) copts@(CompileOptions _ _ _ _) = do
  Atom symDefine <- _gensym "setFunc"
  Atom symMakeDefine <- _gensym "setFuncMakeSet"
 
@@ -289,14 +289,14 @@ compile env (List [Atom "set!", Atom var, form]) copts@(CompileOptions _ _ _ _) 
     createAstCont copts "result" ""]
  return $ [entryPt] ++ compDefine ++ [compMakeDefine]
 
-compile _ (List [Atom "set!", nonvar, _]) copts = do 
+compile _ (List [Atom "set!", nonvar, _] _) copts = do 
  f <- compileSpecialForm "set!" ("throwError $ TypeMismatch \"variable\" $ String \"" ++ (show nonvar) ++ "\"")  copts
  return [f]
-compile _ (List (Atom "set!" : args)) copts = do
+compile _ (List (Atom "set!" : args) _) copts = do
  f <- compileSpecialForm "set!" ("throwError $ NumArgs 2 $ [String \"" ++ (show args) ++ "\"]") copts -- TODO: Cheesy to use a string, but fine for now...
  return [f]
 
-compile env (List [Atom "define", Atom var, form]) copts@(CompileOptions _ _ _ _) = do
+compile env (List [Atom "define", Atom var, form] _) copts@(CompileOptions _ _ _ _) = do
  Atom symDefine <- _gensym "defineFuncDefine"
  Atom symMakeDefine <- _gensym "defineFuncMakeDef"
 
@@ -314,7 +314,7 @@ compile env (List [Atom "define", Atom var, form]) copts@(CompileOptions _ _ _ _
     createAstCont copts "result" ""]
  return $ [createAstFunc copts f] ++ compDefine ++ [compMakeDefine]
 
-compile env (List (Atom "define" : List (Atom var : fparams) : fbody)) copts@(CompileOptions _ _ _ _) = do
+compile env (List (Atom "define" : List (Atom var : fparams) _ : fbody) _) copts@(CompileOptions _ _ _ _) = do
  Atom symCallfunc <- _gensym "defineFuncEntryPt"
  compiledParams <- compileLambdaList fparams
  compiledBody <- compileBlock symCallfunc Nothing env [] fbody
@@ -333,7 +333,7 @@ compile env (List (Atom "define" : List (Atom var : fparams) : fbody)) copts@(Co
        ]
  return $ [createAstFunc copts f] ++ compiledBody
 
-compile env (List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) copts@(CompileOptions _ _ _ _) = do
+compile env (List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody) _) copts@(CompileOptions _ _ _ _) = do
  Atom symCallfunc <- _gensym "defineFuncEntryPt"
  compiledParams <- compileLambdaList fparams
  compiledBody <- compileBlock symCallfunc Nothing env [] fbody
@@ -354,7 +354,7 @@ compile env (List (Atom "define" : DottedList (Atom var : fparams) varargs : fbo
 
 
 
-compile env (List (Atom "lambda" : List fparams : fbody)) copts@(CompileOptions _ _ _ _) = do
+compile env (List (Atom "lambda" : List fparams _ : fbody) _) copts@(CompileOptions _ _ _ _) = do
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
  compiledParams <- compileLambdaList fparams
 
@@ -374,7 +374,7 @@ compile env (List (Atom "lambda" : List fparams : fbody)) copts@(CompileOptions 
        ]
  return $ [createAstFunc copts f] ++ compiledBody
 
-compile env (List (Atom "lambda" : DottedList fparams varargs : fbody)) copts@(CompileOptions _ _ _ _) = do
+compile env (List (Atom "lambda" : DottedList fparams varargs : fbody) _) copts@(CompileOptions _ _ _ _) = do
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
  compiledParams <- compileLambdaList fparams
 
@@ -392,7 +392,7 @@ compile env (List (Atom "lambda" : DottedList fparams varargs : fbody)) copts@(C
        ]
  return $ [createAstFunc copts f] ++ compiledBody
 
-compile env (List (Atom "lambda" : varargs@(Atom _) : fbody)) copts@(CompileOptions _ _ _ _) = do
+compile env (List (Atom "lambda" : varargs@(Atom _) : fbody) _) copts@(CompileOptions _ _ _ _) = do
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
 
 -- TODO: need to extend Env below when compiling body?
@@ -408,7 +408,7 @@ compile env (List (Atom "lambda" : varargs@(Atom _) : fbody)) copts@(CompileOpti
        createAstCont copts "result" "           "
        ]
  return $ [createAstFunc copts f] ++ compiledBody
-compile env (List [Atom "string-set!", Atom var, i, character]) copts = do
+compile env (List [Atom "string-set!", Atom var, i, character] _) copts = do
  Atom symDefine <- _gensym "stringSetFunc"
  Atom symMakeDefine <- _gensym "stringSetFuncMakeSet"
 
@@ -426,7 +426,7 @@ compile env (List [Atom "string-set!", Atom var, i, character]) copts = do
 -- TODO: eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "string-set!" : args)) = do 
 
-compile env (List [Atom "set-car!", Atom var, argObj]) copts = do
+compile env (List [Atom "set-car!", Atom var, argObj] _) copts = do
  Atom symGetVar <- _gensym "setCarGetVar"
  Atom symCompiledObj <- _gensym "setCarCompiledObj"
  Atom symObj <- _gensym "setCarObj"
@@ -454,10 +454,10 @@ compile env (List [Atom "set-car!", Atom var, argObj]) copts = do
  -- FUTURE: consider making these functions part of the runtime.
  compObj <- return $ AstValue $ "" ++
               symObj ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-              symObj ++ " _ _ obj@(List []) _ = throwError $ TypeMismatch \"pair\" obj\n" ++
+              symObj ++ " _ _ obj@(List [] _) _ = throwError $ TypeMismatch \"pair\" obj\n" ++
 -- TODO: below, we want to make sure obj is of the right type. if so, compile obj and call into the "set" 
 --       function below to do the actual set-car
-              symObj ++ " e c obj@(List (_ : _)) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
+              symObj ++ " e c obj@(List (_ : _) _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
               symObj ++ " e c obj@(DottedList _ _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
               symObj ++ " _ _ obj _ = throwError $ TypeMismatch \"pair\" obj\n"
 
@@ -467,7 +467,7 @@ compile env (List [Atom "set-car!", Atom var, argObj]) copts = do
  -- FUTURE: consider making these functions part of the runtime.
  compDoSet <- return $ AstValue $ "" ++
               symDoSet ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-              symDoSet ++ " e c obj (Just [List (_ : ls)]) = setVar e \"" ++ var ++ "\" (List (obj : ls)) >>= " ++ finalContinuation ++
+              symDoSet ++ " e c obj (Just [List (_ : ls) _]) = setVar e \"" ++ var ++ "\" (List (obj : ls) _) >>= " ++ finalContinuation ++
               symDoSet ++ " e c obj (Just [DottedList (_ : ls) l]) = setVar e \"" ++ var ++ "\" (DottedList (obj : ls) l) >>= " ++ finalContinuation ++
               symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
 
@@ -477,7 +477,7 @@ compile env (List [Atom "set-car!", Atom var, argObj]) copts = do
 -- TODO: eval env cont args@(List [Atom "set-car!" , nonvar , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "set-car!" : args)) = do
 
-compile env (List [Atom "set-cdr!", Atom var, argObj]) copts = do
+compile env (List [Atom "set-cdr!", Atom var, argObj] _) copts = do
  Atom symGetVar <- _gensym "setCdrGetVar"
  Atom symCompiledObj <- _gensym "setCdrCompiledObj"
  Atom symObj <- _gensym "setCdrObj"
@@ -505,10 +505,10 @@ compile env (List [Atom "set-cdr!", Atom var, argObj]) copts = do
  -- FUTURE: consider making these functions part of the runtime.
  compObj <- return $ AstValue $ "" ++
               symObj ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-              symObj ++ " _ _ obj@(List []) _ = throwError $ TypeMismatch \"pair\" obj\n" ++
+              symObj ++ " _ _ obj@(List [] _) _ = throwError $ TypeMismatch \"pair\" obj\n" ++
 -- TODO: below, we want to make sure obj is of the right type. if so, compile obj and call into the "set" 
 --       function below to do the actual set-car
-              symObj ++ " e c obj@(List (_ : _)) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
+              symObj ++ " e c obj@(List (_ : _) _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
               symObj ++ " e c obj@(DottedList _ _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
               symObj ++ " _ _ obj _ = throwError $ TypeMismatch \"pair\" obj\n"
 
@@ -518,7 +518,7 @@ compile env (List [Atom "set-cdr!", Atom var, argObj]) copts = do
  -- FUTURE: consider making these functions part of the runtime.
  compDoSet <- return $ AstValue $ "" ++
               symDoSet ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-              symDoSet ++ " e c obj (Just [List (l : _)]) = (liftThrows $ cons [l, obj]) >>= setVar e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
+              symDoSet ++ " e c obj (Just [List (l : _) _]) = (liftThrows $ cons [l, obj]) >>= setVar e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
               symDoSet ++ " e c obj (Just [DottedList (l : _) _]) = (liftThrows $ cons [l, obj]) >>= setVar e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
               symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
 
@@ -527,7 +527,7 @@ compile env (List [Atom "set-cdr!", Atom var, argObj]) copts = do
 
 -- TODO: eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "set-cdr!" : args)) = do
-compile env (List [Atom "vector-set!", Atom var, i, object]) copts = do
+compile env (List [Atom "vector-set!", Atom var, i, object] _) copts = do
  Atom symCompiledIdx <- _gensym "vectorSetIdx"
  Atom symCompiledObj <- _gensym "vectorSetObj"
  Atom symUpdateVec <- _gensym "vectorSetUpdate"
@@ -551,7 +551,7 @@ compile env (List [Atom "vector-set!", Atom var, i, object]) copts = do
 -- TODO: eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
 -- TODO: eval env cont fargs@(List (Atom "vector-set!" : args)) = do 
 
-compile env (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) copts = do
+compile env (List [Atom "hash-table-set!", Atom var, rkey, rvalue] _) copts = do
  Atom symCompiledIdx <- _gensym "hashTableSetIdx"
  Atom symCompiledObj <- _gensym "hashTableSetObj"
  Atom symUpdateVec <- _gensym "hashTableSetUpdate"
@@ -575,7 +575,7 @@ compile env (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) copts = do
 -- TODO: eval env cont args@(List [Atom "hash-table-set!" , nonvar , _ , _]) = do
 -- TODO: eval env cont fargs@(List (Atom "hash-table-set!" : args)) = do
 
-compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
+compile env (List [Atom "hash-table-delete!", Atom var, rkey] _) copts = do
  Atom symCompiledIdx <- _gensym "hashTableDeleteIdx"
  Atom symDoDelete <- _gensym "hashTableDelete"
 
@@ -598,13 +598,13 @@ compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
 compile env (List [Atom "load-ffi", 
                         String moduleName, 
                         String externalFuncName, 
-                        String internalFuncName]) copts = do
+                        String internalFuncName] _) copts = do
 --  Atom symLoadFFI <- _gensym "loadFFI"
 
   -- Only append module again if it is not already in the list
-  List l <- getNamespacedVar env "internal" "imports"
+  List l _ <- getNamespacedVar env "internal" "imports"
   _ <- if not ((String moduleName) `elem` l)
-          then setNamespacedVar env "internal" "imports" $ List $ l ++ [String moduleName]
+          then setNamespacedVar env "internal" "imports" $ newList $ l ++ [String moduleName]
           else return $ String ""
 
   -- Pass along moduleName as another top-level import
@@ -614,7 +614,7 @@ compile env (List [Atom "load-ffi",
         moduleName ++ "." ++ externalFuncName,
     createAstCont copts "result" ""]]
 
-compile env args@(List (_ : _)) copts = mfunc env args compileApply copts 
+compile env args@(List (_ : _) _) copts = mfunc env args compileApply copts 
 compile _ badForm _ = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 mcompile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
@@ -659,7 +659,7 @@ compileExpr env expr symThisFunc fForNextExpr = do
 
 -- |Compiles each argument to a function call, and then uses apply to call the function
 compileApply :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
-compileApply env (List (func : fparams)) (CompileOptions coptsThis _ _ coptsNext) = do
+compileApply env (List (func : fparams) _) (CompileOptions coptsThis _ _ coptsNext) = do
   Atom stubFunc <- _gensym "applyStubF"
   Atom wrapperFunc <- _gensym "applyWrapper"
   Atom nextFunc <- _gensym "applyNextF"
