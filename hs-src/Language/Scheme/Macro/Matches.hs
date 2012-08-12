@@ -20,8 +20,8 @@ _create :: Int     -- ^ Number of nesting levels
        -> LispVal -- ^ Empty nested list
 _create level 
     | level < 1     = Nil "" -- Error
-    | level == 1    = List []
-    | otherwise = List [_create $ level - 1]
+    | level == 1    = newList []
+    | otherwise = newList [_create $ level - 1]
 
 -- |Fill any empty "holes" in a list from the beginning to the given length
 --
@@ -34,14 +34,14 @@ _create level
 --
 fill :: [LispVal] -> Int -> [LispVal]
 fill l len 
-  | length l < len  = fill (l ++ [List []]) len
+  | length l < len  = fill (l ++ [newList []]) len
   | otherwise       = l
 
 -- |Get an element at given location in the nested list
 getData :: LispVal -- ^ The nested list to read from
         -> [Int]   -- ^ Location to read an element from, all numbers are 0-based
         -> LispVal -- ^ Value read, or 'Nil' if none
-getData (List lData) (i:is) = do
+getData (List lData _) (i:is) = do
   if length lData < i
      then Nil "" -- Error: there are not enough elements in the list
      else do
@@ -59,7 +59,7 @@ setData :: LispVal -- ^ The nested list to modify
                    --   its 3rd position.
         -> LispVal -- ^ Value to insert 
         -> LispVal -- ^ Resulant list
-setData (List lData) (i:is) val = do
+setData (List lData _) (i:is) val = do
   -- Fill "holes" as long as they are not at the leaves.
   --
   -- This is because, when a match occurs it happens 0 or more times.
@@ -84,13 +84,13 @@ setData (List lData) (i:is) val = do
   set listData = do
     let content = splitAt i listData
     case (snd content) of
-      [] -> List $ listData ++ [val]
+      [] -> newList $ listData ++ [val]
       [c] ->    if length is < 1
-                   then List $ (fst content) ++ [val] ++ [c] -- Base case - Requested pos must be one less than c
-                   else List $ (fst content) ++ [setData c is val]
+                   then newList $ (fst content) ++ [val] ++ [c] -- Base case - Requested pos must be one less than c
+                   else newList $ (fst content) ++ [setData c is val]
       (c:cs) -> if length is < 1
-                   then List $ (fst content) ++ [val] ++ [c] ++ (cs) -- Base case - Requested pos must be one less than c
-                   else List $ (fst content) ++ [setData c is val] ++ (cs) 
+                   then newList $ (fst content) ++ [val] ++ [c] ++ (cs) -- Base case - Requested pos must be one less than c
+                   else newList $ (fst content) ++ [setData c is val] ++ (cs) 
 
 setData _ _ val = val -- Should never be reached; just return val
 
@@ -103,62 +103,62 @@ _cmp input expected = do
 -- |Run this function to test the above code
 _test :: IO ()
 _test = do
-  _cmp (setData (List [Number 1, Number 2, Number 3, Number 4]) [4] (Number 5)) 
-               (List [Number 1, Number 2, Number 3, Number 4, Number 5])
+  _cmp (setData (newList [Number 1, Number 2, Number 3, Number 4]) [4] (Number 5)) 
+               (newList [Number 1, Number 2, Number 3, Number 4, Number 5])
 
-  _cmp (setData (List [Number 1, Number 2, Number 3, Number 4]) [1] (Number 5)) 
-               (List [Number 1, Number 5, Number 2, Number 3, Number 4])
+  _cmp (setData (newList [Number 1, Number 2, Number 3, Number 4]) [1] (Number 5)) 
+               (newList [Number 1, Number 5, Number 2, Number 3, Number 4])
 
-  _cmp (setData (List [List [Number 1, Number 2], List [Number 3, Number 4, Number 5]]) [1, 3] (Number 6)) 
-               (List [List [Number 1, Number 2], List [Number 3, Number 4, Number 5, Number 6]])
+  _cmp (setData (newList [newList [Number 1, Number 2], newList [Number 3, Number 4, Number 5]]) [1, 3] (Number 6)) 
+               (newList [newList [Number 1, Number 2], newList [Number 3, Number 4, Number 5, Number 6]])
 
-  _cmp (setData (List [List [Number 1, Number 2], List [Number 3, Number 4, Number 5]]) [1, 2] (Number 6)) 
-               (List [List [Number 1, Number 2], List [Number 3, Number 4, Number 6, Number 5]])
+  _cmp (setData (newList [newList [Number 1, Number 2], newList [Number 3, Number 4, Number 5]]) [1, 2] (Number 6)) 
+               (newList [newList [Number 1, Number 2], newList [Number 3, Number 4, Number 6, Number 5]])
 
-  _cmp (setData (List [List [Number 1, Number 2], List [Number 3, Number 4, Number 5]]) [0, 2] (Number 6)) 
-               (List [List [Number 1, Number 2, Number 6], List [Number 3, Number 4, Number 5]])
+  _cmp (setData (newList [newList [Number 1, Number 2], newList [Number 3, Number 4, Number 5]]) [0, 2] (Number 6)) 
+               (newList [newList [Number 1, Number 2, Number 6], newList [Number 3, Number 4, Number 5]])
 
   let a = _create 2
   _cmp a 
-      (List [List []])
+      (newList [newList []])
 
   let b = setData a [0, 0] $ Atom "test"
-  _cmp b (List [List [Atom "test"]])
+  _cmp b (newList [newList [Atom "test"]])
 
   let c = setData b [0, 1] $ Atom "test2"
-  _cmp c (List [List [Atom "test", Atom "test2"]])
+  _cmp c (newList [newList [Atom "test", Atom "test2"]])
 
 
 -- An invalid test case because it attempts to initialize a leaf by adding at a non-zero leaf position.
 --_cmp (setData (List []) [0, 1, 2] $ Atom "test") 
 --               (List [List[List [], List[List [], List[], Atom "test"]]])
 --   A correct test is below:
-  _cmp (setData (List []) [0, 1, 0] $ Atom "test") 
-               (List [List[List [], List[Atom "test"]]])
+  _cmp (setData (newList []) [0, 1, 0] $ Atom "test") 
+               (newList [newList[newList [], newList[Atom "test"]]])
 
   -- Illustrates an important point, that if we are adding into 
   -- a 'hole', we need to create a list there first
   let cc = setData b [1, 0] $ Atom "test2"
-  _cmp cc (List [List [Atom "test"], List [Atom "test2"]])
+  _cmp cc (newList [newList [Atom "test"], newList [Atom "test2"]])
 
   let cc2 = setData b [1, 4] $ Atom "test2"
-  _cmp cc2 (List [List [Atom "test"], List [Atom "test2"]])
+  _cmp cc2 (newList [newList [Atom "test"], newList [Atom "test2"]])
 
   let cc3 = setData b [4, 0] $ Atom "test2"
-  _cmp cc3 (List [List [Atom "test"], List [], List [], List [], List [Atom "test2"]])
+  _cmp cc3 (newList [newList [Atom "test"], newList [], newList [], newList [], newList [Atom "test2"]])
 
-  _cmp (setData (List []) [4, 0] (Number 5)) 
-               (List [List [], List [], List [], List [], List [Number 5]])
+  _cmp (setData (newList []) [4, 0] (Number 5)) 
+               (newList [newList [], newList [], newList [], newList [], newList [Number 5]])
 
-  _cmp (getData (List [List [List [], List [Number 1, Number 2, Number 3, Number 4]]]) [0, 1, 2]) 
+  _cmp (getData (newList [newList [newList [], newList [Number 1, Number 2, Number 3, Number 4]]]) [0, 1, 2]) 
                (Number 3)
 
---  _cmp (getData (List [List [List [], List [Number 1, Number 2, Number 3, Number 4]]]) [0, 1, 20]) 
+--  _cmp (getData (newList [newList [newList [], newList [Number 1, Number 2, Number 3, Number 4]]]) [0, 1, 20]) 
 --               (Nil "")
 
-  _cmp (getData (List [List [List [], List [Atom "1", Number 2, Number 3, Number 4]]]) [0, 1, 0]) 
+  _cmp (getData (newList [newList [newList [], newList [Atom "1", Number 2, Number 3, Number 4]]]) [0, 1, 0]) 
                (Atom "1")
 
   -- Real world case, we would like to take the list (all leaves) at [0, 1]
-  _cmp (getData (List [List [List [], List [Atom "1", Number 2, Number 3, Number 4]]]) [0, 1]) 
-               (List [Atom "1", Number 2, Number 3, Number 4])
+  _cmp (getData (newList [newList [newList [], newList [Atom "1", Number 2, Number 3, Number 4]]]) [0, 1]) 
+               (newList [Atom "1", Number 2, Number 3, Number 4])
