@@ -49,4 +49,17 @@
     (list->vector lst))
     #(0 1 2 3 4))
 
+;
+; The following test cases verify that a vector
+; can be modified by an indirect reference (IE by
+; memory address) as well as a direct ref by name
+;
+(define vec (make-vector 2 #f))
+((lambda (v) (vector-set! v 1 3)) vec)
+(assert/equal vec #(#f 3))
+
+(let ((vec2 (make-vector 2 #f)))
+  ((lambda (v) (vector-set! v 1 3)) vec2)
+  (assert/equal vec2 #(#f 3)))
+
 (unit-test-handler-results)
