@@ -1,5 +1,8 @@
 TODO list for changes on this branch:
 
+general
+ - apply: I think it is fine for huski, but what about the compiler?
+
 vector
  - update type
  - interpreter support
