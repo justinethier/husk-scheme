@@ -766,6 +766,7 @@ apply cont (Func aparams avarargs abody aclosure) args =
      else do
            -- Assign memory addresses to args if necessary
            -- TODO: this is not good enough, what about varargs and HFunc (next apply below)?
+           -- TODO: also consider how to make this work in the compiler
            memArgs <- mapM assignAddress args
          
            (liftIO $ extendEnv aclosure $ 
