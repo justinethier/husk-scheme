@@ -1,0 +1,27 @@
+TODO list for changes on this branch:
+
+vector
+ - update type
+ - interpreter support
+ - compiler support
+ - test suite
+list
+ - update type
+ - interpreter support
+ - compiler support
+ - test suite
+dottedlist
+ - update type
+ - interpreter support
+ - compiler support
+ - test suite
+hashtable
+ - update type
+ - interpreter support
+ - compiler support
+ - test suite
+string
+ - update type
+ - interpreter support
+ - compiler support
+ - test suite
