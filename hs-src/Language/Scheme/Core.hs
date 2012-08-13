@@ -575,6 +575,7 @@ eval env cont args@(List [Atom "vector-set!", Atom var, i, object] _) = do
               Vector _ (Just mloc) -> do
                 -- Very expensive because it checks all env's!!!!
                 _ <- setNamespacedVarByAddress e varNamespace mloc newVec
+--                _ <- setVar e var newVec -- TODO: should not be needed, only needed if addy's are not set properly
                 continueEval e c newVec
               _ -> setVar e var newVec >>= continueEval e c 
             --updateVector vec idx obj >>= setVar e var >>= continueEval e c
@@ -762,18 +763,25 @@ apply cont (PrimitiveFunc func) args = do
 apply cont (Func aparams avarargs abody aclosure) args =
   if num aparams /= num args && avarargs == Nothing
      then throwError $ NumArgs (num aparams) args
-     else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
+     else do
+           -- Assign memory addresses to args if necessary
+           -- TODO: this is not good enough, what about varargs and HFunc (next apply below)?
+           memArgs <- mapM assignAddress args
+         
+           (liftIO $ extendEnv aclosure $ 
+            zip (map ((,) varNamespace) aparams) memArgs) 
+            >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
         --
         -- Continue evaluation within the body, preserving the outer continuation.
         --
-        {- This link was helpful for implementing this, and has a *lot* of other useful information:
-        http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_73.html#SEC80 -}
+        -- This link was helpful for implementing this, and has a *lot* of other useful information:
+        -- http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_73.html#SEC80
         --
-        {- What we are doing now is simply not saving a continuation for tail calls. For now this may
-        be good enough, although it may need to be enhanced in the future in order to properly
-        detect all tail calls. -}
+        -- What we are doing now is simply not saving a continuation for tail calls. For now this may
+        -- be good enough, although it may need to be enhanced in the future in order to properly
+        -- detect all tail calls.
         --
         -- See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
         --
