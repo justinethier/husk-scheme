@@ -765,8 +765,6 @@ apply cont (Func aparams avarargs abody aclosure) args =
      then throwError $ NumArgs (num aparams) args
      else do
            -- Assign memory addresses to args if necessary
-           -- TODO: this is not good enough, what about varargs and HFunc (next apply below)?
-           -- TODO: also consider how to make this work in the compiler
            memArgs <- mapM assignAddress args
          
            (liftIO $ extendEnv aclosure $ 
@@ -799,12 +797,20 @@ apply cont (Func aparams avarargs abody aclosure) args =
             continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing cwcDynWind) $ Nil ""
 
         bindVarArgs arg env = case arg of
-          Just argName -> liftIO $ extendEnv env [((varNamespace, argName), newList $ remainingArgs)]
+          Just argName -> do
+            remainingArgs' <- assignAddress $ newList remainingArgs
+            liftIO $ extendEnv env [((varNamespace, argName), remainingArgs')]
           Nothing -> return env
 apply cont (HFunc aparams avarargs abody aclosure) args =
   if num aparams /= num args && avarargs == Nothing
      then throwError $ NumArgs (num aparams) args
-     else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
+     else do
+           -- Assign memory addresses to args if necessary
+           memArgs <- mapM assignAddress args
+         
+           (liftIO $ extendEnv aclosure $ 
+            zip (map ((,) varNamespace) aparams) memArgs) 
+            >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
         evalBody evBody env = evBody env cont (Nil "") Nothing 
@@ -821,7 +827,9 @@ apply cont (HFunc aparams avarargs abody aclosure) args =
             continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing cwcDynWind) $ Nil ""-}
 
         bindVarArgs arg env = case arg of
-          Just argName -> liftIO $ extendEnv env [((varNamespace, argName), newList $ remainingArgs)]
+          Just argName -> do
+            remainingArgs' <- assignAddress $ newList remainingArgs
+            liftIO $ extendEnv env [((varNamespace, argName), remainingArgs')]
           Nothing -> return env
 apply _ func args = throwError $ BadSpecialForm "Unable to evaluate form" $ newList (func : args)
 

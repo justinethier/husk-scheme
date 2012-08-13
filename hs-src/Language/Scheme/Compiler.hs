@@ -310,7 +310,8 @@ compile env (List [Atom "define", Atom var, form] _) copts@(CompileOptions _ _ _
        AstValue $ "     else do " ++ symDefine ++ " env cont (Nil \"\") []" ]
  compDefine <- compileExpr env form symDefine $ Just symMakeDefine
  compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
-    AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result",
+    AstValue $ "  value <- assignAddress result",
+    AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" value",
     createAstCont copts "result" ""]
  return $ [createAstFunc copts f] ++ compDefine ++ [compMakeDefine]
 
