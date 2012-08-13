@@ -102,8 +102,9 @@ extendEnv :: Env -- ^ Environment
 extendEnv envRef abindings = do bindinglistT <- (mapM addBinding abindings) -- >>= newIORef
                                 bindinglist <- newIORef $ Data.Map.fromList bindinglistT
                                 return $ Environment (Just envRef) bindinglist
- where addBinding ((namespace, name), val) = do ref <- newIORef val
-                                                return ((namespace, name), ref)
+ where addBinding ((namespace, name), val) = do
+         ref <- newIORef val
+         return ((namespace, name), ref)
 
 -- |Recursively search environments to find one that contains the given variable.
 findNamespacedEnv 
