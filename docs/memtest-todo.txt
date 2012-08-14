@@ -4,6 +4,13 @@ vector
  - vector-fill! should be able to be a library
    function, not a macro. put together an initial
    version but it fails both test cases
+consider the following case, with or without the commented lines.
+this seems to be the root problem
+; ((lambda ()
+  (define vec (vector 0 1 2 3 4))
+  (vector-fill! vec 5)
+  (write vec)
+;  ))
  - may be edge cases to consider, such as 
    a vector passed directly to vector-set!
 list
