@@ -1,13 +1,8 @@
 TODO list for changes on this branch:
 
-general
- - apply: I think it is fine for huski, but what about the compiler?
-
-vector
- - update type
- - interpreter support
- - compiler support
- - test suite
+vector - done?
+ - may be edge cases to consider, such as 
+   a vector passed directly to vector-set!
 list
  - update type
  - interpreter support
