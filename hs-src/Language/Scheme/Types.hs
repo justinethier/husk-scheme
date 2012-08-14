@@ -59,6 +59,7 @@ import Data.Ratio
 import Data.Unique
 import System.IO
 import Text.ParserCombinators.Parsec hiding (spaces)
+import Debug.Trace
 
 -- Environment management
 
@@ -258,7 +259,7 @@ assignAddress (List x Nothing) = do
     return $ List x $ Just (toInteger $ hashUnique u)
 assignAddress (Vector v Nothing) = do
     u <- liftIO $ newUnique
-    return $ Vector v $ Just (toInteger $ hashUnique u)
+    return $ Vector v $ (trace ("assigned addy: " ++ (show $ toInteger $ hashUnique u)) Just (toInteger $ hashUnique u))
 assignAddress l = return l -- Address already assigned or N/A
 
 -- | Use this helper function to create a vector.
@@ -415,7 +416,7 @@ showVal (Rational contents) = (show (numerator contents)) ++ "/" ++ (show (denom
 showVal (Float contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
-showVal (Vector contents loc) = "#(" ++ (unwordsList $ Data.Array.elems contents) ++ ")"
+showVal (Vector contents loc) = "#(" ++ (unwordsList $ Data.Array.elems contents) ++ ")" ++ (show loc)
 showVal (HashTable _) = "<hash-table>"
 showVal (List contents _) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showVal t ++ ")"

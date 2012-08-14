@@ -45,6 +45,7 @@ import qualified Data.Map
 import Data.Maybe (isJust, fromJust)
 import qualified System.Exit
 import System.IO
+import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -572,10 +573,10 @@ eval env cont args@(List [Atom "vector-set!", Atom var, i, object] _) = do
         cpsUpdateVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUpdateVec e c vec (Just [idx, obj]) = do
             newVec <- updateVector vec idx obj 
-            case newVec of
+            case (trace ("updated vector " ++ var) newVec) of
               Vector _ (Just mloc) -> do
                 -- Very expensive because it checks all env's!!!!
-                _ <- setNamespacedVarByAddress e varNamespace mloc newVec
+                _ <- setNamespacedVarByAddress e varNamespace (trace ("mloc = " ++ show mloc) mloc) newVec
 --                _ <- setVar e var newVec -- TODO: should not be needed, only needed if addy's are not set properly
                 continueEval e c newVec
               _ -> setVar e var newVec >>= continueEval e c 
