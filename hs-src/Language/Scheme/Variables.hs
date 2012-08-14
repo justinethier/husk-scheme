@@ -225,11 +225,11 @@ setNamespacedVarByAddress envRef namespace mloc value = do
     env <- liftIO $ readIORef $ bindings envRef
     result <- lift $ setLoc $ Data.Map.assocs env
     if result 
-        then return $ Bool True
+        then return value -- $ Bool True
         else 
           case parentEnv envRef of
             (Just par) -> setNamespacedVarByAddress par namespace mloc value
-            Nothing -> return $ Bool False
+            Nothing -> return value -- $ Bool False
  where 
   setLoc :: [((String, String), IORef LispVal)] -> IO Bool
   setLoc [] = return False

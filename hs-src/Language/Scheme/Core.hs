@@ -419,7 +419,8 @@ eval env cont args@(List [Atom "set!", Atom var, form] _) = do
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else meval env (makeCPS env cont cpsResult) form
  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-       cpsResult e c result _ = setVar e var result >>= continueEval e c
+       cpsResult e c result _ = 
+         assignAddress result >>= setVar e var >>= continueEval e c
 eval env cont args@(List [Atom "set!", nonvar, _] _) = do 
  bound <- liftIO $ isRecBound env "set!"
  if bound

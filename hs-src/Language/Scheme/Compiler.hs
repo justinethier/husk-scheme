@@ -285,7 +285,8 @@ compile env (List [Atom "set!", Atom var, form] _) copts@(CompileOptions _ _ _ _
  entryPt <- compileSpecialFormEntryPoint "set!" symDefine copts
  compDefine <- compileExpr env form symDefine $ Just symMakeDefine
  compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
-    AstValue $ "  _ <- setVar env \"" ++ var ++ "\" result",
+    AstValue $ "  value <- assignAddress result",
+    AstValue $ "  _ <- setVar env \"" ++ var ++ "\" value",
     createAstCont copts "result" ""]
  return $ [entryPt] ++ compDefine ++ [compMakeDefine]
 
@@ -544,7 +545,11 @@ compile env (List [Atom "vector-set!", Atom var, i, object] _) copts = do
  -- Do actual update
  compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
     AstValue $ "  vec <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  result <- updateVector vec idx obj >>= setVar env \"" ++ var ++ "\"",
+    AstValue $ "  result <- updateVector vec idx obj ",
+    AstValue $ "  case result of ",
+    AstValue $ "    Vector _ (Just mloc) -> do ",
+    AstValue $ "      setNamespacedVarByAddress env varNamespace mloc result ",
+    AstValue $ "    _ -> setVar env \"" ++ var ++ "\" result ",
     createAstCont copts "result" ""]
 
  return $ [entryPt, compiledIdxWrapper, compiledUpdate] ++ compiledIdx ++ compiledObj
