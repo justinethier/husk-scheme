@@ -1,6 +1,9 @@
 TODO list for changes on this branch:
 
-vector - done?
+vector
+ - vector-fill! should be able to be a library
+   function, not a macro. put together an initial
+   version but it fails both test cases
  - may be edge cases to consider, such as 
    a vector passed directly to vector-set!
 list

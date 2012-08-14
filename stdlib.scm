@@ -326,11 +326,17 @@
            (make-string (string-length _str) _chr)))))
 
 ; Vector Section
-(define-syntax vector-fill!
-  (syntax-rules ()
-    ((_ _vec _fill)
-     (set! _vec
-           (make-vector (vector-length _vec) _fill)))))
+;(define-syntax vector-fill!
+;  (syntax-rules ()
+;    ((_ _vec _fill)
+;     (set! _vec
+;           (make-vector (vector-length _vec) _fill)))))
+(define (vector-fill! vec fill)
+ (let loop ((n (vector-length vec)))
+   (if (> n 0)
+    (begin
+      (vector-set! vec (- n 1) fill)
+      (loop (- n 1))))))
 
 ; Continuation Section
 (define (values . things)
