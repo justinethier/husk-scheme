@@ -12,6 +12,17 @@ this seems to be the root problem
   (write vec)
 ;  ))
 
+also: 
+(define a #f)
+(define (test v) 
+  (vector-set! v 0 #t)
+  (set! a #t))
+(let ((vec '#(0 1 2 3)))
+;  (define vec (vector 0 1 2 3))
+  (test vec)
+  (write vec)
+  (write a))
+
 TBD: is there a way to prove the below?
 
 There must be an old copy of vec stored in the continuation
