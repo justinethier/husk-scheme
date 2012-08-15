@@ -23,16 +23,15 @@ also:
   (write vec)
   (write a))
 
-TBD: is there a way to prove the below?
+theory:
+what is going in here is that there is no reason to
+pass vec to the function's env, so when vector-set
+searches for vec it never finds it. hence when we
+write vec later on, it retains the original value.
+in order for this to work we would need to pass an
+env of use to the (test) function so that we can
+update any bindings there if necessary.
 
-There must be an old copy of vec stored in the continuation
-that is picked back up after returning from the call to
-vector-fill! interesting that things work fine if execution 
-is made at the top level. so where to go from here? is it
-even possible to update that continuation?? can we re-arrange
-how continuations use env's to somehow get this to work?
-maybe we do not use the env from the continuation except in
-special cases such as call/cc??
 
  - may be edge cases to consider, such as 
    a vector passed directly to vector-set!
