@@ -66,13 +66,16 @@ import Debug.Trace
 -- |A Scheme environment containing variable bindings of form @(namespaceName, variableName), variableValue@
 data Env = Environment {
         parentEnv :: (Maybe Env), 
+        outerEnv :: (Maybe Env), -- Env of use, required to update objects such as 
+                           -- vectors that are supposed to be passed by reference
+                           -- TODO: should this be a vector or a list?
         bindings :: (IORef (Data.Map.Map (String, String) (IORef LispVal)))
     }
 
 -- |An empty environment
 nullEnv :: IO Env
 nullEnv = do nullBindings <- newIORef $ Data.Map.fromList []
-             return $ Environment Nothing nullBindings
+             return $ Environment Nothing [] nullBindings
 
 -- Internal namespace for macros
 macroNamespace :: [Char]

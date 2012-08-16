@@ -771,8 +771,8 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True inputIsQu
     "let-syntax" 
     (List _bindings _ : _body)
     False _ = do
-        bodyEnv <- liftIO $ extendEnv useEnv []
-        bodyRenameEnv <- liftIO $ extendEnv renameEnv []
+        bodyEnv <- liftIO $ extendEnv useEnv [] []
+        bodyRenameEnv <- liftIO $ extendEnv renameEnv [] []
         _ <- loadMacros useEnv bodyEnv (Just bodyRenameEnv) True _bindings
         expanded <- walkExpanded defEnv bodyEnv divertEnv bodyRenameEnv cleanupEnv dim True inputIsQuoted (newList [Atom "lambda", newList []]) (newList _body)
         return $ newList [expanded]
@@ -784,8 +784,8 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True inputIsQu
     "letrec-syntax" 
     (List _bindings _ : _body)
     False _ = do
-        bodyEnv <- liftIO $ extendEnv useEnv []
-        bodyRenameEnv <- liftIO $ extendEnv renameEnv []
+        bodyEnv <- liftIO $ extendEnv useEnv [] []
+        bodyRenameEnv <- liftIO $ extendEnv renameEnv [] []
         _ <- loadMacros bodyEnv bodyEnv (Just bodyRenameEnv) True _bindings
         expanded <- walkExpanded defEnv bodyEnv divertEnv bodyRenameEnv cleanupEnv dim True inputIsQuoted (newList [Atom "lambda", newList []]) (newList _body)
         return $ newList [expanded]
@@ -861,7 +861,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _
 -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
     -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
 --    env <- liftIO $ extendEnv (trace ("found procedure abstraction, vars = " ++ show vars ++ "body = " ++ show fbody) renameEnv) []
-    env <- liftIO $ extendEnv renameEnv []
+    env <- liftIO $ extendEnv renameEnv [] []
     renamedVars <- markBoundIdentifiers env cleanupEnv vars []
     walkExpanded defEnv useEnv divertEnv env cleanupEnv dim True False (newList [Atom "lambda", (renamedVars)]) (newList fbody)
 

@@ -38,6 +38,7 @@ import Language.Scheme.Types
 import Control.Monad.Error
 import Data.IORef
 import qualified Data.Map
+import Debug.Trace
 
 {- Experimental code:
 -- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/
@@ -85,23 +86,25 @@ copyEnv :: Env      -- ^ Source environment
 copyEnv env = do
   binds <- liftIO $ readIORef $ bindings env
 --  bindingList <- mapM addBinding binds >>= newIORef
-  bindingListT <- mapM addBinding $ Data.Map.toList binds -- TODO: there is a more elegant way to write this here (and below, too)
+  bindingListT <- mapM addBinding $ Data.Map.toList binds
   bindingList <- newIORef $ Data.Map.fromList bindingListT
-  return $ Environment (parentEnv env) bindingList -- TODO: recursively create a copy of parent also?
- where addBinding ((namespace, name), val) = do --ref <- newIORef $ liftIO $ readIORef val
-                                                x <- liftIO $ readIORef val
-                                                ref <- newIORef x
-                                                return ((namespace, name), ref)
+  return $ Environment (parentEnv env) (outerEnv env) bindingList
+ where addBinding ((namespace, name), val) = do 
+         x <- liftIO $ readIORef val
+         ref <- newIORef x
+         return ((namespace, name), ref)
 
 -- |Extend given environment by binding a series of values to a new environment.
 
 -- TODO: should be able to use Data.Map.fromList to ease construction of new Env
 extendEnv :: Env -- ^ Environment 
+          -> [Env] -- ^ Environment of use
           -> [((String, String), LispVal)] -- ^ Extensions to the environment
           -> IO Env -- ^ Extended environment
-extendEnv envRef abindings = do bindinglistT <- (mapM addBinding abindings) -- >>= newIORef
-                                bindinglist <- newIORef $ Data.Map.fromList bindinglistT
-                                return $ Environment (Just envRef) bindinglist
+extendEnv envRef useEnv abindings = do 
+  bindinglistT <- (mapM addBinding abindings)
+  bindinglist <- newIORef $ Data.Map.fromList bindinglistT
+  return $ Environment (Just envRef) useEnv bindinglist
  where addBinding ((namespace, name), val) = do
          ref <- newIORef val
          return ((namespace, name), ref)

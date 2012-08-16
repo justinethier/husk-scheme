@@ -215,7 +215,7 @@ compile env (List [Atom "expand",  _body] _) copts = do
 
 compile env (List (Atom "let-syntax" : List _bindings _ : _body) _) copts = do
   -- TODO: check if let-syntax has been rebound?
-  bodyEnv <- liftIO $ extendEnv env []
+  bodyEnv <- liftIO $ extendEnv env [] []
   _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
   -- Expand whole body as a single continuous macro, to ensure hygiene
   expanded <- Language.Scheme.Macro.expand bodyEnv False $ newList _body  
@@ -225,7 +225,7 @@ compile env (List (Atom "let-syntax" : List _bindings _ : _body) _) copts = do
 
 compile env (List (Atom "letrec-syntax" : List _bindings _ : _body) _) copts = do
   -- TODO: check if let-syntax has been rebound?
-  bodyEnv <- liftIO $ extendEnv env []
+  bodyEnv <- liftIO $ extendEnv env [] []
   _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False _bindings
   -- Expand whole body as a single continuous macro, to ensure hygiene
   expanded <- Language.Scheme.Macro.expand bodyEnv False $ newList _body  
