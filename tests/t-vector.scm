@@ -37,9 +37,11 @@
       vec)
   '#(0 ("Sue" "Sue") "Anna"))
 
-(assert/equal (let ((vec (vector 0 1 2 3 4)))
-    (vector-fill! vec 5))
-    '#(5 5 5 5 5))
+(assert/equal
+  (let ((vec (vector 0 1 2 3 4)))
+    (vector-fill! vec 5) 
+    vec)
+  '#(5 5 5 5 5))
 
 (assert/equal (let ((vec (vector 0 1 2 3 4)))
     (vector->list vec))
