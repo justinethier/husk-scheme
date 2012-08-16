@@ -45,7 +45,6 @@ import qualified Data.Map
 import Data.Maybe (isJust, fromJust)
 import qualified System.Exit
 import System.IO
-import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -327,7 +326,7 @@ eval env cont args@(List (Atom "let-syntax" : List _bindings _ : _body) _) = do
  if bound
   then prepareApply env cont args -- if bound to a variable in this scope; call into it
   else do 
-   bodyEnv <- liftIO $ extendEnv env [] []
+   bodyEnv <- liftIO $ extendEnv env Nothing []
    _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
    -- Expand whole body as a single continuous macro, to ensure hygiene
    expanded <- Language.Scheme.Macro.expand bodyEnv False $ newList _body  
@@ -340,7 +339,7 @@ eval env cont args@(List (Atom "letrec-syntax" : List _bindings _ : _body) _) = 
  if bound
   then prepareApply env cont args -- if bound to a variable in this scope; call into it
   else do 
-   bodyEnv <- liftIO $ extendEnv env [] []
+   bodyEnv <- liftIO $ extendEnv env Nothing []
    -- A primitive means of implementing letrec, by simply assuming that each macro is defined in
    -- the letrec's environment, instead of the parent env. Not sure if this is 100% correct but it
    -- is good enough to pass the R5RS test case so it will be used as a rudimentary implementation 
@@ -573,10 +572,10 @@ eval env cont args@(List [Atom "vector-set!", Atom var, i, object] _) = do
         cpsUpdateVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUpdateVec e c vec (Just [idx, obj]) = do
             newVec <- updateVector vec idx obj 
-            case (trace ("updated vector " ++ var ++ " to " ++ show newVec) newVec) of
+            case newVec of
               Vector _ (Just mloc) -> do
                 -- Very expensive because it checks all env's!!!!
-                _ <- setNamespacedVarByAddress e varNamespace (trace ("mloc = " ++ show mloc) mloc) newVec
+                _ <- setNamespacedVarByAddress e varNamespace mloc newVec
 --                _ <- setVar e var newVec -- TODO: should not be needed, only needed if addy's are not set properly
                 continueEval e c newVec
               _ -> setVar e var newVec >>= continueEval e c 
@@ -799,8 +798,8 @@ apply cont (Func aparams avarargs abody aclosure) args =
         continueWCont cwcEnv cwcBody cwcCont cwcDynWind =
             continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing cwcDynWind) $ Nil ""
 
-        getContEnv (Continuation env _ _ _) = [env]
-        getContEnv _ = []
+        getContEnv (Continuation env _ _ _ _) = Just env
+        getContEnv _ = Nothing
 
         bindVarArgs arg env = case arg of
           Just argName -> do
@@ -814,7 +813,7 @@ apply cont (HFunc aparams avarargs abody aclosure) args =
            -- Assign memory addresses to args if necessary
            memArgs <- mapM assignAddress args
          
-           (liftIO $ extendEnv aclosure $ 
+           (liftIO $ extendEnv aclosure (getContEnv cont) $ 
             zip (map ((,) varNamespace) aparams) memArgs) 
             >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
@@ -832,10 +831,13 @@ apply cont (HFunc aparams avarargs abody aclosure) args =
         continueWCont cwcEnv cwcBody cwcCont cwcDynWind =
             continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing cwcDynWind) $ Nil ""-}
 
+        getContEnv (Continuation env _ _ _ _) = Just env
+        getContEnv _ = Nothing
+
         bindVarArgs arg env = case arg of
           Just argName -> do
             remainingArgs' <- assignAddress $ newList remainingArgs
-            liftIO $ extendEnv env [((varNamespace, argName), remainingArgs')]
+            liftIO $ extendEnv env (outerEnv env) [((varNamespace, argName), remainingArgs')]
           Nothing -> return env
 apply _ func args = throwError $ BadSpecialForm "Unable to evaluate form" $ newList (func : args)
 
@@ -843,10 +845,14 @@ apply _ func args = throwError $ BadSpecialForm "Unable to evaluate form" $ newL
 forms that are implemented in Haskell; derived forms implemented in Scheme (such as let, list, etc) are available
 in the standard library which must be pulled into the environment using /(load)/. -}
 primitiveBindings :: IO Env
-primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrimitives
-                                               ++ map (domakeFunc EvalFunc) evalFunctions
-                                               ++ map (domakeFunc PrimitiveFunc) primitives)
-  where domakeFunc constructor (var, func) = ((varNamespace, var), constructor func)
+primitiveBindings = do
+  e <- liftIO $ nullEnv
+  extendEnv e Nothing $
+       map (domakeFunc IOFunc) ioPrimitives
+    ++ map (domakeFunc EvalFunc) evalFunctions
+    ++ map (domakeFunc PrimitiveFunc) primitives
+  where
+ domakeFunc constructor (var, func) = ((varNamespace, var), constructor func)
 
 -- Functions that extend the core evaluator, but that can be defined separately.
 --

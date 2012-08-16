@@ -38,7 +38,6 @@ import Language.Scheme.Types
 import Control.Monad.Error
 import Data.IORef
 import qualified Data.Map
-import Debug.Trace
 
 {- Experimental code:
 -- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/
@@ -98,7 +97,7 @@ copyEnv env = do
 
 -- TODO: should be able to use Data.Map.fromList to ease construction of new Env
 extendEnv :: Env -- ^ Environment 
-          -> [Env] -- ^ Environment of use
+          -> Maybe Env -- ^ Environment of use
           -> [((String, String), LispVal)] -- ^ Extensions to the environment
           -> IO Env -- ^ Extended environment
 extendEnv envRef useEnv abindings = do 
@@ -227,15 +226,16 @@ setNamespacedVarByAddress
 setNamespacedVarByAddress envRef namespace mloc value = do
     env <- liftIO $ readIORef $ bindings envRef
     result <- lift $ setLoc $ Data.Map.assocs env
-    -- TODO: I think this is the case? think through this some
-    --       more before deciding and cleaning all of this up
-    -- must always check parent env, because we do not know if
-    -- it contains a reference to var
-    --if result 
-    --    then return value -- $ Bool True
-    --    else 
+    -- TODO:
+    -- Performance really sucks here because we need to recursively check
+    -- both env's and both contain many of the same defintions (for example
+    -- all of stdlib.scm). It would be nice if we could somehow prune
+    -- env's that have already been scanned
+    _ <- case outerEnv envRef of
+      Just out -> setNamespacedVarByAddress out namespace mloc value
+      Nothing -> return value
     case parentEnv envRef of
-      (Just par) -> setNamespacedVarByAddress par namespace mloc value
+      Just par -> setNamespacedVarByAddress par namespace mloc value
       Nothing -> return value -- $ Bool False
  where 
   setLoc :: [((String, String), IORef LispVal)] -> IO Bool
