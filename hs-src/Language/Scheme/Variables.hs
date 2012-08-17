@@ -26,7 +26,7 @@ module Language.Scheme.Variables
     , defineVar
     , setVar
     , setNamespacedVar
-    , setNamespacedVarByAddress 
+    , setVarByAddress 
     , defineNamespacedVar
     -- * Predicates
     , isBound
@@ -38,6 +38,7 @@ import Language.Scheme.Types
 import Control.Monad.Error
 import Data.IORef
 import qualified Data.Map
+import Debug.Trace
 
 {- Experimental code:
 -- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/
@@ -214,18 +215,39 @@ setNamespacedVar envRef
                                               Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
 
 
--- TODO: function to recursively search env for a memory location,
--- and if found update the var at that location with the given one.
--- might make sense to create multiple functions for this (?)
+-- |Recursively search env for a memory location,
+--  and if found update the var at that location with the given one.
+setVarByAddress 
+    :: Env      -- ^ Environment 
+    -> Integer  -- ^ Memory address
+    -> LispVal  -- ^ Value
+    -> IOThrowsError LispVal   -- ^ Value
+setVarByAddress envRef mloc value = 
+  setNamespacedVarByAddress envRef varNamespace mloc value
+
+-- Private version of the above that is called recursively from within this module.
 setNamespacedVarByAddress 
     :: Env      -- ^ Environment 
+    -> [(Integer)] -- ^ Previous environments
     -> String   -- ^ Namespace
     -> Integer  -- ^ Memory address
     -> LispVal  -- ^ Value
     -> IOThrowsError LispVal   -- ^ Value
 setNamespacedVarByAddress envRef namespace mloc value = do
+
+-- TODO: need to restructure this code to get a list of
+-- unique env's using outerEnv and parentEnv.
+-- then call setLoc on each env in that list
+--
+-- the search function can start with a list that is this
+-- env and each parentEnv. then it can recursively search 
+-- outerEnv (both branches, parent and outer?), stopping
+-- in each case when an env is found for the second time.
+-- it will need to pass along the list of env's, adding
+-- to it each time and returning a new list
+--
     env <- liftIO $ readIORef $ bindings envRef
-    result <- lift $ setLoc $ Data.Map.assocs env
+    result <- lift $ setLoc $ (trace ("search env: " ++ show (length $ Data.Map.assocs env)) Data.Map.assocs env)
     -- TODO:
     -- Performance really sucks here because we need to recursively check
     -- both env's and both contain many of the same defintions (for example
