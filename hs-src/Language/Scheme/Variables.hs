@@ -16,6 +16,7 @@ module Language.Scheme.Variables
     (
     -- * Environments
       printEnv
+, _combineEnvs -- TODO: this is only for testing purposes!!!!
     , copyEnv
     , extendEnv
     , findNamespacedEnv
@@ -239,12 +240,18 @@ _combineParentEnvs env envs = do
     Nothing -> (env : envs)
 
 _combineOuterEnvs :: Env -> [Env] -> IO [Env]
-_combineOuterEnvs env envs = return envs -- TODO: do
--- if env is not in the list, 
---   add it
---   combine its outer env
---   combine its parent env
--- else return envs
+_combineOuterEnvs env envs = do
+  found <- _envInEnvs env envs
+  case found of
+    False -> do
+        _outer <- case (outerEnv env) of
+                    Just outer -> _combineOuterEnvs outer (env:envs)
+                    Nothing -> return []
+        _par <- case (parentEnv env) of
+                    Just par -> _combineOuterEnvs par (env:envs)
+                    Nothing -> return []
+        return $ [env] ++ _outer ++ _par
+    True -> return []
 
 _envInEnvs :: Env -> [Env] -> IO Bool
 _envInEnvs env (e : es) = do
@@ -277,8 +284,11 @@ setNamespacedVarByAddress envRef namespace mloc value = do
 -- it will need to pass along the list of env's, adding
 -- to it each time and returning a new list
 --
-    env <- liftIO $ readIORef $ bindings envRef
+    envRefs <- liftIO $ _combineEnvs envRef
+    env <- (trace ("envRefs: " ++ (show $ length envRefs)) liftIO) $ readIORef $ bindings envRef
     result <- lift $ setLoc $ (trace ("search env: " ++ show (length $ Data.Map.assocs env)) Data.Map.assocs env)
+    return $ Bool False
+    {-
     -- TODO:
     -- Performance really sucks here because we need to recursively check
     -- both env's and both contain many of the same defintions (for example
@@ -289,7 +299,7 @@ setNamespacedVarByAddress envRef namespace mloc value = do
       Nothing -> return value
     case parentEnv envRef of
       Just par -> setNamespacedVarByAddress par namespace mloc value
-      Nothing -> return value -- $ Bool False
+      Nothing -> return value -- $ Bool False -}
  where 
   setLoc :: [((String, String), IORef LispVal)] -> IO Bool
   setLoc [] = return False
