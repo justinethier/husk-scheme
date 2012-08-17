@@ -35,9 +35,9 @@ flushStr str = putStr str >> hFlush stdout
 -- |Execute a single scheme file from the command line
 runOne :: [String] -> IO ()
 runOne args = do
-  env <- primitiveBindings >>= flip extendEnv
-                                   [((varNamespace, "args"),
-                                    newList $ map String $ drop 1 args)]
+  p <- primitiveBindings
+  env <- extendEnv p Nothing $ [((varNamespace, "args"),
+                                newList $ map String $ drop 1 args)]
   -- Load standard library
   _ <- loadLibraries env
 
