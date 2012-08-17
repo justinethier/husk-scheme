@@ -225,10 +225,41 @@ setVarByAddress
 setVarByAddress envRef mloc value = 
   setNamespacedVarByAddress envRef varNamespace mloc value
 
+
+_combineEnvs :: Env -> IO [Env]
+_combineEnvs env = do
+ let scope = _combineParentEnvs env []
+ case outerEnv env of
+   Just outer -> _combineOuterEnvs outer scope
+   Nothing -> return scope
+
+_combineParentEnvs env envs = do
+  case parentEnv env of
+    Just par -> _combineParentEnvs par (env : envs)
+    Nothing -> (env : envs)
+
+_combineOuterEnvs :: Env -> [Env] -> IO [Env]
+_combineOuterEnvs env envs = return envs -- TODO: do
+-- if env is not in the list, 
+--   add it
+--   combine its outer env
+--   combine its parent env
+-- else return envs
+
+_envInEnvs :: Env -> [Env] -> IO Bool
+_envInEnvs env (e : es) = do
+  env' <- liftIO $ readIORef $ bindings env
+  e' <- liftIO $ readIORef $ bindings e
+  -- TODO: comparison must be more advanced
+  if ((length $ Data.Map.assocs env') == (length $ Data.Map.assocs e'))
+     then return True
+     else _envInEnvs env es 
+_envInEnvs _ [] = return False
+
+
 -- Private version of the above that is called recursively from within this module.
 setNamespacedVarByAddress 
     :: Env      -- ^ Environment 
-    -> [(Integer)] -- ^ Previous environments
     -> String   -- ^ Namespace
     -> Integer  -- ^ Memory address
     -> LispVal  -- ^ Value

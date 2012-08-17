@@ -575,7 +575,7 @@ eval env cont args@(List [Atom "vector-set!", Atom var, i, object] _) = do
             case newVec of
               Vector _ (Just mloc) -> do
                 -- Very expensive because it checks all env's!!!!
-                _ <- setNamespacedVarByAddress e varNamespace mloc newVec
+                _ <- setVarByAddress e mloc newVec
 --                _ <- setVar e var newVec -- TODO: should not be needed, only needed if addy's are not set properly
                 continueEval e c newVec
               _ -> setVar e var newVec >>= continueEval e c 
