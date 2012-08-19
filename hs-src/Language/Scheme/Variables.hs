@@ -255,12 +255,13 @@ _combineOuterEnvs env envs = do
 
 _envInEnvs :: Env -> [Env] -> IO Bool
 _envInEnvs env (e : es) = do
-  env' <- liftIO $ readIORef $ bindings env
-  e' <- liftIO $ readIORef $ bindings e
-  -- TODO: comparison must be more advanced
-  if ((length $ Data.Map.assocs env') == (length $ Data.Map.assocs e'))
-     then return True
-     else _envInEnvs env es 
+  return False -- TODO: testing, need to restore below:
+--   env' <- liftIO $ readIORef $ bindings env
+--   e' <- liftIO $ readIORef $ bindings e
+--   -- TODO: comparison must be more advanced
+--   if (((length $ Data.Map.assocs env') > 10) && (length $ Data.Map.assocs env') == (length $ Data.Map.assocs e'))
+--      then return True
+--      else _envInEnvs env es 
 _envInEnvs _ [] = return False
 
 
@@ -272,37 +273,21 @@ setNamespacedVarByAddress
     -> LispVal  -- ^ Value
     -> IOThrowsError LispVal   -- ^ Value
 setNamespacedVarByAddress envRef namespace mloc value = do
-
--- TODO: need to restructure this code to get a list of
--- unique env's using outerEnv and parentEnv.
--- then call setLoc on each env in that list
---
--- the search function can start with a list that is this
--- env and each parentEnv. then it can recursively search 
--- outerEnv (both branches, parent and outer?), stopping
--- in each case when an env is found for the second time.
--- it will need to pass along the list of env's, adding
--- to it each time and returning a new list
---
     envRefs <- liftIO $ _combineEnvs envRef
-    env <- (trace ("envRefs: " ++ (show $ length envRefs)) liftIO) $ readIORef $ bindings envRef
-    result <- lift $ setLoc $ (trace ("search env: " ++ show (length $ Data.Map.assocs env)) Data.Map.assocs env)
-    return $ Bool False
-    {-
-    -- TODO:
-    -- Performance really sucks here because we need to recursively check
-    -- both env's and both contain many of the same defintions (for example
-    -- all of stdlib.scm). It would be nice if we could somehow prune
-    -- env's that have already been scanned
-    _ <- case outerEnv envRef of
-      Just out -> setNamespacedVarByAddress out namespace mloc value
-      Nothing -> return value
-    case parentEnv envRef of
-      Just par -> setNamespacedVarByAddress par namespace mloc value
-      Nothing -> return value -- $ Bool False -}
+    _ <- lift $ update $ envRefs ++ [envRef]
+    return value
  where 
-  setLoc :: [((String, String), IORef LispVal)] -> IO Bool
-  setLoc [] = return False
+  -- Check for updates in the list of env's
+  update :: [Env] -> IO ()
+  update (e : envs) = do
+    env <- liftIO $ readIORef $ bindings e
+    _ <- setLoc $ Data.Map.assocs env
+    update envs
+  update [] = return ()
+
+  -- Change IO references at mloc's location
+  setLoc :: [((String, String), IORef LispVal)] -> IO ()
+  setLoc [] = return ()
   setLoc (v@((vnamespace, _), a) : vs) 
    | vnamespace == namespace = do
      -- Check var in namespace, and change if at requested mem location
