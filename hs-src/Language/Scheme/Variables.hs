@@ -16,7 +16,6 @@ module Language.Scheme.Variables
     (
     -- * Environments
       printEnv
-, _combineEnvs -- TODO: this is only for testing purposes!!!!
     , copyEnv
     , extendEnv
     , findNamespacedEnv
@@ -234,6 +233,7 @@ _combineEnvs env = do
    Just outer -> _combineOuterEnvs outer scope
    Nothing -> return scope
 
+_combineParentEnvs :: Env -> [Env] -> [Env]
 _combineParentEnvs env envs = do
   case parentEnv env of
     Just par -> _combineParentEnvs par (env : envs)
@@ -245,23 +245,24 @@ _combineOuterEnvs env envs = do
   case found of
     False -> do
         _outer <- case (outerEnv env) of
-                    Just outer -> _combineOuterEnvs outer (env:envs)
+                    Just outer -> _combineOuterEnvs outer []
                     Nothing -> return []
         _par <- case (parentEnv env) of
-                    Just par -> _combineOuterEnvs par (env:envs)
+                    Just par -> _combineOuterEnvs par []
                     Nothing -> return []
-        return $ [env] ++ _outer ++ _par
-    True -> return []
+        return $ (env : envs) ++ _par ++ _outer 
+    True -> return envs 
 
 _envInEnvs :: Env -> [Env] -> IO Bool
 _envInEnvs env (e : es) = do
-  return False -- TODO: testing, need to restore below:
---   env' <- liftIO $ readIORef $ bindings env
---   e' <- liftIO $ readIORef $ bindings e
---   -- TODO: comparison must be more advanced
---   if (((length $ Data.Map.assocs env') > 10) && (length $ Data.Map.assocs env') == (length $ Data.Map.assocs e'))
---      then return True
---      else _envInEnvs env es 
+  return False
+-- TODO:
+--  env' <- liftIO $ readIORef $ bindings env
+--  e' <- liftIO $ readIORef $ bindings e
+--  -- TODO: comparison must be more advanced
+--  if (((length $ Data.Map.assocs env') > 10) && (length $ Data.Map.assocs env') == (length $ Data.Map.assocs e'))
+--     then return True
+--     else _envInEnvs env es 
 _envInEnvs _ [] = return False
 
 
@@ -274,7 +275,10 @@ setNamespacedVarByAddress
     -> IOThrowsError LispVal   -- ^ Value
 setNamespacedVarByAddress envRef namespace mloc value = do
     envRefs <- liftIO $ _combineEnvs envRef
-    _ <- lift $ update $ envRefs ++ [envRef]
+-- TODO: try this, the lengths are unacceptable with 'make test'
+-- we need to do better...
+--    _ <- lift $ update $ (trace ("len = " ++ (show $ length envRefs)) envRefs)
+    _ <- lift $ update envRefs
     return value
  where 
   -- Check for updates in the list of env's
