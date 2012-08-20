@@ -42,6 +42,7 @@ import Debug.Trace
 
 {- Experimental code:
 -- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/
+-}
 import Foreign
 isMemoryEquivalent :: a -> a -> IO Bool
 isMemoryEquivalent obj1 obj2 = do
@@ -51,7 +52,7 @@ isMemoryEquivalent obj1 obj2 = do
   freeStablePtr obj1Ptr
   freeStablePtr obj2Ptr
   return result
-
+{-
 -- Using above, search an env for a variable definition, but stop if the upperEnv is
 -- reached before the variable
 isNamespacedRecBoundWUpper :: Env -> Env -> String -> String -> IO Bool
@@ -225,13 +226,24 @@ setVarByAddress
 setVarByAddress envRef mloc value = 
   setNamespacedVarByAddress envRef varNamespace mloc value
 
+{-
+TODO: high-level goals
+Want to get a list of all env's that could reference mloc, so we have a chance to update it
+in order to get the list, need to take:
+  current env
+  search parent env tree
+  search outer env tree
 
+both searches are recursive
+TBD: how to accumulate found env's to make search as efficient as possible?
+-}
 _combineEnvs :: Env -> IO [Env]
 _combineEnvs env = do
  let scope = _combineParentEnvs env []
- case outerEnv env of
-   Just outer -> _combineOuterEnvs outer scope
-   Nothing -> return scope
+ outerScope <- case outerEnv env of
+   Just outer -> _combineOuterEnvs outer []
+   Nothing -> return []
+ return $ scope ++ outerScope
 
 _combineParentEnvs :: Env -> [Env] -> [Env]
 _combineParentEnvs env envs = do
@@ -255,14 +267,21 @@ _combineOuterEnvs env envs = do
 
 _envInEnvs :: Env -> [Env] -> IO Bool
 _envInEnvs env (e : es) = do
-  return False
+--  return False
 -- TODO:
---  env' <- liftIO $ readIORef $ bindings env
---  e' <- liftIO $ readIORef $ bindings e
+  envStr <- printEnv env
+  eStr <- printEnv e
+  env' <- liftIO $ readIORef $ bindings env
+  e' <- liftIO $ readIORef $ bindings e
 --  -- TODO: comparison must be more advanced
 --  if (((length $ Data.Map.assocs env') > 10) && (length $ Data.Map.assocs env') == (length $ Data.Map.assocs e'))
---     then return True
---     else _envInEnvs env es 
+--  cmp <- isMemoryEquivalent env' e'
+--  case cmp of
+--     True -> return True
+--     _ -> _envInEnvs env es 
+  if (bindings env) == (bindings e)
+     then return (trace ("Eq: \n 1> " ++ envStr ++ "\n 2> " ++ eStr ++ "\nDONE") True)
+     else _envInEnvs env es
 _envInEnvs _ [] = return False
 
 
@@ -277,13 +296,17 @@ setNamespacedVarByAddress envRef namespace mloc value = do
     envRefs <- liftIO $ _combineEnvs envRef
 -- TODO: try this, the lengths are unacceptable with 'make test'
 -- we need to do better...
---    _ <- lift $ update $ (trace ("len = " ++ (show $ length envRefs)) envRefs)
-    _ <- lift $ update envRefs
+    _ <- lift $ update $ (trace ("len = " ++ (show $ length envRefs)) envRefs)
+--    _ <- lift $ update envRefs
     return value
  where 
   -- Check for updates in the list of env's
   update :: [Env] -> IO ()
   update (e : envs) = do
+
+--    testing <- printEnv e
+--    env <- liftIO $ readIORef $ bindings (trace ("=> " ++ testing) e)
+
     env <- liftIO $ readIORef $ bindings e
     _ <- setLoc $ Data.Map.assocs env
     update envs
@@ -292,13 +315,14 @@ setNamespacedVarByAddress envRef namespace mloc value = do
   -- Change IO references at mloc's location
   setLoc :: [((String, String), IORef LispVal)] -> IO ()
   setLoc [] = return ()
-  setLoc (v@((vnamespace, _), a) : vs) 
+  setLoc (v@((vnamespace, vname), a) : vs) 
    | vnamespace == namespace = do
      -- Check var in namespace, and change if at requested mem location
      var <- liftIO $ readIORef a
      if checkAddress var mloc
         then do
-          liftIO $ writeIORef a value 
+          liftIO $ writeIORef a value
+--          liftIO $ writeIORef a (trace ("setLoc: " ++ vname ++ "[" ++ (show value) ++ "]") value)
           -- keep checking
           setLoc vs
         else setLoc vs
