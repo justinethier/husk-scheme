@@ -16,6 +16,8 @@ module Language.Scheme.Variables
     (
     -- * Environments
       printEnv
+, _envInEnvs -- TODO: need to test this w/define and set
+             --   to make sure that it works correctly
     , copyEnv
     , extendEnv
     , findNamespacedEnv
@@ -238,41 +240,63 @@ both searches are recursive
 TBD: how to accumulate found env's to make search as efficient as possible?
 -}
 _combineEnvs :: Env -> IO [Env]
-_combineEnvs env = do
- let scope = _combineParentEnvs env []
- outerScope <- case outerEnv env of
-   Just outer -> _combineOuterEnvs outer []
-   Nothing -> return []
- return $ scope ++ outerScope
+_combineEnvs env = _combine env []
 
-_combineParentEnvs :: Env -> [Env] -> [Env]
-_combineParentEnvs env envs = do
-  case parentEnv env of
-    Just par -> _combineParentEnvs par (env : envs)
-    Nothing -> (env : envs)
-
-_combineOuterEnvs :: Env -> [Env] -> IO [Env]
-_combineOuterEnvs env envs = do
-  found <- _envInEnvs env envs
+_combine :: Env -> [Env] -> IO [Env]
+_combine env envs = do
+  found <- _envInEnvs env envs -- TODO: accumulator list req'd??
   case found of
+    True -> return envs
     False -> do
-        _outer <- case (outerEnv env) of
-                    Just outer -> _combineOuterEnvs outer []
-                    Nothing -> return []
-        _par <- case (parentEnv env) of
-                    Just par -> _combineOuterEnvs par []
-                    Nothing -> return []
-        return $ (env : envs) ++ _par ++ _outer 
-    True -> return envs 
+      oute <- case outerEnv env of
+        Just o -> _combine o ??
+        Nothing -> return []
+      pare <- case parentEnv env of
+        Just p -> _combine p ??
+        Nothing -> return []
 
+      -- TODO: how to combine these?
+      -- do we just concat or do we attempt to filter dupes?
+
+-- 
+
+-- OBSOLETE:
+-- _combineEnvs :: Env -> IO [Env]
+-- _combineEnvs env = do
+--  let scope = _combineParentEnvs env []
+--  outerScope <- case outerEnv env of
+--    Just outer -> _combineOuterEnvs outer []
+--    Nothing -> return []
+--  return $ scope ++ outerScope
+-- 
+-- _combineParentEnvs :: Env -> [Env] -> [Env]
+-- _combineParentEnvs env envs = do
+--   case parentEnv env of
+--     Just par -> _combineParentEnvs par (env : envs)
+--     Nothing -> (env : envs)
+-- 
+-- _combineOuterEnvs :: Env -> [Env] -> IO [Env]
+-- _combineOuterEnvs env envs = do
+--   found <- _envInEnvs env envs
+--   case found of
+--     False -> do
+--         _outer <- case (outerEnv env) of
+--                     Just outer -> _combineOuterEnvs outer []
+--                     Nothing -> return []
+--         _par <- case (parentEnv env) of
+--                     Just par -> _combineOuterEnvs par []
+--                     Nothing -> return []
+--         return $ (env : envs) ++ _par ++ _outer 
+--     True -> return envs 
+-- 
 _envInEnvs :: Env -> [Env] -> IO Bool
 _envInEnvs env (e : es) = do
 --  return False
 -- TODO:
   envStr <- printEnv env
   eStr <- printEnv e
-  env' <- liftIO $ readIORef $ bindings env
-  e' <- liftIO $ readIORef $ bindings e
+--  env' <- liftIO $ readIORef $ bindings env
+--  e' <- liftIO $ readIORef $ bindings e
 --  -- TODO: comparison must be more advanced
 --  if (((length $ Data.Map.assocs env') > 10) && (length $ Data.Map.assocs env') == (length $ Data.Map.assocs e'))
 --  cmp <- isMemoryEquivalent env' e'
