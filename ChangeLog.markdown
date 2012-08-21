@@ -3,6 +3,10 @@ v3.5.7
 
 The major change in this release is support for explicit renaming macros. This low-level macro system provides the ability to break macro hygiene, if necessary.
 
+TODO: need the following for this release:
+ - compiler support for er-macros
+ - anything else?
+
 v3.5.6
 --------
 
