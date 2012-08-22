@@ -233,6 +233,17 @@ compile env (List (Atom "letrec-syntax" : List _bindings : _body)) copts = do
     List e -> compile bodyEnv (List $ Atom "begin" : e) copts
     e -> compile bodyEnv e copts
 
+compile env (List [Atom "define-syntax", Atom keyword,
+  (List [Atom "er-macro-transformer", 
+    (List (Atom "lambda" : List fparams : fbody))])])
+  copts = do
+
+  -- TODO: same as below, these defs will eventually need to 
+  -- be made available during runtime as well as compile time
+  f <- makeNormalFunc env fparams fbody 
+  _ <- defineNamespacedVar env macroNamespace keyword $ SyntaxExplicitRenaming f
+  compileScalar ("  return $ Nil \"\"") copts 
+
 compile env (List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
 --
 -- TODO:
