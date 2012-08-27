@@ -634,16 +634,21 @@ mfunc :: Env -> LispVal -> (Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST
 mfunc env lisp func copts = do
   transformed <- Language.Scheme.Macro.macroEval env lisp dummy
   func env transformed copts
-       -- TODO: a dummy func until we figure out how to compile er-macro-transformer
- where dummy :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
-       dummy _ _ (lisp : _) = return lisp
+ where
+  dummy :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
+  dummy _ transformer args = (lisp : _) = return lisp
+--  dummy _ transformer args = do
+--    -- TODO: if we use copts here, I think it will cause problems
+--    -- if we also use it above. need to work through this
+-- also need to return a HaskAST to the above, but everything
+-- is written to return a lispval. maybe we can return an opaque
+-- object? need to work through this
+--    compiled <- compileApply env (List transformer:args) copts
+
 {- TODO: adapt for compilation
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 meval env cont lisp = mfunc env cont lisp eval
 mprepareApply env cont lisp = mfunc env cont lisp prepareApply
-mfunc :: Env -> LispVal -> LispVal -> (Env -> LispVal -> LispVal -> IOThrowsError LispVal) -> IOThrowsError LispVal
-mfunc env cont lisp func = do
-  Language.Scheme.Macro.macroEval env lisp >>= (func env cont) 
 -}
 
 
