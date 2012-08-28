@@ -289,6 +289,10 @@ compile env (List [Atom "set!", Atom var, form]) copts@(CompileOptions _ _ _ _) 
  Atom symMakeDefine <- _gensym "setFuncMakeSet"
 
  -- Store var in huskc's env for macro processing
+ --
+ -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ -- TODO: this is going to cause problems for er macros
+ --
  -- TODO: changed this to a 'defineVar' for now, because without lambda forms inserting
  --       defined variables, using setVar will cause an error when trying to set a
  --       lambda var...
@@ -331,9 +335,8 @@ compile env (List (Atom "define" : List (Atom var : fparams) : fbody)) copts@(Co
  compiledParams <- compileLambdaList fparams
  compiledBody <- compileBlock symCallfunc Nothing env [] fbody
 
--- TODO:
--- -- Store var in huskc's env for macro processing (and same for other vers of define)
--- _ <- defineVar e var form
+ -- Store var in huskc's env for macro processing (and same for other vers of define)
+ _ <- makeNormalFunc env fparams fbody >>= defineVar env var
 
  -- Entry point; ensure var is not rebound
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
@@ -350,9 +353,8 @@ compile env (List (Atom "define" : DottedList (Atom var : fparams) varargs : fbo
  compiledParams <- compileLambdaList fparams
  compiledBody <- compileBlock symCallfunc Nothing env [] fbody
 
--- TODO:
--- -- Store var in huskc's env for macro processing (and same for other vers of define)
--- _ <- defineVar e var form
+ -- Store var in huskc's env for macro processing (and same for other vers of define)
+ _ <- makeVarargs varargs env fparams fbody >>= defineVar env var
 
  -- Entry point; ensure var is not rebound
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",

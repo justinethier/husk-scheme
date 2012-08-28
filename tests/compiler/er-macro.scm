@@ -5,6 +5,28 @@
  (display b)
  (newline))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; This illustrates two problems in husk's ER macro implementation:
+;;
+;; 1) er macros are not allowed in all cases (both interpreter 
+;;    and compiler, search for error message for more details)
+;; 2) lambda vars are not loaded during compile time, so the 
+;;    reference to testval should raise an error during compilation
+;;
+
+(let ((testval 1))
+  1
+  (define-syntax test
+    (er-macro-transformer
+      (lambda (exp rename compare)
+            (write testval)
+            (cdr exp))))
+  2)
+(assert/equal 
+  (test list 1 2 3 4)
+  (list 1 2 3 4))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define-syntax call
   (er-macro-transformer
     (lambda (exp rename compare)
