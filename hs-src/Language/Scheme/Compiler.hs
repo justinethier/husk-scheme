@@ -36,7 +36,7 @@ import qualified Data.List
 import qualified Data.Map
 import Data.Ratio
 -- import System.IO
-import Debug.Trace
+--import Debug.Trace
 
 -- A type to store options passed to compile
 -- eventually all of this might be able to be integrated into a Compile monad
@@ -634,7 +634,7 @@ mcompile env lisp copts = mfunc env lisp compile copts
 mfunc :: Env -> LispVal -> (Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]) -> CompOpts -> IOThrowsError [HaskAST] 
 mfunc env lisp func copts = do
   transformed <- Language.Scheme.Macro.macroEval env lisp Language.Scheme.Core.apply
-  func env (trace ("trans = " ++ show transformed) transformed) copts
+  func env transformed copts
 
 {- TODO: adapt for compilation
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal

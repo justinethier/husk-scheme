@@ -130,7 +130,7 @@ showVersion _ = do
 -- |High level code to compile the given file
 process :: String -> String -> Bool -> String -> IO ()
 process inFile outExec dynamic extraArgs = do
-  env <- liftIO $ nullEnv
+  env <- Language.Scheme.Core.primitiveBindings
   stdlib <- getDataFileName "stdlib.scm"
   srfi55 <- getDataFileName "srfi/srfi-55.scm" -- (require-extension)
   result <- (runIOThrows $ liftM show $ compileSchemeFile env stdlib srfi55 inFile)
