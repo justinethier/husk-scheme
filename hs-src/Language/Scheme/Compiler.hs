@@ -22,6 +22,7 @@ be made for time and space...
 -}
 
 module Language.Scheme.Compiler where 
+import qualified Language.Scheme.Core (apply)
 import qualified Language.Scheme.Macro
 -- import Language.Scheme.Numerical
 -- import Language.Scheme.Parser
@@ -35,7 +36,7 @@ import qualified Data.List
 import qualified Data.Map
 import Data.Ratio
 -- import System.IO
--- import Debug.Trace
+import Debug.Trace
 
 -- A type to store options passed to compile
 -- eventually all of this might be able to be integrated into a Compile monad
@@ -632,18 +633,8 @@ mcompile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 mcompile env lisp copts = mfunc env lisp compile copts
 mfunc :: Env -> LispVal -> (Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]) -> CompOpts -> IOThrowsError [HaskAST] 
 mfunc env lisp func copts = do
-  transformed <- Language.Scheme.Macro.macroEval env lisp dummy
-  func env transformed copts
- where
-  dummy :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
-  dummy _ transformer args = (lisp : _) = return lisp
---  dummy _ transformer args = do
---    -- TODO: if we use copts here, I think it will cause problems
---    -- if we also use it above. need to work through this
--- also need to return a HaskAST to the above, but everything
--- is written to return a lispval. maybe we can return an opaque
--- object? need to work through this
---    compiled <- compileApply env (List transformer:args) copts
+  transformed <- Language.Scheme.Macro.macroEval env lisp Language.Scheme.Core.apply
+  func env (trace ("trans = " ++ show transformed) transformed) copts
 
 {- TODO: adapt for compilation
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
