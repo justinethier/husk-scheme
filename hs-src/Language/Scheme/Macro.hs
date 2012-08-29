@@ -1461,6 +1461,7 @@ loadMacros e be Nothing dim (List [Atom keyword, (List (Atom "syntax-rules" : (L
   _ <- defineNamespacedVar be macroNamespace keyword $ 
         Syntax (Just e) Nothing dim identifiers rules
   loadMacros e be Nothing dim bs
+
 loadMacros e be (Just re) dim args@(List [Atom keyword, (List (Atom syntaxrules : (List identifiers : rules)))] : bs) = do
   Atom exKeyword <- expandAtom re (Atom keyword)
   exSynRules <- expandAtom re (Atom syntaxrules)
@@ -1479,5 +1480,38 @@ loadMacros e be (Just re) dim args@(List [Atom keyword, (List (Atom syntaxrules 
              Syntax (Just e) (Just re) dim identifiers rules
         loadMacros e be (Just re) dim bs
     _ -> throwError $ BadSpecialForm "Unable to evaluate form" $ List args
+
+loadMacros e be Nothing dim 
+    (List  
+       [Atom keyword, (List [Atom "er-macro-transformer",  
+             (List (Atom "lambda" : List fparams : fbody))])]
+       : bs) = do
+  f <- makeNormalFunc e fparams fbody 
+  _ <- defineNamespacedVar be macroNamespace keyword $ SyntaxExplicitRenaming f
+  loadMacros e be Nothing dim bs
+
+-- TODO: this pattern overlaps with the other "re" one above. both probably need to be
+--       included in that pattern and then decomposed depending upon which macro
+--       system is found
+--
+-- -- TODO: can lambda be renamed as well? should we at least validate it below?
+-- loadMacros e be (Just re) dim 
+--     args@(List  
+--        [Atom keyword, (List [Atom ermacro,  
+--              (List (Atom lambda : List fparams : fbody))])]
+--        : bs) = do
+--   Atom exKeyword <- expandAtom re (Atom keyword)
+--   exSynRules <- expandAtom re (Atom ermacro)
+-- 
+-- -- TODO: need to process identifiers and rules - are they just expanded, or cleaned up?
+-- 
+--   case exSynRules of
+--     Atom "er-macro-transformer" -> do
+-- -- TODO: this is not good enough, er macros will need access to the rename env
+--         f <- makeNormalFunc e fparams fbody 
+--         _ <- defineNamespacedVar be macroNamespace keyword $ SyntaxExplicitRenaming f
+--         loadMacros e be (Just re) dim bs
+--     _ -> throwError $ BadSpecialForm "Unable to evaluate form" $ List args
+
 loadMacros _ _ _ _ [] = return $ Nil ""
 loadMacros _ _ _ _ form = throwError $ BadSpecialForm "Unable to evaluate form" $ List form 

@@ -15,18 +15,32 @@
 ; - lambda vars are not loaded during compile time, so the 
 ;   reference to testval should raise an error during compilation
 ;
+;
+;(let ((testval 1))
+;  1
+;  (define-syntax test
+;    (er-macro-transformer
+;      (lambda (exp rename compare)
+;            (write testval)
+;            (cdr exp))))
+;  2)
+;(assert/equal 
+;  (test list 1 2 3 4)
+;  (list 1 2 3 4))
 
-(let ((testval 1))
-  1
-  (define-syntax test
-    (er-macro-transformer
-      (lambda (exp rename compare)
-            (write testval)
-            (cdr exp))))
-  2)
-(assert/equal 
-  (test list 1 2 3 4)
-  (list 1 2 3 4))
+; TODO: this passes, but not if enclosed in a macro, see Macro.hs => loadMacros
+;(let-syntax ()
+(let-syntax 
+ ((call
+  (er-macro-transformer
+    (lambda (exp rename compare)
+          (cdr exp)))))
+
+  (assert/equal 
+    (call list 1 2 3 4)
+    (list 1 2 3 4)))
+;)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-syntax call
