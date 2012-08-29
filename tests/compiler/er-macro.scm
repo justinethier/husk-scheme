@@ -5,14 +5,16 @@
  (display b)
  (newline))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; This illustrates two problems in husk's ER macro implementation:
-;;
-;; 1) er macros are not allowed in all cases (both interpreter 
-;;    and compiler, search for error message for more details)
-;; 2) lambda vars are not loaded during compile time, so the 
-;;    reference to testval should raise an error during compilation
-;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; TODO: problems in husk's ER macro implementation:
+;
+; - need to allow er-macro-transformer as part of
+;   let-syntax and letrec-syntax
+;   (need to add test cases for this)
+;
+; - lambda vars are not loaded during compile time, so the 
+;   reference to testval should raise an error during compilation
+;
 
 (let ((testval 1))
   1
