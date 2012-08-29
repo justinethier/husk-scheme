@@ -795,6 +795,15 @@ walkExpandedAtom _ useEnv _ renameEnv _ _ True _ (List _)
         renameEnvClosure <- liftIO $ copyEnv renameEnv
         _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax (Just useEnv) (Just renameEnvClosure) True identifiers rules
         return $ Nil "" -- Sentinal value
+walkExpandedAtom _ useEnv _ renameEnv _ _ True _ (List _)
+    "define-syntax" 
+    ([Atom keyword, 
+       (List [Atom "er-macro-transformer",  
+             (List (Atom "lambda" : List fparams : fbody))])])
+    False _ = do
+        f <- makeNormalFunc useEnv fparams fbody 
+        _ <- defineNamespacedVar useEnv macroNamespace keyword $ SyntaxExplicitRenaming f
+        return $ Nil "" -- Sentinal value
 walkExpandedAtom _ _ _ _ _ _ True _ _ "define-syntax" ts False _ = do
   throwError $ BadSpecialForm "Malformed define-syntax expression" $ List (Atom "define-syntax" : ts)
 
