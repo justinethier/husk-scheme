@@ -34,19 +34,25 @@
 ; But, then it is not expanded when the outer let-syntax is removed!
 ; WTF is going on here, need to think it through...
 
-(write (expand
-;(let-syntax ()
+;(write (expand
+(let-syntax ()
 (let-syntax 
  ((call
   (er-macro-transformer
     (lambda (exp rename compare)
           (cdr exp)))))
+; this works fine, need to fix bug in macro subsystem for let-syntax
+;(define-syntax 
+; call
+;  (er-macro-transformer
+;    (lambda (exp rename compare)
+;          (cdr exp))))
 
   (assert/equal 
     (call list 1 2 3 4)
     (list 1 2 3 4)))
-;)
-))
+;))
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

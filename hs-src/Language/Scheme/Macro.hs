@@ -911,10 +911,23 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
         -- from the {rename ==> original}. Each new name is unique by definition, so
         -- no conflicts are possible.
         macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
-      SyntaxExplicitRenaming _ ->
+      SyntaxExplicitRenaming transformer -> do
+        -- TODO: probably need to take macro hygiene, rename env, etc into account 
+
+-- TODO: unfortunately, since apply is required below, it means we need to thread that parameter
+-- through all our macro calls. it probably also means that expand will need to prompt for it as well
+        erRenameEnv <- liftIO $ nullEnv -- Local environment used just for this
+                                        -- Different than the syntax-rules rename env (??)
+        expanded <- explicitRenamingTransform 
+                      useEnv erRenameEnv (List (Atom a : ts)) transformer apply
+        macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules expanded
+
+
+        -- TODO: old code, delete once the above works:
         -- Probably should expand inline, but for now trans as a normal atom
-        walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
-          dim False False (List $ result ++ [Atom a]) (List ts)
+        --walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
+        --  dim False False (List $ result ++ [Atom a]) (List ts)
+
       _ -> throwError $ Default "Unexpected error processing a macro in walkExpandedAtom"
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List result)
