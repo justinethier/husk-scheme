@@ -1456,31 +1456,19 @@ loadMacros :: Env       -- ^ Parent environment containing the let*-syntax expre
            -> Bool      -- ^ True if the macro was defined inside another macro
            -> [LispVal] -- ^ List containing syntax-rule definitions
            -> IOThrowsError LispVal -- ^ A dummy value, unless an error is thrown
-loadMacros e be Nothing dim (List [Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))] : bs) = do
-  -- TODO: error checking
+
+-- Standard processing for a syntax-rules transformer
+loadMacros e be Nothing dim 
+    (List 
+        [Atom keyword, 
+         (List (Atom "syntax-rules" : 
+                (List identifiers : rules)))] : 
+        bs) = do
   _ <- defineNamespacedVar be macroNamespace keyword $ 
         Syntax (Just e) Nothing dim identifiers rules
   loadMacros e be Nothing dim bs
 
-loadMacros e be (Just re) dim args@(List [Atom keyword, (List (Atom syntaxrules : (List identifiers : rules)))] : bs) = do
-  Atom exKeyword <- expandAtom re (Atom keyword)
-  exSynRules <- expandAtom re (Atom syntaxrules)
-
--- TODO: need to process identifiers and rules - are they just expanded, or cleaned up?
-
-  case exSynRules of
-    Atom "syntax-rules" -> do
---        -- Temporary hack to expand the rules
---        List exRules <- cleanExpanded e e e re re dim False False (List []) (List rules)
-
-        -- TODO: error checking
-        _ <- defineNamespacedVar be macroNamespace exKeyword $ 
---             Syntax (Just e) (Just re) dim identifiers (trace ("exRules = " ++ show exRules) exRules) --rules
---             Syntax (Just e) (Just re) dim identifiers exRules --rules
-             Syntax (Just e) (Just re) dim identifiers rules
-        loadMacros e be (Just re) dim bs
-    _ -> throwError $ BadSpecialForm "Unable to evaluate form" $ List args
-
+-- Standard processing for an explicit renaming transformer
 loadMacros e be Nothing dim 
     (List  
        [Atom keyword, (List [Atom "er-macro-transformer",  
@@ -1490,28 +1478,42 @@ loadMacros e be Nothing dim
   _ <- defineNamespacedVar be macroNamespace keyword $ SyntaxExplicitRenaming f
   loadMacros e be Nothing dim bs
 
--- TODO: this pattern overlaps with the other "re" one above. both probably need to be
---       included in that pattern and then decomposed depending upon which macro
---       system is found
---
--- -- TODO: can lambda be renamed as well? should we at least validate it below?
--- loadMacros e be (Just re) dim 
---     args@(List  
---        [Atom keyword, (List [Atom ermacro,  
---              (List (Atom lambda : List fparams : fbody))])]
---        : bs) = do
---   Atom exKeyword <- expandAtom re (Atom keyword)
---   exSynRules <- expandAtom re (Atom ermacro)
--- 
--- -- TODO: need to process identifiers and rules - are they just expanded, or cleaned up?
--- 
---   case exSynRules of
---     Atom "er-macro-transformer" -> do
--- -- TODO: this is not good enough, er macros will need access to the rename env
---         f <- makeNormalFunc e fparams fbody 
---         _ <- defineNamespacedVar be macroNamespace keyword $ SyntaxExplicitRenaming f
---         loadMacros e be (Just re) dim bs
---     _ -> throwError $ BadSpecialForm "Unable to evaluate form" $ List args
+-- This pattern is reached when there is a rename env, which
+-- means that we were already expanding a syntax-rules macro
+-- when loadMacros was called again.
+loadMacros e be (Just re) dim 
+    args@(List [Atom keyword, 
+                (List (Atom syntaxrules : spec))] : 
+               bs) = do
+  Atom exKeyword <- expandAtom re (Atom keyword)
+  exSynRules <- expandAtom re (Atom syntaxrules)
+
+-- TODO: need to process identifiers and rules - are they just expanded, or cleaned up?
+
+  case (exSynRules, spec) of
+    (Atom "syntax-rules", 
+      (List identifiers : rules)) -> do
+--        -- Temporary hack to expand the rules
+--        List exRules <- cleanExpanded e e e re re dim False False (List []) (List rules)
+
+        -- TODO: error checking
+        _ <- defineNamespacedVar be macroNamespace exKeyword $ 
+--             Syntax (Just e) (Just re) dim identifiers (trace ("exRules = " ++ show exRules) exRules) --rules
+--             Syntax (Just e) (Just re) dim identifiers exRules --rules
+             Syntax (Just e) (Just re) dim identifiers rules
+        loadMacros e be (Just re) dim bs
+    --
+    -- TODO: should check for lambda instead of _
+    --
+    (Atom "er-macro-transformer",
+      [List (Atom _ : List fparams : fbody)]) -> do
+
+        -- TODO: this is not good enough, er macros will
+        --       need access to the rename env
+        f <- makeNormalFunc e fparams fbody 
+        _ <- defineNamespacedVar be macroNamespace exKeyword $ SyntaxExplicitRenaming f
+        loadMacros e be (Just re) dim bs
+    _ -> throwError $ BadSpecialForm "Unable to evaluate form w/re" $ List args
 
 loadMacros _ _ _ _ [] = return $ Nil ""
 loadMacros _ _ _ _ form = throwError $ BadSpecialForm "Unable to evaluate form" $ List form 

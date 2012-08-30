@@ -29,7 +29,7 @@
 ;  (list 1 2 3 4))
 
 ; TODO: this passes, but not if enclosed in a macro, see Macro.hs => loadMacros
-;(let-syntax ()
+(let-syntax ()
 (let-syntax 
  ((call
   (er-macro-transformer
@@ -39,7 +39,7 @@
   (assert/equal 
     (call list 1 2 3 4)
     (list 1 2 3 4)))
-;)
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
