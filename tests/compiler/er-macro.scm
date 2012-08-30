@@ -29,7 +29,13 @@
 ;  (list 1 2 3 4))
 
 ; TODO: this passes, but not if enclosed in a macro, see Macro.hs => loadMacros
-(let-syntax ()
+; TODO: I think the (call) should be expanded by the macro
+; subsystem, but it does not so then (call) is not found at runtime
+; But, then it is not expanded when the outer let-syntax is removed!
+; WTF is going on here, need to think it through...
+
+(write (expand
+;(let-syntax ()
 (let-syntax 
  ((call
   (er-macro-transformer
@@ -39,7 +45,8 @@
   (assert/equal 
     (call list 1 2 3 4)
     (list 1 2 3 4)))
-)
+;)
+))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

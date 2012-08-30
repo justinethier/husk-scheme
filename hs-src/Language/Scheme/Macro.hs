@@ -52,7 +52,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
---import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -1511,7 +1511,7 @@ loadMacros e be (Just re) dim
         -- TODO: this is not good enough, er macros will
         --       need access to the rename env
         f <- makeNormalFunc e fparams fbody 
-        _ <- defineNamespacedVar be macroNamespace exKeyword $ SyntaxExplicitRenaming f
+        _ <- defineNamespacedVar be macroNamespace (trace ("exKeyword = " ++ exKeyword) exKeyword) $ SyntaxExplicitRenaming f
         loadMacros e be (Just re) dim bs
     _ -> throwError $ BadSpecialForm "Unable to evaluate form w/re" $ List args
 
