@@ -52,7 +52,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+--import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -147,7 +147,7 @@ macroEval env lisp@(List (Atom x : _)) apply = do
            -- since a macro may be contained within...
            expanded <- macroTransform defEnv env env renameEnv cleanupEnv 
                                       definedInMacro 
-                                     (List identifiers) rules lisp
+                                     (List identifiers) rules lisp apply
            macroEval env expanded apply
            -- Useful debug to see all exp's:
            -- macroEval env (trace ("exp = " ++ show expanded) expanded)
@@ -236,20 +236,31 @@ explicitRenamingCompare _ _ _ form = throwError $
  -  rules - pattern/transform pairs to compare to input
  -  input - Code from the scheme application 
  -}
-macroTransform :: Env -> Env -> Env -> Env -> Env -> Bool -> LispVal -> [LispVal] -> LispVal -> IOThrowsError LispVal
-macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers (rule@(List _) : rs) input = do
+macroTransform :: 
+     Env 
+  -> Env 
+  -> Env 
+  -> Env 
+  -> Env 
+  -> Bool 
+  -> LispVal 
+  -> [LispVal] 
+  -> LispVal 
+  -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Apply func
+  -> IOThrowsError LispVal
+macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers (rule@(List _) : rs) input apply = do
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
                                -- to hold pattern variables
   result <- matchRule defEnv env divertEnv dim identifiers localEnv renameEnv cleanupEnv rule input
   case (result) of
     -- No match, check the next rule
-    Nil _ -> macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers rs input
+    Nil _ -> macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers rs input apply
     _ -> do
         -- Walk the resulting code, performing the Clinger algorithm's 4 components
-        walkExpanded defEnv env divertEnv renameEnv cleanupEnv dim True False (List []) (result)
+        walkExpanded defEnv env divertEnv renameEnv cleanupEnv dim True False (List []) (result) apply
 
 -- Ran out of rules to match...
-macroTransform _ _ _ _ _ _ _ _ input = throwError $ BadSpecialForm "Input does not match a macro pattern" input
+macroTransform _ _ _ _ _ _ _ _ input _ = throwError $ BadSpecialForm "Input does not match a macro pattern" input
 
 -- Determine if the next element in a list matches 0-to-n times due to an ellipsis
 macroElementMatchesMany :: LispVal -> Bool
@@ -639,11 +650,13 @@ identifierMatches defEnv useEnv ident = do
 
 -- |This function walks the given block of code using the macro expansion algorithm,
 --  recursively expanding macro calls as they are encountered.
-expand :: Env       -- ^Environment of the code being expanded
-       -> Bool      -- ^True if the macro was defined within another macro
-       -> LispVal   -- ^Code to expand
-       -> IOThrowsError LispVal -- ^Expanded code
-expand env dim code = do
+expand :: 
+     Env       -- ^Environment of the code being expanded
+  -> Bool      -- ^True if the macro was defined within another macro
+  -> LispVal   -- ^Code to expand
+  -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Apply func
+  -> IOThrowsError LispVal -- ^Expanded code
+expand env dim code apply = do
   renameEnv <- liftIO $ nullEnv
   cleanupEnv <- liftIO $ nullEnv
 
@@ -654,7 +667,7 @@ expand env dim code = do
 -- function parameter instead of the Syntax object
 --
 
-  walkExpanded env env env renameEnv cleanupEnv dim True False (List []) code
+  walkExpanded env env env renameEnv cleanupEnv dim True False (List []) code apply
 
 -- |Walk expanded code per Clinger's algorithm from Macros That Work
 walkExpanded :: Env 
@@ -670,11 +683,11 @@ walkExpanded :: Env
   -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Apply func
   -> IOThrowsError LispVal
 walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (List l : ls)) apply = do
-  lst <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQuoted (List []) (List l)
+  lst <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQuoted (List []) (List l) apply
   walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [lst]) (List ls) apply
 
 walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List ((Vector v) : vs)) apply = do
-  List lst <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List []) (List $ elems v)
+  List lst <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List []) (List $ elems v) apply
   walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [asVector lst]) (List vs) apply
 
 walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List ((DottedList ds d) : ts)) apply = do
@@ -911,10 +924,10 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
          -- I am still concerned that this may highlight a flaw in the husk
          -- implementation, and that this solution may not be complete.
          --
-         List lexpanded <- cleanExpanded defEnv useEnv divertEnv renameEnv renameEnv True False False (List []) (List ts)
-         macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : lexpanded))
+         List lexpanded <- cleanExpanded defEnv useEnv divertEnv renameEnv renameEnv True False False (List []) (List ts) apply
+         macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : lexpanded)) apply
       Syntax (Just _defEnv) _ definedInMacro identifiers rules -> do 
-        macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
+        macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts)) apply
       Syntax Nothing _ definedInMacro identifiers rules -> do 
         -- A child renameEnv is not created because for a macro call there is no way an
         -- renamed identifier inserted by the macro could override one in the outer env.
@@ -922,7 +935,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
         -- This is because the macro renames non-matched identifiers and stores mappings
         -- from the {rename ==> original}. Each new name is unique by definition, so
         -- no conflicts are possible.
-        macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts))
+        macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts)) apply
       SyntaxExplicitRenaming transformer -> do
         -- TODO: probably need to take macro hygiene, rename env, etc into account 
 
@@ -933,20 +946,21 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
         expanded <- explicitRenamingTransform 
                       useEnv erRenameEnv (List (Atom a : ts)) transformer apply
         walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
-          dim False False (List result) expanded
+          dim False False (List result) expanded apply
 
       _ -> throwError $ Default "Unexpected error processing a macro in walkExpandedAtom"
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List result)
     a
     ts
-    True _ _ = do
+    True _ apply = do
     let isQuasiQuoted = (a == "quasiquote")
     -- Cleanup all symbols in the quoted code
     List cleaned <- cleanExpanded 
                       defEnv useEnv divertEnv renameEnv cleanupEnv 
                       dim True isQuasiQuoted 
                       (List []) (List ts)
+                      apply
     return $ List $ result ++ (Atom a : cleaned)
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List result)
@@ -994,22 +1008,34 @@ expandAtom _ a = return a
 --  ALSO, due to parent Env logic going on, these bindings need to be in some sort of
 --  'master' env that transcends those env's and maps all gensyms back to their original symbols
 --
-cleanExpanded :: Env -> Env -> Env -> Env -> Env -> Bool -> Bool -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
+cleanExpanded :: 
+     Env 
+  -> Env 
+  -> Env 
+  -> Env 
+  -> Env 
+  -> Bool 
+  -> Bool 
+  -> Bool 
+  -> LispVal 
+  -> LispVal 
+  -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Apply func
+  -> IOThrowsError LispVal
 
-cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List (List l : ls)) = do
-  lst <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) (List l)
-  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [lst]) (List ls)
+cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List (List l : ls)) apply = do
+  lst <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) (List l) apply
+  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [lst]) (List ls) apply
 
-cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List ((Vector v) : vs)) = do
-  List lst <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) (List $ elems v)
-  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [asVector lst]) (List vs)
+cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List ((Vector v) : vs)) apply = do
+  List lst <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) (List $ elems v) apply
+  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [asVector lst]) (List vs) apply
 
-cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List ((DottedList ds d) : ts)) = do
-  List ls <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) (List ds)
-  l <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) d
-  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [DottedList ls l]) (List ts)
+cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List ((DottedList ds d) : ts)) apply = do
+  List ls <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) (List ds) apply
+  l <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) d apply
+  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [DottedList ls l]) (List ts) apply
 
-cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList isQQ (List result) (List (Atom a : ts)) = do
+cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList isQQ (List result) (List (Atom a : ts)) apply = do
   expanded <- tmpexpandAtom cleanupEnv $ Atom a
   case (startOfList, isQQ, expanded) of
     -- Unquote an expression by continuing to expand it as a macro form
@@ -1020,10 +1046,10 @@ cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList isQQ 
     --  - An "unquote" is found
     --
     (True, True, Atom "unquote") -> do 
-        r <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True False (List $ result ++ [Atom "unquote"]) (List ts)
+        r <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True False (List $ result ++ [Atom "unquote"]) (List ts) apply
         return r
     _ -> 
-        cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [expanded]) (List ts)
+        cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [expanded]) (List ts) apply
  where
   -- TODO: figure out a way to simplify this code (perhaps consolidate with expandAtom)
   tmpexpandAtom :: Env -> LispVal -> IOThrowsError LispVal
@@ -1037,16 +1063,16 @@ cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList isQQ 
   tmpexpandAtom _ _a = return _a
 
 -- Transform anything else as itself...
-cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List (t : ts)) = do
-  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [t]) (List ts)
+cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List (t : ts)) apply = do
+  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [t]) (List ts) apply
 
 -- Base case - empty transform
-cleanExpanded _ _ _ _ _ _ _ _ result@(List _) (List []) = do
+cleanExpanded _ _ _ _ _ _ _ _ result@(List _) (List []) _ = do
   return result
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
-cleanExpanded _ _ _ _ _ _ _ _ _ transform = return transform
+cleanExpanded _ _ _ _ _ _ _ _ _ transform _ = return transform
 
 
 {- |Transform input by walking the tranform structure and creating a new structure
@@ -1532,7 +1558,7 @@ loadMacros e be (Just re) dim
         -- TODO: this is not good enough, er macros will
         --       need access to the rename env
         f <- makeNormalFunc e fparams fbody 
-        _ <- defineNamespacedVar be macroNamespace (trace ("exKeyword = " ++ exKeyword) exKeyword) $ SyntaxExplicitRenaming f
+        _ <- defineNamespacedVar be macroNamespace exKeyword $ SyntaxExplicitRenaming f
         loadMacros e be (Just re) dim bs
     _ -> throwError $ BadSpecialForm "Unable to evaluate form w/re" $ List args
 

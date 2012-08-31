@@ -311,7 +311,7 @@ eval env cont args@(List [Atom "expand" , _body]) = do
  bound <- liftIO $ isRecBound env "expand"
  if bound
   then prepareApply env cont args -- if bound to a variable in this scope; call into it
-  else Language.Scheme.Macro.expand env False _body >>= continueEval env cont
+  else Language.Scheme.Macro.expand env False _body apply >>= continueEval env cont
  
 -- A rudimentary implementation of let-syntax
 eval env cont args@(List (Atom "let-syntax" : List _bindings : _body)) = do
@@ -322,7 +322,7 @@ eval env cont args@(List (Atom "let-syntax" : List _bindings : _body)) = do
    bodyEnv <- liftIO $ extendEnv env []
    _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
    -- Expand whole body as a single continuous macro, to ensure hygiene
-   expanded <- Language.Scheme.Macro.expand bodyEnv False $ List _body  
+   expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) apply
    case expanded of
      List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing Nothing) $ Nil "" 
      e -> continueEval bodyEnv cont e
@@ -339,7 +339,7 @@ eval env cont args@(List (Atom "letrec-syntax" : List _bindings : _body)) = do
    -- for now...
    _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False _bindings
    -- Expand whole body as a single continuous macro, to ensure hygiene
-   expanded <- Language.Scheme.Macro.expand bodyEnv False $ List _body  
+   expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) apply
    case expanded of
      List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing Nothing) $ Nil "" 
      e -> continueEval bodyEnv cont e

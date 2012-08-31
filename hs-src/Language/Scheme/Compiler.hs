@@ -211,7 +211,7 @@ compile _ (List [Atom "quasiquote", val]) copts = compileScalar (" return $ " ++
 
 compile env (List [Atom "expand",  _body]) copts = do
   -- TODO: check if expand has been rebound?
-  val <- Language.Scheme.Macro.expand env False _body
+  val <- Language.Scheme.Macro.expand env False _body Language.Scheme.Core.apply
   compileScalar (" return $ " ++ astToHaskellStr val) copts
 
 compile env (List (Atom "let-syntax" : List _bindings : _body)) copts = do
@@ -219,7 +219,7 @@ compile env (List (Atom "let-syntax" : List _bindings : _body)) copts = do
   bodyEnv <- liftIO $ extendEnv env []
   _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
   -- Expand whole body as a single continuous macro, to ensure hygiene
-  expanded <- Language.Scheme.Macro.expand bodyEnv False $ List _body  
+  expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) Language.Scheme.Core.apply
   case expanded of
     List e -> compile bodyEnv (List $ Atom "begin" : e) copts
     e -> compile bodyEnv e copts
@@ -229,7 +229,7 @@ compile env (List (Atom "letrec-syntax" : List _bindings : _body)) copts = do
   bodyEnv <- liftIO $ extendEnv env []
   _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False _bindings
   -- Expand whole body as a single continuous macro, to ensure hygiene
-  expanded <- Language.Scheme.Macro.expand bodyEnv False $ List _body  
+  expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) Language.Scheme.Core.apply
   case expanded of
     List e -> compile bodyEnv (List $ Atom "begin" : e) copts
     e -> compile bodyEnv e copts
