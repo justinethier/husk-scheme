@@ -657,21 +657,32 @@ expand env dim code = do
   walkExpanded env env env renameEnv cleanupEnv dim True False (List []) code
 
 -- |Walk expanded code per Clinger's algorithm from Macros That Work
-walkExpanded :: Env -> Env -> Env -> Env -> Env -> Bool -> Bool -> Bool -> LispVal -> LispVal -> IOThrowsError LispVal
-walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (List l : ls)) = do
+walkExpanded :: Env 
+  -> Env 
+  -> Env 
+  -> Env 
+  -> Env 
+  -> Bool 
+  -> Bool 
+  -> Bool 
+  -> LispVal 
+  -> LispVal 
+  -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Apply func
+  -> IOThrowsError LispVal
+walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (List l : ls)) apply = do
   lst <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQuoted (List []) (List l)
-  walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [lst]) (List ls)
+  walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [lst]) (List ls) apply
 
-walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List ((Vector v) : vs)) = do
+walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List ((Vector v) : vs)) apply = do
   List lst <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List []) (List $ elems v)
-  walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [asVector lst]) (List vs)
+  walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [asVector lst]) (List vs) apply
 
-walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List ((DottedList ds d) : ts)) = do
-  List ls <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List []) (List ds)
-  l <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List []) d
-  walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [DottedList ls l]) (List ts)
+walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List ((DottedList ds d) : ts)) apply = do
+  List ls <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List []) (List ds) apply
+  l <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List []) d apply
+  walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [DottedList ls l]) (List ts) apply
 
-walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result) (List (Atom aa : ts)) = do
+walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result) (List (Atom aa : ts)) apply = do
   
  Atom a <- expandAtom renameEnv (Atom aa)
 
@@ -704,39 +715,40 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
      || a == "set!"
      || a == "lambda"
     then walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv 
-                          dim startOfList inputIsQuoted (List result) a ts isQuoted isDefinedAsMacro
+                          dim startOfList inputIsQuoted (List result) a ts isQuoted isDefinedAsMacro apply
     else walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
-                      dim startOfList inputIsQuoted (List result) (List (Atom a : ts))
+                      dim startOfList inputIsQuoted (List result) (List (Atom a : ts)) apply
 
 
 -- Transform anything else as itself...
-walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (t : ts)) = do
-  walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [t]) (List ts)
+walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (t : ts)) apply = do
+  walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [t]) (List ts) apply
 
 -- Base case - empty transform
-walkExpanded _ _ _ _ _ _ _ _ result@(List _) (List []) = return result
+walkExpanded _ _ _ _ _ _ _ _ result@(List _) (List []) _ = return result
 
 -- Single atom, rename (if necessary) and return
-walkExpanded _ _ _ renameEnv _ _ _ _ _ (Atom a) = expandAtom renameEnv (Atom a)
+walkExpanded _ _ _ renameEnv _ _ _ _ _ (Atom a) _ = expandAtom renameEnv (Atom a)
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
-walkExpanded _ _ _ _ _ _ _ _ _ transform = return transform
+walkExpanded _ _ _ _ _ _ _ _ _ transform _ = return transform
 
 walkExpandedAtom :: Env 
-                 -> Env 
-                 -> Env 
-                 -> Env 
-                 -> Env 
-                 -> Bool 
-                 -> Bool 
-                 -> Bool 
-                 -> LispVal 
-                 -> String 
-                 -> [LispVal] 
-                 -> Bool -- is Quoted
-                 -> Bool -- is defined as macro
-                 -> IOThrowsError LispVal
+  -> Env 
+  -> Env 
+  -> Env 
+  -> Env 
+  -> Bool 
+  -> Bool 
+  -> Bool 
+  -> LispVal 
+  -> String 
+  -> [LispVal] 
+  -> Bool -- is Quoted
+  -> Bool -- is defined as macro
+  -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Apply func
+  -> IOThrowsError LispVal
 
 {- 
 Some high-level design notes on how this could be made to work:
@@ -764,33 +776,33 @@ the macro to ensure that none of the introduced macros reference each other.
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True inputIsQuoted (List _)
     "let-syntax" 
     (List _bindings : _body)
-    False _ = do
+    False _ apply = do
         bodyEnv <- liftIO $ extendEnv useEnv []
         bodyRenameEnv <- liftIO $ extendEnv renameEnv []
         _ <- loadMacros useEnv bodyEnv (Just bodyRenameEnv) True _bindings
-        expanded <- walkExpanded defEnv bodyEnv divertEnv bodyRenameEnv cleanupEnv dim True inputIsQuoted (List [Atom "lambda", List []]) (List _body)
+        expanded <- walkExpanded defEnv bodyEnv divertEnv bodyRenameEnv cleanupEnv dim True inputIsQuoted (List [Atom "lambda", List []]) (List _body) apply
         return $ List [expanded]
 
-walkExpandedAtom _ _ _ _ _ _ True _ _ "let-syntax" ts False _ = do
+walkExpandedAtom _ _ _ _ _ _ True _ _ "let-syntax" ts False _ _ = do
   throwError $ BadSpecialForm "Malformed let-syntax expression" $ List (Atom "let-syntax" : ts)
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True inputIsQuoted (List _)
     "letrec-syntax" 
     (List _bindings : _body)
-    False _ = do
+    False _ apply = do
         bodyEnv <- liftIO $ extendEnv useEnv []
         bodyRenameEnv <- liftIO $ extendEnv renameEnv []
         _ <- loadMacros bodyEnv bodyEnv (Just bodyRenameEnv) True _bindings
-        expanded <- walkExpanded defEnv bodyEnv divertEnv bodyRenameEnv cleanupEnv dim True inputIsQuoted (List [Atom "lambda", List []]) (List _body)
+        expanded <- walkExpanded defEnv bodyEnv divertEnv bodyRenameEnv cleanupEnv dim True inputIsQuoted (List [Atom "lambda", List []]) (List _body) apply
         return $ List [expanded]
 
-walkExpandedAtom _ _ _ _ _ _ True _ _ "letrec-syntax" ts False _ = do
+walkExpandedAtom _ _ _ _ _ _ True _ _ "letrec-syntax" ts False _ _ = do
   throwError $ BadSpecialForm "Malformed letrec-syntax expression" $ List (Atom "letrec-syntax" : ts)
 
 walkExpandedAtom _ useEnv _ renameEnv _ _ True _ (List _)
     "define-syntax" 
     ([Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))])
-    False _ = do
+    False _ _ = do
         -- Do we need to rename the keyword, or at least take that into account?
         renameEnvClosure <- liftIO $ copyEnv renameEnv
         _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax (Just useEnv) (Just renameEnvClosure) True identifiers rules
@@ -800,11 +812,11 @@ walkExpandedAtom _ useEnv _ renameEnv _ _ True _ (List _)
     ([Atom keyword, 
        (List [Atom "er-macro-transformer",  
              (List (Atom "lambda" : List fparams : fbody))])])
-    False _ = do
+    False _ _ = do
         f <- makeNormalFunc useEnv fparams fbody 
         _ <- defineNamespacedVar useEnv macroNamespace keyword $ SyntaxExplicitRenaming f
         return $ Nil "" -- Sentinal value
-walkExpandedAtom _ _ _ _ _ _ True _ _ "define-syntax" ts False _ = do
+walkExpandedAtom _ _ _ _ _ _ True _ _ "define-syntax" ts False _ _ = do
   throwError $ BadSpecialForm "Malformed define-syntax expression" $ List (Atom "define-syntax" : ts)
 
 
@@ -822,7 +834,7 @@ that it is inserting a binding for the var
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _)
     "define" 
     [Atom var, val]
-    False _ = do
+    False _ apply = do
 {- It seems like this should be necessary, but it causes problems so it is
    disabled for now...
       isAlreadyRenamed <- liftIO $ isRecBound renameEnv var
@@ -831,15 +843,15 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _
           _ <- defineVar renameEnv var $ Atom var
           walk
 --        _ -> walk
- where walk = walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List [Atom "define", Atom var]) (List [val])
-walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result) a@"define" ts False _ = do
+ where walk = walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List [Atom "define", Atom var]) (List [val]) apply
+walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result) a@"define" ts False _ apply = do
     -- define is malformed, just transform as normal atom...
-    walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
+    walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts) apply
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _)
     "set!" 
     [Atom var, val]
-    False _ = do
+    False _ apply = do
       isLexicalDef <- liftIO $ isRecBound useEnv var
       isAlreadyRenamed <- liftIO $ isRecBound renameEnv var
       case (isLexicalDef, isAlreadyRenamed) of
@@ -851,31 +863,31 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _
            walk
         _ -> walk
   where
-    walk = walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List [Atom "set!"]) (List [Atom var, val])
+    walk = walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List [Atom "set!"]) (List [Atom var, val]) apply
 
-walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result) a@"set!" ts False _ = do
+walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result) a@"set!" ts False _ apply = do
     -- define is malformed, just transform as normal atom...
-    walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
+    walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts) apply
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _)
     "lambda" 
     (List vars : fbody)
-    False _ = do
+    False _ apply = do
 -- Placed here, the lambda primitive trumps a macro of the same name... (desired behavior?)
     -- Create a new Env for this, so args of the same name do not overwrite those in the current Env
 --    env <- liftIO $ extendEnv (trace ("found procedure abstraction, vars = " ++ show vars ++ "body = " ++ show fbody) renameEnv) []
     env <- liftIO $ extendEnv renameEnv []
     renamedVars <- markBoundIdentifiers env cleanupEnv vars []
-    walkExpanded defEnv useEnv divertEnv env cleanupEnv dim True False (List [Atom "lambda", (renamedVars)]) (List fbody)
+    walkExpanded defEnv useEnv divertEnv env cleanupEnv dim True False (List [Atom "lambda", (renamedVars)]) (List fbody) apply
 
-walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result) a@"lambda" ts False _ = do
+walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result) a@"lambda" ts False _ apply = do
     -- lambda is malformed, just transform as normal atom...
-    walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts)
+    walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts) apply
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result)
     a
     ts 
-    False True = do
+    False True apply = do
     syn <- getNamespacedVar useEnv macroNamespace a
     case syn of
 --
@@ -920,20 +932,15 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
                                         -- Different than the syntax-rules rename env (??)
         expanded <- explicitRenamingTransform 
                       useEnv erRenameEnv (List (Atom a : ts)) transformer apply
-        macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules expanded
-
-
-        -- TODO: old code, delete once the above works:
-        -- Probably should expand inline, but for now trans as a normal atom
-        --walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
-        --  dim False False (List $ result ++ [Atom a]) (List ts)
+        walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
+          dim False False (List result) expanded
 
       _ -> throwError $ Default "Unexpected error processing a macro in walkExpandedAtom"
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List result)
     a
     ts
-    True _ = do
+    True _ _ = do
     let isQuasiQuoted = (a == "quasiquote")
     -- Cleanup all symbols in the quoted code
     List cleaned <- cleanExpanded 
@@ -943,12 +950,13 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List resu
     return $ List $ result ++ (Atom a : cleaned)
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List result)
-    a ts isQuoted _ = do
+    a ts isQuoted _ apply = do
     walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
                  dim False isQuoted 
                 (List $ result ++ [Atom a]) (List ts)
+                 apply
 
-walkExpandedAtom _ _ _ _ _ _ _ _ _ _ _ _ _ = throwError $ Default "Unexpected error in walkExpandedAtom"
+walkExpandedAtom _ _ _ _ _ _ _ _ _ _ _ _ _ _ = throwError $ Default "Unexpected error in walkExpandedAtom"
 
 -- |Accept a list of bound identifiers from a lambda expression, and rename them
 --  Returns a list of the renamed identifiers as well as marking those identifiers
