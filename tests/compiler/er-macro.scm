@@ -5,6 +5,10 @@
  (display b)
  (newline))
 
+
+; TODO: need to integrate all of this into the unit test suites!
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; TODO: problems in husk's ER macro implementation:
 ;
