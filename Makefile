@@ -12,8 +12,10 @@ HUSKC_SRC=$(wildcard hs-src/Compiler/*.hs)
 HUSKI_SRC=$(wildcard hs-src/Interpreter/*.hs)
 
 GHCOPTS=-Wall --make -package parsec -package ghc
-GHCFLAGS=
-#GHCFLAGS=-f-useffi
+
+# Currently have the FFI disabled
+GHCFLAGS=-f-useffi
+#GHCFLAGS=
 
 HUSKC = huskc
 HUSKI = huski
