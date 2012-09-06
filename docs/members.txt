@@ -1,0 +1,159 @@
+
+evalFunctions =  [  ("apply", evalfuncApply)
+                  , ("call-with-current-continuation", evalfuncCallCC)
+                  , ("call-with-values", evalfuncCallWValues)
+                  , ("dynamic-wind", evalfuncDynamicWind)
+                  , ("eval", evalfuncEval)
+                  , ("load", evalfuncLoad)
+               -- Non-standard extensions
+#ifdef UseFfi
+                  , ("load-ffi", Language.Scheme.FFI.evalfuncLoadFFI)
+#endif
+                  , ("exit-fail", evalfuncExitFail)
+                  , ("exit-success", evalfuncExitSuccess)
+                ]
+{- I/O primitives
+Primitive functions that execute within the IO monad -}
+ioPrimitives = [("open-input-file", makePort ReadMode),
+                ("open-output-file", makePort WriteMode),
+                ("close-input-port", closePort),
+                ("close-output-port", closePort),
+                ("input-port?", isInputPort),
+                ("output-port?", isOutputPort),
+                ("char-ready?", isCharReady),
+
+                ("current-input-port", currentInputPort),
+                ("current-output-port", currentOutputPort),
+                ("read", readProc),
+                ("read-char", readCharProc hGetChar),
+                ("peek-char", readCharProc hLookAhead),
+                ("write", writeProc (\ port obj -> hPrint port obj)),
+                ("write-char", writeCharProc),
+                ("display", writeProc (\ port obj -> case obj of
+                                                        String str -> hPutStr port str
+                                                        _ -> hPutStr port $ show obj)),
+
+                -- From SRFI 96
+                ("file-exists?", fileExists),
+                ("delete-file", deleteFile),
+
+                -- Other I/O functions
+                ("read-contents", readContents),
+                ("read-all", readAll),
+                ("gensym", gensym)]
+
+{- "Pure" primitive functions -}
+primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
+primitives = [("+", numAdd),
+              ("-", numSub),
+              ("*", numMul),
+              ("/", numDiv),
+              ("modulo", numMod),
+              ("quotient", numericBinop quot),
+              ("remainder", numericBinop rem),
+              ("rationalize", numRationalize),
+
+              ("round", numRound),
+              ("floor", numFloor),
+              ("ceiling", numCeiling),
+              ("truncate", numTruncate),
+
+              ("numerator", numNumerator),
+              ("denominator", numDenominator),
+
+              ("exp", numExp),
+              ("log", numLog),
+              ("sin", numSin),
+              ("cos", numCos),
+              ("tan", numTan),
+              ("asin", numAsin),
+              ("acos", numAcos),
+              ("atan", numAtan),
+
+              ("sqrt", numSqrt),
+              ("expt", numExpt),
+
+              ("make-rectangular", numMakeRectangular),
+              ("make-polar", numMakePolar),
+              ("real-part", numRealPart ),
+              ("imag-part", numImagPart),
+              ("magnitude", numMagnitude),
+              ("angle", numAngle ),
+
+              ("exact->inexact", numExact2Inexact),
+              ("inexact->exact", numInexact2Exact),
+
+              ("number->string", num2String),
+
+              ("=", numBoolBinopEq),
+              (">", numBoolBinopGt),
+              (">=", numBoolBinopGte),
+              ("<", numBoolBinopLt),
+              ("<=", numBoolBinopLte),
+
+              ("&&", boolBoolBinop (&&)),
+              ("||", boolBoolBinop (||)),
+              ("string=?", strBoolBinop (==)),
+              ("string<?", strBoolBinop (<)),
+              ("string>?", strBoolBinop (>)),
+              ("string<=?", strBoolBinop (<=)),
+              ("string>=?", strBoolBinop (>=)),
+              ("string-ci=?", stringCIEquals),
+              ("string-ci<?", stringCIBoolBinop (<)),
+              ("string-ci>?", stringCIBoolBinop (>)),
+              ("string-ci<=?", stringCIBoolBinop (<=)),
+              ("string-ci>=?", stringCIBoolBinop (>=)),
+
+              ("car", car),
+              ("cdr", cdr),
+              ("cons", cons),
+              ("eq?", eqv),
+              ("eqv?", eqv),
+              ("equal?", equal),
+
+              ("pair?", isDottedList),
+              ("procedure?", isProcedure),
+              ("number?", isNumber),
+              ("complex?", isComplex),
+              ("real?", isReal),
+              ("rational?", isRational),
+              ("integer?", isInteger),
+              ("list?", unaryOp isList),
+              ("null?", isNull),
+              ("eof-object?", isEOFObject),
+              ("symbol?", isSymbol),
+              ("symbol->string", symbol2String),
+              ("string->symbol", string2Symbol),
+              ("char?", isChar),
+
+              ("vector?", unaryOp isVector),
+              ("make-vector", makeVector),
+              ("vector", buildVector),
+              ("vector-length", vectorLength),
+              ("vector-ref", vectorRef),
+              ("vector->list", vectorToList),
+              ("list->vector", listToVector),
+
+              ("make-hash-table", hashTblMake),
+              ("hash-table?", isHashTbl),
+              ("hash-table-exists?", hashTblExists),
+              ("hash-table-ref", hashTblRef),
+              ("hash-table-size", hashTblSize),
+              ("hash-table->alist", hashTbl2List),
+              ("hash-table-keys", hashTblKeys),
+              ("hash-table-values", hashTblValues),
+              ("hash-table-copy", hashTblCopy),
+
+              ("string?", isString),
+              ("string", buildString),
+              ("make-string", makeString),
+              ("string-length", stringLength),
+              ("string-ref", stringRef),
+              ("substring", substring),
+              ("string-append", stringAppend),
+              ("string->number", stringToNumber),
+              ("string->list", stringToList),
+              ("list->string", listToString),
+              ("string-copy", stringCopy),
+
+TODO: stdlib.scm, and srfi's              
