@@ -1,3 +1,4 @@
+# Module to conveniently output Scheme API documentation
 module Jekyll
   class DocBlock < Liquid::Block
     include Liquid::StandardFilters
@@ -6,21 +7,25 @@ module Jekyll
       super
       #TODO: error handling (see highlight example)
       #params = markup.split(" ")
-      params = markup.scan(/"([^"]*)" (.*)/)[0]
-      @call = params[0]
-      @type = params[1]
+      params = markup.scan(/([^ ]*) "([^"]*)" (.*)/)[0]
+      @name = params[0]
+      @call = params[1]
+      @type = params[2]
     end
 
     def render(context)
       code = super
       <<-HTML
-#{@call} <br />
-#{@type} <br />
-      markup:
-      #{@code}
+    <div id="#{@name}" class="member"> 
+        <div>
+          <label>#{@type}</label>
+          <strong>#{@call}</strong>
+        </div>
+      #{code}
+    </div>
       HTML
     end
   end
 end
 
-Liquid::Template.register_tag('docbox', Jekyll::DocBlock)
+Liquid::Template.register_tag('scmdoc', Jekyll::DocBlock)

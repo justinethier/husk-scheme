@@ -25,9 +25,18 @@ path: ../
       <a href="#string?">string?</a>
     </div>
     <br />
-    {% docbox "(not obj)" "Function" %}
-    TEST 1, 2...
-    {% enddocbox %}
+    {% scmdoc not "(not obj)" Function %}
+        Not returns #t if obj is false, and #f otherwise.
+
+        {% highlight scheme %}
+(not #t)          ===>  #f
+(not 3)           ===>  #f
+(not (list 3))    ===>  #f
+(not '())         ===>  #f
+(not (list))      ===>  #f
+(not 'nil)        ===>  #f
+        {% endhighlight %}
+    {% endscmdoc %}
     <!--
       string
       make-string
