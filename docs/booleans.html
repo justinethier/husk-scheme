@@ -3,32 +3,7 @@ title: husk scheme
 menu: docs
 path: ../
 ---
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<!--
-
-husk scheme
-
-Copyright   : Justin Ethier
-Licence     : MIT (see LICENSE in the distribution)
-Maintainer  : github.com/justinethier
-
--->
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-    <title>husk λ scheme</title>
-    <meta name="keywords" content="" />
-    <meta name="description" content="" />
-    <link rel="shortcut icon" href="../favicon.ico" />
-    <link href="../default.css" rel="stylesheet" type="text/css" />
-    <link href="../pygments.css" rel="stylesheet" type="text/css" />
-    {% include google-analytics.html %}
-</head>
-<body>
-<div id="header">
-</div>
-    {% include menu.html %}
-<hr />
+{% include docs/header.html %}
 <div id="page">
 	<div id="content">
 	<h1 class="title">Booleans</h1>
@@ -40,46 +15,16 @@ Maintainer  : github.com/justinethier
           <a href="">not</a>
           <a href="">boolean?</a>
         </div>
-        <div id="sec-not" style="border: solid 1px black; width: auto; padding: 5px;"> TODO: how to lay out this section, and what to include?
-          should say it is a function (or syntax or variable, etc depending on members), what else?
-
+        <div id="sec-not" style="border: solid 1px black; width: auto; padding: 5px;"> 
 <div>
   <label style="float: right;">Function</label>
   <strong>(not obj)</strong>
 </div>
-
+TEST 
 Not returns #t if obj is false, and #f otherwise.
         </div>
         <div id="sec-boolean?"></div>
 	</div>
-    <div id="sidebar">
-      <ul>
-        <li>
-          <h2>User Manual</h2>
-          <ul>
-            <li><a href="booleans.html">Booleans</a></li>
-            <li><a href="lists.html">Pairs and Lists</a></li>
-            <li><a href="lists.html">Pairs and Lists</a></li>
-            <li><a href="lists.html">Pairs and Lists</a></li>
-            <li><a href="lists.html">Pairs and Lists</a></li>
-            <li><a href="lists.html">Pairs and Lists</a></li>
-            <li><a href="strings.html">Strings</a></li>
-            <li><a href="booleans.html">Booleans</a></li>
-            <li><a href="strings.html">Strings</a></li>
-            <li><a href="booleans.html">Booleans</a></li>
-            <li><a href="strings.html">Strings</a></li>
-            <li><a href="booleans.html">Booleans</a></li>
-            <li><a href="strings.html">Strings</a></li>
-            <li><a href="booleans.html">Booleans</a></li>
-            <li><a href="strings.html">Strings</a></li>
-          </ul>
-        </li>
-      </ul>
-    </div>
+    {% include docs/sidebar.html %}
 </div>
-<hr />
-<div id="footer">
-    {% include footer.html %}
-</div>
-</body>
-</html>
+{% include docs/footer.html %}
