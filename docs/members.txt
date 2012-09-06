@@ -144,16 +144,5 @@ primitives = [("+", numAdd),
               ("hash-table-values", hashTblValues),
               ("hash-table-copy", hashTblCopy),
 
-              ("string?", isString),
-              ("string", buildString),
-              ("make-string", makeString),
-              ("string-length", stringLength),
-              ("string-ref", stringRef),
-              ("substring", substring),
-              ("string-append", stringAppend),
-              ("string->number", stringToNumber),
-              ("string->list", stringToList),
-              ("list->string", listToString),
-              ("string-copy", stringCopy),
 
 TODO: stdlib.scm, and srfi's              
