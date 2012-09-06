@@ -1,0 +1,13 @@
+/* Style for the box used to display 
+   a function, macro, variable, etc */
+.member {
+    border: solid 1px #eeeeee; 
+    background-color: #eeeeee;
+    width: auto; 
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+.member label {
+    float: right;    
+}
