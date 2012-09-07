@@ -43,6 +43,8 @@
 (define (list . objs)  objs)
 (define (id obj)       obj)
 
+; TODO: this is not flipping args. not part of R5RS, but 
+;       as it is now, what is the point?
 (define (flip func)    (lambda (arg1 arg2) (func arg1 arg2)))
 
 (define (curry func arg1)  (lambda (arg) (apply func (cons arg1 (list arg)))))
