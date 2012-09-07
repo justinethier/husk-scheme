@@ -10,6 +10,27 @@
 
 (unit-test-start "explicit renaming macros")
 
+(let-syntax ()
+(let-syntax 
+ ((call
+  (er-macro-transformer
+    (lambda (exp rename compare)
+          (cdr exp)))))
+  (assert/equal 
+    (call list 1 2 3 4)
+    (list 1 2 3 4))))
+
+(let-syntax ()
+  (define-syntax 
+   call
+    (er-macro-transformer
+      (lambda (exp rename compare)
+            (cdr exp))))
+
+  (assert/equal 
+    (call list 1 2 3 4)
+    (list 1 2 3 4)))
+
 (define-syntax call
   (er-macro-transformer
     (lambda (exp rename compare)
