@@ -16,12 +16,8 @@ path: ../
       <a href="#boolean?">boolean?</a>
     </div>
     <br />
-    <div id="not" class="member"> 
-        <div>
-          <label>Function</label>
-          <strong>(not obj)</strong>
-        </div>
-        Not returns #t if obj is false, and #f otherwise.
+    {% scmdoc not "(not obj)" Function %}
+        not returns #t if obj is false, and #f otherwise.
 
         {% highlight scheme %}
 (not #t)          ===>  #f
@@ -31,15 +27,11 @@ path: ../
 (not (list))      ===>  #f
 (not 'nil)        ===>  #f
         {% endhighlight %}
-    </div>
-    <div id="boolean?" class="member"> 
-        <div>
-          <label>Function</label>
-          <strong>(boolean? obj)</strong>
-        </div>
-        Boolean? is a predicate that returns #t if obj is 
+    {% endscmdoc %}
+    {% scmdoc boolean? "(boolean? obj)" Function %}
+        boolean? is a predicate that returns #t if obj is 
         a boolean (#t or #f), and #f otherwise.
-    </div>
+    {% endscmdoc %}
   </div>
   {% include docs/sidebar.html %}
 </div>

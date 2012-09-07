@@ -25,47 +25,41 @@ path: ../
       <a href="#string?">string?</a>
     </div>
     <br />
-    {% scmdoc not "(not obj)" Function %}
-        Not returns #t if obj is false, and #f otherwise.
-
-        {% highlight scheme %}
-(not #t)          ===>  #f
-(not 3)           ===>  #f
-(not (list 3))    ===>  #f
-(not '())         ===>  #f
-(not (list))      ===>  #f
-(not 'nil)        ===>  #f
-        {% endhighlight %}
+    {% scmdoc string "(string char ...)" Function %}
+      Creates a string from the given characters.
     {% endscmdoc %}
-    <!--
-      string
-      make-string
-      string-length
-      string-ref
-      substring
-      string-append
-      string->number
-      string->list
-      list->string
-      string-copy
-      string?
-    <div id="not" class="member"> 
-        <div>
-          <label>Function</label>
-          <strong>(not obj)</strong>
-        </div>
-        Not returns #t if obj is false, and #f otherwise.
-
-        {% highlight scheme %}
-(not #t)          ===>  #f
-(not 3)           ===>  #f
-(not (list 3))    ===>  #f
-(not '())         ===>  #f
-(not (list))      ===>  #f
-(not 'nil)        ===>  #f
-        {% endhighlight %}
-    </div>
-    -->
+    {% scmdoc make-string "(make-string k)" Function %}
+      <div><strong>(make-string k char)</strong></div>
+      Creates a string of length k. If char is provided, each character in the string will be set to char.
+    {% endscmdoc %}
+    {% scmdoc string-length "(string-length string)" Function %}
+      Returns the length of the given string.
+    {% endscmdoc %}
+    {% scmdoc string-ref "(string-ref string k)" Function %}
+      Returns the character at position k of the given string.
+    {% endscmdoc %}
+    {% scmdoc substring "(substring string start end)" Function %}
+      Returns a new string consisting of the characters of string from start (inclusive) to end (exclusive).
+    {% endscmdoc %}
+    {% scmdoc string-append "(string-append string ...)" Function %}
+      Concatenates each given string.
+    {% endscmdoc %}
+    {% scmdoc string->number "(string->number string)" Function %}
+      <div><strong>(string->number string radix)</strong></div>
+      string->number converts the given string to a number. By default the number is in base 10, but a radix of base 2, 8, 10, or 16 may also be provided.
+    {% endscmdoc %}
+    {% scmdoc string->list "(string->list string)" Function %}
+      Creates a new list consisting of the characters from string.
+    {% endscmdoc %}
+    {% scmdoc list->string "(list->string list)" Function %}
+      list->string takes a list of characters and creates a new string from them.
+    {% endscmdoc %}
+    {% scmdoc string-copy "(string-copy string)" Function %}
+      Creates a new copy of the given string.
+    {% endscmdoc %}
+    {% scmdoc string? "(string obj?)" Function %}
+      String? returns #t if obj is a string, and #f otherwise.
+    {% endscmdoc %}
   </div>
   {% include docs/sidebar.html %}
 </div>
