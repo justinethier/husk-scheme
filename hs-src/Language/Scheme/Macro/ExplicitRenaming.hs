@@ -7,7 +7,13 @@ Maintainer  : github.com/justinethier
 Stability   : experimental
 Portability : portable
 
-This module contains code for explicit renaming macros.
+This module contains code for explicit renaming (ER) macros.
+
+It is used by the Macro module to provide support for ER
+macros, both when called directly or when ER macros are
+found during macro expansion. This ensures both the
+er-macro-transformer and syntax-rules systems are
+compatible with each other.
 
 -}
 
