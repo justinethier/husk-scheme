@@ -39,6 +39,7 @@ Library
                    Language.Scheme.Plugins.CPUTime
 -- Other-Modules:
                    Language.Scheme.Macro
+                   Language.Scheme.Macro.ExplicitRenaming
                    Language.Scheme.Macro.Matches
                    Language.Scheme.Numerical
                    Language.Scheme.Parser

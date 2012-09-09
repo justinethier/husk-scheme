@@ -48,6 +48,7 @@ module Language.Scheme.Macro
     ) where
 import Language.Scheme.Types
 import Language.Scheme.Variables
+import Language.Scheme.Macro.ExplicitRenaming
 import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
@@ -155,74 +156,6 @@ macroEval env lisp@(List (Atom x : _)) apply = do
 
 -- No macro to process, just return code as it is...
 macroEval _ lisp@(_) _ = return lisp
-
-
--- |Handle an explicit renaming macro
-explicitRenamingTransform :: 
-       Env -- ^Environment where macro was used
-    -> Env -- ^Temporary environment to store renamed variables
-    -> LispVal -- ^Form to transform
-    -> LispVal -- ^Macro transformer
-    -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Eval func
-    -> IOThrowsError LispVal
-explicitRenamingTransform useEnv renameEnv lisp 
-                            transformer@(Func _ _ _ defEnv) apply = do
-  let continuation = makeNullContinuation useEnv
-  apply 
-    continuation
-    transformer
-    [lisp, 
-     IOFunc $ explicitRenamingRename useEnv renameEnv defEnv, 
-     IOFunc $ explicitRenamingCompare useEnv renameEnv defEnv] 
-
--- |The explicit renaming "rename" function
---
--- From clinger's paper "Hygienic Macros Through Explicit Renaming":
---
--- The expression returned by the transformation procedure
--- will be expanded in the syntactic environment obtained
--- from the syntactic environment of the macro application
--- by binding any fresh identifiers in the syntactic
--- environment in which the macro was defined. This means
--- that a renamed identifier will denote the same thing as
--- the original identifier unless the transformation
--- procedure that renamed the identifier placed an
--- occurrence of it in a binding position.
---
--- The renaming procedure acts as a mathematical function
--- in the sense that the idenfiers obtained from any two
--- calls with the same argument will be the same in
--- the sense of eqv?. It is an error if the renaming
--- procedure is called after the transformation
--- procedure has returned.
-explicitRenamingRename :: Env -> Env -> Env -> [LispVal] -> IOThrowsError LispVal
-explicitRenamingRename useEnv renameEnv defEnv [Atom a] = do
-  isDef <- liftIO $ isRecBound defEnv a
-  if isDef
-     then do
-       isRenamed <- liftIO $ isRecBound renameEnv a
-       if isRenamed
-          then do
-            renamed <- getVar renameEnv a
-            return renamed
-          else do
-            value <- getVar defEnv a
-            Atom renamed <- _gensym a -- Unique name
-            _ <- defineVar useEnv renamed value -- divert value to Use Env
-            _ <- defineVar renameEnv a $ Atom renamed -- Record renamed sym
-            return $ Atom renamed
-     else
-       return $ Atom a
-explicitRenamingRename _ _ _ form = throwError $ Default $ "Unable to rename: " ++ show form
-
--- |The explicit renaming compare function
-explicitRenamingCompare :: Env -> Env -> Env -> [LispVal] -> IOThrowsError LispVal
-explicitRenamingCompare useEnv renameEnv defEnv values@[a, b] = do
-  return $ Bool $ eqVal a b
-explicitRenamingCompare _ _ _ form = throwError $ 
-   Default $ "Unable to compare: " ++ show form
-----
-
 
 {-
  - Given input and syntax-rules, determine if any rule is a match and transform it.
