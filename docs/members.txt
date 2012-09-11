@@ -43,23 +43,28 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("gensym", gensym)]
 
 {- "Pure" primitive functions -}
-primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
-primitives = [("+", numAdd),
-              ("-", numSub),
-              ("*", numMul),
-              ("/", numDiv),
-              ("modulo", numMod),
-              ("quotient", numericBinop quot),
-              ("remainder", numericBinop rem),
-              ("rationalize", numRationalize),
 
-              ("round", numRound),
-              ("floor", numFloor),
-              ("ceiling", numCeiling),
-              ("truncate", numTruncate),
+(+ n ...)
+This procedure returns the sum of its arguments.
+(- n1 n2 ...) 
+(- n ...) 
+This procedure returns the difference of its arguments, or with one argument, the additive inverse of that argument.
+(* n ...) 
+This procedure returns the product of its arguments.
+(/ n1 n2 ...) 
+(/ n ...) 
+This procedure returns the quotient of its arguments, or with one argument, the multiplicative inverse of that argument.
+(modulo n1 n2)
+(quotient n1 n2)
+(remainder n1 n2)
+(rationalize n)
 
-              ("numerator", numNumerator),
-              ("denominator", numDenominator),
+(round n)
+(floor n)
+(ceiling n)
+(truncate n)
+(numerator n)
+(denominator n)
 
               ("exp", numExp),
               ("log", numLog),
@@ -69,6 +74,14 @@ primitives = [("+", numAdd),
               ("asin", numAsin),
               ("acos", numAcos),
               ("atan", numAtan),
+(exp 
+(log 
+(sin 
+(cos 
+(tan 
+(asin 
+(acos 
+(atan 
 
               ("sqrt", numSqrt),
               ("expt", numExpt),
@@ -133,13 +146,20 @@ primitives = [("+", numAdd),
               ("vector-ref", vectorRef),
               ("vector->list", vectorToList),
               ("list->vector", listToVector),
-(vector?", unaryOp isVector),
-(make-vector", makeVector),
-(vector", buildVector),
-(vector-length", vectorLength),
-(vector-ref", vectorRef),
-(vector->list", vectorToList),
-(list->vector", listToVector),
+(vector? obj)
+(make-vector n)
+(make-vector n obj)
+Create a new vector of size n, optionally filled with many instances of obj.
+(vector obj ...)
+Create a vector consisting of the given objects.
+(vector-length vec)
+Returns the length of the given vector.
+(vector-ref vec n)
+Returns the object at position n of the given vector.
+(vector->list vec)
+Return a new list consisting of all the elements from vec.
+(list->vector lst)
+Convert the given list to a vector.
 
               ("make-hash-table", hashTblMake),
               ("hash-table?", isHashTbl),
