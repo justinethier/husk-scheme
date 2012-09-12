@@ -66,43 +66,43 @@ This procedure returns the quotient of its arguments, or with one argument, the 
 (numerator n)
 (denominator n)
 
-              ("exp", numExp),
-              ("log", numLog),
-              ("sin", numSin),
-              ("cos", numCos),
-              ("tan", numTan),
-              ("asin", numAsin),
-              ("acos", numAcos),
-              ("atan", numAtan),
-(exp 
-(log 
-(sin 
-(cos 
-(tan 
-(asin 
-(acos 
-(atan 
+(exp n) 
+(log n) 
+(sin n) 
+(cos n) 
+(tan n) 
+(asin n) 
+(acos n) 
+(atan n) 
 
-              ("sqrt", numSqrt),
-              ("expt", numExpt),
+(sqrt n)
+(expt n p)
+Compute the exponent of n to the power p.
 
-              ("make-rectangular", numMakeRectangular),
-              ("make-polar", numMakePolar),
-              ("real-part", numRealPart ),
-              ("imag-part", numImagPart),
-              ("magnitude", numMagnitude),
-              ("angle", numAngle ),
+(make-rectangular x y)
+(make-polar x y)
+(real-part n)
+(imag-part n)
+(magnitude n)
+(angle n)
 
-              ("exact->inexact", numExact2Inexact),
-              ("inexact->exact", numInexact2Exact),
+(exact->inexact n)
+(inexact->exact n)
 
-              ("number->string", num2String),
+(number->string n radix)
+(number->string n)
 
-              ("=", numBoolBinopEq),
-              (">", numBoolBinopGt),
-              (">=", numBoolBinopGte),
-              ("<", numBoolBinopLt),
-              ("<=", numBoolBinopLte),
+(= x1 x2 x3)
+(> x1 x2 x3)
+(>= x1 x2 x3)
+(< x1 x2 x3)
+(<= x1 x2 x3)
+
+(number? obj)
+(complex? obj)
+(real? obj)
+(rational? obj)
+(integer? obj)
 
               ("&&", boolBoolBinop (&&)),
               ("||", boolBoolBinop (||)),
@@ -117,27 +117,24 @@ This procedure returns the quotient of its arguments, or with one argument, the 
               ("string-ci<=?", stringCIBoolBinop (<=)),
               ("string-ci>=?", stringCIBoolBinop (>=)),
 
+lists
               ("car", car),
               ("cdr", cdr),
               ("cons", cons),
               ("eq?", eqv),
               ("eqv?", eqv),
               ("equal?", equal),
+(pair?", isDottedList),
+(list?", unaryOp isList),
+(null?", isNull),
+end lists
 
-              ("pair?", isDottedList),
-              ("procedure?", isProcedure),
-              ("number?", isNumber),
-              ("complex?", isComplex),
-              ("real?", isReal),
-              ("rational?", isRational),
-              ("integer?", isInteger),
-              ("list?", unaryOp isList),
-              ("null?", isNull),
-              ("eof-object?", isEOFObject),
-              ("symbol?", isSymbol),
-              ("symbol->string", symbol2String),
-              ("string->symbol", string2Symbol),
-              ("char?", isChar),
+(procedure?", isProcedure),
+(eof-object?", isEOFObject),
+(symbol?", isSymbol),
+(symbol->string", symbol2String),
+(string->symbol", string2Symbol),
+(char?", isChar),
 
               ("vector?", unaryOp isVector),
               ("make-vector", makeVector),
