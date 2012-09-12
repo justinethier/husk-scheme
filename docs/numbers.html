@@ -1,0 +1,126 @@
+---
+title: husk scheme
+menu: docs
+path: ../
+---
+{% include docs/header.html %}
+<div id="page">
+  <div id="content">
+  <h1 class="title">Numbers</h1>
+    <div>
+      <p>
+        TODO: numbers
+      </p>
+      <a href="#+">+</a>
+      <a href="#-">-</a>
+      <a href="#*">*</a>
+      <a href="#/">/</a>
+      <a href="#=">=</a>
+      <a href="#>">&gt;</a>
+      <a href="#>=">&gt;=</a>
+      <a href="#<">&lt;</a>
+      <a href="#<=">&lt;=</a>
+      <a href="#modulo">modulo</a>
+      <a href="#quotient">quotient</a>
+      <a href="#remainder">remainder</a>
+      <a href="#rationalize">rationalize</a>
+      <a href="#round">round</a>
+      <a href="#floor">floor</a>
+      <a href="#ceiling">ceiling</a>
+      <a href="#truncate">truncate</a>
+      <a href="#numerator">numerator</a>
+      <a href="#denominator">denominator</a>
+      <a href="#exp">exp</a>
+      <a href="#log">log</a>
+      <a href="#sin">sin</a>
+      <a href="#cos">cos</a>
+      <a href="#tan">tan</a>
+      <a href="#asin">asin</a>
+      <a href="#acos">acos</a>
+      <a href="#atan">atan</a>
+      <a href="#sqrt">sqrt</a>
+      <a href="#expt">expt</a>
+      <a href="#make-rectangular">make-rectangular</a>
+      <a href="#make-polar">make-polar</a>
+      <a href="#real-part">real-part</a>
+      <a href="#imag-part">imag-part</a>
+      <a href="#magnitude">magnitude</a>
+      <a href="#angle">angle</a>
+      <a href="#exact->inexact">exact->inexact</a>
+      <a href="#inexact->exact">inexact->exact</a>
+      <a href="#number->string">number->string</a>
+      <a href="#number->string">number->string</a>
+      <a href="#number?">number?</a>
+      <a href="#complex?">complex?</a>
+      <a href="#real?">real?</a>
+      <a href="#rational?">rational?</a>
+      <a href="#integer?">integer?</a>
+    </div>
+    <br />
+    {% scmdoc + "(+ n ...)" Function %}
+    This procedure returns the sum of its arguments.
+    {% endscmdoc %}
+<!--
+    { % scmdoc  "" Function % }
+(- n1 n2 ...) 
+(- n ...) 
+This procedure returns the difference of its arguments, or with one argument, the additive inverse of that argument.
+(* n ...) 
+This procedure returns the product of its arguments.
+(/ n1 n2 ...) 
+(/ n ...) 
+This procedure returns the quotient of its arguments, or with one argument, the multiplicative inverse of that argument.
+(= x1 x2 x3)
+(> x1 x2 x3)
+(>= x1 x2 x3)
+(< x1 x2 x3)
+(<= x1 x2 x3)
+(modulo n1 n2)
+(quotient n1 n2)
+(remainder n1 n2)
+(rationalize n)
+
+(round n)
+(floor n)
+(ceiling n)
+(truncate n)
+(numerator n)
+(denominator n)
+
+(exp n) 
+(log n) 
+(sin n) 
+(cos n) 
+(tan n) 
+(asin n) 
+(acos n) 
+(atan n) 
+
+(sqrt n)
+(expt n p)
+Compute the exponent of n to the power p.
+
+(make-rectangular x y)
+(make-polar x y)
+(real-part n)
+(imag-part n)
+(magnitude n)
+(angle n)
+
+(exact->inexact n)
+(inexact->exact n)
+
+(number->string n radix)
+(number->string n)
+
+
+(number? obj)
+(complex? obj)
+(real? obj)
+(rational? obj)
+(integer? obj)
+    -->
+  </div>
+  {% include docs/sidebar.html %}
+</div>
+{% include docs/footer.html %}

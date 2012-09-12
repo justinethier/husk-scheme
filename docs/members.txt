@@ -44,65 +44,6 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
 
 {- "Pure" primitive functions -}
 
-(+ n ...)
-This procedure returns the sum of its arguments.
-(- n1 n2 ...) 
-(- n ...) 
-This procedure returns the difference of its arguments, or with one argument, the additive inverse of that argument.
-(* n ...) 
-This procedure returns the product of its arguments.
-(/ n1 n2 ...) 
-(/ n ...) 
-This procedure returns the quotient of its arguments, or with one argument, the multiplicative inverse of that argument.
-(modulo n1 n2)
-(quotient n1 n2)
-(remainder n1 n2)
-(rationalize n)
-
-(round n)
-(floor n)
-(ceiling n)
-(truncate n)
-(numerator n)
-(denominator n)
-
-(exp n) 
-(log n) 
-(sin n) 
-(cos n) 
-(tan n) 
-(asin n) 
-(acos n) 
-(atan n) 
-
-(sqrt n)
-(expt n p)
-Compute the exponent of n to the power p.
-
-(make-rectangular x y)
-(make-polar x y)
-(real-part n)
-(imag-part n)
-(magnitude n)
-(angle n)
-
-(exact->inexact n)
-(inexact->exact n)
-
-(number->string n radix)
-(number->string n)
-
-(= x1 x2 x3)
-(> x1 x2 x3)
-(>= x1 x2 x3)
-(< x1 x2 x3)
-(<= x1 x2 x3)
-
-(number? obj)
-(complex? obj)
-(real? obj)
-(rational? obj)
-(integer? obj)
 
               ("&&", boolBoolBinop (&&)),
               ("||", boolBoolBinop (||)),
