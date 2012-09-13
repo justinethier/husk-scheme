@@ -1,0 +1,61 @@
+---
+title: husk scheme
+menu: docs
+path: ../
+---
+{% include docs/header.html %}
+<div id="page">
+  <div id="content">
+  <h1 class="title">Vectors</h1>
+    <div>
+      <p>
+        vectors...
+      </p>
+  
+      <a href="#not">not</a>
+      <a href="#boolean?">boolean?</a>
+
+              ("vector?", unaryOp isVector),
+              ("make-vector", makeVector),
+              ("vector", buildVector),
+              ("vector-length", vectorLength),
+              ("vector-ref", vectorRef),
+              ("vector->list", vectorToList),
+              ("list->vector", listToVector),
+(vector? obj)
+(make-vector n)
+(make-vector n obj)
+Create a new vector of size n, optionally filled with many instances of obj.
+(vector obj ...)
+Create a vector consisting of the given objects.
+(vector-length vec)
+Returns the length of the given vector.
+(vector-ref vec n)
+Returns the object at position n of the given vector.
+(vector->list vec)
+Return a new list consisting of all the elements from vec.
+(list->vector lst)
+Convert the given list to a vector.
+
+    </div>
+    <br />
+    {% scmdoc not "(not obj)" Function %}
+        not returns #t if obj is false, and #f otherwise.
+
+        {% highlight scheme %}
+(not #t)          ===>  #f
+(not 3)           ===>  #f
+(not (list 3))    ===>  #f
+(not '())         ===>  #f
+(not (list))      ===>  #f
+(not 'nil)        ===>  #f
+        {% endhighlight %}
+    {% endscmdoc %}
+    {% scmdoc boolean? "(boolean? obj)" Function %}
+        boolean? is a predicate that returns #t if obj is 
+        a boolean (#t or #f), and #f otherwise.
+    {% endscmdoc %}
+  </div>
+  {% include docs/sidebar.html %}
+</div>
+{% include docs/footer.html %}
