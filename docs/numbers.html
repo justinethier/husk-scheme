@@ -16,10 +16,10 @@ path: ../
       <a href="#*">*</a>
       <a href="#/">/</a>
       <a href="#=">=</a>
-      <a href="#>">&gt;</a>
-      <a href="#>=">&gt;=</a>
-      <a href="#<">&lt;</a>
-      <a href="#<=">&lt;=</a>
+      <a href="#gt">&gt;</a>
+      <a href="#lt=">&gt;=</a>
+      <a href="#gt">&lt;</a>
+      <a href="#lt=">&lt;=</a>
       <a href="#modulo">modulo</a>
       <a href="#quotient">quotient</a>
       <a href="#remainder">remainder</a>
@@ -60,66 +60,97 @@ path: ../
     {% scmdoc + "(+ n ...)" Function %}
     This procedure returns the sum of its arguments.
     {% endscmdoc %}
-<!--
-    { % scmdoc  "" Function % }
-(- n1 n2 ...) 
-(- n ...) 
-This procedure returns the difference of its arguments, or with one argument, the additive inverse of that argument.
-(* n ...) 
-This procedure returns the product of its arguments.
-(/ n1 n2 ...) 
-(/ n ...) 
-This procedure returns the quotient of its arguments, or with one argument, the multiplicative inverse of that argument.
-(= x1 x2 x3)
-(> x1 x2 x3)
-(>= x1 x2 x3)
-(< x1 x2 x3)
-(<= x1 x2 x3)
-(modulo n1 n2)
-(quotient n1 n2)
-(remainder n1 n2)
-(rationalize n)
-
-(round n)
-(floor n)
-(ceiling n)
-(truncate n)
-(numerator n)
-(denominator n)
-
-(exp n) 
-(log n) 
-(sin n) 
-(cos n) 
-(tan n) 
-(asin n) 
-(acos n) 
-(atan n) 
-
-(sqrt n)
-(expt n p)
-Compute the exponent of n to the power p.
-
-(make-rectangular x y)
-(make-polar x y)
-(real-part n)
-(imag-part n)
-(magnitude n)
-(angle n)
-
-(exact->inexact n)
-(inexact->exact n)
-
-(number->string n radix)
-(number->string n)
-
-
-(number? obj)
-(complex? obj)
-(real? obj)
-(rational? obj)
-(integer? obj)
-    -->
+    {% scmdoc -  "(- n1 n2 ...)" Function %}
+      <div><strong>(- n ...)</strong></div>
+      This procedure returns the difference of its arguments, or with one argument, the additive inverse of that argument.
+    {% endscmdoc %}
+    {% scmdoc *  "(* n ...)" Function %}
+      This procedure returns the product of its arguments.
+    {% endscmdoc %}
+    {% scmdoc /  "(/ n1 n2 ...)" Function %}
+      <div><strong>(/ n ...)</strong></div>
+      This procedure returns the quotient of its arguments, or with one argument, the multiplicative inverse of that argument.
+    {% endscmdoc %}
+    {% scmdoc = "(= x1 x2 x3)" Function %}
+    {% endscmdoc %}
+    {% scmdoc gt  "(&gt; x1 x2 x3)" Function %}
+    {% endscmdoc %}
+    {% scmdoc gt=  "(&gt;= x1 x2 x3)" Function %}
+    {% endscmdoc %}
+    {% scmdoc lt  "(&lt; x1 x2 x3)" Function %}
+    {% endscmdoc %}
+    {% scmdoc lt= "(&lt;= x1 x2 x3)" Function %}
+    {% endscmdoc %}
+    {% scmdoc modulo "(modulo n1 n2)" Function %}
+    {% endscmdoc %}
+    {% scmdoc quotient "(quotient n1 n2)" Function %}
+    {% endscmdoc %}
+    {% scmdoc remainder "(remainder n1 n2)" Function %}
+    {% endscmdoc %}
+    {% scmdoc rationalize "(rationalize n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc round "(round n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc floor "(floor n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc ceiling "(ceiling n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc truncate "(truncate n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc numerator "(numerator n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc denominator "(denominator n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc exp "(exp n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc log "(log n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc sin "(sin n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc cos "(cos n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc tan "(tan n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc asin "(asin n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc acos "(acos n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc atan "(atan n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc sqrt "(sqrt n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc expt "(expt n p)" Function %}
+        Compute the exponent of n to the power p.
+    {% endscmdoc %}
+    {% scmdoc make-rectangular "(make-rectangular x y)" Function %}
+    {% endscmdoc %}
+    {% scmdoc make-polar "(make-polar x y)" Function %}
+    {% endscmdoc %}
+    {% scmdoc real-part "(real-part n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc imag-part "(imag-part n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc magnitude "(magnitude n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc angle "(angle n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc exact->inexact "(exact->inexact n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc  inexact->exact "(inexact->exact n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc  number->string "(number->string n radix)" Function %}
+      <div><strong>(number->string n)</strong></div>
+    {% endscmdoc %}
+    {% scmdoc number? "(number? obj)" Function %}
+    {% endscmdoc %}
+    {% scmdoc complex?  "(complex? obj)" Function %}
+    {% endscmdoc %}
+    {% scmdoc real? "(real? obj)" Function %}
+    {% endscmdoc %}
+    {% scmdoc rational? "(rational? obj)" Function %}
+    {% endscmdoc %}
+    {% scmdoc integer? "(integer? obj)" Function %}
+    {% endscmdoc %}
   </div>
   {% include docs/sidebar.html %}
 </div>
