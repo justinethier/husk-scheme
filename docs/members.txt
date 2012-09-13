@@ -47,28 +47,6 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
 
               ("&&", boolBoolBinop (&&)),
               ("||", boolBoolBinop (||)),
-              ("string=?", strBoolBinop (==)),
-              ("string<?", strBoolBinop (<)),
-              ("string>?", strBoolBinop (>)),
-              ("string<=?", strBoolBinop (<=)),
-              ("string>=?", strBoolBinop (>=)),
-              ("string-ci=?", stringCIEquals),
-              ("string-ci<?", stringCIBoolBinop (<)),
-              ("string-ci>?", stringCIBoolBinop (>)),
-              ("string-ci<=?", stringCIBoolBinop (<=)),
-              ("string-ci>=?", stringCIBoolBinop (>=)),
-
-lists
-              ("car", car),
-              ("cdr", cdr),
-              ("cons", cons),
-              ("eq?", eqv),
-              ("eqv?", eqv),
-              ("equal?", equal),
-(pair?", isDottedList),
-(list?", unaryOp isList),
-(null?", isNull),
-end lists
 
 (procedure?", isProcedure),
 (eof-object?", isEOFObject),
@@ -77,27 +55,6 @@ end lists
 (string->symbol", string2Symbol),
 (char?", isChar),
 
-              ("vector?", unaryOp isVector),
-              ("make-vector", makeVector),
-              ("vector", buildVector),
-              ("vector-length", vectorLength),
-              ("vector-ref", vectorRef),
-              ("vector->list", vectorToList),
-              ("list->vector", listToVector),
-(vector? obj)
-(make-vector n)
-(make-vector n obj)
-Create a new vector of size n, optionally filled with many instances of obj.
-(vector obj ...)
-Create a vector consisting of the given objects.
-(vector-length vec)
-Returns the length of the given vector.
-(vector-ref vec n)
-Returns the object at position n of the given vector.
-(vector->list vec)
-Return a new list consisting of all the elements from vec.
-(list->vector lst)
-Convert the given list to a vector.
 
               ("make-hash-table", hashTblMake),
               ("hash-table?", isHashTbl),

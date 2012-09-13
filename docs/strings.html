@@ -23,6 +23,18 @@ path: ../
       <a href="#list->string">list->string</a>
       <a href="#string-copy">string-copy</a>
       <a href="#string?">string?</a>
+
+("string=?", strBoolBinop (==)),
+("string<?", strBoolBinop (<)),
+("string>?", strBoolBinop (>)),
+("string<=?", strBoolBinop (<=)),
+("string>=?", strBoolBinop (>=)),
+("string-ci=?", stringCIEquals),
+("string-ci<?", stringCIBoolBinop (<)),
+("string-ci>?", stringCIBoolBinop (>)),
+("string-ci<=?", stringCIBoolBinop (<=)),
+("string-ci>=?", stringCIBoolBinop (>=)),
+
     </div>
     <br />
     {% scmdoc string "(string char ...)" Function %}
