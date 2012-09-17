@@ -1,59 +1,27 @@
 
+Exec section??
 evalFunctions =  [  ("apply", evalfuncApply)
                   , ("call-with-current-continuation", evalfuncCallCC)
                   , ("call-with-values", evalfuncCallWValues)
                   , ("dynamic-wind", evalfuncDynamicWind)
                   , ("eval", evalfuncEval)
-                  , ("load", evalfuncLoad)
+                  , ("exit-fail", evalfuncExitFail)
+                  , ("exit-success", evalfuncExitSuccess)
+
+FFI section?
                -- Non-standard extensions
 #ifdef UseFfi
                   , ("load-ffi", Language.Scheme.FFI.evalfuncLoadFFI)
 #endif
-                  , ("exit-fail", evalfuncExitFail)
-                  , ("exit-success", evalfuncExitSuccess)
                 ]
-{- I/O primitives
-Primitive functions that execute within the IO monad -}
-ioPrimitives = [("open-input-file", makePort ReadMode),
-                ("open-output-file", makePort WriteMode),
-                ("close-input-port", closePort),
-                ("close-output-port", closePort),
-                ("input-port?", isInputPort),
-                ("output-port?", isOutputPort),
-                ("char-ready?", isCharReady),
-
-                ("current-input-port", currentInputPort),
-                ("current-output-port", currentOutputPort),
-                ("read", readProc),
-                ("read-char", readCharProc hGetChar),
-                ("peek-char", readCharProc hLookAhead),
-                ("write", writeProc (\ port obj -> hPrint port obj)),
-                ("write-char", writeCharProc),
-                ("display", writeProc (\ port obj -> case obj of
-                                                        String str -> hPutStr port str
-                                                        _ -> hPutStr port $ show obj)),
-
-                -- From SRFI 96
-                ("file-exists?", fileExists),
-                ("delete-file", deleteFile),
-
-                -- Other I/O functions
-                ("read-contents", readContents),
-                ("read-all", readAll),
-                ("gensym", gensym)]
-
-{- "Pure" primitive functions -}
-
 
               ("&&", boolBoolBinop (&&)),
               ("||", boolBoolBinop (||)),
 
 (procedure?", isProcedure),
-(eof-object?", isEOFObject),
 (symbol?", isSymbol),
 (symbol->string", symbol2String),
 (string->symbol", string2Symbol),
-(char?", isChar),
 
 
               ("make-hash-table", hashTblMake),
@@ -68,3 +36,4 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
 
 
 TODO: stdlib.scm, and srfi's              
+TODO: special forms

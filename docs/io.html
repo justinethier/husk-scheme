@@ -6,12 +6,43 @@ path: ../
 {% include docs/header.html %}
 <div id="page">
   <div id="content">
-  <h1 class="title">Booleans</h1>
+  <h1 class="title">Input/Output</h1>
     <div>
       <p>
-        Strings are sequences of characters enclosed in double quotes (").
+        TODO
       </p>
-  
+<!-- 
+ioPrimitives = [("open-input-file", makePort ReadMode),
+                ("open-output-file", makePort WriteMode),
+                ("close-input-port", closePort),
+                ("close-output-port", closePort),
+                ("input-port?", isInputPort),
+                ("output-port?", isOutputPort),
+                ("char-ready?", isCharReady),
+
+(eof-object?", isEOFObject),
+                  , ("load", evalfuncLoad)
+                ("current-input-port", currentInputPort),
+                ("current-output-port", currentOutputPort),
+                ("read", readProc),
+                ("read-char", readCharProc hGetChar),
+                ("peek-char", readCharProc hLookAhead),
+                ("write", writeProc (\ port obj -> hPrint port obj)),
+                ("write-char", writeCharProc),
+                ("display", writeProc (\ port obj -> case obj of
+                                                        String str -> hPutStr port str
+                                                        _ -> hPutStr port $ show obj)),
+
+                -- From SRFI 96
+                ("file-exists?", fileExists),
+                ("delete-file", deleteFile),
+
+                -- Other I/O functions
+                ("read-contents", readContents),
+                ("read-all", readAll),
+TODO: not sure where this belongs:                ("gensym", gensym)]
+
+-->
       <a href="#not">not</a>
       <a href="#boolean?">boolean?</a>
     </div>
