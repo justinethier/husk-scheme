@@ -9,7 +9,22 @@ path: ../
   <h1 class="title">Strings</h1>
     <div>
       <p>
-        Strings are sequences of characters enclosed in double quotes (").
+        Strings are sequences of characters. Strings are written as sequences of characters enclosed within doublequotes ("). A doublequote can be written inside a string only by escaping it with a backslash (\), as in
+      </p>
+      <p>
+        "The word \"recursion\" has many meanings."
+      </p>
+      <p>
+        A backslash can be written inside a string only by escaping it with another backslash. Scheme does not specify the effect of a backslash within a string that is not followed by a doublequote or backslash.
+      </p>
+      <p>
+        A string constant may continue from one line to the next, but the exact contents of such a string are unspecified. The length of a string is the number of characters that it contains. This number is an exact, non-negative integer that is fixed when the string is created. The valid indexes of a string are the exact non-negative integers less than the length of the string. The first character of a string has index 0, the second has index 1, and so on.
+      </p>
+      <p>
+        In phrases such as ``the characters of string beginning with index start and ending with index end,'' it is understood that the index start is inclusive and the index end is exclusive. Thus if start and end are the same index, a null substring is referred to, and if start is zero and end is the length of string, then the entire string is referred to.
+      </p>
+      <p>
+        Some of the procedures that operate on strings ignore the difference between upper and lower case. The versions that ignore case have ``-ci'' (for ``case insensitive'') embedded in their names.
       </p>
   
       <a href="#string">string</a>

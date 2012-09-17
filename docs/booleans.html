@@ -9,7 +9,22 @@ path: ../
   <h1 class="title">Booleans</h1>
     <div>
       <p>
-        There are two boolean values, #t for true and #f for false.
+        The standard boolean objects for true and false are written as #t and #f. What really matters, though, are the objects that the Scheme conditional expressions (if, cond, and, or, do) treat as true or false. The phrase ``a true value'' (or sometimes just ``true'') means any object treated as true by the conditional expressions, and the phrase ``a false value'' (or ``false'') means any object treated as false by the conditional expressions.
+      </p>
+      <p>
+        Of all the standard Scheme values, only #f counts as false in conditional expressions. Except for #f, all standard Scheme values, including #t, pairs, the empty list, symbols, numbers, strings, vectors, and procedures, count as true.
+      <p>
+        Note:   Programmers accustomed to other dialects of Lisp should be aware that Scheme distinguishes both #f and the empty list from the symbol nil.
+     </p>
+     <p>
+        Boolean constants evaluate to themselves, so they do not need to be quoted in programs.
+     </p>
+
+{% highlight scheme %}
+#t                 ===>  #t
+#f                ===>  #f
+'#f               ===>  #f
+{% endhighlight %}
       </p>
   
       <a href="#not">not</a>
