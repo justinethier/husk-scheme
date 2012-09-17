@@ -11,3 +11,7 @@
 .member label {
     float: right;    
 }
+
+#sidebar div div {
+  margin-left: 10px;
+}
