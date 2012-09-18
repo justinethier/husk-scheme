@@ -39,16 +39,16 @@ path: ../
       <a href="#string-copy">string-copy</a>
       <a href="#string?">string?</a>
 
-("string=?", strBoolBinop (==)),
-("string<?", strBoolBinop (<)),
-("string>?", strBoolBinop (>)),
-("string<=?", strBoolBinop (<=)),
-("string>=?", strBoolBinop (>=)),
-("string-ci=?", stringCIEquals),
-("string-ci<?", stringCIBoolBinop (<)),
-("string-ci>?", stringCIBoolBinop (>)),
-("string-ci<=?", stringCIBoolBinop (<=)),
-("string-ci>=?", stringCIBoolBinop (>=)),
+      <a href="#string=?">string=?</a>
+      <a href="#string=?">string-ci=?</a>
+      <a href="#string=lt?">string&lt;?</a>
+      <a href="#string=lt?">string&gt;?</a>
+      <a href="#string=lt?">string&lt;=?</a>
+      <a href="#string=lt?">string&gt;=?</a>
+      <a href="#string=lt?">string-ci&lt;?</a>
+      <a href="#string=lt?">string-ci&gt;?</a>
+      <a href="#string=lt?">string-ci&lt;=?</a>
+      <a href="#string=lt?">string-ci&gt;=?</a>
 
     </div>
     <br />
@@ -86,6 +86,19 @@ path: ../
     {% endscmdoc %}
     {% scmdoc string? "(string obj?)" Function %}
       String? returns #t if obj is a string, and #f otherwise.
+    {% endscmdoc %}
+    {% scmdoc string=? "(string=? string1 string2)" Function %}
+      <div><strong>(string-ci=? string1 string2)</strong></div>
+    {% endscmdoc %}
+    {% scmdoc string=lt? "(string&lt;? string1 string2)" Function %}
+      <div><strong>(string-ci=? string1 string2)</strong></div>
+      <div><strong>(string&gt;? string1 string2)</strong></div>
+      <div><strong>(string&lt;=? string1 string2)</strong></div>
+      <div><strong>(string&gt;=? string1 string2)</strong></div>
+      <div><strong>(string-ci&lt;? string1 string2)</strong></div>
+      <div><strong>(string-ci&gt;? string1 string2)</strong></div>
+      <div><strong>(string-ci&lt;=? string1 string2)</strong></div>
+      <div><strong>(string-ci&gt;=? string1 string2)</strong></div>
     {% endscmdoc %}
   </div>
   {% include docs/sidebar.html %}
