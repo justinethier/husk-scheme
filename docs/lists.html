@@ -9,9 +9,89 @@ path: ../
   <h1 class="title">Pairs and Lists</h1>
     <div>
       <p>
-        Pair and lists ...
+      A pair (sometimes called a dotted pair) is a record structure with two fields called the car and cdr fields (for historical reasons). Pairs are created by the procedure cons. The car and cdr fields are accessed by the procedures car and cdr. The car and cdr fields are assigned by the procedures set-car! and set-cdr!.
+      </p>
+      <p>
+      Pairs are used primarily to represent lists. A list can be defined recursively as either the empty list or a pair whose cdr is a list. More precisely, the set of lists is defined as the smallest set X such that
+    <ul>
+      <li>The empty list is in X.</li>
+      <li>If list is in X, then any pair whose cdr field contains list is also in X.</li>
+    </ul>
+    </p>
+    <p>
+      The objects in the car fields of successive pairs of a list are the elements of the list. For example, a two-element list is a pair whose car is the first element and whose cdr is a pair whose car is the second element and whose cdr is the empty list. The length of a list is the number of elements, which is the same as the number of pairs.
+    </p>
+    <p>
+      The empty list is a special object of its own type (it is not a pair); it has no elements and its length is zero.
+    </p>
+    <p>
+      Note:   The above definitions imply that all lists have finite length and are terminated by the empty list.
+    </p>
+    <p>
+      The most general notation (external representation) for Scheme pairs is the ``dotted'' notation (c1 . c2) where c1 is the value of the car field and c2 is the value of the cdr field. For example (4 . 5) is a pair whose car is 4 and whose cdr is 5. Note that (4 . 5) is the external representation of a pair, not an expression that evaluates to a pair.
+    </p>
+    <p>
+      A more streamlined notation can be used for lists: the elements of the list are simply enclosed in parentheses and separated by spaces. The empty list is written () . For example,
+
+{% highlight scheme %}
+      (a b c d e)
+{% endhighlight %}
+
+      and
+
+{% highlight scheme %}
+      (a . (b . (c . (d . (e . ())))))
+{% endhighlight %}
+
+      are equivalent notations for a list of symbols.
+    </p>
+    <p>
+      A chain of pairs not ending in the empty list is called an improper list. Note that an improper list is not a list. The list and dotted notations can be combined to represent improper lists:
+
+{% highlight scheme %}
+      (a b c . d)
+{% endhighlight %}
+
+      is equivalent to
+
+{% highlight scheme %}
+      (a . (b . (c . d)))
+{% endhighlight %}
+
+      Whether a given pair is a list depends upon what is stored in the cdr field. When the set-cdr! procedure is used, an object can be a list one moment and not the next:
+
+
+{% highlight scheme %}
+      (define x (list 'a 'b 'c))
+      (define y x)
+      y                               ===>  (a b c)
+      (list? y)                       ===>  #t
+      (set-cdr! x 4)                  ===>  unspecified
+      x                               ===>  (a . 4)
+      (eqv? x y)                      ===>  #t
+      y                               ===>  (a . 4)
+      (list? y)                       ===>  #f
+      (set-cdr! x x)                  ===>  unspecified
+      (list? x)                       ===>  #f
+{% endhighlight %}
+
+    </p>
+    <p>
+      Within literal expressions and representations of objects read by the read procedure, the forms '<datum>, `<datum>, ,<datum>, and ,@<datum> denote two-element lists whose first elements are the symbols quote, quasiquote, unquote, and unquote-splicing, respectively. The second element in each case is <datum>. This convention is supported so that arbitrary Scheme programs may be represented as lists. That is, according to Scheme's grammar, every <expression> is also a <datum>. Among other things, this permits the use of the read procedure to parse Scheme programs.
       </p>
   
+      <a href="#car">car</a>
+      <a href="#cdr">cdr</a>
+      <a href="#cons">cons</a>
+      <a href="#eq?">eq?</a>
+      <a href="#eqv?">eqv?</a>
+      <a href="#equal?">equal?</a>
+      <a href="#pair?">pair?</a>
+      <a href="#list?">list?</a>
+      <a href="#null?">null?</a>
+    </div>
+    <br />
+    <!--
 ("car", car),
 ("cdr", cdr),
 ("cons", cons),
@@ -21,27 +101,6 @@ path: ../
 (pair?", isDottedList),
 (list?", unaryOp isList),
 (null?", isNull),
-      <a href="#not">not</a>
-      <a href="#boolean?">boolean?</a>
-    </div>
-    <br />
-    <!--
-    <div id="not" class="member"> 
-        <div>
-          <label>Function</label>
-          <strong>(not obj)</strong>
-        </div>
-        Not returns #t if obj is false, and #f otherwise.
-
-        {% highlight scheme %}
-(not #t)          ===>  #f
-(not 3)           ===>  #f
-(not (list 3))    ===>  #f
-(not '())         ===>  #f
-(not (list))      ===>  #f
-(not 'nil)        ===>  #f
-        {% endhighlight %}
-    </div>
     -->
   </div>
   {% include docs/sidebar.html %}
