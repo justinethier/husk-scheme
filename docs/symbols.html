@@ -1,0 +1,38 @@
+---
+title: husk scheme
+menu: docs
+path: ../
+---
+{% include docs/header.html %}
+<div id="page">
+  <div id="content">
+  <h1 class="title">Strings</h1>
+    <div>
+      <p>
+        Symbols are objects whose usefulness rests on the fact that two symbols are identical (in the sense of eqv?) if and only if their names are spelled the same way. This is exactly the property needed to represent identifiers in programs, and so most implementations of Scheme use them internally for that purpose. Symbols are useful for many other applications; for instance, they may be used the way enumerated values are used in Pascal.
+      </p>
+      <p>
+        The rules for writing a symbol are exactly the same as the rules for writing an identifier; see sections 2.1 and 7.1.1.
+      </p>
+      <p>
+        It is guaranteed that any symbol that has been returned as part of a literal expression, or read using the read procedure, and subsequently written out using the write procedure, will read back in as the identical symbol (in the sense of eqv?). The string->symbol procedure, however, can create symbols for which this write/read invariance may not hold because their names contain special characters or letters in the non-standard case.
+      </p>
+  
+      <a href="#symbol?">symbol?</a>
+      <a href="#symbol->string">symbol->string</a>
+      <a href="#string->symbol">string->symbol</a>
+    </div>
+    <br />
+    {% scmdoc symbol? "(symbol? obj)" Function %}
+    Returns #t if obj is a symbol, otherwise returns #f.
+    {% endscmdoc %}
+    {% scmdoc symbol->string "(symbol->string symbol)" Function %}
+    Returns the name of symbol as a string. 
+    {% endscmdoc %}
+    {% scmdoc string->symbol "(string->symbol string)" Function %}
+    Returns the symbol whose name is string.
+    {% endscmdoc %}
+  </div>
+  {% include docs/sidebar.html %}
+</div>
+{% include docs/footer.html %}

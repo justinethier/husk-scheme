@@ -19,9 +19,6 @@ FFI section?
               ("||", boolBoolBinop (||)),
 
 (procedure?", isProcedure),
-(symbol?", isSymbol),
-(symbol->string", symbol2String),
-(string->symbol", string2Symbol),
 
 
               ("make-hash-table", hashTblMake),
