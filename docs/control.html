@@ -1,0 +1,40 @@
+---
+title: husk scheme
+menu: docs
+path: ../
+---
+{% include docs/header.html %}
+<div id="page">
+  <div id="content">
+  <h1 class="title">Control Features</h1>
+    <div>
+      <p>
+      This chapter describes various primitive procedures which control the flow of program execution in special ways.
+      </p>
+
+      <a href="#procedure?">procedure?</a>
+      <a href="#apply">apply</a>
+      <a href="#call-with-current-continuation">call-with-current-continuation"</a>
+      <a href="#call-with-values">call-with-values</a>
+      <a href="#dynamic-wind">dynamic-wind</a>
+      <a href="#eval">eval</a>
+      <a href="#exit-fail">exit-fail</a>
+      <a href="#exit-success">exit-success</a>
+    </div>
+    <br />
+    {% scmdoc procedure? "(procedure? obj)" Function %}
+    Returns #t if obj is a procedure (function), otherwise returns #f.
+    {% endscmdoc %}
+
+apply", evalfuncApply)
+call-with-current-continuation", evalfuncCallCC)
+call-with-values", evalfuncCallWValues)
+dynamic-wind", evalfuncDynamicWind)
+eval", evalfuncEval)
+exit-fail", evalfuncExitFail)
+exit-success", evalfuncExitSuccess)
+
+  </div>
+  {% include docs/sidebar.html %}
+</div>
+{% include docs/footer.html %}

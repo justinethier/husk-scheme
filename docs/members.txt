@@ -1,12 +1,5 @@
 
 Exec section??
-evalFunctions =  [  ("apply", evalfuncApply)
-                  , ("call-with-current-continuation", evalfuncCallCC)
-                  , ("call-with-values", evalfuncCallWValues)
-                  , ("dynamic-wind", evalfuncDynamicWind)
-                  , ("eval", evalfuncEval)
-                  , ("exit-fail", evalfuncExitFail)
-                  , ("exit-success", evalfuncExitSuccess)
 
 FFI section?
                -- Non-standard extensions
@@ -15,21 +8,6 @@ FFI section?
 #endif
                 ]
 
-              ("&&", boolBoolBinop (&&)),
-              ("||", boolBoolBinop (||)),
-
-(procedure?", isProcedure),
-
-
-              ("make-hash-table", hashTblMake),
-              ("hash-table?", isHashTbl),
-              ("hash-table-exists?", hashTblExists),
-              ("hash-table-ref", hashTblRef),
-              ("hash-table-size", hashTblSize),
-              ("hash-table->alist", hashTbl2List),
-              ("hash-table-keys", hashTblKeys),
-              ("hash-table-values", hashTblValues),
-              ("hash-table-copy", hashTblCopy),
 
 
 TODO: stdlib.scm, and srfi's              

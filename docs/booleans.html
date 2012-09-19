@@ -29,6 +29,8 @@ path: ../
   
       <a href="#not">not</a>
       <a href="#boolean?">boolean?</a>
+      <a href="#logical-and">&&</a>
+      <a href="#logical-or">||</a>
     </div>
     <br />
     {% scmdoc not "(not obj)" Function %}
@@ -46,6 +48,16 @@ path: ../
     {% scmdoc boolean? "(boolean? obj)" Function %}
         boolean? is a predicate that returns #t if obj is 
         a boolean (#t or #f), and #f otherwise.
+    {% endscmdoc %}
+    {% scmdoc logical-and "(&& boolean<sub>1</sub> boolean<sub>2</sub>)" Function %}
+        The logical and function returns #t if both boolean arguments are #t, and #f otherwise.
+
+        This function is not part of standard R<sup>5</sup>RS scheme, and provides an alternative to the <code>and</code> macro.
+    {% endscmdoc %}
+    {% scmdoc logical-or "(|| boolean<sub>1</sub> boolean<sub>2</sub>)" Function %}
+        The logical or function returns #t if at least one of the boolean arguments is #t, and #f otherwise.
+
+        This function is not part of standard R<sup>5</sup>RS scheme, and provides an alternative to the <code>or</code> macro.
     {% endscmdoc %}
   </div>
   {% include docs/sidebar.html %}
