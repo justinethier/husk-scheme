@@ -1,14 +1,4 @@
 
-Exec section??
-
-FFI section?
-               -- Non-standard extensions
-#ifdef UseFfi
-                  , ("load-ffi", Language.Scheme.FFI.evalfuncLoadFFI)
-#endif
-                ]
-
-
 
 TODO: stdlib.scm, and srfi's              
 TODO: special forms
