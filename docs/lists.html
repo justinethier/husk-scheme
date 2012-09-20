@@ -83,6 +83,37 @@ path: ../
       <a href="#car">car</a>
       <a href="#cdr">cdr</a>
       <a href="#cons">cons</a>
+      <a href="#list">list</a>
+      <a href="#length">length</a>
+      <a href="#reverse">reverse</a>
+      <a href="#caar">caar</a>
+      <a href="#cadr">cadr</a>
+      <a href="#cadr">cdar</a>
+      <a href="#cadr">cddr</a>
+      <a href="#cadr">caaar</a>
+      <a href="#cadr">caadr</a>
+      <a href="#cadr">cadar</a>
+      <a href="#cadr">caddr</a>
+      <a href="#cadr">cdaar</a>
+      <a href="#cadr">cdadr</a>
+      <a href="#cadr">cddar</a>
+      <a href="#cadr">cdddr</a>
+      <a href="#cadr">caaaar</a>
+      <a href="#cadr">caaadr</a>
+      <a href="#cadr">caadar</a>
+      <a href="#cadr">caaddr</a>
+      <a href="#cadr">cadaar</a>
+      <a href="#cadr">cadadr</a>
+      <a href="#cadr">caddar</a>
+      <a href="#cadr">cadddr</a>
+      <a href="#cadr">cdaaar</a>
+      <a href="#cadr">cdaadr</a>
+      <a href="#cadr">cdadar</a>
+      <a href="#cadr">cdaddr</a>
+      <a href="#cadr">cddaar</a>
+      <a href="#cadr">cddadr</a>
+      <a href="#cadr">cdddar</a>
+      <a href="#cadr">cddddr</a>
       <a href="#eq?">eq?</a>
       <a href="#eqv?">eqv?</a>
       <a href="#equal?">equal?</a>
@@ -95,13 +126,31 @@ path: ../
 ("car", car),
 ("cdr", cdr),
 ("cons", cons),
+    -->
+    {% scmdoc list "(list . objs)" Function %}
+    {% endscmdoc %}
+
+    {% scmdoc todo "(todo)" Function %}
+    {% endscmdoc %}
+
+    {% scmdoc cadr "(caar pair)" Function %}
+      <div><strong>(cadr pair)</strong></div>
+      <div><strong>...</strong></div>
+      <div><strong>(cdddar pair)</strong></div>
+      <div><strong>(cddddr pair)</strong></div>
+    {% endscmdoc %}
+    {% scmdoc length "(length list)" Function %}
+    {% endscmdoc %}
+    {% scmdoc reverse "(reverse list)" Function %}
+    {% endscmdoc %}
+<!--
 ("eq?", eqv),
 ("eqv?", eqv),
 ("equal?", equal),
 (pair?", isDottedList),
 (list?", unaryOp isList),
 (null?", isNull),
-    -->
+-->
   </div>
   {% include docs/sidebar.html %}
 </div>

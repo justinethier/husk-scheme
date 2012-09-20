@@ -15,11 +15,15 @@ path: ../
       <a href="#procedure?">procedure?</a>
       <a href="#apply">apply</a>
       <a href="#call-with-current-continuation">call-with-current-continuation"</a>
+      <a href="#call/cc">call/cc"</a>
       <a href="#call-with-values">call-with-values</a>
       <a href="#dynamic-wind">dynamic-wind</a>
       <a href="#eval">eval</a>
       <a href="#exit-fail">exit-fail</a>
       <a href="#exit-success">exit-success</a>
+
+      <a href="#for-each">for-each</a>
+      <a href="#map">map</a>
     </div>
     <br />
     {% scmdoc procedure? "(procedure? obj)" Function %}
@@ -28,11 +32,15 @@ path: ../
 
 apply", evalfuncApply)
 call-with-current-continuation", evalfuncCallCC)
+call/cc
 call-with-values", evalfuncCallWValues)
 dynamic-wind", evalfuncDynamicWind)
 eval", evalfuncEval)
 exit-fail", evalfuncExitFail)
 exit-success", evalfuncExitSuccess)
+
+(for-each func lst) 
+(map func lst)
 
   </div>
   {% include docs/sidebar.html %}

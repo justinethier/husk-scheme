@@ -30,6 +30,11 @@ path: ../
       <a href="#truncate">truncate</a>
       <a href="#numerator">numerator</a>
       <a href="#denominator">denominator</a>
+      <a href="#sum">sum</a>
+      <a href="#product">product</a>
+      <a href="#abs">abs</a>
+      <a href="#max">max</a>
+      <a href="#min">min</a>
       <a href="#exp">exp</a>
       <a href="#log">log</a>
       <a href="#sin">sin</a>
@@ -55,6 +60,11 @@ path: ../
       <a href="#real?">real?</a>
       <a href="#rational?">rational?</a>
       <a href="#integer?">integer?</a>
+      <a href="#zero?">zero?</a>
+      <a href="#positive?">positive?</a>
+      <a href="#negative?">negative?</a>
+      <a href="#odd?">odd?</a>
+      <a href="#even?">even?</a>
     </div>
     <br />
     {% scmdoc + "(+ n ...)" Function %}
@@ -100,6 +110,16 @@ path: ../
     {% scmdoc numerator "(numerator n)" Function %}
     {% endscmdoc %}
     {% scmdoc denominator "(denominator n)" Function %}
+    {% endscmdoc %}
+    {% scmdoc sum "(sum . list)" Function %}
+    {% endscmdoc %}
+    {% scmdoc product "(product . list)" Function %}
+    {% endscmdoc %}
+    {% scmdoc abs "(abs num)" Function %}
+    {% endscmdoc %}
+    {% scmdoc max "(max first . rest)" Function %}
+    {% endscmdoc %}
+    {% scmdoc min "(min first . rest)" Function %}
     {% endscmdoc %}
     {% scmdoc exp "(exp n)" Function %}
     {% endscmdoc %}
@@ -150,6 +170,16 @@ path: ../
     {% scmdoc rational? "(rational? obj)" Function %}
     {% endscmdoc %}
     {% scmdoc integer? "(integer? obj)" Function %}
+    {% endscmdoc %}
+    {% scmdoc zero? "(zero? num)" Function %}
+    {% endscmdoc %}
+    {% scmdoc positive? "(positive? num)" Function %}
+    {% endscmdoc %}
+    {% scmdoc negative? "(negative? num)" Function %}
+    {% endscmdoc %}
+    {% scmdoc odd? "(odd? num)" Function %}
+    {% endscmdoc %}
+    {% scmdoc even? "(even? num)" Function %}
     {% endscmdoc %}
   </div>
   {% include docs/sidebar.html %}

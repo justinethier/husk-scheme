@@ -2,3 +2,311 @@
 
 TODO: stdlib.scm, and srfi's              
 TODO: special forms
+
+Remaining work from stdlib.scm:
+
+
+(define (id obj)       obj)
+
+; TODO: this is not flipping args. not part of R5RS, but 
+;       as it is now, what is the point?
+(define (flip func)    (lambda (arg1 arg2) (func arg1 arg2)))
+
+(define (curry func arg1)  (lambda (arg) (apply func (cons arg1 (list arg)))))
+(define (compose f g)      (lambda (arg) (f (apply g arg))))
+
+(define (foldr func end lst)
+  (if (null? lst)
+	  end
+	  (func (car lst) (foldr func end (cdr lst)))))
+
+(define (foldl func accum lst)
+  (if (null? lst)
+	  accum
+	  (foldl func (func (car lst) accum) (cdr lst))))
+
+
+(define-syntax begin
+  (syntax-rules ()
+    ((begin exp ...)
+      ((lambda () exp ...)))))
+
+
+(define (my-mem-helper obj lst cmp-proc)
+ (cond 
+   ((null? lst) #f)
+   ((cmp-proc obj (car lst)) lst)
+   (else (my-mem-helper obj (cdr lst) cmp-proc))))
+(define (memq obj lst) (my-mem-helper obj lst eq?))
+(define (memv obj lst) (my-mem-helper obj lst eqv?))
+(define (member obj lst) (my-mem-helper obj lst equal?))
+
+(define (mem-helper pred op)  (lambda (next acc) (if (and (not acc) (pred (op next))) next acc)))
+(define (assq obj alist)      (foldl (mem-helper (curry eq? obj) car) #f alist))
+(define (assv obj alist)      (foldl (mem-helper (curry eqv? obj) car) #f alist))
+(define (assoc obj alist)     (foldl (mem-helper (curry equal? obj) car) #f alist))
+
+
+(define (list-tail lst k) 
+        (if (zero? k)
+          lst
+          (list-tail (cdr lst) (- k 1))))
+(define (list-ref lst k)  (car (list-tail lst k)))
+
+; append accepts a variable number of arguments, per R5RS. So a wrapper
+; has been provided for the standard 2-argument version of (append).
+;
+; We return the given value if less than 2 arguments are given, and
+; otherwise fold over each arg, appending it to its predecessor. 
+(define (append . lst)
+  (let ((append-2 
+          (lambda (inlist alist) 
+                  (foldr (lambda (ap in) (cons ap in)) alist inlist))))
+    (if (null? lst)
+        lst
+        (if (null? (cdr lst))
+            (car lst)
+            (foldl (lambda (a b) (append-2 b a)) (car lst) (cdr lst))))))
+
+; Let forms
+;
+; letrec from R5RS
+(define-syntax letrec
+    (syntax-rules ()
+      ((letrec ((var1 init1) ...) body ...)
+       (letrec "generate_temp_names"
+         (var1 ...)
+         ()
+         ((var1 init1) ...)
+         body ...))
+      ((letrec "generate_temp_names"
+         ()
+         (temp1 ...)
+         ((var1 init1) ...)
+         body ...)                         ; start the changed code
+       (let ((var1 #f) ...)
+         (let ((temp1 init1) ...)
+           (set! var1 temp1)
+           ...
+           body ...)))
+      ((letrec "generate_temp_names"
+         (x y ...)
+         (temp ...)
+         ((var1 init1) ...)
+         body ...)
+       (letrec "generate_temp_names"
+         (y ...)
+         (newtemp temp ...)
+         ((var1 init1) ...)
+         body ...))))
+
+; let and named let (using the Y-combinator):
+(define-syntax let
+  (syntax-rules ()
+    ((_ ((x v) ...) e1 e2 ...)
+     ((lambda (x ...) e1 e2 ...) v ...))
+    ((_ name ((x v) ...) e1 e2 ...)
+     (let*
+       ((f  (lambda (name)
+              (lambda (x ...) e1 e2 ...)))
+        (ff ((lambda (proc) (f (lambda (x ...) ((proc proc)
+               x ...))))
+             (lambda (proc) (f (lambda (x ...) ((proc proc)
+               x ...)))))))
+        (ff v ...)))))
+
+;
+; It would be nice to change first rule back to:
+;    ((_ () body) body)
+;
+(define-syntax let*
+  (syntax-rules ()
+    ((let* () body1 body2 ...)
+     (let () body1 body2 ...))
+    ((let* ((name1 val1) (name2 val2) ...)
+       body1 body2 ...)
+     (let ((name1 val1))
+       (let* ((name2 val2) ...)
+         body1 body2 ...)))))
+
+; Iteration - do
+(define-syntax do
+  (syntax-rules ()
+    ((do ((var init step ...) ...)
+         (test expr ...)
+         command ...)
+     (letrec
+       ((loop
+         (lambda (var ...)
+           (if test
+               (begin
+                 (if #f #f)
+                 expr ...)
+               (begin
+                 command
+                 ...
+                 (loop (do "step" var step ...)
+                       ...))))))
+       (loop init ...)))
+    ((do "step" x)
+     x)
+    ((do "step" x y)
+     y)))
+
+; Delayed evaluation functions
+(define force
+    (lambda (object)
+	      (object)))
+
+(define-syntax delay 
+  (syntax-rules () 
+    ((delay expression)
+     (make-promise (lambda () expression)))))
+
+(define make-promise
+  (lambda (proc)
+    (let ((result-ready? #f)
+          (result #f))
+      (lambda ()
+        (if result-ready? 
+            result
+            (let ((x (proc)))
+              (if result-ready?
+                  result
+                  (begin (set! result x)
+                         (set! result-ready? #t)
+                         result))))))))
+
+; End delayed evaluation section
+
+; String Section
+(define-syntax string-fill!
+  (syntax-rules ()
+    ((_ _str _chr)
+     (set! _str
+           (make-string (string-length _str) _chr)))))
+
+; Vector Section
+(define-syntax vector-fill!
+  (syntax-rules ()
+    ((_ _vec _fill)
+     (set! _vec
+           (make-vector (vector-length _vec) _fill)))))
+
+; Continuation Section
+(define (values . things)
+    (call-with-current-continuation 
+        (lambda (cont) (apply cont things))))
+
+;; I/O Section
+(define (newline . port)
+  (if (null? port) 
+      (display #\newline) 
+      (display #\newline port)))
+
+; TODO: test these forms
+(define (call-with-input-file filename proc)
+  (let ((opened-file (open-input-file filename)))
+    (define result
+           (proc opened-file))
+    (close-input-port opened-file)
+    result))
+; TODO: test
+(define (call-with-output-file filename proc)
+  (let ((opened-file (open-output-file filename)))
+    (define result
+           (proc opened-file))
+    (close-output-port opened-file)
+    result))
+
+;; SRFI 23 - Error reporting mechanism
+;; based on code from: http://srfi.schemers.org/srfi-23/srfi-23.html
+(define (error reason . args)
+    (display "Error: ")
+    (display reason)
+    (newline)
+    (for-each (lambda (arg) 
+                (display " ")
+      	  (write arg))
+      	args)
+    (newline)
+    (exit-fail))
+
+;; Hashtable derived forms
+(define hash-table-walk
+  (lambda (ht proc)
+    (map 
+      (lambda (kv) (proc (car kv) (car (reverse kv))))
+      (hash-table->alist ht)))) 
+
+(define (hash-table-update! hash-table key function)
+  (hash-table-set! hash-table key
+                  (function (hash-table-ref hash-table key thunk))))
+
+(define-syntax hash-table-merge!
+  (syntax-rules ()
+    ((_ hdest hsrc)
+     (map (lambda (node) (hash-table-set! hdest 
+                                       (car node)
+                                       (cadr node)))
+       (hash-table->alist hsrc)))))
+
+(define (alist->hash-table lst)
+ (let ((ht (make-hash-table)))
+   (for-each (lambda (node)
+              (hash-table-set! ht (car node) (cadr node)))
+             lst)
+   ht))
+
+(define (hash-table-fold hash-table f acc-in)
+  (let ((acc acc-in))
+    (hash-table-walk hash-table 
+             (lambda (key value) (set! acc (f key value acc))))
+      acc))
+
+; Implementations of gcd and lcm using Euclid's algorithm
+;
+; Also note that each form is written to accept either 0 or
+; 2 arguments, per R5RS. This could probably be generalized
+; even further, if necessary.
+;
+(define gcd '())
+(define lcm '())
+
+(let ()
+  ; Main GCD algorithm
+  (define (gcd/main a b)
+    (if (= b 0)
+      (abs a)
+      (gcd/main b (modulo a b))))
+
+  ; A helper function to reduce the input list
+  (define (gcd/entry . nums)
+    (if (eqv? nums '())
+      0
+      (foldl gcd/main (car nums) (cdr nums))))
+
+  ; Main LCM algorithm
+  (define (lcm/main a b)
+    (abs (/ (* a b) (gcd/main a b))))
+
+  ; A helper function to reduce the input list
+  (define (lcm/entry . nums)
+    (if (eqv? nums '())
+      1
+      (foldl lcm/main (car nums) (cdr nums))))
+
+  (set! gcd gcd/entry)
+  (set! lcm lcm/entry))  
+
+; SRFI 8
+; Reference implementation from: http://srfi.schemers.org/srfi-8/srfi-8.html
+;
+; FUTURE: This may be moved into its own file
+;
+(define-syntax receive
+    (syntax-rules ()
+        ((receive formals expression body ...)
+         (call-with-values (lambda () expression)
+             (lambda formals body ...)))))
+
