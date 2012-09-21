@@ -1,12 +1,5 @@
----
-title: husk scheme
-menu: docs
-path: ../
----
-{% include docs/header.html %}
-<div id="page">
-  <div id="content">
-  <h1 class="title">Symbols</h1>
+ <div id="hdr-symbols">
+    <h2 class="title">Symbols</h2>
     <div>
       <p>
         Symbols are objects whose usefulness rests on the fact that two symbols are identical (in the sense of eqv?) if and only if their names are spelled the same way. This is exactly the property needed to represent identifiers in programs, and so most implementations of Scheme use them internally for that purpose. Symbols are useful for many other applications; for instance, they may be used the way enumerated values are used in Pascal.
@@ -33,6 +26,3 @@ path: ../
     Returns the symbol whose name is string.
     {% endscmdoc %}
   </div>
-  {% include docs/sidebar.html %}
-</div>
-{% include docs/footer.html %}
