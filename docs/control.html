@@ -17,6 +17,7 @@ path: ../
       <a href="#call-with-current-continuation">call-with-current-continuation"</a>
       <a href="#call/cc">call/cc"</a>
       <a href="#call-with-values">call-with-values</a>
+      <a href="#values">values</a>
       <a href="#dynamic-wind">dynamic-wind</a>
       <a href="#eval">eval</a>
       <a href="#exit-fail">exit-fail</a>
@@ -34,6 +35,9 @@ apply", evalfuncApply)
 call-with-current-continuation", evalfuncCallCC)
 call/cc
 call-with-values", evalfuncCallWValues)
+    {% scmdoc values "(values . things)" Function %}
+    Delivers all of its arguments to its continuation. Except for continuations created by the call-with-values procedure, all continuations take exactly one value
+    {% endscmdoc %}
 dynamic-wind", evalfuncDynamicWind)
 eval", evalfuncEval)
 exit-fail", evalfuncExitFail)

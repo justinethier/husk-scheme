@@ -43,28 +43,14 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
 TODO: not sure where this belongs:                ("gensym", gensym)]
 
 -->
-      <a href="#not">not</a>
-      <a href="#boolean?">boolean?</a>
+      <a href="#newline">newline</a>
     </div>
     <br />
-    <!--
-    <div id="not" class="member"> 
-        <div>
-          <label>Function</label>
-          <strong>(not obj)</strong>
-        </div>
-        Not returns #t if obj is false, and #f otherwise.
+    {% scmdoc newline "(newline)" Function %}
+      <div><strong>(newline port)</strong></div>
+      Writes an end of line to port. The port argument may be omitted, in which case it defaults to the value returned by current-output-port.
+    {% endscmdoc %}
 
-        {% highlight scheme %}
-(not #t)          ===>  #f
-(not 3)           ===>  #f
-(not (list 3))    ===>  #f
-(not '())         ===>  #f
-(not (list))      ===>  #f
-(not 'nil)        ===>  #f
-        {% endhighlight %}
-    </div>
-    -->
   </div>
   {% include docs/sidebar.html %}
 </div>

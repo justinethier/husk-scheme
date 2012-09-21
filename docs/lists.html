@@ -86,6 +86,7 @@ path: ../
       <a href="#list">list</a>
       <a href="#length">length</a>
       <a href="#reverse">reverse</a>
+      <a href="#append">append</a>
       <a href="#caar">caar</a>
       <a href="#cadr">cadr</a>
       <a href="#cadr">cdar</a>
@@ -143,14 +144,15 @@ path: ../
     {% endscmdoc %}
     {% scmdoc reverse "(reverse list)" Function %}
     {% endscmdoc %}
-<!--
-("eq?", eqv),
-("eqv?", eqv),
-("equal?", equal),
-(pair?", isDottedList),
-(list?", unaryOp isList),
-(null?", isNull),
--->
+    {% scmdoc append "(append list ...)" Function %}
+    Returns a list consisting of the elements of the first list followed by the elements of the other lists.
+    {% endscmdoc %}
+    {% scmdoc pair? "(pair? list)" Function %}
+    {% endscmdoc %}
+    {% scmdoc list? "(list? list)" Function %}
+    {% endscmdoc %}
+    {% scmdoc null? "(null? list)" Function %}
+    {% endscmdoc %}
   </div>
   {% include docs/sidebar.html %}
 </div>
