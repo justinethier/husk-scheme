@@ -25,6 +25,7 @@
       <a href="#string-length">string-length</a>
       <a href="#string-ref">string-ref</a>
       <a href="#substring">substring</a>
+      <a href="#string-fill!">string-fill!</a>
       <a href="#string-append">string-append</a>
       <a href="#string->number">string->number</a>
       <a href="#string->list">string->list</a>
@@ -60,6 +61,11 @@
     {% endscmdoc %}
     {% scmdoc substring "(substring string start end)" Function %}
       Returns a new string consisting of the characters of string from start (inclusive) to end (exclusive).
+    {% endscmdoc %}
+    {% scmdoc string-fill! "(string-fill! string char)" Syntax %}
+
+TODO: need to explain/link to memory model?
+
     {% endscmdoc %}
     {% scmdoc string-append "(string-append string ...)" Function %}
       Concatenates each given string.

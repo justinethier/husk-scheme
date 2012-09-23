@@ -24,38 +24,32 @@ Note that unlike standard R<sup>5</sup>RS, husk does not require that vector con
       <a href="#vector-ref">vector-ref</a>
       <a href="#vector->list">vector->list</a>
       <a href="#list->vector">list->vector</a>
-
-(vector? obj)
-(make-vector n)
-(make-vector n obj)
-Create a new vector of size n, optionally filled with many instances of obj.
-(vector obj ...)
-Create a vector consisting of the given objects.
-(vector-length vec)
-Returns the length of the given vector.
-(vector-ref vec n)
-Returns the object at position n of the given vector.
-(vector->list vec)
-Return a new list consisting of all the elements from vec.
-(list->vector lst)
-Convert the given list to a vector.
+      <a href="#vector-fill!">vector-fill!</a>
 
     </div>
     <br />
-    {% scmdoc not "(not obj)" Function %}
-        not returns #t if obj is false, and #f otherwise.
-
-        {% highlight scheme %}
-(not #t)          ===>  #f
-(not 3)           ===>  #f
-(not (list 3))    ===>  #f
-(not '())         ===>  #f
-(not (list))      ===>  #f
-(not 'nil)        ===>  #f
-        {% endhighlight %}
+    {% scmdoc vector? "(vector? obj)" Function %}
     {% endscmdoc %}
-    {% scmdoc boolean? "(boolean? obj)" Function %}
-        boolean? is a predicate that returns #t if obj is 
-        a boolean (#t or #f), and #f otherwise.
+    {% scmdoc make-vector "(make-vector n)" Function %}
+      <div><strong>(make-vector n obj)</strong></div>
+Create a new vector of size n, optionally filled with many instances of obj.
+    {% endscmdoc %}
+    {% scmdoc vector "(vector obj ...)" Function %}
+Create a vector consisting of the given objects.
+    {% endscmdoc %}
+    {% scmdoc vector-length "(vector-length vec)" Function %}
+Returns the length of the given vector.
+    {% endscmdoc %}
+    {% scmdoc vector-ref "(vector-ref vec n)" Function %}
+Returns the object at position n of the given vector.
+    {% endscmdoc %}
+    {% scmdoc vector-list "(vector->list vec)" Function %}
+Return a new list consisting of all the elements from vec.
+    {% endscmdoc %}
+    {% scmdoc list->vector "(list->vector lst)" Function %}
+Convert the given list to a vector.
+    {% endscmdoc %}
+    {% scmdoc vector-fill! "(vector-fill! vector obj)" Syntax %}
+    TODO: explain memory model?
     {% endscmdoc %}
   </div>

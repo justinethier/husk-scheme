@@ -2,7 +2,7 @@
     <h2 class="title">Hash Tables</h2>
     <div>
       <p>
-        TODO
+        TODO: explain, maybe ref SRFI 69
       </p>
   
       <a href="#make-hash-table">make-hash-table</a>
@@ -14,6 +14,38 @@
       <a href="#hash-table-keys">hash-table-keys</a>
       <a href="#hash-table-values">hash-table-values</a>
       <a href="#hash-table-copy">hash-table-copy</a>
+
+;; Hashtable derived forms
+(define hash-table-walk
+  (lambda (ht proc)
+    (map 
+      (lambda (kv) (proc (car kv) (car (reverse kv))))
+      (hash-table->alist ht)))) 
+
+(define (hash-table-update! hash-table key function)
+  (hash-table-set! hash-table key
+                  (function (hash-table-ref hash-table key thunk))))
+
+(define-syntax hash-table-merge!
+  (syntax-rules ()
+    ((_ hdest hsrc)
+     (map (lambda (node) (hash-table-set! hdest 
+                                       (car node)
+                                       (cadr node)))
+       (hash-table->alist hsrc)))))
+
+(define (alist->hash-table lst)
+ (let ((ht (make-hash-table)))
+   (for-each (lambda (node)
+              (hash-table-set! ht (car node) (cadr node)))
+             lst)
+   ht))
+
+(define (hash-table-fold hash-table f acc-in)
+  (let ((acc acc-in))
+    (hash-table-walk hash-table 
+             (lambda (key value) (set! acc (f key value acc))))
+      acc))
     </div>
     <br />
     {% scmdoc make-hash-table    "(make-hash-table TODO)" Function %}
