@@ -73,13 +73,9 @@
       Within literal expressions and representations of objects read by the read procedure, the forms '<datum>, `<datum>, ,<datum>, and ,@<datum> denote two-element lists whose first elements are the symbols quote, quasiquote, unquote, and unquote-splicing, respectively. The second element in each case is <datum>. This convention is supported so that arbitrary Scheme programs may be represented as lists. That is, according to Scheme's grammar, every <expression> is also a <datum>. Among other things, this permits the use of the read procedure to parse Scheme programs.
       </p>
   
+      <a href="#cons">cons</a>
       <a href="#car">car</a>
       <a href="#cdr">cdr</a>
-      <a href="#cons">cons</a>
-      <a href="#list">list</a>
-      <a href="#length">length</a>
-      <a href="#reverse">reverse</a>
-      <a href="#append">append</a>
       <a href="#caar">caar</a>
       <a href="#cadr">cadr</a>
       <a href="#cadr">cdar</a>
@@ -108,23 +104,30 @@
       <a href="#cadr">cddadr</a>
       <a href="#cadr">cdddar</a>
       <a href="#cadr">cddddr</a>
-      <a href="#eq?">eq?</a>
-      <a href="#eqv?">eqv?</a>
-      <a href="#equal?">equal?</a>
+      <a href="#list">list</a>
+      <a href="#list-tail">list-tail</a>
+      <a href="#length">length</a>
+      <a href="#reverse">reverse</a>
+      <a href="#append">append</a>
+      <a href="#memq">memq</a>
+      <a href="#memv">memv</a>
+      <a href="#member">member</a>
+      <a href="#assq">assq</a>
+      <a href="#assv">assv</a>
+      <a href="#assoc">assoc</a>
       <a href="#pair?">pair?</a>
       <a href="#list?">list?</a>
       <a href="#null?">null?</a>
     </div>
     <br />
-    <!--
-("car", car),
-("cdr", cdr),
-("cons", cons),
-    -->
-    {% scmdoc list "(list . objs)" Function %}
+
+    {% scmdoc cons "(cons obj<sub>1</sub> obj<sub>2</sub>)" Function %}
     {% endscmdoc %}
 
-    {% scmdoc todo "(todo)" Function %}
+    {% scmdoc cdr "(cdr pair)" Function %}
+    {% endscmdoc %}
+
+    {% scmdoc car "(car pair)" Function %}
     {% endscmdoc %}
 
     {% scmdoc cadr "(caar pair)" Function %}
@@ -133,6 +136,10 @@
       <div><strong>(cdddar pair)</strong></div>
       <div><strong>(cddddr pair)</strong></div>
     {% endscmdoc %}
+    {% scmdoc list "(list . objs)" Function %}
+    {% endscmdoc %}
+    {% scmdoc list-tail "(list-tail list k)" Function %}
+    {% endscmdoc %}
     {% scmdoc length "(length list)" Function %}
     {% endscmdoc %}
     {% scmdoc reverse "(reverse list)" Function %}
@@ -140,6 +147,20 @@
     {% scmdoc append "(append list ...)" Function %}
     Returns a list consisting of the elements of the first list followed by the elements of the other lists.
     {% endscmdoc %}
+    
+    {% scmdoc memq (memq obj list) Function %}
+    {% endscmdoc %}
+    {% scmdoc memv (memv obj list) Function %}
+    {% endscmdoc %}
+    {% scmdoc member (member obj list) Function %}
+    {% endscmdoc %}
+    {% scmdoc assq (assq obj alist) Function %}
+    {% endscmdoc %}
+    {% scmdoc assv (assv obj alist) Function %}
+    {% endscmdoc %}
+    {% scmdoc assoc (assoc obj alist) Function %}
+    {% endscmdoc %}
+
     {% scmdoc pair? "(pair? list)" Function %}
     {% endscmdoc %}
     {% scmdoc list? "(list? list)" Function %}

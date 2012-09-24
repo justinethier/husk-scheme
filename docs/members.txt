@@ -5,7 +5,6 @@ TODO: special forms
 
 Remaining work from stdlib.scm:
 
-
 (define (id obj)       obj)
 
 ; TODO: this is not flipping args. not part of R5RS, but 
@@ -25,54 +24,6 @@ Remaining work from stdlib.scm:
 	  accum
 	  (foldl func (func (car lst) accum) (cdr lst))))
 
-
-
-(define (my-mem-helper obj lst cmp-proc)
- (cond 
-   ((null? lst) #f)
-   ((cmp-proc obj (car lst)) lst)
-   (else (my-mem-helper obj (cdr lst) cmp-proc))))
-(define (memq obj lst) (my-mem-helper obj lst eq?))
-(define (memv obj lst) (my-mem-helper obj lst eqv?))
-(define (member obj lst) (my-mem-helper obj lst equal?))
-
-(define (mem-helper pred op)  (lambda (next acc) (if (and (not acc) (pred (op next))) next acc)))
-(define (assq obj alist)      (foldl (mem-helper (curry eq? obj) car) #f alist))
-(define (assv obj alist)      (foldl (mem-helper (curry eqv? obj) car) #f alist))
-(define (assoc obj alist)     (foldl (mem-helper (curry equal? obj) car) #f alist))
-
-
-(define (list-tail lst k) 
-        (if (zero? k)
-          lst
-          (list-tail (cdr lst) (- k 1))))
-(define (list-ref lst k)  (car (list-tail lst k)))
-
-
-;; SRFI 23 - Error reporting mechanism
-;; based on code from: http://srfi.schemers.org/srfi-23/srfi-23.html
-(define (error reason . args)
-    (display "Error: ")
-    (display reason)
-    (newline)
-    (for-each (lambda (arg) 
-                (display " ")
-      	  (write arg))
-      	args)
-    (newline)
-    (exit-fail))
-
-
-; SRFI 8
-; Reference implementation from: http://srfi.schemers.org/srfi-8/srfi-8.html
-;
-; FUTURE: This may be moved into its own file
-;
-(define-syntax receive
-    (syntax-rules ()
-        ((receive formals expression body ...)
-         (call-with-values (lambda () expression)
-             (lambda formals body ...)))))
 
 
 Remaining work from special forms:
