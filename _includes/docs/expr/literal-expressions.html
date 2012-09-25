@@ -1,0 +1,45 @@
+  <div id="hdr-literal-expressions">
+    <h2 class="title">Literal Expressions</h2>
+    <div>
+      <p>
+      <div class="member">
+        syntax:  (quote &lt;datum&gt;) 
+        syntax:  '&lt;datum&gt; 
+        syntax:  &lt;constant&gt; 
+      </div>
+(quote <datum>) evaluates to <datum>. <Datum> may be any external representation of a Scheme object (see section 3.3). This notation is used to include literal constants in Scheme code.
+
+{% highlight scheme %}
+(quote a)                             ===>  a
+(quote #(a b c))             ===>  #(a b c)
+(quote (+ 1 2))                       ===>  (+ 1 2)
+{% endhighlight %}
+
+(quote <datum>) may be abbreviated as '<datum>. The two notations are equivalent in all respects.
+
+{% highlight scheme %}
+'a                           ===>  a
+'#(a b c)                   ===>  #(a b c)
+'()                          ===>  ()
+'(+ 1 2)                     ===>  (+ 1 2)
+'(quote a)                   ===>  (quote a)
+''a                          ===>  (quote a)
+{% endhighlight %}
+
+Numerical constants, string constants, character constants, and boolean constants evaluate ``to themselves''; they need not be quoted.
+
+
+{% highlight scheme %}
+'"abc"             ===>  "abc"
+"abc"              ===>  "abc"
+'145932            ===>  145932
+145932             ===>  145932
+'#t          ===>  #t
+#t           ===>  #t
+{% endhighlight %}
+
+     </p>
+
+      </p>
+    </div>
+  </div>

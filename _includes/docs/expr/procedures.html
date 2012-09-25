@@ -1,0 +1,41 @@
+  <div id="hdr-procedures">
+    <h2 class="title">Procedures</h2>
+    <div>
+      <p>
+      <div class="member">
+        syntax:  (lambda &lt;formals&gt; &lt;body&gt;) 
+      </div>
+      &lt;Formals&gt; should be a formal arguments list as described below, and &lt;body&gt; should be a sequence of one or more expressions.
+
+      Semantics: A lambda expression evaluates to a procedure. The environment in effect when the lambda expression was evaluated is remembered as part of the procedure. When the procedure is later called with some actual arguments, the environment in which the lambda expression was evaluated will be extended by binding the variables in the formal argument list to fresh locations, the corresponding actual argument values will be stored in those locations, and the expressions in the body of the lambda expression will be evaluated sequentially in the extended environment. The result(s) of the last expression in the body will be returned as the result(s) of the procedure call.
+
+{% highlight scheme %}
+      (lambda (x) (+ x x))              ===>  a procedure
+      ((lambda (x) (+ x x)) 4)          ===>  8
+
+      (define reverse-subtract
+        (lambda (x y) (- y x)))
+      (reverse-subtract 7 10)                 ===>  3
+
+      (define add4
+        (let ((x 4))
+            (lambda (y) (+ x y))))
+      (add4 6)                                ===>  10
+{% endhighlight %}
+
+      &lt;Formals&gt; should have one of the following forms:
+
+      (&lt;variable1&gt; ...): The procedure takes a fixed number of arguments; when the procedure is called, the arguments will be stored in the bindings of the corresponding variables.
+      &lt;variable&gt;: The procedure takes any number of arguments; when the procedure is called, the sequence of actual arguments is converted into a newly allocated list, and the list is stored in the binding of the &lt;variable&gt;.
+      (&lt;variable1&gt; ... &lt;variablen&gt; . &lt;variablen+1&gt;): If a space-delimited period precedes the last variable, then the procedure takes n or more arguments, where n is the number of formal arguments before the period (there must be at least one). The value stored in the binding of the last variable will be a newly allocated list of the actual arguments left over after all the other actual arguments have been matched up against the other formal arguments.
+      It is an error for a &lt;variable&gt; to appear more than once in &lt;formals&gt;.
+
+{% highlight scheme %}
+      ((lambda x x) 3 4 5 6)                  ===>  (3 4 5 6)
+      ((lambda (x y . z) z)
+       3 4 5 6)                               ===>  (5 6)
+{% endhighlight %}
+
+       Each procedure created as the result of evaluating a lambda expression is (conceptually) tagged with a storage location, in order to make eqv? and eq? work on procedures (see section 6.1).
+    </div>
+  </div>

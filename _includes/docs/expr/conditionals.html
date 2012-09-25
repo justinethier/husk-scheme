@@ -1,0 +1,22 @@
+  <div id="hdr-conditionals">
+    <h2 class="title">Conditionals</h2>
+    <div>
+      <p>
+      <div class="member">
+syntax:  (if &lt;test&gt; &lt;consequent&gt; &lt;alternate&gt;) 
+syntax:  (if &lt;test&gt; &lt;consequent&gt;) 
+      </div>
+Syntax: &lt;Test&gt;, &lt;consequent&gt;, and &lt;alternate&gt; may be arbitrary expressions.
+Semantics: An if expression is evaluated as follows: first, &lt;test&gt; is evaluated. If it yields a true value (see section 6.3.1), then &lt;consequent&gt; is evaluated and its value(s) is(are) returned. Otherwise &lt;alternate&gt; is evaluated and its value(s) is(are) returned. If &lt;test&gt; yields a false value and no &lt;alternate&gt; is specified, then the result of the expression is unspecified.
+
+
+{% highlight scheme %}
+(if (> 3 2) 'yes 'no)                   ===>  yes
+(if (> 2 3) 'yes 'no)                   ===>  no
+(if (> 3 2)
+    (- 3 2)
+        (+ 3 2))                            ===>  1
+{% endhighlight %}
+
+    </div>
+  </div>

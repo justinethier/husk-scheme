@@ -1,0 +1,18 @@
+  <div id="hdr-procedure-calls">
+    <h2 class="title">Procedure calls</h2>
+    <div>
+      <p>
+      <div class="member">
+        syntax:  (&lt;operator&gt; &lt;operand<sub>1</sub>&gt; ...) 
+      </div>
+
+A procedure call is written by simply enclosing in parentheses expressions for the procedure to be called and the arguments to be passed to it. The operator and operand expressions are evaluated (in an unspecified order) and the resulting procedure is passed the resulting arguments.
+
+{% highlight scheme %}
+(+ 3 4)                                  ===>  7
+((if #f + *) 3 4)                 ===>  12
+{% endhighlight %}
+
+A number of procedures are available as the values of variables in the initial environment; for example, the addition and multiplication procedures in the above examples are the values of the variables + and *. New procedures are created by evaluating lambda expressions . Procedure calls may return any number of values. With the exception of values the procedures available in the initial environment return one value or, for procedures such as apply, pass on the values returned by a call to one of their arguments.
+    </div>
+  </div>

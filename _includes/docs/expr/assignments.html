@@ -1,0 +1,18 @@
+  <div id="hdr-assignments">
+    <h2 class="title">Assignments</h2>
+    <div>
+      <p>
+      <div class="member">
+syntax:  (set! &lt;variable&gt; &lt;expression&gt;) 
+      </div>
+<Expression> is evaluated, and the resulting value is stored in the location to which &lt;variable&gt; is bound. &lt;Variable&gt; must be bound either in some region enclosing the set! expression or at top level. The result of the set! expression is unspecified.
+
+{% highlight scheme %}
+(define x 2)
+(+ x 1)                         ===>  3
+(set! x 4)                      ===>  unspecified
+(+ x 1)                         ===>  5
+{% endhighlight %}
+
+    </div>
+  </div>
