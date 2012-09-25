@@ -1020,12 +1020,12 @@ primitives = [("+", numAdd),
               ("string-ci<=?", stringCIBoolBinop (<=)),
               ("string-ci>=?", stringCIBoolBinop (>=)),
 
+              ("char=?",  charBoolBinop (==)),
+              ("char<?",  charBoolBinop (<)),
+              ("char>?",  charBoolBinop (>)),
+              ("char<=?", charBoolBinop (<=)),
+              ("char>=?", charBoolBinop (>=)),
 -- TODO:
--- procedure:  (char=? char1 char2) 
--- procedure:  (char<? char1 char2) 
--- procedure:  (char>? char1 char2) 
--- procedure:  (char<=? char1 char2) 
--- procedure:  (char>=? char1 char2)
 -- library procedure:  (char-ci=? char1 char2) 
 -- library procedure:  (char-ci<? char1 char2) 
 -- library procedure:  (char-ci>? char1 char2) 

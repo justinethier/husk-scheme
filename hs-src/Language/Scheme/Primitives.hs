@@ -78,6 +78,7 @@ module Language.Scheme.Primitives (
  , boolBinop 
  , unaryOp 
  , strBoolBinop 
+ , charBoolBinop 
  , boolBoolBinop
  , unpackStr 
  , unpackBool
@@ -584,8 +585,13 @@ unaryOp _ args@(_ : _) = throwError $ NumArgs 1 args
 numBoolBinop = boolBinop unpackNum -}
 strBoolBinop :: (String -> String -> Bool) -> [LispVal] -> ThrowsError LispVal
 strBoolBinop = boolBinop unpackStr
+charBoolBinop = boolBinop unpackChar
 boolBoolBinop :: (Bool -> Bool -> Bool) -> [LispVal] -> ThrowsError LispVal
 boolBoolBinop = boolBinop unpackBool
+
+unpackChar :: LispVal -> ThrowsError Char
+unpackChar (Char c) = return c
+unpackChar notChar = throwError $ TypeMismatch "character" notChar
 
 unpackStr :: LispVal -> ThrowsError String
 unpackStr (String s) = return s
