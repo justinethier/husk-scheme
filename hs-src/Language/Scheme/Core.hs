@@ -40,6 +40,7 @@ import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
 import Data.Array
+import qualified Data.Char
 import qualified Data.Map
 import qualified System.Exit
 import System.IO
@@ -1018,6 +1019,27 @@ primitives = [("+", numAdd),
               ("string-ci>?", stringCIBoolBinop (>)),
               ("string-ci<=?", stringCIBoolBinop (<=)),
               ("string-ci>=?", stringCIBoolBinop (>=)),
+
+-- TODO:
+-- procedure:  (char=? char1 char2) 
+-- procedure:  (char<? char1 char2) 
+-- procedure:  (char>? char1 char2) 
+-- procedure:  (char<=? char1 char2) 
+-- procedure:  (char>=? char1 char2)
+-- library procedure:  (char-ci=? char1 char2) 
+-- library procedure:  (char-ci<? char1 char2) 
+-- library procedure:  (char-ci>? char1 char2) 
+-- library procedure:  (char-ci<=? char1 char2) 
+-- library procedure:  (char-ci>=? char1 char2) 
+              ("char-alphabetic?", charPredicate Data.Char.isAlpha),
+              ("char-numeric?", charPredicate Data.Char.isNumber),
+              ("char-whitespace?", charPredicate Data.Char.isSpace),
+              ("char-upper-case?", charPredicate Data.Char.isUpper),
+              ("char-lower-case?", charPredicate Data.Char.isLower),
+              ("char->integer", char2Int),
+              ("integer->char", int2Char),
+              ("char-upper", charUpper),
+              ("char-lower", charLower),
 
               ("car", car),
               ("cdr", cdr),

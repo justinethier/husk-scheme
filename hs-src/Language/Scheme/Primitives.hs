@@ -54,6 +54,13 @@ module Language.Scheme.Primitives (
  , symbol2String 
  , string2Symbol
  --data Unpacker = forall a . Eq a => AnyUnpacker (LispVal -> ThrowsError a)
+ -- ** Character
+ , charPredicate
+ , charUpper
+ , charLower
+ , char2Int
+ , int2Char
+
  -- ** Predicate
  , isHashTbl
  , isChar 
@@ -516,6 +523,27 @@ string2Symbol ([String s]) = return $ Atom s
 string2Symbol [] = throwError $ NumArgs 1 []
 string2Symbol [notString] = throwError $ TypeMismatch "string" notString
 string2Symbol args@(_ : _) = throwError $ NumArgs 1 args
+
+charUpper :: [LispVal] -> ThrowsError LispVal
+charUpper [Char c] = return $ Char $ toUpper c
+charUpper [notChar] = throwError $ TypeMismatch "char" notChar
+
+charLower :: [LispVal] -> ThrowsError LispVal
+charLower [Char c] = return $ Char $ toLower c
+charLower [notChar] = throwError $ TypeMismatch "char" notChar
+
+char2Int :: [LispVal] -> ThrowsError LispVal
+char2Int [Char c] = return $ Number $ toInteger $ ord c 
+char2Int [notChar] = throwError $ TypeMismatch "char" notChar
+
+int2Char :: [LispVal] -> ThrowsError LispVal
+int2Char [Number n] = return $ Char $ chr $ fromInteger n 
+int2Char [notInt] = throwError $ TypeMismatch "integer" notInt
+
+-- |Determine if given character satisfies the given predicate
+charPredicate :: (Char -> Bool) -> [LispVal] -> ThrowsError LispVal
+charPredicate pred ([Char c]) = return $ Bool $ pred c 
+charPredicate _ _ = return $ Bool False
 
 isChar :: [LispVal] -> ThrowsError LispVal
 isChar ([Char _]) = return $ Bool True
