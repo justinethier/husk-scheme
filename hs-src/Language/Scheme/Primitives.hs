@@ -54,7 +54,9 @@ module Language.Scheme.Primitives (
  , symbol2String 
  , string2Symbol
  --data Unpacker = forall a . Eq a => AnyUnpacker (LispVal -> ThrowsError a)
+
  -- ** Character
+ , charCIBoolBinop 
  , charPredicate
  , charUpper
  , charLower
@@ -433,6 +435,11 @@ stringCIBoolBinop op [(String s1), (String s2)] = boolBinop unpackStr op [(Strin
   where strToLower str = map (toLower) str
 stringCIBoolBinop _ [badType] = throwError $ TypeMismatch "string string" badType
 stringCIBoolBinop _ badArgList = throwError $ NumArgs 2 badArgList
+
+charCIBoolBinop :: (Char -> Char -> Bool) -> [LispVal] -> ThrowsError LispVal
+charCIBoolBinop op [(Char s1), (Char s2)] = boolBinop unpackChar op [(Char $ toLower s1), (Char $ toLower s2)]
+charCIBoolBinop _ [badType] = throwError $ TypeMismatch "character character" badType
+charCIBoolBinop _ badArgList = throwError $ NumArgs 2 badArgList
 
 stringAppend :: [LispVal] -> ThrowsError LispVal
 stringAppend [(String s)] = return $ String s -- Needed for "last" string value

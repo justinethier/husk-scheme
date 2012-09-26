@@ -1025,12 +1025,11 @@ primitives = [("+", numAdd),
               ("char>?",  charBoolBinop (>)),
               ("char<=?", charBoolBinop (<=)),
               ("char>=?", charBoolBinop (>=)),
--- TODO:
--- library procedure:  (char-ci=? char1 char2) 
--- library procedure:  (char-ci<? char1 char2) 
--- library procedure:  (char-ci>? char1 char2) 
--- library procedure:  (char-ci<=? char1 char2) 
--- library procedure:  (char-ci>=? char1 char2) 
+              ("char-ci=?",  charCIBoolBinop (==)),
+              ("char-ci<?",  charCIBoolBinop (<)),
+              ("char-ci>?",  charCIBoolBinop (>)),
+              ("char-ci<=?", charCIBoolBinop (<=)),
+              ("char-ci>=?", charCIBoolBinop (>=)),
               ("char-alphabetic?", charPredicate Data.Char.isAlpha),
               ("char-numeric?", charPredicate Data.Char.isNumber),
               ("char-whitespace?", charPredicate Data.Char.isSpace),
