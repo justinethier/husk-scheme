@@ -44,6 +44,7 @@ import qualified Data.Char
 import qualified Data.Map
 import qualified System.Exit
 import System.IO
+import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -97,7 +98,21 @@ evalAndPrint env expr = evalString env expr >>= putStrLn
 
 -- |Evaluate lisp code that has already been loaded into haskell
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
-evalLisp env lisp = meval env (makeNullContinuation env) lisp
+evalLisp env lisp = do
+  v <- meval env (makeNullContinuation env) lisp
+  return v
+-- TODO: trying to handle case of just 'x'. need to
+-- implement evalString. also need to consider cases of
+-- a lambda function that takes a param x and just returns
+-- it... I think this would orphan the var and fuck everything
+-- up when we try to look up the var here. am worried this 
+-- whole idea may just turn into a big hack that does not
+-- work. that is not acceptable. an implementation that handles
+-- 90% of cases and is good enough would be OK, though
+--
+--  case v of
+--    Pointer p -> getVar env p
+--    _ -> return $ v
 
 -- |A wrapper for macroEval and eval
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
@@ -215,7 +230,19 @@ eval env cont val@(Number _) = continueEval env cont val
 eval env cont val@(Bool _) = continueEval env cont val
 eval env cont val@(HashTable _) = continueEval env cont val
 eval env cont val@(Vector _) = continueEval env cont val
-eval env cont (Atom a) = continueEval env cont =<< getVar env a
+eval env cont val@(Pointer _) = continueEval env cont val
+eval env cont (Atom a) = do
+  v <- getVar env a
+  val <- return $ case (trace ("v = " ++ show v) v) of
+    List _ -> Pointer a
+    DottedList _ _ -> Pointer a
+    String _ -> Pointer a
+    Vector _ -> Pointer a
+    HashTable _ -> Pointer a
+    _ -> v
+  -- TODO: only return a pointer for some types? 
+  -- for example, can a number just be returned directly?
+  continueEval env cont val
 
 -- Quote an expression by simply passing along the value
 eval env cont (List [Atom "quote", val]) = continueEval env cont val

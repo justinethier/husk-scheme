@@ -194,6 +194,8 @@ data LispVal = Atom String
  | EvalFunc ([LispVal] -> IOThrowsError LispVal)
  {- ^Function within the IO monad with access to
  the current environment and continuation. -}
+ | Pointer String -- TODO: env ID
+ -- ^Pointer to an environment variable.
  | Opaque Dynamic
  -- ^Opaque Haskell value.
  | Port Handle
@@ -384,6 +386,7 @@ showVal (HFunc {hparams = args, hvararg = varargs, hbody = _, hclosure = _}) =
 showVal (Port _) = "<IO port>"
 showVal (IOFunc _) = "<IO primitive>"
 showVal (EvalFunc _) = "<procedure>"
+showVal (Pointer p) = "<ptr " ++ p ++ ">"
 showVal (Opaque d) = "<Haskell " ++ show (dynTypeRep d) ++ ">"
 
 -- |Convert a list of Lisp objects into a space-separated string
