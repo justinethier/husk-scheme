@@ -90,7 +90,8 @@ evalString env "(* 3 9)"
 @
 -}
 evalString :: Env -> String -> IO String
-evalString env expr = runIOThrowsREPL $ liftM show $ (liftThrows $ readExpr expr) >>= meval env (makeNullContinuation env)
+evalString env expr = do
+  runIOThrowsREPL $ liftM show $ (liftThrows $ readExpr expr) >>= evalLisp env
 
 -- |Evaluate a string and print results to console
 evalAndPrint :: Env -> String -> IO ()
@@ -100,19 +101,12 @@ evalAndPrint env expr = evalString env expr >>= putStrLn
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = do
   v <- meval env (makeNullContinuation env) lisp
-  return v
--- TODO: trying to handle case of just 'x'. need to
--- implement evalString. also need to consider cases of
--- a lambda function that takes a param x and just returns
--- it... I think this would orphan the var and fuck everything
--- up when we try to look up the var here. am worried this 
--- whole idea may just turn into a big hack that does not
--- work. that is not acceptable. an implementation that handles
--- 90% of cases and is good enough would be OK, though
---
---  case v of
---    Pointer p -> getVar env p
---    _ -> return $ v
+  deref env v
+
+-- Return a value with a pointer dereferenced, if necessary
+deref :: Env -> LispVal -> IOThrowsError LispVal
+deref env (Pointer p) = getVar env p
+deref _ v = return v
 
 -- |A wrapper for macroEval and eval
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
