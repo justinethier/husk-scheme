@@ -87,25 +87,27 @@ printEnv env = do
 copyEnv :: Env      -- ^ Source environment
         -> IO Env   -- ^ A copy of the source environment
 copyEnv env = do
+  ptrs <- liftIO $ readIORef $ pointers env
+  ptrList <- newIORef ptrs
+
   binds <- liftIO $ readIORef $ bindings env
---  bindingList <- mapM addBinding binds >>= newIORef
-  bindingListT <- mapM addBinding $ Data.Map.toList binds -- TODO: there is a more elegant way to write this here (and below, too)
+  bindingListT <- mapM addBinding $ Data.Map.toList binds 
   bindingList <- newIORef $ Data.Map.fromList bindingListT
-  return $ Environment (parentEnv env) bindingList -- TODO: recursively create a copy of parent also?
- where addBinding ((namespace, name), val) = do --ref <- newIORef $ liftIO $ readIORef val
-                                                x <- liftIO $ readIORef val
-                                                ref <- newIORef x
-                                                return ((namespace, name), ref)
+  return $ Environment (parentEnv env) bindingList ptrList
+ where addBinding ((namespace, name), val) = do 
+         x <- liftIO $ readIORef val
+         ref <- newIORef x
+         return ((namespace, name), ref)
 
 -- |Extend given environment by binding a series of values to a new environment.
-
--- TODO: should be able to use Data.Map.fromList to ease construction of new Env
 extendEnv :: Env -- ^ Environment 
           -> [((String, String), LispVal)] -- ^ Extensions to the environment
           -> IO Env -- ^ Extended environment
-extendEnv envRef abindings = do bindinglistT <- (mapM addBinding abindings) -- >>= newIORef
-                                bindinglist <- newIORef $ Data.Map.fromList bindinglistT
-                                return $ Environment (Just envRef) bindinglist
+extendEnv envRef abindings = do 
+  bindinglistT <- (mapM addBinding abindings) -- >>= newIORef
+  bindinglist <- newIORef $ Data.Map.fromList bindinglistT
+  nullPointers <- newIORef $ Data.Map.fromList []
+  return $ Environment (Just envRef) bindinglist nullPointers
  where addBinding ((namespace, name), val) = do ref <- newIORef val
                                                 return ((namespace, name), ref)
 

@@ -64,13 +64,16 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 -- |A Scheme environment containing variable bindings of form @(namespaceName, variableName), variableValue@
 data Env = Environment {
         parentEnv :: (Maybe Env), 
-        bindings :: (IORef (Data.Map.Map (String, String) (IORef LispVal)))
+        bindings :: (IORef (Data.Map.Map (String, String) (IORef LispVal))),
+        pointers :: (IORef (Data.Map.Map (String, String) ([Env])))
     }
 
 -- |An empty environment
 nullEnv :: IO Env
-nullEnv = do nullBindings <- newIORef $ Data.Map.fromList []
-             return $ Environment Nothing nullBindings
+nullEnv = do 
+    nullBindings <- newIORef $ Data.Map.fromList []
+    nullPointers <- newIORef $ Data.Map.fromList []
+    return $ Environment Nothing nullBindings nullPointers
 
 -- Internal namespace for macros
 macroNamespace :: [Char]
@@ -194,7 +197,8 @@ data LispVal = Atom String
  | EvalFunc ([LispVal] -> IOThrowsError LispVal)
  {- ^Function within the IO monad with access to
  the current environment and continuation. -}
- | Pointer String -- TODO: env ID
+ | Pointer { pointerVar :: String
+            ,pointerEnv :: Env } 
  -- ^Pointer to an environment variable.
  | Opaque Dynamic
  -- ^Opaque Haskell value.
@@ -386,7 +390,7 @@ showVal (HFunc {hparams = args, hvararg = varargs, hbody = _, hclosure = _}) =
 showVal (Port _) = "<IO port>"
 showVal (IOFunc _) = "<IO primitive>"
 showVal (EvalFunc _) = "<procedure>"
-showVal (Pointer p) = "<ptr " ++ p ++ ">"
+showVal (Pointer p _) = "<ptr " ++ p ++ ">"
 showVal (Opaque d) = "<Haskell " ++ show (dynTypeRep d) ++ ">"
 
 -- |Convert a list of Lisp objects into a space-separated string
