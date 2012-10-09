@@ -105,7 +105,7 @@ evalLisp env lisp = do
 
 -- Return a value with a pointer dereferenced, if necessary
 deref :: Env -> LispVal -> IOThrowsError LispVal
-deref env (Pointer p) = getVar env p
+deref _ (Pointer p env) = getVar env p
 deref _ v = return v
 
 -- |A wrapper for macroEval and eval
@@ -224,15 +224,15 @@ eval env cont val@(Number _) = continueEval env cont val
 eval env cont val@(Bool _) = continueEval env cont val
 eval env cont val@(HashTable _) = continueEval env cont val
 eval env cont val@(Vector _) = continueEval env cont val
-eval env cont val@(Pointer _) = continueEval env cont val
+eval env cont val@(Pointer _ _) = continueEval env cont val
 eval env cont (Atom a) = do
   v <- getVar env a
   val <- return $ case (trace ("v = " ++ show v) v) of
-    List _ -> Pointer a
-    DottedList _ _ -> Pointer a
-    String _ -> Pointer a
-    Vector _ -> Pointer a
-    HashTable _ -> Pointer a
+    List _ -> Pointer a env
+    DottedList _ _ -> Pointer a env
+    String _ -> Pointer a env
+    Vector _ -> Pointer a env
+    HashTable _ -> Pointer a env
     _ -> v
   -- TODO: only return a pointer for some types? 
   -- for example, can a number just be returned directly?
