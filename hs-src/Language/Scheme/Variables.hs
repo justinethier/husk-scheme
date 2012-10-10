@@ -32,16 +32,38 @@ module Language.Scheme.Variables
     , isRecBound
     , isNamespacedBound
     , isNamespacedRecBound 
+    -- * Pointers
+    , derefPtr
+    , recDerefPtrs
     ) where
 import Language.Scheme.Types
 import Control.Monad.Error
+import Data.Array
 import Data.IORef
 import qualified Data.Map
 
+-- |Return a value with a pointer dereferenced, if necessary
+derefPtr :: LispVal -> IOThrowsError LispVal
+derefPtr (Pointer p env) = getVar env p
+derefPtr v = return v
 
--- TODO: convert from storing vars in a list to a more efficient
---       data structure using Data.Map
+-- |Recursively process the given data structure, dereferencing
+--  any pointers found along the way
+recDerefPtrs :: LispVal -> IOThrowsError LispVal
+recDerefPtrs (List l) = do
+    result <- mapM recDerefPtrs l
+    return $ List result
+recDerefPtrs (DottedList ls l) = do
+    ds <- mapM recDerefPtrs ls
+    d <- recDerefPtrs l
+    return $ DottedList ds d
+recDerefPtrs (Vector v) = do
+    let vs = elems v
+    ds <- mapM recDerefPtrs vs
+    return $ Vector $ listArray (0, length vs - 1) ds
 
+-- TODO: need to walk HashTable, anything else?
+recDerefPtrs p = derefPtr p
 
 {- Experimental code:
 -- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/

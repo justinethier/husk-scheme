@@ -44,7 +44,7 @@ import qualified Data.Char
 import qualified Data.Map
 import qualified System.Exit
 import System.IO
-import Debug.Trace
+-- import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -101,12 +101,7 @@ evalAndPrint env expr = evalString env expr >>= putStrLn
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = do
   v <- meval env (makeNullContinuation env) lisp
-  deref env v
-
--- Return a value with a pointer dereferenced, if necessary
-deref :: Env -> LispVal -> IOThrowsError LispVal
-deref _ (Pointer p env) = getVar env p
-deref _ v = return v
+  derefPtr v
 
 -- |A wrapper for macroEval and eval
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
@@ -227,7 +222,7 @@ eval env cont val@(Vector _) = continueEval env cont val
 eval env cont val@(Pointer _ _) = continueEval env cont val
 eval env cont (Atom a) = do
   v <- getVar env a
-  val <- return $ case (trace ("v = " ++ show v) v) of
+  val <- return $ case v of
     List _ -> Pointer a env
     DottedList _ _ -> Pointer a env
     String _ -> Pointer a env
@@ -730,7 +725,8 @@ apply cont (EvalFunc func) args = do
     pass it as the first argument. -}
     func (cont : args)
 apply cont (PrimitiveFunc func) args = do
-  result <- liftThrows $ func args
+  List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  result <- liftThrows $ func dargs
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
