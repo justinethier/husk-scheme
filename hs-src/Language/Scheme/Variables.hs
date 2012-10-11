@@ -253,6 +253,7 @@ defineNamespacedVar envRef
     then setNamespacedVar envRef namespace var value >> return value
     else liftIO $ do
 
+  -- FUTURE: come back to this comment block once below works to save ptrs
   -- TODO: if x is redefined and it has any pointers, then
   --       need to assign the first pointer to the old value of x, 
   --       and the rest need to be updated to point to that first var
@@ -266,22 +267,49 @@ defineNamespacedVar envRef
   --
   -- Edge case: don't change anything if (define) is to existing pointer
   --  (IE, it does not really change anything)
+  --
+  -- TODO: need the below logic in set!, so when it works, need to
+  --       extract it out into a common function
 
 
-  -- TODO: need this logic in set!
        -- If we are assigning to a pointer, we need a reverse lookup to 
-       -- note that "var" now points to "value". That way if "value"
-       -- is changed to point to a new object, we need to update "var" so
-       -- it points to the old object.
-       _ <- case value of
-         Pointer p _ -> do
-           ptrs <- readIORef $ pointers envRef
-           ptrRef <- newIORef var
-           writeIORef (pointers envRef) (Data.Map.insert (namespace, p) ptrRef ptrs)
-         _ -> ()
+       -- note that the pointer "value" points to "var"
+       -- 
+       -- So run through this logic to figure out what exactly to store,
+       -- both for bindings and for rev-lookup pointers
+       valueToStore <- case value of
+       -- TODO: need to figure out if x is an object
+       -- if it is, need to add a reverse lookup and set var => Pointer
+       -- if it is not, just look it up and set var => x_Value
+       -- see logic below, and comments in addRevPointer (where it might
+       -- be easier to actually implement all of this)
+
+        --Pointer p pEnv -> 
+        -- get: pValue, pActualEnv (might be a parent of pEnv)
+        -- if (object? pValue)
+        --    addReversePointer p pEnv var envRef
+        --    return value
+        -- else 
+        --    return $ deref p
+        _ -> return $ value
 
        -- Write new value binding
-       valueRef <- newIORef value
+       valueRef <- newIORef valueToStore
        env <- readIORef $ bindings envRef
        writeIORef (bindings envRef) (Data.Map.insert (namespace, var) valueRef env)
-       return value
+       return valueToStore
+
+--addReversePointer :: String -> String -> Env -> String -> String -> Env -> IOThrowsError LispVal
+--addReversePointer namespace var envRef ptrNamespace ptrVar ptrEnv = do
+--   env <- liftIO $ readIORef $ bindings envRef
+--   case Data.Map.lookup (namespace, var) env of
+
+--TODO: might be able to add logic here:
+--if object, add ptr, else deref and return (no need to add rev ptr)
+
+--     (Just a) -> do
+--                    liftIO $ writeIORef a value
+--                    return value
+--     Nothing -> case parentEnv envRef of
+--                 (Just par) -> setNamespacedVar par namespace var value
+--                 Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
