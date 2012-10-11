@@ -8,14 +8,17 @@
 (define x '())
 (assert/equal (list? x) #t)
 
-;;0)
-;(define x '())
-;(define y x)
-;(define x 1)
-;(assert/equal 
-;   '()
-;    ((lambda (z) z) y))
-;
+;0)
+(define x '())
+(define y x)
+; TODO: edge case - y could be assigned to something else later on.
+; when we go redefine x below, the logic needs to check to make sure
+; y is still bound to x before assigning y the old x value
+(define x 1)
+(assert/equal 
+   '()
+    ((lambda (z) z) y))
+
 ;;1)
 ;(define x (list 'a 'b 'c))
 ;(define y x)

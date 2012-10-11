@@ -252,7 +252,36 @@ defineNamespacedVar envRef
   if alreadyDefined
     then setNamespacedVar envRef namespace var value >> return value
     else liftIO $ do
+
+  -- TODO: if x is redefined and it has any pointers, then
+  --       need to assign the first pointer to the old value of x, 
+  --       and the rest need to be updated to point to that first var
+  --
+  -- IMPORTANT!
+  --  is this approach all wrong? it works fine if "x" and "y" are in the
+  --  same env, but what if they are in different env's? can we get into
+  --  situations where one of the vars goes out of scope? need to think 
+  --  this through before implementing it
+  --
+  --
+  -- Edge case: don't change anything if (define) is to existing pointer
+  --  (IE, it does not really change anything)
+
+
+  -- TODO: need this logic in set!
+       -- If we are assigning to a pointer, we need a reverse lookup to 
+       -- note that "var" now points to "value". That way if "value"
+       -- is changed to point to a new object, we need to update "var" so
+       -- it points to the old object.
+       _ <- case value of
+         Pointer p _ -> do
+           ptrs <- readIORef $ pointers envRef
+           ptrRef <- newIORef var
+           writeIORef (pointers envRef) (Data.Map.insert (namespace, p) ptrRef ptrs)
+         _ -> ()
+
+       -- Write new value binding
        valueRef <- newIORef value
        env <- readIORef $ bindings envRef
-       writeIORef (bindings envRef) (Data.Map.insert (namespace, var) valueRef env) --  (((namespace, var), valueRef) : env)
+       writeIORef (bindings envRef) (Data.Map.insert (namespace, var) valueRef env)
        return value
