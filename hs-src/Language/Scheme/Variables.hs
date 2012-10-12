@@ -65,6 +65,17 @@ recDerefPtrs (Vector v) = do
 -- TODO: need to walk HashTable, anything else?
 recDerefPtrs p = derefPtr p
 
+-- |Determine if given lisp value is an "object" that
+--  can be pointed to.
+isObject :: LispVal -> Bool
+isObject (List _) = True
+isObject (DottedList _ _) = True
+isObject (String _) = True
+isObject (Vector _) = True
+isObject (HashTable _) = True
+isObject (Pointer _ _) = True
+isObject _ = False
+
 {- Experimental code:
 -- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/
 import Foreign
@@ -284,14 +295,14 @@ defineNamespacedVar envRef
        -- see logic below, and comments in addRevPointer (where it might
        -- be easier to actually implement all of this)
 
-        --Pointer p pEnv -> 
+        Pointer p pEnv -> 
         -- get: pValue, pActualEnv (might be a parent of pEnv)
         -- if (object? pValue)
-        --    addReversePointer p pEnv var envRef
+          return $ addReversePointer namespace p pEnv namespace var envRef
         --    return value
         -- else 
         --    return $ deref p
-        _ -> return $ value
+        _ -> return $ liftIO $ value
 
        -- Write new value binding
        valueRef <- newIORef valueToStore
@@ -299,17 +310,35 @@ defineNamespacedVar envRef
        writeIORef (bindings envRef) (Data.Map.insert (namespace, var) valueRef env)
        return valueToStore
 
---addReversePointer :: String -> String -> Env -> String -> String -> Env -> IOThrowsError LispVal
---addReversePointer namespace var envRef ptrNamespace ptrVar ptrEnv = do
---   env <- liftIO $ readIORef $ bindings envRef
---   case Data.Map.lookup (namespace, var) env of
+-- |Accept input for a pointer (ptrVar) and a variable that the pointer is going
+--  to be assigned to. If that variable is an object then we setup a reverse lookup
+--  for future book-keeping. Otherwise, we just look it up and return it directly, 
+--  no booking-keeping required.
+addReversePointer :: String -> String -> Env -> String -> String -> Env -> IOThrowsError LispVal
+addReversePointer namespace var envRef ptrNamespace ptrVar ptrEnvRef = do
+   env <- liftIO $ readIORef $ bindings envRef
+   case Data.Map.lookup (namespace, var) env of
+     (Just a) -> do
+       v <- liftIO $ readIORef a
+       if isObject v
+          then do
+            -- Store pointer for book keeping
+            ptrs <- liftIO $ readIORef $ pointers envRef
+            ptr <- Pointer ptrEnvRef ptrVar
+            
+            -- Lookup ptr for var
+            case Data.Map.lookup (namespace, var) ptrs of
+              -- if exists, append ptr
+      -- TODO: should make sure ptr is not already there, before adding it again
+              (Just p) -> do
+                writeIORef (pointers envRef) (Data.Map.insert (namespace, var) (p ++ (Pointer ptrEnvRef ptrVar)) ptrs)
+              -- does not exist, create it
+              _ -> do
+                writeIORef (pointers envRef) (Data.Map.insert (namespace, var) [Pointer ptrEnvRef ptrVar] ptrs)
 
---TODO: might be able to add logic here:
---if object, add ptr, else deref and return (no need to add rev ptr)
-
---     (Just a) -> do
---                    liftIO $ writeIORef a value
---                    return value
---     Nothing -> case parentEnv envRef of
---                 (Just par) -> setNamespacedVar par namespace var value
---                 Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
+            -- Return pointer for use by the caller
+            return $ Pointer envRef var
+          else return v
+     Nothing -> case parentEnv envRef of
+       (Just par) -> addReversePointer namespace var par ptrNamespace ptrVar ptrEnvRef
+       Nothing -> throwError $ UnboundVar "Getting an unbound variable: " var
