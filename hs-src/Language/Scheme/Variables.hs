@@ -240,14 +240,18 @@ setNamespacedVar
     -> IOThrowsError LispVal   -- ^ Value
 setNamespacedVar envRef
                  namespace
-                 var value = do env <- liftIO $ readIORef $ bindings envRef
-                                case Data.Map.lookup (namespace, var) env of
-                                  (Just a) -> do -- vprime <- liftIO $ readIORef a
-                                                 liftIO $ writeIORef a value
-                                                 return value
-                                  Nothing -> case parentEnv envRef of
-                                              (Just par) -> setNamespacedVar par namespace var value
-                                              Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
+                 var value = do 
+  env <- liftIO $ readIORef $ bindings envRef
+
+-- TODO: call getValueToStore, see define
+
+  case Data.Map.lookup (namespace, var) env of
+    (Just a) -> do
+      liftIO $ writeIORef a value
+      return value
+    Nothing -> case parentEnv envRef of
+      (Just par) -> setNamespacedVar par namespace var value
+      Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
 
 -- |Bind a variable in the given namespace
 defineNamespacedVar
@@ -287,18 +291,22 @@ defineNamespacedVar envRef
       -- 
       -- So run through this logic to figure out what exactly to store,
       -- both for bindings and for rev-lookup pointers
-      valueToStore <- getValueToStore value
+      valueToStore <- getValueToStore namespace var envRef value
       liftIO $ do
         -- Write new value binding
         valueRef <- newIORef valueToStore
         env <- readIORef $ bindings envRef
         writeIORef (bindings envRef) (Data.Map.insert (namespace, var) valueRef env)
         return valueToStore
- where
-   getValueToStore :: LispVal -> IOThrowsError LispVal
-   getValueToStore (Pointer p pEnv) = do
-     addReversePointer namespace p pEnv namespace var envRef
-   getValueToStore _ = return value
+
+-- |An internal helper function to get the value to save to an env
+--  based on the value passed to the define/set function. Normally this
+--  is straightforward, but there is book-keeping involved if a
+--  pointer is passed, depending on if the pointer resolves to an object.
+getValueToStore :: String -> String -> Env -> LispVal -> IOThrowsError LispVal
+getValueToStore namespace var env (Pointer p pEnv) = do
+  addReversePointer namespace p pEnv namespace var env
+getValueToStore _ _ _ value = return value
 
 -- |Accept input for a pointer (ptrVar) and a variable that the pointer is going
 --  to be assigned to. If that variable is an object then we setup a reverse lookup
