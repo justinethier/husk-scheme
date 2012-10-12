@@ -65,7 +65,7 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 data Env = Environment {
         parentEnv :: (Maybe Env), 
         bindings :: (IORef (Data.Map.Map (String, String) (IORef LispVal))),
-        pointers :: (IORef (Data.Map.Map (String, String) ([LispVal])))
+        pointers :: (IORef (Data.Map.Map (String, String) (IORef [LispVal])))
     }
 
 -- |An empty environment
