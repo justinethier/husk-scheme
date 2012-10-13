@@ -41,6 +41,7 @@ import Control.Monad.Error
 import Data.Array
 import Data.IORef
 import qualified Data.Map
+import Debug.Trace
 
 -- |Return a value with a pointer dereferenced, if necessary
 derefPtr :: LispVal -> IOThrowsError LispVal
@@ -223,14 +224,6 @@ setVar
     -> IOThrowsError LispVal -- ^ Value
 setVar envRef var value = setNamespacedVar envRef varNamespace var value
 
--- |Bind a variable in the default namespace
-defineVar
-    :: Env      -- ^ Environment
-    -> String   -- ^ Variable
-    -> LispVal  -- ^ Value
-    -> IOThrowsError LispVal -- ^ Value
-defineVar envRef var value = defineNamespacedVar envRef varNamespace var value
-
 -- |Set a variable in a given namespace
 setNamespacedVar 
     :: Env      -- ^ Environment 
@@ -243,15 +236,22 @@ setNamespacedVar envRef
                  var value = do 
   env <- liftIO $ readIORef $ bindings envRef
 
--- TODO: call getValueToStore, see define
-
+  valueToStore <- getValueToStore namespace var envRef value
   case Data.Map.lookup (namespace, var) env of
     (Just a) -> do
-      liftIO $ writeIORef a value
-      return value
+      liftIO $ writeIORef a valueToStore
+      return valueToStore
     Nothing -> case parentEnv envRef of
-      (Just par) -> setNamespacedVar par namespace var value
+      (Just par) -> setNamespacedVar par namespace var valueToStore
       Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
+
+-- |Bind a variable in the default namespace
+defineVar
+    :: Env      -- ^ Environment
+    -> String   -- ^ Variable
+    -> LispVal  -- ^ Value
+    -> IOThrowsError LispVal -- ^ Value
+defineVar envRef var value = defineNamespacedVar envRef varNamespace var value
 
 -- |Bind a variable in the given namespace
 defineNamespacedVar
@@ -294,7 +294,7 @@ defineNamespacedVar envRef
       valueToStore <- getValueToStore namespace var envRef value
       liftIO $ do
         -- Write new value binding
-        valueRef <- newIORef valueToStore
+        valueRef <- newIORef (trace ("var: " ++ var ++ " value " ++ (show value) ++ " valueToStore " ++ (show valueToStore)) valueToStore)
         env <- readIORef $ bindings envRef
         writeIORef (bindings envRef) (Data.Map.insert (namespace, var) valueRef env)
         return valueToStore
@@ -305,7 +305,7 @@ defineNamespacedVar envRef
 --  pointer is passed, depending on if the pointer resolves to an object.
 getValueToStore :: String -> String -> Env -> LispVal -> IOThrowsError LispVal
 getValueToStore namespace var env (Pointer p pEnv) = do
-  addReversePointer namespace p pEnv namespace var env
+  addReversePointer namespace p pEnv namespace (trace ("adding reverse pointer of " ++ p ++ " to " ++ var) var) env
 getValueToStore _ _ _ value = return value
 
 -- |Accept input for a pointer (ptrVar) and a variable that the pointer is going

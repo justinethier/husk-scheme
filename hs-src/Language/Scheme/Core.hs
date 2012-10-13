@@ -44,7 +44,7 @@ import qualified Data.Char
 import qualified Data.Map
 import qualified System.Exit
 import System.IO
--- import Debug.Trace
+import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -231,7 +231,7 @@ eval env cont (Atom a) = do
     _ -> v
   -- TODO: only return a pointer for some types? 
   -- for example, can a number just be returned directly?
-  continueEval env cont val
+  continueEval env cont (trace ("eval atom => " ++ (show val)) val)
 
 -- Quote an expression by simply passing along the value
 eval env cont (List [Atom "quote", val]) = continueEval env cont val
@@ -447,7 +447,7 @@ eval env cont args@(List [Atom "define", Atom var, form]) = do
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else meval env (makeCPS env cont cpsResult) form
  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-       cpsResult e c result _ = defineVar e var result >>= continueEval e c
+       cpsResult e c result _ = defineVar e var (trace ("defineVar as " ++ (show result)) result) >>= continueEval e c
 
 eval env cont args@(List (Atom "define" : List (Atom var : fparams) : fbody )) = do
  bound <- liftIO $ isRecBound env "define"
