@@ -305,8 +305,8 @@ defineNamespacedVar envRef
 --  pointer is passed, depending on if the pointer resolves to an object.
 getValueToStore :: String -> String -> Env -> LispVal -> IOThrowsError LispVal
 getValueToStore namespace var env (Pointer p pEnv) = do
-  addReversePointer namespace p pEnv namespace (trace ("adding reverse pointer of " ++ p ++ " to " ++ var) var) env
-getValueToStore _ _ _ value = return value
+  (trace ("adding rev ptr of " ++ p ++ " to " ++ var) addReversePointer) namespace p pEnv namespace var env
+getValueToStore _ _ _ value = return (trace ("no need for ref ptr, value = " ++ show value) value)
 
 -- |Accept input for a pointer (ptrVar) and a variable that the pointer is going
 --  to be assigned to. If that variable is an object then we setup a reverse lookup

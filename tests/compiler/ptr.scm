@@ -19,6 +19,10 @@
    '()
     ((lambda (z) z) y))
 
+; This is an important test case because (list) actually
+; returns a pointer at this time...
+; might want to break it down as (0) but with (define x (list))
+;
 ;;1)
 ;(define x (list 'a 'b 'c))
 ;(define y x)
