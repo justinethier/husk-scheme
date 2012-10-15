@@ -234,8 +234,23 @@ setNamespacedVar
 setNamespacedVar envRef
                  namespace
                  var value = do 
-  env <- liftIO $ readIORef $ bindings envRef
+  _ <- updatePointers envRef namespace var 
+  _setNamespacedVar envRef namespace var value
 
+-- |An internal function that does the actual setting of a 
+--  variable, without all the extra code that keeps pointers
+--  in sync.
+_setNamespacedVar 
+    :: Env      -- ^ Environment 
+    -> String   -- ^ Namespace
+    -> String   -- ^ Variable
+    -> LispVal  -- ^ Value
+    -> IOThrowsError LispVal   -- ^ Value
+_setNamespacedVar envRef
+                 namespace
+                 var value = do 
+  -- Set the variable to its new value
+  env <- liftIO $ readIORef $ bindings envRef
   valueToStore <- getValueToStore namespace var envRef value
   case Data.Map.lookup (namespace, var) env of
     (Just a) -> do
@@ -244,6 +259,27 @@ setNamespacedVar envRef
     Nothing -> case parentEnv envRef of
       (Just par) -> setNamespacedVar par namespace var valueToStore
       Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
+
+-- |This helper function is used to keep pointers in sync when
+--  a variable is re-binded to a different value.
+updatePointers :: Env -> String -> String -> IOThrowsError LispVal
+updatePointers envRef namespace var = do
+  ptrs <- liftIO $ readIORef $ pointers envRef
+  case Data.Map.lookup (namespace, var) ptrs of
+    (Just valIORef) -> do
+      val <- liftIO $ readIORef valIORef
+      case val of 
+  -- TODO:
+  -- If var has any pointers, then
+  -- need to assign the first pointer to the old value of x, 
+  -- and the rest need to be updated to point to that first var
+        (Pointer pVar pEnv : ps) -> do
+          existingValue <- getNamespacedVar envRef namespace var
+          _setNamespacedVar pEnv namespace pVar existingValue
+          -- TODO: if existingValue is an object, each ps should point to p
+          --       else they should just be set to existingValue
+-- TODO:        _ -> ??
+    Nothing -> return $ Nil ""
 
 -- |Bind a variable in the default namespace
 defineVar
@@ -267,23 +303,10 @@ defineNamespacedVar envRef
   if alreadyDefined
     then setNamespacedVar envRef namespace var value >> return value
     else do
-  -- FUTURE: come back to this comment block once below works to save ptrs
-  -- TODO: if x is redefined and it has any pointers, then
-  --       need to assign the first pointer to the old value of x, 
-  --       and the rest need to be updated to point to that first var
   --
-  -- IMPORTANT!
-  --  is this approach all wrong? it works fine if "x" and "y" are in the
-  --  same env, but what if they are in different env's? can we get into
-  --  situations where one of the vars goes out of scope? need to think 
-  --  this through before implementing it
-  --
-  --
+  -- TODO: 
   -- Edge case: don't change anything if (define) is to existing pointer
   --  (IE, it does not really change anything)
-  --
-  -- TODO: need the below logic in set!, so when it works, need to
-  --       extract it out into a common function
 
 
       -- If we are assigning to a pointer, we need a reverse lookup to 
