@@ -962,9 +962,7 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("peek-char", readCharProc hLookAhead),
                 ("write", writeProc (\ port obj -> hPrint port obj)),
                 ("write-char", writeCharProc),
-                ("display", writeProc (\ port obj -> case obj of
-                                                        String str -> hPutStr port str
-                                                        _ -> hPutStr port $ show obj)),
+                ("display", writeProc (\ port obj -> displayProc port obj getVar)), 
 
                 -- From SRFI 96
                 ("file-exists?", fileExists),
@@ -974,6 +972,16 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("read-contents", readContents),
                 ("read-all", readAll),
                 ("gensym", gensym)]
+
+-- TODO: this is just a temporary stub until it
+-- can be relocated
+displayProc port obj lookup = do
+  case obj of
+    String str -> hPutStr port str
+--    Pointer pVar pEnv -> do
+--      value <- lookup pEnv pVar
+--      displayProc port obj lookup
+    _ -> hPutStr port $ show obj
 
 {- "Pure" primitive functions -}
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
