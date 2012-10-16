@@ -101,7 +101,7 @@ evalAndPrint env expr = evalString env expr >>= putStrLn
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = do
   v <- meval env (makeNullContinuation env) lisp
-  derefPtr v
+  recDerefPtrs v
 
 -- |A wrapper for macroEval and eval
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
@@ -551,7 +551,7 @@ eval env cont args@(List [Atom "set-cdr!", Pointer pVar pEnv, argObj]) = do
         cpsObj e c pair@(List (_ : _)) _ = meval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
         cpsObj e c pair@(DottedList _ _) _ = meval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
         cpsObj e c pair@(Pointer _ _) _ = do
-          value <- derefPtr pair
+          value <- recDerefPtrs pair
           meval e (makeCPSWArgs e c cpsSet $ [value]) argObj
         cpsObj _ _ pair _ = throwError $ TypeMismatch "pair 2" pair
 
