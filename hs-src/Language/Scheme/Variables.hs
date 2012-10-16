@@ -41,10 +41,11 @@ import Control.Monad.Error
 import Data.Array
 import Data.IORef
 import qualified Data.Map
-import Debug.Trace
+-- import Debug.Trace
 
 -- |Return a value with a pointer dereferenced, if necessary
 derefPtr :: LispVal -> IOThrowsError LispVal
+-- TODO: try dereferencing again if a ptr is found??
 derefPtr (Pointer p env) = getVar env p
 derefPtr v = return v
 
@@ -317,7 +318,7 @@ defineNamespacedVar envRef
       valueToStore <- getValueToStore namespace var envRef value
       liftIO $ do
         -- Write new value binding
-        valueRef <- newIORef (trace ("var: " ++ var ++ " value " ++ (show value) ++ " valueToStore " ++ (show valueToStore)) valueToStore)
+        valueRef <- newIORef valueToStore
         env <- readIORef $ bindings envRef
         writeIORef (bindings envRef) (Data.Map.insert (namespace, var) valueRef env)
         return valueToStore
@@ -328,8 +329,8 @@ defineNamespacedVar envRef
 --  pointer is passed, depending on if the pointer resolves to an object.
 getValueToStore :: String -> String -> Env -> LispVal -> IOThrowsError LispVal
 getValueToStore namespace var env (Pointer p pEnv) = do
-  (trace ("adding rev ptr of " ++ p ++ " to " ++ var) addReversePointer) namespace p pEnv namespace var env
-getValueToStore _ _ _ value = return (trace ("no need for ref ptr, value = " ++ show value) value)
+  addReversePointer namespace p pEnv namespace var env
+getValueToStore _ _ _ value = return value
 
 -- |Accept input for a pointer (ptrVar) and a variable that the pointer is going
 --  to be assigned to. If that variable is an object then we setup a reverse lookup

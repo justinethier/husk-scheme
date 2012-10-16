@@ -44,7 +44,7 @@ import qualified Data.Char
 import qualified Data.Map
 import qualified System.Exit
 import System.IO
-import Debug.Trace
+--import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -231,7 +231,7 @@ eval env cont (Atom a) = do
     _ -> v
   -- TODO: only return a pointer for some types? 
   -- for example, can a number just be returned directly?
-  continueEval env cont (trace ("eval atom => " ++ (show val)) val)
+  continueEval env cont val
 
 -- Quote an expression by simply passing along the value
 eval env cont (List [Atom "quote", val]) = continueEval env cont val
@@ -447,7 +447,7 @@ eval env cont args@(List [Atom "define", Atom var, form]) = do
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else meval env (makeCPS env cont cpsResult) form
  where cpsResult :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-       cpsResult e c result _ = defineVar e var (trace ("defineVar as " ++ (show result)) result) >>= continueEval e c
+       cpsResult e c result _ = defineVar e var result >>= continueEval e c
 
 eval env cont args@(List (Atom "define" : List (Atom var : fparams) : fbody )) = do
  bound <- liftIO $ isRecBound env "define"
@@ -536,6 +536,30 @@ eval env cont fargs@(List (Atom "set-car!" : args)) = do
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 2 args
 
+
+-- TODO: There is too much redundancy in this case vs the next one
+--  they need to be combined
+{-
+eval env cont args@(List [Atom "set-cdr!", Pointer pVar pEnv, argObj]) = do
+ bound <- liftIO $ isRecBound env "set-cdr!"
+ if bound
+  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
+  else continueEval env (makeCPS env cont cpsObj) =<< getVar pEnv pVar
+ where
+        cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsObj _ _ pair@(List []) _ = throwError $ TypeMismatch "pair 1" pair
+        cpsObj e c pair@(List (_ : _)) _ = meval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
+        cpsObj e c pair@(DottedList _ _) _ = meval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
+        cpsObj e c pair@(Pointer _ _) _ = do
+          value <- derefPtr pair
+          meval e (makeCPSWArgs e c cpsSet $ [value]) argObj
+        cpsObj _ _ pair _ = throwError $ TypeMismatch "pair 2" pair
+
+        cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsSet e c obj (Just [List (l : _)]) = (liftThrows $ cons [l, obj]) >>= setVar pEnv pVar >>= continueEval e c
+        cpsSet e c obj (Just [DottedList (l : _) _]) = (liftThrows $ cons [l, obj]) >>= setVar pEnv pVar >>= continueEval e c
+        cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
+-}
 eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
@@ -716,7 +740,8 @@ apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
         _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
              continueEval e (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args
 apply cont (IOFunc func) args = do
-  result <- func args
+  List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  result <- func dargs
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
@@ -962,7 +987,10 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("peek-char", readCharProc hLookAhead),
                 ("write", writeProc (\ port obj -> hPrint port obj)),
                 ("write-char", writeCharProc),
-                ("display", writeProc (\ port obj -> displayProc port obj getVar)), 
+                ("display", writeProc (\ port obj -> do
+                  case obj of
+                    String str -> hPutStr port str
+                    _ -> hPutStr port $ show obj)),
 
                 -- From SRFI 96
                 ("file-exists?", fileExists),
@@ -972,16 +1000,6 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("read-contents", readContents),
                 ("read-all", readAll),
                 ("gensym", gensym)]
-
--- TODO: this is just a temporary stub until it
--- can be relocated
-displayProc port obj lookup = do
-  case obj of
-    String str -> hPutStr port str
---    Pointer pVar pEnv -> do
---      value <- lookup pEnv pVar
---      displayProc port obj lookup
-    _ -> hPutStr port $ show obj
 
 {- "Pure" primitive functions -}
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
