@@ -44,7 +44,7 @@ import qualified Data.Char
 import qualified Data.Map
 import qualified System.Exit
 import System.IO
-import Debug.Trace
+-- import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -567,7 +567,7 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
   else do
       value <- getVar env var
       derefValue <- derefPtr value
-      continueEval env (makeCPS env cont cpsObj) (trace ("var = " ++ var ++ " deref = " ++ show derefValue) derefValue)
+      continueEval env (makeCPS env cont cpsObj) derefValue
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsObj _ _ pair@(List []) _ = throwError $ TypeMismatch "pair" pair
@@ -576,8 +576,8 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
         cpsObj _ _ pair _ = throwError $ TypeMismatch "pair" pair
 
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsSet e c obj (Just [List (l : _)]) = (liftThrows $ cons [l, obj]) >>= _setNamespacedVar e varNamespace var >>= continueEval e c
-        cpsSet e c obj (Just [DottedList (l : _) _]) = (liftThrows $ cons [l, obj]) >>= _setNamespacedVar e varNamespace var >>= continueEval e c
+        cpsSet e c obj (Just [List (l : _)]) = (liftThrows $ cons [l, obj]) >>= updateNamespacedObject e varNamespace var >>= continueEval e c
+        cpsSet e c obj (Just [DottedList (l : _) _]) = (liftThrows $ cons [l, obj]) >>= updateNamespacedObject e varNamespace var >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
 eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
  bound <- liftIO $ isRecBound env "set-cdr!"

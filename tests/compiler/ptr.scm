@@ -1,4 +1,6 @@
 (define (assert/equal a b)
+ (if (not (eqv? a b))
+    (display "ERROR: "))
  (display "Expected ")
  (display a)
  (display " Got ")
@@ -42,38 +44,15 @@
 ; and y should be too, per the spec
 (assert/equal '(a . 4) x)
 (assert/equal '(a . 4) y)
-; TODO: crap, y is broken I think in part because x points to obj.
-; consider the logs, why does y->obj?????:
-;
-;  huski> (define x (list 1 2 3))
-;  recDeref of objs = (1 2 3)
-;  (1 2 3)
-;  huski> (define y x)
-;  recDeref of objs = (1 2 3)
-;  (1 2 3)
-;  huski> x
-;  recDeref of objs = (1 2 3)
-;  (1 2 3)
-;  huski> y
-;  recDeref of objs = (1 2 3)
-;  (1 2 3)
-;  huski> (set-cdr! x 5)
-;  var = x deref = (1 2 3)
-;  (1 . 5)
-;  huski> x
-;  recDeref of x = (1 . 5)
-;  (1 . 5)
-;  huski> y
-;  recDeref of objs = (1 2 3)
-;  (1 2 3)
+(set-cdr! y 44)
+(assert/equal '(a . 44) x)
+(assert/equal '(a . 44) y)
 
-; TODO: the above should also work for (set-cdr! y 44)
+;2)
+(define x '( a b c))
+(assert/equal '(a b c) x)
+(define y x)
+(define x 1)
+(assert/equal 1 x)
+(assert/equal '(a b c) y)
 
-;;2)
-;(define x '( a b c))
-;(assert/equal '(a b c) x)
-;(define y x)
-;(define x 1)
-;(assert/equal 1 x)
-;(assert/equal '(a b c) y)
-;

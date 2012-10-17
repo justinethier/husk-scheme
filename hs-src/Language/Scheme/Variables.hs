@@ -26,7 +26,8 @@ module Language.Scheme.Variables
     , defineVar
     , setVar
     , setNamespacedVar
-    , _setNamespacedVar
+    , _setNamespacedVar -- TODO: consider renaming down the road
+    , updateNamespacedObject -- TODO: consider renaming down the road
     , defineNamespacedVar
     -- * Predicates
     , isBound
@@ -42,7 +43,7 @@ import Control.Monad.Error
 import Data.Array
 import Data.IORef
 import qualified Data.Map
-import Debug.Trace
+-- import Debug.Trace
 
 -- |Return a value with a pointer dereferenced, if necessary
 derefPtr :: LispVal -> IOThrowsError LispVal
@@ -58,6 +59,18 @@ derefPtr (Pointer p env) = do
     result <- getVar env p
     derefPtr result
 derefPtr v = return v
+
+-- Same as dereferencing a pointer, except we want the
+-- last pointer to an object (if there is one) instead
+-- of the object itself
+findPointerTo :: LispVal -> IOThrowsError LispVal
+findPointerTo ptr@(Pointer p env) = do
+    result <- getVar env p
+    case result of
+      (Pointer _ _) -> findPointerTo result
+      _ -> return ptr
+findPointerTo v = return v
+
 
 -- |Recursively process the given data structure, dereferencing
 --  any pointers found along the way
@@ -76,7 +89,7 @@ recDerefPtrs (Vector v) = do
 -- TODO: need to walk HashTable, anything else?
 recDerefPtrs (Pointer p env) = do
     result <- getVar env p
-    recDerefPtrs (trace ("recDeref of " ++ p ++ " = " ++ show result) result)
+    recDerefPtrs result 
 recDerefPtrs v = return v
 
 -- |Determine if given lisp value is an "object" that
@@ -272,6 +285,17 @@ _setNamespacedVar envRef
     Nothing -> case parentEnv envRef of
       (Just par) -> _setNamespacedVar par namespace var valueToStore
       Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
+
+-- |Simialr to set! but if the var is a pointer, this will find the
+--  object that it points to and update that object
+updateNamespacedObject :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
+updateNamespacedObject env namespace var value = do
+  varContents <- getNamespacedVar env namespace var
+  obj <- findPointerTo varContents
+  case obj of
+    Pointer pVar pEnv -> do
+      _setNamespacedVar pEnv namespace pVar value
+    _ -> _setNamespacedVar env namespace var value
 
 -- |This helper function is used to keep pointers in sync when
 --  a variable is re-binded to a different value.
