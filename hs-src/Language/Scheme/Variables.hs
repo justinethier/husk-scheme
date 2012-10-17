@@ -26,6 +26,7 @@ module Language.Scheme.Variables
     , defineVar
     , setVar
     , setNamespacedVar
+    , _setNamespacedVar
     , defineNamespacedVar
     -- * Predicates
     , isBound
@@ -33,6 +34,7 @@ module Language.Scheme.Variables
     , isNamespacedBound
     , isNamespacedRecBound 
     -- * Pointers
+    , derefPtr
     , recDerefPtrs
     ) where
 import Language.Scheme.Types
@@ -42,20 +44,20 @@ import Data.IORef
 import qualified Data.Map
 import Debug.Trace
 
----- |Return a value with a pointer dereferenced, if necessary
---derefPtr :: LispVal -> IOThrowsError LispVal
----- Try dereferencing again if a ptr is found
-----
----- TODO: not sure if this is the best solution; it would be 
----- nice if we did not have to worry about multiple levels
----- of ptrs, especially since I believe husk only needs to 
----- have one level. but for now we will go with this just to
----- move forward
-----
---derefPtr (Pointer p env) = do
---    result <- getVar env p
---    derefPtr (trace ("deref result=" ++ show result ++ " for " ++ p) result) --result
---derefPtr v = return (trace ("deref returning " ++ show v) v)
+-- |Return a value with a pointer dereferenced, if necessary
+derefPtr :: LispVal -> IOThrowsError LispVal
+-- Try dereferencing again if a ptr is found
+--
+-- TODO: not sure if this is the best solution; it would be 
+-- nice if we did not have to worry about multiple levels
+-- of ptrs, especially since I believe husk only needs to 
+-- have one level. but for now we will go with this just to
+-- move forward
+--
+derefPtr (Pointer p env) = do
+    result <- getVar env p
+    derefPtr result
+derefPtr v = return v
 
 -- |Recursively process the given data structure, dereferencing
 --  any pointers found along the way
@@ -74,7 +76,7 @@ recDerefPtrs (Vector v) = do
 -- TODO: need to walk HashTable, anything else?
 recDerefPtrs (Pointer p env) = do
     result <- getVar env p
-    recDerefPtrs result
+    recDerefPtrs (trace ("recDeref of " ++ p ++ " = " ++ show result) result)
 recDerefPtrs v = return v
 
 -- |Determine if given lisp value is an "object" that
@@ -268,7 +270,7 @@ _setNamespacedVar envRef
       liftIO $ writeIORef a valueToStore
       return valueToStore
     Nothing -> case parentEnv envRef of
-      (Just par) -> setNamespacedVar par namespace var valueToStore
+      (Just par) -> _setNamespacedVar par namespace var valueToStore
       Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
 
 -- |This helper function is used to keep pointers in sync when

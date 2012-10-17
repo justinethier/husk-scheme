@@ -26,6 +26,13 @@
 ; in the first place (IE, during definition)
 (write (list (list (list))))
 
+;0.2)
+(define a '())
+(define b a)
+(set! a '(1))
+(assert/equal '(1) a)
+(assert/equal '() b)
+
 ;1)
 (define x (list 'a 'b 'c))
 (define y x)
@@ -35,6 +42,32 @@
 ; and y should be too, per the spec
 (assert/equal '(a . 4) x)
 (assert/equal '(a . 4) y)
+; TODO: crap, y is broken I think in part because x points to obj.
+; consider the logs, why does y->obj?????:
+;
+;  huski> (define x (list 1 2 3))
+;  recDeref of objs = (1 2 3)
+;  (1 2 3)
+;  huski> (define y x)
+;  recDeref of objs = (1 2 3)
+;  (1 2 3)
+;  huski> x
+;  recDeref of objs = (1 2 3)
+;  (1 2 3)
+;  huski> y
+;  recDeref of objs = (1 2 3)
+;  (1 2 3)
+;  huski> (set-cdr! x 5)
+;  var = x deref = (1 2 3)
+;  (1 . 5)
+;  huski> x
+;  recDeref of x = (1 . 5)
+;  (1 . 5)
+;  huski> y
+;  recDeref of objs = (1 2 3)
+;  (1 2 3)
+
+; TODO: the above should also work for (set-cdr! y 44)
 
 ;;2)
 ;(define x '( a b c))
