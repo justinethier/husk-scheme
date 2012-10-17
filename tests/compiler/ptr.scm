@@ -36,7 +36,7 @@
 (assert/equal '() b)
 
 ;1)
-(define x (list 'a 'b 'c))
+(define x (let () (list 'a 'b 'c)))
 (define y x)
 ; Now y is equal to (a b c)
 (set-cdr! x 4)

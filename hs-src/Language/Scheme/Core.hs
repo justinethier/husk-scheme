@@ -44,7 +44,7 @@ import qualified Data.Char
 import qualified Data.Map
 import qualified System.Exit
 import System.IO
--- import Debug.Trace
+import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -101,7 +101,7 @@ evalAndPrint env expr = evalString env expr >>= putStrLn
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = do
   v <- meval env (makeNullContinuation env) lisp
-  recDerefPtrs v
+  recDerefPtrs (trace ("deref: " ++ show v) v)
 
 -- |A wrapper for macroEval and eval
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
@@ -279,7 +279,10 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
         -- Finish unquoting a pair by combining both of the unquoted left/right hand sides.
         cpsUnquotePairFinish :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUnquotePairFinish e c rx (Just [List rxs]) = do
-            case rx of
+            -- TODO: I think we can just deref rx here and 
+            -- use that to keep going, but what else is broken
+            -- w/the concept of pointers?
+            case (trace ("rx = " ++ show rx) rx) of
               List [] -> continueEval e c $ List rxs
               List rxlst -> continueEval e c $ List $ rxs ++ rxlst
               DottedList rxlst rxlast -> continueEval e c $ DottedList (rxs ++ rxlst) rxlast
