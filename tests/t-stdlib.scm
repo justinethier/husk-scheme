@@ -71,6 +71,7 @@
 (set-car! f "a")
 (assert/equal f '("a" . 2))
 
+; TODO: should be able to get these to pass now...
 ;
 ; Looks like all of below fail because (define y x) 
 ; is assigning to to the evaluated value of x instead of the symbol x.
@@ -85,7 +86,7 @@
 ;;
 ; End test failures
 
-
+; TODO: the following two lines cause an infinite loop!
 (set-cdr! x x)
 (assert/equal (list? x)  #f)
 

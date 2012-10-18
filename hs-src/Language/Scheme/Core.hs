@@ -44,7 +44,7 @@ import qualified Data.Char
 import qualified Data.Map
 import qualified System.Exit
 import System.IO
-import Debug.Trace
+-- import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -101,7 +101,7 @@ evalAndPrint env expr = evalString env expr >>= putStrLn
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = do
   v <- meval env (makeNullContinuation env) lisp
-  recDerefPtrs (trace ("deref: " ++ show v) v)
+  recDerefPtrs v
 
 -- |A wrapper for macroEval and eval
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
