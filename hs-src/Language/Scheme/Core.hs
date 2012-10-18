@@ -567,7 +567,7 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do
       value <- getVar env var
-      derefValue <- derefPtr value
+      derefValue <- recDerefPtrs value --derefPtr value
       continueEval env (makeCPS env cont cpsObj) derefValue
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -578,7 +578,7 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
 
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsSet e c obj (Just [List (l : _)]) = (liftThrows $ cons [l, obj]) >>= updateNamespacedObject e varNamespace var >>= continueEval e c
-        cpsSet e c obj (Just [DottedList (l : _) _]) = (liftThrows $ cons [l, obj]) >>= updateNamespacedObject e varNamespace var >>= continueEval e c
+        cpsSet e c obj (Just [DottedList (l : _) _]) = (liftThrows $ cons [l, obj]) >>= updateObject e var >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
 eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
@@ -606,7 +606,7 @@ eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
 
         cpsUpdateVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUpdateVec e c vec (Just [idx, obj]) =
-            updateVector vec idx obj >>= setVar e var >>= continueEval e c
+            updateVector vec idx obj >>= updateObject e var >>= continueEval e c
         cpsUpdateVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateVec"
 
 eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
@@ -694,6 +694,9 @@ substr (s, _, _) = throwError $ TypeMismatch "string" s
 -- |A helper function for the special form /(vector-set!)/
 updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
 updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec // [(fromInteger idx, obj)]
+updateVector ptr@(Pointer _ _) i obj = do
+  vec <- recDerefPtrs ptr
+  updateVector vec i obj
 updateVector v _ _ = throwError $ TypeMismatch "vector" v
 
 {- Prepare for apply by evaluating each function argument,

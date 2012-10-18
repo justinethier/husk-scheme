@@ -27,6 +27,7 @@ module Language.Scheme.Variables
     , setVar
     , setNamespacedVar
     , _setNamespacedVar -- TODO: consider renaming down the road
+    , updateObject -- TODO: consider renaming down the road
     , updateNamespacedObject -- TODO: consider renaming down the road
     , defineNamespacedVar
     -- * Predicates
@@ -286,7 +287,13 @@ _setNamespacedVar envRef
       (Just par) -> _setNamespacedVar par namespace var valueToStore
       Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
 
--- |Simialr to set! but if the var is a pointer, this will find the
+-- |Similar to set! but if the var is a pointer, this will find the
+--  object that it points to and update that object
+updateObject :: Env -> String -> LispVal -> IOThrowsError LispVal
+updateObject env var value = 
+  updateNamespacedObject env varNamespace var value
+
+-- |Similar to set! but if the var is a pointer, this will find the
 --  object that it points to and update that object
 updateNamespacedObject :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
 updateNamespacedObject env namespace var value = do
