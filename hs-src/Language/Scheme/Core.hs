@@ -737,7 +737,8 @@ apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
  where
    cpsApply :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
    cpsApply e c _ _ = doApply e c
-   doApply e c =
+   doApply e c = do
+      -- TODO (?): List dargs <- recDerefPtrs $ List args -- Deref any pointers
       case (toInteger $ length args) of
         0 -> throwError $ NumArgs 1 []
         1 -> continueEval e c $ head args
@@ -880,10 +881,16 @@ evalfuncApply (cont@(Continuation _ _ _ _ _) : func : args) = do
 
   if null args
      then throwError $ NumArgs 2 args
-     else case head aRev of
-            List aLastElems -> do
-              apply cont func $ (init args) ++ aLastElems
-            other -> throwError $ TypeMismatch "List" other
+     else applyArgs $ head aRev
+ where 
+  applyArgs aRev = do
+    case aRev of
+      List aLastElems -> do
+        apply cont func $ (init args) ++ aLastElems
+      Pointer pVar pEnv -> do
+        value <- recDerefPtrs aRev
+        applyArgs value
+      other -> throwError $ TypeMismatch "List" other
 evalfuncApply (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
 evalfuncApply _ = throwError $ NumArgs 2 []
 
