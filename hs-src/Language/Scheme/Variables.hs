@@ -24,12 +24,11 @@ module Language.Scheme.Variables
     , getNamespacedVar 
     -- * Setters
     , defineVar
+    , defineNamespacedVar
     , setVar
     , setNamespacedVar
-    , _setNamespacedVar -- TODO: consider renaming down the road
     , updateObject -- TODO: consider renaming down the road
     , updateNamespacedObject -- TODO: consider renaming down the road
-    , defineNamespacedVar
     -- * Predicates
     , isBound
     , isRecBound
@@ -61,20 +60,11 @@ derefPtr (Pointer p env) = do
     derefPtr result
 derefPtr v = return v
 
--- Same as dereferencing a pointer, except we want the
--- last pointer to an object (if there is one) instead
--- of the object itself
-findPointerTo :: LispVal -> IOThrowsError LispVal
-findPointerTo ptr@(Pointer p env) = do
-    result <- getVar env p
-    case result of
-      (Pointer _ _) -> findPointerTo result
-      _ -> return ptr
-findPointerTo v = return v
-
-
 -- |Recursively process the given data structure, dereferencing
---  any pointers found along the way
+--  any pointers found along the way. 
+-- 
+--  This could potentially be expensive on large data structures 
+--  since it must walk the entire object.
 recDerefPtrs :: LispVal -> IOThrowsError LispVal
 recDerefPtrs (List l) = do
     result <- mapM recDerefPtrs l
@@ -93,8 +83,8 @@ recDerefPtrs (Pointer p env) = do
     recDerefPtrs result 
 recDerefPtrs v = return v
 
--- |Determine if given lisp value is an "object" that
---  can be pointed to.
+-- |A predicate to determine if the given lisp value 
+--  is an "object" that can be pointed to.
 isObject :: LispVal -> Bool
 isObject (List _) = True
 isObject (DottedList _ _) = True
@@ -103,6 +93,17 @@ isObject (Vector _) = True
 isObject (HashTable _) = True
 isObject (Pointer _ _) = True
 isObject _ = False
+
+-- |Same as dereferencing a pointer, except we want the
+--  last pointer to an object (if there is one) instead
+--  of the object itself
+findPointerTo :: LispVal -> IOThrowsError LispVal
+findPointerTo ptr@(Pointer p env) = do
+    result <- getVar env p
+    case result of
+      (Pointer _ _) -> findPointerTo result
+      _ -> return ptr
+findPointerTo v = return v
 
 {- Experimental code:
 -- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/
@@ -264,6 +265,27 @@ setNamespacedVar envRef
   _ <- updatePointers envRef namespace var 
   _setNamespacedVar envRef namespace var value
 
+-- |This helper function is used to keep pointers in sync when
+--  a variable is re-binded to a different value.
+updatePointers :: Env -> String -> String -> IOThrowsError LispVal
+updatePointers envRef namespace var = do
+  ptrs <- liftIO $ readIORef $ pointers envRef
+  case Data.Map.lookup (namespace, var) ptrs of
+    (Just valIORef) -> do
+      val <- liftIO $ readIORef valIORef
+      case val of 
+  -- TODO:
+  -- If var has any pointers, then
+  -- need to assign the first pointer to the old value of x, 
+  -- and the rest need to be updated to point to that first var
+        (Pointer pVar pEnv : ps) -> do
+          existingValue <- getNamespacedVar envRef namespace var
+          _setNamespacedVar pEnv namespace pVar existingValue
+          -- TODO: if existingValue is an object, each ps should point to p
+          --       else they should just be set to existingValue
+-- TODO:        _ -> ??
+    Nothing -> return $ Nil ""
+
 -- |An internal function that does the actual setting of a 
 --  variable, without all the extra code that keeps pointers
 --  in sync.
@@ -287,14 +309,21 @@ _setNamespacedVar envRef
       (Just par) -> _setNamespacedVar par namespace var valueToStore
       Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
 
--- |Similar to set! but if the var is a pointer, this will find the
---  object that it points to and update that object
+-- |A wrapper for updateNamespaceObject that uses the variable namespace.
 updateObject :: Env -> String -> LispVal -> IOThrowsError LispVal
 updateObject env var value = 
   updateNamespacedObject env varNamespace var value
 
--- |Similar to set! but if the var is a pointer, this will find the
---  object that it points to and update that object
+-- |This function updates the object that "var" refers to. If "var" is
+--  a pointer, that means this function will update that pointer (or the last
+--  pointer in the chain) to point to the given "value" object. If "var"
+--  is not a pointer, the result is the same as a setVar (but without updating
+--  any pointer references, see below).
+--
+--  Note this function only updates the object, it does not
+--  update any associated pointers. So it should probably only be
+--  used internally by husk, unless you really know what you are
+--  doing!
 updateNamespacedObject :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
 updateNamespacedObject env namespace var value = do
   varContents <- getNamespacedVar env namespace var
@@ -303,27 +332,6 @@ updateNamespacedObject env namespace var value = do
     Pointer pVar pEnv -> do
       _setNamespacedVar pEnv namespace pVar value
     _ -> _setNamespacedVar env namespace var value
-
--- |This helper function is used to keep pointers in sync when
---  a variable is re-binded to a different value.
-updatePointers :: Env -> String -> String -> IOThrowsError LispVal
-updatePointers envRef namespace var = do
-  ptrs <- liftIO $ readIORef $ pointers envRef
-  case Data.Map.lookup (namespace, var) ptrs of
-    (Just valIORef) -> do
-      val <- liftIO $ readIORef valIORef
-      case val of 
-  -- TODO:
-  -- If var has any pointers, then
-  -- need to assign the first pointer to the old value of x, 
-  -- and the rest need to be updated to point to that first var
-        (Pointer pVar pEnv : ps) -> do
-          existingValue <- getNamespacedVar envRef namespace var
-          _setNamespacedVar pEnv namespace pVar existingValue
-          -- TODO: if existingValue is an object, each ps should point to p
-          --       else they should just be set to existingValue
--- TODO:        _ -> ??
-    Nothing -> return $ Nil ""
 
 -- |Bind a variable in the default namespace
 defineVar
