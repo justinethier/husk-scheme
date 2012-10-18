@@ -278,11 +278,9 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
 
         -- Finish unquoting a pair by combining both of the unquoted left/right hand sides.
         cpsUnquotePairFinish :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquotePairFinish e c rx (Just [List rxs]) = do
-            -- TODO: I think we can just deref rx here and 
-            -- use that to keep going, but what else is broken
-            -- w/the concept of pointers?
-            case (trace ("rx = " ++ show rx) rx) of
+        cpsUnquotePairFinish e c _rx (Just [List rxs]) = do
+            rx <- recDerefPtrs _rx
+            case rx of
               List [] -> continueEval e c $ List rxs
               List rxlst -> continueEval e c $ List $ rxs ++ rxlst
               DottedList rxlst rxlast -> continueEval e c $ DottedList (rxs ++ rxlst) rxlast
