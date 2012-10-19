@@ -566,7 +566,9 @@ eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else throwError $ TypeMismatch "variable" nonvar
+  else do
+      -- TODO: eval nonvar, then can process it if we get a list
+      throwError $ TypeMismatch "variable" nonvar
 eval env cont fargs@(List (Atom "set-cdr!" : args)) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
