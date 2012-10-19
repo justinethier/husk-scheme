@@ -559,8 +559,14 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
         cpsObj _ _ pair _ = throwError $ TypeMismatch "pair" pair
 
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsSet e c obj (Just [List (l : _)]) = (liftThrows $ cons [l, obj]) >>= updateObject e var >>= continueEval e c
-        cpsSet e c obj (Just [DottedList (l : _) _]) = (liftThrows $ cons [l, obj]) >>= updateObject e var >>= continueEval e c
+        cpsSet e c obj (Just [List (l : _)]) = do
+            l' <- recDerefPtrs l
+            obj' <- recDerefPtrs obj
+            (liftThrows $ cons [l', obj']) >>= updateObject e var >>= continueEval e c
+        cpsSet e c obj (Just [DottedList (l : _) _]) = do
+            l' <- recDerefPtrs l
+            obj' <- recDerefPtrs obj
+            (liftThrows $ cons [l', obj']) >>= updateObject e var >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
 eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
