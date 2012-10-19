@@ -120,6 +120,7 @@ import qualified Data.Map
 import System.IO
 import System.Directory (doesFileExist, removeFile)
 import System.IO.Error
+-- import Debug.Trace
 
 ---------------------------------------------------
 -- I/O Primitives
@@ -341,7 +342,7 @@ hashTblExists args@(_ : _) = throwError $ NumArgs 2 args
 
 hashTblRef [(HashTable ht), key@(_)] = do
   case Data.Map.lookup key ht of
-    Just val -> return $ val
+    Just val -> return val
     Nothing -> throwError $ BadSpecialForm "Hash table does not contain key" key
 hashTblRef [(HashTable ht), key@(_), Func _ _ _ _] = do
   case Data.Map.lookup key ht of

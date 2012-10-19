@@ -492,11 +492,14 @@ eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
   else meval env (makeCPS env cont cpsStr) i
  where
         cpsStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsStr e c idx _ = (meval e (makeCPSWArgs e c cpsSubStr $ [idx]) =<< getVar e var) 
+        cpsStr e c idx _ = do
+            value <- getVar env var
+            derefValue <- recDerefPtrs value
+            meval e (makeCPSWArgs e c cpsSubStr $ [idx]) derefValue
 
         cpsSubStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsSubStr e c str (Just [idx]) =
-            substr (str, character, idx) >>= setVar e var >>= continueEval e c
+            substr (str, character, idx) >>= updateObject e var >>= continueEval e c
         cpsSubStr _ _ _ _ = throwError $ InternalError "Invalid argument to cpsSubStr"
 
 eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do
@@ -514,7 +517,10 @@ eval env cont args@(List [Atom "set-car!", Atom var, argObj]) = do
  bound <- liftIO $ isRecBound env "set-car!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else continueEval env (makeCPS env cont cpsObj) =<< getVar env var
+  else do
+      value <- getVar env var
+      derefValue <- recDerefPtrs value
+      continueEval env (makeCPS env cont cpsObj) derefValue
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsObj _ _ obj@(List []) _ = throwError $ TypeMismatch "pair" obj
@@ -523,8 +529,8 @@ eval env cont args@(List [Atom "set-car!", Atom var, argObj]) = do
         cpsObj _ _ obj _ = throwError $ TypeMismatch "pair" obj
 
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsSet e c obj (Just [List (_ : ls)]) = setVar e var (List (obj : ls)) >>= continueEval e c -- Wrong constructor? Should it be DottedList?
-        cpsSet e c obj (Just [DottedList (_ : ls) l]) = setVar e var (DottedList (obj : ls) l) >>= continueEval e c
+        cpsSet e c obj (Just [List (_ : ls)]) = updateObject e var (List (obj : ls)) >>= continueEval e c -- Wrong constructor? Should it be DottedList?
+        cpsSet e c obj (Just [DottedList (_ : ls) l]) = updateObject e var (DottedList (obj : ls) l) >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
 eval env cont args@(List [Atom "set-car!" , nonvar , _ ]) = do
  bound <- liftIO $ isRecBound env "set-car!"
@@ -537,30 +543,6 @@ eval env cont fargs@(List (Atom "set-car!" : args)) = do
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 2 args
 
-
--- TODO: There is too much redundancy in this case vs the next one
---  they need to be combined
-{-
-eval env cont args@(List [Atom "set-cdr!", Pointer pVar pEnv, argObj]) = do
- bound <- liftIO $ isRecBound env "set-cdr!"
- if bound
-  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else continueEval env (makeCPS env cont cpsObj) =<< getVar pEnv pVar
- where
-        cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsObj _ _ pair@(List []) _ = throwError $ TypeMismatch "pair 1" pair
-        cpsObj e c pair@(List (_ : _)) _ = meval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
-        cpsObj e c pair@(DottedList _ _) _ = meval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
-        cpsObj e c pair@(Pointer _ _) _ = do
-          value <- recDerefPtrs pair
-          meval e (makeCPSWArgs e c cpsSet $ [value]) argObj
-        cpsObj _ _ pair _ = throwError $ TypeMismatch "pair 2" pair
-
-        cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsSet e c obj (Just [List (l : _)]) = (liftThrows $ cons [l, obj]) >>= setVar pEnv pVar >>= continueEval e c
-        cpsSet e c obj (Just [DottedList (l : _) _]) = (liftThrows $ cons [l, obj]) >>= setVar pEnv pVar >>= continueEval e c
-        cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
--}
 eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
@@ -577,7 +559,7 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
         cpsObj _ _ pair _ = throwError $ TypeMismatch "pair" pair
 
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsSet e c obj (Just [List (l : _)]) = (liftThrows $ cons [l, obj]) >>= updateNamespacedObject e varNamespace var >>= continueEval e c
+        cpsSet e c obj (Just [List (l : _)]) = (liftThrows $ cons [l, obj]) >>= updateObject e var >>= continueEval e c
         cpsSet e c obj (Just [DottedList (l : _) _]) = (liftThrows $ cons [l, obj]) >>= updateObject e var >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
 eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
@@ -630,14 +612,17 @@ eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
         cpsValue e c key _ = meval e (makeCPSWArgs e c cpsH $ [key]) rvalue
 
         cpsH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsH e c value (Just [key]) = (meval e (makeCPSWArgs e c cpsEvalH $ [key, value]) =<< getVar e var) 
+        cpsH e c value (Just [key]) = do
+          v <- getVar e var
+          derefVar <- recDerefPtrs v
+          meval e (makeCPSWArgs e c cpsEvalH $ [key, value]) derefVar
         cpsH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsH"
 
         cpsEvalH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsEvalH e c h (Just [key, value]) = do
             case h of
                 HashTable ht -> do
-                  setVar env var (HashTable $ Data.Map.insert key value ht) >>= meval e c
+                  updateObject env var (HashTable $ Data.Map.insert key value ht) >>= meval e c
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
 eval env cont args@(List [Atom "hash-table-set!" , nonvar , _ , _]) = do
@@ -658,13 +643,16 @@ eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
   else meval env (makeCPS env cont cpsH) rkey
  where
         cpsH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsH e c key _ = (meval e (makeCPSWArgs e c cpsEvalH $ [key]) =<< getVar e var) 
+        cpsH e c key _ = do
+            value <- getVar e var
+            derefValue <- recDerefPtrs value
+            meval e (makeCPSWArgs e c cpsEvalH $ [key]) derefValue
 
         cpsEvalH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsEvalH e c h (Just [key]) = do
             case h of
                 HashTable ht -> do
-                  setVar env var (HashTable $ Data.Map.delete key ht) >>= meval e c
+                  updateObject env var (HashTable $ Data.Map.delete key ht) >>= meval e c
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
 eval env cont args@(List [Atom "hash-table-delete!" , nonvar , _]) = do

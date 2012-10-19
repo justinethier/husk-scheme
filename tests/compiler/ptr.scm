@@ -1,5 +1,9 @@
+
+; TODO: need to update huskc so all of this works
+; under the compiler
+
 (define (assert/equal a b)
- (if (not (eqv? a b))
+(if (not (eqv? a b))
     (display "ERROR: "))
  (display "Expected ")
  (display a)
@@ -47,6 +51,26 @@
 (set-cdr! y 44)
 (assert/equal '(a . 44) x)
 (assert/equal '(a . 44) y)
+(set-car! y 55)
+(assert/equal '(55 . 44) x)
+(assert/equal '(55 . 44) y)
+
+;1.1)
+(define x "test")
+(define y x)
+(string-set! y 0 #\a)
+(assert/equal x "aest")
+(assert/equal y "aest")
+
+(define ht (make-hash-table))
+(hash-table-set! ht 1 1)
+(assert/equal (hash-table-ref ht 1) 1)
+
+;1.2)
+; Does not need to return anything, but should not crash either:
+; NOTE: a similar issue affects all of the other special forms.
+; presently they each expect a symbol
+(set-cdr! '(1 . 2) 3)
 
 ;2)
 (define x '( a b c))
