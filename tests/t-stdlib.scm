@@ -86,11 +86,8 @@
 ;;
 ; End test failures
 
-; TODO: the following two lines cause an infinite loop!
-;(set-cdr! x x)
-;(assert/equal (list? x)  #f)
-(assert/equal #t 'TODO) ; TODO: a placeholder for the above
-;
+(set-cdr! x x)
+(assert/equal (list? x)  #f)
 
 (assert/equal (pair? (list 1 2 3)) #t)
 (assert/equal (pair? 1) #f)
