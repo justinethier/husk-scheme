@@ -75,14 +75,6 @@ nullEnv = do
     nullPointers <- newIORef $ Data.Map.fromList []
     return $ Environment Nothing nullBindings nullPointers
 
--- Internal namespace for macros
-macroNamespace :: [Char]
-macroNamespace = "m"
-
--- Internal namespace for variables
-varNamespace :: [Char]
-varNamespace = "v"
-
 -- |Types of errors that may occur when evaluating Scheme code
 data LispError = NumArgs Integer [LispVal] -- ^Invalid number of function arguments
   | TypeMismatch String LispVal -- ^Type error

@@ -19,6 +19,8 @@ module Language.Scheme.Variables
     , copyEnv
     , extendEnv
     , findNamespacedEnv
+    , macroNamespace
+    , varNamespace 
     -- * Getters
     , getVar
     , getNamespacedVar 
@@ -44,6 +46,14 @@ import Data.Array
 import Data.IORef
 import qualified Data.Map
 -- import Debug.Trace
+
+-- Internal namespace for macros
+macroNamespace :: [Char]
+macroNamespace = "m"
+
+-- Internal namespace for variables
+varNamespace :: [Char]
+varNamespace = "v"
 
 -- |Return a value with a pointer dereferenced, if necessary
 derefPtr :: LispVal -> IOThrowsError LispVal
