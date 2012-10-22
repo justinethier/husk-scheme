@@ -14,15 +14,22 @@ This module contains top-level data type definitions, environments, error types,
 -}
 
 module Language.Scheme.Types
-{-    (
-      Env
---    , Environment
+    (
+      Env (Environment, pointers)
     , parentEnv
     , bindings
     , nullEnv 
-    , macroNamespace
-    , varNamespace
-    , LispError
+    , LispError (
+          NumArgs
+        , TypeMismatch
+        , Parser 
+        , BadSpecialForm
+        , NotFunction
+        , UnboundVar
+        , DivideByZero
+        , NotImplemented
+        , InternalError
+        , Default)
     , ThrowsError 
     , trapError
     , extractValue 
@@ -30,13 +37,60 @@ module Language.Scheme.Types
     , liftThrows 
     , runIOThrowsREPL 
     , runIOThrows 
-    , LispVal
+    , LispVal (
+          Atom
+        , List
+        , DottedList
+        , Vector
+        , HashTable
+        , Number
+        , Float
+        , Complex
+        , Rational
+        , String
+        , Char
+        , Bool
+        , PrimitiveFunc
+        , Func
+             , params
+             , vararg
+             , body
+             , closure
+        , HFunc
+             , hparams
+             , hvararg
+             , hbody
+             , hclosure
+        , IOFunc
+        , EvalFunc
+        , Pointer
+             , pointerVar
+             , pointerEnv
+        , Opaque
+        , Port
+        , Continuation
+             , closure
+             , currentCont
+             , nextCont
+             , extraReturnArgs
+             , dynamicWind
+        , Syntax
+             , synClosure
+             , synRenameClosure
+             , synDefinedInMacro
+             , synIdentifiers
+             , synRules
+        , SyntaxExplicitRenaming
+        , EOF
+        , Nil)
     , toOpaque
     , fromOpaque
-    , DeferredCode
-    , DynamicWinders   
-    , before 
-    , after 
+    , DeferredCode (
+          SchemeBody
+        , HaskellBody
+        , contFunction
+        , contFunctionArgs)
+    , DynamicWinders (DynamicWinders, before, after)
     , showDWVal 
     , makeNullContinuation 
     , makeCPS 
@@ -46,7 +100,13 @@ module Language.Scheme.Types
     , eqVal 
     , showVal
     , unwordsList
-    ) -}
+    , makeFunc
+    , makeNormalFunc
+    , makeVarargs
+    , makeHFunc
+    , makeNormalHFunc
+    , makeHVarargs
+    )
  where
 import Control.Monad.Error
 import Data.Complex
