@@ -22,8 +22,8 @@ GHCFLAGS=-f-useffi
 # In order to get profiling to work, the profiling flags
 # also need to be enabled in ~/.cabal/config
 #
-CONFIGFLAGS=--ghc-option='-rtsopts'
-#CONFIGFLAGS=
+#CONFIGFLAGS=--ghc-option='-rtsopts' --ghc-option='-auto-all'
+CONFIGFLAGS=
 
 HUSKC = huskc
 HUSKI = huski
