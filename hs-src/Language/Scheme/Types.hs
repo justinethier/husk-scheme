@@ -64,8 +64,8 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 -- |A Scheme environment containing variable bindings of form @(namespaceName, variableName), variableValue@
 data Env = Environment {
         parentEnv :: (Maybe Env), 
-        bindings :: (IORef (Data.Map.Map (String, String) (IORef LispVal))),
-        pointers :: (IORef (Data.Map.Map (String, String) (IORef [LispVal])))
+        bindings :: (IORef (Data.Map.Map String (IORef LispVal))),
+        pointers :: (IORef (Data.Map.Map String (IORef [LispVal])))
     }
 
 -- |An empty environment

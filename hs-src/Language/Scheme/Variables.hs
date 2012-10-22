@@ -105,33 +105,38 @@ findPointerTo ptr@(Pointer p env) = do
       _ -> return ptr
 findPointerTo v = return v
 
-{- Experimental code:
+-- Experimental code:
 -- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/
-import Foreign
-isMemoryEquivalent :: a -> a -> IO Bool
-isMemoryEquivalent obj1 obj2 = do
-  obj1Ptr <- newStablePtr obj1
-  obj2Ptr <- newStablePtr obj2
-  let result = obj1Ptr == obj2Ptr
-  freeStablePtr obj1Ptr
-  freeStablePtr obj2Ptr
-  return result
+--
+-- import Foreign
+-- isMemoryEquivalent :: a -> a -> IO Bool
+-- isMemoryEquivalent obj1 obj2 = do
+--   obj1Ptr <- newStablePtr obj1
+--   obj2Ptr <- newStablePtr obj2
+--   let result = obj1Ptr == obj2Ptr
+--   freeStablePtr obj1Ptr
+--   freeStablePtr obj2Ptr
+--   return result
+-- 
+-- -- Using above, search an env for a variable definition, but stop if the upperEnv is
+-- -- reached before the variable
+-- isNamespacedRecBoundWUpper :: Env -> Env -> String -> String -> IO Bool
+-- isNamespacedRecBoundWUpper upperEnvRef envRef namespace var = do 
+--   areEnvsEqual <- liftIO $ isMemoryEquivalent upperEnvRef envRef
+--   if areEnvsEqual
+--      then return False
+--      else do
+--          found <- liftIO $ isNamespacedBound envRef namespace var
+--          if found
+--             then return True 
+--             else case parentEnv envRef of
+--                       (Just par) -> isNamespacedRecBoundWUpper upperEnvRef par namespace var
+--                       Nothing -> return False -- Var never found
+--
 
--- Using above, search an env for a variable definition, but stop if the upperEnv is
--- reached before the variable
-isNamespacedRecBoundWUpper :: Env -> Env -> String -> String -> IO Bool
-isNamespacedRecBoundWUpper upperEnvRef envRef namespace var = do 
-  areEnvsEqual <- liftIO $ isMemoryEquivalent upperEnvRef envRef
-  if areEnvsEqual
-     then return False
-     else do
-         found <- liftIO $ isNamespacedBound envRef namespace var
-         if found
-            then return True 
-            else case parentEnv envRef of
-                      (Just par) -> isNamespacedRecBoundWUpper upperEnvRef par namespace var
-                      Nothing -> return False -- Var never found
--}
+-- |Create a variable's name in an environment using given arguments
+getVarName :: String -> String -> String
+getVarName namespace name = namespace ++ "_" ++ name
 
 -- |Show the contents of an environment
 printEnv :: Env         -- ^Environment
@@ -141,7 +146,7 @@ printEnv env = do
   l <- mapM showVar $ Data.Map.toList binds 
   return $ unlines l
  where 
-  showVar ((_, name), val) = do
+  showVar (name, val) = do
     v <- liftIO $ readIORef val
     return $ name ++ ": " ++ show v
 
@@ -156,10 +161,10 @@ copyEnv env = do
   bindingListT <- mapM addBinding $ Data.Map.toList binds 
   bindingList <- newIORef $ Data.Map.fromList bindingListT
   return $ Environment (parentEnv env) bindingList ptrList
- where addBinding ((namespace, name), val) = do 
+ where addBinding (name, val) = do 
          x <- liftIO $ readIORef val
          ref <- newIORef x
-         return ((namespace, name), ref)
+         return (name, ref)
 
 -- |Extend given environment by binding a series of values to a new environment.
 extendEnv :: Env -- ^ Environment 
@@ -171,7 +176,7 @@ extendEnv envRef abindings = do
   nullPointers <- newIORef $ Data.Map.fromList []
   return $ Environment (Just envRef) bindinglist nullPointers
  where addBinding ((namespace, name), val) = do ref <- newIORef val
-                                                return ((namespace, name), ref)
+                                                return (getVarName namespace name, ref)
 
 -- |Recursively search environments to find one that contains the given variable.
 findNamespacedEnv 
@@ -208,7 +213,7 @@ isNamespacedBound
     -> String   -- ^ Variable
     -> IO Bool  -- ^ True if the variable is bound
 isNamespacedBound envRef namespace var = 
-    (readIORef $ bindings envRef) >>= return . Data.Map.member (namespace, var)
+    (readIORef $ bindings envRef) >>= return . Data.Map.member (getVarName namespace var)
 
 -- |Determine if a variable is bound in a given namespace
 --  or a parent of the given environment.
@@ -237,7 +242,7 @@ getNamespacedVar :: Env     -- ^ Environment
 getNamespacedVar envRef
                  namespace
                  var = do binds <- liftIO $ readIORef $ bindings envRef
-                          case Data.Map.lookup (namespace, var) binds of
+                          case Data.Map.lookup (getVarName namespace var) binds of
                             (Just a) -> liftIO $ readIORef a
                             Nothing -> case parentEnv envRef of
                                          (Just par) -> getNamespacedVar par namespace var
@@ -270,7 +275,7 @@ setNamespacedVar envRef
 updatePointers :: Env -> String -> String -> IOThrowsError LispVal
 updatePointers envRef namespace var = do
   ptrs <- liftIO $ readIORef $ pointers envRef
-  case Data.Map.lookup (namespace, var) ptrs of
+  case Data.Map.lookup (getVarName namespace var) ptrs of
     (Just valIORef) -> do
       val <- liftIO $ readIORef valIORef
       case val of 
@@ -301,7 +306,7 @@ _setNamespacedVar envRef
   -- Set the variable to its new value
   env <- liftIO $ readIORef $ bindings envRef
   valueToStore <- getValueToStore namespace var envRef value
-  case Data.Map.lookup (namespace, var) env of
+  case Data.Map.lookup (getVarName namespace var) env of
     (Just a) -> do
       liftIO $ writeIORef a valueToStore
       return valueToStore
@@ -371,7 +376,7 @@ defineNamespacedVar envRef
         -- Write new value binding
         valueRef <- newIORef valueToStore
         env <- readIORef $ bindings envRef
-        writeIORef (bindings envRef) (Data.Map.insert (namespace, var) valueRef env)
+        writeIORef (bindings envRef) (Data.Map.insert (getVarName namespace var) valueRef env)
         return valueToStore
 
 -- |An internal helper function to get the value to save to an env
@@ -390,7 +395,7 @@ getValueToStore _ _ _ value = return value
 addReversePointer :: String -> String -> Env -> String -> String -> Env -> IOThrowsError LispVal
 addReversePointer namespace var envRef ptrNamespace ptrVar ptrEnvRef = do
    env <- liftIO $ readIORef $ bindings envRef
-   case Data.Map.lookup (namespace, var) env of
+   case Data.Map.lookup (getVarName namespace var) env of
      (Just a) -> do
        v <- liftIO $ readIORef a
        if isObject v
@@ -399,7 +404,7 @@ addReversePointer namespace var envRef ptrNamespace ptrVar ptrEnvRef = do
             ptrs <- liftIO $ readIORef $ pointers envRef
             
             -- Lookup ptr for var
-            case Data.Map.lookup (namespace, var) ptrs of
+            case Data.Map.lookup (getVarName namespace var) ptrs of
                -- Append another reverse ptr to this var
 -- TODO: should make sure ptr is not already there, before adding it again
               (Just valueRef) -> liftIO $ do
@@ -410,7 +415,7 @@ addReversePointer namespace var envRef ptrNamespace ptrVar ptrEnvRef = do
               -- No mapping, add the first reverse pointer
               Nothing -> liftIO $ do
                 valueRef <- newIORef [Pointer ptrVar ptrEnvRef]
-                writeIORef (pointers envRef) (Data.Map.insert (namespace, var) valueRef ptrs)
+                writeIORef (pointers envRef) (Data.Map.insert (getVarName namespace var) valueRef ptrs)
                 return $ Pointer var envRef -- Return non-reverse ptr to caller
           else return v -- Not an object, return value directly
      Nothing -> case parentEnv envRef of
