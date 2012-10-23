@@ -69,7 +69,7 @@ module Language.Scheme.Types
         , Opaque
         , Port
         , Continuation
-             , closure
+             , contClosure
              , currentCont
              , nextCont
              , extraReturnArgs
@@ -256,9 +256,9 @@ data LispVal = Atom String
  -- ^Opaque Haskell value.
  | Port Handle
  -- ^I/O port
- | Continuation { closure :: Env                       -- Environment of the continuation
+ | Continuation {  contClosure :: Env                   -- Environment of the continuation
                  , currentCont :: (Maybe DeferredCode)  -- Code of current continuation
-                 , nextCont :: (Maybe LispVal)       -- Code to resume after body of cont
+                 , nextCont :: (Maybe LispVal)          -- Code to resume after body of cont
                  , extraReturnArgs :: (Maybe [LispVal]) -- Extra return arguments, to support (values) and (call-with-values)
                         , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind)
                 }
