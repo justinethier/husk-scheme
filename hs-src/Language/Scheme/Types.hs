@@ -14,22 +14,9 @@ This module contains top-level data type definitions, environments, error types,
 -}
 
 module Language.Scheme.Types
-    (
-      Env (Environment, pointers)
-    , parentEnv
-    , bindings
+    ( Env (..)
     , nullEnv 
-    , LispError (
-          NumArgs
-        , TypeMismatch
-        , Parser 
-        , BadSpecialForm
-        , NotFunction
-        , UnboundVar
-        , DivideByZero
-        , NotImplemented
-        , InternalError
-        , Default)
+    , LispError (..)
     , ThrowsError 
     , trapError
     , extractValue 
@@ -85,21 +72,14 @@ module Language.Scheme.Types
         , Nil)
     , toOpaque
     , fromOpaque
-    , DeferredCode (
-          SchemeBody
-        , HaskellBody
-        , contFunction
-        , contFunctionArgs)
-    , DynamicWinders (DynamicWinders, before, after)
-    , showDWVal 
+    , DeferredCode (..)
+    , DynamicWinders (..)
     , makeNullContinuation 
     , makeCPS 
     , makeCPSWArgs 
     , eqv 
     , eqvList
     , eqVal 
-    , showVal
-    , unwordsList
     , makeFunc
     , makeNormalFunc
     , makeVarargs
