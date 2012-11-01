@@ -29,8 +29,8 @@ module Language.Scheme.Variables
     , defineNamespacedVar
     , setVar
     , setNamespacedVar
-    , updateObject -- TODO: consider renaming down the road
-    , updateNamespacedObject -- TODO: consider renaming down the road
+    , updateObject 
+    , updateNamespacedObject 
     -- * Predicates
     , isBound
     , isRecBound
@@ -59,11 +59,11 @@ varNamespace = "v"
 derefPtr :: LispVal -> IOThrowsError LispVal
 -- Try dereferencing again if a ptr is found
 --
--- TODO: not sure if this is the best solution; it would be 
+-- Not sure if this is the best solution; it would be 
 -- nice if we did not have to worry about multiple levels
 -- of ptrs, especially since I believe husk only needs to 
--- have one level. but for now we will go with this just to
--- move forward
+-- have one level. but for now we will go with this to
+-- move forward.
 --
 derefPtr (Pointer p env) = do
     result <- getVar env p
@@ -87,7 +87,10 @@ recDerefPtrs (Vector v) = do
     let vs = elems v
     ds <- mapM recDerefPtrs vs
     return $ Vector $ listArray (0, length vs - 1) ds
--- TODO: need to walk HashTable, anything else?
+recDerefPtrs (HashTable ht) = do
+    ks <- mapM recDerefPtrs $ map (\ (k, _) -> k) $ Data.Map.toList ht
+    vs <- mapM recDerefPtrs $ map (\ (_, v) -> v) $ Data.Map.toList ht
+    return $ HashTable $ Data.Map.fromList $ zip ks vs
 recDerefPtrs (Pointer p env) = do
     result <- getVar env p
     recDerefPtrs result 
@@ -293,12 +296,16 @@ updatePointers envRef namespace var = do
   -- If var has any pointers, then
   -- need to assign the first pointer to the old value of x, 
   -- and the rest need to be updated to point to that first var
+  -- 
+  -- right now we are only updating the first one, which is not
+  -- so good.
+--TODO: need some test cases for this to make sure I get it right!
+  --
         (Pointer pVar pEnv : ps) -> do
           existingValue <- getNamespacedVar envRef namespace var
           _setNamespacedVar pEnv namespace pVar existingValue
           -- TODO: if existingValue is an object, each ps should point to p
           --       else they should just be set to existingValue
--- TODO:        _ -> ??
     Nothing -> return $ Nil ""
 
 -- |An internal function that does the actual setting of a 
@@ -370,10 +377,11 @@ defineNamespacedVar envRef
   if alreadyDefined
     then setNamespacedVar envRef namespace var value >> return value
     else do
-  --
-  -- TODO: 
-  -- Edge case: don't change anything if (define) is to existing pointer
-  --  (IE, it does not really change anything)
+      --
+      -- Future optimization:
+      -- don't change anything if (define) is to existing pointer
+      -- (IE, it does not really change anything)
+      --
 
 
       -- If we are assigning to a pointer, we need a reverse lookup to 
@@ -416,7 +424,7 @@ addReversePointer namespace var envRef ptrNamespace ptrVar ptrEnvRef = do
             -- Lookup ptr for var
             case Data.Map.lookup (getVarName namespace var) ptrs of
                -- Append another reverse ptr to this var
--- TODO: should make sure ptr is not already there, before adding it again
+-- TODO: should make sure ptr is not already there, before adding it to the list again
               (Just valueRef) -> liftIO $ do
                 value <- readIORef valueRef
                 writeIORef valueRef (value ++ [Pointer ptrVar ptrEnvRef])
