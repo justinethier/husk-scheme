@@ -299,14 +299,39 @@ updatePointers envRef namespace var = do
   -- 
   -- right now we are only updating the first one, which is not
   -- so good.
---TODO: need some test cases for this to make sure I get it right!
   --
+        -- This is the first pointer to (the old) var
         (Pointer pVar pEnv : ps) -> do
           existingValue <- getNamespacedVar envRef namespace var
+          -- Set first pointer to existing value of var
           _setNamespacedVar pEnv namespace pVar existingValue
-          -- TODO: if existingValue is an object, each ps should point to p
-          --       else they should just be set to existingValue
+
+-- TODO: since the first pointer now becomes the old var,
+-- I believe its pointers list should become ps
+
+-- TODO: since var is now fresh, I believe its pointers list should
+-- be set to []
+
+
+-- TODO: code WIP, does not work and may be obsolete
+--          -- TODO: if existingValue is an object, each ps should point to p
+--          --       else they should just be set to existingValue
+--          if isObject existingValue
+--             then updateRemainingPtrs ps (Pointer pVar pEnv)
+--             else updateRemainingPtrs ps existingValue
     Nothing -> return $ Nil ""
+
+-- TODO: this does not work, just trying to implement above
+-- where
+--   -- Set each remaining pointer in the list to
+--   -- point to val
+--   updateRemainingPtrs (Pointer pVar' pEnv' : ps) val = 
+--     -- TODO: no, I think we want to take all the pointers ps and
+--     --_ <- _setNamespacedVar pEnv' namespace pVar' val
+--     updateRemainingPtrs ps val 
+--  -- updateRemainingPtrs [] = return $ Nil ""
+--   updateRemainingPtrs _ _ = return $ Nil ""
+
 
 -- |An internal function that does the actual setting of a 
 --  variable, without all the extra code that keeps pointers

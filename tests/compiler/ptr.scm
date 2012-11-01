@@ -75,6 +75,18 @@
 (assert/equal '(a b c) y)
 
 
+; Trying to figure out exactly what updatePointers
+; needs to do... note that if a is re-bound, 
+; b and c still contain the original value
+(define a '(1 2))
+(define b a)
+(define c a)
+(set! a '(1))
+(set-car! c 4)
+(assert/equal '(1) a)
+(assert/equal '(4 2) b)
+(assert/equal '(4 2) c)
+
 ; Attempt to prove that updatePointers needs
 ; to update the list of pointers, not just the
 ; first one
