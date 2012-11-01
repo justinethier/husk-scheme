@@ -66,12 +66,6 @@
 (hash-table-set! ht 1 1)
 (assert/equal (hash-table-ref ht 1) 1)
 
-;1.2)
-; Does not need to return anything, but should not crash either:
-; NOTE: a similar issue affects all of the other special forms.
-; presently they each expect a symbol
-(set-cdr! '(1 . 2) 3)
-
 ;2)
 (define x '( a b c))
 (assert/equal '(a b c) x)
@@ -79,4 +73,29 @@
 (define x 1)
 (assert/equal 1 x)
 (assert/equal '(a b c) y)
+
+
+; Attempt to prove that updatePointers needs
+; to update the list of pointers, not just the
+; first one
+(define z1 '())
+(define z2 '())
+(define z3 '())
+(let ((x '(1)))
+ (set! z1 x)
+ (set! z2 x)
+ (set! z3 x)
+ (set! x 1)
+)
+(assert/equal 1 x)
+(assert/equal '(1) z1)
+(assert/equal '(1) z2)
+(assert/equal '(1) z3)
+; end updatePointers test
+
+;1.2)
+; Does not need to return anything, but should not crash either:
+; NOTE: a similar issue affects all of the other special forms.
+; presently they each expect a symbol
+(set-cdr! '(1 . 2) 3)
 
