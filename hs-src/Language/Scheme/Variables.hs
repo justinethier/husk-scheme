@@ -45,7 +45,7 @@ import Control.Monad.Error
 import Data.Array
 import Data.IORef
 import qualified Data.Map
--- import Debug.Trace
+import Debug.Trace
 
 -- Internal namespace for macros
 macroNamespace :: [Char]
@@ -291,47 +291,55 @@ updatePointers envRef namespace var = do
   case Data.Map.lookup (getVarName namespace var) ptrs of
     (Just valIORef) -> do
       val <- liftIO $ readIORef valIORef
-      case val of 
-  -- TODO:
-  -- If var has any pointers, then
-  -- need to assign the first pointer to the old value of x, 
-  -- and the rest need to be updated to point to that first var
-  -- 
-  -- right now we are only updating the first one, which is not
-  -- so good.
-  --
+      case (trace ("var = " ++ var ++ " val = " ++ show val) val) of 
+-- TODO: none of this is working,
+-- I think I may have some of the pointers reversed
+-- or something. traces may help track this down.
+-- but just run tests/compiler/ptr.scm to see
+-- what is failing
+
+        -- If var has any pointers, then we need to 
+        -- assign the first pointer to the old value
+        -- of x, and the rest need to be updated to 
+        -- point to that first var
+
         -- This is the first pointer to (the old) var
         (Pointer pVar pEnv : ps) -> do
-          existingValue <- getNamespacedVar envRef namespace var
+          -- Since var is now fresh, reset its pointers list
+          liftIO $ writeIORef valIORef []
+
+          -- The first pointer now becomes the old var,
+          -- so its pointers list should become ps
+          --(trace ("pVar = " ++ pVar ++ " val = " ++ show val)
+          movePointers pEnv namespace pVar ps
+
           -- Set first pointer to existing value of var
+          existingValue <- getNamespacedVar envRef namespace var
           _setNamespacedVar pEnv namespace pVar existingValue
 
--- TODO: since the first pointer now becomes the old var,
--- I believe its pointers list should become ps
-
--- TODO: since var is now fresh, I believe its pointers list should
--- be set to []
-
-
--- TODO: code WIP, does not work and may be obsolete
---          -- TODO: if existingValue is an object, each ps should point to p
---          --       else they should just be set to existingValue
---          if isObject existingValue
---             then updateRemainingPtrs ps (Pointer pVar pEnv)
---             else updateRemainingPtrs ps existingValue
+        [] -> 
+            -- No pointers, so nothing to do
+            return $ Nil ""
+        _ -> throwError $ InternalError
+            "non-pointer value found in updatePointers"
     Nothing -> return $ Nil ""
-
--- TODO: this does not work, just trying to implement above
--- where
---   -- Set each remaining pointer in the list to
---   -- point to val
---   updateRemainingPtrs (Pointer pVar' pEnv' : ps) val = 
---     -- TODO: no, I think we want to take all the pointers ps and
---     --_ <- _setNamespacedVar pEnv' namespace pVar' val
---     updateRemainingPtrs ps val 
---  -- updateRemainingPtrs [] = return $ Nil ""
---   updateRemainingPtrs _ _ = return $ Nil ""
-
+ where
+  -- |Move the given pointers (ptr) to the list of
+  --  pointeres for variable (var)
+  movePointers :: Env -> String -> String -> [LispVal] -> IOThrowsError LispVal
+  movePointers envRef namespace var ptrs = do
+    env <- liftIO $ readIORef $ pointers envRef
+    case Data.Map.lookup (getVarName namespace var) env of
+      Just ps' -> do
+        -- Append ptrs to existing list of pointers to var
+        ps <- liftIO $ readIORef ps'
+        liftIO $ writeIORef ps' $ ps ++ ptrs
+        return $ Nil ""
+      Nothing -> do
+        -- var does not have any pointers; create new list
+        valueRef <- liftIO $ newIORef ptrs
+        liftIO $ writeIORef (pointers envRef) (Data.Map.insert (getVarName namespace var) valueRef env)
+        return $ Nil ""
 
 -- |An internal function that does the actual setting of a 
 --  variable, without all the extra code that keeps pointers
