@@ -310,12 +310,15 @@ updatePointers envRef namespace var = do
 
           -- The first pointer now becomes the old var,
           -- so its pointers list should become ps
-          --(trace ("pVar = " ++ pVar ++ " val = " ++ show val)
           movePointers pEnv namespace pVar ps
+
+          -- Each ps needs to be updated to point to pVar
+          -- instead of var
+          pointToNewVar pEnv namespace pVar ps
 
           -- Set first pointer to existing value of var
           existingValue <- getNamespacedVar envRef namespace var
-          _setNamespacedVar pEnv namespace pVar existingValue
+          (trace ("setting " ++ pVar ++ " to " ++ show existingValue) _setNamespacedVar) pEnv namespace pVar existingValue
 
         [] -> 
             -- No pointers, so nothing to do
@@ -325,7 +328,7 @@ updatePointers envRef namespace var = do
     Nothing -> return $ Nil ""
  where
   -- |Move the given pointers (ptr) to the list of
-  --  pointeres for variable (var)
+  --  pointers for variable (var)
   movePointers :: Env -> String -> String -> [LispVal] -> IOThrowsError LispVal
   movePointers envRef namespace var ptrs = do
     env <- liftIO $ readIORef $ pointers envRef
@@ -341,6 +344,13 @@ updatePointers envRef namespace var = do
         liftIO $ writeIORef (pointers envRef) (Data.Map.insert (getVarName namespace var) valueRef env)
         return $ Nil ""
 
+  -- |Update each pointer's source to point to pVar
+  pointToNewVar pEnv namespace pVar (Pointer v e : ps) = do
+    _ <- (trace ("pointing " ++ v ++ " to " ++ pVar) _setNamespacedVar') e namespace v (Pointer pVar pEnv)
+    pointToNewVar pEnv namespace pVar ps
+  pointToNewVar pEnv namespace pVar [] = return $ Nil ""
+  pointToNewVar pEnv namespace pVar _ = throwError $ InternalError "pointToNewVar"
+
 -- |An internal function that does the actual setting of a 
 --  variable, without all the extra code that keeps pointers
 --  in sync.
@@ -354,14 +364,20 @@ _setNamespacedVar envRef
                  namespace
                  var value = do 
   -- Set the variable to its new value
-  env <- liftIO $ readIORef $ bindings envRef
   valueToStore <- getValueToStore namespace var envRef value
+  _setNamespacedVar' envRef namespace var valueToStore
+
+-- Do the actual "set" operation
+_setNamespacedVar' envRef
+                 namespace
+                 var valueToStore = do 
+  env <- liftIO $ readIORef $ bindings envRef
   case Data.Map.lookup (getVarName namespace var) env of
     (Just a) -> do
       liftIO $ writeIORef a valueToStore
       return valueToStore
     Nothing -> case parentEnv envRef of
-      (Just par) -> _setNamespacedVar par namespace var valueToStore
+      (Just par) -> _setNamespacedVar' par namespace var valueToStore
       Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
 
 -- |A wrapper for updateNamespaceObject that uses the variable namespace.
@@ -394,7 +410,7 @@ defineVar
     -> String   -- ^ Variable
     -> LispVal  -- ^ Value
     -> IOThrowsError LispVal -- ^ Value
-defineVar envRef var value = defineNamespacedVar envRef varNamespace var value
+defineVar envRef var value = defineNamespacedVar envRef varNamespace var (trace ("define " ++ var ++ " as " ++ show value) value)
 
 -- |Bind a variable in the given namespace
 defineNamespacedVar
