@@ -229,8 +229,6 @@ eval env cont (Atom a) = do
     Vector _ -> Pointer a env
     HashTable _ -> Pointer a env
     _ -> v
-  -- TODO: only return a pointer for some types? 
-  -- for example, can a number just be returned directly?
   continueEval env cont val
 
 -- Quote an expression by simply passing along the value

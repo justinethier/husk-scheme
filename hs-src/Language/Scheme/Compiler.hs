@@ -199,6 +199,23 @@ compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
 compile _ v@(Vector _) copts = compileScalar (" return $ " ++ astToHaskellStr v) copts
 compile _ ht@(HashTable _) copts = compileScalar (" return $ " ++ astToHaskellStr ht) copts
 compile _ (Atom a) copts = compileScalar ("  getVar env \"" ++ a ++ "\"") copts 
+-- TODO: this is the interpreter's code...
+-- eval env cont (Atom a) = do
+--   v <- getVar env a
+--   val <- return $ case v of
+--     List _ -> Pointer a env
+--     DottedList _ _ -> Pointer a env
+--     String _ -> Pointer a env
+--     Vector _ -> Pointer a env
+--     HashTable _ -> Pointer a env
+--     _ -> v
+--   continueEval env cont val
+--
+---- WIP for above:
+-- compGetVar <- return $ AstFunction symGetVar " env cont idx _ " [
+--    AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
+--    AstValue $ "  " ++ symObj ++ " env cont result Nothing "]
+--
 
 compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
 
