@@ -80,6 +80,8 @@
 ; b and c still contain the original value
 (define a '(1 2))
 (define b a)
+(define b a)
+(define b a)
 (define c a)
 (set! a '(1))
 (set-car! c 4)

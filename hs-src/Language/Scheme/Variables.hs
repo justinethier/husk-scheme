@@ -406,8 +406,9 @@ addReversePointer namespace var envRef ptrNamespace ptrVar ptrEnvRef = do
             
             -- Lookup ptr for var
             case Data.Map.lookup (getVarName namespace var) ptrs of
-               -- Append another reverse ptr to this var
--- TODO: should make sure ptr is not already there, before adding it to the list again
+              -- Append another reverse ptr to this var
+              -- FUTURE: make sure ptr is not already there, 
+              --         before adding it to the list again?
               (Just valueRef) -> liftIO $ do
                 value <- readIORef valueRef
                 writeIORef valueRef (value ++ [Pointer ptrVar ptrEnvRef])
