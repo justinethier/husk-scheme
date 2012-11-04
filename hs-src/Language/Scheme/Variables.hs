@@ -45,7 +45,7 @@ import Control.Monad.Error
 import Data.Array
 import Data.IORef
 import qualified Data.Map
-import Debug.Trace
+-- import Debug.Trace
 
 -- Internal namespace for macros
 macroNamespace :: [Char]
@@ -54,69 +54,6 @@ macroNamespace = "m"
 -- Internal namespace for variables
 varNamespace :: [Char]
 varNamespace = "v"
-
--- |Return a value with a pointer dereferenced, if necessary
-derefPtr :: LispVal -> IOThrowsError LispVal
--- Try dereferencing again if a ptr is found
---
--- Not sure if this is the best solution; it would be 
--- nice if we did not have to worry about multiple levels
--- of ptrs, especially since I believe husk only needs to 
--- have one level. but for now we will go with this to
--- move forward.
---
-derefPtr (Pointer p env) = do
-    result <- getVar env p
-    derefPtr result
-derefPtr v = return v
-
--- |Recursively process the given data structure, dereferencing
---  any pointers found along the way. 
--- 
---  This could potentially be expensive on large data structures 
---  since it must walk the entire object.
-recDerefPtrs :: LispVal -> IOThrowsError LispVal
-recDerefPtrs (List l) = do
-    result <- mapM recDerefPtrs l
-    return $ List result
-recDerefPtrs (DottedList ls l) = do
-    ds <- mapM recDerefPtrs ls
-    d <- recDerefPtrs l
-    return $ DottedList ds d
-recDerefPtrs (Vector v) = do
-    let vs = elems v
-    ds <- mapM recDerefPtrs vs
-    return $ Vector $ listArray (0, length vs - 1) ds
-recDerefPtrs (HashTable ht) = do
-    ks <- mapM recDerefPtrs $ map (\ (k, _) -> k) $ Data.Map.toList ht
-    vs <- mapM recDerefPtrs $ map (\ (_, v) -> v) $ Data.Map.toList ht
-    return $ HashTable $ Data.Map.fromList $ zip ks vs
-recDerefPtrs (Pointer p env) = do
-    result <- getVar env p
-    recDerefPtrs result 
-recDerefPtrs v = return v
-
--- |A predicate to determine if the given lisp value 
---  is an "object" that can be pointed to.
-isObject :: LispVal -> Bool
-isObject (List _) = True
-isObject (DottedList _ _) = True
-isObject (String _) = True
-isObject (Vector _) = True
-isObject (HashTable _) = True
-isObject (Pointer _ _) = True
-isObject _ = False
-
--- |Same as dereferencing a pointer, except we want the
---  last pointer to an object (if there is one) instead
---  of the object itself
-findPointerTo :: LispVal -> IOThrowsError LispVal
-findPointerTo ptr@(Pointer p env) = do
-    result <- getVar env p
-    case result of
-      (Pointer _ _) -> findPointerTo result
-      _ -> return ptr
-findPointerTo v = return v
 
 -- Experimental code:
 -- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/
@@ -283,21 +220,48 @@ setNamespacedVar envRef
   _ <- updatePointers envRef namespace var 
   _setNamespacedVar envRef namespace var value
 
+-- |An internal function that does the actual setting of a 
+--  variable, without all the extra code that keeps pointers
+--  in sync when a variable is re-binded
+--
+--  Note this function still binds reverse pointers
+--  for purposes of book-keeping.
+_setNamespacedVar 
+    :: Env      -- ^ Environment 
+    -> String   -- ^ Namespace
+    -> String   -- ^ Variable
+    -> LispVal  -- ^ Value
+    -> IOThrowsError LispVal   -- ^ Value
+_setNamespacedVar envRef
+                 namespace
+                 var value = do 
+  -- Set the variable to its new value
+  valueToStore <- getValueToStore namespace var envRef value
+  _setNamespacedVarDirect envRef namespace var valueToStore
+
+-- |Do the actual "set" operation, with NO pointer operations.
+--  Only call this if you know what you are doing!
+_setNamespacedVarDirect envRef
+                 namespace
+                 var valueToStore = do 
+  env <- liftIO $ readIORef $ bindings envRef
+  case Data.Map.lookup (getVarName namespace var) env of
+    (Just a) -> do
+      liftIO $ writeIORef a valueToStore
+      return valueToStore
+    Nothing -> case parentEnv envRef of
+      (Just par) -> _setNamespacedVarDirect par namespace var valueToStore
+      Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
+
 -- |This helper function is used to keep pointers in sync when
---  a variable is re-binded to a different value.
+--  a variable is bound to a different value.
 updatePointers :: Env -> String -> String -> IOThrowsError LispVal
 updatePointers envRef namespace var = do
   ptrs <- liftIO $ readIORef $ pointers envRef
   case Data.Map.lookup (getVarName namespace var) ptrs of
     (Just valIORef) -> do
       val <- liftIO $ readIORef valIORef
-      case (trace ("var = " ++ var ++ " val = " ++ show val) val) of 
--- TODO: none of this is working,
--- I think I may have some of the pointers reversed
--- or something. traces may help track this down.
--- but just run tests/compiler/ptr.scm to see
--- what is failing
-
+      case val of 
         -- If var has any pointers, then we need to 
         -- assign the first pointer to the old value
         -- of x, and the rest need to be updated to 
@@ -318,13 +282,12 @@ updatePointers envRef namespace var = do
 
           -- Set first pointer to existing value of var
           existingValue <- getNamespacedVar envRef namespace var
-          (trace ("setting " ++ pVar ++ " to " ++ show existingValue) _setNamespacedVar) pEnv namespace pVar existingValue
+          _setNamespacedVar pEnv namespace pVar existingValue
 
-        [] -> 
-            -- No pointers, so nothing to do
-            return $ Nil ""
+        -- No pointers, so nothing to do
+        [] -> return $ Nil ""
         _ -> throwError $ InternalError
-            "non-pointer value found in updatePointers"
+               "non-pointer value found in updatePointers"
     Nothing -> return $ Nil ""
  where
   -- |Move the given pointers (ptr) to the list of
@@ -346,39 +309,10 @@ updatePointers envRef namespace var = do
 
   -- |Update each pointer's source to point to pVar
   pointToNewVar pEnv namespace pVar (Pointer v e : ps) = do
-    _ <- (trace ("pointing " ++ v ++ " to " ++ pVar) _setNamespacedVar') e namespace v (Pointer pVar pEnv)
+    _ <- _setNamespacedVarDirect e namespace v (Pointer pVar pEnv)
     pointToNewVar pEnv namespace pVar ps
   pointToNewVar pEnv namespace pVar [] = return $ Nil ""
   pointToNewVar pEnv namespace pVar _ = throwError $ InternalError "pointToNewVar"
-
--- |An internal function that does the actual setting of a 
---  variable, without all the extra code that keeps pointers
---  in sync.
-_setNamespacedVar 
-    :: Env      -- ^ Environment 
-    -> String   -- ^ Namespace
-    -> String   -- ^ Variable
-    -> LispVal  -- ^ Value
-    -> IOThrowsError LispVal   -- ^ Value
-_setNamespacedVar envRef
-                 namespace
-                 var value = do 
-  -- Set the variable to its new value
-  valueToStore <- getValueToStore namespace var envRef value
-  _setNamespacedVar' envRef namespace var valueToStore
-
--- Do the actual "set" operation
-_setNamespacedVar' envRef
-                 namespace
-                 var valueToStore = do 
-  env <- liftIO $ readIORef $ bindings envRef
-  case Data.Map.lookup (getVarName namespace var) env of
-    (Just a) -> do
-      liftIO $ writeIORef a valueToStore
-      return valueToStore
-    Nothing -> case parentEnv envRef of
-      (Just par) -> _setNamespacedVar' par namespace var valueToStore
-      Nothing -> throwError $ UnboundVar "Setting an unbound variable: " var
 
 -- |A wrapper for updateNamespaceObject that uses the variable namespace.
 updateObject :: Env -> String -> LispVal -> IOThrowsError LispVal
@@ -410,7 +344,7 @@ defineVar
     -> String   -- ^ Variable
     -> LispVal  -- ^ Value
     -> IOThrowsError LispVal -- ^ Value
-defineVar envRef var value = defineNamespacedVar envRef varNamespace var (trace ("define " ++ var ++ " as " ++ show value) value)
+defineVar envRef var value = defineNamespacedVar envRef varNamespace var value
 
 -- |Bind a variable in the given namespace
 defineNamespacedVar
@@ -488,3 +422,67 @@ addReversePointer namespace var envRef ptrNamespace ptrVar ptrEnvRef = do
      Nothing -> case parentEnv envRef of
        (Just par) -> addReversePointer namespace var par ptrNamespace ptrVar ptrEnvRef
        Nothing -> throwError $ UnboundVar "Getting an unbound variable: " var
+
+-- |Return a value with a pointer dereferenced, if necessary
+derefPtr :: LispVal -> IOThrowsError LispVal
+-- Try dereferencing again if a ptr is found
+--
+-- Not sure if this is the best solution; it would be 
+-- nice if we did not have to worry about multiple levels
+-- of ptrs, especially since I believe husk only needs to 
+-- have one level. but for now we will go with this to
+-- move forward.
+--
+derefPtr (Pointer p env) = do
+    result <- getVar env p
+    derefPtr result
+derefPtr v = return v
+
+-- |Recursively process the given data structure, dereferencing
+--  any pointers found along the way. 
+-- 
+--  This could potentially be expensive on large data structures 
+--  since it must walk the entire object.
+recDerefPtrs :: LispVal -> IOThrowsError LispVal
+recDerefPtrs (List l) = do
+    result <- mapM recDerefPtrs l
+    return $ List result
+recDerefPtrs (DottedList ls l) = do
+    ds <- mapM recDerefPtrs ls
+    d <- recDerefPtrs l
+    return $ DottedList ds d
+recDerefPtrs (Vector v) = do
+    let vs = elems v
+    ds <- mapM recDerefPtrs vs
+    return $ Vector $ listArray (0, length vs - 1) ds
+recDerefPtrs (HashTable ht) = do
+    ks <- mapM recDerefPtrs $ map (\ (k, _) -> k) $ Data.Map.toList ht
+    vs <- mapM recDerefPtrs $ map (\ (_, v) -> v) $ Data.Map.toList ht
+    return $ HashTable $ Data.Map.fromList $ zip ks vs
+recDerefPtrs (Pointer p env) = do
+    result <- getVar env p
+    recDerefPtrs result 
+recDerefPtrs v = return v
+
+-- |A predicate to determine if the given lisp value 
+--  is an "object" that can be pointed to.
+isObject :: LispVal -> Bool
+isObject (List _) = True
+isObject (DottedList _ _) = True
+isObject (String _) = True
+isObject (Vector _) = True
+isObject (HashTable _) = True
+isObject (Pointer _ _) = True
+isObject _ = False
+
+-- |Same as dereferencing a pointer, except we want the
+--  last pointer to an object (if there is one) instead
+--  of the object itself
+findPointerTo :: LispVal -> IOThrowsError LispVal
+findPointerTo ptr@(Pointer p env) = do
+    result <- getVar env p
+    case result of
+      (Pointer _ _) -> findPointerTo result
+      _ -> return ptr
+findPointerTo v = return v
+
