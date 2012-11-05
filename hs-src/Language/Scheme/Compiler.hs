@@ -518,7 +518,8 @@ compile env (List [Atom "set-cdr!", Atom var, argObj]) copts = do
  -- Function to read existing var
  compGetVar <- return $ AstFunction symGetVar " env cont idx _ " [
     AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  " ++ symObj ++ " env cont result Nothing "]
+    AstValue $ "  derefValue <- recDerefPtrs result",
+    AstValue $ "  " ++ symObj ++ " env cont derefValue Nothing "]
 
  -- Compiled version of argObj
  compiledObj <- compileExpr env argObj symCompiledObj Nothing 
@@ -542,8 +543,14 @@ compile env (List [Atom "set-cdr!", Atom var, argObj]) copts = do
  -- FUTURE: consider making these functions part of the runtime.
  compDoSet <- return $ AstValue $ "" ++
               symDoSet ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-              symDoSet ++ " e c obj (Just [List (l : _)]) = (liftThrows $ cons [l, obj]) >>= setVar e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
-              symDoSet ++ " e c obj (Just [DottedList (l : _) _]) = (liftThrows $ cons [l, obj]) >>= setVar e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
+              symDoSet ++ " e c obj (Just [List (l : _)]) = do\n" ++
+                          "   l' <- recDerefPtrs l\n" ++
+                          "   obj' <- recDerefPtrs obj\n" ++
+                          "   (liftThrows $ cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
+              symDoSet ++ " e c obj (Just [DottedList (l : _) _]) = do\n" ++
+                          "   l' <- recDerefPtrs l\n" ++
+                          "   obj' <- recDerefPtrs obj\n" ++
+                          "   (liftThrows $ cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
               symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
 
  -- Return a list of all the compiled code
