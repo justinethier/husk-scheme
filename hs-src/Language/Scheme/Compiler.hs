@@ -203,11 +203,11 @@ compile _ (Atom a) copts = do
  return [createAstFunc copts [
    AstValue $ "  v <- getVar env \"" ++ a ++ "\"",
    AstValue $ "  val <- return $ case v of",
-   AstValue $ "    List _ -> Pointer a env",
-   AstValue $ "    DottedList _ _ -> Pointer a env",
-   AstValue $ "    String _ -> Pointer a env",
-   AstValue $ "    Vector _ -> Pointer a env",
-   AstValue $ "    HashTable _ -> Pointer a env",
+   AstValue $ "    List _ -> Pointer \"" ++ a ++ "\" env",
+   AstValue $ "    DottedList _ _ -> Pointer \"" ++ a ++ "\" env",
+   AstValue $ "    String _ -> Pointer \"" ++ a ++ "\" env",
+   AstValue $ "    Vector _ -> Pointer \"" ++ a ++ "\" env",
+   AstValue $ "    HashTable _ -> Pointer \"" ++ a ++ "\" env",
    AstValue $ "    _ -> v"], c]
 
 compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
