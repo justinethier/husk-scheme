@@ -103,4 +103,79 @@
 (assert/equal '(1) z2)
 (assert/equal '(1) z3)
 ; end updatePointers test
+
+
+; TODO: these are the other tests from the design doc
+;4)
+; Closures.
+; need to be able to handle closures. something like:
+
+(define a '(1 2))
+(define afunc (let ((b a)) (lambda () b)))
+(assert/equal '(1 2) (afunc))
+(set-car! a 3)
+(assert/equal '(3 2) (afunc))
+(set! a 3)
+(assert/equal 3 a)
+; should be previous value from above, NOT 3
+(assert/equal '(3 2) (afunc))
+
+; TODO:
+;;5)
+;; Both expressions return #t even though per spec each should be #f since 
+;; each a points to a different memory location.
+;(eqv? (list 'a) '(a)) 
+;(eq? (list 'a) '(a))
+
+
+;6)
+(define a (lambda (vec) (vector-set! vec 0 #t)))
+(let ((vec (make-vector 4 #f)))
+  (a vec)
+  (assert/equal #(#t #f #f #f) vec))
+
+
+;7)
+;Following cases needs to work, both with or without
+; the extra function scope
+  (define vec (vector 0 1 2 3 4))
+  (vector-fill! vec 5)
+  (assert/equal '#(5 5 5 5 5) vec)
+
+  ((lambda ()
+    (define vec (vector 0 1 2 3 4))
+    (vector-fill! vec 5)
+    (assert/equal '#(5 5 5 5 5) vec)))
+
+; using this definition for vector-fill!
+; TODO: replace stdlib macro with this definition
+(define (vector-fill! vec fill)
+ (let loop ((n (vector-length vec)))
+   (if (> n 0)
+    (begin
+      (vector-set! vec (- n 1) fill)
+      (loop (- n 1))))))
+
+;8)
+;also:
+(define a #f)
+(define (test v)
+  (vector-set! v 0 #t)
+  (set! a #t))
+(let ((vec '#(0 1 2 3)))
+  (test vec)
+  (assert/equal '#(#t 1 2 3) vec)
+  (assert/equal #t a))
+
+; theory (TBD: this was written a long time ago, does it
+;  still apply??):
+; what is going in here is that there is no reason to
+; pass vec to the function's env, so when vector-set
+; searches for vec it never finds it. hence when we
+; write vec later on, it retains the original value.
+; in order for this to work we would need to pass an
+; env of use to the (test) function so that we can
+; update any bindings there if necessary.
+
+
 (unit-test-handler-results)
