@@ -1,15 +1,12 @@
-
-; TODO: need to update huskc so all of this works
-; under the compiler
-
-(define (assert/equal a b)
-(if (not (eqv? a b))
-    (display "ERROR: "))
- (display "Expected ")
- (display a)
- (display " Got ")
- (display b)
- (newline))
+;;
+;; husk-scheme
+;; http://github.com/justinethier/husk-scheme
+;;
+;; Written by Justin Ethier
+;;
+;; Test cases related to the scheme storage model
+;;
+(unit-test-start "storage model")
 
 (define x '())
 (assert/equal (list? x) #t)
@@ -30,7 +27,7 @@
 ; need to figure out how to handle this, if we do
 ; it on the back-end or if we do not allow ptrs-to-ptrs
 ; in the first place (IE, during definition)
-(write (list (list (list))))
+(assert/equal '((())) (list (list (list))))
 
 ;0.2)
 (define a '())
@@ -106,4 +103,4 @@
 (assert/equal '(1) z2)
 (assert/equal '(1) z3)
 ; end updatePointers test
-
+(unit-test-handler-results)
