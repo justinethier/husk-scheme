@@ -14,7 +14,7 @@ The more general problem is that there are certain data types that can be modifi
 > Variables and objects such as pairs, vectors, and strings implicitly denote locations or sequences of locations. A string, for example, denotes as many locations as there are characters in the string. (These locations need not correspond to a full machine word.) A new value may be stored into one of these locations using the string-set! procedure, but the string continues to denote the same locations as before.
 > 
 
-Internally, husk uses Haskell data types, so the husk model differs slightly from the one in R<sup>5</sup>RS in that individual memory locations are not used. This has some implications for the `set-car!` and `set-cdr!` special forms, where circular lists and similar low-level optimizations are not possible as Haskell lists are used instead of raw pointers. However, these issues aside, the enhanced storage model is a big step forward to bringing variable support in husk closer in line to that of other Schemes.
+Internally, husk uses Haskell data types, so the husk model differs slightly from the one in R<sup>5</sup>RS in that individual memory locations are not used. This has some implications for the `set-car!` and `set-cdr!` special forms, where circular lists and similar low-level optimizations are not possible as Haskell lists are used instead of raw pointers. However, these issues aside, the enhanced storage model is a big step forward to bringing husk's variable support closer in line to that of other Schemes.
 
 v3.5.7
 --------
