@@ -17,7 +17,10 @@ GHCOPTS=-Wall --make -package parsec -package ghc
 GHCFLAGS=-f-useffi
 #GHCFLAGS=
 
-# Require for profiling using +RTS -p
+# Require for profiling, EG:
+#
+#      +RTS -p -RTS
+#   or +RTS -sstderr -RTS
 #
 # In order to get profiling to work, the profiling flags
 # also need to be enabled in ~/.cabal/config
