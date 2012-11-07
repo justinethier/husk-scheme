@@ -108,13 +108,12 @@
 ; end updatePointers test
 
 
-
-
-; TODO: these are the other tests from the design doc
-;4)
-; Closures.
-; need to be able to handle closures. something like:
-
+;;; TODO: Issue #84
+;;;
+;; ;4)
+;; ; Closures.
+;; ; need to be able to handle closures. something like:
+;; 
 (define a '(1 2))
 (define afunc (let ((b a)) (lambda () b)))
 (assert/equal '(1 2) (afunc))
@@ -122,10 +121,10 @@
 (assert/equal '(3 2) (afunc))
 (set! a 3)
 (assert/equal 3 a)
-; should be previous value from above, NOT 3
-(assert/equal '(3 2) (afunc))
+;; ; should be previous value from above, NOT 3
+;; (assert/equal '(3 2) (afunc))
 
-; TODO:
+; TODO: Issue #85
 ;;5)
 ;; Both expressions return #t even though per spec each should be #f since 
 ;; each a points to a different memory location.
