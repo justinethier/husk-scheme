@@ -223,11 +223,13 @@ eval env cont val@(Pointer _ _) = continueEval env cont val
 eval env cont (Atom a) = do
   v <- getVar env a
   val <- return $ case v of
+#ifdef UsePointers
     List _ -> Pointer a env
     DottedList _ _ -> Pointer a env
     String _ -> Pointer a env
     Vector _ -> Pointer a env
     HashTable _ -> Pointer a env
+#endif
     _ -> v
   continueEval env cont val
 

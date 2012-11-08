@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 {- |
 Module      : Language.Scheme.Variables
 Copyright   : Justin Ethier
@@ -445,6 +447,7 @@ derefPtr v = return v
 --  This could potentially be expensive on large data structures 
 --  since it must walk the entire object.
 recDerefPtrs :: LispVal -> IOThrowsError LispVal
+#ifdef UsePointers
 recDerefPtrs (List l) = do
     result <- mapM recDerefPtrs l
     return $ List result
@@ -460,6 +463,7 @@ recDerefPtrs (HashTable ht) = do
     ks <- mapM recDerefPtrs $ map (\ (k, _) -> k) $ Data.Map.toList ht
     vs <- mapM recDerefPtrs $ map (\ (_, v) -> v) $ Data.Map.toList ht
     return $ HashTable $ Data.Map.fromList $ zip ks vs
+#endif
 recDerefPtrs (Pointer p env) = do
     result <- getVar env p
     recDerefPtrs result 
