@@ -1,12 +1,12 @@
 v3.6
 --------
-Enhanced the variable storage model to store references to objects. For example, consider the following:
+Enhanced the variable storage model to correctly store references to objects. For example, consider the following:
 
     (define x (list 'a 'b 'c))
     (define y x)
     (set-cdr! x 4)
 
-After executing this code, previous versions of husk assigned `(a b c)` to `y`. With this release, husk now correctly evaluates `y` to `(a . 4)`.
+After executing this code, previous versions of husk assigned `(a b c)` to `y`. With this release, husk now evaluates `y` to the expected value of `(a . 4)`.
 
 The more general problem is that certain data types denote a memory location which may be modified by mutator functions such as `set-cdr!`. This is discussed specifically in section 3.4 <b>Storage Model</b>:
 
