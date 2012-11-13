@@ -14,15 +14,9 @@ This module contains top-level data type definitions, environments, error types,
 -}
 
 module Language.Scheme.Types
-{-    (
-      Env
---    , Environment
-    , parentEnv
-    , bindings
+    ( Env (..)
     , nullEnv 
-    , macroNamespace
-    , varNamespace
-    , LispError
+    , LispError (..)
     , ThrowsError 
     , trapError
     , extractValue 
@@ -30,23 +24,69 @@ module Language.Scheme.Types
     , liftThrows 
     , runIOThrowsREPL 
     , runIOThrows 
-    , LispVal
+    , LispVal (
+          Atom
+        , List
+        , DottedList
+        , Vector
+        , HashTable
+        , Number
+        , Float
+        , Complex
+        , Rational
+        , String
+        , Char
+        , Bool
+        , PrimitiveFunc
+        , Func
+             , params
+             , vararg
+             , body
+             , closure
+        , HFunc
+             , hparams
+             , hvararg
+             , hbody
+             , hclosure
+        , IOFunc
+        , EvalFunc
+        , Pointer
+             , pointerVar
+             , pointerEnv
+        , Opaque
+        , Port
+        , Continuation
+             , contClosure
+             , currentCont
+             , nextCont
+             , extraReturnArgs
+             , dynamicWind
+        , Syntax
+             , synClosure
+             , synRenameClosure
+             , synDefinedInMacro
+             , synIdentifiers
+             , synRules
+        , SyntaxExplicitRenaming
+        , EOF
+        , Nil)
     , toOpaque
     , fromOpaque
-    , DeferredCode
-    , DynamicWinders   
-    , before 
-    , after 
-    , showDWVal 
+    , DeferredCode (..)
+    , DynamicWinders (..)
     , makeNullContinuation 
     , makeCPS 
     , makeCPSWArgs 
     , eqv 
     , eqvList
     , eqVal 
-    , showVal
-    , unwordsList
-    ) -}
+    , makeFunc
+    , makeNormalFunc
+    , makeVarargs
+    , makeHFunc
+    , makeNormalHFunc
+    , makeHVarargs
+    )
  where
 import Control.Monad.Error
 import Data.Complex
@@ -64,21 +104,16 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 -- |A Scheme environment containing variable bindings of form @(namespaceName, variableName), variableValue@
 data Env = Environment {
         parentEnv :: (Maybe Env), 
-        bindings :: (IORef (Data.Map.Map (String, String) (IORef LispVal)))
+        bindings :: (IORef (Data.Map.Map String (IORef LispVal))),
+        pointers :: (IORef (Data.Map.Map String (IORef [LispVal])))
     }
 
 -- |An empty environment
 nullEnv :: IO Env
-nullEnv = do nullBindings <- newIORef $ Data.Map.fromList []
-             return $ Environment Nothing nullBindings
-
--- Internal namespace for macros
-macroNamespace :: [Char]
-macroNamespace = "m"
-
--- Internal namespace for variables
-varNamespace :: [Char]
-varNamespace = "v"
+nullEnv = do 
+    nullBindings <- newIORef $ Data.Map.fromList []
+    nullPointers <- newIORef $ Data.Map.fromList []
+    return $ Environment Nothing nullBindings nullPointers
 
 -- |Types of errors that may occur when evaluating Scheme code
 data LispError = NumArgs Integer [LispVal] -- ^Invalid number of function arguments
@@ -194,13 +229,16 @@ data LispVal = Atom String
  | EvalFunc ([LispVal] -> IOThrowsError LispVal)
  {- ^Function within the IO monad with access to
  the current environment and continuation. -}
+ | Pointer { pointerVar :: String
+            ,pointerEnv :: Env } 
+ -- ^Pointer to an environment variable.
  | Opaque Dynamic
  -- ^Opaque Haskell value.
  | Port Handle
  -- ^I/O port
- | Continuation { closure :: Env                       -- Environment of the continuation
+ | Continuation {  contClosure :: Env                   -- Environment of the continuation
                  , currentCont :: (Maybe DeferredCode)  -- Code of current continuation
-                 , nextCont :: (Maybe LispVal)       -- Code to resume after body of cont
+                 , nextCont :: (Maybe LispVal)          -- Code to resume after body of cont
                  , extraReturnArgs :: (Maybe [LispVal]) -- Extra return arguments, to support (values) and (call-with-values)
                         , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind)
                 }
@@ -384,6 +422,7 @@ showVal (HFunc {hparams = args, hvararg = varargs, hbody = _, hclosure = _}) =
 showVal (Port _) = "<IO port>"
 showVal (IOFunc _) = "<IO primitive>"
 showVal (EvalFunc _) = "<procedure>"
+showVal (Pointer p _) = "<ptr " ++ p ++ ">"
 showVal (Opaque d) = "<Haskell " ++ show (dynTypeRep d) ++ ">"
 
 -- |Convert a list of Lisp objects into a space-separated string

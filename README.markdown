@@ -17,6 +17,8 @@ husk may be installed using [cabal](http://www.haskell.org/cabal/):
     cabal update
     cabal install husk-scheme
 
+More information is available on the [husk website](http://justinethier.github.com/husk-scheme).
+
 License
 -------
 Copyright (C) 2010 [Justin Ethier](http://github.com/justinethier)

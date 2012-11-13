@@ -44,10 +44,11 @@ import qualified Data.Char
 import qualified Data.Map
 import qualified System.Exit
 import System.IO
+-- import Debug.Trace
 
 -- |husk version number
 version :: String
-version = "3.5.7"
+version = "3.6"
 
 -- |A utility function to display the husk console banner
 showBanner :: IO ()
@@ -89,7 +90,8 @@ evalString env "(* 3 9)"
 @
 -}
 evalString :: Env -> String -> IO String
-evalString env expr = runIOThrowsREPL $ liftM show $ (liftThrows $ readExpr expr) >>= meval env (makeNullContinuation env)
+evalString env expr = do
+  runIOThrowsREPL $ liftM show $ (liftThrows $ readExpr expr) >>= evalLisp env
 
 -- |Evaluate a string and print results to console
 evalAndPrint :: Env -> String -> IO ()
@@ -97,7 +99,9 @@ evalAndPrint env expr = evalString env expr >>= putStrLn
 
 -- |Evaluate lisp code that has already been loaded into haskell
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
-evalLisp env lisp = meval env (makeNullContinuation env) lisp
+evalLisp env lisp = do
+  v <- meval env (makeNullContinuation env) lisp
+  recDerefPtrs v
 
 -- |A wrapper for macroEval and eval
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
@@ -215,7 +219,19 @@ eval env cont val@(Number _) = continueEval env cont val
 eval env cont val@(Bool _) = continueEval env cont val
 eval env cont val@(HashTable _) = continueEval env cont val
 eval env cont val@(Vector _) = continueEval env cont val
-eval env cont (Atom a) = continueEval env cont =<< getVar env a
+eval env cont val@(Pointer _ _) = continueEval env cont val
+eval env cont (Atom a) = do
+  v <- getVar env a
+  val <- return $ case v of
+#ifdef UsePointers
+    List _ -> Pointer a env
+    DottedList _ _ -> Pointer a env
+    String _ -> Pointer a env
+    Vector _ -> Pointer a env
+    HashTable _ -> Pointer a env
+#endif
+    _ -> v
+  continueEval env cont val
 
 -- Quote an expression by simply passing along the value
 eval env cont (List [Atom "quote", val]) = continueEval env cont val
@@ -262,7 +278,8 @@ eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value No
 
         -- Finish unquoting a pair by combining both of the unquoted left/right hand sides.
         cpsUnquotePairFinish :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUnquotePairFinish e c rx (Just [List rxs]) = do
+        cpsUnquotePairFinish e c _rx (Just [List rxs]) = do
+            rx <- recDerefPtrs _rx
             case rx of
               List [] -> continueEval e c $ List rxs
               List rxlst -> continueEval e c $ List $ rxs ++ rxlst
@@ -475,11 +492,14 @@ eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
   else meval env (makeCPS env cont cpsStr) i
  where
         cpsStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsStr e c idx _ = (meval e (makeCPSWArgs e c cpsSubStr $ [idx]) =<< getVar e var) 
+        cpsStr e c idx _ = do
+            value <- getVar env var
+            derefValue <- recDerefPtrs value
+            meval e (makeCPSWArgs e c cpsSubStr $ [idx]) derefValue
 
         cpsSubStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsSubStr e c str (Just [idx]) =
-            substr (str, character, idx) >>= setVar e var >>= continueEval e c
+            substr (str, character, idx) >>= updateObject e var >>= continueEval e c
         cpsSubStr _ _ _ _ = throwError $ InternalError "Invalid argument to cpsSubStr"
 
 eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do
@@ -497,7 +517,10 @@ eval env cont args@(List [Atom "set-car!", Atom var, argObj]) = do
  bound <- liftIO $ isRecBound env "set-car!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else continueEval env (makeCPS env cont cpsObj) =<< getVar env var
+  else do
+      value <- getVar env var
+      derefValue <- recDerefPtrs value
+      continueEval env (makeCPS env cont cpsObj) derefValue
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsObj _ _ obj@(List []) _ = throwError $ TypeMismatch "pair" obj
@@ -506,8 +529,8 @@ eval env cont args@(List [Atom "set-car!", Atom var, argObj]) = do
         cpsObj _ _ obj _ = throwError $ TypeMismatch "pair" obj
 
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsSet e c obj (Just [List (_ : ls)]) = setVar e var (List (obj : ls)) >>= continueEval e c -- Wrong constructor? Should it be DottedList?
-        cpsSet e c obj (Just [DottedList (_ : ls) l]) = setVar e var (DottedList (obj : ls) l) >>= continueEval e c
+        cpsSet e c obj (Just [List (_ : ls)]) = updateObject e var (List (obj : ls)) >>= continueEval e c -- Wrong constructor? Should it be DottedList?
+        cpsSet e c obj (Just [DottedList (_ : ls) l]) = updateObject e var (DottedList (obj : ls) l) >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
 eval env cont args@(List [Atom "set-car!" , nonvar , _ ]) = do
  bound <- liftIO $ isRecBound env "set-car!"
@@ -524,7 +547,10 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else continueEval env (makeCPS env cont cpsObj) =<< getVar env var
+  else do
+      value <- getVar env var
+      derefValue <- recDerefPtrs value --derefPtr value
+      continueEval env (makeCPS env cont cpsObj) derefValue
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsObj _ _ pair@(List []) _ = throwError $ TypeMismatch "pair" pair
@@ -533,14 +559,22 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
         cpsObj _ _ pair _ = throwError $ TypeMismatch "pair" pair
 
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsSet e c obj (Just [List (l : _)]) = (liftThrows $ cons [l, obj]) >>= setVar e var >>= continueEval e c
-        cpsSet e c obj (Just [DottedList (l : _) _]) = (liftThrows $ cons [l, obj]) >>= setVar e var >>= continueEval e c
+        cpsSet e c obj (Just [List (l : _)]) = do
+            l' <- recDerefPtrs l
+            obj' <- recDerefPtrs obj
+            (liftThrows $ cons [l', obj']) >>= updateObject e var >>= continueEval e c
+        cpsSet e c obj (Just [DottedList (l : _) _]) = do
+            l' <- recDerefPtrs l
+            obj' <- recDerefPtrs obj
+            (liftThrows $ cons [l', obj']) >>= updateObject e var >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
 eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else throwError $ TypeMismatch "variable" nonvar
+  else do
+      -- TODO: eval nonvar, then can process it if we get a list
+      throwError $ TypeMismatch "variable" nonvar
 eval env cont fargs@(List (Atom "set-cdr!" : args)) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
@@ -562,7 +596,7 @@ eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
 
         cpsUpdateVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsUpdateVec e c vec (Just [idx, obj]) =
-            updateVector vec idx obj >>= setVar e var >>= continueEval e c
+            updateVector vec idx obj >>= updateObject e var >>= continueEval e c
         cpsUpdateVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateVec"
 
 eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
@@ -586,14 +620,17 @@ eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
         cpsValue e c key _ = meval e (makeCPSWArgs e c cpsH $ [key]) rvalue
 
         cpsH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsH e c value (Just [key]) = (meval e (makeCPSWArgs e c cpsEvalH $ [key, value]) =<< getVar e var) 
+        cpsH e c value (Just [key]) = do
+          v <- getVar e var
+          derefVar <- recDerefPtrs v
+          meval e (makeCPSWArgs e c cpsEvalH $ [key, value]) derefVar
         cpsH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsH"
 
         cpsEvalH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsEvalH e c h (Just [key, value]) = do
             case h of
                 HashTable ht -> do
-                  setVar env var (HashTable $ Data.Map.insert key value ht) >>= meval e c
+                  updateObject env var (HashTable $ Data.Map.insert key value ht) >>= meval e c
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
 eval env cont args@(List [Atom "hash-table-set!" , nonvar , _ , _]) = do
@@ -614,13 +651,16 @@ eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
   else meval env (makeCPS env cont cpsH) rkey
  where
         cpsH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsH e c key _ = (meval e (makeCPSWArgs e c cpsEvalH $ [key]) =<< getVar e var) 
+        cpsH e c key _ = do
+            value <- getVar e var
+            derefValue <- recDerefPtrs value
+            meval e (makeCPSWArgs e c cpsEvalH $ [key]) derefValue
 
         cpsEvalH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsEvalH e c h (Just [key]) = do
             case h of
                 HashTable ht -> do
-                  setVar env var (HashTable $ Data.Map.delete key ht) >>= meval e c
+                  updateObject env var (HashTable $ Data.Map.delete key ht) >>= meval e c
                 other -> throwError $ TypeMismatch "hash-table" other
         cpsEvalH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsEvalH"
 eval env cont args@(List [Atom "hash-table-delete!" , nonvar , _]) = do
@@ -650,6 +690,9 @@ substr (s, _, _) = throwError $ TypeMismatch "string" s
 -- |A helper function for the special form /(vector-set!)/
 updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
 updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec // [(fromInteger idx, obj)]
+updateVector ptr@(Pointer _ _) i obj = do
+  vec <- recDerefPtrs ptr
+  updateVector vec i obj
 updateVector v _ _ = throwError $ TypeMismatch "vector" v
 
 {- Prepare for apply by evaluating each function argument,
@@ -693,14 +736,16 @@ apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
  where
    cpsApply :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
    cpsApply e c _ _ = doApply e c
-   doApply e c =
+   doApply e c = do
+      -- TODO (?): List dargs <- recDerefPtrs $ List args -- Deref any pointers
       case (toInteger $ length args) of
         0 -> throwError $ NumArgs 1 []
         1 -> continueEval e c $ head args
         _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
              continueEval e (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args
 apply cont (IOFunc func) args = do
-  result <- func args
+  List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  result <- func dargs
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
@@ -709,7 +754,8 @@ apply cont (EvalFunc func) args = do
     pass it as the first argument. -}
     func (cont : args)
 apply cont (PrimitiveFunc func) args = do
-  result <- liftThrows $ func args
+  List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  result <- liftThrows $ func dargs
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
@@ -834,10 +880,16 @@ evalfuncApply (cont@(Continuation _ _ _ _ _) : func : args) = do
 
   if null args
      then throwError $ NumArgs 2 args
-     else case head aRev of
-            List aLastElems -> do
-              apply cont func $ (init args) ++ aLastElems
-            other -> throwError $ TypeMismatch "List" other
+     else applyArgs $ head aRev
+ where 
+  applyArgs aRev = do
+    case aRev of
+      List aLastElems -> do
+        apply cont func $ (init args) ++ aLastElems
+      Pointer pVar pEnv -> do
+        value <- recDerefPtrs aRev
+        applyArgs value
+      other -> throwError $ TypeMismatch "List" other
 evalfuncApply (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
 evalfuncApply _ = throwError $ NumArgs 2 []
 
@@ -945,9 +997,10 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("peek-char", readCharProc hLookAhead),
                 ("write", writeProc (\ port obj -> hPrint port obj)),
                 ("write-char", writeCharProc),
-                ("display", writeProc (\ port obj -> case obj of
-                                                        String str -> hPutStr port str
-                                                        _ -> hPutStr port $ show obj)),
+                ("display", writeProc (\ port obj -> do
+                  case obj of
+                    String str -> hPutStr port str
+                    _ -> hPutStr port $ show obj)),
 
                 -- From SRFI 96
                 ("file-exists?", fileExists),

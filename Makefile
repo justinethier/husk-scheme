@@ -17,17 +17,28 @@ GHCOPTS=-Wall --make -package parsec -package ghc
 GHCFLAGS=-f-useffi
 #GHCFLAGS=
 
+# Require for profiling, EG:
+#
+#      +RTS -p -RTS
+#   or +RTS -sstderr -RTS
+#
+# In order to get profiling to work, the profiling flags
+# also need to be enabled in ~/.cabal/config
+#
+#CONFIGFLAGS=--ghc-option='-rtsopts' --ghc-option='-auto-all'
+CONFIGFLAGS=
+
 HUSKC = huskc
 HUSKI = huski
 UNIT_TEST_DIR = tests
 
 all: config build
 config:
-	cabal configure --prefix=$(HOME) --user $(GHCFLAGS)
+	cabal configure --prefix=$(HOME) --user $(GHCFLAGS) $(CONFIGFLAGS)
 build:
-	cabal build
+	cabal build $(CONFIGFLAGS)
 install:
-	cabal install $(GHCFLAGS)
+	cabal install $(GHCFLAGS) $(CONFIGFLAGS)
 sdist:
 	cabal sdist
 doc:

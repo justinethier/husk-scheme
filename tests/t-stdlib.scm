@@ -71,6 +71,7 @@
 (set-car! f "a")
 (assert/equal f '("a" . 2))
 
+; TODO: should be able to get these to pass now...
 ;
 ; Looks like all of below fail because (define y x) 
 ; is assigning to to the evaluated value of x instead of the symbol x.
@@ -84,7 +85,6 @@
 ;;(assert/equal (list? y) #f)
 ;;
 ; End test failures
-
 
 (set-cdr! x x)
 (assert/equal (list? x)  #f)

@@ -198,7 +198,17 @@ compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
 -- TODO: eval env cont val@(HashTable _) = continueEval env cont val
 compile _ v@(Vector _) copts = compileScalar (" return $ " ++ astToHaskellStr v) copts
 compile _ ht@(HashTable _) copts = compileScalar (" return $ " ++ astToHaskellStr ht) copts
-compile _ (Atom a) copts = compileScalar ("  getVar env \"" ++ a ++ "\"") copts 
+compile _ (Atom a) copts = do
+ c <- return $ createAstCont copts "val" ""
+ return [createAstFunc copts [
+   AstValue $ "  v <- getVar env \"" ++ a ++ "\"",
+   AstValue $ "  val <- return $ case v of",
+   AstValue $ "    List _ -> Pointer \"" ++ a ++ "\" env",
+   AstValue $ "    DottedList _ _ -> Pointer \"" ++ a ++ "\" env",
+   AstValue $ "    String _ -> Pointer \"" ++ a ++ "\" env",
+   AstValue $ "    Vector _ -> Pointer \"" ++ a ++ "\" env",
+   AstValue $ "    HashTable _ -> Pointer \"" ++ a ++ "\" env",
+   AstValue $ "    _ -> v"], c]
 
 compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
 
@@ -430,10 +440,11 @@ compile env (List [Atom "string-set!", Atom var, i, character]) copts = do
  compDefine <- compileExpr env i symDefine $ Just symMakeDefine
  compMakeDefine <- return $ AstFunction symMakeDefine " env cont idx _ " [
     AstValue $ "  tmp <- getVar env \"" ++ var ++ "\"",
+    AstValue $ "  derefValue <- recDerefPtrs tmp",
     -- TODO: not entirely correct below; should compile the character argument rather
     --       than directly inserting it into the compiled code...
-    AstValue $ "  result <- substr (tmp, (" ++ astToHaskellStr(character) ++ "), idx)",
-    AstValue $ "  _ <- setVar env \"" ++ var ++ "\" result",
+    AstValue $ "  result <- substr (derefValue, (" ++ astToHaskellStr(character) ++ "), idx)",
+    AstValue $ "  _ <- updateObject env \"" ++ var ++ "\" result",
     createAstCont copts "result" ""]
  return $ [entryPt] ++ compDefine ++ [compMakeDefine]
 
@@ -457,7 +468,8 @@ compile env (List [Atom "set-car!", Atom var, argObj]) copts = do
  -- Function to read existing var
  compGetVar <- return $ AstFunction symGetVar " env cont idx _ " [
     AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  " ++ symObj ++ " env cont result Nothing "]
+    AstValue $ "  derefValue <- recDerefPtrs result",
+    AstValue $ "  " ++ symObj ++ " env cont derefValue Nothing "]
 
  -- Compiled version of argObj
  compiledObj <- compileExpr env argObj symCompiledObj Nothing 
@@ -481,8 +493,8 @@ compile env (List [Atom "set-car!", Atom var, argObj]) copts = do
  -- FUTURE: consider making these functions part of the runtime.
  compDoSet <- return $ AstValue $ "" ++
               symDoSet ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-              symDoSet ++ " e c obj (Just [List (_ : ls)]) = setVar e \"" ++ var ++ "\" (List (obj : ls)) >>= " ++ finalContinuation ++
-              symDoSet ++ " e c obj (Just [DottedList (_ : ls) l]) = setVar e \"" ++ var ++ "\" (DottedList (obj : ls) l) >>= " ++ finalContinuation ++
+              symDoSet ++ " e c obj (Just [List (_ : ls)]) = updateObject e \"" ++ var ++ "\" (List (obj : ls)) >>= " ++ finalContinuation ++
+              symDoSet ++ " e c obj (Just [DottedList (_ : ls) l]) = updateObject e \"" ++ var ++ "\" (DottedList (obj : ls) l) >>= " ++ finalContinuation ++
               symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
 
  -- Return a list of all the compiled code
@@ -508,7 +520,8 @@ compile env (List [Atom "set-cdr!", Atom var, argObj]) copts = do
  -- Function to read existing var
  compGetVar <- return $ AstFunction symGetVar " env cont idx _ " [
     AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  " ++ symObj ++ " env cont result Nothing "]
+    AstValue $ "  derefValue <- recDerefPtrs result",
+    AstValue $ "  " ++ symObj ++ " env cont derefValue Nothing "]
 
  -- Compiled version of argObj
  compiledObj <- compileExpr env argObj symCompiledObj Nothing 
@@ -532,8 +545,14 @@ compile env (List [Atom "set-cdr!", Atom var, argObj]) copts = do
  -- FUTURE: consider making these functions part of the runtime.
  compDoSet <- return $ AstValue $ "" ++
               symDoSet ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-              symDoSet ++ " e c obj (Just [List (l : _)]) = (liftThrows $ cons [l, obj]) >>= setVar e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
-              symDoSet ++ " e c obj (Just [DottedList (l : _) _]) = (liftThrows $ cons [l, obj]) >>= setVar e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
+              symDoSet ++ " e c obj (Just [List (l : _)]) = do\n" ++
+                          "   l' <- recDerefPtrs l\n" ++
+                          "   obj' <- recDerefPtrs obj\n" ++
+                          "   (liftThrows $ cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
+              symDoSet ++ " e c obj (Just [DottedList (l : _) _]) = do\n" ++
+                          "   l' <- recDerefPtrs l\n" ++
+                          "   obj' <- recDerefPtrs obj\n" ++
+                          "   (liftThrows $ cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
               symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
 
  -- Return a list of all the compiled code
@@ -557,7 +576,7 @@ compile env (List [Atom "vector-set!", Atom var, i, object]) copts = do
  -- Do actual update
  compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
     AstValue $ "  vec <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  result <- updateVector vec idx obj >>= setVar env \"" ++ var ++ "\"",
+    AstValue $ "  result <- updateVector vec idx obj >>= updateObject env \"" ++ var ++ "\"",
     createAstCont copts "result" ""]
 
  return $ [entryPt, compiledIdxWrapper, compiledUpdate] ++ compiledIdx ++ compiledObj
@@ -582,7 +601,8 @@ compile env (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) copts = do
  compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [rkey]) " [
     -- TODO: this should be more robust, than just assuming ht is a HashTable
     AstValue $ "  HashTable ht <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  result <- setVar env \"" ++ var ++ "\" (HashTable $ Data.Map.insert rkey obj ht) ",
+    AstValue $ "  HashTable ht' <- recDerefPtrs $ HashTable ht",
+    AstValue $ "  result <- updateObject env \"" ++ var ++ "\" (HashTable $ Data.Map.insert rkey obj ht') ",
     createAstCont copts "result" ""]
 
  return $ [entryPt, compiledIdxWrapper, compiledUpdate] ++ compiledIdx ++ compiledObj
@@ -601,7 +621,8 @@ compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
  compiledUpdate <- return $ AstFunction symDoDelete " env cont rkey _ " [
     -- TODO: this should be more robust, than just assuming ht is a HashTable
     AstValue $ "  HashTable ht <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  result <- setVar env \"" ++ var ++ "\" (HashTable $ Data.Map.delete rkey ht) ",
+    AstValue $ "  HashTable ht' <- recDerefPtrs $ HashTable ht",
+    AstValue $ "  result <- updateObject env \"" ++ var ++ "\" (HashTable $ Data.Map.delete rkey ht') ",
     createAstCont copts "result" ""]
 
  return $ [entryPt, compiledUpdate] ++ compiledIdx

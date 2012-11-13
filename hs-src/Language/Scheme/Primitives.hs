@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# Language ExistentialQuantification #-}
 
 {- |
@@ -120,6 +121,13 @@ import qualified Data.Map
 import System.IO
 import System.Directory (doesFileExist, removeFile)
 import System.IO.Error
+-- import Debug.Trace
+
+#if __GLASGOW_HASKELL__ < 702
+try' = try
+#else
+try' = tryIOError
+#endif
 
 ---------------------------------------------------
 -- I/O Primitives
@@ -152,7 +160,7 @@ isOutputPort _ = return $ Bool False
 
 isCharReady :: [LispVal] -> IOThrowsError LispVal
 isCharReady [Port port] = do --liftM Bool $ liftIO $ hReady port
-    result <- liftIO $ try (liftIO $ hReady port)
+    result <- liftIO $ try' (liftIO $ hReady port)
     case result of
         Left e -> if isEOFError e
                      then return $ Bool False
@@ -163,7 +171,7 @@ isCharReady _ = return $ Bool False
 readProc :: [LispVal] -> IOThrowsError LispVal
 readProc [] = readProc [Port stdin]
 readProc [Port port] = do
-    input <- liftIO $ try (liftIO $ hGetLine port)
+    input <- liftIO $ try' (liftIO $ hGetLine port)
     case input of
         Left e -> if isEOFError e
                      then return $ EOF
@@ -176,7 +184,7 @@ readCharProc :: (Handle -> IO Char) -> [LispVal] -> IOThrowsError LispVal
 readCharProc func [] = readCharProc func [Port stdin]
 readCharProc func [Port port] = do
     liftIO $ hSetBuffering port NoBuffering
-    input <- liftIO $ try (liftIO $ func port)
+    input <- liftIO $ try' (liftIO $ func port)
     liftIO $ hSetBuffering port LineBuffering
     case input of
         Left e -> if isEOFError e
@@ -191,7 +199,7 @@ readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
              (Handle -> LispVal -> IO a) -> [LispVal] -> m LispVal -}
 writeProc func [obj] = writeProc func [obj, Port stdout]
 writeProc func [obj, Port port] = do
-    output <- liftIO $ try (liftIO $ func port obj)
+    output <- liftIO $ try' (liftIO $ func port obj)
     case output of
         Left _ -> throwError $ Default "I/O error writing to port"
         Right _ -> return $ Nil ""
@@ -202,7 +210,7 @@ writeProc _ other = if length other == 2
 writeCharProc :: [LispVal] -> IOThrowsError LispVal
 writeCharProc [obj] = writeCharProc [obj, Port stdout]
 writeCharProc [obj@(Char _), Port port] = do
-    output <- liftIO $ try (liftIO $ (hPutStr port $ show obj))
+    output <- liftIO $ try' (liftIO $ (hPutStr port $ show obj))
     case output of
         Left _ -> throwError $ Default "I/O error writing to port"
         Right _ -> return $ Nil ""
@@ -218,7 +226,7 @@ fileExists [] = throwError $ NumArgs 1 []
 fileExists args@(_ : _) = throwError $ NumArgs 1 args
 
 deleteFile [String filename] = do
-    output <- liftIO $ try(liftIO $ removeFile filename)
+    output <- liftIO $ try' (liftIO $ removeFile filename)
     case output of
         Left _ -> return $ Bool False
         Right _ -> return $ Bool True
@@ -341,7 +349,7 @@ hashTblExists args@(_ : _) = throwError $ NumArgs 2 args
 
 hashTblRef [(HashTable ht), key@(_)] = do
   case Data.Map.lookup key ht of
-    Just val -> return $ val
+    Just val -> return val
     Nothing -> throwError $ BadSpecialForm "Hash table does not contain key" key
 hashTblRef [(HashTable ht), key@(_), Func _ _ _ _] = do
   case Data.Map.lookup key ht of
