@@ -119,7 +119,10 @@ defaultRunGhc =
 #if __GLASGOW_HASKELL__ <= 700
   -- Old syntax for GHC 7.0.x and lower
   GHC.defaultErrorHandler DynFlags.defaultDynFlags . GHC.runGhc (Just GHC.Paths.libdir)
-#else
+#elif __GLASGOW_HASKELL__ < 706 
   -- New syntax in GHC 7.2
   GHC.defaultErrorHandler DynFlags.defaultLogAction . GHC.runGhc (Just GHC.Paths.libdir)
+#else
+  -- New syntax in GHC 7.6
+  GHC.defaultErrorHandler DynFlags.defaultFatalMessager DynFlags.defaultFlushOut . GHC.runGhc (Just GHC.Paths.libdir)
 #endif
