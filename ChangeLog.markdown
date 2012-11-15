@@ -1,3 +1,7 @@
+v3.6.1
+--------
+Added support for GHC 7.6.
+
 v3.6
 --------
 Enhanced the variable storage model to correctly store references to objects. For example, consider the following:
