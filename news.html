@@ -43,10 +43,13 @@ Maintainer  : github.com/justinethier
 			<ul>
                 {% for post in site.posts %}
                 <li>
-                    <h3>
+                    <h3 style="margin-bottom: 0px;">
                         <span>{{post.date | date: "%b %d %Y" }}: </span>
                         <a href="./{{post.url}}">{{post.title}}</a>
                     </h3> 
+                    <p style="margin-top: 0px; margin-bottom: 10px;">
+                    {{post.excerpt}}
+                    </p>
                 </li>
                 {% endfor %}
 			</ul>

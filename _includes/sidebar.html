@@ -5,9 +5,9 @@
 				<ul>
                     {% for post in site.posts limit: 3 %}
                     <li>
-                        <h3><span>{{post.date | date: "%b %d" }}: </span>{{post.title}}</h3>
+                        <h3><span>{{post.date | date: "%b %d" }}: </span><a href="./{{post.url}}">{{post.title}}</a></h3>
                         <p>
-                            <a href="./{{post.url}}">{{post.excerpt}}</a>
+                            {{post.excerpt}}
                         </p> 
                     </li>
                     {% endfor %}
