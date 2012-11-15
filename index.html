@@ -27,21 +27,29 @@ Maintainer  : github.com/justinethier
 </div>
 {% include menu.html %}
 <hr />
-<div id="page">
+<div id="outer-page">
+  <div id="page">
 	<div id="content">
 		<div>
-			<h1 class="title">What is husk?</h1>
-            <p>
-            <strong>husk</strong> is a dialect of Scheme written in Haskell that adheres to the <a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/">R<sup>5</sup>RS standard</a>. husk may be used as either a stand-alone interpreter or as an extension language within a larger Haskell application. Advanced features are provided including:
 
-            <ul>
-            <li>Continuations: First-class continuations of unlimited extent</li>
-            <li>Hygienic macros</li>
-            <li>A foreign function interface (FFI) to Haskell</li>
-            <li>Full numeric tower providing support for real, rational, and complex numbers</li>
-            </ul>
-            <p>husk scheme is available under the <a href="http://www.opensource.org/licenses/mit-license.php">MIT license</a>.</p>
-            </p>
+<h1 class="title">What is husk?</h1>
+<p>
+<strong>husk</strong> is a dialect of Scheme written in Haskell that adheres to the <a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/">R<sup>5</sup>RS standard</a>. Advanced R<sup>5</sup>RS features are provided including:
+
+<ul>
+  <li>First-class continuations of unlimited extent</li>
+  <li>Hygienic macros</li>
+  <li>A foreign function interface (FFI) to Haskell</li>
+  <li>Full numeric tower providing support for real, rational, and complex numbers</li>
+  <li>Proper tail recursion and lexical scoping</li>
+  <li>Read-Eval-Print-Loop (REPL) interpreter, with input driven by Haskeline to provide a rich user experience</a>
+  <li>Standard library of Scheme functions, and support for many popular <a href="http://srfi.schemers.org/">SRFI</a>'s</li>
+</ul>
+<p>
+  Husk may be used as either a stand-alone interpreter or as an extension language within a larger Haskell application, 
+  and is available under the <a href="http://www.opensource.org/licenses/mit-license.php">MIT license</a>.</p>
+</p>
+
 
 <h2>Background</h2>
 <p>
@@ -50,6 +58,7 @@ Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design p
 		</div>
 	</div>
     {% include sidebar.html %}
+  </div>
 </div>
 <hr />
 <div id="footer">

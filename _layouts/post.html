@@ -31,7 +31,8 @@ Description: A two-column, fixed-width template with light color blend.
 </div>
     {% include menu-post.html %}
 <hr />
-<div id="page">
+<div id="outer-page">
+  <div id="page">
 	<div id="content">
     {{ content }}
     <p>
@@ -39,6 +40,7 @@ Description: A two-column, fixed-width template with light color blend.
     </p>
     </div>
     {% include sidebar-post.html %}
+  </div>
 </div>
 <hr />
 <div id="footer">
