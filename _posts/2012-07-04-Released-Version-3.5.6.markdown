@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Released Version 3.5.6 
-excerpt: This incremental release allows a hash table to be defined directly using the syntax "#hash(alist)"...
+excerpt: This incremental release allows a hash table to be defined directly using the syntax "#hash(alist)".
 ---
 # {{ page.title }}
 

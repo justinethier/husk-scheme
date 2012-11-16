@@ -6,7 +6,7 @@
                     {% for post in site.posts limit: 3 %}
                     <li>
                         <h3><span>{{post.date | date: "%b %d" }}: </span><a href="./{{post.url}}">{{post.title}}</a></h3>
-                        <p>
+                        <p style="text-align: justify;">
                             {{post.excerpt}}
                         </p> 
                     </li>
@@ -14,7 +14,7 @@
 				</ul>
 			</li>
 			<li>
-				<h2>Quick Links</h2>
+				<h2>Links</h2>
 				<ul>
 					<li><a href="http://schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-2.html#%_toc_start">Scheme language reference</a></li>
                     <li><a href="http://justinethier.github.com/husk-scheme/API/3.5.5/index.html">Haskell API documentation</a></li>

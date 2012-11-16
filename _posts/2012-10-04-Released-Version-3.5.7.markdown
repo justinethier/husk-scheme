@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Released Version 3.5.7 
-excerpt: The major change in this release is support for explicit renaming macros. This low-level macro system provides... 
+excerpt: This release adds support for low-level explicit renaming macros.
 ---
 # {{ page.title }}
 

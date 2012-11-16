@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Older Releases
-excerpt: Added experimental support for let-syntax and letrec-syntax...
+excerpt: This post summarizes all of the older releases of husk.
 ---
 # {{ page.title }}
 

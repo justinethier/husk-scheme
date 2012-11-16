@@ -1,11 +1,11 @@
 ---
 layout: post
 title: Released Version 3.6 
-excerpt: Enhanced the variable storage model to correctly store references to objects...
+excerpt: Enhanced the variable storage model to improve support for storing references to objects.
 ---
 # {{ page.title }}
 
-Enhanced the variable storage model to correctly store references to objects. For example, consider the following:
+Enhanced the variable storage model to improve support for storing references to objects. For example, consider the following:
 
     (define x (list 'a 'b 'c))
     (define y x)
