@@ -16,6 +16,7 @@
 (define make-environment (lambda () '()))
 (define (string-concatenate l) (apply string-append l)) 
 (define *modules* '()) ; Just a temporary def, see EOF
+; env-exports - I think this needs to be a hook in husk
 ;; /JAE
 
 (define *this-module* '())
@@ -154,7 +155,8 @@
     => (lambda (mod) (cons x (%module-exports mod))))
    (else
     (error "couldn't find import" x))))
-#|
+
+; untested
 (define (eval-module name mod . o)
   (let ((env (if (pair? o) (car o) (make-environment)))
         (meta (module-meta-data mod))
@@ -223,7 +225,9 @@
         (module-env-set! mod (eval-module name mod)))
     mod))
 
-(define define-library-transformer
+;TODO: see below:
+;(define define-library-transformer
+(define-syntax define-library
   (er-macro-transformer
    (lambda (expr rename compare)
      (let ((name (cadr expr))
@@ -259,8 +263,9 @@
           (,add-module! ',name (make-module (extract-exports) #f ,this-module))
           (set! ,this-module ,tmp))))))
 
-(define-syntax define-library define-library-transformer)
-(define-syntax module define-library-transformer)
+; JAE TODO: chibi supports 'module' as well as 'define-library'
+;(define-syntax define-library define-library-transformer)
+;(define-syntax module define-library-transformer)
 
 (define-syntax define-config-primitive
   (er-macro-transformer
@@ -271,21 +276,21 @@
            (let ((this-module (rename '*this-module*)))
              `(set! ,this-module (cons ',expr ,this-module)))))))))
 
-(define-syntax orig-begin begin)
+;JAE - TODO: (define-syntax orig-begin begin)
 (define-config-primitive import)
-(define-config-primitive import-immutable)
-(define-config-primitive export)
-(define-config-primitive export-all)
-(define-config-primitive include)
-(define-config-primitive include-ci)
-(define-config-primitive include-shared)
-(define-config-primitive body)
-(define-config-primitive begin)
+;(define-config-primitive import-immutable)
+;(define-config-primitive export)
+;(define-config-primitive export-all)
+;(define-config-primitive include)
+;(define-config-primitive include-ci)
+;(define-config-primitive include-shared)
+;(define-config-primitive body)
+;JAE - TODO: (define-config-primitive begin)
 
-;; The `import' binding used by (scheme) and (scheme base), etc.
+; The `import' binding used by (scheme) and (scheme base), etc.
 (define-syntax repl-import
   (er-macro-transformer
-   (let ((meta-env (current-environment)))
+   ;(let ((meta-env (current-environment)))
      (lambda (expr rename compare)
        (let lp ((ls (cdr expr)) (res '()))
          (cond
@@ -305,13 +310,14 @@
                            #f)
                          res)))
               (else
-               (error "couldn't find module" (car ls))))))))))))
+               (error "couldn't find module" (car ls)))))))))));)
 
-(define *modules*
-  (list (cons '(scheme) (make-module #f (interaction-environment)
-                                     '((include "init-7.scm"))))
-        (cons '(meta) (make-module #f (current-environment) '()))
-        (cons '(srfi 0) (make-module (list 'cond-expand)
-                                     (current-environment)
-                                     (list (list 'export 'cond-expand))))))
-|#
+; JAE - TODO:
+;(define *modules*
+;  (list (cons '(scheme) (make-module #f (interaction-environment)
+;                                     '((include "init-7.scm"))))
+;        (cons '(meta) (make-module #f (current-environment) '()))
+;        (cons '(srfi 0) (make-module (list 'cond-expand)
+;                                     (current-environment)
+;                                     (list (list 'export 'cond-expand))))))
+
