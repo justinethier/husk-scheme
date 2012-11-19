@@ -79,3 +79,22 @@ Library
   if flag(useptrs)
     cpp-options: -DUsePointers
 
+Executable         huski
+  Build-Depends:   husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory
+  if flag(useffi)
+    Build-Depends: ghc, ghc-paths
+    cpp-options: -DUseFfi
+  Extensions:      ExistentialQuantification
+  Main-is:         shell.hs
+  Hs-Source-Dirs:  hs-src/Interpreter
+
+Executable huskc
+  Build-Depends: husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc-paths, process, filepath
+  if flag(useffi)
+    Build-Depends: ghc, ghc-paths
+    cpp-options: -DUseFfi
+  if flag(useptrs)
+    cpp-options: -DUsePointers
+  Extensions:      ExistentialQuantification
+  Main-is: huskc.hs
+  Hs-Source-Dirs: hs-src/Compiler
