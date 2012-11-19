@@ -814,7 +814,10 @@ apply cont (HFunc aparams avarargs abody aclosure) args =
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
-apply _ func args = throwError $ BadSpecialForm "Unable to evaluate form" $ List (func : args)
+apply _ func args = do
+  List [func'] <- recDerefPtrs $ List [func] -- Deref any pointers
+  List args' <- recDerefPtrs $ List args
+  throwError $ BadSpecialForm "Unable to evaluate form" $ List (func' : args')
 
 {- |Environment containing the primitive forms that are built into the Scheme language. Note that this only includes
 forms that are implemented in Haskell; derived forms implemented in Scheme (such as let, list, etc) are available
