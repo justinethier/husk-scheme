@@ -212,13 +212,6 @@ compile _ (Atom a) copts = do
 
 compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
 
-
--- TODO: eval envi cont (List [Atom "quasiquote", value]) = cpsUnquote envi cont value Nothing
--- 
--- This is only a temporary solution that does not handle unquoting
---
-compile _ (List [Atom "quasiquote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
-
 compile env (List [Atom "expand",  _body]) copts = do
   -- TODO: check if expand has been rebound?
   val <- Language.Scheme.Macro.expand env False _body Language.Scheme.Core.apply
