@@ -7,3 +7,7 @@ Contributors:
   Arseniy <https://github.com/Rotsor>
   Eli Barzilay <eli@barzilay.org>
   Ricardo Lanziano <ricardo.lanziano@gmail.com>
+
+References:
+  R5RS <http://www.schemers.org/Documents/Standards/R5RS/HTML/>
+  Chibi-Scheme <http://code.google.com/p/chibi-scheme/>
