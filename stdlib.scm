@@ -69,7 +69,6 @@
 (define-syntax quasiquote
   (er-macro-transformer
    (lambda (expr rename compare)
-     (write "testing")
      (define (qq x d)
        (cond
         ((pair? x)
@@ -98,7 +97,6 @@
         ((if (symbol? x) #t (null? x)) (list (rename 'quote) x))
         (else x)))
      (qq (cadr expr) 0))))
-;     ((qq (cadr expr) 0)))))
 
 ; Forms from R5RS for and/or
 (define-syntax and
