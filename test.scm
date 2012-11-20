@@ -7,7 +7,10 @@
 ; Based on code from chibi-scheme
 (define test
    (lambda (expr rename compare)
-     (write "testing:")
+;    '(list (quote quasiquote) (cons 1 (cons 2 (quote ()))))
+;   ))
+     (newline)
+     (write "before:")
      (write expr)
      (newline)
      (define (qq x d)
@@ -37,6 +40,10 @@
         ((vector? x) (list (rename 'list->vector) (qq (vector->list x) d)))
         ((if (symbol? x) #t (null? x)) (list (rename 'quote) x))
         (else x)))
+     (newline)
+     (write "after:")
+     (write (qq (cadr expr) 0))
+     (newline)
      (qq (cadr expr) 0)))
 
 ;(write (test '`(1 2) rename compare))
@@ -47,7 +54,8 @@
      (test expr rename compare))))
 
 (newline)
-(write (test2 `(1 2) rename compare))
+(write (test '(quasiquote (1 2)) rename compare))
+(write (test2 (quasiquote (1 2)) rename compare))
 (newline)
 
 ;(let-syntax 
