@@ -52,25 +52,23 @@
               '#(10 5 2.0 4.0 3.0 8))
 
 ;; In csi, the following is allowed, need to handle this correctly, where a scalar is supplied.
-;; For now we are not allowing this.
-;(assert/equal `(,@2)
-;              2)
+(assert/equal `(,@2)
+              2)
 
 (assert/equal `(1 2 . ,(list 3 4))
               '(1 2 3 4))
 
-;
-; FUTURE: Issue #8 https://github.com/justinethier/husk-scheme/issues/#issue/8
-;         Nested forms test cases from spec: 
-;
-;(assert/equal `(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)
-;              '(a (quasiquote (b (unquote (+ 1 2)) (unquote (foo 4 d)) e)) f))
-;
-;
+; Issue #8 https://github.com/justinethier/husk-scheme/issues/#issue/8
+; Nested forms test cases from spec: 
+(assert/equal `(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)
+              '(a (quasiquote (b (unquote (+ 1 2)) (unquote (foo 4 d)) e)) f))
+
+(assert/equal (let ((name1 'x) (name2 'y)) `(a `(b ,,name1 ,,name2 d) e))
+             '(a `(b ,x ,y d) e))
+
+; TODO: this is still broken:
 ;(assert/equal (let ((name1 'x) (name2 'y)) `(a `(b ,,name1 ,',name2 d) e))
 ;             '(a `(b ,x ,'y d) e))
-;
-
 
 ; Final set of test cases from spec:
 (assert/equal (quasiquote (list (unquote (+ 1 2)) 4))
