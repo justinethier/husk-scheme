@@ -7,6 +7,9 @@
 ; Based on code from chibi-scheme
 (define test
    (lambda (expr rename compare)
+     (write "testing:")
+     (write expr)
+     (newline)
      (define (qq x d)
        (cond
         ((pair? x)
@@ -36,7 +39,7 @@
         (else x)))
      (qq (cadr expr) 0)))
 
-(write (test '`(1 2) rename compare))
+;(write (test '`(1 2) rename compare))
 
 (define-syntax test2
   (er-macro-transformer
@@ -45,4 +48,13 @@
 
 (newline)
 (write (test2 `(1 2) rename compare))
+(newline)
 
+;(let-syntax 
+; ((call
+;  (er-macro-transformer
+;    (lambda (exp rename compare)
+;      (define (x y) list)
+;        (x 1
+;          )))))
+;    (call 1 2 3 4))
