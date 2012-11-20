@@ -40,12 +40,13 @@ explicitRenamingTransform ::
 explicitRenamingTransform useEnv renameEnv lisp 
                           transformer@(Func _ _ _ defEnv) apply = do
   let continuation = makeNullContinuation useEnv
-  apply 
+  result <- apply 
     continuation
     transformer
     [lisp, 
      IOFunc $ exRename useEnv renameEnv defEnv, 
      IOFunc $ exCompare useEnv renameEnv defEnv] 
+  recDerefPtrs result
 
 -- |The explicit renaming "rename" function
 --
