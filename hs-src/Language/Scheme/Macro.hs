@@ -660,6 +660,14 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
      || a == "define"  
      || a == "set!"
      || a == "lambda"
+     || a == "quote"
+     || a == "expand"
+     || a == "string-set!"
+     || a == "set-car!"
+     || a == "set-cdr!"
+     || a == "vector-set!"
+     || a == "hash-table-set!"
+     || a == "hash-table-delete!"
     then walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv 
                           dim startOfList inputIsQuoted (List result) a ts isQuoted isDefinedAsMacro apply
     else walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
