@@ -4,6 +4,8 @@ Added support for nested quasi-quotation forms, which now respect depth level. T
 
 TODO: huskc should support QQ as well (need to test some more)
 
+- Fixed a bug where nested explicit renaming macros may not expand properly.
+
 v3.6.1
 --------
 Added support for GHC 7.6.
