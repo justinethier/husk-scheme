@@ -53,7 +53,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
---import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+-- import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -634,7 +634,7 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
 
  -- If a macro is quoted, keep track of it and do not invoke rules below for
  -- procedure abstraction or macro calls 
- let isQuoted = inputIsQuoted || (a == "quote") || (a == "quasiquote")
+ let isQuoted = inputIsQuoted || (a == "quote") -- || (a == "quasiquote")
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
 
@@ -895,7 +895,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List resu
     a
     ts
     True _ apply = do
-    let isQuasiQuoted = (a == "quasiquote")
+    let isQuasiQuoted = False -- (a == "quasiquote")
     -- Cleanup all symbols in the quoted code
     List cleaned <- cleanExpanded 
                       defEnv useEnv divertEnv renameEnv cleanupEnv 
@@ -979,16 +979,6 @@ cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List resu
 cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList isQQ (List result) (List (Atom a : ts)) apply = do
   expanded <- tmpexpandAtom cleanupEnv $ Atom a
   case (startOfList, isQQ, expanded) of
-    -- Unquote an expression by continuing to expand it as a macro form
-    -- 
-    -- Only perform an unquote if (in order):
-    --  - We are currently at the head of the list
-    --  - Expression is quasi-quoted
-    --  - An "unquote" is found
-    --
-    (True, True, Atom "unquote") -> do 
-        r <- walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True False (List $ result ++ [Atom "unquote"]) (List ts) apply
-        return r
     _ -> 
         cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [expanded]) (List ts) apply
  where
@@ -1373,7 +1363,7 @@ transformDottedList defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim 
    buildTransformedCode results ps p = do 
      case p of
         [List []] -> List $ results ++ [List ps]         -- Proper list has null list at the end
-        [List l@(Atom "unquote" : _ )] -> List $ results ++ [DottedList ps $ List l] -- Special case from parser. 
+--        [List l@(Atom "unquote" : _ )] -> List $ results ++ [DottedList ps $ List l] -- Special case from parser. 
         [List ls] -> List $ results ++ [List $ ps ++ ls] -- Again, convert to proper list because a proper list is at end
         [l] -> List $ results ++ [DottedList ps l]
         ls -> do
