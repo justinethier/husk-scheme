@@ -1,3 +1,9 @@
+v3.6.2
+--------
+Added support for nested quasi-quotation forms, which now respect depth level. This was done by replacing the quasi-quotation special form with a macro from chibi scheme.
+
+TODO: huskc should support QQ as well (need to test some more)
+
 v3.6.1
 --------
 Added support for GHC 7.6.
