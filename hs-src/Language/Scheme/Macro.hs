@@ -634,7 +634,7 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
 
  -- If a macro is quoted, keep track of it and do not invoke rules below for
  -- procedure abstraction or macro calls 
- let isQuoted = inputIsQuoted || (a == "quote") -- || (a == "quasiquote")
+ let isQuoted = inputIsQuoted || (a == "quote")
 
  isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
 
@@ -865,7 +865,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
          -- I am still concerned that this may highlight a flaw in the husk
          -- implementation, and that this solution may not be complete.
          --
-         List lexpanded <- cleanExpanded defEnv useEnv divertEnv renameEnv renameEnv True False False (List []) (List ts) apply
+         List lexpanded <- cleanExpanded defEnv useEnv divertEnv renameEnv renameEnv True False (List []) (List ts) apply
          macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : lexpanded)) apply
       Syntax (Just _defEnv) _ definedInMacro identifiers rules -> do 
         macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts)) apply
@@ -895,11 +895,10 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List resu
     a
     ts
     True _ apply = do
-    let isQuasiQuoted = False -- (a == "quasiquote")
     -- Cleanup all symbols in the quoted code
     List cleaned <- cleanExpanded 
                       defEnv useEnv divertEnv renameEnv cleanupEnv 
-                      dim True isQuasiQuoted 
+                      dim True
                       (List []) (List ts)
                       apply
     return $ List $ result ++ (Atom a : cleaned)
@@ -925,17 +924,26 @@ markBoundIdentifiers env cleanupEnv (Atom v : vs) renamedVars = do
 markBoundIdentifiers env cleanupEnv (_: vs) renamedVars = markBoundIdentifiers env cleanupEnv vs renamedVars
 markBoundIdentifiers _ _ [] renamedVars = return $ List renamedVars
 
--- |Recursively expand an atom that may have been renamed multiple times
-expandAtom :: Env -> LispVal -> IOThrowsError LispVal
-expandAtom renameEnv (Atom a) = do
+-- |Expand an atom, optionally recursively
+_expandAtom :: Bool -> Env -> LispVal -> IOThrowsError LispVal
+_expandAtom isRec renameEnv (Atom a) = do
   isDefined <- liftIO $ isRecBound renameEnv a -- Search parent Env's also
   if isDefined 
      then do
        expanded <- getVar renameEnv a
---       return (trace ("ea renaming " ++ a ++ " to " ++ show expanded) expanded) -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
-       return expanded -- disabled this; just expand once. expandAtom renameEnv expanded -- Recursively expand
+       case isRec of
+         True  -> _expandAtom isRec renameEnv expanded
+         False -> return expanded
      else return $ Atom a 
-expandAtom _ a = return a
+_expandAtom _ _ a = return a
+
+-- |Recursively expand an atom that may have been renamed multiple times
+recExpandAtom :: Env -> LispVal -> IOThrowsError LispVal
+recExpandAtom renameEnv a = _expandAtom True renameEnv a
+
+-- |Expand an atom
+expandAtom :: Env -> LispVal -> IOThrowsError LispVal
+expandAtom renameEnv a = _expandAtom False renameEnv a
 
 -- |Clean up any remaining renamed variables in the expanded code
 --  Only needed in special circumstances to deal with quoting.
@@ -957,53 +965,39 @@ cleanExpanded ::
   -> Env 
   -> Bool 
   -> Bool 
-  -> Bool 
   -> LispVal 
   -> LispVal 
   -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Apply func
   -> IOThrowsError LispVal
 
-cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List (List l : ls)) apply = do
-  lst <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) (List l) apply
-  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [lst]) (List ls) apply
+cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ (List result) (List (List l : ls)) apply = do
+  lst <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True (List []) (List l) apply
+  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False (List $ result ++ [lst]) (List ls) apply
 
-cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List ((Vector v) : vs)) apply = do
-  List lst <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) (List $ elems v) apply
-  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [asVector lst]) (List vs) apply
+cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ (List result) (List ((Vector v) : vs)) apply = do
+  List lst <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True (List []) (List $ elems v) apply
+  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False (List $ result ++ [asVector lst]) (List vs) apply
 
-cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List ((DottedList ds d) : ts)) apply = do
-  List ls <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) (List ds) apply
-  l <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True isQQ (List []) d apply
-  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [DottedList ls l]) (List ts) apply
+cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ (List result) (List ((DottedList ds d) : ts)) apply = do
+  List ls <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True (List []) (List ds) apply
+  l <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True (List []) d apply
+  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False (List $ result ++ [DottedList ls l]) (List ts) apply
 
-cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList isQQ (List result) (List (Atom a : ts)) apply = do
-  expanded <- tmpexpandAtom cleanupEnv $ Atom a
-  case (startOfList, isQQ, expanded) of
-    _ -> 
-        cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [expanded]) (List ts) apply
- where
-  -- TODO: figure out a way to simplify this code (perhaps consolidate with expandAtom)
-  tmpexpandAtom :: Env -> LispVal -> IOThrowsError LispVal
-  tmpexpandAtom _renameEnv (Atom _a) = do
-    isDefined <- liftIO $ isRecBound _renameEnv _a -- Search parent Env's also
-    if isDefined 
-       then do
-         expanded <- getVar _renameEnv _a
-         tmpexpandAtom _renameEnv expanded -- Recursively expand
-       else return $ Atom _a 
-  tmpexpandAtom _ _a = return _a
+cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList (List result) (List (Atom a : ts)) apply = do
+  expanded <- recExpandAtom cleanupEnv $ Atom a
+  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False (List $ result ++ [expanded]) (List ts) apply
 
 -- Transform anything else as itself...
-cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQQ (List result) (List (t : ts)) apply = do
-  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQQ (List $ result ++ [t]) (List ts) apply
+cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ (List result) (List (t : ts)) apply = do
+  cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False (List $ result ++ [t]) (List ts) apply
 
 -- Base case - empty transform
-cleanExpanded _ _ _ _ _ _ _ _ result@(List _) (List []) _ = do
+cleanExpanded _ _ _ _ _ _ _ result@(List _) (List []) _ = do
   return result
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
-cleanExpanded _ _ _ _ _ _ _ _ _ transform _ = return transform
+cleanExpanded _ _ _ _ _ _ _ _ transform _ = return transform
 
 
 {- |Transform input by walking the tranform structure and creating a new structure
