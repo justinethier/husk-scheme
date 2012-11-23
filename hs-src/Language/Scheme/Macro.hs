@@ -1288,8 +1288,6 @@ transformLiteralIdentifier :: Env -> Env -> Env -> Env -> Bool -> String -> IOTh
 transformLiteralIdentifier defEnv _ divertEnv renameEnv definedInMacro transform = do
   isInDef <- liftIO $ isRecBound defEnv transform
   isRenamed <- liftIO $ isRecBound renameEnv transform
---  if (trace ("a = " ++ transform ++ " inDef = " ++ show isInDef ++ " isRnm = " ++ show isRenamed ++ " dim = " ++ show definedInMacro) isInDef) && not isRenamed
---  TODO: isRenamed should only matter if the macro was originally defined within another macro
   if (isInDef && not definedInMacro) || (isInDef && definedInMacro && not isRenamed)
      then do
           {- Variable exists in the environment the macro was defined in,
@@ -1299,29 +1297,29 @@ transformLiteralIdentifier defEnv _ divertEnv renameEnv definedInMacro transform
          value <- getVar defEnv transform
          Atom renamed <- _gensym transform
          _ <- defineVar divertEnv renamed value 
---         return $ Atom (trace ("diverted " ++ transform ++ " into " ++ renamed) renamed)
          return $ Atom renamed
      else do
-{- TODO:         
-else if not defined in defEnv then just pass the var back as-is (?)
-  this is not entirely correct, a special form would not be defined but still has
-  a meaning and could be shadowed in useEnv. need some way of being able to
-  divert a special form back into useEnv...
-
-Or, consider the following example. csi throws an error because if is not defined.
-If we make the modifications to store intermediate vars somewhere that are introduced
-via lambda, set!, and define then we may be able to throw an error if the var is not
-defined, instead of trying to store the special form to a variable somehow.
-
-;(define if 3)
-(define-syntax test-template
- (syntax-rules (if)
-    ((_)
-        if)))
-(write (let ((if 1)) (test-template)) )
-(write (let ((if 2)) (test-template)) )
--}
+         -- else if not defined in defEnv then just pass the var back as-is
          return $ Atom transform
+         {-
+           TODO:         
+           above "else" is not entirely correct, a special form would not be defined but still
+           has a meaning and could be shadowed in useEnv. need some way of being able to
+           divert a special form back into useEnv...
+         
+           Or, consider the following example. csi throws an error because if is not defined.
+           If we make the modifications to store intermediate vars somewhere that are introduced
+           via lambda, set!, and define then we may be able to throw an error if the var is not
+           defined, instead of trying to store the special form to a variable somehow.
+           
+           ;(define if 3)
+           (define-syntax test-template
+            (syntax-rules (if)
+               ((_)
+                   if)))
+           (write (let ((if 1)) (test-template)) )
+           (write (let ((if 2)) (test-template)) )
+         -}
 
 -- | A helper function for transforming an improper list
 transformDottedList :: Env -> Env -> Env -> Env -> Env -> Env -> Bool -> LispVal -> Int -> [Int] -> LispVal -> LispVal -> IOThrowsError LispVal

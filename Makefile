@@ -32,7 +32,7 @@ HUSKC = huskc
 HUSKI = huski
 UNIT_TEST_DIR = tests
 
-all: config build
+all: config build install
 config:
 	cabal configure --prefix=$(HOME) --user $(GHCFLAGS) $(CONFIGFLAGS)
 build:
@@ -50,12 +50,12 @@ rpm:
 	rpmbuild -ba misc/ghc-husk-scheme.spec
 
 # Run all unit tests
-test: stdlib.scm
+test:
 	$(HUSKI) $(UNIT_TEST_DIR)/r5rs_pitfall.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) run-tests.scm
 
 # Run (experimental) compiler unit tests
-testc: stdlib.scm
+testc:
 	$(HUSKC) $(UNIT_TEST_DIR)/compiler/t-basic.scm
 	$(UNIT_TEST_DIR)/compiler/t-basic
 	$(HUSKC) $(UNIT_TEST_DIR)/compiler/er-macro.scm
