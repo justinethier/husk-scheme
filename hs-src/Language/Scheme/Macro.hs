@@ -125,14 +125,21 @@ macroEval env lisp@(List (Atom x : _)) apply = do
   -- experimenting with code to keep track of diverted vars
   -- would need a way to compile diverted vars, probably by passing
   -- such a function as input to macroEval.
-  -- Also need similar code in the expand function
+  --
+  -- TODO: may want to consider naming this macroEval' and the below
+  -- just macroEval. then we call the special version macroEval' from
+  -- the compiler with an additional divert argument. ditto for expand'
+  -- That streamlines everything for the interpreter
   --
 
   -- Keep track of diverted variables
   _ <- defineNamespacedVar env " " "diverted" (List [])
   result <- _macroEval env lisp apply
-  tmp <- getNamespacedVar env " " "diverted"
-  return (trace ("diverted: " ++ show tmp) result)
+  List tmp <- getNamespacedVar env " " "diverted"
+  case tmp of 
+    [] -> return result
+    _ -> -- TODO: call a function to process diverted vars
+         return (trace ("diverted: " ++ show tmp) result)
 macroEval env lisp apply = _macroEval env lisp apply
 
 -- |Do the actual work for the 'macroEval' wrapper func
@@ -616,7 +623,14 @@ expand env dim code apply = do
 -- function parameter instead of the Syntax object
 --
 
-  walkExpanded env env env renameEnv cleanupEnv dim True False (List []) code apply
+  -- Keep track of diverted variables
+  _ <- defineNamespacedVar env " " "diverted" (List [])
+  result <- walkExpanded env env env renameEnv cleanupEnv dim True False (List []) code apply
+  List tmp <- getNamespacedVar env " " "diverted"
+  case tmp of 
+    [] -> return result
+    _ -> -- TODO: call a function to process diverted vars
+         return (trace ("diverted: " ++ show tmp) result)
 
 -- |Walk expanded code per Clinger's algorithm from Macros That Work
 walkExpanded :: Env 
