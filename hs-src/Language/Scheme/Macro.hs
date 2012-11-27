@@ -53,7 +53,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
--- import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -121,6 +121,22 @@ macroEval :: Env        -- ^Current environment for the AST
  -
  -}
 macroEval env lisp@(List (Atom x : _)) apply = do
+  -- TODO: 
+  -- experimenting with code to keep track of diverted vars
+  -- would need a way to compile diverted vars, probably by passing
+  -- such a function as input to macroEval.
+  -- Also need similar code in the expand function
+  --
+
+  -- Keep track of diverted variables
+  _ <- defineNamespacedVar env " " "diverted" (List [])
+  result <- _macroEval env lisp apply
+  tmp <- getNamespacedVar env " " "diverted"
+  return (trace ("diverted: " ++ show tmp) result)
+macroEval env lisp apply = _macroEval env lisp apply
+
+-- |Do the actual work for the 'macroEval' wrapper func
+_macroEval env lisp@(List (Atom x : _)) apply = do
   -- Note: If there is a procedure of the same name it will be shadowed by the macro.
   isDefined <- liftIO $ isNamespacedRecBound env macroNamespace x
   if isDefined
@@ -132,7 +148,7 @@ macroEval env lisp@(List (Atom x : _)) apply = do
            renameEnv <- liftIO $ nullEnv -- Local environment used just for this
            expanded <- explicitRenamingTransform env renameEnv 
                                                lisp transformer apply
-           macroEval env expanded apply
+           _macroEval env expanded apply
 
          -- Syntax Rules
          Syntax (Just defEnv) _ definedInMacro identifiers rules -> do
@@ -149,13 +165,13 @@ macroEval env lisp@(List (Atom x : _)) apply = do
            expanded <- macroTransform defEnv env env renameEnv cleanupEnv 
                                       definedInMacro 
                                      (List identifiers) rules lisp apply
-           macroEval env expanded apply
+           _macroEval env expanded apply
            -- Useful debug to see all exp's:
            -- macroEval env (trace ("exp = " ++ show expanded) expanded)
      else return lisp
 
 -- No macro to process, just return code as it is...
-macroEval _ lisp@(_) _ = return lisp
+_macroEval _ lisp@(_) _ = return lisp
 
 {-
  - Given input and syntax-rules, determine if any rule is a match and transform it.
@@ -1285,7 +1301,7 @@ transformRule _ _ _ _ _ _ _ _ _ _ _ transform = return transform
 
 -- |A helper function for transforming an atom that has been marked as as literal identifier
 transformLiteralIdentifier :: Env -> Env -> Env -> Env -> Bool -> String -> IOThrowsError LispVal
-transformLiteralIdentifier defEnv _ divertEnv renameEnv definedInMacro transform = do
+transformLiteralIdentifier defEnv outerEnv divertEnv renameEnv definedInMacro transform = do
   isInDef <- liftIO $ isRecBound defEnv transform
   isRenamed <- liftIO $ isRecBound renameEnv transform
   if (isInDef && not definedInMacro) || (isInDef && definedInMacro && not isRenamed)
@@ -1297,6 +1313,13 @@ transformLiteralIdentifier defEnv _ divertEnv renameEnv definedInMacro transform
          value <- getVar defEnv transform
          Atom renamed <- _gensym transform
          _ <- defineVar divertEnv renamed value 
+
+-- TODO: this is temporary testing code
+         List diverted <- getNamespacedVar outerEnv " " "diverted"
+         _ <- setNamespacedVar outerEnv " " "diverted" $ 
+             List (diverted ++ [List [Atom renamed, Atom transform]])
+-- END
+
          return $ Atom renamed
      else do
          -- else if not defined in defEnv then just pass the var back as-is

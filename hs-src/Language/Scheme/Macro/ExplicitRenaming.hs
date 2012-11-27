@@ -83,6 +83,13 @@ exRename useEnv renameEnv defEnv [Atom a] = do
             Atom renamed <- _gensym a -- Unique name
             _ <- defineVar useEnv renamed value -- divert value to Use Env
             _ <- defineVar renameEnv a $ Atom renamed -- Record renamed sym
+
+-- TODO: this is temporary testing code
+            List diverted <- getNamespacedVar useEnv " " "diverted"
+            _ <- setNamespacedVar useEnv " " "diverted" $ 
+                List (diverted ++ [List [Atom renamed, Atom a]])
+-- END
+
             return $ Atom renamed
      else
        return $ Atom a
