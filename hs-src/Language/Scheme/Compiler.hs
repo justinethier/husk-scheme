@@ -648,7 +648,7 @@ compile _ badForm _ = throwError $ BadSpecialForm "Unrecognized special form" ba
 mcompile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 mcompile env lisp copts = mfunc env lisp compile copts
 mfunc :: Env -> LispVal -> (Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]) -> CompOpts -> IOThrowsError [HaskAST] 
-mfunc env lisp func copts = do
+mfunc env lisp func copts@(CompileOptions tfnc uvar uargs nfnc) = do
 
 
  -- TODO: here, and in expand, need a way to parse out any
@@ -659,7 +659,34 @@ mfunc env lisp func copts = do
 
 
   transformed <- Language.Scheme.Macro.macroEval env lisp Language.Scheme.Core.apply
-  func env transformed copts
+
+  -- TESTING
+  List tmp <- getNamespacedVar env " " "diverted"
+  case tmp of 
+    [] -> func env transformed copts
+    _ -> do -- TODO: call a function to process diverted vars
+           Atom symNext <- _gensym "afterDivert"
+           diverted <- compileDivertedVars symNext env tmp copts
+           rest <- func env transformed $ CompileOptions symNext uvar uargs nfnc --copts
+           return $ [diverted] ++ rest
+  -- END
+
+compileDivertedVars :: String -> Env -> [LispVal] -> CompOpts -> IOThrowsError HaskAST
+compileDivertedVars formNext env vars copts@(CompileOptions thisFunc useVal useArgs nextFunc) = do
+  let val = case useVal of
+              True -> "value"
+              _ -> "Nil \"\""
+      args = case useArgs of
+              True -> "(Just args)"
+              _ -> "Nothing"
+
+-- TODO: need to build this up dynamically based on contents of vars
+  f <- return $ [
+    AstValue $ "  v <- getVar env \"cons\"",
+    AstValue $ "  _ <- defineVar env \"cons1870\" v",
+    AstValue $ "  " ++ formNext ++ " env cont (" ++ val ++ ") " ++ args]
+  return $ createAstFunc copts f
+
 
 {- TODO: adapt for compilation
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
