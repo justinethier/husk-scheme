@@ -649,6 +649,15 @@ mcompile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 mcompile env lisp copts = mfunc env lisp compile copts
 mfunc :: Env -> LispVal -> (Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]) -> CompOpts -> IOThrowsError [HaskAST] 
 mfunc env lisp func copts = do
+
+
+ -- TODO: here, and in expand, need a way to parse out any
+ -- diverted vars and insert them into the compiled code
+ -- *before* the expanded macro. trouble is that there is
+ -- no accumulator here so it will require a larger set of
+ -- changes to fit that in here...
+
+
   transformed <- Language.Scheme.Macro.macroEval env lisp Language.Scheme.Core.apply
   func env transformed copts
 
