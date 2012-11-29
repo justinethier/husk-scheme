@@ -53,7 +53,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+-- import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -121,25 +121,9 @@ macroEval :: Env        -- ^Current environment for the AST
  -
  -}
 macroEval env lisp@(List (Atom x : _)) apply = do
-  -- TODO: 
-  -- experimenting with code to keep track of diverted vars
-  -- would need a way to compile diverted vars, probably by passing
-  -- such a function as input to macroEval.
-  --
-  -- TODO: may want to consider naming this macroEval' and the below
-  -- just macroEval. then we call the special version macroEval' from
-  -- the compiler with an additional divert argument. ditto for expand'
-  -- That streamlines everything for the interpreter
-  --
-
   -- Keep track of diverted variables
   _ <- defineNamespacedVar env " " "diverted" (List [])
-  result <- _macroEval env lisp apply
-  List tmp <- getNamespacedVar env " " "diverted"
-  case tmp of 
-    [] -> return result
-    _ -> -- TODO: call a function to process diverted vars
-         return (trace ("diverted: " ++ show tmp) result)
+  _macroEval env lisp apply
 macroEval env lisp apply = _macroEval env lisp apply
 
 -- |Do the actual work for the 'macroEval' wrapper func
@@ -625,12 +609,7 @@ expand env dim code apply = do
 
   -- Keep track of diverted variables
   _ <- defineNamespacedVar env " " "diverted" (List [])
-  result <- walkExpanded env env env renameEnv cleanupEnv dim True False (List []) code apply
-  List tmp <- getNamespacedVar env " " "diverted"
-  case tmp of 
-    [] -> return result
-    _ -> -- TODO: call a function to process diverted vars
-         return (trace ("diverted: " ++ show tmp) result)
+  walkExpanded env env env renameEnv cleanupEnv dim True False (List []) code apply
 
 -- |Walk expanded code per Clinger's algorithm from Macros That Work
 walkExpanded :: Env 
