@@ -24,8 +24,6 @@ be made for time and space...
 module Language.Scheme.Compiler where 
 import qualified Language.Scheme.Core (apply)
 import qualified Language.Scheme.Macro
--- import Language.Scheme.Numerical
--- import Language.Scheme.Parser
 import Language.Scheme.Primitives
 import Language.Scheme.Types
 import Language.Scheme.Variables
@@ -35,7 +33,6 @@ import Data.Complex
 import qualified Data.List
 import qualified Data.Map
 import Data.Ratio
--- import System.IO
 --import Debug.Trace
 
 -- A type to store options passed to compile
@@ -650,17 +647,12 @@ mcompile env lisp copts = mfunc env lisp compile copts
 mfunc :: Env -> LispVal -> (Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]) -> CompOpts -> IOThrowsError [HaskAST] 
 mfunc env lisp func copts@(CompileOptions tfnc uvar uargs nfnc) = do
 
-
- -- TODO: here, and in expand, need a way to parse out any
- -- diverted vars and insert them into the compiled code
- -- *before* the expanded macro. trouble is that there is
- -- no accumulator here so it will require a larger set of
- -- changes to fit that in here...
-
-
   transformed <- Language.Scheme.Macro.macroEval env lisp Language.Scheme.Core.apply
 
   -- TESTING
+-- TODO: need to refactor this into a common function, and use it here as well
+--       as for expand below. Also, it would be nice if all the details for
+--       "diverted" could be contained in the macro module
   List tmp <- getNamespacedVar env " " "diverted"
   case tmp of 
     [] -> func env transformed copts
