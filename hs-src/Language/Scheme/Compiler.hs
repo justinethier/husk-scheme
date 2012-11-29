@@ -671,22 +671,25 @@ mfunc env lisp func copts@(CompileOptions tfnc uvar uargs nfnc) = do
            return $ [diverted] ++ rest
   -- END
 
+-- |Take a list of variables diverted into env at compile time, and
+--  divert them into the env at runtime
 compileDivertedVars :: String -> Env -> [LispVal] -> CompOpts -> IOThrowsError HaskAST
-compileDivertedVars formNext env vars copts@(CompileOptions thisFunc useVal useArgs nextFunc) = do
+compileDivertedVars 
+  formNext env vars 
+  copts@(CompileOptions thisFunc useVal useArgs nextFunc) = do
   let val = case useVal of
-              True -> "value"
-              _ -> "Nil \"\""
+        True -> "value"
+        _ -> "Nil \"\""
       args = case useArgs of
-              True -> "(Just args)"
-              _ -> "Nothing"
-
--- TODO: need to build this up dynamically based on contents of vars
-  f <- return $ [
-    AstValue $ "  v <- getVar env \"cons\"",
-    AstValue $ "  _ <- defineVar env \"cons1870\" v",
-    AstValue $ "  " ++ formNext ++ " env cont (" ++ val ++ ") " ++ args]
+        True -> "(Just args)"
+        _ -> "Nothing"
+      comp (List [Atom renamed, Atom orig]) = do
+        [AstValue $ "  v <- getVar env \"" ++ orig ++ "\"",
+         AstValue $ "  _ <- defineVar env \"" ++ renamed ++ "\" v"]
+      cvars = map comp vars 
+      f = (concat cvars) ++ 
+          [AstValue $ "  " ++ formNext ++ " env cont (" ++ val ++ ") " ++ args]
   return $ createAstFunc copts f
-
 
 {- TODO: adapt for compilation
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
