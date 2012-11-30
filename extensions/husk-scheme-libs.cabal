@@ -1,7 +1,7 @@
 Name:                husk-scheme-libs
 Version:             0.0.1
-Synopsis:            Extra libraries for the husk Scheme platform.
-Description:         Extra libraries for the husk Scheme platform.
+Synopsis:            Extra libraries for the husk-scheme platform.
+Description:         Extra libraries for the husk-scheme platform.
 License:             MIT
 License-file:        LICENSE
 Author:              Justin Ethier
