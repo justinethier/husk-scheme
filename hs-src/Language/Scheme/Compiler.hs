@@ -214,15 +214,29 @@ compile env (List [Atom "expand",  _body]) copts = do
   val <- Language.Scheme.Macro.expand env False _body Language.Scheme.Core.apply
   compileScalar (" return $ " ++ astToHaskellStr val) copts
 
-compile env (List (Atom "let-syntax" : List _bindings : _body)) copts = do
+compile env (List (Atom "let-syntax" : List _bindings : _body)) copts@(CompileOptions tfnc uvar uargs nfnc) = do
   -- TODO: check if let-syntax has been rebound?
   bodyEnv <- liftIO $ extendEnv env []
   _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
   -- Expand whole body as a single continuous macro, to ensure hygiene
   expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) Language.Scheme.Core.apply
-  case expanded of
-    List e -> compile bodyEnv (List $ Atom "begin" : e) copts
-    e -> compile bodyEnv e copts
+
+-- TODO: should be able to consolidate with the one from macroEval
+-- also, need to use for the other 'expand' call below
+  vars <- Language.Scheme.Macro.getDivertedVars bodyEnv
+  case vars of 
+    [] -> func bodyEnv expanded copts
+    _ -> do 
+      Atom symNext <- _gensym "afterDivert"
+      diverted <- compileDivertedVars symNext bodyEnv vars copts
+      rest <- func bodyEnv expanded $ CompileOptions symNext uvar uargs nfnc
+      return $ [diverted] ++ rest
+
+ where 
+   func bodyEnv' expanded' copts' = do
+     case expanded' of
+       List e -> compile bodyEnv' (List $ Atom "begin" : e) copts'
+       e -> compile bodyEnv' e copts'
 
 compile env (List (Atom "letrec-syntax" : List _bindings : _body)) copts = do
   -- TODO: check if let-syntax has been rebound?
@@ -649,19 +663,14 @@ mfunc env lisp func copts@(CompileOptions tfnc uvar uargs nfnc) = do
 
   transformed <- Language.Scheme.Macro.macroEval env lisp Language.Scheme.Core.apply
 
-  -- TESTING
--- TODO: need to refactor this into a common function, and use it here as well
---       as for expand below. Also, it would be nice if all the details for
---       "diverted" could be contained in the macro module
-  List tmp <- getNamespacedVar env " " "diverted"
-  case tmp of 
+  vars <- Language.Scheme.Macro.getDivertedVars env
+  case vars of 
     [] -> func env transformed copts
-    _ -> do -- TODO: call a function to process diverted vars
-           Atom symNext <- _gensym "afterDivert"
-           diverted <- compileDivertedVars symNext env tmp copts
-           rest <- func env transformed $ CompileOptions symNext uvar uargs nfnc --copts
-           return $ [diverted] ++ rest
-  -- END
+    _ -> do 
+      Atom symNext <- _gensym "afterDivert"
+      diverted <- compileDivertedVars symNext env vars copts
+      rest <- func env transformed $ CompileOptions symNext uvar uargs nfnc
+      return $ [diverted] ++ rest
 
 -- |Take a list of variables diverted into env at compile time, and
 --  divert them into the env at runtime

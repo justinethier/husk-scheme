@@ -45,6 +45,7 @@ module Language.Scheme.Macro
       expand
     , macroEval
     , loadMacros  
+    , getDivertedVars 
     ) where
 import Language.Scheme.Types
 import Language.Scheme.Variables
@@ -101,6 +102,19 @@ import Data.Array
 --needToExtendEnv (List [Atom "define-syntax", Atom _, (List (Atom "syntax-rules" : (List _ : _)))]) = True
 --needToExtendEnv _ = False 
 
+-- |Get a list of variables that the macro hygiene 
+--  subsystem diverted back into the calling environment.
+--
+--  This is a specialized function that is only
+--  mean to be used by the husk compiler.
+getDivertedVars :: Env -> IOThrowsError [LispVal]
+getDivertedVars env = do
+  List tmp <- getNamespacedVar env " " "diverted"
+  return tmp
+
+clearDivertedVars :: Env -> IOThrowsError LispVal
+clearDivertedVars env = defineNamespacedVar env " " "diverted" $ List []
+
 -- |Examines the input AST to see if it is a macro call. 
 --  If a macro call is found, the code is expanded.
 --  Otherwise the input is returned unchanged.
@@ -122,7 +136,7 @@ macroEval :: Env        -- ^Current environment for the AST
  -}
 macroEval env lisp@(List (Atom x : _)) apply = do
   -- Keep track of diverted variables
-  _ <- defineNamespacedVar env " " "diverted" (List [])
+  _ <- clearDivertedVars env
   _macroEval env lisp apply
 macroEval env lisp apply = _macroEval env lisp apply
 
@@ -608,7 +622,7 @@ expand env dim code apply = do
 --
 
   -- Keep track of diverted variables
-  _ <- defineNamespacedVar env " " "diverted" (List [])
+  _ <- clearDivertedVars env
   walkExpanded env env env renameEnv cleanupEnv dim True False (List []) code apply
 
 -- |Walk expanded code per Clinger's algorithm from Macros That Work
