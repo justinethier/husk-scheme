@@ -1,10 +1,9 @@
 v3.6.2
 --------
-Added support for nested quasi-quotation forms, which now respect depth level. This was done by replacing the quasi-quotation special form with a macro from chibi scheme.
-
-TODO: huskc should support QQ as well (need to test some more)
+Added support for nested quasi-quotation forms, which now respect depth level. This was done by replacing the quasi-quotation special form with a macro from chibi scheme. A nice side-benefit is that, by removing the special forms, quasi-quotation now works in the compiler.
 
 - Fixed a bug where nested explicit renaming macros may not expand properly.
+- Hygienic macros already diverted renamed variables back to the enclosing environment, however, this release improves the compiler by allowing compiled programs to divert these values as well.
 
 v3.6.1
 --------
