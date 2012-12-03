@@ -64,51 +64,6 @@
 (define (sum . lst)     (foldl + 0 lst))
 (define (product . lst) (foldl * 1 lst))
 
-; Quasi-quotation as a macro
-; Based on code from chibi-scheme
-;
-; The code below is compiled to avoid having to expand dozens of macros
-; in real-time, significantly improving performance. This does highlight
-; an area that husk could improve upon but for now a compilation will do.
-;
-; The (expand) special form is used to compile the code, in case it needs
-; to be changed in the future.
-;
-(define-syntax quasiquote
-  (er-macro-transformer
-   (lambda (expr rename compare)
-(define (qq x d) (if (pair? x) ((lambda () (if (compare (rename (quote unquote)) (car x)) ((lambda () (if (<= d 0) (cadr x) (list (rename (quote list)) (list (rename (quote quote)) (quote unquote)) (qq (cadr x) (- d 1)))))) (if (compare (rename (quote unquote-splicing)) (car x)) ((lambda () (if (<= d 0) (list (rename (quote cons)) (qq (car x) d) (qq (cdr x) d)) (list (rename (quote list)) (list (rename (quote quote)) (quote unquote-splicing)) (qq (cadr x) (- d 1)))))) (if (compare (rename (quote quasiquote)) (car x)) ((lambda () (list (rename (quote list)) (list (rename (quote quote)) (quote quasiquote)) (qq (cadr x) (+ d 1))))) (if (if (<= d 0) (if (pair? (car x)) (compare (rename (quote unquote-splicing)) (caar x)) #f) #f) ((lambda () (if (null? (cdr x)) (cadr (car x)) (list (rename (quote append)) (cadr (car x)) (qq (cdr x) d))))) (if #t ((lambda () (list (rename (quote cons)) (qq (car x) d) (qq (cdr x) d))))))))))) (if (vector? x) ((lambda () (list (rename (quote list->vector)) (qq (vector->list x) d)))) (if (if (symbol? x) #t (null? x)) ((lambda () (list (rename (quote quote)) x))) (if #t ((lambda () x)))))))
-     (qq (cadr expr) 0))))
-;; Original code:
-;     (define (qq x d)
-;       (cond
-;        ((pair? x)
-;         (cond
-;          ((compare (rename 'unquote) (car x))
-;           (if (<= d 0)
-;               (cadr x)
-;               (list (rename 'list) (list (rename 'quote) 'unquote)
-;                     (qq (cadr x) (- d 1)))))
-;          ((compare (rename 'unquote-splicing) (car x))
-;           (if (<= d 0)
-;               (list (rename 'cons) (qq (car x) d) (qq (cdr x) d))
-;               (list (rename 'list) (list (rename 'quote) 'unquote-splicing)
-;                     (qq (cadr x) (- d 1)))))
-;          ((compare (rename 'quasiquote) (car x))
-;           (list (rename 'list) (list (rename 'quote) 'quasiquote)
-;                 (qq (cadr x) (+ d 1))))
-;          ((and (<= d 0) (pair? (car x))
-;                (compare (rename 'unquote-splicing) (caar x)))
-;           (if (null? (cdr x))
-;               (cadr (car x))
-;               (list (rename 'append) (cadr (car x)) (qq (cdr x) d))))
-;          (else
-;           (list (rename 'cons) (qq (car x) d) (qq (cdr x) d)))))
-;        ((vector? x) (list (rename 'list->vector) (qq (vector->list x) d)))
-;        ((if (symbol? x) #t (null? x)) (list (rename 'quote) x))
-;        (else x)))
-;     (qq (cadr expr) 0))))
-
 ; Forms from R5RS for and/or
 (define-syntax and
   (syntax-rules ()
@@ -239,21 +194,6 @@
           lst
           (list-tail (cdr lst) (- k 1))))
 (define (list-ref lst k)  (car (list-tail lst k)))
-
-; append accepts a variable number of arguments, per R5RS. So a wrapper
-; has been provided for the standard 2-argument version of (append).
-;
-; We return the given value if less than 2 arguments are given, and
-; otherwise fold over each arg, appending it to its predecessor. 
-(define (append . lst)
-  (define append-2
-          (lambda (inlist alist) 
-                  (foldr (lambda (ap in) (cons ap in)) alist inlist)))
-  (if (null? lst)
-      lst
-      (if (null? (cdr lst))
-          (car lst)
-          (foldl (lambda (a b) (append-2 b a)) (car lst) (cdr lst)))))
 
 ; Let forms
 ;
@@ -496,4 +436,64 @@
         ((receive formals expression body ...)
          (call-with-values (lambda () expression)
              (lambda formals body ...)))))
+; END SRFI 8
 
+; append accepts a variable number of arguments, per R5RS. So a wrapper
+; has been provided for the standard 2-argument version of (append).
+;
+; We return the given value if less than 2 arguments are given, and
+; otherwise fold over each arg, appending it to its predecessor. 
+(define (append . lst)
+  (define append-2
+          (lambda (inlist alist) 
+                  (foldr (lambda (ap in) (cons ap in)) alist inlist)))
+  (if (null? lst)
+      lst
+      (if (null? (cdr lst))
+          (car lst)
+          (foldl (lambda (a b) (append-2 b a)) (car lst) (cdr lst)))))
+
+; Quasi-quotation as a macro
+; Based on code from chibi-scheme
+;
+; The code below is compiled to avoid having to expand dozens of macros
+; in real-time, significantly improving performance. This does highlight
+; an area that husk could improve upon but for now a compilation will do.
+;
+; The (expand) special form is used to compile the code, in case it needs
+; to be changed in the future.
+;
+(define-syntax quasiquote
+  (er-macro-transformer
+   (lambda (expr rename compare)
+(define (qq x d) (if (pair? x) ((lambda () (if (compare (rename (quote unquote)) (car x)) ((lambda () (if (<= d 0) (cadr x) (list (rename (quote list)) (list (rename (quote quote)) (quote unquote)) (qq (cadr x) (- d 1)))))) (if (compare (rename (quote unquote-splicing)) (car x)) ((lambda () (if (<= d 0) (list (rename (quote cons)) (qq (car x) d) (qq (cdr x) d)) (list (rename (quote list)) (list (rename (quote quote)) (quote unquote-splicing)) (qq (cadr x) (- d 1)))))) (if (compare (rename (quote quasiquote)) (car x)) ((lambda () (list (rename (quote list)) (list (rename (quote quote)) (quote quasiquote)) (qq (cadr x) (+ d 1))))) (if (if (<= d 0) (if (pair? (car x)) (compare (rename (quote unquote-splicing)) (caar x)) #f) #f) ((lambda () (if (null? (cdr x)) (cadr (car x)) (list (rename (quote append)) (cadr (car x)) (qq (cdr x) d))))) (if #t ((lambda () (list (rename (quote cons)) (qq (car x) d) (qq (cdr x) d))))))))))) (if (vector? x) ((lambda () (list (rename (quote list->vector)) (qq (vector->list x) d)))) (if (if (symbol? x) #t (null? x)) ((lambda () (list (rename (quote quote)) x))) (if #t ((lambda () x)))))))
+     (qq (cadr expr) 0))))
+;; Original code:
+;     (define (qq x d)
+;       (cond
+;        ((pair? x)
+;         (cond
+;          ((compare (rename 'unquote) (car x))
+;           (if (<= d 0)
+;               (cadr x)
+;               (list (rename 'list) (list (rename 'quote) 'unquote)
+;                     (qq (cadr x) (- d 1)))))
+;          ((compare (rename 'unquote-splicing) (car x))
+;           (if (<= d 0)
+;               (list (rename 'cons) (qq (car x) d) (qq (cdr x) d))
+;               (list (rename 'list) (list (rename 'quote) 'unquote-splicing)
+;                     (qq (cadr x) (- d 1)))))
+;          ((compare (rename 'quasiquote) (car x))
+;           (list (rename 'list) (list (rename 'quote) 'quasiquote)
+;                 (qq (cadr x) (+ d 1))))
+;          ((and (<= d 0) (pair? (car x))
+;                (compare (rename 'unquote-splicing) (caar x)))
+;           (if (null? (cdr x))
+;               (cadr (car x))
+;               (list (rename 'append) (cadr (car x)) (qq (cdr x) d))))
+;          (else
+;           (list (rename 'cons) (qq (car x) d) (qq (cdr x) d)))))
+;        ((vector? x) (list (rename 'list->vector) (qq (vector->list x) d)))
+;        ((if (symbol? x) #t (null? x)) (list (rename 'quote) x))
+;        (else x)))
+;     (qq (cadr expr) 0))))
