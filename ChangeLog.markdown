@@ -4,8 +4,8 @@ Added support for nested quasi-quotation forms, which now respect depth level. T
 
 This release also includes the following bug fixes:
 
-- Fixed a bug where nested explicit renaming macros may not expand properly.
-- Hygienic macros already diverted renamed variables back to the enclosing environment, however, this release improves the compiler by allowing compiled programs to divert these values as well.
+- Fixed a bug where nested explicit renaming macros may not always expand properly.
+- Improved compiler support by diverting renamed variables back into the enclosing environment. Such variables would previously throw a runtime error when accessed by the compiled program.
 
 v3.6.1
 --------
