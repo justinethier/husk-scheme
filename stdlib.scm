@@ -246,14 +246,14 @@
 ; We return the given value if less than 2 arguments are given, and
 ; otherwise fold over each arg, appending it to its predecessor. 
 (define (append . lst)
-  (let ((append-2 
+  (define append-2
           (lambda (inlist alist) 
-                  (foldr (lambda (ap in) (cons ap in)) alist inlist))))
-    (if (null? lst)
-        lst
-        (if (null? (cdr lst))
-            (car lst)
-            (foldl (lambda (a b) (append-2 b a)) (car lst) (cdr lst))))))
+                  (foldr (lambda (ap in) (cons ap in)) alist inlist)))
+  (if (null? lst)
+      lst
+      (if (null? (cdr lst))
+          (car lst)
+          (foldl (lambda (a b) (append-2 b a)) (car lst) (cdr lst)))))
 
 ; Let forms
 ;
