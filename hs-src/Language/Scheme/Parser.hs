@@ -374,10 +374,10 @@ parseExpr =
          x <- parseVector
          _ <- lexeme $ char ')'
          return x
-  <|> do _ <- try (lexeme $ string "#hash(")
-         x <- parseHashTable
-         _ <- lexeme $ char ')'
-         return x
+--  <|> do _ <- try (lexeme $ string "#hash(")
+--         x <- parseHashTable
+--         _ <- lexeme $ char ')'
+--         return x
   <|> try (parseAtom)
   <|> lexeme parseString
   <|> lexeme parseBool

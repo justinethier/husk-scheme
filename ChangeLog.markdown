@@ -4,6 +4,7 @@ Added support for nested quasi-quotation forms, which now respect depth level. T
 
 This release also includes the following bug fixes:
 
+- Unfortunatly, the storage model changes introduced in 3.6 cause problems with hash table literals defined using the `#hash()` syntax. For now, hash table literals have been removed to prevent further problems. This feature may be added back in the future.
 - Fixed a bug where nested explicit renaming macros may not always expand properly.
 - Improved compiler support by diverting renamed variables back into the enclosing environment. Such variables would previously throw a runtime error when accessed by the compiled program.
 
