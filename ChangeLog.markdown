@@ -1,6 +1,6 @@
 v3.6.2
 --------
-Added support for nested quasi-quotation forms, which now respect depth level. This was done by replacing the quasi-quotation special form with a macro based on the one from chibi scheme. A nice side-benefit is that, by removing the special forms, quasi-quotation now works in the compiler.
+Added support for nested quasi-quotation forms, which now respect depth level. This was done by replacing the quasi-quotation special form with a macro based on the one from chibi scheme. A nice side-benefit is that by removing the special forms, quasi-quotation now works in the compiler.
 
 This release also includes the following bug fixes:
 
