@@ -17,6 +17,7 @@
 (define (string-concatenate l) (apply string-append l)) 
 (define *modules* '()) ; Just a temporary def, see EOF
 ; env-exports - I think this needs to be a hook in husk
+; %import - I think this needs to be a hook in husk
 ;; /JAE
 
 (define *this-module* '())
@@ -278,13 +279,13 @@
 
 ;JAE - TODO: (define-syntax orig-begin begin)
 (define-config-primitive import)
-;(define-config-primitive import-immutable)
-;(define-config-primitive export)
-;(define-config-primitive export-all)
-;(define-config-primitive include)
-;(define-config-primitive include-ci)
-;(define-config-primitive include-shared)
-;(define-config-primitive body)
+(define-config-primitive import-immutable)
+(define-config-primitive export)
+(define-config-primitive export-all)
+(define-config-primitive include)
+(define-config-primitive include-ci)
+(define-config-primitive include-shared)
+(define-config-primitive body)
 ;JAE - TODO: (define-config-primitive begin)
 
 ; The `import' binding used by (scheme) and (scheme base), etc.
@@ -295,7 +296,8 @@
        (let lp ((ls (cdr expr)) (res '()))
          (cond
           ((null? ls)
-           (cons (rename 'orig-begin) (reverse res)))
+           (cons (rename 'begin) (reverse res))) ; JAE - this line is a temporary workaround
+; JAE TODO:           (cons (rename 'orig-begin) (reverse res)))
           (else
            (let ((mod+imps (resolve-import (car ls))))
              (cond
