@@ -664,7 +664,8 @@ apply cont (IOFunc func) args = do
 apply cont (EvalFunc func) args = do
     {- An EvalFunc extends the evaluator so it needs access to the current continuation;
     pass it as the first argument. -}
-    func (cont : args)
+  List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  func (cont : dargs)
 apply cont (PrimitiveFunc func) args = do
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
   result <- liftThrows $ func dargs
