@@ -4,10 +4,12 @@
 
 # Continuations
 
-Husk is a Scheme interpreter based on code from the tutorial [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) by Jonathan Tang. Although that book is a great starting point for writing a Scheme, its interpreter does not include many of features required by R<sup>5</sup>RS Scheme such as continuations. This article provides a brief overview of Scheme continuations and presents the corresponding code from husk to show how they can be implemented. It will be most helpful to a reader with previous experience with Lisp and/or functional programming. In addition, you may want to at least skim through Jonathan Tang's book to get a basic understanding of how the interpreter works.
+Husk is a Scheme interpreter based on code from the tutorial [Write Yourself a Scheme in 48 Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours) by Jonathan Tang. Although that book is a great starting point for writing a Scheme, its interpreter does not include many of features required by R<sup>5</sup>RS Scheme such as continuations. 
+
+This article provides a brief overview of Scheme continuations and presents the corresponding code from husk to show how they can be implemented. It will be most helpful to a reader with previous experience with Lisp and/or functional programming. In addition, you may want to at least skim through Jonathan Tang's book to get a basic understanding of how the interpreter works.
 
 ## Introduction
-Scheme is a minimalistic language that does not include many common control constructs such as `return`, `try`/`catch`, or even `goto`. Instead Scheme provides a powerful, general-purpose construct which may be used to build more specific control structures. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following summary:
+Scheme is a minimalistic language that does not include many common control flow constructs such as `return`, `try`/`catch`, or even `goto`. Instead Scheme provides a powerful, general-purpose construct which may be used to build more specific control structures. The [R<sup>5</sup>RS specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4) gives the following summary:
 
 >Whenever a Scheme expression is evaluated there is a continuation wanting the result of the expression. The continuation represents an entire (default) future for the computation. If the expression is evaluated at top level, for example, then the continuation might take the result, print it on the screen, prompt for the next input, evaluate it, and so on forever. Most of the time the continuation includes actions specified by user code, as in a continuation that will take the result, multiply it by the value stored in a local variable, add seven, and give the answer to the top level continuation to be printed. Normally these ubiquitous continuations are hidden behind the scenes and programmers do not think much about them. On rare occasions, however, a programmer may need to deal with continuations explicitly. Call-with-current-continuation allows Scheme programmers to do that by creating a procedure that acts just like the current continuation.
 
@@ -24,7 +26,7 @@ To see how this works in practice, we can walk through an implementation of `ret
 
 As the R<sup>5</sup>RS spec describes, `call-with-current-continuation` (or `call/cc` for short) expects a single function as its only argument - an anonymous `lambda` function in this example. When Scheme executes `call-with-current-continuation`, it packs up the current continuation and passes it in as the `return` argument. We can now call `return` to escape from the current execution context and return a value to the expression that encloses `call-with-current-continuation`.
 
-To walk through exactly what happens, as the code above loops over the list of numbers it finds a negative number and calls the `return` continuation with a result of `-3`. Execution immediately jumps back to where `call-with-current-continuation` left off. Assuming this code was typed directly into the huski interpreter, the whole expression evaluates to `-3` and that result is printed to the screen.
+To walk through exactly what happens, as the code above loops over the list of numbers it finds a negative number and calls the `return` continuation with a value of `-3`. Execution immediately jumps back to where `call-with-current-continuation` left off. Assuming this code was typed directly into the huski interpreter, the whole expression evaluates to `-3` and that result is printed to the screen.
 
 Continuations are first-class objects, which means they can be assigned to variables, passed to functions, etc, just like any other data type. [Phillip Wright](http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/) wrote an excellent article about this in which he presented the following code snippet: 
 
@@ -66,11 +68,12 @@ Here we use the `makeCPS` helper function to pack `cps` into a continuation obje
 
 Although CPS works great for Haskell code, what about all of those Scheme functions that need to be evaluated? They will not be transformed into Haskell functions - at least not by the interpreter - so how do we handle them?
 
-Husk stores the body of a Scheme function as a list of `LispVal` objects. Each time a line of code is executed, the body is reduced by one line and the evaluator calls into the next line. We can take the remaining code and pack it up into a continuation object that can be executed later on by the interpreter. 
-Let's walk through each part of the implementation to get an understanding of how it all fits together.
+Husk stores the body of a Scheme function as a list of `LispVal` objects. Each time a line of code is executed, the body is reduced by one line and the evaluator calls into the next line. So we can just take the remaining code and pack it up into a continuation object that can be executed later on by the interpreter.
+
+Next, let's walk through each part of the implementation to get an understanding of how it all fits together.
 
 ## Implementation
-In order to transform the husk evaluator into CPS, a new `cont` (continuation) parameter had to be added to `eval`, and threaded through each call. This was a time consuming change as there were perhaps a hundred calls to `eval` within the core husk code, but each change by itself was straightforward. 
+In order to transform the husk evaluator into CPS, a new continuation parameter `cont` had to be added to `eval`, and threaded through each call. This was a time consuming change as there were perhaps a hundred calls to `eval` within the core husk code, but each change by itself was straightforward. 
 
 ###Data types
 The following container allows us to pass around either Scheme or Haskell code:
@@ -268,11 +271,11 @@ Initially I thought a lower-level construct might be required to implement conti
 But it turns out this is not necessary since Haskell already supports proper tail recursion. This is one of the niceties of writing a Lisp in Lisp - if husk were implemented in C it would be much more difficult to implement an interpreter of equal complexity. 
 
 ## Conclusion
-As we have seen, CPS is a very natural way to implement continuations if you are fortunate enough to be using a language that can take advantage of this pattern. Looking back, it seems obvious to use CPS to implement continuations in husk, as Haskell supports both first-class functions and tail call optimization.
+As we have seen, CPS is a natural way to implement continuations if you are fortunate enough to be using a language that can take advantage of this pattern. Looking back, it seems obvious to use CPS to implement continuations in husk, as Haskell supports both first-class functions and tail call optimization.
 
-It may have been possible to write husk's continuations in a more clever, compact form - for example, by leveraging the continuation monad. But any compactness gains would come at the expense of readability. One of the main goals of this implementation is as a learning project, so it is undesirable to make the code *too* clever. As such, it could always be used as a blueprint to implement Scheme in a lower-level form.
+It may have been possible to write husk's continuations in a more clever, compact form - for example, by leveraging the continuation monad. But any compactness gains would come at the expense of readability. One of the main goals of this implementation is as a learning project, so it is undesirable to make the code *too* clever. As such, it could always be used as a blueprint to implement Scheme in a lower-level form. Also, husk was my first Haskell project, so please do not be too critical of the code presented here. For the purposes of this project I tried to keep things as simple as possible.
 
-I hope this article helped you understand a bit more about what continuations are and how they work. If you would like to suggest any corrections or improvements - or if you just enjoyed reading - please send me an email. On a side note, husk was my first Haskell project, so please do not be too critical of the code presented here. For the purposes of this project I tried to keep things as simple as possible.
+I hope this article helped you understand a bit more about what continuations are and how they work. If you would like to suggest any corrections or improvements - or if you just enjoyed reading - please send me an email. 
 
 Thanks for reading,
 
