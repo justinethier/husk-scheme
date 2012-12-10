@@ -14,7 +14,6 @@
 (define current-environment (lambda () '()))
 (define interaction-environment (lambda () '()))
 (define make-environment (lambda () '()))
-(define (string-concatenate l) (apply string-append l)) 
 (define *modules* '()) ; Just a temporary def, see EOF
 ; env-exports - I think this needs to be a hook in husk
 ; %import - I think this needs to be a hook in husk

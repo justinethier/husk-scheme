@@ -313,6 +313,9 @@
      (set! _str
            (make-string (string-length _str) _chr)))))
 
+(define (string-concatenate l) 
+    (apply string-append l)) 
+
 ; Vector Section
 (define-syntax vector-fill!
   (syntax-rules ()
