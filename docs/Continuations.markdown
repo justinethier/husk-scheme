@@ -91,7 +91,7 @@ Since continuations are first-class objects, the `LispVal` data type was extende
     Continuation {  closure :: Env                          -- Environment of the continuation
                   , currentCont     :: (Maybe DeferredCode) -- Code of current continuation
                   , nextCont        :: (Maybe LispVal)      -- Code to resume after body of cont
-                  , extraReturnArgs :: (Maybe [LispVal])    -- Extra return arguments, to support (values) and (call-with-values)
+                  , extraReturnArgs :: (Maybe [LispVal])    -- Extra return arguments, for (call-with-values)
                   , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind) 
                  }
 
@@ -105,8 +105,8 @@ The auxillary data members allow a continuation to keep track of data for specia
 
     -- |Container to store information from a dynamic-wind
     data DynamicWinders = DynamicWinders {
-        before :: LispVal -- ^Function to execute when resuming continuation within extent of dynamic-wind
-      , after :: LispVal  -- ^Function to execute when leaving extent of dynamic-wind
+        before :: LispVal
+      , after :: LispVal
     }
 
 ###Helper functions
@@ -202,7 +202,9 @@ The following case is a bit more interesting; here we execute a Scheme function:
     apply cont (Func aparams avarargs abody aclosure) args =
       if num aparams /= num args && avarargs == Nothing
          then throwError $ NumArgs (num aparams) args
-         else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
+         else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args)
+               >>= bindVarArgs avarargs 
+               >>= (evalBody abody)
       where remainingArgs = drop (length aparams) args
             num = toInteger . length
             --
@@ -217,7 +219,9 @@ The following case is a bit more interesting; here we execute a Scheme function:
     
             -- Shortcut for calling continueEval
             continueWCont cwcEnv cwcBody cwcCont cwcDynWind = 
-                continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing cwcDynWind) $ Nil ""
+                continueEval cwcEnv 
+                    (Continuation cwcEnv (Just (SchemeBody cwcBody)) 
+                    (Just cwcCont) Nothing cwcDynWind) $ Nil ""
     
             bindVarArgs arg env = case arg of
               Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
@@ -283,10 +287,10 @@ Justin
 
 ## References
 
-- http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours
-- http://c2.com/cgi/wiki?ContinuationImplementation
-- http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
-- http://community.schemewiki.org/?call-with-current-continuation
-- http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_73.html#SEC80
-- http://home.pipeline.com/~hbaker1/CheneyMTA.html
-- http://matt.might.net/articles/cps-conversion/
+- [http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours](http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours)
+- [http://c2.com/cgi/wiki?ContinuationImplementation](http://c2.com/cgi/wiki?ContinuationImplementation)
+- [http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/](http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/)
+- [http://community.schemewiki.org/?call-with-current-continuation](http://community.schemewiki.org/?call-with-current-continuation)
+- [http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_73.html#SEC80](http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_73.html#SEC80)
+- [http://home.pipeline.com/~hbaker1/CheneyMTA.html](http://home.pipeline.com/~hbaker1/CheneyMTA.html)
+- [http://matt.might.net/articles/cps-conversion/](http://matt.might.net/articles/cps-conversion/)
