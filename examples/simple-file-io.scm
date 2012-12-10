@@ -7,12 +7,11 @@
 ;;; Opens a sample file containing one number per line, and outputs their sum
 ;;; both to the screen and to an output file.
 ;;;
-;;; Usage: run from the main husk directory -
-;;;        ./huski examples/simple-file-io.scm
+;;; Usage: huski simple-file-io.scm
 ;;;
 
-(define *input-file* "examples/simple-file-io.txt")
-(define *output-file* "examples/simple-file-io.out")
+(define *input-file* "simple-file-io.txt")
+(define *output-file* "simple-file-io.out")
 
 (define (sum-from-file acc fp)
   (let ((data (read fp)))
