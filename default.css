@@ -215,13 +215,13 @@ html>body #menu a {
 #outer-page {
     width: 100%;
 	margin: 0; /* auto 20px auto;*/
-	background-color: #FFFFFF;
+	background-color: #FCFCF9;
 }
 
 #page {
 	width: 870px;
 	margin: 0 auto 0px auto;
-	background: #FFFFFF url(images/img07.gif) repeat-y 260px 0;
+	background: #FCFCF9 url(images/img07.gif) repeat-y 260px 0;
     border-bottom: white solid 20px;
 }
 
