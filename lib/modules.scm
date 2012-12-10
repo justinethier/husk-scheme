@@ -1,3 +1,4 @@
+; NOTE: This file is experimental, and not currently used by husk
 ;
 ; An attempt to modify chibi scheme's module meta language
 ; to use to implement modules (r7rs libraries) in husk
