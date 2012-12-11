@@ -93,7 +93,7 @@ Since continuations are first-class objects, the `LispVal` data type was extende
     Continuation {  closure :: Env                          -- Environment of the continuation
                   , currentCont     :: (Maybe DeferredCode) -- Code of current continuation
                   , nextCont        :: (Maybe LispVal)      -- Code to resume after body of cont
-                  , extraReturnArgs :: (Maybe [LispVal])    -- Extra return arguments, for (call-with-values)
+                  , extraReturnArgs :: (Maybe [LispVal])    -- Extra args for (call-with-values)
                   , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind) 
                  }
 
@@ -144,16 +144,35 @@ There are many versions of `continueEval`, depending upon the input pattern. We 
 
 We may also receive a list containing Scheme code. In this case the function checks how much code is left. If the Scheme code is all finished the resultant value is returned; otherwise we keep going:
 
-    continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs dynWind) val = do
-        case cBody of
-            [] -> do
-              case cCont of
-                Continuation nEnv ncCont nnCont _ nDynWind -> 
-                  -- Pass extra args along if last expression of a function, to support (call-with-values)
-                  continueEval nEnv (Continuation nEnv ncCont nnCont extraArgs nDynWind) val 
-                _ -> return (val)
-            [lv]       -> eval cEnv (Continuation cEnv (Just (SchemeBody []))  (Just cCont) Nothing dynWind) (lv)
-            (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing dynWind) (lv)
+```haskell
+continueEval _ (Continuation cEnv 
+                            (Just (SchemeBody cBody)) 
+                            (Just cCont) 
+                            extraArgs 
+                            dynWind)
+             val = do
+    case cBody of
+        [] -> do
+          case cCont of
+            Continuation nEnv ncCont nnCont _ nDynWind -> 
+              -- Pass extra args along to support (call-with-values)
+              continueEval nEnv (Continuation nEnv ncCont nnCont extraArgs nDynWind) val 
+            _ -> return (val)
+        [lv]       -> eval cEnv (Continuation
+                                    cEnv 
+                                   (Just (SchemeBody []))  
+                                   (Just cCont) 
+                                    Nothing 
+                                    dynWind) 
+                          (lv)
+        (lv : lvs) -> eval cEnv (Continuation
+                                    cEnv
+                                    (Just (SchemeBody lvs)) 
+                                    (Just cCont) 
+                                    Nothing
+                                    dynWind)
+                          (lv)
+```
 
 Finally, there are two edge cases where a current continuation may not be present:
 
