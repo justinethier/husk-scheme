@@ -115,7 +115,7 @@ showHelp _ = do
 -- |Print debug information
 showDebug :: Options -> IO Options
 showDebug _ = do
-  stdlib <- getDataFileName "stdlib.scm"
+  stdlib <- getDataFileName "lib/stdlib.scm"
   putStrLn $ "stdlib: " ++ stdlib
   putStrLn ""
   exitWith ExitSuccess
@@ -131,8 +131,8 @@ showVersion _ = do
 process :: String -> String -> Bool -> String -> IO ()
 process inFile outExec dynamic extraArgs = do
   env <- Language.Scheme.Core.primitiveBindings
-  stdlib <- getDataFileName "stdlib.scm"
-  srfi55 <- getDataFileName "srfi/srfi-55.scm" -- (require-extension)
+  stdlib <- getDataFileName "lib/stdlib.scm"
+  srfi55 <- getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
   result <- (runIOThrows $ liftM show $ compileSchemeFile env stdlib srfi55 inFile)
   case result of
    Just errMsg -> putStrLn errMsg
@@ -142,7 +142,7 @@ process inFile outExec dynamic extraArgs = do
 -- |Register the given SRFI
 registerSRFI :: Env -> Integer -> IO ()
 registerSRFI env num = do
- filename <- getDataFileName $ "srfi/srfi-" ++ show num ++ ".scm"
+ filename <- getDataFileName $ "lib/srfi/srfi-" ++ show num ++ ".scm"
  _ <- Language.Scheme.Core.evalString env $ "(register-extension '(srfi " ++ show num ++ ") \"" ++ 
   (Language.Scheme.Core.escapeBackslashes filename) ++ "\")"
  return () 

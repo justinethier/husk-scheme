@@ -57,8 +57,8 @@ runOne args = do
 -- |Load standard libraries into the given environment
 loadLibraries :: Env -> IO ()
 loadLibraries env = do
-  stdlib <- getDataFileName "stdlib.scm"
-  srfi55 <- getDataFileName "srfi/srfi-55.scm" -- (require-extension)
+  stdlib <- getDataFileName "lib/stdlib.scm"
+  srfi55 <- getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
   -- Load standard library
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
   -- Load (require-extension), which can be used to load other SRFI's
@@ -68,7 +68,7 @@ loadLibraries env = do
 -- |Register the given SRFI
 registerSRFI :: Env -> Integer -> IO ()
 registerSRFI env num = do
- filename <- getDataFileName $ "srfi/srfi-" ++ show num ++ ".scm"
+ filename <- getDataFileName $ "lib/srfi/srfi-" ++ show num ++ ".scm"
  _ <- evalString env $ "(register-extension '(srfi " ++ show num ++ ") \"" ++ 
   (escapeBackslashes filename) ++ "\")"
  return ()

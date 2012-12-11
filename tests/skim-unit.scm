@@ -6,10 +6,6 @@
 ;;;
 ;;; Minimal unit testing framework
 ;;;
-(load "../stdlib.scm") ; Explicitly loaded here as unit tests typically invoked during dev
-                       ; via 'make test' - as such, it is easier to just add this include
-                       ; than to work around the fact that building via 'make' does not
-                       ; allow huski to know the exact location of 'stdlib.scm'.
 
 (define *file-with-counts* "scm-unit.tmp")
 (define pass-count 0)
