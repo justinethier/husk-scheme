@@ -746,7 +746,9 @@ primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrim
 {- These functions have access to the current environment via the
 current continuation, which is passed as the first LispVal argument. -}
 --
-evalfuncExitSuccess, evalfuncExitFail, evalfuncApply, evalfuncDynamicWind, evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues :: [LispVal] -> IOThrowsError LispVal
+evalfuncExitSuccess, evalfuncExitFail, evalfuncApply, evalfuncDynamicWind, 
+  evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues,
+  evalfuncInteractionEnv :: [LispVal] -> IOThrowsError LispVal
 
 {-
  - A (somewhat) simplified implementation of dynamic-wind
@@ -808,6 +810,12 @@ evalfuncApply (cont@(Continuation _ _ _ _ _) : func : args) = do
       other -> throwError $ TypeMismatch "List" other
 evalfuncApply (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
 evalfuncApply _ = throwError $ NumArgs 2 []
+
+evalfuncInteractionEnv [cont@(Continuation env _ _ _ _)] = do
+    continueEval env cont $ LispEnv env
+
+evalfuncLoad [cont@(Continuation _ a b c d), String filename, LispEnv env] = do
+    evalfuncLoad [Continuation env a b c d, String filename]
 
 evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
 {-
@@ -878,6 +886,9 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("dynamic-wind", evalfuncDynamicWind)
                   , ("eval", evalfuncEval)
                   , ("load", evalfuncLoad)
+                  , ("current-environment", evalfuncInteractionEnv)
+                  , ("interaction-environment", evalfuncInteractionEnv)
+
                -- Non-standard extensions
 #ifdef UseFfi
                   , ("load-ffi", Language.Scheme.FFI.evalfuncLoadFFI)

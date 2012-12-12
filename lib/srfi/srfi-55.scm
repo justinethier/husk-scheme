@@ -37,6 +37,9 @@
 
 (define-syntax require-extension 
   (syntax-rules (srfi)
+;
+; TODO: rewrite below using (load filename env) to account for the begin
+;
 ; A temporary version that works for one srfi, but needs to be
 ; generalized. The issue is that introducing a new scope will
 ; cause the load to be ineffective because the outer scope will

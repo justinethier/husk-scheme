@@ -68,6 +68,7 @@ module Language.Scheme.Types
              , synIdentifiers
              , synRules
         , SyntaxExplicitRenaming
+        , LispEnv
         , EOF
         , Nil)
     , toOpaque
@@ -258,6 +259,7 @@ data LispVal = Atom String
      --   manipulated by the same functions as regular variables.
  | SyntaxExplicitRenaming LispVal
    -- ^ Syntax for an explicit-renaming macro
+ | LispEnv Env
  | EOF
  | Nil String
  -- ^Internal use only; do not use this type directly.
@@ -392,6 +394,7 @@ instance Eq LispVal where
 showVal :: LispVal -> String
 showVal (Nil _) = ""
 showVal (EOF) = "#!EOF"
+showVal (LispEnv _) = "<env>"
 showVal (String contents) = "\"" ++ contents ++ "\""
 showVal (Char chr) = [chr]
 showVal (Atom name) = name
