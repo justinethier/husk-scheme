@@ -748,7 +748,7 @@ current continuation, which is passed as the first LispVal argument. -}
 --
 evalfuncExitSuccess, evalfuncExitFail, evalfuncApply, evalfuncDynamicWind, 
   evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues,
-  evalfuncInteractionEnv :: [LispVal] -> IOThrowsError LispVal
+  evalfuncMakeEnv, evalfuncInteractionEnv :: [LispVal] -> IOThrowsError LispVal
 
 {-
  - A (somewhat) simplified implementation of dynamic-wind
@@ -811,7 +811,11 @@ evalfuncApply (cont@(Continuation _ _ _ _ _) : func : args) = do
 evalfuncApply (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
 evalfuncApply _ = throwError $ NumArgs 2 []
 
-evalfuncInteractionEnv [cont@(Continuation env _ _ _ _)] = do
+
+evalfuncMakeEnv (cont@(Continuation env _ _ _ _) : _) = do
+    e <- liftIO $ nullEnv
+    continueEval env cont $ LispEnv e
+evalfuncInteractionEnv (cont@(Continuation env _ _ _ _) : _) = do
     continueEval env cont $ LispEnv env
 
 evalfuncLoad [cont@(Continuation _ a b c d), String filename, LispEnv env] = do
@@ -888,6 +892,7 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("load", evalfuncLoad)
                   , ("current-environment", evalfuncInteractionEnv)
                   , ("interaction-environment", evalfuncInteractionEnv)
+                  , ("make-environment", evalfuncMakeEnv)
 
                -- Non-standard extensions
 #ifdef UseFfi
