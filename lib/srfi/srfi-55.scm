@@ -38,11 +38,11 @@
 
 (define-syntax require-extension 
   (syntax-rules (srfi)
-    ((_ (srfi id ...))
+    ((_ "internal" (srfi id ...))
      (begin 
-       (load (find-extension '(srfi id)) *__env__*) ...))))
-;    ((_ "internal" id)
-;     (find-extension 'id) )
-;    ((_ clause ...)
-;     (begin (require-extension "internal" clause) ...)) ) )
+       (load (find-extension '(srfi id)) *__env__*) ...))
+    ((_ "internal" id)
+     (load (find-extension 'id) *__env__*))
+    ((_ clause ...)
+     (begin (require-extension "internal" clause) ...)) ) )
 
