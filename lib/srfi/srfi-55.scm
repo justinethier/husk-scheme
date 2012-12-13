@@ -13,9 +13,10 @@
 ;    (register-extension '(srfi 1) "srfi/srfi-1.scm")
 ; Example of loading an extension:
 ;   (require-extension (srfi 1))
+;   (require-extension (srfi 1 3 4))
 ;
 
-
+(define *__env__* (current-environment))
 (define available-extensions '())
 
 (define (register-extension id action . compare)
@@ -37,18 +38,9 @@
 
 (define-syntax require-extension 
   (syntax-rules (srfi)
-;
-; TODO: rewrite below using (load filename env) to account for the begin
-;
-; A temporary version that works for one srfi, but needs to be
-; generalized. The issue is that introducing a new scope will
-; cause the load to be ineffective because the outer scope will
-; not be affected
     ((_ (srfi id ...))
-     (load (find-extension '(srfi id) ...)) ) ; TODO: Maybe we could have a load-all that accepts a list?
-    ))
-;    ((_ "internal" (srfi id ...))
-;     (begin (find-extension '(srfi id) ...)) )
+     (begin 
+       (load (find-extension '(srfi id)) *__env__*) ...))))
 ;    ((_ "internal" id)
 ;     (find-extension 'id) )
 ;    ((_ clause ...)
