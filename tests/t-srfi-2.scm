@@ -9,7 +9,51 @@
 (unit-test-start "SRFI 2: and-let*")
 (require-extension (srfi 2))
 
-; TODO: port tests over to this test suite
+(assert/equal (and-let* () 1) 1)
+(assert/equal (and-let* () 1 2) 2)
+(assert/equal (and-let* () ) #t)
+
+;;; One claw, no body
+(assert/equal (let ((x #f)) (and-let* (x))) #f)
+(assert/equal (let ((x 1)) (and-let* (x))) 1)
+(assert/equal (let ((x 1)) (and-let* ( (x) ))) 1)
+(assert/equal (let ((x 1)) (and-let* ( ((+ x 1)) ))) 2)
+(assert/equal (and-let* ((x #f)) ) #f)
+(assert/equal (and-let* ((x 1)) ) 1)
+
+;; two claws, no body
+(assert/equal (and-let* ( (#f) (x 1)) ) #f)
+(assert/equal (and-let* ( (2) (x 1)) ) 1)
+(assert/equal (and-let* ( (x 1) (2)) ) 2)
+(assert/equal (and-let* ( (x 1) x) ) 1)
+(assert/equal (and-let* ( (x 1) (x)) ) 1)
+
+;;; two claws, body
+(assert/equal (let ((x #f)) (and-let* (x) x)) #f)
+(assert/equal (let ((x "")) (and-let* (x) x)) "")
+(assert/equal (let ((x "")) (and-let* (x)  )) "")
+(assert/equal (let ((x 1)) (and-let* (x) (+ x 1))) 2)
+(assert/equal (let ((x #f)) (and-let* (x) (+ x 1))) #f)
+(assert/equal (let ((x 1)) (and-let* (((positive? x))) (+ x 1))) 2)
+(assert/equal (let ((x 1)) (and-let* (((positive? x))) )) #t)
+(assert/equal (let ((x 0)) (and-let* (((positive? x))) (+ x 1))) #f)
+(assert/equal (let ((x 1)) (and-let* (((positive? x)) (x (+ x 1))) (+ x 1)))  3)
+(assert/equal
+ (let ((x 1)) (and-let* (((positive? x)) (x (+ x 1)) (x (+ x 1))) (+ x 1)))
+  4
+  )
+
+(assert/equal (let ((x 1)) (and-let* (x ((positive? x))) (+ x 1))) 2)
+(assert/equal (let ((x 1)) (and-let* ( ((begin x)) ((positive? x))) (+ x 1))) 2)
+(assert/equal (let ((x 0)) (and-let* (x ((positive? x))) (+ x 1))) #f)
+(assert/equal (let ((x #f)) (and-let* (x ((positive? x))) (+ x 1))) #f)
+(assert/equal (let ((x #f)) (and-let* ( ((begin x)) ((positive? x))) (+ x 1))) #f)
+
+(assert/equal (let ((x 1)) (and-let* (x (y (- x 1)) ((positive? y))) (/ x y))) #f)
+(assert/equal (let ((x 0)) (and-let* (x (y (- x 1)) ((positive? y))) (/ x y))) #f)
+(assert/equal (let ((x #f)) (and-let* (x (y (- x 1)) ((positive? y))) (/ x y))) #f)
+(assert/equal (let ((x 3)) (and-let* (x (y (- x 1)) ((positive? y))) (/ x y))) (/ 3 2))
+
 (unit-test-handler-results)
 
 ; Original test code:
