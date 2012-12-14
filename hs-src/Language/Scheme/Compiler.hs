@@ -251,17 +251,22 @@ compile env (List [Atom "define-syntax", Atom keyword,
   _ <- defineNamespacedVar env macroNamespace keyword $ SyntaxExplicitRenaming f
   compileScalar ("  return $ Nil \"\"") copts 
 
-compile env (List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
---
--- TODO:
---
--- macros will eventually need to introduce a definition in both the compiler's env (so macros can be processed at compile time) and in the program's env (so dynamically injected code has access to the macro). That said, the priority is compile-time processing.
---
--- TBD: how the heck to serialize a Syntax object for use in the compiled code, since
---    Syntax has embedded env's... perhaps the first step is to do it with a null env
---
+compile env lisp@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
+-- Question: how the heck to serialize a Syntax object for use in the compiled code, since
+--           Syntax has embedded env's... perhaps the first step is to do it with a null env?
+-- Answer: easy, env is built by compiled program, so it should be identical at runtime
+  let idStr = astToHaskellStr' identifiers
+      ruleStr = astToHaskellStr' rules
+
+  -- Make macro available at compile time
   _ <- defineNamespacedVar env macroNamespace keyword $ Syntax (Just env) Nothing False identifiers rules
-  compileScalar ("  return $ Nil \"\"") copts 
+
+  -- And load it at runtime as well
+  compileScalar ("  defineNamespacedVar env macroNamespace \"" ++ keyword ++ "\" $ Syntax (Just env) Nothing False " ++ idStr ++ " " ++ ruleStr) copts 
+  where
+    astToHaskellStr' :: [LispVal] -> String
+    astToHaskellStr' ls = do
+        "[" ++ (joinL (map astToHaskellStr ls) ",") ++ "]"
 
 compile env (List [Atom "if", predic, conseq]) copts = 
  compile env (List [Atom "if", predic, conseq, Nil ""]) copts
