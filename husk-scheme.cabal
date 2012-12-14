@@ -41,7 +41,7 @@ Extra-Source-Files:  README.markdown
                      ChangeLog.markdown
                      LICENSE
                      AUTHORS
-Data-Files:          lib/stdlib.scm lib/srfi/srfi-1.scm lib/srfi/srfi-55.scm
+Data-Files:          lib/stdlib.scm lib/srfi/*.scm
 
 Source-Repository head
     Type:            git

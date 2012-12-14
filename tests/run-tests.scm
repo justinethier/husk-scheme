@@ -33,6 +33,7 @@
 (let () (load "t-er-macro.scm"))
 ; SRFI tests
 (let () (load "t-srfi-1.scm"))
+(let () (load "t-srfi-2.scm"))
 ; Summarize test results
 (let () (load "summarize.scm"))
 (delete-file "scm-unit.tmp")

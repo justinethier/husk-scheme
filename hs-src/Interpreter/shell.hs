@@ -63,7 +63,8 @@ loadLibraries env = do
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
   -- Load (require-extension), which can be used to load other SRFI's
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes srfi55) ++ "\")"
-  registerSRFI env 1
+  _ <- registerSRFI env 1
+  registerSRFI env 2
 
 -- |Register the given SRFI
 registerSRFI :: Env -> Integer -> IO ()

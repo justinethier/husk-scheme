@@ -157,6 +157,7 @@ compileSchemeFile env stdlib srfi55 filename = do
   libsC <- compileLisp env stdlib "run" (Just "exec55")
   libSrfi55C <- compileLisp env srfi55 "exec55" (Just "exec")
   _ <- liftIO $ registerSRFI env 1
+  _ <- liftIO $ registerSRFI env 2
 
   -- Initialize the compiler module and begin
   _ <- initializeCompiler env
