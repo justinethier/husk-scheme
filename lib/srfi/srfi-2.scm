@@ -1,13 +1,13 @@
+
 (define-syntax and-let*
   (syntax-rules ()
     ; Special case
     ((and-let* ())
      #t)
-
+    ; No CLAWS, just body
     ((and-let* () body ...)
      (begin body ...))
-
-    ; Special cases of below - no body
+    ; Special cases of below - CLAWS with no body
     ((and-let* ((var expr)) )
      (let ((var expr))
        (and var)))
@@ -17,7 +17,7 @@
     ((and-let* (expr))
      (let ((tmp expr))
        (and tmp )))
-
+    ; General case - CLAWS and body
     ((and-let* ((var expr) . rest) . body)
      (let ((var expr))
        (and var (and-let* rest . body))))
@@ -42,7 +42,7 @@
   (let ((real-result (eval form)))
 ;  (let ((real-result (eval form (interaction-environment))))
     (if (equal? real-result expected-result)
-    (write (list "... gave the expected result: " real-result))
+    (write (list "... gave the expected result: " real-result (newline)))
     (error "... returned: " real-result
            " which differs from the expected result: " expected-result)
     )))
@@ -73,8 +73,8 @@
 ;; One claw, no body
 (expect '(let ((x #f)) (and-let* (x))) #f)
 (expect '(let ((x 1)) (and-let* (x))) 1)
-;(expect '(let ((x 1)) (and-let* ( (x) ))) 1)
-;(expect '(let ((x 1)) (and-let* ( ((+ x 1)) ))) 2)
+(expect '(let ((x 1)) (and-let* ( (x) ))) 1)
+(expect '(let ((x 1)) (and-let* ( ((+ x 1)) ))) 2)
 (expect '(and-let* ((x #f)) ) #f)
 (expect '(and-let* ((x 1)) ) 1)
 ;(must-be-a-syntax-error '(and-let* ( #f (x 1))) )
