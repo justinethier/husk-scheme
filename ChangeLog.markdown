@@ -2,6 +2,12 @@ v3.6.2
 --------
 Added support for nested quasi-quotation forms, which now respect depth level. This was done by replacing the quasi-quotation special form with a macro based on the one from chibi scheme. A nice side-benefit is that by removing the special forms, quasi-quotation now works in the compiler.
 
+
+
+TODO: environment specifiers (TODO: pass one to eval)
+TODO: SRFI-2 (and-let\*) support
+
+
 This release also includes the following bug fixes:
 
 TODO: allow passing multiple numbers to require-extension (need to add another SRFI so there is actually a reason to do this :)
