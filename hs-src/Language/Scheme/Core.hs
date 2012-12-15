@@ -850,6 +850,7 @@ evalfuncLoad _ = throwError $ NumArgs 1 []
 -- FUTURE: consider allowing env to be specified, per R5RS
 --
 evalfuncEval [cont@(Continuation env _ _ _ _), val] = meval env cont val
+evalfuncEval [cont@(Continuation _ _ _ _ _), val, LispEnv env] = meval env cont val
 evalfuncEval (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
 evalfuncEval _ = throwError $ NumArgs 1 []
 
