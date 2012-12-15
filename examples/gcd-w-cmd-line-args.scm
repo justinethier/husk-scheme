@@ -4,7 +4,7 @@
 ;;;
 ;;; Example program: Greatest common denominator
 ;;;
-;;; Based on example code from SCIP. The real reason to show this program
+;;; Based on example code from SICP. The real reason to show this program
 ;;; is to demonstrate that a (main) function can be defined in order to 
 ;;; enable a program to receive command line arguments.
 ;;;
