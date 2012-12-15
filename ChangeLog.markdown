@@ -19,6 +19,7 @@ This release also includes the following bug fixes:
 - Fixed a bug where nested explicit renaming macros may not always expand properly.
 - Fixed the code for `require-extension` to allow passing multiple SRFI numbers in the same call. For example: `(require-extension (srfi 1 2))`.
 - Improved compiler support by diverting renamed variables back into the enclosing environment. Such variables would previously throw a runtime error when accessed by the compiled program.
+- Improved compiler support by loading `syntax-rules` macros defined using `define-syntax` so they are available at runtime.
 
 v3.6.1
 --------

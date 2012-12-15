@@ -91,27 +91,33 @@ instance Show HaskAST where show = showValAST
 joinL :: forall a. [[a]] -> [a] -> [a]
 joinL ls sep = concat $ Data.List.intersperse sep ls
 
-astToHaskellStr :: LispVal -> String 
-astToHaskellStr (String s) = "String " ++ show s
-astToHaskellStr (Char c) = "Char " ++ show c
-astToHaskellStr (Atom a) = "Atom " ++ show a
-astToHaskellStr (Number n) = "Number (" ++ show n ++ ")"
-astToHaskellStr (Complex c) = "Complex $ (" ++ (show $ realPart c) ++ ") :+ (" ++ (show $ imagPart c) ++ ")"
-astToHaskellStr (Rational r) = "Rational $ (" ++ (show $ numerator r) ++ ") % (" ++ (show $ denominator r) ++ ")"
-astToHaskellStr (Float f) = "Float (" ++ show f ++ ")"
-astToHaskellStr (Bool True) = "Bool True"
-astToHaskellStr (Bool False) = "Bool False"
-astToHaskellStr (HashTable ht) = do
+-- |Convert abstract syntax tree to a string
+ast2Str :: LispVal -> String 
+ast2Str (String s) = "String " ++ show s
+ast2Str (Char c) = "Char " ++ show c
+ast2Str (Atom a) = "Atom " ++ show a
+ast2Str (Number n) = "Number (" ++ show n ++ ")"
+ast2Str (Complex c) = "Complex $ (" ++ (show $ realPart c) ++ ") :+ (" ++ (show $ imagPart c) ++ ")"
+ast2Str (Rational r) = "Rational $ (" ++ (show $ numerator r) ++ ") % (" ++ (show $ denominator r) ++ ")"
+ast2Str (Float f) = "Float (" ++ show f ++ ")"
+ast2Str (Bool True) = "Bool True"
+ast2Str (Bool False) = "Bool False"
+ast2Str (HashTable ht) = do
  let ls = Data.Map.toList ht 
-     conv (a, b) = "(" ++ astToHaskellStr a ++ "," ++ astToHaskellStr b ++ ")"
+     conv (a, b) = "(" ++ ast2Str a ++ "," ++ ast2Str b ++ ")"
  "HashTable $ Data.Map.fromList $ [" ++ joinL (map conv ls) "," ++ "]"
-astToHaskellStr (Vector v) = do
+ast2Str (Vector v) = do
   let ls = Data.Array.elems v
       size = (length ls) - 1
-  "Vector (listArray (0, " ++ show size ++ ")" ++ "[" ++ joinL (map astToHaskellStr ls) "," ++ "])"
-astToHaskellStr (List ls) = "List [" ++ joinL (map astToHaskellStr ls) "," ++ "]"
-astToHaskellStr (DottedList ls l) = 
-  "DottedList [" ++ joinL (map astToHaskellStr ls) "," ++ "] $ " ++ astToHaskellStr l
+  "Vector (listArray (0, " ++ show size ++ ")" ++ "[" ++ joinL (map ast2Str ls) "," ++ "])"
+ast2Str (List ls) = "List [" ++ joinL (map ast2Str ls) "," ++ "]"
+ast2Str (DottedList ls l) = 
+  "DottedList [" ++ joinL (map ast2Str ls) "," ++ "] $ " ++ ast2Str l
+
+-- |Convert a list of abstract syntax trees to a list of strings
+asts2Str :: [LispVal] -> String
+asts2Str ls = do
+    "[" ++ (joinL (map ast2Str ls) ",") ++ "]"
 
 header, headerModule, headerImports :: [String]
 headerModule = ["module Main where "]
@@ -193,8 +199,8 @@ compile _ (Rational r) copts = compileScalar ("  return $ Rational $ (" ++ (show
 compile _ (Number n) copts = compileScalar ("  return $ Number (" ++ (show n) ++ ")") copts
 compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
 -- TODO: eval env cont val@(HashTable _) = continueEval env cont val
-compile _ v@(Vector _) copts = compileScalar (" return $ " ++ astToHaskellStr v) copts
-compile _ ht@(HashTable _) copts = compileScalar (" return $ " ++ astToHaskellStr ht) copts
+compile _ v@(Vector _) copts = compileScalar (" return $ " ++ ast2Str v) copts
+compile _ ht@(HashTable _) copts = compileScalar (" return $ " ++ ast2Str ht) copts
 compile _ (Atom a) copts = do
  c <- return $ createAstCont copts "val" ""
  return [createAstFunc copts [
@@ -207,12 +213,12 @@ compile _ (Atom a) copts = do
    AstValue $ "    HashTable _ -> Pointer \"" ++ a ++ "\" env",
    AstValue $ "    _ -> v"], c]
 
-compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ astToHaskellStr val) copts
+compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ ast2Str val) copts
 
 compile env (List [Atom "expand",  _body]) copts = do
   -- TODO: check if expand has been rebound?
   val <- Language.Scheme.Macro.expand env False _body Language.Scheme.Core.apply
-  compileScalar (" return $ " ++ astToHaskellStr val) copts
+  compileScalar (" return $ " ++ ast2Str val) copts
 
 compile env (List (Atom "let-syntax" : List _bindings : _body)) copts = do
   -- TODO: check if let-syntax has been rebound?
@@ -244,29 +250,33 @@ compile env (List [Atom "define-syntax", Atom keyword,
   (List [Atom "er-macro-transformer", 
     (List (Atom "lambda" : List fparams : fbody))])])
   copts = do
+  let fparamsStr = asts2Str fparams
+      fbodyStr = asts2Str fbody
 
-  -- TODO: same as below, these defs will eventually need to 
-  -- be made available during runtime as well as compile time
   f <- makeNormalFunc env fparams fbody 
   _ <- defineNamespacedVar env macroNamespace keyword $ SyntaxExplicitRenaming f
-  compileScalar ("  return $ Nil \"\"") copts 
 
-compile env lisp@(List [Atom "define-syntax", Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
--- Question: how the heck to serialize a Syntax object for use in the compiled code, since
---           Syntax has embedded env's... perhaps the first step is to do it with a null env?
--- Answer: easy, env is built by compiled program, so it should be identical at runtime
-  let idStr = astToHaskellStr' identifiers
-      ruleStr = astToHaskellStr' rules
+
+  -- TODO: seem to be some problems with this at runtime
+  compFunc <- return $ [
+    AstValue $ "  f <- makeNormalFunc env " ++ fparamsStr ++ " " ++ fbodyStr, 
+    AstValue $ "  defineNamespacedVar env macroNamespace \"" ++ keyword ++ "\" $ SyntaxExplicitRenaming f"]
+  return $ [createAstFunc copts compFunc]
+
+compile env lisp@(List [Atom "define-syntax", Atom keyword, 
+    (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
+  let idStr = asts2Str identifiers
+      ruleStr = asts2Str rules
 
   -- Make macro available at compile time
-  _ <- defineNamespacedVar env macroNamespace keyword $ Syntax (Just env) Nothing False identifiers rules
+  _ <- defineNamespacedVar env macroNamespace keyword $ 
+         Syntax (Just env) Nothing False identifiers rules
 
   -- And load it at runtime as well
-  compileScalar ("  defineNamespacedVar env macroNamespace \"" ++ keyword ++ "\" $ Syntax (Just env) Nothing False " ++ idStr ++ " " ++ ruleStr) copts 
-  where
-    astToHaskellStr' :: [LispVal] -> String
-    astToHaskellStr' ls = do
-        "[" ++ (joinL (map astToHaskellStr ls) ",") ++ "]"
+  -- Env should be identical to the one loaded at compile time...
+  compileScalar 
+    ("  defineNamespacedVar env macroNamespace \"" ++ keyword ++ 
+     "\" $ Syntax (Just env) Nothing False " ++ idStr ++ " " ++ ruleStr) copts 
 
 compile env (List [Atom "if", predic, conseq]) copts = 
  compile env (List [Atom "if", predic, conseq, Nil ""]) copts
@@ -371,7 +381,7 @@ compile env (List (Atom "define" : DottedList (Atom var : fparams) varargs : fbo
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do result <- makeHVarargs (" ++ astToHaskellStr varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
+       AstValue $ "     else do result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
        AstValue $ "             _ <- defineVar env \"" ++ var ++ "\" result ",
        createAstCont copts "result" "           "
        ]
@@ -412,7 +422,7 @@ compile env (List (Atom "lambda" : DottedList fparams varargs : fbody)) copts@(C
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do result <- makeHVarargs (" ++ astToHaskellStr varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
+       AstValue $ "     else do result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
        createAstCont copts "result" "           "
        ]
  return $ [createAstFunc copts f] ++ compiledBody
@@ -429,7 +439,7 @@ compile env (List (Atom "lambda" : varargs@(Atom _) : fbody)) copts@(CompileOpti
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do result <- makeHVarargs (" ++ astToHaskellStr varargs ++ ") env [] " ++ symCallfunc,
+       AstValue $ "     else do result <- makeHVarargs (" ++ ast2Str varargs ++ ") env [] " ++ symCallfunc,
        createAstCont copts "result" "           "
        ]
  return $ [createAstFunc copts f] ++ compiledBody
@@ -444,7 +454,7 @@ compile env (List [Atom "string-set!", Atom var, i, character]) copts = do
     AstValue $ "  derefValue <- recDerefPtrs tmp",
     -- TODO: not entirely correct below; should compile the character argument rather
     --       than directly inserting it into the compiled code...
-    AstValue $ "  result <- substr (derefValue, (" ++ astToHaskellStr(character) ++ "), idx)",
+    AstValue $ "  result <- substr (derefValue, (" ++ ast2Str(character) ++ "), idx)",
     AstValue $ "  _ <- updateObject env \"" ++ var ++ "\" result",
     createAstCont copts "result" ""]
  return $ [entryPt] ++ compDefine ++ [compMakeDefine]
