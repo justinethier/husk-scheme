@@ -11,6 +11,7 @@ Added support for environment specifiers, including the following functions:
 - `(interaction-environment)`
 - `(current-environment)`
 - `(make-environment)`
+- `(null-environment version)`
 - `(load filename environment-specifier)`
 - `(eval expression environment-specifier)`
 

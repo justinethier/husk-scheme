@@ -748,7 +748,7 @@ current continuation, which is passed as the first LispVal argument. -}
 --
 evalfuncExitSuccess, evalfuncExitFail, evalfuncApply, evalfuncDynamicWind, 
   evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues,
-  evalfuncMakeEnv, evalfuncInteractionEnv :: [LispVal] -> IOThrowsError LispVal
+  evalfuncMakeEnv, evalfuncNullEnv, evalfuncInteractionEnv :: [LispVal] -> IOThrowsError LispVal
 
 {-
  - A (somewhat) simplified implementation of dynamic-wind
@@ -815,6 +815,13 @@ evalfuncApply _ = throwError $ NumArgs 2 []
 evalfuncMakeEnv (cont@(Continuation env _ _ _ _) : _) = do
     e <- liftIO $ nullEnv
     continueEval env cont $ LispEnv e
+
+evalfuncNullEnv [cont@(Continuation env _ _ _ _), Number version] = do
+    nullEnv <- liftIO $ primitiveBindings
+    continueEval env cont $ LispEnv nullEnv
+evalfuncNullEnv (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
+evalfuncNullEnv _ = throwError $ NumArgs 1 []
+
 evalfuncInteractionEnv (cont@(Continuation env _ _ _ _) : _) = do
     continueEval env cont $ LispEnv env
 
@@ -891,6 +898,7 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("dynamic-wind", evalfuncDynamicWind)
                   , ("eval", evalfuncEval)
                   , ("load", evalfuncLoad)
+                  , ("null-environment", evalfuncNullEnv)
                   , ("current-environment", evalfuncInteractionEnv)
                   , ("interaction-environment", evalfuncInteractionEnv)
                   , ("make-environment", evalfuncMakeEnv)
