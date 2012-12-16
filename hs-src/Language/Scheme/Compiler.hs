@@ -256,11 +256,10 @@ compile env (List [Atom "define-syntax", Atom keyword,
   f <- makeNormalFunc env fparams fbody 
   _ <- defineNamespacedVar env macroNamespace keyword $ SyntaxExplicitRenaming f
 
-
-  -- TODO: seem to be some problems with this at runtime
   compFunc <- return $ [
     AstValue $ "  f <- makeNormalFunc env " ++ fparamsStr ++ " " ++ fbodyStr, 
-    AstValue $ "  defineNamespacedVar env macroNamespace \"" ++ keyword ++ "\" $ SyntaxExplicitRenaming f"]
+    AstValue $ "  defineNamespacedVar env macroNamespace \"" ++ keyword ++ "\" $ SyntaxExplicitRenaming f",
+    createAstCont copts "(Nil \"\")" ""]
   return $ [createAstFunc copts compFunc]
 
 compile env lisp@(List [Atom "define-syntax", Atom keyword, 
