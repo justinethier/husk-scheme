@@ -4,7 +4,7 @@ This release adds support for nested quasi-quotation forms, which now respect de
 
 Also added support for SRFI 2, `and-let*`. From the SRFI document:
 
-> Like an ordinary AND, an AND-LET\* special form evaluates its arguments -- expressions -- one after another in order, till the first one that yields #f. Unlike AND, however, a non-#f result of one expression can be bound to a fresh variable and used in the subsequent expressions. AND-LET\* is a cross-breed between LET\* and AND.
+> Like an ordinary AND, an AND-LET\* special form evaluates its arguments - expressions - one after another in order, until the first one that yields #f. Unlike AND, however, a non-#f result of one expression can be bound to a fresh variable and used in the subsequent expressions. AND-LET\* is a cross-breed between LET\* and AND.
 
 And added support for environment specifiers, including the following functions:
 
