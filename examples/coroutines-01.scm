@@ -1,6 +1,9 @@
 ; Example of using continuations to implement co-routines (green threads)
 ; Code obtained from: http://en.wikipedia.org/wiki/Continuation
 ;
+; This file is still a work-in-progress and does not work correctly
+; from husk.
+;
 ;;; A naive queue for thread scheduling.
 ;;; It holds a list of continuations "waiting to run".
 
