@@ -226,9 +226,10 @@ compile env (List (Atom "let-syntax" : List _bindings : _body)) copts = do
   _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
   -- Expand whole body as a single continuous macro, to ensure hygiene
   expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) Language.Scheme.Core.apply
-  divertVars bodyEnv expanded copts func
+  divertVars bodyEnv expanded copts compexp
  where 
-   func bodyEnv' expanded' copts' = do
+   -- Pick up execution here after expansion
+   compexp bodyEnv' expanded' copts' = do
      case expanded' of
        List e -> compile bodyEnv' (List $ Atom "begin" : e) copts'
        e -> compile bodyEnv' e copts'
@@ -239,9 +240,10 @@ compile env (List (Atom "letrec-syntax" : List _bindings : _body)) copts = do
   _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False _bindings
   -- Expand whole body as a single continuous macro, to ensure hygiene
   expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) Language.Scheme.Core.apply
-  divertVars bodyEnv expanded copts func
+  divertVars bodyEnv expanded copts compexp
  where 
-   func bodyEnv' expanded' copts' = do
+   -- Pick up execution here after expansion
+   compexp bodyEnv' expanded' copts' = do
      case expanded' of
        List e -> compile bodyEnv' (List $ Atom "begin" : e) copts'
        e -> compile bodyEnv' e copts'
