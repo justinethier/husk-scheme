@@ -160,7 +160,8 @@ compileSchemeFile env stdlib srfi55 filename = do
   outH <- liftIO $ openFile "_tmp.hs" WriteMode
   _ <- liftIO $ writeList outH headerModule
   _ <- liftIO $ writeList outH $ map (\mod -> "import " ++ mod ++ " ") $ headerImports ++ moreHeaderImports
-  _ <- liftIO $ writeList outH header
+  filepath <- liftIO $ getDataFileName ""
+  _ <- liftIO $ writeList outH $ header filepath
   _ <- liftIO $ writeList outH $ map show libsC
   _ <- liftIO $ writeList outH $ map show libSrfi55C
   _ <- liftIO $ writeList outH $ map show execC
