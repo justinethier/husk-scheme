@@ -63,16 +63,7 @@ loadLibraries env = do
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
   -- Load (require-extension), which can be used to load other SRFI's
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes srfi55) ++ "\")"
-  _ <- registerSRFI env 1
-  registerSRFI env 2
-
--- |Register the given SRFI
-registerSRFI :: Env -> Integer -> IO ()
-registerSRFI env num = do
- filename <- getDataFileName $ "lib/srfi/srfi-" ++ show num ++ ".scm"
- _ <- evalString env $ "(register-extension '(srfi " ++ show num ++ ") \"" ++ 
-  (escapeBackslashes filename) ++ "\")"
- return ()
+  registerExtensions env getDataFileName
 
 -- |Start the REPL (interactive interpreter)
 runRepl :: IO ()

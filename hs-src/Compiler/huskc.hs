@@ -138,15 +138,6 @@ process inFile outExec dynamic extraArgs = do
    Just errMsg -> putStrLn errMsg
    _ -> compileHaskellFile outExec dynamic extraArgs
 
--- TODO: this is also used in shell.hs - find a common place to put them both
--- |Register the given SRFI
-registerSRFI :: Env -> Integer -> IO ()
-registerSRFI env num = do
- filename <- getDataFileName $ "lib/srfi/srfi-" ++ show num ++ ".scm"
- _ <- Language.Scheme.Core.evalString env $ "(register-extension '(srfi " ++ show num ++ ") \"" ++ 
-  (Language.Scheme.Core.escapeBackslashes filename) ++ "\")"
- return () 
-
 -- |Compile a scheme file to haskell
 compileSchemeFile :: Env -> String -> String -> String -> IOThrowsError LispVal
 compileSchemeFile env stdlib srfi55 filename = do
@@ -156,8 +147,7 @@ compileSchemeFile env stdlib srfi55 filename = do
   --       precompiled and just added during the ghc compilation
   libsC <- compileLisp env stdlib "run" (Just "exec55")
   libSrfi55C <- compileLisp env srfi55 "exec55" (Just "exec")
-  _ <- liftIO $ registerSRFI env 1
-  _ <- liftIO $ registerSRFI env 2
+  liftIO $ Language.Scheme.Core.registerExtensions env getDataFileName
 
   -- Initialize the compiler module and begin
   _ <- initializeCompiler env

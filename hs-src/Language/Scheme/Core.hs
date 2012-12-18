@@ -24,6 +24,7 @@ module Language.Scheme.Core
     , primitiveBindings
     , version
     -- * Utility functions
+    , registerExtensions
     , escapeBackslashes
     , showBanner
     , substr
@@ -64,6 +65,21 @@ showBanner = do
   putStrLn " (c) 2010-2012 Justin Ethier                                             "
   putStrLn $ " Version " ++ version ++ " "
   putStrLn "                                                                         "
+
+-- |Register optional SRFI extensions
+registerExtensions :: Env -> (FilePath -> IO FilePath) -> IO ()
+registerExtensions env getDataFileName = do
+  _ <- registerSRFI env getDataFileName 1
+  _ <- registerSRFI env getDataFileName 2
+  return ()
+
+-- |Register the given SRFI
+registerSRFI :: Env -> (FilePath -> IO FilePath) -> Integer -> IO ()
+registerSRFI env getDataFileName num = do
+ filename <- getDataFileName $ "lib/srfi/srfi-" ++ show num ++ ".scm"
+ _ <- evalString env $ "(register-extension '(srfi " ++ show num ++ ") \"" ++ 
+  (escapeBackslashes filename) ++ "\")"
+ return ()
 
 -- |A utility function to escape backslashes in the given string
 escapeBackslashes :: String -> String
