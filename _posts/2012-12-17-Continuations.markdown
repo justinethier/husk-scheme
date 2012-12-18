@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Continuations
-excerpt: Background on the implementation of continuations in husk.
+excerpt: Background information on the implementation of continuations in husk.
 ---
 
 <img src="https://github.com/justinethier/husk-scheme/raw/master/docs/design-notes-husk-scheme.png" width="500" height="44">
@@ -144,8 +144,7 @@ There are many versions of `continueEval`, depending upon the input pattern. We 
 
 We may also receive a list containing Scheme code. In this case the function checks how much code is left. If the Scheme code is all finished the resultant value is returned; otherwise we keep going:
 
-```haskell
-continueEval _ (Continuation cEnv 
+    continueEval _ (Continuation cEnv 
                             (Just (SchemeBody cBody)) 
                             (Just cCont) 
                             extraArgs 
@@ -172,7 +171,6 @@ continueEval _ (Continuation cEnv
                                     Nothing
                                     dynWind)
                           (lv)
-```
 
 Finally, there are two edge cases where a current continuation may not be present:
 
@@ -201,8 +199,10 @@ There are several patterns to consider. Let's start with the first, which handle
           case (toInteger $ length args) of 
             0 -> throwError $ NumArgs 1 [] 
             1 -> continueEval e c $ head args
-            _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
-                 continueEval e (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args 
+            _ ->  -- Pass along additional arguments for (call-with-values)
+                 continueEval e 
+                   (Continuation env ccont ncont (Just $ tail args) ndynwind) 
+                   (head args)
 
 We first check to see if there is a `before` function stored in the continuation from a previous `dynamic-wind` operation. Such a function is guaranteed to execute each time the continuation is called, so we execute it if present. Then husk checks the number of arguments to the continuation, and hands them - along with the continuation itself - to `continueEval` to resume execution at the new continuation. We have just replaced the current continuation!
 
@@ -232,7 +232,8 @@ The following case is a bit more interesting; here we execute a Scheme function:
             -- Continue evaluation within the body, preserving the outer continuation.
             --
             evalBody evBody env = case cont of
-                Continuation _ (Just (SchemeBody cBody)) (Just cCont) _ cDynWind -> if length cBody == 0
+                Continuation _ (Just (SchemeBody cBody)) (Just cCont) _ cDynWind -> 
+                  if length cBody == 0
                     then continueWCont env (evBody) cCont cDynWind
                     else continueWCont env (evBody) cont cDynWind
                 Continuation _ _ _ _ cDynWind -> continueWCont env (evBody) cont cDynWind
@@ -245,7 +246,8 @@ The following case is a bit more interesting; here we execute a Scheme function:
                     (Just cwcCont) Nothing cwcDynWind) $ Nil ""
     
             bindVarArgs arg env = case arg of
-              Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
+              Just argName -> 
+                liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
               Nothing -> return env
 
 This function uses a series of helper functions, organized into a single pipeline:
@@ -289,7 +291,7 @@ But eventually `eval` has to return *something*, right? Well, yes, but since Has
 
 Initially I thought a lower-level construct might be required to implement continuations and proper tail recursion. For example, many [Schemes written in C use a trampoline](http://home.pipeline.com/~hbaker1/CheneyMTA.html):
 
->A popular method for achieving proper tail recursion in a non-tail-recursive C implementation is a trampoline.[2] A trampoline is an outer function which iteratively calls an inner function. The inner function returns the address of another function to call, and the outer function then calls this new function. In other words, when an inner function wishes to call another inner function tail-recursively, it returns the address of the function it wants to call back to the trampoline, which then calls the returned function. By returning before calling, the stack is first popped so that it does not grow without bound on a simple iteration. Unfortunately, the cost of such a trampoline function call is 2-3 times slower than a normal C call, and it requires that arguments be passed in global variables [Tarditi92].
+>A popular method for achieving proper tail recursion in a non-tail-recursive C implementation is a trampoline. A trampoline is an outer function which iteratively calls an inner function. The inner function returns the address of another function to call, and the outer function then calls this new function. In other words, when an inner function wishes to call another inner function tail-recursively, it returns the address of the function it wants to call back to the trampoline, which then calls the returned function. By returning before calling, the stack is first popped so that it does not grow without bound on a simple iteration. Unfortunately, the cost of such a trampoline function call is 2-3 times slower than a normal C call, and it requires that arguments be passed in global variables.
 >
 >Appel's unpublished suggestion for achieving proper tail recursion in C uses a much larger fixed-size stack, continuation-passing style, and also does not put any arguments or data on the C stack. When the stack is about to overflow, the address of the next function to call is longjmp'ed (or return'ed) to a trampoline. Appel's method avoids making a large number of small trampoline bounces by occasionally jumping off the Empire State Building.
 
