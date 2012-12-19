@@ -146,7 +146,7 @@ compileSchemeFile env stdlib srfi55 filename = do
   -- TODO: it is only temporary to compile the standard library each time. It should be 
   --       precompiled and just added during the ghc compilation
   libsC <- compileLisp env stdlib "run" (Just "exec55")
-  libSrfi55C <- compileLisp env srfi55 "exec55" (Just "exec")
+  libSrfi55C <- compileLisp env srfi55 "exec55" (Just "exec55_2")
   liftIO $ Language.Scheme.Core.registerExtensions env getDataFileName
 
   -- Initialize the compiler module and begin
