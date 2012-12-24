@@ -15,6 +15,26 @@ husk may be installed using [cabal](http://www.haskell.org/cabal/):
     cabal update
     cabal install husk-scheme
 
+Before running husk you may also need to add the cabal executable directory to your path. On Linux this is `~/.cabal/bin`. Now you are ready to start up the interpreter:
+
+    justin@my-pc$ huski
+      _               _        __                 _                          
+     | |             | |       \\\               | |                         
+     | |__  _   _ ___| | __     \\\      ___  ___| |__   ___ _ __ ___   ___  
+     | '_ \| | | / __| |/ /    //\\\    / __|/ __| '_ \ / _ \ '_ ` _ \ / _ \ 
+     | | | | |_| \__ \   <    /// \\\   \__ \ (__| | | |  __/ | | | | |  __/ 
+     |_| |_|\__,_|___/_|\_\  ///   \\\  |___/\___|_| |_|\___|_| |_| |_|\___| 
+                                                                             
+     http://justinethier.github.com/husk-scheme                              
+     (c) 2010-2012 Justin Ethier                                             
+     Version 3.6.2 
+                                                                             
+    huski> (define (hello) 'world)
+    (lambda () ...)
+    huski> (hello)
+    world
+    huski>
+
 husk has been tested on Windows, Linux, and FreeBSD.
 
 More information is available on the [husk website](http://justinethier.github.com/husk-scheme).
