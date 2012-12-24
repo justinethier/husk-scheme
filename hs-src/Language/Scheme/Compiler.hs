@@ -22,7 +22,7 @@ be made for time and space...
 -}
 
 module Language.Scheme.Compiler where 
-import qualified Language.Scheme.Core (apply, escapeBackslashes)
+import qualified Language.Scheme.Core (apply, escapeBackslashes, evalLisp)
 import qualified Language.Scheme.Macro
 import Language.Scheme.Primitives
 import Language.Scheme.Types
@@ -33,7 +33,7 @@ import Data.Complex
 import qualified Data.List
 import qualified Data.Map
 import Data.Ratio
---import Debug.Trace
+import Debug.Trace
 
 -- A type to store options passed to compile
 -- eventually all of this might be able to be integrated into a Compile monad
@@ -651,6 +651,22 @@ compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
 
 -- TODO:
 -- Testing this out; idea is to compile-in any code injected via load
+compile env (List [Atom "load", filename, envSpec]) copts = do
+  -- More TODO:
+  -- Hacking around, the issue with require-extension / and-let* is that
+  -- the compiler loads (and-let*) and attempts to compile the argument
+  -- () which cannot be evaluated, hence the special form error on ()
+  --
+  -- LispEnv env
+  y <- Language.Scheme.Core.evalLisp env envSpec
+  -- TODO: I think this is no good because current-environment is really the
+  -- same as env here. it would need to be evaluated and stored when it is first found
+  -- hmm...not quite sure how to proceed here, need to think on it
+  LispEnv env' <- Language.Scheme.Core.evalLisp env y
+  compile env' (List [Atom "load", filename]) copts
+compile env (List [Atom "load", Atom filename]) copts = do
+  String filename' <- getVar env filename
+  compile env (List [Atom "load", String filename']) copts
 compile env (List [Atom "load", String filename]) copts = do -- TODO: allow filename from a var, support env optional arg
  Atom symEntryPt <- _gensym "load"
  result <- compileLisp env filename symEntryPt Nothing
