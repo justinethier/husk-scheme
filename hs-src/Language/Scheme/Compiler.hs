@@ -649,6 +649,18 @@ compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
  return $ [entryPt, compiledUpdate] ++ compiledIdx
 -- TODO: eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 
+-- TODO:
+-- Testing this out; idea is to compile-in any code injected via
+-- (load)...
+--
+-- compile env (List [Atom "load", String filename]) copts = do -- TODO: allow filename from a var, support env optional arg
+--  Atom symEntryPt <- _gensym "load"
+--  result <- compileLisp env filename symEntryPt $ coptsNextFunc copts
+--  return $ result ++ 
+--    [createAstFunc copts [
+--      AstValue $ "  result <- " ++ symEntryPt ++ " env cont (Nil \"\") Nothing",
+--      createAstCont copts "result" ""]]
+
 -- FUTURE: eventually it should be possible to evaluate the args instead of assuming
 -- that they are all strings, but lets keep it simple for now
 compile env (List [Atom "load-ffi", 
