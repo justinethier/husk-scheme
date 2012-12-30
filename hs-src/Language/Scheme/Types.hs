@@ -29,6 +29,7 @@ module Language.Scheme.Types
         , List
         , DottedList
         , Vector
+        , ByteVector
         , HashTable
         , Number
         , Float
@@ -92,11 +93,13 @@ module Language.Scheme.Types
 import Control.Monad.Error
 import Data.Complex
 import Data.Array
+import qualified Data.ByteString as BS
 import Data.Dynamic
 import Data.IORef
 import qualified Data.Map
 -- import Data.Maybe
 import Data.Ratio
+import Data.Word
 import System.IO
 import Text.ParserCombinators.Parsec hiding (spaces)
 
@@ -189,6 +192,8 @@ data LispVal = Atom String
  -- ^Pair
  | Vector (Array Int LispVal)
  -- ^Vector
+ | ByteVector BS.ByteString
+ -- ^ByteVector from R7RS
  | HashTable (Data.Map.Map LispVal LispVal)
  {- ^Hash table.
  Technically this could be a derived data type instead of being built-in to the
@@ -339,6 +344,7 @@ eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
 eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)]
+eqv [(ByteVector a), (ByteVector b)] = return $ Bool $ a == b
 eqv [(HashTable arg1), (HashTable arg2)] =
   eqv [List $ (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg1),
        List $ (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg2)]
@@ -405,6 +411,7 @@ showVal (Float contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
 showVal (Vector contents) = "#(" ++ (unwordsList $ Data.Array.elems contents) ++ ")"
+showVal (ByteVector contents) = "#u8(" ++ unwords (map show (BS.unpack contents)) ++ ")"
 showVal (HashTable _) = "<hash-table>"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showVal t ++ ")"

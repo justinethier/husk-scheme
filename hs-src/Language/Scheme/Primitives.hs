@@ -29,6 +29,9 @@ module Language.Scheme.Primitives (
  , vectorToList 
  , listToVector
  , makeVector
+ -- ** Bytevectors
+ , makeByteVector
+ , byteVectorLength
  -- ** Hash Table
  , hashTblExists 
  , hashTblRef
@@ -73,9 +76,11 @@ module Language.Scheme.Primitives (
  , isProcedure 
  , isList 
  , isVector 
+ , isByteVector
  , isNull 
  , isEOFObject 
  , isSymbol 
+
  -- ** Utility functions
  , unpackEquals 
  , boolBinop 
@@ -114,10 +119,12 @@ import Language.Scheme.Parser
 import Language.Scheme.Types
 --import qualified Control.Exception
 import Control.Monad.Error
+import qualified Data.ByteString as BS
 import Data.Char hiding (isSymbol)
 import Data.Array
 import Data.Unique
 import qualified Data.Map
+import Data.Word
 import System.IO
 import System.Directory (doesFileExist, removeFile)
 import System.IO.Error
@@ -331,6 +338,21 @@ listToVector [(List l)] = return $ Vector $ (listArray (0, length l - 1)) l
 listToVector [badType] = throwError $ TypeMismatch "list" badType
 listToVector badArgList = throwError $ NumArgs 1 badArgList
 
+-- ------------ Bytevector Primitives --------------
+makeByteVector :: [LispVal] -> ThrowsError LispVal
+makeByteVector [(Number n)] = do
+  let ls = replicate (fromInteger n) (0 :: Word8)
+  return $ ByteVector $ BS.pack ls
+makeByteVector [Number n, Number byte] = do
+  let ls = replicate (fromInteger n) (fromInteger byte :: Word8)
+  return $ ByteVector $ BS.pack ls
+makeByteVector [badType] = throwError $ TypeMismatch "integer" badType
+makeByteVector badArgList = throwError $ NumArgs 2 badArgList
+
+byteVectorLength [(ByteVector bv)] = return $ Number $ toInteger $ BS.length bv
+byteVectorLength [badType] = throwError $ TypeMismatch "bytevector" badType
+byteVectorLength badArgList = throwError $ NumArgs 1 badArgList
+
 -- ------------ Hash Table Primitives --------------
 
 -- Future: support (equal?), (hash) parameters
@@ -515,6 +537,10 @@ isVector (Vector _) = return $ Bool True
 isVector _ = return $ Bool False
 isList (List _) = return $ Bool True
 isList _ = return $ Bool False
+
+isByteVector :: LispVal -> ThrowsError LispVal
+isByteVector (ByteVector _) = return $ Bool True
+isByteVector _ = return $ Bool False
 
 isNull :: [LispVal] -> ThrowsError LispVal
 isNull ([List []]) = return $ Bool True

@@ -1080,6 +1080,10 @@ primitives = [("+", numAdd),
               ("vector->list", vectorToList),
               ("list->vector", listToVector),
 
+              ("bytevector?", unaryOp isByteVector),
+              ("make-bytevector", makeByteVector),
+              ("bytevector-length", byteVectorLength),
+
               ("make-hash-table", hashTblMake),
               ("hash-table?", isHashTbl),
               ("hash-table-exists?", hashTblExists),
