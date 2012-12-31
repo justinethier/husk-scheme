@@ -36,6 +36,7 @@ module Language.Scheme.Parser
     , parseEscapedChar 
     , parseString 
     , parseVector
+    , parseByteVector
     , parseHashTable
     , parseList
     , parseDottedList
@@ -47,10 +48,12 @@ module Language.Scheme.Parser
 import Language.Scheme.Types
 import Control.Monad.Error
 import Data.Array
+import qualified Data.ByteString as BS
 import qualified Data.Char as Char
 import Data.Complex
-import Data.Ratio
 import qualified Data.Map
+import Data.Ratio
+import Data.Word
 import Numeric
 import Text.ParserCombinators.Parsec hiding (spaces)
 import Text.Parsec.Language
@@ -282,6 +285,17 @@ parseVector = do
   vals <- sepBy parseExpr whiteSpace
   return $ Vector (listArray (0, (length vals - 1)) vals)
 
+-- TODO: get this working:
+parseByteVector :: Parser LispVal
+parseByteVector = do
+-- TODO:
+--  ns <- sepBy parseNumber whiteSpace
+  ns <- sepBy parseExpr whiteSpace
+  return $ ByteVector $ BS.pack $ map conv ns
+ where 
+   conv (Number n) = fromInteger n :: Word8
+   conv n = 0 :: Word8
+
 -- |Parse a hash table. The table is either empty or is made up of
 --  an alist (associative list)
 parseHashTable :: Parser LispVal
@@ -372,6 +386,10 @@ parseExpr =
   <|> parseUnquoteSpliced
   <|> do _ <- try (lexeme $ string "#(")
          x <- parseVector
+         _ <- lexeme $ char ')'
+         return x
+  <|> do _ <- try (lexeme $ string "#u8(")
+         x <- parseByteVector
          _ <- lexeme $ char ')'
          return x
 --  <|> do _ <- try (lexeme $ string "#hash(")
