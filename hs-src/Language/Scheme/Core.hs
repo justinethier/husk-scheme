@@ -235,6 +235,7 @@ eval env cont val@(Number _) = continueEval env cont val
 eval env cont val@(Bool _) = continueEval env cont val
 eval env cont val@(HashTable _) = continueEval env cont val
 eval env cont val@(Vector _) = continueEval env cont val
+eval env cont val@(ByteVector _) = continueEval env cont val
 eval env cont val@(Pointer _ _) = continueEval env cont val
 eval env cont (Atom a) = do
   v <- getVar env a
@@ -244,6 +245,7 @@ eval env cont (Atom a) = do
     DottedList _ _ -> Pointer a env
     String _ -> Pointer a env
     Vector _ -> Pointer a env
+    ByteVector _ -> Pointer a env
     HashTable _ -> Pointer a env
 #endif
     _ -> v

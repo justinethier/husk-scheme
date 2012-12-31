@@ -29,11 +29,13 @@ import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
 import qualified Data.Array
+import qualified Data.ByteString as BS
 import Data.Complex
 import qualified Data.List
 import qualified Data.Map
 import Data.Ratio
-import Debug.Trace
+import Data.Word
+-- import Debug.Trace
 
 -- A type to store options passed to compile
 -- eventually all of this might be able to be integrated into a Compile monad
@@ -110,6 +112,9 @@ ast2Str (Vector v) = do
   let ls = Data.Array.elems v
       size = (length ls) - 1
   "Vector (listArray (0, " ++ show size ++ ")" ++ "[" ++ joinL (map ast2Str ls) "," ++ "])"
+ast2Str (ByteVector bv) = do
+  let ls = BS.unpack bv
+  "ByteVector ( BS.pack " ++ "[" ++ joinL (map show ls) "," ++ "])"
 ast2Str (List ls) = "List [" ++ joinL (map ast2Str ls) "," ++ "]"
 ast2Str (DottedList ls l) = 
   "DottedList [" ++ joinL (map ast2Str ls) "," ++ "] $ " ++ ast2Str l
@@ -129,9 +134,11 @@ headerImports = [
  , "Language.Scheme.Variables -- Scheme variable operations "
  , "Control.Monad.Error "
  , "Data.Array "
+ , " qualified Data.ByteString as BS "
  , "Data.Complex "
  , " qualified Data.Map "
  , "Data.Ratio "
+ , "Data.Word "
  , "System.IO "]
 
 header :: String -> [String]
@@ -209,6 +216,7 @@ compile _ (Number n) copts = compileScalar ("  return $ Number (" ++ (show n) ++
 compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
 -- TODO: eval env cont val@(HashTable _) = continueEval env cont val
 compile _ v@(Vector _) copts = compileScalar (" return $ " ++ ast2Str v) copts
+compile _ v@(ByteVector _) copts = compileScalar (" return $ " ++ ast2Str v) copts
 compile _ ht@(HashTable _) copts = compileScalar (" return $ " ++ ast2Str ht) copts
 compile _ (Atom a) copts = do
  c <- return $ createAstCont copts "val" ""
@@ -219,6 +227,7 @@ compile _ (Atom a) copts = do
    AstValue $ "    DottedList _ _ -> Pointer \"" ++ a ++ "\" env",
    AstValue $ "    String _ -> Pointer \"" ++ a ++ "\" env",
    AstValue $ "    Vector _ -> Pointer \"" ++ a ++ "\" env",
+   AstValue $ "    ByteVector _ -> Pointer \"" ++ a ++ "\" env",
    AstValue $ "    HashTable _ -> Pointer \"" ++ a ++ "\" env",
    AstValue $ "    _ -> v"], c]
 
