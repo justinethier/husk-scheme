@@ -289,11 +289,12 @@ parseVector = do
 parseByteVector :: Parser LispVal
 parseByteVector = do
 -- TODO:
---  ns <- sepBy parseNumber whiteSpace
-  ns <- sepBy parseExpr whiteSpace
-  return $ ByteVector $ BS.pack $ map conv ns
+  ns <- sepBy parseNumber whiteSpace
+-- WTF does BV not work when V works below???
+--  return $ ByteVector $ BS.pack $ map conv ns
+  return $ Vector (listArray (0, (length ns - 1)) ns)
  where 
-   conv (Number n) = fromInteger n :: Word8
+--   conv (Number n) = fromInteger n :: Word8
    conv n = 0 :: Word8
 
 -- |Parse a hash table. The table is either empty or is made up of
