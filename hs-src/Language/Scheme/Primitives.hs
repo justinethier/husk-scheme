@@ -31,7 +31,9 @@ module Language.Scheme.Primitives (
  , makeVector
  -- ** Bytevectors
  , makeByteVector
+ , byteVector
  , byteVectorLength
+ , byteVectorRef
  -- ** Hash Table
  , hashTblExists 
  , hashTblRef
@@ -326,7 +328,11 @@ vectorLength [(Vector v)] = return $ Number $ toInteger $ length (elems v)
 vectorLength [badType] = throwError $ TypeMismatch "vector" badType
 vectorLength badArgList = throwError $ NumArgs 1 badArgList
 
-vectorRef [(Vector v), (Number n)] = return $ v ! (fromInteger n)
+vectorRef [(Vector v), (Number n)] = do
+    let len = toInteger $ (length $ elems v) - 1
+    if n > len || n < 0
+       then throwError $ Default "Invalid index"
+       else return $ v ! (fromInteger n)
 vectorRef [badType] = throwError $ TypeMismatch "vector integer" badType
 vectorRef badArgList = throwError $ NumArgs 2 badArgList
 
@@ -339,7 +345,7 @@ listToVector [badType] = throwError $ TypeMismatch "list" badType
 listToVector badArgList = throwError $ NumArgs 1 badArgList
 
 -- ------------ Bytevector Primitives --------------
-makeByteVector :: [LispVal] -> ThrowsError LispVal
+makeByteVector, byteVector, byteVectorLength, byteVectorRef :: [LispVal] -> ThrowsError LispVal
 makeByteVector [(Number n)] = do
   let ls = replicate (fromInteger n) (0 :: Word8)
   return $ ByteVector $ BS.pack ls
@@ -349,9 +355,23 @@ makeByteVector [Number n, Number byte] = do
 makeByteVector [badType] = throwError $ TypeMismatch "integer" badType
 makeByteVector badArgList = throwError $ NumArgs 2 badArgList
 
+byteVector bs = do
+ return $ ByteVector $ BS.pack $ map conv bs
+ where 
+   conv (Number n) = fromInteger n :: Word8
+   conv n = 0 :: Word8
+
 byteVectorLength [(ByteVector bv)] = return $ Number $ toInteger $ BS.length bv
 byteVectorLength [badType] = throwError $ TypeMismatch "bytevector" badType
 byteVectorLength badArgList = throwError $ NumArgs 1 badArgList
+
+byteVectorRef [(ByteVector bv), (Number n)] = do
+    let len = toInteger $ (BS.length bv) - 1
+    if n > len || n < 0
+       then throwError $ Default "Invalid index"
+       else return $ Number $ toInteger $ BS.index bv (fromInteger n)
+byteVectorRef [badType] = throwError $ TypeMismatch "bytevector integer" badType
+byteVectorRef badArgList = throwError $ NumArgs 2 badArgList
 
 -- ------------ Hash Table Primitives --------------
 

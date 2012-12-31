@@ -1084,7 +1084,9 @@ primitives = [("+", numAdd),
 
               ("bytevector?", unaryOp isByteVector),
               ("make-bytevector", makeByteVector),
+              ("bytevector", byteVector),
               ("bytevector-length", byteVectorLength),
+              ("bytevector-u8-ref", byteVectorRef),
 
               ("make-hash-table", hashTblMake),
               ("hash-table?", isHashTbl),
