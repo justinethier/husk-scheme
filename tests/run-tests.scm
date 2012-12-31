@@ -25,6 +25,7 @@
 (let () (load "t-storage.scm"))
 (let () (load "t-string.scm"))
 (let () (load "t-vector.scm"))
+(let () (load "t-bytevector.scm"))
 ; Macro tests
 (let () (load "t-macro.scm"))
 (let () (load "t-macro-lists.scm"))
