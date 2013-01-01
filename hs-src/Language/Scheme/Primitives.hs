@@ -34,6 +34,8 @@ module Language.Scheme.Primitives (
  , byteVector
  , byteVectorLength
  , byteVectorRef
+ , byteVectorUtf2Str
+ , byteVectorStr2Utf
  -- ** Hash Table
  , hashTblExists 
  , hashTblRef
@@ -122,6 +124,7 @@ import Language.Scheme.Types
 --import qualified Control.Exception
 import Control.Monad.Error
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.UTF8 as BSU
 import Data.Char hiding (isSymbol)
 import Data.Array
 import Data.Unique
@@ -345,7 +348,7 @@ listToVector [badType] = throwError $ TypeMismatch "list" badType
 listToVector badArgList = throwError $ NumArgs 1 badArgList
 
 -- ------------ Bytevector Primitives --------------
-makeByteVector, byteVector, byteVectorLength, byteVectorRef :: [LispVal] -> ThrowsError LispVal
+makeByteVector, byteVector, byteVectorLength, byteVectorRef, byteVectorUtf2Str, byteVectorStr2Utf :: [LispVal] -> ThrowsError LispVal
 makeByteVector [(Number n)] = do
   let ls = replicate (fromInteger n) (0 :: Word8)
   return $ ByteVector $ BS.pack ls
@@ -372,6 +375,18 @@ byteVectorRef [(ByteVector bv), (Number n)] = do
        else return $ Number $ toInteger $ BS.index bv (fromInteger n)
 byteVectorRef [badType] = throwError $ TypeMismatch "bytevector integer" badType
 byteVectorRef badArgList = throwError $ NumArgs 2 badArgList
+
+byteVectorUtf2Str [(ByteVector bv)] = do
+    return $ String $ BSU.toString bv 
+-- TODO: need to support other overloads of this function
+byteVectorUtf2Str [badType] = throwError $ TypeMismatch "bytevector" badType
+byteVectorUtf2Str badArgList = throwError $ NumArgs 1 badArgList
+byteVectorStr2Utf [(String s)] = do
+    return $ ByteVector $ BSU.fromString s
+-- TODO: need to support other overloads of this function
+byteVectorStr2Utf [badType] = throwError $ TypeMismatch "string" badType
+byteVectorStr2Utf badArgList = throwError $ NumArgs 1 badArgList
+
 
 -- ------------ Hash Table Primitives --------------
 

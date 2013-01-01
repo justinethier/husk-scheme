@@ -45,9 +45,11 @@
 ;=⇒ #u8(0 1 2 3 4 5)
 
 ; TODO: (6 UTF-8 / string conversion functions)
-;(utf8->string #u8(#x41))
-;(string->utf8 "λ")
-;=⇒ "A"
-;=⇒ #u8(#xCE #xBB)
+(assert/equal
+    (utf8->string #u8(#x41))
+    "A")
+(assert/equal
+    (string->utf8 "λ")
+    #u8(#xCE #xBB))
 
 (unit-test-handler-results)
