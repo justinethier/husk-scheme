@@ -11,43 +11,43 @@
 (assert/equal (bytevector? #u8(1 2 3 4 5)) #t)
 (assert/equal (bytevector? '#(1 2 3 4 5)) #f)
 
-;(assert/equal (make-vector 4 "test") '#("test" "test" "test" "test"))
-;(assert/equal (vector-length (make-vector 4 "test")) 4)
-;(assert/equal (vector-length '#()) 0)
-;(assert/equal (vector-ref '#(1) 0) 1)
-;
-;(define vec '#(1 2 3 4))
-;(vector-fill! vec "Num")
-;(assert/equal (id vec) '#("Num" "Num" "Num" "Num"))
-;
-;(assert/equal (eqv? '#("Num" "Num" "Num") '#("Num" "Num" "Num")) #t)
-;(assert/equal (eqv? '#("Num" "Num" "Num") '#("Num" "Num" "Num2")) #f)
-;(assert/equal (eqv? '#("Num" "Num" "Num") '#("Num" "Num" 2)) #f)
-;(assert/equal (eqv? '#("1" "2" "3") '#(1 2 3)) #f)
-;(assert/equal (equal? '#("1" "2" "3") '#(1 2 3)) #t)
-;
-;(define foo 1)
-;(define bar 2)
-;(assert/equal `#(,foo ,bar) '#(1 2))
-;(assert/equal `#() '#())
-;(assert/equal (vector 'a 'b 'c)
-;              '#(a b c))
-;(assert/equal
-;  (let ((vec (vector 0 '(2 2 2 2) "Anna")))
-;    (vector-set! vec 1 '("Sue" "Sue"))
-;      vec)
-;  '#(0 ("Sue" "Sue") "Anna"))
-;
-;(assert/equal (let ((vec (vector 0 1 2 3 4)))
-;    (vector-fill! vec 5))
-;    '#(5 5 5 5 5))
-;
-;(assert/equal (let ((vec (vector 0 1 2 3 4)))
-;    (vector->list vec))
-;    '(0 1 2 3 4))
-;
-;(assert/equal (let ((lst (list 0 1 2 3 4)))
-;    (list->vector lst))
-;    #(0 1 2 3 4))
-;
+(assert/equal 
+    (make-bytevector 2 12)
+    #u8(12 12))
+
+(assert/equal (bytevector 1 3 5 1 3 5) #u8(1 3 5 1 3 5))
+(assert/equal (bytevector) #u8())
+(assert/equal (bytevector-length #u8(1 3 5 1 3 5)) 6)
+(assert/equal 
+    (bytevector-u8-ref #u8(1 1 2 3 5 8 13 21) 5)
+    8)
+
+; TODO: need a special form for set!
+;(let ((bv (bytevector 1 2 3 4)
+;(bytevector-u8-set! bv 1 3)
+;bv)
+;=⇒ #u8(1 3 3 4)
+
+; TODO:
+;define a #u8(1 2 3 4 5))
+;(bytevector-copy a 2 4))
+;=⇒ #u8(3 4)
+
+; TODO: bytevector-copy! (a special form? stdlib function?)
+;(define a (bytevector 1 2 3 4 5))
+;(define b (bytevector 10 20 30 40 50))
+;(bytevector-copy! b 1 a 0 2)
+;b
+;=⇒ #u8(10 1 2 40 50)
+
+; TODO:
+;(bytevector-append #u8(0 1 2) #u8(3 4 5))
+;=⇒ #u8(0 1 2 3 4 5)
+
+; TODO: (6 UTF-8 / string conversion functions)
+;(utf8->string #u8(#x41))
+;(string->utf8 "λ")
+;=⇒ "A"
+;=⇒ #u8(#xCE #xBB)
+
 (unit-test-handler-results)
