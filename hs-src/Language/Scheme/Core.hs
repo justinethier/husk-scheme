@@ -29,6 +29,7 @@ module Language.Scheme.Core
     , showBanner
     , substr
     , updateVector
+    , updateByteVector
     ) where
 #ifdef UseFfi
 import qualified Language.Scheme.FFI
@@ -41,8 +42,10 @@ import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
 import Data.Array
+import qualified Data.ByteString as BS
 import qualified Data.Char
 import qualified Data.Map
+import Data.Word
 import qualified System.Exit
 import System.IO
 -- import Debug.Trace
@@ -540,35 +543,34 @@ eval env cont fargs@(List (Atom "vector-set!" : args)) = do
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs 3 args
 
--- TODO:
--- eval env cont args@(List [Atom "bytevector-u8-set!", Atom var, i, object]) = do
---  bound <- liftIO $ isRecBound env "bytevector-u8-set!"
---  if bound
---   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
---   else meval env (makeCPS env cont cpsObj) i
---  where
---         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
---         cpsObj e c idx _ = meval e (makeCPSWArgs e c cpsVec $ [idx]) object
--- 
---         cpsVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
---         cpsVec e c obj (Just [idx]) = (meval e (makeCPSWArgs e c cpsUpdateVec $ [idx, obj]) =<< getVar e var)
---         cpsVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsVec"
--- 
---         cpsUpdateVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
---         cpsUpdateVec e c vec (Just [idx, obj]) =
---             updateByteVector vec idx obj >>= updateObject e var >>= continueEval e c
---         cpsUpdateVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateVec"
--- 
--- eval env cont args@(List [Atom "bytevector-u8-set!" , nonvar , _ , _]) = do 
---  bound <- liftIO $ isRecBound env "bytevector-u8-set!"
---  if bound
---   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
---   else throwError $ TypeMismatch "variable" nonvar
--- eval env cont fargs@(List (Atom "bytevector-u8-set!" : args)) = do 
---  bound <- liftIO $ isRecBound env "bytevector-u8-set!"
---  if bound
---   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
---   else throwError $ NumArgs 3 args
+eval env cont args@(List [Atom "bytevector-u8-set!", Atom var, i, object]) = do
+ bound <- liftIO $ isRecBound env "bytevector-u8-set!"
+ if bound
+  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
+  else meval env (makeCPS env cont cpsObj) i
+ where
+        cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsObj e c idx _ = meval e (makeCPSWArgs e c cpsVec $ [idx]) object
+
+        cpsVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsVec e c obj (Just [idx]) = (meval e (makeCPSWArgs e c cpsUpdateVec $ [idx, obj]) =<< getVar e var)
+        cpsVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsVec"
+
+        cpsUpdateVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsUpdateVec e c vec (Just [idx, obj]) =
+            updateByteVector vec idx obj >>= updateObject e var >>= continueEval e c
+        cpsUpdateVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateVec"
+
+eval env cont args@(List [Atom "bytevector-u8-set!" , nonvar , _ , _]) = do 
+ bound <- liftIO $ isRecBound env "bytevector-u8-set!"
+ if bound
+  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
+  else throwError $ TypeMismatch "variable" nonvar
+eval env cont fargs@(List (Atom "bytevector-u8-set!" : args)) = do 
+ bound <- liftIO $ isRecBound env "bytevector-u8-set!"
+ if bound
+  then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
+  else throwError $ NumArgs 3 args
 
 eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
  bound <- liftIO $ isRecBound env "hash-table-set!"
@@ -655,14 +657,19 @@ updateVector ptr@(Pointer _ _) i obj = do
   updateVector vec i obj
 updateVector v _ _ = throwError $ TypeMismatch "vector" v
 
--- TODO:
--- -- |A helper function for the special form /(bytevector-u8-set!)/
--- updateByteVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
--- updateByteVector (ByteVector vec) (Number idx) obj = return $ ByteVector $ vec // [(fromInteger idx, obj)]
--- updateByteVector ptr@(Pointer _ _) i obj = do
---   vec <- recDerefPtrs ptr
---   updateByteVector vec i obj
--- updateByteVector v _ _ = throwError $ TypeMismatch "bytevector" v
+-- |A helper function for the special form /(bytevector-u8-set!)/
+updateByteVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
+updateByteVector (ByteVector vec) (Number idx) obj = 
+    case obj of
+        Number byte -> do
+-- TODO: error checking
+           let (h, t) = BS.splitAt (fromInteger idx) vec
+           return $ ByteVector $ BS.concat [h, BS.pack $ [fromInteger byte :: Word8], BS.tail t]
+        badType -> throwError $ TypeMismatch "byte" badType
+updateByteVector ptr@(Pointer _ _) i obj = do
+  vec <- recDerefPtrs ptr
+  updateByteVector vec i obj
+updateByteVector v _ _ = throwError $ TypeMismatch "bytevector" v
 
 {- Prepare for apply by evaluating each function argument,
    and then execute the function via 'apply' -}

@@ -22,13 +22,12 @@
     (bytevector-u8-ref #u8(1 1 2 3 5 8 13 21) 5)
     8)
 
-; TODO: need a special form for set!
-; TODO: interpreter support
 ; TODO: compiler support
-;(let ((bv (bytevector 1 2 3 4)
-;(bytevector-u8-set! bv 1 3)
-;bv)
-;=⇒ #u8(1 3 3 4)
+(assert/equal 
+    (let ((bv (bytevector 1 2 3 4)))
+        (bytevector-u8-set! bv 1 3)
+        bv)
+    #u8(1 3 3 4))
 
 ; TODO:
 ;define a #u8(1 2 3 4 5))
