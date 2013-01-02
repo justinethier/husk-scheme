@@ -23,6 +23,8 @@
     8)
 
 ; TODO: need a special form for set!
+; TODO: interpreter support
+; TODO: compiler support
 ;(let ((bv (bytevector 1 2 3 4)
 ;(bytevector-u8-set! bv 1 3)
 ;bv)
