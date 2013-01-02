@@ -1087,6 +1087,7 @@ primitives = [("+", numAdd),
               ("bytevector", byteVector),
               ("bytevector-length", byteVectorLength),
               ("bytevector-u8-ref", byteVectorRef),
+              ("bytevector-append", byteVectorAppend),
               ("utf8->string", byteVectorUtf2Str),
               ("string->utf8", byteVectorStr2Utf),
 

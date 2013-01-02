@@ -34,6 +34,7 @@ module Language.Scheme.Primitives (
  , byteVector
  , byteVectorLength
  , byteVectorRef
+ , byteVectorAppend
  , byteVectorUtf2Str
  , byteVectorStr2Utf
  -- ** Hash Table
@@ -348,7 +349,7 @@ listToVector [badType] = throwError $ TypeMismatch "list" badType
 listToVector badArgList = throwError $ NumArgs 1 badArgList
 
 -- ------------ Bytevector Primitives --------------
-makeByteVector, byteVector, byteVectorLength, byteVectorRef, byteVectorUtf2Str, byteVectorStr2Utf :: [LispVal] -> ThrowsError LispVal
+makeByteVector, byteVector, byteVectorLength, byteVectorRef, byteVectorAppend, byteVectorUtf2Str, byteVectorStr2Utf :: [LispVal] -> ThrowsError LispVal
 makeByteVector [(Number n)] = do
   let ls = replicate (fromInteger n) (0 :: Word8)
   return $ ByteVector $ BS.pack ls
@@ -363,6 +364,14 @@ byteVector bs = do
  where 
    conv (Number n) = fromInteger n :: Word8
    conv n = 0 :: Word8
+
+byteVectorAppend bs = do
+    let acc = BS.pack []
+        conv (ByteVector bs) = bs
+        conv x = BS.empty
+        bs' = map conv bs
+    return $ ByteVector $ BS.concat bs'
+-- TODO: error handling
 
 byteVectorLength [(ByteVector bv)] = return $ Number $ toInteger $ BS.length bv
 byteVectorLength [badType] = throwError $ TypeMismatch "bytevector" badType

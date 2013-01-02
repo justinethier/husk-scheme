@@ -40,11 +40,10 @@
 ;b
 ;=⇒ #u8(10 1 2 40 50)
 
-; TODO:
-;(bytevector-append #u8(0 1 2) #u8(3 4 5))
-;=⇒ #u8(0 1 2 3 4 5)
+(assert/equal
+    (bytevector-append #u8(0 1 2) #u8(3 4 5))
+    #u8(0 1 2 3 4 5))
 
-; TODO: (6 UTF-8 / string conversion functions)
 (assert/equal
     (utf8->string #u8(#x41))
     "A")
