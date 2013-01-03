@@ -34,6 +34,7 @@ module Language.Scheme.Primitives (
  , byteVector
  , byteVectorLength
  , byteVectorRef
+ , byteVectorCopy
  , byteVectorAppend
  , byteVectorUtf2Str
  , byteVectorStr2Utf
@@ -349,7 +350,7 @@ listToVector [badType] = throwError $ TypeMismatch "list" badType
 listToVector badArgList = throwError $ NumArgs 1 badArgList
 
 -- ------------ Bytevector Primitives --------------
-makeByteVector, byteVector, byteVectorLength, byteVectorRef, byteVectorAppend, byteVectorUtf2Str, byteVectorStr2Utf :: [LispVal] -> ThrowsError LispVal
+makeByteVector, byteVector, byteVectorLength, byteVectorRef, byteVectorCopy, byteVectorAppend, byteVectorUtf2Str, byteVectorStr2Utf :: [LispVal] -> ThrowsError LispVal
 makeByteVector [(Number n)] = do
   let ls = replicate (fromInteger n) (0 :: Word8)
   return $ ByteVector $ BS.pack ls
@@ -364,6 +365,22 @@ byteVector bs = do
  where 
    conv (Number n) = fromInteger n :: Word8
    conv n = 0 :: Word8
+
+byteVectorCopy [ByteVector bv] = do
+    return $ ByteVector $ BS.copy
+        bv
+byteVectorCopy [ByteVector bv, Number start] = do
+    return $ ByteVector $ BS.drop 
+        (fromInteger start)
+        bv
+byteVectorCopy [ByteVector bv, Number start, Number end] = do
+    return $ ByteVector $ BS.take 
+        (fromInteger $ end - start)
+        (BS.drop 
+            (fromInteger start)
+            bv)
+byteVectorCopy [badType] = throwError $ TypeMismatch "bytevector" badType
+byteVectorCopy badArgList = throwError $ NumArgs 1 badArgList
 
 byteVectorAppend bs = do
     let acc = BS.pack []

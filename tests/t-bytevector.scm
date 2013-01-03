@@ -29,10 +29,11 @@
         bv)
     #u8(1 3 3 4))
 
-; TODO:
-;define a #u8(1 2 3 4 5))
-;(bytevector-copy a 2 4))
-;=⇒ #u8(3 4)
+(let ()
+    (define a #u8(1 2 3 4 5))
+    (assert/equal
+        (bytevector-copy a 2 4)
+        #u8(3 4)))
 
 ; TODO: bytevector-copy! (a special form? stdlib function?)
 ;(define a (bytevector 1 2 3 4 5))
