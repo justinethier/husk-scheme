@@ -35,12 +35,10 @@
         (bytevector-copy a 2 4)
         #u8(3 4)))
 
-; TODO: bytevector-copy! (a special form? stdlib function?)
-;(define a (bytevector 1 2 3 4 5))
-;(define b (bytevector 10 20 30 40 50))
-;(bytevector-copy! b 1 a 0 2)
-;b
-;=⇒ #u8(10 1 2 40 50)
+(define a (bytevector 1 2 3 4 5))
+(define b (bytevector 10 20 30 40 50))
+(bytevector-copy! b 1 a 0 2)
+(assert/equal b #u8(10 1 2 40 50))
 
 (assert/equal
     (bytevector-append #u8(0 1 2) #u8(3 4 5))

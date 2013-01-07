@@ -325,10 +325,15 @@
 
 ; Bytevector Section
 
-; TODO:
-;(define (bytevector-copy! to at from start end)
-    ;; for FROM start ... end
-    ;; (bytevector-u8-set! to K BYTE[from])
+; TODO: add appropriate overloads, also note this is not the
+; fastest implementation
+(define (bytevector-copy! to at from start end)
+  (do ((i 0 (+ i 1)))
+      ((= i (- end start)))
+    (bytevector-u8-set! 
+        to
+        (+ at i) 
+        (bytevector-u8-ref from (+ start i)))))
 
 ; Continuation Section
 (define (values . things)
