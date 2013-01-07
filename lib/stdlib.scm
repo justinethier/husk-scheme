@@ -323,6 +323,13 @@
      (set! _vec
            (make-vector (vector-length _vec) _fill)))))
 
+; Bytevector Section
+
+; TODO:
+;(define (bytevector-copy! to at from start end)
+    ;; for FROM start ... end
+    ;; (bytevector-u8-set! to K BYTE[from])
+
 ; Continuation Section
 (define (values . things)
     (call-with-current-continuation 
