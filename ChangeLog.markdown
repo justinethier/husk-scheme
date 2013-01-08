@@ -1,7 +1,7 @@
 v3.6.3
 --------
 
-bytevector support
+Added support for R<sup>7</sup>RS bytevectors.
 
 v3.6.2
 --------
