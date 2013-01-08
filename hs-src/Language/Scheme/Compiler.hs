@@ -614,6 +614,30 @@ compile env (List [Atom "vector-set!", Atom var, i, object]) copts = do
 -- TODO: eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
 -- TODO: eval env cont fargs@(List (Atom "vector-set!" : args)) = do 
 
+compile env (List [Atom "bytevector-u8-set!", Atom var, i, object]) copts = do
+ Atom symCompiledIdx <- _gensym "bytevectorSetIdx"
+ Atom symCompiledObj <- _gensym "bytevectorSetObj"
+ Atom symUpdateVec <- _gensym "bytevectorSetUpdate"
+ Atom symIdxWrapper <- _gensym "bytevectorSetIdxWrapper"
+
+ -- Entry point that allows this form to be redefined
+ entryPt <- compileSpecialFormEntryPoint "bytevector-u8-set!" symCompiledIdx copts
+ -- Compile index, then use a wrapper to pass it as an arg while compiling obj
+ compiledIdx <- compileExpr env i symCompiledIdx (Just symIdxWrapper) 
+ compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
+    AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") Nothing " ]
+ compiledObj <- compileExpr env object symCompiledObj Nothing
+ -- Do actual update
+ compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
+    AstValue $ "  vec <- getVar env \"" ++ var ++ "\"",
+    AstValue $ "  result <- updateByteVector vec idx obj >>= updateObject env \"" ++ var ++ "\"",
+    createAstCont copts "result" ""]
+
+ return $ [entryPt, compiledIdxWrapper, compiledUpdate] ++ compiledIdx ++ compiledObj
+
+-- TODO: eval env cont args@(List [Atom "bytevector-u8-set!" , nonvar , _ , _]) = do 
+-- TODO: eval env cont fargs@(List (Atom "bytevector-u8-set!" : args)) = do 
+
 compile env (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) copts = do
  Atom symCompiledIdx <- _gensym "hashTableSetIdx"
  Atom symCompiledObj <- _gensym "hashTableSetObj"

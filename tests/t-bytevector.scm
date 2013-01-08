@@ -22,7 +22,6 @@
     (bytevector-u8-ref #u8(1 1 2 3 5 8 13 21) 5)
     8)
 
-; TODO: compiler support
 (assert/equal 
     (let ((bv (bytevector 1 2 3 4)))
         (bytevector-u8-set! bv 1 3)
