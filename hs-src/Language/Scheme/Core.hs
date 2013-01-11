@@ -20,7 +20,6 @@ module Language.Scheme.Core
     , evalString
     , evalAndPrint
     , apply
-    , continueEval
     -- * Core data
     , primitiveBindings
     , version
@@ -92,9 +91,7 @@ escapeBackslashes s = foldr step [] s
                    | otherwise =  x : xs 
 
 
-{- |Evaluate a string containing Scheme code.
-
-    For example:
+{- |Evaluate a string containing Scheme code
 
 @
 env <- primitiveBindings
@@ -125,7 +122,7 @@ evalLisp env lisp = do
   recDerefPtrs v
 
 -- |Evaluate a lisp data structure and return the LispVal or LispError
---  result directly. For example:
+--  result directly
 -- 
 -- @
 --  result <- evalLisp' env $ List [Atom "/", Number 1, Number 0]
@@ -716,7 +713,10 @@ prepareApply env cont (List (function : functionArgs)) = do
 prepareApply _ _ _ = throwError $ Default "Unexpected error in prepareApply"
 
 -- |Call into a Scheme function
-apply :: LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal
+apply :: LispVal  -- ^ Current continuation
+      -> LispVal  -- ^ Function or continuation to execute
+      -> [LispVal] -- ^ Arguments
+      -> IOThrowsError LispVal -- ^ Final value of computation
 apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
 -- case (trace ("calling into continuation. dynWind = " ++ show ndynwind) ndynwind) of
   case ndynwind of
