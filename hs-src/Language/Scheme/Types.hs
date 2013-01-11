@@ -14,16 +14,20 @@ This module contains top-level data type definitions, environments, error types,
 -}
 
 module Language.Scheme.Types
-    ( Env (..)
+    ( 
+    -- * Environments
+      Env (..)
     , nullEnv 
+    -- * Error Handling
     , LispError (..)
     , ThrowsError 
+    , IOThrowsError 
     , trapError
     , extractValue 
-    , IOThrowsError 
     , liftThrows 
     , runIOThrowsREPL 
     , runIOThrows 
+    -- * Types and related functions
     , LispVal (
           Atom
         , List
@@ -124,10 +128,10 @@ data LispError = NumArgs Integer [LispVal] -- ^Invalid number of function argume
   | TypeMismatch String LispVal -- ^Type error
   | Parser ParseError -- ^Parsing error
   | BadSpecialForm String LispVal -- ^Invalid special (built-in) form
-  | NotFunction String String
-  | UnboundVar String String
+--  | NotFunction String String
+  | UnboundVar String String -- ^ A referenced variable has not been declared
   | DivideByZero -- ^Divide by Zero error
-  | NotImplemented String
+  | NotImplemented String -- ^ Feature is not implemented
   | InternalError String {- ^An internal error within husk; in theory user (Scheme) code
                          should never allow one of these errors to be triggered. -}
   | Default String -- ^Default error
@@ -140,7 +144,7 @@ showError (TypeMismatch expected found) = "Invalid type: expected " ++ expected
                                   ++ ", found " ++ show found
 showError (Parser parseErr) = "Parse error at " ++ ": " ++ show parseErr
 showError (BadSpecialForm message form) = message ++ ": " ++ show form
-showError (NotFunction message func) = message ++ ": " ++ show func
+-- showError (NotFunction message func) = message ++ ": " ++ show func
 showError (UnboundVar message varname) = message ++ ": " ++ varname
 showError (DivideByZero) = "Division by zero"
 showError (NotImplemented message) = "Not implemented: " ++ message
@@ -152,23 +156,24 @@ instance Error LispError where
   noMsg = Default "An error has occurred"
   strMsg = Default
 
+-- |Container used by operations that could throw an error
 type ThrowsError = Either LispError
 
+-- |Error handler that returns a string description of any error
 trapError :: -- forall (m :: * -> *) e.
             (MonadError e m, Show e) =>
              m String -> m String
 trapError action = catchError action (return . show)
 
+-- |Utility function to unwrap a value from ThrowsError
 extractValue :: ThrowsError a -> a
 extractValue (Right val) = val
 extractValue (Left _) = error "Unexpected error in extractValue"
 
--- extractLispVal :: ThrowsError LispVal -> LispVal
--- extractLispVal (Right val) = val
--- extractLispVal (Left err) = Nil $ show err
-
+-- |Container used to provide error handling in the IO monad
 type IOThrowsError = ErrorT LispError IO
 
+-- |Lift a ThrowsError into the IO monad
 liftThrows :: ThrowsError a -> IOThrowsError a
 liftThrows (Left err) = throwError err
 liftThrows (Right val) = return val
@@ -206,9 +211,11 @@ data LispVal = Atom String
  --
  -- Map is technically the wrong structure to use for a hash table since it is based on a binary tree and hence operations tend to be O(log n) instead of O(1). However, according to <http://www.opensubscriber.com/message/haskell-cafe@haskell.org/10779624.html> Map has good performance characteristics compared to the alternatives. So it stays for the moment...
  --
- | Number Integer {- FUTURE: rename this to "Integer" (or "WholeNumber" or something else more meaningful)
+ | Number Integer -- ^Integer number
+ {- FUTURE: rename this to "Integer" (or "WholeNumber" or something else more meaningful)
  Integer -}
- | Float Double {- FUTURE: rename this "Real" instead of "Float"...
+ | Float Double -- ^Double-precision floating point number
+ {- FUTURE: rename this "Real" instead of "Float"...
  Floating point -}
  | Complex (Complex Double)
  -- ^Complex number
@@ -256,7 +263,7 @@ data LispVal = Atom String
  | Syntax { synClosure :: Maybe Env       -- ^ Code env in effect at definition time, if applicable
           , synRenameClosure :: Maybe Env -- ^ Renames (from macro hygiene) in effect at def time;
                                           --   only applicable if this macro defined inside another macro.
-          , synDefinedInMacro :: Bool
+          , synDefinedInMacro :: Bool     -- ^ Set if macro is defined within another macro
           , synIdentifiers :: [LispVal]   -- ^ Literal identifiers from syntax-rules 
           , synRules :: [LispVal]         -- ^ Rules from syntax-rules
    } -- ^ Type to hold a syntax object that is created by a macro definition.
@@ -269,7 +276,9 @@ data LispVal = Atom String
  | SyntaxExplicitRenaming LispVal
    -- ^ Syntax for an explicit-renaming macro
  | LispEnv Env
+   -- ^ Wrapper for a scheme environment
  | EOF
+   -- ^ End of file indicator
  | Nil String
  -- ^Internal use only; do not use this type directly.
 
@@ -306,19 +315,44 @@ showDWVal (DynamicWinders b a) = "(" ++ (show b) ++ " . " ++ (show a) ++ ")"
 
 instance Show DynamicWinders where show = showDWVal
 
--- Make an "empty" continuation that does not contain any code
+-- |Make an "empty" continuation that does not contain any code
 makeNullContinuation :: Env -> LispVal
 makeNullContinuation env = Continuation env Nothing Nothing Nothing Nothing
 
--- Make a continuation that takes a higher-order function (written in Haskell)
-makeCPS :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) -> LispVal
+-- |Make a continuation that takes a higher-order function (written in Haskell)
+makeCPS :: Env 
+        -- ^ Environment
+        -> LispVal 
+        -- ^ Current continuation
+        -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) 
+        -- ^ Haskell function
+        -> LispVal
+        -- ^ The Haskell function packaged as a LispVal
 makeCPS env cont@(Continuation _ _ _ _ dynWind) cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing dynWind
 makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing Nothing -- This overload just here for completeness; it should never be used
 
--- Make a continuation that stores a higher-order function and arguments to that function
-makeCPSWArgs :: Env -> LispVal -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) -> [LispVal] -> LispVal
-makeCPSWArgs env cont@(Continuation _ _ _ _ dynWind) cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont) Nothing dynWind
-makeCPSWArgs env cont cps args = Continuation env (Just (HaskellBody cps (Just args))) (Just cont) Nothing Nothing -- This overload just here for completeness; it should never be used
+-- |Make a continuation that stores a higher-order function and arguments to that function
+makeCPSWArgs :: Env
+        -- ^ Environment
+        -> LispVal 
+        -- ^ Current continuation
+        -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal) 
+        -- ^ Haskell function
+        -> [LispVal]
+        -- ^ Arguments to the function
+        -> LispVal
+        -- ^ The Haskell function packaged as a LispVal
+makeCPSWArgs env cont@(Continuation _ _ _ _ dynWind) cps args = 
+    Continuation 
+        env 
+        (Just (HaskellBody cps (Just args))) 
+        (Just cont) Nothing dynWind
+makeCPSWArgs env cont cps args = 
+    -- This overload just here for completeness; it should never be used
+    Continuation 
+        env 
+        (Just (HaskellBody cps (Just args))) 
+        (Just cont) Nothing Nothing
 
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b
@@ -337,7 +371,10 @@ Others? -}
   compare a b = compare (show a) (show b) -- Hack (??): sort alphabetically when types differ or have no handlers
 
 -- |Compare two 'LispVal' instances
-eqv :: [LispVal] -> ThrowsError LispVal
+eqv :: [LispVal] 
+    -- ^ A list containing two values to compare
+    -> ThrowsError LispVal
+    -- ^ Result wrapped as a Bool
 eqv [(Bool arg1), (Bool arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Number arg1), (Number arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Complex arg1), (Complex arg2)] = return $ Bool $ arg1 == arg2
@@ -389,6 +426,7 @@ eqvList eqvFunc [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == len
                                _ -> False -- OK?
 eqvList _ _ = throwError $ Default "Unexpected error in eqvList"
 
+-- |A more convenient way to call /eqv/
 eqVal :: LispVal -> LispVal -> Bool
 eqVal a b = do
   let result = eqv [a, b]
