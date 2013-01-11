@@ -20,7 +20,6 @@ module Language.Scheme.Types
     , ThrowsError 
     , trapError
     , extractValue 
-    , extractLispVal 
     , IOThrowsError 
     , liftThrows 
     , runIOThrowsREPL 
@@ -164,9 +163,9 @@ extractValue :: ThrowsError a -> a
 extractValue (Right val) = val
 extractValue (Left _) = error "Unexpected error in extractValue"
 
-extractLispVal :: ThrowsError LispVal -> LispVal
-extractLispVal (Right val) = val
-extractLispVal (Left err) = Nil $ show err
+-- extractLispVal :: ThrowsError LispVal -> LispVal
+-- extractLispVal (Right val) = val
+-- extractLispVal (Left err) = Nil $ show err
 
 type IOThrowsError = ErrorT LispError IO
 
