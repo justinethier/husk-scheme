@@ -20,6 +20,7 @@ module Language.Scheme.Core
     , evalString
     , evalAndPrint
     , apply
+    , continueEval
     -- * Core data
     , primitiveBindings
     , version
