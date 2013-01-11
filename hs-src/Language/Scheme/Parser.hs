@@ -271,7 +271,7 @@ parseComplexNumber = do
   _ <- char 'i'
   return $ Complex $ real :+ imag
 
--- Parse an escaped character
+-- |Parse an escaped character
 parseEscapedChar :: forall st .
                     GenParser Char st Char
 parseEscapedChar = do
