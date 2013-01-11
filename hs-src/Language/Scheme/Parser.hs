@@ -20,7 +20,6 @@ module Language.Scheme.Parser
     , readExpr
     , readExprList 
     -- *Low level parsing
-    , symbol
     , parseExpr 
     , parseAtom
     , parseBool
@@ -103,9 +102,11 @@ whiteSpace = P.whiteSpace lexer
 --lexeme :: ParsecT String () Identity a -> ParsecT String () Identity a
 lexeme = P.lexeme lexer
 
+-- |Match a special character
 symbol :: Parser Char
 symbol = oneOf "!$%&|*+-/:<=>?@^_~."
 
+-- |Parse an atom (scheme symbol)
 parseAtom :: Parser LispVal
 parseAtom = do
   atom <- identifier
@@ -113,6 +114,7 @@ parseAtom = do
      then pzero -- Do not match this form
      else return $ Atom atom
 
+-- |Parse a boolean
 parseBool :: Parser LispVal
 parseBool = do _ <- string "#"
                x <- oneOf "tf"
@@ -121,6 +123,7 @@ parseBool = do _ <- string "#"
                           'f' -> Bool False
                           _ -> Bool False
 
+-- |Parse a character
 parseChar :: Parser LispVal
 parseChar = do
   _ <- try (string "#\\")
@@ -132,6 +135,8 @@ parseChar = do
     "newline" -> Char '\n'
     _ -> Char c
 
+
+-- |Parse an integer in octal notation, base 8
 parseOctalNumber :: Parser LispVal
 parseOctalNumber = do
   _ <- try (string "#o")
@@ -142,6 +147,7 @@ parseOctalNumber = do
      1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ Numeric.readOct num !! 0
      _ -> pzero
 
+-- |Parse an integer in binary notation, base 2
 parseBinaryNumber :: Parser LispVal
 parseBinaryNumber = do
   _ <- try (string "#b")
@@ -152,6 +158,7 @@ parseBinaryNumber = do
      1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ Numeric.readInt 2 (`elem` "01") Char.digitToInt num !! 0
      _ -> pzero
 
+-- |Parse an integer in hexadecimal notation, base 16
 parseHexNumber :: Parser LispVal
 parseHexNumber = do
   _ <- try (string "#x")
@@ -227,6 +234,7 @@ parseNumberExponent n = do
   buildResult (Float num) nexp = return $ Float $ num * (10 ** (fromIntegral nexp))
   buildResult _ _ = pzero
 
+-- |Parse a rational number
 parseRationalNumber :: Parser LispVal
 parseRationalNumber = do
   pnumerator <- parseDecimalNumber
@@ -244,6 +252,7 @@ parseRationalNumber = do
                 else return $ Rational $ n % pdenominator
     _ -> pzero
 
+-- |Parse a complex number
 parseComplexNumber :: Parser LispVal
 parseComplexNumber = do
   lispreal <- (try (parseRealNumber) <|> try (parseRationalNumber) <|> parseDecimalNumber)
@@ -262,6 +271,7 @@ parseComplexNumber = do
   _ <- char 'i'
   return $ Complex $ real :+ imag
 
+-- Parse an escaped character
 parseEscapedChar :: forall st .
                     GenParser Char st Char
 parseEscapedChar = do
@@ -273,6 +283,7 @@ parseEscapedChar = do
     'r' -> '\r'
     _ -> c
 
+-- |Parse a string
 parseString :: Parser LispVal
 parseString = do
   _ <- char '"'
@@ -280,11 +291,13 @@ parseString = do
   _ <- char '"'
   return $ String x
 
+-- |Parse a vector
 parseVector :: Parser LispVal
 parseVector = do
   vals <- sepBy parseExpr whiteSpace
   return $ Vector (listArray (0, (length vals - 1)) vals)
 
+-- |Parse a bytevector
 parseByteVector :: Parser LispVal
 parseByteVector = do
   ns <- sepBy parseNumber whiteSpace
@@ -313,10 +326,12 @@ parseHashTable = do
     Just m -> return $ HashTable $ Data.Map.fromList m
     Nothing -> pzero
 
+-- |Parse a list
 parseList :: Parser LispVal
 parseList = liftM List $ sepBy parseExpr whiteSpace
 -- TODO: wanted to use endBy (or a variant) above, but it causes an error such that dotted lists are not parsed
 
+-- |Parse a dotted list (scheme pair)
 parseDottedList :: Parser LispVal
 parseDottedList = do
   phead <- endBy parseExpr whiteSpace
@@ -344,24 +359,29 @@ parseDottedList = do
        all of R5RS without performing this transformation. -}
     _ -> return $ DottedList phead ptail
 
+-- |Parse a quoted expression
 parseQuoted :: Parser LispVal
 parseQuoted = do
   _ <- lexeme $ char '\''
   x <- parseExpr
   return $ List [Atom "quote", x]
 
+-- |Parse a quasi-quoted expression
 parseQuasiQuoted :: Parser LispVal
 parseQuasiQuoted = do
   _ <- lexeme $ char '`'
   x <- parseExpr
   return $ List [Atom "quasiquote", x]
 
+-- |Parse an unquoted expression (a quasiquotated expression preceded
+--  by a comma)
 parseUnquoted :: Parser LispVal
 parseUnquoted = do
   _ <- try (lexeme $ char ',')
   x <- parseExpr
   return $ List [Atom "unquote", x]
 
+-- |Parse an unquote-spliced expression
 parseUnquoteSpliced :: Parser LispVal
 parseUnquoteSpliced = do
   _ <- try (lexeme $ string ",@")
@@ -405,6 +425,7 @@ parseExpr =
   <|> brackets parseDottedList
   <?> "Expression"
 
+-- |Initial parser used by the high-level parse functions
 mainParser :: Parser LispVal
 mainParser = do
     _ <- whiteSpace
