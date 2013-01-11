@@ -49,11 +49,11 @@ import Data.IORef
 import qualified Data.Map
 -- import Debug.Trace
 
--- Internal namespace for macros
+-- |Internal namespace for macros
 macroNamespace :: [Char]
 macroNamespace = "m"
 
--- Internal namespace for variables
+-- |Internal namespace for variables
 varNamespace :: [Char]
 varNamespace = "v"
 
