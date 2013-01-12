@@ -22,14 +22,14 @@ import Language.Scheme.Types
 import System.CPUTime
 import Control.Monad.Error
 
-get, precision :: [LispVal] -> IOThrowsError LispVal
-
 -- |Wrapper for CPUTime.getCPUTime
+get :: [LispVal] -> IOThrowsError LispVal
 get [] = do
   t <- liftIO $ System.CPUTime.getCPUTime
   return $ Number t
 get badArgList = throwError $ NumArgs 0 badArgList
 
 -- |Wrapper for CPUTime.cpuTimePrecision
+precision :: [LispVal] -> IOThrowsError LispVal
 precision [] = return $ Number $ System.CPUTime.cpuTimePrecision
 precision badArgList = throwError $ NumArgs 0 badArgList
