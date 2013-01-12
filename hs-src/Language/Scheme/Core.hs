@@ -115,8 +115,7 @@ evalString env expr = do
 evalAndPrint :: Env -> String -> IO ()
 evalAndPrint env expr = evalString env expr >>= putStrLn
 
--- |Evaluate lisp code that has already been loaded into haskell
---  and return a value for use by husk.
+-- |Evaluate a lisp data structure and return a value for use by husk
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = do
   v <- meval env (makeNullContinuation env) lisp
