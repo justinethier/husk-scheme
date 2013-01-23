@@ -210,6 +210,21 @@
     (warn-undefs env #f)
     env))
 
+; JAE - Trying to figure out how this works
+; Uses resolve-import to make sure each import is valid.
+; For example:
+;
+;  huski> (load "modules.scm" )
+;  huski> (resolve-import '(hello world))
+;  ((hello world))
+;  huski> (resolve-import '(hello world 1))
+;  Error: File does not exist: hello/world/1.sld
+;
+; Then, based on that information it uses load-module to (load) the given module
+; into a new environment that is returned and assigned to mod2
+;
+; Then this is imported into env somehow by the call to %import
+; not quite sure how that works yet
 (define (environment . ls)
   (let ((env (make-environment)))
     (for-each
