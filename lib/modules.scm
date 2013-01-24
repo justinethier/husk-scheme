@@ -46,7 +46,8 @@
 (define (module-meta-data-set! mod x) (vector-set! mod 2 x))
 
 (define (module-exports mod)
-  (or (%module-exports mod) #| JAE - (env-exports (module-env mod)) |# ))
+  (or (%module-exports mod) (env-exports (module-env mod))))
+; JAE  (or (%module-exports mod) #| JAE - (env-exports (module-env mod)) |# ))
 
 (define (module-name->strings ls res)
   (if (null? ls)
@@ -76,6 +77,7 @@
 ;             (path (find-module-file file)))
 ;        (if path (load path meta-env))))))
         )
+        (write (list "loading file" file)) ; JAE debugging
         (if file (load file))))))
 
 (define (find-module name)
@@ -281,6 +283,8 @@
                     (error "invalid module export" x))
                 x))
           (define (extract-exports)
+            (write "entered extract-exports") ; JAE Debugging
+            (write ,this-module) ; JAE Debugging
             (cond
              ((assq 'export-all ,this-module)
               => (lambda (x)
