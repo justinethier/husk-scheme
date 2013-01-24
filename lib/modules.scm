@@ -17,8 +17,24 @@
 (define make-environment (lambda () '()))
 (define *modules* '()) ; Just a temporary def, see EOF
 ; env-exports - I think this needs to be a hook in husk
-; %import - I think this needs to be a hook in husk
+
+; %import - needs to be a hook in husk
+; The signature in chibi is:
+;sexp sexp_env_import_op (sexp ctx, sexp self, sexp_sint_t n, sexp to, sexp from, sexp ls, sexp immutp) {
+; and example usage is:
+;(%import env (module-env mod2) (cdr mod2-name+imports) #t)))
+;
+; Parameters:
+;  1) environment to import to (?)
+;  2) env to import from
+;  3) list of defs to import?
+;  4) immutable flag?
+(define (%import to from ls immutp)
+  (write "%import test stub")
+)
+;  (write ls))
 ;; /JAE
+
 
 (define *this-module* '())
 
@@ -111,6 +127,11 @@
 
 
 ; TODO: There is a lot going on here, but does it work?
+; JAE - no, it should do this:
+;
+; > (resolve-import '(hello world))
+; ((hello world) hello)
+;
 (define (resolve-import x)
   (cond
    ((not (and (pair? x) (list? x)))
