@@ -3,6 +3,12 @@ v3.6.3
 
 Added support for R<sup>7</sup>RS bytevectors.
 
+Fixed a bug where setting a variable to refer back to itself would result in an infinite loop. For example:
+
+    (define a '())
+    (define b a)
+    (define a b)
+
 v3.6.2
 --------
 This release adds support for nested quasi-quotation forms, which now respect depth level. This was done by replacing the quasi-quotation special form with a macro based on the one from chibi scheme. A nice side-benefit is that by removing the special forms, quasi-quotation now works in the compiler.

@@ -219,8 +219,24 @@ setNamespacedVar
 setNamespacedVar envRef
                  namespace
                  var value = do 
-  _ <- updatePointers envRef namespace var 
-  _setNamespacedVar envRef namespace var value
+  -- Issue #98 - Need to detect circular references
+  --
+  -- TODO:
+  -- Note this implementation is rather simplistic since
+  -- it does not take environments into account. The same
+  -- variable name could refer to 2 different variables in
+  -- different environments.
+  case value of
+    Pointer p env -> do
+      if p == var 
+          then return value
+          else next
+    _ -> next
+
+  where 
+    next = do
+      _ <- updatePointers envRef namespace var 
+      _setNamespacedVar envRef namespace var value
 
 -- |An internal function that does the actual setting of a 
 --  variable, without all the extra code that keeps pointers
