@@ -20,3 +20,6 @@
 ; (set! *this-module*35 (reverse *this-module*35)) 
 ; (add-module!36 (quote (hello world)) (make-module (extract-exports) #f *this-module*35)) 
 ; (set! *this-module*35 tmp))
+
+I think the issue above is that the form (set! *tm* (cons _ *tm)) is forming a circular dep or at least not preserving the previous version of *tm*
+
