@@ -301,6 +301,7 @@
           (set! ,this-module '())
           ,@body
           (set! ,this-module (reverse ,this-module))
+          (write (list 'module-debug ,this-module *this-module*259 *this-module*263)) ; JAE debugging
           (,add-module! ',name (make-module (extract-exports) #f ,this-module))
           (set! ,this-module ,tmp))))))
 
