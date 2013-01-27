@@ -49,7 +49,7 @@ import qualified Data.Map
 import Data.Word
 import qualified System.Exit
 import System.IO
--- import Debug.Trace
+import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -826,7 +826,7 @@ current continuation, which is passed as the first LispVal argument. -}
 --
 evalfuncExitSuccess, evalfuncExitFail, evalfuncApply, evalfuncDynamicWind, 
   evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues,
-  evalfuncMakeEnv, evalfuncNullEnv, evalfuncInteractionEnv :: [LispVal] -> IOThrowsError LispVal
+  evalfuncMakeEnv, evalfuncNullEnv, evalfuncInteractionEnv, evalfuncImport :: [LispVal] -> IOThrowsError LispVal
 
 {-
  - A (somewhat) simplified implementation of dynamic-wind
@@ -902,6 +902,26 @@ evalfuncNullEnv _ = throwError $ NumArgs 1 []
 
 evalfuncInteractionEnv (cont@(Continuation env _ _ _ _) : _) = do
     continueEval env cont $ LispEnv env
+
+-- TODO: just testing out a binding for %import
+evalfuncImport [
+    cont@(Continuation env _ _ _ _), 
+    LispEnv toEnv,
+    LispEnv fromEnv, 
+    List imports,
+    _] = do
+    result <- moduleImport toEnv fromEnv imports
+    continueEval env cont (trace ("finished import") result)
+
+evalfuncImport (cont@(Continuation env _ _ _ _ ) : cs) = do
+    continueEval env cont (trace ("DEBUG: " ++ show cs) Nil "")
+
+moduleImport to from (Atom i : is) = do
+  v <- getVar from i 
+  _ <- defineVar to i v
+  moduleImport to from is
+moduleImport to from [] = do
+  return $ LispEnv to
 
 evalfuncLoad [cont@(Continuation _ a b c d), String filename, LispEnv env] = do
     evalfuncLoad [Continuation env a b c d, String filename]
@@ -979,6 +999,7 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("null-environment", evalfuncNullEnv)
                   , ("current-environment", evalfuncInteractionEnv)
                   , ("interaction-environment", evalfuncInteractionEnv)
+                  , ("%import", evalfuncImport)
                   , ("make-environment", evalfuncMakeEnv)
 
                -- Non-standard extensions
