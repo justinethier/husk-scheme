@@ -23,3 +23,4 @@
 
 I think the issue above is that the form (set! *tm* (cons _ *tm)) is forming a circular dep or at least not preserving the previous version of *tm*
 
+Or, could be that all of the renamed variables are supposed to refer to the same memory location, but they do not... so this disconnect prevents the code from working properly
