@@ -29,10 +29,22 @@
 ;  2) env to import from
 ;  3) list of defs to import?
 ;  4) immutable flag?
-(define (%import to from ls immutp)
-  (write "%import test stub")
-)
+;; (define (%import to from ls immutp)
+;;   (write "%import test stub")
+;;   (write ls)
+;;   (write "end %import")
+;; )
 ;  (write ls))
+;
+;
+; Working on porting this to husk. The trouble is, after loading a
+; module, the contents of *modules* is:
+;
+;  (((hello world) . #((hello) #f ((export hello)) #f)))
+;
+; So Where-T-F is the environment?!??
+;
+;
 ;; /JAE
 
 
@@ -230,7 +242,7 @@
           (apply error (cdr x)))))
      meta)
     (module-meta-data-set! mod meta)
-    (warn-undefs env #f)
+    ;(warn-undefs env #f) ; JAE - commented this out (TODO)
     env))
 
 ; JAE - Trying to figure out how this works
@@ -272,7 +284,7 @@
      (let ((name (cadr expr))
            (body (cddr expr))
            (tmp (rename 'tmp))
-           (this-module (rename '*this-module*))
+           (this-module '*this-module*)
            (add-module! (rename 'add-module!)))
        `(let ((,tmp ,this-module))
           (define (rewrite-export x)
@@ -301,7 +313,7 @@
           (set! ,this-module '())
           ,@body
           (set! ,this-module (reverse ,this-module))
-          (write (list 'module-debug ,this-module *this-module*259 *this-module*263)) ; JAE debugging
+          ;(write (list 'module-debug ,this-module *this-module*259 *this-module*263)) ; JAE debugging
           (,add-module! ',name (make-module (extract-exports) #f ,this-module))
           (set! ,this-module ,tmp))))))
 
@@ -315,7 +327,7 @@
      `(define-syntax ,(cadr expr)
         (er-macro-transformer
          (lambda (expr rename compare)
-           (let ((this-module (rename '*this-module*)))
+           (let ((this-module '*this-module*))
              `(set! ,this-module (cons ',expr ,this-module)))))))))
 
 ;JAE - TODO: (define-syntax orig-begin begin)
