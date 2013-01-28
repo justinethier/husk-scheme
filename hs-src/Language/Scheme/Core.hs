@@ -913,12 +913,23 @@ evalfuncImport [
     result <- moduleImport toEnv fromEnv imports
     continueEval env cont (trace ("finished import") result)
 
-evalfuncImport (cont@(Continuation env _ _ _ _ ) : cs) = do
-    continueEval env cont (trace ("DEBUG: " ++ show cs) Nil "")
+evalfuncImport [
+    cont@(Continuation env _ _ _ _), 
+    Bool False, -- Default to env
+    LispEnv fromEnv, 
+    List imports,
+    _] = do
+    LispEnv env' <- moduleImport env fromEnv imports
+    continueEval env cont (trace ("finished import 2") $ LispEnv env')
+-- TODO: should env' be passed along?    continueEval env' cont (trace ("finished import") $ LispEnv env')
+
+-- -- This is just for debugging purposes:
+-- evalfuncImport (cont@(Continuation env _ _ _ _ ) : cs) = do
+--     continueEval env cont (trace ("DEBUG: " ++ show cs) Nil "")
 
 moduleImport to from (Atom i : is) = do
   v <- getVar from i 
-  _ <- defineVar to i v
+  _ <- defineVar to i (trace ("Import toEnv: " ++ show v) v)
   moduleImport to from is
 moduleImport to from [] = do
   return $ LispEnv to

@@ -33,6 +33,8 @@
 ;; )
 ;  (write ls))
 ;
+
+; PROGRESS LOG:
 ;
 ; Working on porting this to husk. The trouble is, after loading a
 ; module, the contents of *modules* is:
@@ -40,6 +42,33 @@
 ;  (((hello world) . #((hello) #f ((export hello)) #f)))
 ;
 ; So Where-T-F is the environment?!??
+;
+;
+; UPDATE 1/28 - after adding begin2 and *this-module* hacks, am
+; able to successfully import a binding. but the binding is not added
+; to the current env - not sure why:
+;
+;;;;  huski> (load "run.scm" )
+;;;;  ("loading file" "hello/world.sld")
+;;;;  "entered extract-exports"
+;;;;  ((export hello) (begin2 (define hello "hello, world")))
+;;;;  Import toEnv: "hello, world"
+;;;;  finished import
+;;;;  <env>
+;;;;  huski> hello
+;;;;  Getting an unbound variable: hello
+;;;;  huski> (define e (repl-import (hello world)))
+;;;;  Import toEnv: "hello, world"
+;;;;  finished import
+;;;;  <env>
+;;;;  huski> e
+;;;;  <env>
+;;;;  huski> hello
+;;;;  Getting an unbound variable: hello
+;;;;  huski> (eval 'hello)
+;;;;  Getting an unbound variable: hello
+;;;;  huski> (eval 'hello e)
+;;;;  "hello, world"
 ;
 ;
 ;; /JAE
