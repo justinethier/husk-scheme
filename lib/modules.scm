@@ -12,9 +12,6 @@
 ;; modules
 
 ;; JAE - Hacks to get everything to work
-(define current-environment (lambda () '()))
-(define interaction-environment (lambda () '()))
-(define make-environment (lambda () '()))
 (define *modules* '()) ; Just a temporary def, see EOF
 ; env-exports - I think this needs to be a hook in husk
 
@@ -236,8 +233,12 @@
           (load-modules (cdr x) "" #t))
          ((include-shared)
           (load-modules (cdr x) *shared-object-extension* #f))
-         ((body begin)
-          (for-each (lambda (expr) (eval expr env)) (cdr x)))
+         ;((body begin) ; JAE - Restore this line, debugging using 'begin2'
+         ((body begin2)
+          (for-each 
+            (lambda (expr) 
+                (eval expr env)) 
+            (cdr x)))
          ((error)
           (apply error (cdr x)))))
      meta)
@@ -314,7 +315,6 @@
           (set! ,this-module '())
           ,@body
           (set! ,this-module (reverse ,this-module))
-          ;(write (list 'module-debug ,this-module *this-module*259 *this-module*263)) ; JAE debugging
           (,add-module! ',name (make-module (extract-exports) #f ,this-module))
           (set! ,this-module ,tmp))))))
 
@@ -341,7 +341,8 @@
 (define-config-primitive include-ci)
 (define-config-primitive include-shared)
 (define-config-primitive body)
-;JAE - TODO: (define-config-primitive begin)
+;(define-config-primitive begin) ; JAE - Restore this line, debugging using 'begin2'
+(define-config-primitive begin2) ; JAE - Restore this line, debugging using 'begin2'
 
 ; The `import' binding used by (scheme) and (scheme base), etc.
 (define-syntax repl-import
@@ -351,6 +352,7 @@
        (let lp ((ls (cdr expr)) (res '()))
          (cond
           ((null? ls)
+;            (reverse res)) ; JAE - more workarounds
            (cons (rename 'begin) (reverse res))) ; JAE - this line is a temporary workaround
 ; JAE TODO:           (cons (rename 'orig-begin) (reverse res)))
           (else
