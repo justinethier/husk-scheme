@@ -100,7 +100,7 @@ printEnv env = do
  where 
   showVar (name, val) = do
     v <- liftIO $ readIORef val
-    return $ name ++ ": " ++ show v
+    return $ "[" ++ name ++ "]" ++ ": " ++ show v
 
 -- |Create a deep copy of an environment
 copyEnv :: Env      -- ^ Source environment

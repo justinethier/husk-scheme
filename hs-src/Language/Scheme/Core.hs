@@ -914,13 +914,16 @@ evalfuncImport [
     continueEval env cont (trace ("finished import") result)
 
 evalfuncImport [
-    cont@(Continuation env _ _ _ _), 
+    cont@(Continuation env a b c d), 
     Bool False, -- Default to env
     LispEnv fromEnv, 
     List imports,
     _] = do
     LispEnv env' <- moduleImport env fromEnv imports
-    continueEval env cont (trace ("finished import 2") $ LispEnv env')
+    continueEval 
+        env
+        (Continuation env' a b c d)
+        (trace ("finished import 2") $ LispEnv env')
 -- TODO: should env' be passed along?    continueEval env' cont (trace ("finished import") $ LispEnv env')
 
 -- -- This is just for debugging purposes:
@@ -929,7 +932,7 @@ evalfuncImport [
 
 moduleImport to from (Atom i : is) = do
   v <- getVar from i 
-  _ <- defineVar to i (trace ("Import toEnv: " ++ show v) v)
+  _ <- defineVar to i (trace ("Import toEnv: " ++ "[" ++ i ++ "]" ++ show v) v)
   moduleImport to from is
 moduleImport to from [] = do
   return $ LispEnv to
@@ -1058,9 +1061,15 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("delete-file", deleteFile),
 
                 -- Other I/O functions
+                ("print-env", printEnv'),
                 ("read-contents", readContents),
                 ("read-all", readAll),
                 ("gensym", gensym)]
+
+printEnv' :: [LispVal] -> IOThrowsError LispVal
+printEnv' [LispEnv env] = do
+    result <- liftIO $ printEnv env
+    return $ String result
 
 {- "Pure" primitive functions -}
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]

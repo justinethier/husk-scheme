@@ -165,13 +165,6 @@
         ((pred (to-id (car ls))) (cons (car ls) (id-filter pred (cdr ls))))
         (else (id-filter pred (cdr ls)))))
 
-
-; TODO: There is a lot going on here, but does it work?
-; JAE - no, it should do this:
-;
-; > (resolve-import '(hello world))
-; ((hello world) hello)
-;
 (define (resolve-import x)
   (cond
    ((not (and (pair? x) (list? x)))
@@ -266,6 +259,7 @@
          ((body begin2)
           (for-each 
             (lambda (expr) 
+                (write (list "DEBUG" expr))
                 (eval expr env)) 
             (cdr x)))
          ((error)
