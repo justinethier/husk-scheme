@@ -313,6 +313,7 @@
            (add-module! (rename 'add-module!)))
        `(let ((,tmp ,this-module))
           (define (rewrite-export x)
+            (write (list "DEBUG: rewrite-export" x))
             (if (pair? x)
                 (if (and (= 3 (length x))
                          (eq? 'rename (identifier->symbol (car x))))
