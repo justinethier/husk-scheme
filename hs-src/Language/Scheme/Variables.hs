@@ -20,6 +20,7 @@ module Language.Scheme.Variables
       printEnv
     , copyEnv
     , extendEnv
+    , topmostEnv
     , findNamespacedEnv
     , macroNamespace
     , varNamespace 
@@ -129,6 +130,13 @@ extendEnv envRef abindings = do
   return $ Environment (Just envRef) bindinglist nullPointers
  where addBinding ((namespace, name), val) = do ref <- newIORef val
                                                 return (getVarName namespace name, ref)
+
+-- |Find the top-most environment
+topmostEnv :: Env -> IO Env
+topmostEnv envRef = do
+    case parentEnv envRef of
+        Just p -> topmostEnv p
+        Nothing -> return envRef
 
 -- |Recursively search environments to find one that contains the given variable.
 findNamespacedEnv 

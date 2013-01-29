@@ -910,7 +910,8 @@ evalfuncImport [
     LispEnv fromEnv, 
     List imports,
     _] = do
-    result <- moduleImport toEnv fromEnv imports
+    topmostEnv <- liftIO $ topmostEnv toEnv -- TODO: testing this out; trying to overcome introducing vars to a nested env
+    result <- moduleImport topmostEnv fromEnv imports
     continueEval env cont (trace ("finished import") result)
 
 evalfuncImport [
@@ -919,7 +920,8 @@ evalfuncImport [
     LispEnv fromEnv, 
     List imports,
     _] = do
-    LispEnv env' <- moduleImport env fromEnv imports
+    topmostEnv <- liftIO $ topmostEnv env -- TODO: testing this out; trying to overcome introducing vars to a nested env
+    LispEnv env' <- moduleImport topmostEnv fromEnv imports
     continueEval 
         env
         (Continuation env' a b c d)
