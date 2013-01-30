@@ -119,12 +119,12 @@ copyEnv env = do
          ref <- newIORef x
          return (name, ref)
 
--- -- |Perform a deep copy of an environment's contents to a new environment
--- importEnv 
---   :: Env -- ^ Source environment
---   -> Env -- ^ Destination environment
---   -> IO () = do
--- -- TODO: need to do this recursively?
+-- |Perform a deep copy of an environment's contents to a new environment
+importEnv 
+  :: Env -- ^ Source environment
+  -> Env -- ^ Destination environment
+  -> IO () = do
+-- TODO: need to do this recursively?
 
 -- |Extend given environment by binding a series of values to a new environment.
 extendEnv :: Env -- ^ Environment 
