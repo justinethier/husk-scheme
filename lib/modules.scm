@@ -12,7 +12,6 @@
 ;; modules
 
 ;; JAE - Hacks to get everything to work
-(define *modules* '()) ; Just a temporary def, see EOF
 (define meta-env (current-environment))
 ; env-exports - I think this needs to be a hook in husk
 
@@ -397,7 +396,8 @@
                (error "couldn't find module" (car ls)))))))))));)
 
 ; JAE - TODO:
-;(define *modules*
+(define *modules*
+   (list (cons '(scheme) (make-module #f (interaction-environment) '()))))
 ;  (list (cons '(scheme) (make-module #f (interaction-environment)
 ;                                     '((include "init-7.scm"))))
 ;        (cons '(meta) (make-module #f (current-environment) '()))
