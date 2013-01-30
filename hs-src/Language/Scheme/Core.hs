@@ -931,7 +931,7 @@ evalfuncInteractionEnv (cont@(Continuation env _ _ _ _) : _) = do
 -- -- TODO: should env' be passed along?    continueEval env' cont (trace ("finished import") $ LispEnv env')
 
 evalfuncImport [
-    cont@(Continuation env _ _ _ _), 
+    cont@(Continuation env a b c d), 
     toEnv,
     LispEnv fromEnv, 
     imports,
@@ -945,7 +945,9 @@ evalfuncImport [
         List i -> do
             result <- moduleImport toEnv' fromEnv i
             continueEval env cont (trace ("finished import") result)
--- TODO:        Bool False -> do -- Export everything (?)
+        Bool False -> do -- Export everything (?)
+            newEnv <- liftIO $ importEnv toEnv' fromEnv
+            continueEval newEnv (Continuation newEnv a b c d) (trace ("finished import2") $ LispEnv newEnv)
 
 -- This is just for debugging purposes:
 evalfuncImport (cont@(Continuation env _ _ _ _ ) : cs) = do

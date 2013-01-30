@@ -20,6 +20,7 @@ module Language.Scheme.Variables
       printEnv
     , copyEnv
     , extendEnv
+    , importEnv
     , topmostEnv
     , findNamespacedEnv
     , macroNamespace
@@ -123,8 +124,22 @@ copyEnv env = do
 importEnv 
   :: Env -- ^ Source environment
   -> Env -- ^ Destination environment
-  -> IO () = do
--- TODO: need to do this recursively?
+  -> IO Env
+importEnv sEnv dEnv = do
+-- TODO: not sure this is the best way to do this, just
+-- came up with a quick solution:
+  sPtrs <- liftIO $ readIORef $ pointers sEnv
+  dPtrs <- liftIO $ readIORef $ pointers dEnv
+  ptrList <- newIORef $ Data.Map.union sPtrs dPtrs
+
+  sBinds <- liftIO $ readIORef $ bindings sEnv
+  dBinds <- liftIO $ readIORef $ bindings dEnv
+  bindList <- newIORef $ Data.Map.union sBinds dBinds
+
+  combinedEnv <- return $ Environment (parentEnv dEnv) bindList ptrList
+  case parentEnv sEnv of
+    Just ps -> importEnv ps combinedEnv
+    Nothing -> return combinedEnv 
 
 -- |Extend given environment by binding a series of values to a new environment.
 extendEnv :: Env -- ^ Environment 

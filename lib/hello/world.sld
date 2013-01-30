@@ -3,7 +3,7 @@
 (define-library (hello world)
     (export hello)
 ;    (import (scheme base))
-;    (import (scheme))
+    (import (scheme))
     (begin2 
         (define (hello h)
             ; TODO: how to get some of these def's in here?
