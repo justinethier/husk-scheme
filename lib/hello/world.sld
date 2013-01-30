@@ -9,5 +9,8 @@
             ; I understand that is what import is for, but how
             ; to bootstrap that to get primitives such as car, 
             ; cdr, etc
+            ;
+            ; I guess that is what the scheme module is for????
+            ;
             (car h))
         (define hello2 "not exported"))) 
