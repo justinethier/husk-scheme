@@ -13,6 +13,7 @@
 
 ;; JAE - Hacks to get everything to work
 (define *modules* '()) ; Just a temporary def, see EOF
+(define meta-env (current-environment))
 ; env-exports - I think this needs to be a hook in husk
 
 ; %import - needs to be a hook in husk
