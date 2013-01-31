@@ -120,26 +120,27 @@ copyEnv env = do
          ref <- newIORef x
          return (name, ref)
 
--- |Perform a deep copy of an environment's contents to a new environment
+-- |Perform a deep copy of an environment's contents into
+--  another environment.
+--
+--  The destination environment is modified!
+--
 importEnv 
-  :: Env -- ^ Source environment
-  -> Env -- ^ Destination environment
+  :: Env -- ^ Destination environment
+  -> Env -- ^ Source environment
   -> IO Env
-importEnv sEnv dEnv = do
--- TODO: not sure this is the best way to do this, just
--- came up with a quick solution:
+importEnv dEnv sEnv = do
   sPtrs <- liftIO $ readIORef $ pointers sEnv
   dPtrs <- liftIO $ readIORef $ pointers dEnv
-  ptrList <- newIORef $ Data.Map.union sPtrs dPtrs
+  writeIORef (pointers dEnv) $ Data.Map.union sPtrs dPtrs
 
   sBinds <- liftIO $ readIORef $ bindings sEnv
   dBinds <- liftIO $ readIORef $ bindings dEnv
-  bindList <- newIORef $ Data.Map.union sBinds dBinds
+  writeIORef (bindings dEnv)  $ Data.Map.union sBinds dBinds
 
-  combinedEnv <- return $ Environment (parentEnv dEnv) bindList ptrList
   case parentEnv sEnv of
-    Just ps -> importEnv ps combinedEnv
-    Nothing -> return combinedEnv 
+    Just ps -> importEnv dEnv ps 
+    Nothing -> return dEnv 
 
 -- |Extend given environment by binding a series of values to a new environment.
 extendEnv :: Env -- ^ Environment 
