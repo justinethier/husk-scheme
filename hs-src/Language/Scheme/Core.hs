@@ -936,15 +936,15 @@ evalfuncImport [
     LispEnv fromEnv, 
     imports,
     _] = do
-    let sourceEnv = case toEnv of
-                        LispEnv e -> e
-                        Bool False -> env
+    LispEnv toEnv' <- 
+        case toEnv of
+            LispEnv e -> return toEnv
+            Bool False -> getVar env "meta-env"
 
-    LispEnv toEnv' <- getVar sourceEnv "meta-env"
     case imports of
         List i -> do
             result <- moduleImport toEnv' fromEnv i
-            continueEval env cont (trace ("finished import") result)
+            continueEval env cont result
         Bool False -> do -- Export everything (?)
             newEnv <- liftIO $ importEnv toEnv' fromEnv
             continueEval newEnv (Continuation newEnv a b c d) (trace ("finished import2") $ LispEnv newEnv)
