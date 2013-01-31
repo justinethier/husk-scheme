@@ -115,7 +115,7 @@
 ;             (path (find-module-file file)))
 ;        (if path (load path meta-env))))))
         )
-        (write (list "loading file" file)) ; JAE debugging
+        ;(write (list "loading file" file)) ; JAE debugging
         (if file (load file))))))
 
 (define (find-module name)
@@ -243,7 +243,13 @@
            (lambda (m)
              (let* ((mod2-name+imports (resolve-import m))
                     (mod2 (load-module (car mod2-name+imports))))
-               (%import env (module-env mod2) (cdr mod2-name+imports) #t)))
+               (%import env (module-env mod2) (cdr mod2-name+imports) #t)
+; JAE DEBUG:
+;               (write "AFTER IMPORT")
+;               (write (list "DEBUG import from module" (print-env env) "DONE"))
+               )
+               ;(write (print-env env)) ;JAE DEBUG
+               )
            (cdr x)))))
      meta)
     (for-each
@@ -259,7 +265,6 @@
          ((body begin2)
           (for-each 
             (lambda (expr) 
-                (write (list "DEBUG" expr))
                 (eval expr env)) 
             (cdr x)))
          ((error)
@@ -313,7 +318,7 @@
            (add-module! (rename 'add-module!)))
        `(let ((,tmp ,this-module))
           (define (rewrite-export x)
-            (write (list "DEBUG: rewrite-export" x))
+; JAE            (write (list "DEBUG: rewrite-export" x))
             (if (pair? x)
                 (if (and (= 3 (length x))
                          (eq? 'rename (identifier->symbol (car x))))
@@ -321,8 +326,8 @@
                     (error "invalid module export" x))
                 x))
           (define (extract-exports)
-            (write "entered extract-exports") ; JAE Debugging
-            (write ,this-module) ; JAE Debugging
+;            (write "entered extract-exports") ; JAE Debugging
+;            (write ,this-module) ; JAE Debugging
             (cond
              ((assq 'export-all ,this-module)
               => (lambda (x)
@@ -397,7 +402,12 @@
 
 ; JAE - TODO:
 (define *modules*
-   (list (cons '(scheme) (make-module #f (interaction-environment) '()))))
+   (list (cons 
+           '(scheme) 
+            (make-module 
+                #f 
+                (interaction-environment) 
+               '())))) ; TODO: meta data should include a "stdlib-r7rs.scm"
 ;  (list (cons '(scheme) (make-module #f (interaction-environment)
 ;                                     '((include "init-7.scm"))))
 ;        (cons '(meta) (make-module #f (current-environment) '()))

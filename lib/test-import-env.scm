@@ -4,3 +4,4 @@
 (write (list 'initial: (print-env env)))
 (%import env (current-environment) #f #f)
 (write (list 'final: (print-env env)))
+(write (eval '(car (list 1 2 3)) env))
