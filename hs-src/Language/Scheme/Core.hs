@@ -49,7 +49,7 @@ import qualified Data.Map
 import Data.Word
 import qualified System.Exit
 import System.IO
-import Debug.Trace
+-- import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -947,15 +947,15 @@ evalfuncImport [
             continueEval env cont result
         Bool False -> do -- Export everything (?)
             newEnv <- liftIO $ importEnv toEnv' fromEnv
-            continueEval newEnv (Continuation newEnv a b c d) (trace ("finished import2") $ LispEnv newEnv)
+            continueEval newEnv (Continuation newEnv a b c d) $ LispEnv newEnv
 
 -- This is just for debugging purposes:
 evalfuncImport (cont@(Continuation env _ _ _ _ ) : cs) = do
-    (trace ("import DEBUG: " ++ show cs) continueEval) env cont $ Nil ""
+    continueEval env cont $ Nil ""
 
 moduleImport to from (Atom i : is) = do
   v <- getVar from i 
-  _ <- defineVar to i (trace ("Import toEnv: " ++ "[" ++ i ++ "]" ++ show v) v)
+  _ <- defineVar to i v
   moduleImport to from is
 moduleImport to from [] = do
   return $ LispEnv to

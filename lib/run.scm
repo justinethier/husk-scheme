@@ -4,7 +4,7 @@
 ;(environment '(hello world))
 ;(resolve-import '(hello world))
 (repl-import (hello world))
-;(hello (list 1 2 3))
+(hello (list 1 2 3))
 ;;; (write (expand
 ;;; (define-library (hello world)
 ;;;     (export hello)
