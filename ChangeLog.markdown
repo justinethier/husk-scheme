@@ -3,7 +3,7 @@ v3.6.3
 
 Added support for R<sup>7</sup>RS bytevectors.
 
-Added the Haskell function `evalLisp'` to evaluate a lisp data structure and return the `LispVal` or `LispError` result directly:
+Improved support for using husk as an extension language by adding Haskell function `evalLisp'`. This function evaluates a lisp data structure and returns the `LispVal` or `LispError` result directly:
 
     evalLisp' :: Env -> LispVal -> IO (ThrowsError LispVal)
 
@@ -14,7 +14,7 @@ This makes it much easier to retrieve results when using husk as an extension la
       Left err -> putStrLn $ "Error: " ++ (show err)
       Right val -> putStrLn $ show val
 
-Fixed a bug where setting a variable to refer back to itself would result in an infinite loop. For example, the last line of the following code would cause `huski` to hang:
+Finally, fixed a bug where setting a variable to refer back to itself would result in an infinite loop. For example, the last line of the following code would cause `huski` to hang:
 
     (define a '())
     (define b a)
