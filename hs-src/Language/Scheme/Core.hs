@@ -49,7 +49,7 @@ import qualified Data.Map
 import Data.Word
 import qualified System.Exit
 import System.IO
--- import Debug.Trace
+import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -957,8 +957,14 @@ moduleImport to from (Atom i : is) = do
   v <- getVar from i 
   _ <- defineVar to i v
   moduleImport to from is
+moduleImport to from (DottedList [Atom iDest] (Atom iSrc) : is) = do
+  v <- getVar from iSrc 
+  _ <- defineVar to iDest v
+  moduleImport to from is
 moduleImport to from [] = do
   return $ LispEnv to
+moduleImport to from unknown = do
+  (trace ("MODULE IMPORT DEBUG: " ++ show unknown) return) $ Nil ""
 
 evalfuncLoad [cont@(Continuation _ a b c d), String filename, LispEnv env] = do
     evalfuncLoad [Continuation env a b c d, String filename]
