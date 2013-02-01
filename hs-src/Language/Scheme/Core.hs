@@ -32,14 +32,17 @@ module Language.Scheme.Core
     , updateVector
     , updateByteVector
     ) where
+import qualified Paths_husk_scheme as PHS (getDataFileName)
 #ifdef UseFfi
 import qualified Language.Scheme.FFI
 #endif
 import qualified Language.Scheme.Macro
+import Language.Scheme.Modules
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Primitives
 import Language.Scheme.Types
+import Language.Scheme.Util
 import Language.Scheme.Variables
 import Control.Monad.Error
 import Data.Array
@@ -69,6 +72,9 @@ showBanner = do
   putStrLn " (c) 2010-2013 Justin Ethier                                             "
   putStrLn $ " Version " ++ version ++ " "
   putStrLn "                                                                         "
+-- TODO: should be able to use this to point to scheme libs internally
+getDataFileFullPath :: String -> IO String
+getDataFileFullPath s = PHS.getDataFileName s
 
 -- |Register optional SRFI extensions
 registerExtensions :: Env -> (FilePath -> IO FilePath) -> IO ()
@@ -84,12 +90,6 @@ registerSRFI env getDataFileName num = do
  _ <- evalString env $ "(register-extension '(srfi " ++ show num ++ ") \"" ++ 
   (escapeBackslashes filename) ++ "\")"
  return ()
-
--- |A utility function to escape backslashes in the given string
-escapeBackslashes :: String -> String
-escapeBackslashes s = foldr step [] s
-  where step x xs  | x == '\\'  = '\\' : '\\' : xs
-                   | otherwise =  x : xs 
 
 
 {- |Evaluate a string containing Scheme code
@@ -952,19 +952,6 @@ evalfuncImport [
 -- This is just for debugging purposes:
 evalfuncImport (cont@(Continuation env _ _ _ _ ) : cs) = do
     continueEval env cont $ Nil ""
-
-moduleImport to from (Atom i : is) = do
-  v <- getVar from i 
-  _ <- defineVar to i v
-  moduleImport to from is
-moduleImport to from (DottedList [Atom iDest] (Atom iSrc) : is) = do
-  v <- getVar from iSrc 
-  _ <- defineVar to iDest v
-  moduleImport to from is
-moduleImport to from [] = do
-  return $ LispEnv to
-moduleImport to from unknown = do
-  (trace ("MODULE IMPORT DEBUG: " ++ show unknown) return) $ Nil ""
 
 evalfuncLoad [cont@(Continuation _ a b c d), String filename, LispEnv env] = do
     evalfuncLoad [Continuation env a b c d, String filename]
