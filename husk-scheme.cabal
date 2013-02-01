@@ -41,7 +41,7 @@ Extra-Source-Files:  README.markdown
                      ChangeLog.markdown
                      LICENSE
                      AUTHORS
-Data-Files:          lib/stdlib.scm lib/srfi/*.scm
+Data-Files:          lib/*.scm lib/scheme/*.sld lib/srfi/*.scm
 
 Source-Repository head
     Type:            git
@@ -67,7 +67,7 @@ Library
                    Language.Scheme.Macro
                    Language.Scheme.Macro.ExplicitRenaming
                    Language.Scheme.Macro.Matches
-                   Language.Scheme.Modules
+                   Language.Scheme.Libraries
                    Language.Scheme.Numerical
                    Language.Scheme.Parser
                    Language.Scheme.Primitives

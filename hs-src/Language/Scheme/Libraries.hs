@@ -1,5 +1,5 @@
 {- |
-Module      : Language.Scheme.Modules
+Module      : Language.Scheme.Libraries
 Copyright   : Justin Ethier
 Licence     : MIT (see LICENSE in the distribution)
 
@@ -7,10 +7,12 @@ Maintainer  : github.com/justinethier
 Stability   : experimental
 Portability : portable
 
-This module contains code to handle modules (AKA R7RS libraries).
+This module contains code to handle R7RS libraries.
+NOTE: Libraries are usually referred to as "modules" in the husk source code.
+
 -}
 
-module Language.Scheme.Modules
+module Language.Scheme.Libraries
     (
       findModuleFile
     , moduleImport
@@ -27,9 +29,10 @@ findModuleFile
     -> IOThrowsError LispVal
 findModuleFile [String file] 
     -- Built-in modules
+-- TODO: does this work in Windows, since it uses the "wrong" type of slashes for that OS?
     | file == "scheme/base.sld" ||
       file == "scheme/write.sld" = do
-        path <- liftIO $ PHS.getDataFileName file
+        path <- liftIO $ PHS.getDataFileName $ "lib/" ++ file
         return $ String path
     | otherwise = return $ String file
 findModuleFile _ = return $ Bool False
@@ -41,6 +44,7 @@ moduleImport
     -> [LispVal] -- ^ Identifiers to import
     -> IOThrowsError LispVal
 moduleImport to from (Atom i : is) = do
+-- TODO: this does not work for macros!
   v <- getVar from i 
   _ <- defineVar to i v
   moduleImport to from is

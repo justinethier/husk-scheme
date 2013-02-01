@@ -36,8 +36,8 @@ module Language.Scheme.Core
 #ifdef UseFfi
 import qualified Language.Scheme.FFI
 #endif
+import Language.Scheme.Libraries
 import qualified Language.Scheme.Macro
-import Language.Scheme.Modules
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Primitives
