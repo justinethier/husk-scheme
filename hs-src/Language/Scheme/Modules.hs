@@ -28,7 +28,6 @@ findModuleFile
 findModuleFile [String file] 
     -- Built-in modules
     | file == "scheme/base.sld" ||
-      file == "stdlib.scm" || -- TESTING!
       file == "scheme/write.sld" = do
         path <- liftIO $ PHS.getDataFileName file
         return $ String path
