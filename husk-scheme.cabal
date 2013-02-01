@@ -68,9 +68,11 @@ Library
                    Language.Scheme.Macro
                    Language.Scheme.Macro.ExplicitRenaming
                    Language.Scheme.Macro.Matches
+                   Language.Scheme.Modules
                    Language.Scheme.Numerical
                    Language.Scheme.Parser
                    Language.Scheme.Primitives
+                   Language.Scheme.Util
   if flag(useffi)
     Build-Depends: ghc, ghc-paths
     Exposed-Modules:  Language.Scheme.FFI
