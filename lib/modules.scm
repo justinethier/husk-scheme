@@ -106,20 +106,12 @@
 (define (module-name-prefix name)
   (string-concatenate (reverse (cdr (cdr (module-name->strings name '()))))))
 
-; TODO: test this def below:
-; WTF is find-module-file  ?
 (define load-module-definition
   (let ((meta-env (current-environment)))
     (lambda (name)
       (let* ((file (module-name->file name))
-; JAE - TODO: this version prepends a path
-;  to the filename. husk will eventually need
-;  to do this as well...
-;             (path (find-module-file file)))
-;        (if path (load path meta-env))))))
-        )
-        ;(write (list "loading file" file)) ; JAE debugging
-        (if file (load file))))))
+             (path (find-module-file file)))
+        (if path (load path meta-env))))))
 
 (define (find-module name)
   (cond
