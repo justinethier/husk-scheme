@@ -13,6 +13,9 @@
 
 ;; JAE - Hacks to get everything to work
 (define meta-env (current-environment))
+(define (identifier->symbol s) 
+    (write (list "DEBUG id->sym" s))
+    s)
 ; env-exports - I think this needs to be a hook in husk
 
 ; %import - needs to be a hook in husk
