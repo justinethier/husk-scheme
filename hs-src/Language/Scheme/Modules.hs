@@ -12,18 +12,27 @@ This module contains code to handle modules (AKA R7RS libraries).
 
 module Language.Scheme.Modules
     (
-      moduleImport
+      findModuleFile
+    , moduleImport
     ) where
 import qualified Paths_husk_scheme as PHS (getDataFileName)
 import Language.Scheme.Types
 import Language.Scheme.Util
 import Language.Scheme.Variables
+import Control.Monad.Error
 
+-- |Get the full path to a module file
 findModuleFile 
-    :: LispVal 
+    :: [LispVal]
     -> IOThrowsError LispVal
-findModuleFile (String s@("scheme/base.sld")) = return $ String s
-findModuleFile (String file) = return $ String file
+findModuleFile [String file] 
+    -- Built-in modules
+    | file == "scheme/base.sld" ||
+      file == "stdlib.scm" || -- TESTING!
+      file == "scheme/write.sld" = do
+        path <- liftIO $ PHS.getDataFileName file
+        return $ String path
+    | otherwise = return $ String file
 findModuleFile _ = return $ Bool False
 
 -- |Import definitions from one environment into another

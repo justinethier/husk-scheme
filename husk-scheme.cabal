@@ -64,7 +64,6 @@ Library
                    Language.Scheme.Variables
                    Language.Scheme.Compiler
                    Language.Scheme.Plugins.CPUTime
--- Other-Modules:
                    Language.Scheme.Macro
                    Language.Scheme.Macro.ExplicitRenaming
                    Language.Scheme.Macro.Matches
@@ -73,6 +72,8 @@ Library
                    Language.Scheme.Parser
                    Language.Scheme.Primitives
                    Language.Scheme.Util
+  Other-Modules:   Paths_husk_scheme
+
   if flag(useffi)
     Build-Depends: ghc, ghc-paths
     Exposed-Modules:  Language.Scheme.FFI

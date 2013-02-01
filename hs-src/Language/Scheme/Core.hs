@@ -32,7 +32,7 @@ module Language.Scheme.Core
     , updateVector
     , updateByteVector
     ) where
-import qualified Paths_husk_scheme as PHS (getDataFileName)
+-- import qualified Paths_husk_scheme as PHS (getDataFileName)
 #ifdef UseFfi
 import qualified Language.Scheme.FFI
 #endif
@@ -72,9 +72,10 @@ showBanner = do
   putStrLn " (c) 2010-2013 Justin Ethier                                             "
   putStrLn $ " Version " ++ version ++ " "
   putStrLn "                                                                         "
--- TODO: should be able to use this to point to scheme libs internally
-getDataFileFullPath :: String -> IO String
-getDataFileFullPath s = PHS.getDataFileName s
+
+-- -- TODO: should be able to use this to point to scheme libs internally
+-- getDataFileFullPath :: String -> IO String
+-- getDataFileFullPath s = PHS.getDataFileName s
 
 -- |Register optional SRFI extensions
 registerExtensions :: Env -> (FilePath -> IO FilePath) -> IO ()
@@ -1080,6 +1081,7 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("print-env", printEnv'),
                 ("read-contents", readContents),
                 ("read-all", readAll),
+                ("find-module-file", findModuleFile),
                 ("gensym", gensym)]
 
 printEnv' :: [LispVal] -> IOThrowsError LispVal
