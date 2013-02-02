@@ -4,5 +4,4 @@
     (export hello)
     (import (scheme base))
     (begin2 (define hello "hello, world"))) 
-    ;(import (scheme base))
     ;(begin (define hello "hello, world"))) 
