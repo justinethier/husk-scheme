@@ -21,52 +21,69 @@ import Language.Scheme.Variables -- Scheme variable operations
 import Control.Monad.Error
 import System.Cmd (system)
 import System.Console.GetOpt
-import System.IO
-import System.Environment
 import System.Console.Haskeline
+import System.Environment
+import System.Exit (ExitCode (..), exitWith, exitFailure)
+import System.IO
 
 main :: IO ()
 main = do 
   args <- getArgs
 
--- TODO: specify scheme revision via cmd line
---  let (actions, nonOpts, msgs) = getOpt Permute options args
---  opts <- foldl (>>=) (return defaultOptions) actions
---  let Options {optSchemeVersion = scheme} = opts
---
---  putStrLn scheme
+  let (actions, nonOpts, msgs) = getOpt Permute options args
+  opts <- foldl (>>=) (return defaultOptions) actions
+  let Options {optSchemeRev = schemeRev} = opts
 
-  if null args 
+  if null nonOpts 
      then do 
        showBanner
-       runRepl
-     else runOne $ args
+       runRepl schemeRev
+     else runOne schemeRev nonOpts
 
 -- Command line options section
 data Options = Options {
-    optSchemeVersion :: String -- RxRS version
+    optSchemeRev :: String -- RxRS version
     }
 
 -- |Default values for the command line options
 defaultOptions :: Options
 defaultOptions = Options {
-    optSchemeVersion = "5"
+    optSchemeRev = "5"
     }
 options :: [OptDescr (Options -> IO Options)]
 options = [
-  Option ['r'] ["scheme"] (ReqArg writeRxRSVersion "Scheme") "scheme RxRS version"
+  Option ['r'] ["revision"] (ReqArg writeRxRSVersion "Scheme") "scheme RxRS version",
+  Option ['h', '?'] ["help"] (NoArg showHelp) "show usage information"
   ]
 
-writeRxRSVersion arg opt = return opt { optSchemeVersion = arg }
+writeRxRSVersion arg opt = return opt { optSchemeRev = arg }
 
+showHelp :: Options -> IO Options
+showHelp _ = do
+  putStrLn "Usage: huski [options] [file]"
+  putStrLn ""
+  putStrLn "  huski is the husk scheme interpreter."
+  putStrLn ""
+  putStrLn "  File is a scheme source file to execute. If no file is specified"
+  putStrLn "  the husk REPL will be started."
+  putStrLn ""
+  putStrLn "  Options may be any of the following:"
+  putStrLn ""
+  putStrLn "  -h -? --help      Display this information"
+  putStrLn "  -r --revision     Specify the scheme revision to use:"
+  putStrLn ""
+  putStrLn "                      5 - r5rs (default)"
+  putStrLn "                      7 - r7rs small"
+  putStrLn ""
+  exitWith ExitSuccess
 
 -- REPL Section
 flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
 
 -- |Execute a single scheme file from the command line
-runOne :: [String] -> IO ()
-runOne args = do
+runOne :: String -> [String] -> IO ()
+runOne _ args = do
   env <- primitiveBindings >>= flip extendEnv
                                    [((varNamespace, "args"),
                                     List $ map String $ drop 1 args)]
@@ -98,8 +115,8 @@ loadLibraries env = do
   registerExtensions env getDataFileName
 
 -- |Start the REPL (interactive interpreter)
-runRepl :: IO ()
-runRepl = do
+runRepl :: String -> IO ()
+runRepl _ = do
     env <- primitiveBindings
     _ <- loadLibraries env
 
