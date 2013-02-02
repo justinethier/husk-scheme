@@ -22,10 +22,11 @@ be made for time and space...
 -}
 
 module Language.Scheme.Compiler where 
-import qualified Language.Scheme.Core (apply, escapeBackslashes, evalLisp)
+import qualified Language.Scheme.Core (apply, evalLisp)
 import qualified Language.Scheme.Macro
 import Language.Scheme.Primitives
 import Language.Scheme.Types
+import qualified Language.Scheme.Util (escapeBackslashes)
 import Language.Scheme.Variables
 import Control.Monad.Error
 import qualified Data.Array
@@ -145,7 +146,7 @@ header :: String -> [String]
 header filepath = do
   [ " "
     , "getDataFileName' :: FilePath -> IO FilePath "
-    , "getDataFileName' name = return $ \"" ++ (Language.Scheme.Core.escapeBackslashes filepath) ++ "\" ++ name "
+    , "getDataFileName' name = return $ \"" ++ (Language.Scheme.Util.escapeBackslashes filepath) ++ "\" ++ name "
     , " "
     , "exec55_2 env cont _ _ = do "
     , "  liftIO $ registerExtensions env getDataFileName' "

@@ -15,18 +15,50 @@ module Main where
 import Paths_husk_scheme
 import Language.Scheme.Core      -- Scheme Interpreter
 import Language.Scheme.Types     -- Scheme data types
+import Language.Scheme.Util
 import Language.Scheme.Variables -- Scheme variable operations
 --import Control.Monad (when)
 import Control.Monad.Error
+import System.Cmd (system)
+import System.Console.GetOpt
 import System.IO
 import System.Environment
 import System.Console.Haskeline
 
 main :: IO ()
-main = do args <- getArgs
-          if null args then do showBanner
-                               runRepl
-                       else runOne $ args
+main = do 
+  args <- getArgs
+
+-- TODO: specify scheme revision via cmd line
+--  let (actions, nonOpts, msgs) = getOpt Permute options args
+--  opts <- foldl (>>=) (return defaultOptions) actions
+--  let Options {optSchemeVersion = scheme} = opts
+--
+--  putStrLn scheme
+
+  if null args 
+     then do 
+       showBanner
+       runRepl
+     else runOne $ args
+
+-- Command line options section
+data Options = Options {
+    optSchemeVersion :: String -- RxRS version
+    }
+
+-- |Default values for the command line options
+defaultOptions :: Options
+defaultOptions = Options {
+    optSchemeVersion = "5"
+    }
+options :: [OptDescr (Options -> IO Options)]
+options = [
+  Option ['r'] ["scheme"] (ReqArg writeRxRSVersion "Scheme") "scheme RxRS version"
+  ]
+
+writeRxRSVersion arg opt = return opt { optSchemeVersion = arg }
+
 
 -- REPL Section
 flushStr :: String -> IO ()

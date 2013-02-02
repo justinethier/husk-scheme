@@ -83,7 +83,7 @@ Library
     cpp-options: -DUsePointers
 
 Executable         huski
-  Build-Depends:   husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory
+  Build-Depends:   husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, process
   if flag(useffi)
     Build-Depends: ghc, ghc-paths
     cpp-options: -DUseFfi

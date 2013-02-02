@@ -26,7 +26,6 @@ module Language.Scheme.Core
     , version
     -- * Utility functions
     , registerExtensions
-    , escapeBackslashes
     , showBanner
     , substr
     , updateVector
