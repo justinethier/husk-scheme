@@ -23,6 +23,7 @@ module Language.Scheme.Core
     , continueEval
     -- * Core data
     , primitiveBindings
+    , r5rsEnv
     , version
     -- * Utility functions
     , registerExtensions
@@ -31,7 +32,7 @@ module Language.Scheme.Core
     , updateVector
     , updateByteVector
     ) where
--- import qualified Paths_husk_scheme as PHS (getDataFileName)
+import qualified Paths_husk_scheme as PHS (getDataFileName)
 #ifdef UseFfi
 import qualified Language.Scheme.FFI
 #endif
@@ -71,10 +72,8 @@ showBanner = do
   putStrLn " (c) 2010-2013 Justin Ethier                                             "
   putStrLn $ " Version " ++ version ++ " "
   putStrLn "                                                                         "
-
--- -- TODO: should be able to use this to point to scheme libs internally
--- getDataFileFullPath :: String -> IO String
--- getDataFileFullPath s = PHS.getDataFileName s
+getDataFileFullPath :: String -> IO String
+getDataFileFullPath s = PHS.getDataFileName s
 
 -- |Register optional SRFI extensions
 registerExtensions :: Env -> (FilePath -> IO FilePath) -> IO ()
@@ -818,6 +817,19 @@ primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrim
                                                ++ map (domakeFunc EvalFunc) evalFunctions
                                                ++ map (domakeFunc PrimitiveFunc) primitives)
   where domakeFunc constructor (var, func) = ((varNamespace, var), constructor func)
+
+-- |Load the standard r5rs environment, including libraries
+r5rsEnv :: IO Env
+r5rsEnv = do
+  env <- primitiveBindings
+  stdlib <- PHS.getDataFileName "lib/stdlib.scm"
+  srfi55 <- PHS.getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
+  -- Load standard library
+  _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
+  -- Load (require-extension), which can be used to load other SRFI's
+  _ <- evalString env $ "(load \"" ++ (escapeBackslashes srfi55) ++ "\")"
+  registerExtensions env PHS.getDataFileName
+  return env
 
 -- Functions that extend the core evaluator, but that can be defined separately.
 --

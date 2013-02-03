@@ -84,11 +84,9 @@ flushStr str = putStr str >> hFlush stdout
 -- |Execute a single scheme file from the command line
 runOne :: String -> [String] -> IO ()
 runOne _ args = do
-  env <- primitiveBindings >>= flip extendEnv
-                                   [((varNamespace, "args"),
-                                    List $ map String $ drop 1 args)]
-  -- Load standard library
-  _ <- loadLibraries env
+  env <- r5rsEnv >>= flip extendEnv
+                          [((varNamespace, "args"),
+                           List $ map String $ drop 1 args)]
 
   result <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
   case result of
@@ -103,22 +101,10 @@ runOne _ args = do
           Just errMsg -> putStrLn errMsg
           _  -> return ())
 
--- |Load standard libraries into the given environment
-loadLibraries :: Env -> IO ()
-loadLibraries env = do
-  stdlib <- getDataFileName "lib/stdlib.scm"
-  srfi55 <- getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
-  -- Load standard library
-  _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
-  -- Load (require-extension), which can be used to load other SRFI's
-  _ <- evalString env $ "(load \"" ++ (escapeBackslashes srfi55) ++ "\")"
-  registerExtensions env getDataFileName
-
 -- |Start the REPL (interactive interpreter)
 runRepl :: String -> IO ()
 runRepl _ = do
-    env <- primitiveBindings
-    _ <- loadLibraries env
+    env <- r5rsEnv
 
     runInputT defaultSettings (loop env)
     where
