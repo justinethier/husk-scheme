@@ -5,7 +5,7 @@ excerpt: This release adds R<sup>7</sup>RS bytevector support and makes it easie
 ---
 # {{ page.title }}
 
-This release adds support for R<sup>7</sup>RS bytevectors. Husk will continue to slowly add R<sup>7</sup>RS features as the small language standard nears completion.
+This release adds support for R<sup>7</sup>RS bytevectors. Husk will continue to slowly add R<sup>7</sup>RS features as the small language standard nears completion. 
 
 In addition, this release adds the Haskell function `evalLisp'` to evaluate a lisp data structure and return the `LispVal` or `LispError` result directly:
 
