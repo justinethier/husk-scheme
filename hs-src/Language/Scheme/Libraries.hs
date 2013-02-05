@@ -44,7 +44,6 @@ moduleImport
     -> [LispVal] -- ^ Identifiers to import
     -> IOThrowsError LispVal
 moduleImport to from (Atom i : is) = do
--- TODO: this does not work for macros!
   _ <- divertBinding to from i i
   moduleImport to from is
 moduleImport to from (DottedList [Atom iRenamed] (Atom iOrig) : is) = do
@@ -57,7 +56,12 @@ moduleImport to from [] = do
 --   (trace ("MODULE IMPORT DEBUG: " ++ show unknown) return) $ Nil ""
 
 -- |Copy a binding from one env to another
-divertBinding :: Env -> Env -> String -> String -> IOThrowsError LispVal
+divertBinding
+    :: Env  -- ^ Environment to import into
+    -> Env  -- ^ Environment to import from
+    -> String -- ^ Name of the binding in 'from'
+    -> String -- ^ Name to use for the binding in 'to'
+    -> IOThrowsError LispVal
 divertBinding to from nameOrig nameNew = do
   isMacroBound <- liftIO $ isNamespacedRecBound from macroNamespace nameOrig
   namespace <- liftIO $ case isMacroBound of
