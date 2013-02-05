@@ -32,6 +32,7 @@ License-file:        LICENSE
 Author:              Justin Ethier
 Maintainer:          Justin Ethier <github.com/justinethier>
 Homepage:            http://justinethier.github.com/husk-scheme
+Bug-Reports:         http://github.com/justinethier/husk-scheme/issues
 Cabal-Version:       >= 1.8
 Build-Type:          Simple
 Category:            Compilers/Interpreters, Language
