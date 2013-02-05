@@ -1,7 +1,7 @@
 ; TODO:
 ; This is a sample library, delete it once modules are up-and-running
 (define-library (hello world)
-    (export hello2 hello)
+    (export (rename let let**)  hello2 hello)
 ;    (import (scheme base))
     (import (scheme))
     (begin2 

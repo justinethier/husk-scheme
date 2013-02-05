@@ -356,7 +356,7 @@
            (let ((this-module '*this-module*))
              `(set! ,this-module (cons ',expr ,this-module)))))))))
 
-;JAE - TODO: (define-syntax orig-begin begin)
+(define-syntax orig-begin begin)
 (define-config-primitive import)
 (define-config-primitive import-immutable)
 (define-config-primitive export)

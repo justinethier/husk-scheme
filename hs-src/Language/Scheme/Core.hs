@@ -305,6 +305,17 @@ eval env cont args@(List (Atom "letrec-syntax" : List _bindings : _body)) = do
      List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing Nothing) $ Nil "" 
      e -> continueEval bodyEnv cont e
 
+-- A non-standard way to rebind a macro to another keyword
+eval env cont args@(List [Atom "define-syntax", 
+                          Atom newKeyword,
+                          Atom keyword]) = do
+  bound <- liftIO $ isNamespacedRecBound env macroNamespace keyword
+  if bound
+     then do
+       m <- getNamespacedVar env macroNamespace keyword
+       defineNamespacedVar env macroNamespace newKeyword m
+     else throwError $ TypeMismatch "macro" $ Atom keyword
+
 eval env cont args@(List [Atom "define-syntax", Atom keyword,
   (List [Atom "er-macro-transformer", 
     (List (Atom "lambda" : List fparams : fbody))])]) = do
