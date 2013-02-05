@@ -915,33 +915,6 @@ evalfuncNullEnv _ = throwError $ NumArgs 1 []
 evalfuncInteractionEnv (cont@(Continuation env _ _ _ _) : _) = do
     continueEval env cont $ LispEnv env
 
--- TODO: just testing out a binding for %import
--- evalfuncImport [
---     cont@(Continuation env _ _ _ _), 
---     LispEnv toEnv,
---     LispEnv fromEnv, 
---     List imports,
---     _] = do
--- --    topmostEnv <- liftIO $ topmostEnv toEnv -- TODO: testing this out; trying to overcome introducing vars to a nested env
---     LispEnv toEnv' <- getVar toEnv "meta-env"
---     result <- moduleImport toEnv' fromEnv imports
---     continueEval env cont (trace ("finished import") result)
--- 
--- evalfuncImport [
---     cont@(Continuation env a b c d), 
---     Bool False, -- Default to env
---     LispEnv fromEnv, 
---     List imports,
---     _] = do
--- --    topmostEnv <- liftIO $ topmostEnv env -- TODO: testing this out; trying to overcome introducing vars to a nested env
---     LispEnv toEnv <- getVar env "meta-env"
---     LispEnv env' <- moduleImport toEnv fromEnv imports
---     continueEval
---         env'
---         (Continuation env' a b c d)
---         (trace ("finished import 2") $ LispEnv env')
--- -- TODO: should env' be passed along?    continueEval env' cont (trace ("finished import") $ LispEnv env')
-
 evalfuncImport [
     cont@(Continuation env a b c d), 
     toEnv,
@@ -957,9 +930,12 @@ evalfuncImport [
         List i -> do
             result <- moduleImport toEnv' fromEnv i
             continueEval env cont result
-        Bool False -> do -- Export everything (?)
+        Bool False -> do -- Export everything
             newEnv <- liftIO $ importEnv toEnv' fromEnv
-            continueEval newEnv (Continuation newEnv a b c d) $ LispEnv newEnv
+            continueEval 
+                newEnv 
+               (Continuation newEnv a b c d) 
+               (LispEnv newEnv)
 
 -- This is just for debugging purposes:
 evalfuncImport (cont@(Continuation env _ _ _ _ ) : cs) = do
