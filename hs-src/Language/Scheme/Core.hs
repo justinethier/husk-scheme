@@ -26,6 +26,7 @@ module Language.Scheme.Core
     , r5rsEnv
     , version
     -- * Utility functions
+    , getDataFileFullPath
     , registerExtensions
     , showBanner
     , substr
@@ -72,6 +73,8 @@ showBanner = do
   putStrLn " (c) 2010-2013 Justin Ethier                                             "
   putStrLn $ " Version " ++ version ++ " "
   putStrLn "                                                                         "
+
+-- |Get the full path to a data file installed for husk
 getDataFileFullPath :: String -> IO String
 getDataFileFullPath s = PHS.getDataFileName s
 
@@ -249,6 +252,7 @@ eval env cont val@(Bool _) = continueEval env cont val
 eval env cont val@(HashTable _) = continueEval env cont val
 eval env cont val@(Vector _) = continueEval env cont val
 eval env cont val@(ByteVector _) = continueEval env cont val
+eval env cont val@(LispEnv _) = continueEval env cont val
 eval env cont val@(Pointer _ _) = continueEval env cont val
 eval env cont (Atom a) = do
   v <- getVar env a
@@ -833,7 +837,7 @@ primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrim
 r5rsEnv :: IO Env
 r5rsEnv = do
   env <- primitiveBindings
-  metaEnv <- liftIO $ nullEnv
+  metaEnv <- nullEnv
   stdlib <- PHS.getDataFileName "lib/stdlib.scm"
   metalib <- PHS.getDataFileName "lib/modules.scm"
   srfi55 <- PHS.getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
@@ -846,8 +850,9 @@ r5rsEnv = do
   -- TODO: load env as parent of metaenv
   -- maybe create a new function nullWithParentEnv or something
   --_ <- evalString metaEnv $ "(load \"" ++ (escapeBackslashes metalib) ++ "\")"
+  --r <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
 
-  return env
+  return (trace (show r) env)
 
 -- Functions that extend the core evaluator, but that can be defined separately.
 --
