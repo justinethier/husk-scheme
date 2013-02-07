@@ -833,13 +833,20 @@ primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrim
 r5rsEnv :: IO Env
 r5rsEnv = do
   env <- primitiveBindings
+  metaEnv <- liftIO $ nullEnv
   stdlib <- PHS.getDataFileName "lib/stdlib.scm"
+  metalib <- PHS.getDataFileName "lib/modules.scm"
   srfi55 <- PHS.getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
   -- Load standard library
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
   -- Load (require-extension), which can be used to load other SRFI's
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes srfi55) ++ "\")"
   registerExtensions env PHS.getDataFileName
+
+  -- TODO: load env as parent of metaenv
+  -- maybe create a new function nullWithParentEnv or something
+  --_ <- evalString metaEnv $ "(load \"" ++ (escapeBackslashes metalib) ++ "\")"
+
   return env
 
 -- Functions that extend the core evaluator, but that can be defined separately.
