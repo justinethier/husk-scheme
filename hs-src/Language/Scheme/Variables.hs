@@ -22,6 +22,7 @@ module Language.Scheme.Variables
     , extendEnv
     , importEnv
     , topmostEnv
+    , nullEnvWithParent
     , findNamespacedEnv
     , macroNamespace
     , varNamespace 
@@ -160,6 +161,11 @@ topmostEnv envRef = do
     case parentEnv envRef of
         Just p -> topmostEnv p
         Nothing -> return envRef
+
+nullEnvWithParent :: Env -> IO Env 
+nullEnvWithParent p = do
+  Environment _ binds ptrs <- nullEnv
+  return $ Environment (Just p) binds ptrs
 
 -- |Recursively search environments to find one that contains the given variable.
 findNamespacedEnv 

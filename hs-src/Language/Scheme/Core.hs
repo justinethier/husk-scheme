@@ -837,7 +837,6 @@ primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrim
 r5rsEnv :: IO Env
 r5rsEnv = do
   env <- primitiveBindings
-  metaEnv <- nullEnv
   stdlib <- PHS.getDataFileName "lib/stdlib.scm"
   metalib <- PHS.getDataFileName "lib/modules.scm"
   srfi55 <- PHS.getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
@@ -847,12 +846,12 @@ r5rsEnv = do
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes srfi55) ++ "\")"
   registerExtensions env PHS.getDataFileName
 
-  -- TODO: load env as parent of metaenv
-  -- maybe create a new function nullWithParentEnv or something
-  --_ <- evalString metaEnv $ "(load \"" ++ (escapeBackslashes metalib) ++ "\")"
-  --r <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
+  -- Load env as parent of metaenv
+  metaEnv <- nullEnvWithParent env
+  _ <- evalString metaEnv $ "(load \"" ++ (escapeBackslashes metalib) ++ "\")"
+  r <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
 
-  return (trace (show r) env)
+  return env
 
 -- Functions that extend the core evaluator, but that can be defined separately.
 --
@@ -947,6 +946,7 @@ evalfuncImport [
     LispEnv toEnv' <- 
         case toEnv of
             LispEnv e -> return toEnv
+            -- TODO: no, need to import into "current" env, not meta
             Bool False -> getVar env "meta-env"
 
     case imports of
