@@ -851,6 +851,11 @@ r5rsEnv = do
   _ <- evalString metaEnv $ "(load \"" ++ (escapeBackslashes metalib) ++ "\")"
   r <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
 
+  -- TODO: how to define "import"
+  -- trick is, need the macro to map to repl-import, and that will need
+  -- to expand within *meta-env*, but the bindings must be inserted into
+  -- the calling env. not quite sure how to set this up
+
   return env
 
 -- Functions that extend the core evaluator, but that can be defined separately.
@@ -946,8 +951,12 @@ evalfuncImport [
     LispEnv toEnv' <- 
         case toEnv of
             LispEnv e -> return toEnv
-            -- TODO: no, need to import into "current" env, not meta
-            Bool False -> getVar env "meta-env"
+            -- A hack to import into the "current" env
+            -- from (repl-import)
+            Bool False -> do
+                case parentEnv env of
+                    Just p -> return $ LispEnv p
+                    Nothing -> return $ LispEnv env -- TODO: error?
 
     case imports of
         List i -> do
