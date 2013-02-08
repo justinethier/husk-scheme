@@ -840,21 +840,21 @@ r5rsEnv = do
   stdlib <- PHS.getDataFileName "lib/stdlib.scm"
   metalib <- PHS.getDataFileName "lib/modules.scm"
   srfi55 <- PHS.getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
+  
   -- Load standard library
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
+
   -- Load (require-extension), which can be used to load other SRFI's
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes srfi55) ++ "\")"
   registerExtensions env PHS.getDataFileName
 
-  -- Load env as parent of metaenv
-  metaEnv <- nullEnvWithParent env
+  -- Load module meta-language 
+  metaEnv <- nullEnvWithParent env -- Load env as parent of metaenv
   _ <- evalString metaEnv $ "(load \"" ++ (escapeBackslashes metalib) ++ "\")"
-  r <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
-
-  -- TODO: how to define "import"
-  -- trick is, need the macro to map to repl-import, and that will need
-  -- to expand within *meta-env*, but the bindings must be inserted into
-  -- the calling env. not quite sure how to set this up
+  -- Load meta-env so we can find it later
+  _ <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
+  -- Bit of a hack to load (import)
+  _ <- evalLisp' env $ List [Atom "%bootstrap-import"]
 
   return env
 
@@ -951,12 +951,14 @@ evalfuncImport [
     LispEnv toEnv' <- 
         case toEnv of
             LispEnv e -> return toEnv
-            -- A hack to import into the "current" env
-            -- from (repl-import)
             Bool False -> do
+                -- A hack to load imports into the main env, which
+                -- in modules.scm is the grandparent env
                 case parentEnv env of
-                    Just p -> return $ LispEnv p
-                    Nothing -> return $ LispEnv env -- TODO: error?
+                    Just (Environment (Just gp) _ _) -> 
+                        return $ LispEnv gp
+                    Just (Environment Nothing _ _ ) -> throwError $ InternalError "import into empty parent env"
+                    Nothing -> throwError $ InternalError "import into empty env"
 
     case imports of
         List i -> do
@@ -1050,6 +1052,7 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("current-environment", evalfuncInteractionEnv)
                   , ("interaction-environment", evalfuncInteractionEnv)
                   , ("%import", evalfuncImport)
+                  , ("%bootstrap-import", bootstrapImport)
                   , ("make-environment", evalfuncMakeEnv)
 
                -- Non-standard extensions
@@ -1059,6 +1062,15 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("exit-fail", evalfuncExitFail)
                   , ("exit-success", evalfuncExitSuccess)
                 ]
+
+-- |Load import into the main environment
+--
+-- TODO: there must be a cleaner way to do this!
+bootstrapImport [cont@(Continuation env _ _ _ _)] = do
+    LispEnv me <- getVar env "*meta-env*"
+    ri <- getNamespacedVar me macroNamespace "repl-import"
+    defineNamespacedVar env macroNamespace "import" ri
+
 {- I/O primitives
 Primitive functions that execute within the IO monad -}
 ioPrimitives :: [(String, [LispVal] -> IOThrowsError LispVal)]
