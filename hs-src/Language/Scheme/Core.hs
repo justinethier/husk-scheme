@@ -53,7 +53,7 @@ import qualified Data.Map
 import Data.Word
 import qualified System.Exit
 import System.IO
-import Debug.Trace
+-- import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -1069,7 +1069,8 @@ evalFunctions =  [  ("apply", evalfuncApply)
 bootstrapImport [cont@(Continuation env _ _ _ _)] = do
     LispEnv me <- getVar env "*meta-env*"
     ri <- getNamespacedVar me macroNamespace "repl-import"
-    defineNamespacedVar env macroNamespace "import" ri
+    renv <- defineNamespacedVar env macroNamespace "import" ri
+    continueEval env cont renv
 
 {- I/O primitives
 Primitive functions that execute within the IO monad -}
