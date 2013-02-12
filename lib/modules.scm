@@ -12,9 +12,9 @@
 ;; modules
 
 ;; JAE - Hacks to get everything to work
-(define meta-env (current-environment))
+;(define meta-env (current-environment))
 (define (identifier->symbol s) 
-    (write (list "DEBUG id->sym" s))
+    ; JAE DEBUG: (write (list "DEBUG id->sym" s))
     s)
 ; env-exports - I think this needs to be a hook in husk
 
@@ -88,7 +88,6 @@
 
 (define (module-exports mod)
   (or (%module-exports mod) (env-exports (module-env mod))))
-; JAE  (or (%module-exports mod) #| JAE - (env-exports (module-env mod)) |# ))
 
 (define (module-name->strings ls res)
   (if (null? ls)
@@ -206,7 +205,6 @@
    (else
     (error "couldn't find import" x))))
 
-; untested
 (define (eval-module name mod . o)
   (let ((env (if (pair? o) (car o) (make-environment)))
         (meta (module-meta-data mod))
@@ -256,8 +254,7 @@
           (load-modules (cdr x) "" #t))
          ((include-shared)
           (load-modules (cdr x) *shared-object-extension* #f))
-         ;((body begin) ; JAE - Restore this line, debugging using 'begin2'
-         ((body begin2)
+         ((body begin)
           (for-each 
             (lambda (expr) 
                 (eval expr env)) 
@@ -365,8 +362,7 @@
 (define-config-primitive include-ci)
 (define-config-primitive include-shared)
 (define-config-primitive body)
-;(define-config-primitive begin) ; JAE - Restore this line, debugging using 'begin2'
-(define-config-primitive begin2) ; JAE - Restore this line, debugging using 'begin2'
+(define-config-primitive begin)
 
 ; The `import' binding used by (scheme) and (scheme base), etc.
 (define-syntax repl-import
@@ -376,9 +372,14 @@
        (let lp ((ls (cdr expr)) (res '()))
          (cond
           ((null? ls)
-;            (reverse res)) ; JAE - more workarounds
-           (cons (rename 'begin) (reverse res))) ; JAE - this line is a temporary workaround
-; JAE TODO:           (cons (rename 'orig-begin) (reverse res)))
+           ;(cons (rename 'orig-begin) (reverse res)))
+           (cons 
+             (cons 
+               'lambda
+               (cons
+                 '()
+                 (reverse res)))
+             '()))
           (else
            (let ((mod+imps (resolve-import (car ls))))
              (cond
