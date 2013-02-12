@@ -1,4 +1,3 @@
 (define-library (scheme base)
-    (export 
-        (rename car car*))
+    (export-all)
     (import (scheme)))
