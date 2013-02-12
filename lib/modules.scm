@@ -16,66 +16,7 @@
 (define (identifier->symbol s) 
     ; JAE DEBUG: (write (list "DEBUG id->sym" s))
     s)
-; env-exports - I think this needs to be a hook in husk
-
-; %import - needs to be a hook in husk
-; The signature in chibi is:
-;sexp sexp_env_import_op (sexp ctx, sexp self, sexp_sint_t n, sexp to, sexp from, sexp ls, sexp immutp) {
-; and example usage is:
-;(%import env (module-env mod2) (cdr mod2-name+imports) #t)))
-;
-; Parameters:
-;  1) environment to import to (?)
-;  2) env to import from
-;  3) list of defs to import?
-;  4) immutable flag?
-;; (define (%import to from ls immutp)
-;;   (write "%import test stub")
-;;   (write ls)
-;;   (write "end %import")
-;; )
-;  (write ls))
-;
-
-; PROGRESS LOG:
-;
-; Working on porting this to husk. The trouble is, after loading a
-; module, the contents of *modules* is:
-;
-;  (((hello world) . #((hello) #f ((export hello)) #f)))
-;
-; So Where-T-F is the environment?!??
-;
-;
-; UPDATE 1/28 - after adding begin2 and *this-module* hacks, am
-; able to successfully import a binding. but the binding is not added
-; to the current env - not sure why:
-;
-;;;;  huski> (load "run.scm" )
-;;;;  ("loading file" "hello/world.sld")
-;;;;  "entered extract-exports"
-;;;;  ((export hello) (begin2 (define hello "hello, world")))
-;;;;  Import toEnv: "hello, world"
-;;;;  finished import
-;;;;  <env>
-;;;;  huski> hello
-;;;;  Getting an unbound variable: hello
-;;;;  huski> (define e (repl-import (hello world)))
-;;;;  Import toEnv: "hello, world"
-;;;;  finished import
-;;;;  <env>
-;;;;  huski> e
-;;;;  <env>
-;;;;  huski> hello
-;;;;  Getting an unbound variable: hello
-;;;;  huski> (eval 'hello)
-;;;;  Getting an unbound variable: hello
-;;;;  huski> (eval 'hello e)
-;;;;  "hello, world"
-;
-;
-;; /JAE
-
+; env-exports - I think this needs to be a hook in husk (??)
 
 (define *this-module* '())
 
@@ -391,6 +332,16 @@
                             (,(rename 'load-module)
                              (,(rename 'quote) ,(car mod+imps))))
                            (,(rename 'quote) ,(cdr mod+imps))
+                   ; JAE - Testing to debug hygiene issues with
+                   ;       the rename calls above. But the code
+                   ;       above is what should be used, not the
+                   ;       test code below
+                   ;(cons `('%import
+                   ;        #f
+                   ;        ('module-env
+                   ;         ('load-module
+                   ;          ('quote ,(car mod+imps))))
+                   ;        ('quote ,(cdr mod+imps))
                            #f)
                          res)))
               (else
