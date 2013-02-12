@@ -1,10 +1,7 @@
-; TODO:
-; This is a sample library, delete it once modules are up-and-running
-(define-library (hello world)
+(define-library (hello debug)
     (export (rename let let**)  hello2 hello)
-;    (import (scheme base))
-    (import (scheme))
-    (begin2 
+    (import (scheme base))
+    (begin
         (define (hello h)
             ; TODO: how to get some of these def's in here?
             ; I understand that is what import is for, but how
