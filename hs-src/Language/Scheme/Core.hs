@@ -1051,14 +1051,15 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("null-environment", evalfuncNullEnv)
                   , ("current-environment", evalfuncInteractionEnv)
                   , ("interaction-environment", evalfuncInteractionEnv)
-                  , ("%import", evalfuncImport)
-                  , ("%bootstrap-import", bootstrapImport)
                   , ("make-environment", evalfuncMakeEnv)
 
                -- Non-standard extensions
 #ifdef UseFfi
                   , ("load-ffi", Language.Scheme.FFI.evalfuncLoadFFI)
 #endif
+                  , ("%import", evalfuncImport)
+                  , ("%bootstrap-import", bootstrapImport)
+
                   , ("exit-fail", evalfuncExitFail)
                   , ("exit-success", evalfuncExitSuccess)
                 ]
@@ -1111,6 +1112,7 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
 
                 -- Other I/O functions
                 ("print-env", printEnv'),
+                ("env-exports", exportsFromEnv'),
                 ("read-contents", readContents),
                 ("read-all", readAll),
                 ("find-module-file", findModuleFile),
@@ -1120,6 +1122,11 @@ printEnv' :: [LispVal] -> IOThrowsError LispVal
 printEnv' [LispEnv env] = do
     result <- liftIO $ printEnv env
     return $ String result
+
+exportsFromEnv' :: [LispVal] -> IOThrowsError LispVal
+exportsFromEnv' [LispEnv env] = do
+    result <- liftIO $ exportsFromEnv env
+    return $ List result
 
 {- "Pure" primitive functions -}
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]

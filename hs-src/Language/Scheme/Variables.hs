@@ -18,6 +18,7 @@ module Language.Scheme.Variables
     (
     -- * Environments
       printEnv
+    , exportsFromEnv 
     , copyEnv
     , extendEnv
     , importEnv
@@ -104,6 +105,18 @@ printEnv env = do
   showVar (name, val) = do
     v <- liftIO $ readIORef val
     return $ "[" ++ name ++ "]" ++ ": " ++ show v
+
+-- |Return a list of symbols exported from an environment
+exportsFromEnv :: Env 
+               -> IO [LispVal]
+exportsFromEnv env = do
+  binds <- liftIO $ readIORef $ bindings env
+  return $ getExports [] $ fst $ unzip $ Data.Map.toList binds 
+ where 
+  getExports acc (('m':'_':b) : bs) = getExports (Atom b:acc) bs
+  getExports acc (('v':'_':b) : bs) = getExports (Atom b:acc) bs
+  getExports acc (_ : bs) = getExports acc bs
+  getExports acc [] = acc
 
 -- |Create a deep copy of an environment
 copyEnv :: Env      -- ^ Source environment
