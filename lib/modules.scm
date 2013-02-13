@@ -16,7 +16,6 @@
 (define (identifier->symbol s) 
     ; JAE DEBUG: (write (list "DEBUG id->sym" s))
     s)
-; env-exports - I think this needs to be a hook in husk (??)
 
 (define *this-module* '())
 

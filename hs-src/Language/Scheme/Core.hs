@@ -1127,6 +1127,8 @@ exportsFromEnv' :: [LispVal] -> IOThrowsError LispVal
 exportsFromEnv' [LispEnv env] = do
     result <- liftIO $ exportsFromEnv env
     return $ List result
+--exportsFromEnv' err = throwError $ Default $ "bad args: " ++ show err
+exportsFromEnv' err = return $ List []
 
 {- "Pure" primitive functions -}
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
