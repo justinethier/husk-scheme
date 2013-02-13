@@ -246,8 +246,7 @@
      (let ((name (cadr expr))
            (body (cddr expr))
            (tmp (rename 'tmp))
-           ; (this-module (rename '*this-module*)) ; TODO: this is the old binding that must be restored - Issue #99
-           (this-module '*this-module*)
+           (this-module (rename '*this-module*))
            (add-module! (rename 'add-module!)))
        `(let ((,tmp ,this-module))
           (define (rewrite-export x)
@@ -290,8 +289,7 @@
      `(define-syntax ,(cadr expr)
         (er-macro-transformer
          (lambda (expr rename compare)
-           ; (let ((this-module (rename '*this-module*))) ; JAE TODO: need to restore this line, see Issue #99
-           (let ((this-module '*this-module*))
+           (let ((this-module (rename '*this-module*)))
              `(set! ,this-module (cons ',expr ,this-module)))))))))
 
 (define-syntax orig-begin begin)
