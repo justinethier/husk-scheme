@@ -967,8 +967,8 @@ evalfuncImport [
         Bool False -> do -- Export everything
             newEnv <- liftIO $ importEnv toEnv' fromEnv
             continueEval 
-                newEnv 
-               (Continuation newEnv a b c d) 
+                env 
+               (Continuation env a b c d) 
                (LispEnv newEnv)
 
 -- This is just for debugging purposes:
