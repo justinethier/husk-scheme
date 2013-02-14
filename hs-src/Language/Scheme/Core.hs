@@ -398,7 +398,7 @@ eval env cont fargs@(List (Atom "set!" : args)) = do
  bound <- liftIO $ isRecBound env "set!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
-  else throwError $ NumArgs 2 args
+  else throwError $ NumArgs (Just 2) args
 
 eval env cont args@(List [Atom "define", Atom var, form]) = do
  bound <- liftIO $ isRecBound env "define"
@@ -469,7 +469,7 @@ eval env cont fargs@(List (Atom "string-set!" : args)) = do
  bound <- liftIO $ isRecBound env "string-set!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
-  else throwError $ NumArgs 3 args
+  else throwError $ NumArgs (Just 3) args
 
 eval env cont args@(List [Atom "set-car!", Atom var, argObj]) = do
  bound <- liftIO $ isRecBound env "set-car!"
@@ -499,7 +499,7 @@ eval env cont fargs@(List (Atom "set-car!" : args)) = do
  bound <- liftIO $ isRecBound env "set-car!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
-  else throwError $ NumArgs 2 args
+  else throwError $ NumArgs (Just 2) args
 
 eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
@@ -537,7 +537,7 @@ eval env cont fargs@(List (Atom "set-cdr!" : args)) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
-  else throwError $ NumArgs 2 args
+  else throwError $ NumArgs (Just 2) args
 
 eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
  bound <- liftIO $ isRecBound env "vector-set!"
@@ -566,7 +566,7 @@ eval env cont fargs@(List (Atom "vector-set!" : args)) = do
  bound <- liftIO $ isRecBound env "vector-set!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
-  else throwError $ NumArgs 3 args
+  else throwError $ NumArgs (Just 3) args
 
 eval env cont args@(List [Atom "bytevector-u8-set!", Atom var, i, object]) = do
  bound <- liftIO $ isRecBound env "bytevector-u8-set!"
@@ -595,7 +595,7 @@ eval env cont fargs@(List (Atom "bytevector-u8-set!" : args)) = do
  bound <- liftIO $ isRecBound env "bytevector-u8-set!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
-  else throwError $ NumArgs 3 args
+  else throwError $ NumArgs (Just 3) args
 
 eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
  bound <- liftIO $ isRecBound env "hash-table-set!"
@@ -629,7 +629,7 @@ eval env cont fargs@(List (Atom "hash-table-set!" : args)) = do
  bound <- liftIO $ isRecBound env "hash-table-set!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
-  else throwError $ NumArgs 3 args
+  else throwError $ NumArgs (Just 3) args
 
 eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
  bound <- liftIO $ isRecBound env "hash-table-delete!"
@@ -659,7 +659,7 @@ eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
  bound <- liftIO $ isRecBound env "hash-table-delete!"
  if bound
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
-  else throwError $ NumArgs 2 args
+  else throwError $ NumArgs (Just 2) args
 
 eval env cont args@(List (_ : _)) = mprepareApply env cont args
 eval _ _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
@@ -743,7 +743,7 @@ apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
    doApply e c = do
       -- TODO (?): List dargs <- recDerefPtrs $ List args -- Deref any pointers
       case (toInteger $ length args) of
-        0 -> throwError $ NumArgs 1 []
+        0 -> throwError $ NumArgs (Just 1) []
         1 -> continueEval e c $ head args
         _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
              continueEval e (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args
@@ -766,7 +766,7 @@ apply cont (PrimitiveFunc func) args = do
     _ -> return result
 apply cont (Func aparams avarargs abody aclosure) args =
   if num aparams /= num args && avarargs == Nothing
-     then throwError $ NumArgs (num aparams) args
+     then throwError $ NumArgs (Just (num aparams)) args
      else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
@@ -799,7 +799,7 @@ apply cont (Func aparams avarargs abody aclosure) args =
           Nothing -> return env
 apply cont (HFunc aparams avarargs abody aclosure) args =
   if num aparams /= num args && avarargs == Nothing
-     then throwError $ NumArgs (num aparams) args
+     then throwError $ NumArgs (Just (num aparams)) args
      else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
@@ -897,8 +897,8 @@ evalfuncDynamicWind [cont@(Continuation env _ _ _ _), beforeFunc, thunkFunc, aft
                                thunkFunc []
    cpsThunk _ _ _ _ = throwError $ Default "Unexpected error in cpsThunk during (dynamic-wind)"
    cpsAfter _ c _ _ = apply c afterFunc [] -- FUTURE: remove dynamicWinder from above from the list before calling after
-evalfuncDynamicWind (_ : args) = throwError $ NumArgs 3 args -- Skip over continuation argument
-evalfuncDynamicWind _ = throwError $ NumArgs 3 []
+evalfuncDynamicWind (_ : args) = throwError $ NumArgs (Just 3) args -- Skip over continuation argument
+evalfuncDynamicWind _ = throwError $ NumArgs (Just 3) []
 
 evalfuncCallWValues [cont@(Continuation env _ _ _ _), producer, consumer] = do
   apply (makeCPS env cont cpsEval) producer [] -- Call into prod to get values
@@ -906,15 +906,15 @@ evalfuncCallWValues [cont@(Continuation env _ _ _ _), producer, consumer] = do
    cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
    cpsEval _ c@(Continuation _ _ _ (Just xargs) _) value _ = apply c consumer (value : xargs)
    cpsEval _ c value _ = apply c consumer [value]
-evalfuncCallWValues (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
-evalfuncCallWValues _ = throwError $ NumArgs 2 []
+evalfuncCallWValues (_ : args) = throwError $ NumArgs (Just 2) args -- Skip over continuation argument
+evalfuncCallWValues _ = throwError $ NumArgs (Just 2) []
 
 --evalfuncApply [cont@(Continuation _ _ _ _ _), func, List args] = apply cont func args
 evalfuncApply (cont@(Continuation _ _ _ _ _) : func : args) = do
   let aRev = reverse args
 
   if null args
-     then throwError $ NumArgs 2 args
+     then throwError $ NumArgs (Just 2) args
      else applyArgs $ head aRev
  where 
   applyArgs aRev = do
@@ -925,8 +925,8 @@ evalfuncApply (cont@(Continuation _ _ _ _ _) : func : args) = do
         value <- recDerefPtrs aRev
         applyArgs value
       other -> throwError $ TypeMismatch "List" other
-evalfuncApply (_ : args) = throwError $ NumArgs 2 args -- Skip over continuation argument
-evalfuncApply _ = throwError $ NumArgs 2 []
+evalfuncApply (_ : args) = throwError $ NumArgs (Just 2) args -- Skip over continuation argument
+evalfuncApply _ = throwError $ NumArgs (Just 2) []
 
 
 evalfuncMakeEnv (cont@(Continuation env _ _ _ _) : _) = do
@@ -936,8 +936,8 @@ evalfuncMakeEnv (cont@(Continuation env _ _ _ _) : _) = do
 evalfuncNullEnv [cont@(Continuation env _ _ _ _), Number version] = do
     nullEnv <- liftIO $ primitiveBindings
     continueEval env cont $ LispEnv nullEnv
-evalfuncNullEnv (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
-evalfuncNullEnv _ = throwError $ NumArgs 1 []
+evalfuncNullEnv (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
+evalfuncNullEnv _ = throwError $ NumArgs (Just 1) []
 
 evalfuncInteractionEnv (cont@(Continuation env _ _ _ _) : _) = do
     continueEval env cont $ LispEnv env
@@ -996,8 +996,8 @@ evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
        else return $ Nil "" -- Empty, unspecified value
   where evaluate env2 cont2 val2 = meval env2 cont2 val2
 
-evalfuncLoad (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
-evalfuncLoad _ = throwError $ NumArgs 1 []
+evalfuncLoad (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
+evalfuncLoad _ = throwError $ NumArgs (Just 1) []
 
 -- Evaluate an expression in the current environment
 --
@@ -1008,8 +1008,8 @@ evalfuncLoad _ = throwError $ NumArgs 1 []
 --
 evalfuncEval [cont@(Continuation env _ _ _ _), val] = meval env cont val
 evalfuncEval [cont@(Continuation _ _ _ _ _), val, LispEnv env] = meval env cont val
-evalfuncEval (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
-evalfuncEval _ = throwError $ NumArgs 1 []
+evalfuncEval (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
+evalfuncEval _ = throwError $ NumArgs (Just 1) []
 
 evalfuncCallCC [cont@(Continuation _ _ _ _ _), func] = do
    case func of
@@ -1023,15 +1023,15 @@ evalfuncCallCC [cont@(Continuation _ _ _ _ _), func] = do
      Func aparams _ _ _ ->
        if (toInteger $ length aparams) == 1
          then apply cont func [cont]
-         else throwError $ NumArgs (toInteger $ length aparams) [cont]
+         else throwError $ NumArgs (Just (toInteger $ length aparams)) [cont]
      HFunc _ (Just _) _ _ -> apply cont func [cont] -- Variable # of args (pair). Just call into cont  
      HFunc aparams _ _ _ ->
        if (toInteger $ length aparams) == 1
          then apply cont func [cont]
-         else throwError $ NumArgs (toInteger $ length aparams) [cont]
+         else throwError $ NumArgs (Just (toInteger $ length aparams)) [cont]
      other -> throwError $ TypeMismatch "procedure" other
-evalfuncCallCC (_ : args) = throwError $ NumArgs 1 args -- Skip over continuation argument
-evalfuncCallCC _ = throwError $ NumArgs 1 []
+evalfuncCallCC (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
+evalfuncCallCC _ = throwError $ NumArgs (Just 1) []
 
 evalfuncExitFail _ = do
   _ <- liftIO $ System.Exit.exitFailure

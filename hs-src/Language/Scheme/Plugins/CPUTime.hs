@@ -27,9 +27,9 @@ get :: [LispVal] -> IOThrowsError LispVal
 get [] = do
   t <- liftIO $ System.CPUTime.getCPUTime
   return $ Number t
-get badArgList = throwError $ NumArgs 0 badArgList
+get badArgList = throwError $ NumArgs (Just 0) badArgList
 
 -- |Wrapper for CPUTime.cpuTimePrecision
 precision :: [LispVal] -> IOThrowsError LispVal
 precision [] = return $ Number $ System.CPUTime.cpuTimePrecision
-precision badArgList = throwError $ NumArgs 0 badArgList
+precision badArgList = throwError $ NumArgs (Just 0) badArgList
