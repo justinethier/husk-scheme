@@ -124,7 +124,7 @@ nullEnv = do
     return $ Environment Nothing nullBindings nullPointers
 
 -- |Types of errors that may occur when evaluating Scheme code
-data LispError = NumArgs Integer [LispVal] -- ^Invalid number of function arguments
+data LispError = NumArgs (Maybe Integer) [LispVal] -- ^Invalid number of function arguments
   | TypeMismatch String LispVal -- ^Type error
   | Parser ParseError -- ^Parsing error
   | BadSpecialForm String LispVal -- ^Invalid special (built-in) form
@@ -138,8 +138,10 @@ data LispError = NumArgs Integer [LispVal] -- ^Invalid number of function argume
 
 -- |Create a textual description for a 'LispError'
 showError :: LispError -> String
-showError (NumArgs expected found) = "Expected " ++ show expected
+showError (NumArgs (Just expected) found) = "Expected " ++ show expected
                                   ++ " args; found values " ++ unwordsList found
+showError (NumArgs Nothing found) = "Incorrect number of args; " ++
+                                    " found values " ++ unwordsList found
 showError (TypeMismatch expected found) = "Invalid type: expected " ++ expected
                                   ++ ", found " ++ show found
 showError (Parser parseErr) = "Parse error at " ++ ": " ++ show parseErr
@@ -414,7 +416,7 @@ eqv [x@(EvalFunc _), y@(EvalFunc _)] = return $ Bool $ (show x) == (show y)
 -- FUTURE: comparison of two continuations
 eqv [l1@(List _), l2@(List _)] = eqvList eqv [l1, l2]
 eqv [_, _] = return $ Bool False
-eqv badArgList = throwError $ NumArgs 2 badArgList
+eqv badArgList = throwError $ NumArgs (Just 2) badArgList
 
 -- |Compare two lists of haskell values, using the given comparison function
 eqvList :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
