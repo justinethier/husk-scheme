@@ -169,6 +169,14 @@ numMod aparams = do
         doMod (List [(Complex _), (Complex _)]) = throwError $ Default "modulo not implemented for complex numbers" 
         doMod _ = throwError $ Default "Unexpected error in modulo"
 
+numBoolBinopCompare cmp n1 (n2 : ns) = do
+  List [n1', n2'] <- numCast [n1, n2]
+  result <- cmp n1' n2'
+  case result of
+    Bool True -> numBoolBinopCompare cmp n2' ns
+    _ -> return $ Bool False
+numBoolBinopCompare _ _ _ = return $ Bool True
+
 -- |Numeric equals
 numBoolBinopEq :: [LispVal] -> ThrowsError LispVal
 numBoolBinopEq [] = throwError $ NumArgs (Just 0) []
@@ -203,12 +211,14 @@ numBoolBinopGte aparams = do
 -- |Numeric less than 
 numBoolBinopLt :: [LispVal] -> ThrowsError LispVal
 numBoolBinopLt [] = throwError $ NumArgs (Just 0) []
-numBoolBinopLt aparams = do
-  foldl1M (\ a b -> doOp =<< (numCast [a, b])) aparams
-  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a < b
-        doOp (List [(Float a), (Float b)]) = return $ Bool $ a < b
-        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a < b
-        doOp _ = throwError $ Default "Unexpected error in <"
+numBoolBinopLt (n : ns) = numBoolBinopCompare cmp n ns
+  where
+    f a b = a < b
+    cmp (Number a) (Number b) = return $ Bool $ f a b
+    cmp (Float a) (Float b) = return $ Bool $ f a b
+    cmp (Rational a) (Rational b) = return $ Bool $ f a b
+    cmp _ _ = throwError $ Default "Unexpected error in <"
+
 
 -- |Numeric less than equal
 numBoolBinopLte :: [LispVal] -> ThrowsError LispVal
