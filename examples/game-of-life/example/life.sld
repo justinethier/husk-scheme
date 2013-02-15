@@ -32,10 +32,11 @@
     (define (life-print grid)
       (clear-vt100)
       (each grid
-      (lambda (i j v)
-      (display (if v "*" " "))
-      (when (= j (- (cols grid) 1))
-      (newline)))))
+        (lambda (i j v)
+          (display (if v "*" " "))
+          (if (= j (- (cols grid) 1))
+          ;(when (= j (- (cols grid) 1))
+            (newline)))))
     (define (life grid iterations)
       (do ((i 0 (+ i 1))
            (grid0 grid grid1)
@@ -45,5 +46,6 @@
         (each grid0
           (lambda (j k v)
             (let ((a (life-alive? grid0 j k)))
-              (set! grid1 j k a))))
+              (put! grid1 j k a))))
+              ;(set! grid1 j k a))))
         (life-print grid1)))))

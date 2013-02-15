@@ -1,7 +1,7 @@
 ; Example from draft 6 of R7RS
 (define-library (example grid)
     (export make rows cols ref each
-            (rename put! set!))
+            put!) ;(rename put! set!))
     (import (scheme base))
     (begin
       ;; Create an NxM grid.
@@ -22,7 +22,10 @@
              (vector-ref (vector-ref grid n) m)))
       (define (put! grid n m v)
         (define tmp (vector-ref grid n))
-        (vector-set! tmp m v))
+        (vector-set! 
+            grid
+            n
+            (vector-set! tmp m v)))
         ;(vector-set! (vector-ref grid n) m v))
       (define (each grid proc)
         (do ((j 0 (+ j 1)))
