@@ -169,6 +169,8 @@ numMod aparams = do
         doMod (List [(Complex _), (Complex _)]) = throwError $ Default "modulo not implemented for complex numbers" 
         doMod _ = throwError $ Default "Unexpected error in modulo"
 
+-- |Compare a series of numbers using a given numeric comparison
+--  function and an array of lisp values
 numBoolBinopCompare cmp n1 (n2 : ns) = do
   List [n1', n2'] <- numCast [n1, n2]
   result <- cmp n1' n2'
@@ -180,33 +182,36 @@ numBoolBinopCompare _ _ _ = return $ Bool True
 -- |Numeric equals
 numBoolBinopEq :: [LispVal] -> ThrowsError LispVal
 numBoolBinopEq [] = throwError $ NumArgs (Just 0) []
-numBoolBinopEq aparams = do
-  foldl1M (\ a b -> doOp =<< (numCast [a, b])) aparams
-  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a == b
-        doOp (List [(Float a), (Float b)]) = return $ Bool $ a == b
-        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a == b
-        doOp (List [(Complex a), (Complex b)]) = return $ Bool $ a == b
-        doOp _ = throwError $ Default "Unexpected error in ="
+numBoolBinopEq (n : ns) = numBoolBinopCompare cmp n ns
+  where
+    f a b = a == b
+    cmp (Number a) (Number b) = return $ Bool $ f a b
+    cmp (Float a) (Float b) = return $ Bool $ f a b
+    cmp (Rational a) (Rational b) = return $ Bool $ f a b
+    cmp (Complex a) (Complex b) = return $ Bool $ f a b
+    cmp _ _ = throwError $ Default "Unexpected error in ="
 
 -- |Numeric greater than
 numBoolBinopGt :: [LispVal] -> ThrowsError LispVal
 numBoolBinopGt [] = throwError $ NumArgs (Just 0) []
-numBoolBinopGt aparams = do
-  foldl1M (\ a b -> doOp =<< (numCast [a, b])) aparams
-  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a > b
-        doOp (List [(Float a), (Float b)]) = return $ Bool $ a > b
-        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a > b
-        doOp _ = throwError $ Default "Unexpected error in >"
+numBoolBinopGt (n : ns) = numBoolBinopCompare cmp n ns
+  where
+    f a b = a > b
+    cmp (Number a) (Number b) = return $ Bool $ f a b
+    cmp (Float a) (Float b) = return $ Bool $ f a b
+    cmp (Rational a) (Rational b) = return $ Bool $ f a b
+    cmp _ _ = throwError $ Default "Unexpected error in >"
 
 -- |Numeric greater than equal
 numBoolBinopGte :: [LispVal] -> ThrowsError LispVal
 numBoolBinopGte [] = throwError $ NumArgs (Just 0) []
-numBoolBinopGte aparams = do
-  foldl1M (\ a b -> doOp =<< (numCast [a, b])) aparams
-  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a >= b
-        doOp (List [(Float a), (Float b)]) = return $ Bool $ a >= b
-        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a >= b
-        doOp _ = throwError $ Default "Unexpected error in >="
+numBoolBinopGte (n : ns) = numBoolBinopCompare cmp n ns
+  where
+    f a b = a >= b
+    cmp (Number a) (Number b) = return $ Bool $ f a b
+    cmp (Float a) (Float b) = return $ Bool $ f a b
+    cmp (Rational a) (Rational b) = return $ Bool $ f a b
+    cmp _ _ = throwError $ Default "Unexpected error in >="
 
 -- |Numeric less than 
 numBoolBinopLt :: [LispVal] -> ThrowsError LispVal
@@ -219,16 +224,16 @@ numBoolBinopLt (n : ns) = numBoolBinopCompare cmp n ns
     cmp (Rational a) (Rational b) = return $ Bool $ f a b
     cmp _ _ = throwError $ Default "Unexpected error in <"
 
-
 -- |Numeric less than equal
 numBoolBinopLte :: [LispVal] -> ThrowsError LispVal
 numBoolBinopLte [] = throwError $ NumArgs (Just 0) []
-numBoolBinopLte aparams = do
-  foldl1M (\ a b -> doOp =<< (numCast [a, b])) aparams
-  where doOp (List [(Number a), (Number b)]) = return $ Bool $ a <= b
-        doOp (List [(Float a), (Float b)]) = return $ Bool $ a <= b
-        doOp (List [(Rational a), (Rational b)]) = return $ Bool $ a <= b
-        doOp _ = throwError $ Default "Unexpected error in <="
+numBoolBinopLte (n : ns) = numBoolBinopCompare cmp n ns
+  where
+    f a b = a <= b
+    cmp (Number a) (Number b) = return $ Bool $ f a b
+    cmp (Float a) (Float b) = return $ Bool $ f a b
+    cmp (Rational a) (Rational b) = return $ Bool $ f a b
+    cmp _ _ = throwError $ Default "Unexpected error in <="
 
 -- |Accept two numbers and cast one of them to the appropriate type, if necessary
 numCast :: [LispVal] -> ThrowsError LispVal
