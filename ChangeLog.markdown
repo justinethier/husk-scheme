@@ -9,6 +9,10 @@ Improvements to the Haskell API:
 - Added `getDataFileFullPath` to the Core module to allow third party code to reference files such as `stdlib.scm` that are installed alongside husk.
 - Modified `NumArgs` to optionally require an explicit number of arguments. This helps when writing variable-length functions where specifying a single number of arguments may be misleading.
 
+Bug fixes
+
+- Enhanced numerical comparison operators (`=`, `<`, `<=`, `>`, `>=`) to be able to accept an unlimited number of arguments, per R5RS.
+
 v3.6.3
 --------
 
