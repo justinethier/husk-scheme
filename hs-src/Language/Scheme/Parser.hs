@@ -202,10 +202,12 @@ parseNumber = parseDecimalNumberMaybeExponent <|>
 parseRealNumber :: Parser LispVal
 parseRealNumber = do
   sign <- many (oneOf "-+")
-  num <- many1 (digit)
+  num <- many (digit)
   _ <- char '.'
   frac <- many1 (digit)
-  let dec = num ++ "." ++ frac
+  let dec = if length num > 0
+               then num ++ "." ++ frac
+               else "0." ++ frac
   f <- case (length sign) of
      0 -> return $ Float $ fst $ Numeric.readFloat dec !! 0
           -- Bit of a hack, but need to support the + sign as well as the minus.

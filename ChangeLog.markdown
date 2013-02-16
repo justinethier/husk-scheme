@@ -11,6 +11,7 @@ Improvements to the Haskell API:
 
 Bug fixes
 
+- Updated the parser to accept floating point numbers that contain only a fractional component, such as `.5`.
 - Enhanced numerical comparison operators (`=`, `<`, `<=`, `>`, `>=`) to be able to accept an unlimited number of arguments, per R5RS.
 
 v3.6.3
