@@ -6,7 +6,7 @@ TBD: r7rs style libraries
 Improvements to the Haskell API:
 
 - Added `r5rsEnv` to the Core module to expose the full environment, including functions loaded from the Scheme standard library.
-- Added `getDataFileFullPath` to the Core module to allow third party code to reference files such as `stdlib.scm` that are installed alongside husk.
+- Added `getDataFileFullPath` to the Core module to allow third party code to reference Scheme files such as `stdlib.scm` that are installed alongside husk.
 - Modified `NumArgs` to optionally require an explicit number of arguments. This helps when writing variable-length functions where specifying a single number of arguments may be misleading.
 
 Bug fixes
