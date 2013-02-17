@@ -1,8 +1,12 @@
-; NOTE: This file is experimental, and not currently used by husk
-;
-; An attempt to modify chibi scheme's module meta language
-; to use to implement modules (r7rs libraries) in husk
-;
+;;;
+;;; husk-scheme
+;;; http://justinethier.github.com/husk-scheme
+;;;
+;;; Written by Justin Ethier
+;;;
+;;; A modified version of chibi scheme's module meta language
+;;; used to implement modules (r7rs libraries) in husk
+;;;
 
 ;; meta.scm -- meta langauge for describing modules
 ;; Copyright (c) 2009-2012 Alex Shinn.  All rights reserved.
@@ -11,11 +15,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; modules
 
-;; JAE - Hacks to get everything to work
-;(define meta-env (current-environment))
-(define (identifier->symbol s) 
-    ; JAE DEBUG: (write (list "DEBUG id->sym" s))
-    s)
+;; Hacked version of this function req'd to get everything to work
+(define (identifier->symbol s) s)
 
 (define *this-module* '())
 
@@ -176,13 +177,7 @@
            (lambda (m)
              (let* ((mod2-name+imports (resolve-import m))
                     (mod2 (load-module (car mod2-name+imports))))
-               (%import env (module-env mod2) (cdr mod2-name+imports) #t)
-; JAE DEBUG:
-;               (write "AFTER IMPORT")
-;               (write (list "DEBUG import from module" (print-env env) "DONE"))
-               )
-               ;(write (print-env env)) ;JAE DEBUG
-               )
+               (%import env (module-env mod2) (cdr mod2-name+imports) #t)))
            (cdr x)))))
      meta)
     (for-each
@@ -206,21 +201,6 @@
     ;(warn-undefs env #f) ; JAE - commented this out (TODO)
     env))
 
-; JAE - Trying to figure out how this works
-; Uses resolve-import to make sure each import is valid.
-; For example:
-;
-;  huski> (load "modules.scm" )
-;  huski> (resolve-import '(hello world))
-;  ((hello world))
-;  huski> (resolve-import '(hello world 1))
-;  Error: File does not exist: hello/world/1.sld
-;
-; Then, based on that information it uses load-module to (load) the given module
-; into a new environment that is returned and assigned to mod2
-;
-; Then this is imported into env somehow by the call to %import
-; not quite sure how that works yet
 (define (environment . ls)
   (let ((env (make-environment)))
     (for-each
@@ -310,6 +290,11 @@
        (let lp ((ls (cdr expr)) (res '()))
          (cond
           ((null? ls)
+           ; JAE - Using expanded version of begin because there were
+           ;       problems with using the following line from chibi.
+           ;       This may highlight a problem in husk, but for the
+           ;       purposes of this file we are moving on...
+           ;
            ;(cons (rename 'orig-begin) (reverse res)))
            (cons 
              (cons 
@@ -329,16 +314,6 @@
                             (,(rename 'load-module)
                              (,(rename 'quote) ,(car mod+imps))))
                            (,(rename 'quote) ,(cdr mod+imps))
-                   ; JAE - Testing to debug hygiene issues with
-                   ;       the rename calls above. But the code
-                   ;       above is what should be used, not the
-                   ;       test code below
-                   ;(cons `('%import
-                   ;        #f
-                   ;        ('module-env
-                   ;         ('load-module
-                   ;          ('quote ,(car mod+imps))))
-                   ;        ('quote ,(cdr mod+imps))
                            #f)
                          res)))
               (else
