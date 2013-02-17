@@ -147,6 +147,7 @@ _macroEval env lisp@(List (Atom x : _)) apply = do
   if isDefined
      then do
        var <- getNamespacedVar env macroNamespace x
+       -- DEBUG: var <- (trace ("expand: " ++ x) getNamespacedVar) env macroNamespace x
        case var of
          -- Explicit Renaming
          SyntaxExplicitRenaming transformer@(Func _ _ _ _) -> do
