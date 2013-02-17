@@ -49,7 +49,11 @@ Source-Repository head
     Location:        git://github.com/justinethier/husk-scheme.git
 
 flag useffi
-    description: Turn off FFI to decrease build times and minimize executable sizes
+    description: Haskell Foreign Function Interface (FFI). Allows husk to import and call into Haskell code directly from Scheme code. Turn off FFI to decrease build times and minimize executable sizes
+    default: False
+
+flag uselibraries
+    description: R7RS-style libraries. 
     default: True
 
 flag useptrs
@@ -79,6 +83,9 @@ Library
     Build-Depends: ghc, ghc-paths
     Exposed-Modules:  Language.Scheme.FFI
     cpp-options: -DUseFfi
+
+  if flag(uselibraries)
+    cpp-options: -DUseLibraries
 
   if flag(useptrs)
     cpp-options: -DUsePointers

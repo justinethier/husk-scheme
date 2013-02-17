@@ -838,7 +838,6 @@ r5rsEnv :: IO Env
 r5rsEnv = do
   env <- primitiveBindings
   stdlib <- PHS.getDataFileName "lib/stdlib.scm"
-  metalib <- PHS.getDataFileName "lib/modules.scm"
   srfi55 <- PHS.getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
   
   -- Load standard library
@@ -848,13 +847,16 @@ r5rsEnv = do
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes srfi55) ++ "\")"
   registerExtensions env PHS.getDataFileName
 
+#ifdef UseLibraries
   -- Load module meta-language 
+  metalib <- PHS.getDataFileName "lib/modules.scm"
   metaEnv <- nullEnvWithParent env -- Load env as parent of metaenv
   _ <- evalString metaEnv $ "(load \"" ++ (escapeBackslashes metalib) ++ "\")"
   -- Load meta-env so we can find it later
   _ <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
   -- Bit of a hack to load (import)
   _ <- evalLisp' env $ List [Atom "%bootstrap-import"]
+#endif
 
   return env
 
@@ -975,6 +977,14 @@ evalfuncImport [
 evalfuncImport (cont@(Continuation env _ _ _ _ ) : cs) = do
     continueEval env cont $ Nil ""
 
+-- |Load import into the main environment
+bootstrapImport [cont@(Continuation env _ _ _ _)] = do
+    LispEnv me <- getVar env "*meta-env*"
+    ri <- getNamespacedVar me macroNamespace "repl-import"
+    renv <- defineNamespacedVar env macroNamespace "import" ri
+    continueEval env cont renv
+
+
 evalfuncLoad [cont@(Continuation _ a b c d), String filename, LispEnv env] = do
     evalfuncLoad [Continuation env a b c d, String filename]
 
@@ -1057,21 +1067,13 @@ evalFunctions =  [  ("apply", evalfuncApply)
 #ifdef UseFfi
                   , ("load-ffi", Language.Scheme.FFI.evalfuncLoadFFI)
 #endif
+#ifdef UseLibraries
                   , ("%import", evalfuncImport)
                   , ("%bootstrap-import", bootstrapImport)
-
+#endif
                   , ("exit-fail", evalfuncExitFail)
                   , ("exit-success", evalfuncExitSuccess)
                 ]
-
--- |Load import into the main environment
---
--- TODO: there must be a cleaner way to do this!
-bootstrapImport [cont@(Continuation env _ _ _ _)] = do
-    LispEnv me <- getVar env "*meta-env*"
-    ri <- getNamespacedVar me macroNamespace "repl-import"
-    renv <- defineNamespacedVar env macroNamespace "import" ri
-    continueEval env cont renv
 
 {- I/O primitives
 Primitive functions that execute within the IO monad -}
