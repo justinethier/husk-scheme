@@ -1,5 +1,5 @@
 ;; Main program.
-(import (scheme base)
+(import (r5rs base)
         (only (example life) life)
         (rename (prefix (example grid) grid-)
                 (grid-make make-grid)))

@@ -319,14 +319,9 @@
               (else
                (error "couldn't find module" (car ls)))))))))));)
 
-; JAE - TODO:
-(define *modules*
-   (list (cons 
-           '(scheme) 
-            (make-module 
-                #f 
-                (interaction-environment) 
-               '())))) ; TODO: meta data should include a "stdlib-r7rs.scm"
+(define *modules* '())
+
+; Old code from original file:
 ;  (list (cons '(scheme) (make-module #f (interaction-environment)
 ;                                     '((include "init-7.scm"))))
 ;        (cons '(meta) (make-module #f (current-environment) '()))

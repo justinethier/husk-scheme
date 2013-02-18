@@ -856,6 +856,9 @@ r5rsEnv = do
   _ <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
   -- Bit of a hack to load (import)
   _ <- evalLisp' env $ List [Atom "%bootstrap-import"]
+  -- Load (r5rs base)
+  _ <- evalString metaEnv
+         "(add-module! '(r5rs) (make-module #f (interaction-environment) '()))"
 #endif
 
   return env
