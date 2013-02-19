@@ -412,8 +412,11 @@ eval env cont args@(List (Atom "define" : List (Atom var : fparams) : fbody )) =
  bound <- liftIO $ isRecBound env "define"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else do result <- (makeNormalFunc env fparams fbody >>= defineVar env var)
-          continueEval env cont result
+  else do 
+      -- Experimenting with macro expansion of body of function
+      -- ebody <- mapM (\ lisp -> Language.Scheme.Macro.macroEval env lisp apply) fbody
+      result <- (makeNormalFunc env fparams fbody >>= defineVar env var)
+      continueEval env cont result
 
 eval env cont args@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) = do
  bound <- liftIO $ isRecBound env "define"
