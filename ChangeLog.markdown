@@ -1,12 +1,9 @@
 v3.7
 --------
 
-TBD: r7rs style libraries
-TODO: link to docs, example code
+A major change for this release is the introduction of Scheme libraries using the R7RS library syntax. For an example of how to use libraries, see `examples/hello-library/hello.scm` in the husk source tree. Note that since R7RS is not currently implemented by husk, the library system currently only has the following built-in import: `(r5rs base)`.
 
-Added the ability to define scheme libraries, using the library syntax from R7RS. Since R7RS libraries are not currently implemented by husk, the library system currently only has the following built-in imports: `(r5rs base)`
-
-This release contains many improvements to the Haskell API:
+This release also contains many improvements to the Haskell API:
 
 - Added `r5rsEnv` to the Core module to expose the full environment, including functions loaded from the Scheme standard library.
 - Added `getDataFileFullPath` to the Core module to allow third party code to reference Scheme files such as `stdlib.scm` that are installed alongside husk.

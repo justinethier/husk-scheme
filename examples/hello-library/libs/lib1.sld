@@ -1,3 +1,9 @@
+;;;
+;;; Justin Ethier
+;;; husk scheme
+;;;
+;;; A sample library
+;;;
 (define-library (libs lib1)
     (export lib1-hello)
     (import (r5rs base)
