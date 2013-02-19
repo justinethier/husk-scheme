@@ -2,14 +2,18 @@ v3.7
 --------
 
 TBD: r7rs style libraries
+TODO: link to docs, example code
 
-Improvements to the Haskell API:
+Added the ability to define scheme libraries, using the library syntax from R7RS. Since R7RS libraries are not currently implemented by husk, the library system currently only has the following built-in imports: `(r5rs base)`
+
+This release contains many improvements to the Haskell API:
 
 - Added `r5rsEnv` to the Core module to expose the full environment, including functions loaded from the Scheme standard library.
 - Added `getDataFileFullPath` to the Core module to allow third party code to reference Scheme files such as `stdlib.scm` that are installed alongside husk.
 - Modified `NumArgs` to optionally require an explicit number of arguments. This helps when writing variable-length functions where specifying a single number of arguments may be misleading.
+- Added a new module `Language.Scheme.Util` to contain general purpose utility functions.
 
-Bug fixes
+Bug fixes:
 
 - Updated the parser to accept floating point numbers that contain only a fractional component, such as `.5`.
 - Enhanced numerical comparison operators (`=`, `<`, `<=`, `>`, `>=`) to be able to accept an unlimited number of arguments, per R5RS.
