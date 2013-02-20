@@ -123,6 +123,7 @@ module Language.Scheme.Primitives (
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Types
+import Language.Scheme.Variables
 --import qualified Control.Exception
 import Control.Monad.Error
 import qualified Data.ByteString as BS
@@ -143,6 +144,10 @@ try' = try
 try' = tryIOError
 #endif
 
+-- |A helper function to make pointer deref code more concise
+box :: LispVal -> IOThrowsError [LispVal]
+box a = return [a]
+
 ---------------------------------------------------
 -- I/O Primitives
 -- These primitives all execute within the IO monad
@@ -150,6 +155,7 @@ try' = tryIOError
 
 makePort :: IOMode -> [LispVal] -> IOThrowsError LispVal
 makePort mode [String filename] = liftM Port $ liftIO $ openFile filename mode
+makePort mode [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= makePort mode
 makePort _ [] = throwError $ NumArgs (Just 1) []
 makePort _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 

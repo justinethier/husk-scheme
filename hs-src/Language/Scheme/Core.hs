@@ -751,8 +751,8 @@ apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
         _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
              continueEval e (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args
 apply cont (IOFunc func) args = do
-  List dargs <- recDerefPtrs $ List args -- Deref any pointers
-  result <- func dargs
+  --List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  result <- func args
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
@@ -1107,6 +1107,7 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("read", readProc),
                 ("read-char", readCharProc hGetChar),
                 ("peek-char", readCharProc hLookAhead),
+-- TODO: pick recDeref conversion back up here...
                 ("write", writeProc (\ port obj -> hPrint port obj)),
                 ("write-char", writeCharProc),
                 ("display", writeProc (\ port obj -> do
