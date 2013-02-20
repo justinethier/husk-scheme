@@ -284,10 +284,16 @@ gensym args@(_ : _) = throwError $ NumArgs (Just 1) args
 -- "Pure" primitives
 ---------------------------------------------------
 
+box :: LispVal -> IOThrowsError [LispVal]
+box a = return [a]
+
 -- List primitives
 car :: [LispVal] -> ThrowsError LispVal
 car [List (x : _)] = return x
 car [DottedList (x : _) _] = return x
+--car [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= car
+--  r <- recDerefPtrs p -- >>= liftIO $ box >>= car
+--  car [r]
 car [badArg] = throwError $ TypeMismatch "pair" badArg
 car badArgList = throwError $ NumArgs (Just 1) badArgList
 

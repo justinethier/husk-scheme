@@ -1123,6 +1123,7 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
 -- Relocated
                 ("list?", unaryOp' isList),
                 ("vector?", unaryOp' isVector),
+
 -- end of relocated functions
 
                 -- Other I/O functions
