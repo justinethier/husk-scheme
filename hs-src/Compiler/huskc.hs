@@ -130,6 +130,11 @@ showVersion _ = do
 -- |High level code to compile the given file
 process :: String -> String -> Bool -> String -> IO ()
 process inFile outExec dynamic extraArgs = do
+
+
+-- TODO: how to integrate r5rsEnv and libraries?
+
+
   env <- Language.Scheme.Core.primitiveBindings
   stdlib <- getDataFileName "lib/stdlib.scm"
   srfi55 <- getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
