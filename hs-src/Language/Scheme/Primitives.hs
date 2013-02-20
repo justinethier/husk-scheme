@@ -91,6 +91,7 @@ module Language.Scheme.Primitives (
  , unpackEquals 
  , boolBinop 
  , unaryOp 
+ , unaryOp'
  , strBoolBinop 
  , charBoolBinop 
  , boolBoolBinop
@@ -123,6 +124,7 @@ module Language.Scheme.Primitives (
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Types
+import Language.Scheme.Variables
 --import qualified Control.Exception
 import Control.Monad.Error
 import qualified Data.ByteString as BS
@@ -593,10 +595,12 @@ isProcedure ([IOFunc _]) = return $ Bool True
 isProcedure ([EvalFunc _]) = return $ Bool True
 isProcedure _ = return $ Bool False
 
-isVector, isList :: LispVal -> ThrowsError LispVal
+isVector, isList :: LispVal -> IOThrowsError LispVal
 isVector (Vector _) = return $ Bool True
+isVector p@(Pointer _ _) = recDerefPtrs p >>= isVector
 isVector _ = return $ Bool False
 isList (List _) = return $ Bool True
+isList p@(Pointer _ _) = recDerefPtrs p >>= isList
 isList _ = return $ Bool False
 
 isByteVector :: LispVal -> ThrowsError LispVal
@@ -682,6 +686,11 @@ unaryOp :: (LispVal -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
 unaryOp f [v] = f v
 unaryOp _ [] = throwError $ NumArgs (Just 1) []
 unaryOp _ args@(_ : _) = throwError $ NumArgs (Just 1) args
+
+unaryOp' :: (LispVal -> IOThrowsError LispVal) -> [LispVal] -> IOThrowsError LispVal
+unaryOp' f [v] = f v
+unaryOp' _ [] = throwError $ NumArgs (Just 1) []
+unaryOp' _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 
 {- numBoolBinop :: (Integer -> Integer -> Bool) -> [LispVal] -> ThrowsError LispVal
 numBoolBinop = boolBinop unpackNum -}

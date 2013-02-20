@@ -751,19 +751,21 @@ apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
         _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
              continueEval e (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args
 apply cont (IOFunc func) args = do
-  List dargs <- recDerefPtrs $ List args -- Deref any pointers
-  result <- func dargs
+  result <- func args
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
 apply cont (EvalFunc func) args = do
     {- An EvalFunc extends the evaluator so it needs access to the current continuation;
     pass it as the first argument. -}
-  List dargs <- recDerefPtrs $ List args -- Deref any pointers
-  func (cont : dargs)
+  func (cont : args)
 apply cont (PrimitiveFunc func) args = do
-  List dargs <- recDerefPtrs $ List args -- Deref any pointers
-  result <- liftThrows $ func dargs
+-- TODO: this works as a temporary workaround, although it
+-- screws things up for error messages if a list, string, etc is
+-- specified. an alternative is just to move everything into the I/O
+-- monad
+--  List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  result <- liftThrows $ func args
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
@@ -1118,6 +1120,11 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("file-exists?", fileExists),
                 ("delete-file", deleteFile),
 
+-- Relocated
+                ("list?", unaryOp' isList),
+                ("vector?", unaryOp' isVector),
+-- end of relocated functions
+
                 -- Other I/O functions
                 ("print-env", printEnv'),
                 ("env-exports", exportsFromEnv'),
@@ -1234,7 +1241,6 @@ primitives = [("+", numAdd),
               ("real?", isReal),
               ("rational?", isRational),
               ("integer?", isInteger),
-              ("list?", unaryOp isList),
               ("null?", isNull),
               ("eof-object?", isEOFObject),
               ("symbol?", isSymbol),
@@ -1242,7 +1248,6 @@ primitives = [("+", numAdd),
               ("string->symbol", string2Symbol),
               ("char?", isChar),
 
-              ("vector?", unaryOp isVector),
               ("make-vector", makeVector),
               ("vector", buildVector),
               ("vector-length", vectorLength),
