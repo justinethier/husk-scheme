@@ -8,5 +8,7 @@
 ;;;
 ;;; > huski hello.scm
 ;;;
-(import (r5rs base) (libs lib1))
-(lib1-hello)
+(import (r5rs base)
+        (rename (prefix (libs lib1) test-)))
+
+(test-lib1-hello)

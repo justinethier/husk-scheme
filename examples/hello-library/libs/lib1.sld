@@ -9,5 +9,7 @@
     (import (r5rs base)
             (libs lib2))
     (begin
+        (define (internal-func)
+            (write lib2-hello))
         (define (lib1-hello)
-            (write lib2-hello))))
+            (internal-func))))
