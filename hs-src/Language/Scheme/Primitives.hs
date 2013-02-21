@@ -144,10 +144,6 @@ try' = try
 try' = tryIOError
 #endif
 
--- |A helper function to make pointer deref code more concise
-box :: LispVal -> IOThrowsError [LispVal]
-box a = return [a]
-
 ---------------------------------------------------
 -- I/O Primitives
 -- These primitives all execute within the IO monad
@@ -217,9 +213,12 @@ readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 {- writeProc :: --forall a (m :: * -> *).
              (MonadIO m, MonadError LispError m) =>
              (Handle -> LispVal -> IO a) -> [LispVal] -> m LispVal -}
-writeProc func [obj] = writeProc func [obj, Port stdout]
+writeProc func [obj] = do
+    dobj <- recDerefPtrs obj -- Last opportunity to do this before writing
+    writeProc func [dobj, Port stdout]
 writeProc func [obj, Port port] = do
-    output <- liftIO $ try' (liftIO $ func port obj)
+    dobj <- recDerefPtrs obj -- Last opportunity to do this before writing
+    output <- liftIO $ try' (liftIO $ func port dobj)
     case output of
         Left _ -> throwError $ Default "I/O error writing to port"
         Right _ -> return $ Nil ""
@@ -239,12 +238,14 @@ writeCharProc other = if length other == 2
                      else throwError $ NumArgs (Just 2) other
 
 fileExists, deleteFile :: [LispVal] -> IOThrowsError LispVal
+fileExists [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= fileExists
 fileExists [String filename] = do
     exists <- liftIO $ doesFileExist filename
     return $ Bool exists
 fileExists [] = throwError $ NumArgs (Just 1) []
 fileExists args@(_ : _) = throwError $ NumArgs (Just 1) args
 
+deleteFile [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= deleteFile
 deleteFile [String filename] = do
     output <- liftIO $ try' (liftIO $ removeFile filename)
     case output of
@@ -255,6 +256,7 @@ deleteFile args@(_ : _) = throwError $ NumArgs (Just 1) args
 
 readContents :: [LispVal] -> IOThrowsError LispVal
 readContents [String filename] = liftM String $ liftIO $ readFile filename
+readContents [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= readContents
 readContents [] = throwError $ NumArgs (Just 1) []
 readContents args@(_ : _) = throwError $ NumArgs (Just 1) args
 
@@ -266,6 +268,7 @@ load filename = do
      else throwError $ Default $ "File does not exist: " ++ filename
 
 readAll :: [LispVal] -> IOThrowsError LispVal
+readAll [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= readAll
 readAll [String filename] = liftM List $ load filename
 readAll [] = throwError $ NumArgs (Just 1) []
 readAll args@(_ : _) = throwError $ NumArgs (Just 1) args
@@ -279,6 +282,7 @@ _gensym prefix = do
 -- |Generate a (reasonably) unique symbol, given an optional prefix.
 --  This function is provided even though it is not part of R5RS.
 gensym :: [LispVal] -> IOThrowsError LispVal
+gensym [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= gensym
 gensym [String prefix] = _gensym prefix
 gensym [] = _gensym " g"
 gensym args@(_ : _) = throwError $ NumArgs (Just 1) args

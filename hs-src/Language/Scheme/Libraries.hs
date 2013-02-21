@@ -27,6 +27,7 @@ import Control.Monad.Error
 findModuleFile 
     :: [LispVal]
     -> IOThrowsError LispVal
+findModuleFile [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= findModuleFile
 findModuleFile [String file] 
     -- Built-in modules
 -- TODO: does this work in Windows, since it uses the "wrong" type of slashes for that OS?

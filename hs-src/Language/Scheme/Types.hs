@@ -86,6 +86,7 @@ module Language.Scheme.Types
     , eqv 
     , eqvList
     , eqVal 
+    , box
     , makeFunc
     , makeNormalFunc
     , makeVarargs
@@ -478,6 +479,10 @@ showVal (IOFunc _) = "<IO primitive>"
 showVal (EvalFunc _) = "<procedure>"
 showVal (Pointer p _) = "<ptr " ++ p ++ ">"
 showVal (Opaque d) = "<Haskell " ++ show (dynTypeRep d) ++ ">"
+
+-- |A helper function to make pointer deref code more concise
+box :: LispVal -> IOThrowsError [LispVal]
+box a = return [a]
 
 -- |Convert a list of Lisp objects into a space-separated string
 unwordsList :: [LispVal] -> String

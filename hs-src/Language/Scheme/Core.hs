@@ -1107,7 +1107,6 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("read", readProc),
                 ("read-char", readCharProc hGetChar),
                 ("peek-char", readCharProc hLookAhead),
--- TODO: pick recDeref conversion back up here...
                 ("write", writeProc (\ port obj -> hPrint port obj)),
                 ("write-char", writeCharProc),
                 ("display", writeProc (\ port obj -> do
@@ -1131,12 +1130,13 @@ printEnv' :: [LispVal] -> IOThrowsError LispVal
 printEnv' [LispEnv env] = do
     result <- liftIO $ printEnv env
     return $ String result
+printEnv' [] = throwError $ NumArgs (Just 1) []
+printEnv' args = throwError $ TypeMismatch "env" $ List args
 
 exportsFromEnv' :: [LispVal] -> IOThrowsError LispVal
 exportsFromEnv' [LispEnv env] = do
     result <- liftIO $ exportsFromEnv env
     return $ List result
---exportsFromEnv' err = throwError $ Default $ "bad args: " ++ show err
 exportsFromEnv' err = return $ List []
 
 {- "Pure" primitive functions -}
