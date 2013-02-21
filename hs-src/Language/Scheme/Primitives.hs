@@ -529,24 +529,32 @@ substring [(String s), (Number start), (Number end)] =
 substring [badType] = throwError $ TypeMismatch "string number number" badType
 substring badArgList = throwError $ NumArgs (Just 3) badArgList
 
-stringCIEquals :: [LispVal] -> ThrowsError LispVal
-stringCIEquals [(String str1), (String str2)] = do
-  if (length str1) /= (length str2)
-     then return $ Bool False
-     else return $ Bool $ ciCmp str1 str2 0
-  where ciCmp s1 s2 idx = if idx == (length s1)
-                             then True
-                             else if (toLower $ s1 !! idx) == (toLower $ s2 !! idx)
-                                     then ciCmp s1 s2 (idx + 1)
-                                     else False
-stringCIEquals [badType] = throwError $ TypeMismatch "string string" badType
-stringCIEquals badArgList = throwError $ NumArgs (Just 2) badArgList
+stringCIEquals :: [LispVal] -> IOThrowsError LispVal
+stringCIEquals args = do
+  List dargs <- recDerefPtrs $ List args
+  case dargs of
+    [(String str1), (String str2)] -> do
+      if (length str1) /= (length str2)
+         then return $ Bool False
+         else return $ Bool $ ciCmp str1 str2 0
+    [badType] -> throwError $ TypeMismatch "string string" badType
+    badArgList -> throwError $ NumArgs (Just 2) badArgList
+ where ciCmp s1 s2 idx = 
+         if idx == (length s1)
+            then True
+            else if (toLower $ s1 !! idx) == (toLower $ s2 !! idx)
+                    then ciCmp s1 s2 (idx + 1)
+                    else False
 
-stringCIBoolBinop :: ([Char] -> [Char] -> Bool) -> [LispVal] -> ThrowsError LispVal
-stringCIBoolBinop op [(String s1), (String s2)] = boolBinop unpackStr op [(String $ strToLower s1), (String $ strToLower s2)]
+stringCIBoolBinop :: ([Char] -> [Char] -> Bool) -> [LispVal] -> IOThrowsError LispVal
+stringCIBoolBinop op args = do 
+  List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  case dargs of
+    [(String s1), (String s2)] ->
+      liftThrows $ boolBinop unpackStr op [(String $ strToLower s1), (String $ strToLower s2)]
+    [badType] -> throwError $ TypeMismatch "string string" badType
+    badArgList -> throwError $ NumArgs (Just 2) badArgList
   where strToLower str = map (toLower) str
-stringCIBoolBinop _ [badType] = throwError $ TypeMismatch "string string" badType
-stringCIBoolBinop _ badArgList = throwError $ NumArgs (Just 2) badArgList
 
 charCIBoolBinop :: (Char -> Char -> Bool) -> [LispVal] -> ThrowsError LispVal
 charCIBoolBinop op [(Char s1), (Char s2)] = boolBinop unpackChar op [(Char $ toLower s1), (Char $ toLower s2)]
@@ -704,10 +712,11 @@ unaryOp f [v] = f v
 unaryOp _ [] = throwError $ NumArgs (Just 1) []
 unaryOp _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 
-{- numBoolBinop :: (Integer -> Integer -> Bool) -> [LispVal] -> ThrowsError LispVal
-numBoolBinop = boolBinop unpackNum -}
-strBoolBinop :: (String -> String -> Bool) -> [LispVal] -> ThrowsError LispVal
-strBoolBinop = boolBinop unpackStr
+strBoolBinop :: (String -> String -> Bool) -> [LispVal] -> IOThrowsError LispVal
+strBoolBinop fnc args = do
+  List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  liftThrows $ boolBinop unpackStr fnc dargs
+
 charBoolBinop = boolBinop unpackChar
 boolBoolBinop :: (Bool -> Bool -> Bool) -> [LispVal] -> ThrowsError LispVal
 boolBoolBinop = boolBinop unpackBool
