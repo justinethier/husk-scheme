@@ -762,6 +762,10 @@ apply cont (EvalFunc func) args = do
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
   func (cont : dargs)
 apply cont (PrimitiveFunc func) args = do
+-- TODO: need to get rid of this deref
+--  - funcs operating on objects need to become IOFuncs
+--  - TBD  how to report errors that could contain ptr args (perhaps a new error type?)
+--  - any other complications?
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
   result <- liftThrows $ func dargs
   case cont of
