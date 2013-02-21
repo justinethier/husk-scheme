@@ -1118,6 +1118,15 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                     String str -> hPutStr port str
                     _ -> hPutStr port $ show obj)),
 
+              ("hash-table?",       wrapHashTbl isHashTbl),
+              ("hash-table-exists?",wrapHashTbl hashTblExists),
+              ("hash-table-ref",    wrapHashTbl hashTblRef),
+              ("hash-table-size",   wrapHashTbl hashTblSize),
+              ("hash-table->alist", wrapHashTbl hashTbl2List),
+              ("hash-table-keys",   wrapHashTbl hashTblKeys),
+              ("hash-table-values", wrapHashTbl hashTblValues),
+              ("hash-table-copy",   wrapHashTbl hashTblCopy),
+
                 -- From SRFI 96
                 ("file-exists?", fileExists),
                 ("delete-file", deleteFile),
@@ -1266,14 +1275,6 @@ primitives = [("+", numAdd),
               ("string->utf8", byteVectorStr2Utf),
 
               ("make-hash-table", hashTblMake),
-              ("hash-table?", isHashTbl),
-              ("hash-table-exists?", hashTblExists),
-              ("hash-table-ref", hashTblRef),
-              ("hash-table-size", hashTblSize),
-              ("hash-table->alist", hashTbl2List),
-              ("hash-table-keys", hashTblKeys),
-              ("hash-table-values", hashTblValues),
-              ("hash-table-copy", hashTblCopy),
 
               ("string?", isString),
               ("string", buildString),

@@ -47,6 +47,7 @@ module Language.Scheme.Primitives (
  , hashTblValues 
  , hashTblCopy
  , hashTblMake
+ , wrapHashTbl
  -- ** String
  , buildString
  , makeString
@@ -425,6 +426,16 @@ byteVectorStr2Utf badArgList = throwError $ NumArgs (Just 1) badArgList
 
 
 -- ------------ Hash Table Primitives --------------
+
+wrapHashTbl :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> IOThrowsError LispVal
+wrapHashTbl fnc [p@(Pointer _ _)] = do
+  val <- derefPtr p
+  liftThrows $ fnc [val]
+wrapHashTbl fnc (p@(Pointer _ _) : key : args) = do
+  ht <- derefPtr p
+  k <- recDerefPtrs key
+  liftThrows $ fnc (ht : k : args)
+wrapHashTbl fnc args = liftThrows $ fnc args
 
 -- Future: support (equal?), (hash) parameters
 hashTblMake, isHashTbl, hashTblExists, hashTblRef, hashTblSize, hashTbl2List, hashTblKeys, hashTblValues, hashTblCopy :: [LispVal] -> ThrowsError LispVal
