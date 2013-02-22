@@ -827,9 +827,13 @@ apply _ func args = do
   List args' <- recDerefPtrs $ List args
   throwError $ BadSpecialForm "Unable to evaluate form" $ List (func' : args')
 
-{- |Environment containing the primitive forms that are built into the Scheme language. Note that this only includes
-forms that are implemented in Haskell; derived forms implemented in Scheme (such as let, list, etc) are available
-in the standard library which must be pulled into the environment using /(load)/. -}
+-- |Environment containing the primitive forms that are built into the Scheme 
+--  language. This function only includes forms that are implemented in Haskell; 
+--  derived forms implemented in Scheme (such as let, list, etc) are available
+--  in the standard library which must be pulled into the environment using /(load)/
+--
+--  For the purposes of using husk as an extension language, /r5rsEnv/ will
+--  probably be more useful.
 primitiveBindings :: IO Env
 primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrimitives
                                                ++ map (domakeFunc EvalFunc) evalFunctions
