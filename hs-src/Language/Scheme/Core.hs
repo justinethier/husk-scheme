@@ -1138,6 +1138,11 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
               ("list?", unaryOp' isList),
               ("vector?", unaryOp' isVector),
               ("null?", isNull),
+              ("string?", isString),
+
+              ("string-length", stringLength),
+              ("string-ref", stringRef),
+              ("substring", substring),
 
               ("vector-length",wrapLeadObj vectorLength),
               ("vector-ref",   wrapLeadObj vectorRef),
@@ -1280,13 +1285,9 @@ primitives = [("+", numAdd),
               ("string->utf8", byteVectorStr2Utf),
 
               ("make-hash-table", hashTblMake),
--- TODO: resume conversion here
-              ("string?", isString),
               ("string", buildString),
               ("make-string", makeString),
-              ("string-length", stringLength),
-              ("string-ref", stringRef),
-              ("substring", substring),
+-- TODO: resume conversion here
               ("string-append", stringAppend),
               ("string->number", stringToNumber),
               ("string->list", stringToList),

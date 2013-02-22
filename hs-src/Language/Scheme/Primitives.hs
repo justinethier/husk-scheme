@@ -527,17 +527,22 @@ doMakeString n char s =
        then String s
        else doMakeString (n - 1) char (s ++ [char])
 
-stringLength :: [LispVal] -> ThrowsError LispVal
+stringLength :: [LispVal] -> IOThrowsError LispVal
+stringLength [p@(Pointer _ _)] = derefPtr p  >>= box >>= stringLength
 stringLength [String s] = return $ Number $ foldr (const (+ 1)) 0 s -- Could probably do 'length s' instead...
 stringLength [badType] = throwError $ TypeMismatch "string" badType
 stringLength badArgList = throwError $ NumArgs (Just 1) badArgList
 
-stringRef :: [LispVal] -> ThrowsError LispVal
+stringRef :: [LispVal] -> IOThrowsError LispVal
+stringRef [p@(Pointer _ _)] = derefPtr p >>= box >>= stringRef
 stringRef [(String s), (Number k)] = return $ Char $ s !! fromInteger k
 stringRef [badType] = throwError $ TypeMismatch "string number" badType
 stringRef badArgList = throwError $ NumArgs (Just 2) badArgList
 
-substring :: [LispVal] -> ThrowsError LispVal
+substring :: [LispVal] -> IOThrowsError LispVal
+substring (p@(Pointer _ _) : lvs) = do
+  s <- derefPtr p
+  substring (s : lvs)
 substring [(String s), (Number start), (Number end)] =
   do let slength = fromInteger $ end - start
      let begin = fromInteger start
@@ -702,7 +707,8 @@ isChar :: [LispVal] -> ThrowsError LispVal
 isChar ([Char _]) = return $ Bool True
 isChar _ = return $ Bool False
 
-isString :: [LispVal] -> ThrowsError LispVal
+isString :: [LispVal] -> IOThrowsError LispVal
+isString [p@(Pointer _ _)] = derefPtr p >>= box >>= isString
 isString ([String _]) = return $ Bool True
 isString _ = return $ Bool False
 
