@@ -48,6 +48,7 @@ module Language.Scheme.Primitives (
  , hashTblCopy
  , hashTblMake
  , wrapHashTbl
+ , wrapLeadObj
  -- ** String
  , buildString
  , makeString
@@ -92,6 +93,7 @@ module Language.Scheme.Primitives (
  , unpackEquals 
  , boolBinop 
  , unaryOp 
+ , unaryOp'
  , strBoolBinop 
  , charBoolBinop 
  , boolBoolBinop
@@ -294,20 +296,25 @@ gensym args@(_ : _) = throwError $ NumArgs (Just 1) args
 ---------------------------------------------------
 
 -- List primitives
-car :: [LispVal] -> ThrowsError LispVal
+car :: [LispVal] -> IOThrowsError LispVal
+car [p@(Pointer _ _)] = derefPtr p >>= box >>= car
 car [List (x : _)] = return x
 car [DottedList (x : _) _] = return x
 car [badArg] = throwError $ TypeMismatch "pair" badArg
 car badArgList = throwError $ NumArgs (Just 1) badArgList
 
-cdr :: [LispVal] -> ThrowsError LispVal
+cdr :: [LispVal] -> IOThrowsError LispVal
+cdr [p@(Pointer _ _)] = derefPtr p >>= box >>= cdr
 cdr [List (_ : xs)] = return $ List xs
 cdr [DottedList [_] x] = return x
 cdr [DottedList (_ : xs) x] = return $ DottedList xs x
 cdr [badArg] = throwError $ TypeMismatch "pair" badArg
 cdr badArgList = throwError $ NumArgs (Just 1) badArgList
 
-cons :: [LispVal] -> ThrowsError LispVal
+cons :: [LispVal] -> IOThrowsError LispVal
+cons [x, p@(Pointer _ _)] = do
+  y <- derefPtr p
+  cons [x, y]
 cons [x1, List []] = return $ List [x1]
 cons [x, List xs] = return $ List $ x : xs
 cons [x, DottedList xs xlast] = return $ DottedList (x : xs) xlast
@@ -335,8 +342,7 @@ makeVector [(Number n), a] = do
 makeVector [badType] = throwError $ TypeMismatch "integer" badType
 makeVector badArgList = throwError $ NumArgs (Just 1) badArgList
 
-buildVector (o : os) = do
-  let lst = o : os
+buildVector lst@(o : os) = do
   return $ Vector $ (listArray (0, length lst - 1)) lst
 buildVector badArgList = throwError $ NumArgs (Just 1) badArgList
 
@@ -425,9 +431,9 @@ byteVectorStr2Utf [badType] = throwError $ TypeMismatch "string" badType
 byteVectorStr2Utf badArgList = throwError $ NumArgs (Just 1) badArgList
 
 
--- ------------ Hash Table Primitives --------------
+-- ------------ Ptr Helper Primitives --------------
 
-wrapHashTbl :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> IOThrowsError LispVal
+wrapHashTbl, wrapLeadObj :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> IOThrowsError LispVal
 wrapHashTbl fnc [p@(Pointer _ _)] = do
   val <- derefPtr p
   liftThrows $ fnc [val]
@@ -436,6 +442,16 @@ wrapHashTbl fnc (p@(Pointer _ _) : key : args) = do
   k <- recDerefPtrs key
   liftThrows $ fnc (ht : k : args)
 wrapHashTbl fnc args = liftThrows $ fnc args
+
+wrapLeadObj fnc [p@(Pointer _ _)] = do
+  val <- derefPtr p
+  liftThrows $ fnc [val]
+wrapLeadObj fnc (p@(Pointer _ _) : args) = do
+  obj <- derefPtr p
+  liftThrows $ fnc (obj : args)
+wrapLeadObj fnc args = liftThrows $ fnc args
+
+-- ------------ Hash Table Primitives --------------
 
 -- Future: support (equal?), (hash) parameters
 hashTblMake, isHashTbl, hashTblExists, hashTblRef, hashTblSize, hashTbl2List, hashTblKeys, hashTblValues, hashTblCopy :: [LispVal] -> ThrowsError LispVal
@@ -607,7 +623,8 @@ stringCopy [String s] = return $ String s
 stringCopy [badType] = throwError $ TypeMismatch "string" badType
 stringCopy badArgList = throwError $ NumArgs (Just 2) badArgList
 
-isDottedList :: [LispVal] -> ThrowsError LispVal
+isDottedList :: [LispVal] -> IOThrowsError LispVal
+isDottedList ([p@(Pointer _ _)]) = derefPtr p >>= box >>= isDottedList
 isDottedList ([DottedList _ _]) = return $ Bool True
 -- Must include lists as well since they are made up of 'chains' of pairs
 isDottedList ([List []]) = return $ Bool False
@@ -622,9 +639,11 @@ isProcedure ([IOFunc _]) = return $ Bool True
 isProcedure ([EvalFunc _]) = return $ Bool True
 isProcedure _ = return $ Bool False
 
-isVector, isList :: LispVal -> ThrowsError LispVal
+isVector, isList :: LispVal -> IOThrowsError LispVal
+isVector p@(Pointer _ _) = derefPtr p >>= isVector
 isVector (Vector _) = return $ Bool True
 isVector _ = return $ Bool False
+isList p@(Pointer _ _) = derefPtr p >>= isList
 isList (List _) = return $ Bool True
 isList _ = return $ Bool False
 
@@ -632,7 +651,8 @@ isByteVector :: LispVal -> ThrowsError LispVal
 isByteVector (ByteVector _) = return $ Bool True
 isByteVector _ = return $ Bool False
 
-isNull :: [LispVal] -> ThrowsError LispVal
+isNull :: [LispVal] -> IOThrowsError LispVal
+isNull ([p@(Pointer _ _)]) = derefPtr p >>= box >>= isNull
 isNull ([List []]) = return $ Bool True
 isNull _ = return $ Bool False
 
@@ -650,7 +670,8 @@ symbol2String [notAtom] = throwError $ TypeMismatch "symbol" notAtom
 symbol2String [] = throwError $ NumArgs (Just 1) []
 symbol2String args@(_ : _) = throwError $ NumArgs (Just 1) args
 
-string2Symbol :: [LispVal] -> ThrowsError LispVal
+string2Symbol :: [LispVal] -> IOThrowsError LispVal
+string2Symbol ([p@(Pointer _ _)]) = derefPtr p >>= box >>= string2Symbol
 string2Symbol ([String s]) = return $ Atom s
 string2Symbol [] = throwError $ NumArgs (Just 1) []
 string2Symbol [notString] = throwError $ TypeMismatch "string" notString
@@ -711,6 +732,11 @@ unaryOp :: (LispVal -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
 unaryOp f [v] = f v
 unaryOp _ [] = throwError $ NumArgs (Just 1) []
 unaryOp _ args@(_ : _) = throwError $ NumArgs (Just 1) args
+
+unaryOp' :: (LispVal -> IOThrowsError LispVal) -> [LispVal] -> IOThrowsError LispVal
+unaryOp' f [v] = f v
+unaryOp' _ [] = throwError $ NumArgs (Just 1) []
+unaryOp' _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 
 strBoolBinop :: (String -> String -> Bool) -> [LispVal] -> IOThrowsError LispVal
 strBoolBinop fnc args = do

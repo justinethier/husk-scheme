@@ -523,11 +523,11 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
         cpsSet e c obj (Just [List (l : _)]) = do
             l' <- recDerefPtrs l
             obj' <- recDerefPtrs obj
-            (liftThrows $ cons [l', obj']) >>= updateObject e var >>= continueEval e c
+            (cons [l', obj']) >>= updateObject e var >>= continueEval e c
         cpsSet e c obj (Just [DottedList (l : _) _]) = do
             l' <- recDerefPtrs l
             obj' <- recDerefPtrs obj
-            (liftThrows $ cons [l', obj']) >>= updateObject e var >>= continueEval e c
+            (cons [l', obj']) >>= updateObject e var >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
 eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
@@ -1128,6 +1128,21 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
               ("string-ci>?", stringCIBoolBinop (>)),
               ("string-ci<=?", stringCIBoolBinop (<=)),
               ("string-ci>=?", stringCIBoolBinop (>=)),
+              ("string->symbol", string2Symbol),
+
+              ("car", car),
+              ("cdr", cdr),
+              ("cons", cons),
+
+              ("pair?", isDottedList),
+              ("list?", unaryOp' isList),
+              ("vector?", unaryOp' isVector),
+              ("null?", isNull),
+
+              ("vector-length",wrapLeadObj vectorLength),
+              ("vector-ref",   wrapLeadObj vectorRef),
+              ("vector->list", wrapLeadObj vectorToList),
+              ("list->vector", wrapLeadObj listToVector),
 
               ("hash-table?",       wrapHashTbl isHashTbl),
               ("hash-table-exists?",wrapHashTbl hashTblExists),
@@ -1234,36 +1249,25 @@ primitives = [("+", numAdd),
               ("integer->char", int2Char),
               ("char-upper", charUpper),
               ("char-lower", charLower),
--- TODO: pick up conversion here
-              ("car", car),
-              ("cdr", cdr),
-              ("cons", cons),
+-- TODO: equivalence becomes more interesting with ptrs, let's convert
+--       these last
               ("eq?", eqv),
               ("eqv?", eqv),
               ("equal?", equal),
 
-              ("pair?", isDottedList),
               ("procedure?", isProcedure),
               ("number?", isNumber),
               ("complex?", isComplex),
               ("real?", isReal),
               ("rational?", isRational),
               ("integer?", isInteger),
-              ("list?", unaryOp isList),
-              ("null?", isNull),
               ("eof-object?", isEOFObject),
               ("symbol?", isSymbol),
               ("symbol->string", symbol2String),
-              ("string->symbol", string2Symbol),
               ("char?", isChar),
 
-              ("vector?", unaryOp isVector),
               ("make-vector", makeVector),
               ("vector", buildVector),
-              ("vector-length", vectorLength),
-              ("vector-ref", vectorRef),
-              ("vector->list", vectorToList),
-              ("list->vector", listToVector),
 
               ("bytevector?", unaryOp isByteVector),
               ("make-bytevector", makeByteVector),
@@ -1276,7 +1280,7 @@ primitives = [("+", numAdd),
               ("string->utf8", byteVectorStr2Utf),
 
               ("make-hash-table", hashTblMake),
-
+-- TODO: resume conversion here
               ("string?", isString),
               ("string", buildString),
               ("make-string", makeString),

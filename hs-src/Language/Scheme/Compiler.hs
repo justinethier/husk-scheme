@@ -579,11 +579,11 @@ compile env (List [Atom "set-cdr!", Atom var, argObj]) copts = do
               symDoSet ++ " e c obj (Just [List (l : _)]) = do\n" ++
                           "   l' <- recDerefPtrs l\n" ++
                           "   obj' <- recDerefPtrs obj\n" ++
-                          "   (liftThrows $ cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
+                          "   (cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
               symDoSet ++ " e c obj (Just [DottedList (l : _) _]) = do\n" ++
                           "   l' <- recDerefPtrs l\n" ++
                           "   obj' <- recDerefPtrs obj\n" ++
-                          "   (liftThrows $ cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
+                          "   (cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
               symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
 
  -- Return a list of all the compiled code

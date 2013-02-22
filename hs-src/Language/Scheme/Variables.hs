@@ -44,6 +44,7 @@ module Language.Scheme.Variables
     , isNamespacedRecBound 
     -- * Pointers
     , derefPtr
+--    , derefPtrs
     , recDerefPtrs
     ) where
 import Language.Scheme.Types
@@ -506,6 +507,11 @@ derefPtr (Pointer p env) = do
     result <- getVar env p
     derefPtr result
 derefPtr v = return v
+
+-- -- |Return the given list of values, but if any of the
+-- --  original values is a pointer it will be dereferenced
+-- derefPtrs :: [LispVal] -> IOThrowsError LispVal
+-- derefPtrs lvs = mapM (liftThrows $ derefPtr) lvs
 
 -- |Recursively process the given data structure, dereferencing
 --  any pointers found along the way. 
