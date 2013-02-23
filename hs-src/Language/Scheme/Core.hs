@@ -257,6 +257,8 @@ eval env cont val@(Pointer _ _) = continueEval env cont val
 eval env cont (Atom a) = do
   v <- getVar env a
   val <- return $ case v of
+-- TODO: this flag may go away on this branch; it may
+--       not be practical with Pointer used everywhere now
 #ifdef UsePointers
     List _ -> Pointer a env
     DottedList _ _ -> Pointer a env
@@ -762,12 +764,11 @@ apply cont (EvalFunc func) args = do
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
   func (cont : dargs)
 apply cont (PrimitiveFunc func) args = do
--- TODO: need to get rid of this deref
---  - funcs operating on objects need to become IOFuncs
---  - TBD  how to report errors that could contain ptr args (perhaps a new error type?)
+-- TODO: 
+--  how to report errors that could contain ptr args (perhaps a new error type?)
 --  - any other complications?
-  List dargs <- recDerefPtrs $ List args -- Deref any pointers
-  result <- liftThrows $ func dargs
+  --List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  result <- liftThrows $ func args
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
@@ -1134,6 +1135,12 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
               ("cdr", cdr),
               ("cons", cons),
 
+            -- TODO: these need to be rewritten to actually be in 
+            -- the IO monad, tmpWrap is just temporary
+              ("eq?",    tmpWrap eqv),
+              ("eqv?",   tmpWrap eqv),
+              ("equal?", tmpWrap equal),
+
               ("pair?", isDottedList),
               ("list?", unaryOp' isList),
               ("vector?", unaryOp' isVector),
@@ -1143,6 +1150,19 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
               ("string-length", stringLength),
               ("string-ref", stringRef),
               ("substring", substring),
+              ("string-append", stringAppend),
+              ("string->number", stringToNumber),
+              ("string->list", stringToList),
+              ("list->string", listToString),
+              ("string-copy", stringCopy),
+              ("string->utf8", byteVectorStr2Utf),
+
+              ("bytevector?", unaryOp' isByteVector),
+              ("bytevector-length", byteVectorLength),
+              ("bytevector-u8-ref", byteVectorRef),
+              ("bytevector-append", byteVectorAppend),
+              ("bytevector-copy", byteVectorCopy),
+              ("utf8->string", byteVectorUtf2Str),
 
               ("vector-length",wrapLeadObj vectorLength),
               ("vector-ref",   wrapLeadObj vectorRef),
@@ -1169,6 +1189,14 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("read-all", readAll),
                 ("find-module-file", findModuleFile),
                 ("gensym", gensym)]
+
+-- TODO:
+-- This function is a temporary stopgap that will go
+-- away before this branch is merged
+tmpWrap :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> IOThrowsError LispVal
+tmpWrap fnc lvs = do
+    List result <- recDerefPtrs $ List lvs 
+    liftThrows $ fnc result
 
 printEnv' :: [LispVal] -> IOThrowsError LispVal
 printEnv' [LispEnv env] = do
@@ -1254,11 +1282,6 @@ primitives = [("+", numAdd),
               ("integer->char", int2Char),
               ("char-upper", charUpper),
               ("char-lower", charLower),
--- TODO: equivalence becomes more interesting with ptrs, let's convert
---       these last
-              ("eq?", eqv),
-              ("eqv?", eqv),
-              ("equal?", equal),
 
               ("procedure?", isProcedure),
               ("number?", isNumber),
@@ -1274,25 +1297,12 @@ primitives = [("+", numAdd),
               ("make-vector", makeVector),
               ("vector", buildVector),
 
-              ("bytevector?", unaryOp isByteVector),
               ("make-bytevector", makeByteVector),
               ("bytevector", byteVector),
-              ("bytevector-length", byteVectorLength),
-              ("bytevector-u8-ref", byteVectorRef),
-              ("bytevector-append", byteVectorAppend),
-              ("bytevector-copy", byteVectorCopy),
-              ("utf8->string", byteVectorUtf2Str),
-              ("string->utf8", byteVectorStr2Utf),
 
               ("make-hash-table", hashTblMake),
               ("string", buildString),
               ("make-string", makeString),
--- TODO: resume conversion here
-              ("string-append", stringAppend),
-              ("string->number", stringToNumber),
-              ("string->list", stringToList),
-              ("list->string", listToString),
-              ("string-copy", stringCopy),
 
               ("boolean?", isBoolean)]
 

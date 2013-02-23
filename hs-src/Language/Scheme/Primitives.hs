@@ -367,7 +367,7 @@ listToVector [badType] = throwError $ TypeMismatch "list" badType
 listToVector badArgList = throwError $ NumArgs (Just 1) badArgList
 
 -- ------------ Bytevector Primitives --------------
-makeByteVector, byteVector, byteVectorLength, byteVectorRef, byteVectorCopy, byteVectorAppend, byteVectorUtf2Str, byteVectorStr2Utf :: [LispVal] -> ThrowsError LispVal
+makeByteVector, byteVector :: [LispVal] -> ThrowsError LispVal
 makeByteVector [(Number n)] = do
   let ls = replicate (fromInteger n) (0 :: Word8)
   return $ ByteVector $ BS.pack ls
@@ -383,6 +383,10 @@ byteVector bs = do
    conv (Number n) = fromInteger n :: Word8
    conv n = 0 :: Word8
 
+byteVectorLength, byteVectorRef, byteVectorCopy, byteVectorAppend, byteVectorUtf2Str :: [LispVal] -> IOThrowsError LispVal
+byteVectorCopy (p@(Pointer _ _) : lvs) = do
+    bv <- derefPtr p
+    byteVectorCopy (bv : lvs)
 byteVectorCopy [ByteVector bv] = do
     return $ ByteVector $ BS.copy
         bv
@@ -401,16 +405,24 @@ byteVectorCopy badArgList = throwError $ NumArgs (Just 1) badArgList
 
 byteVectorAppend bs = do
     let acc = BS.pack []
-        conv (ByteVector bs) = bs
-        conv x = BS.empty
-        bs' = map conv bs
+        conv :: LispVal -> IOThrowsError BSU.ByteString
+        conv p@(Pointer _ _) = do
+          bs <- derefPtr p
+          conv bs
+        conv (ByteVector bs) = return bs
+        conv x = return BS.empty
+    bs' <- mapM conv bs
     return $ ByteVector $ BS.concat bs'
 -- TODO: error handling
 
+byteVectorLength [p@(Pointer _ _)] = derefPtr p >>= box >>= byteVectorLength
 byteVectorLength [(ByteVector bv)] = return $ Number $ toInteger $ BS.length bv
 byteVectorLength [badType] = throwError $ TypeMismatch "bytevector" badType
 byteVectorLength badArgList = throwError $ NumArgs (Just 1) badArgList
 
+byteVectorRef (p@(Pointer _ _) : lvs) = do
+    bv <- derefPtr p
+    byteVectorRef (bv : lvs)
 byteVectorRef [(ByteVector bv), (Number n)] = do
     let len = toInteger $ (BS.length bv) - 1
     if n > len || n < 0
@@ -419,11 +431,15 @@ byteVectorRef [(ByteVector bv), (Number n)] = do
 byteVectorRef [badType] = throwError $ TypeMismatch "bytevector integer" badType
 byteVectorRef badArgList = throwError $ NumArgs (Just 2) badArgList
 
+byteVectorUtf2Str [p@(Pointer _ _)] = derefPtr p >>= box >>= byteVectorUtf2Str
 byteVectorUtf2Str [(ByteVector bv)] = do
     return $ String $ BSU.toString bv 
 -- TODO: need to support other overloads of this function
 byteVectorUtf2Str [badType] = throwError $ TypeMismatch "bytevector" badType
 byteVectorUtf2Str badArgList = throwError $ NumArgs (Just 1) badArgList
+
+byteVectorStr2Utf :: [LispVal] -> IOThrowsError LispVal
+byteVectorStr2Utf [p@(Pointer _ _)] = derefPtr p >>= box >>= byteVectorStr2Utf
 byteVectorStr2Utf [(String s)] = do
     return $ ByteVector $ BSU.fromString s
 -- TODO: need to support other overloads of this function
@@ -582,7 +598,10 @@ charCIBoolBinop op [(Char s1), (Char s2)] = boolBinop unpackChar op [(Char $ toL
 charCIBoolBinop _ [badType] = throwError $ TypeMismatch "character character" badType
 charCIBoolBinop _ badArgList = throwError $ NumArgs (Just 2) badArgList
 
-stringAppend :: [LispVal] -> ThrowsError LispVal
+stringAppend :: [LispVal] -> IOThrowsError LispVal
+stringAppend (p@(Pointer _ _) : lvs) = do
+  s <- derefPtr p
+  stringAppend (s : lvs)
 stringAppend [(String s)] = return $ String s -- Needed for "last" string value
 stringAppend (String st : sts) = do
   rest <- stringAppend sts
@@ -592,9 +611,12 @@ stringAppend (String st : sts) = do
 stringAppend [badType] = throwError $ TypeMismatch "string" badType
 stringAppend badArgList = throwError $ NumArgs (Just 1) badArgList
 
-stringToNumber :: [LispVal] -> ThrowsError LispVal
+stringToNumber :: [LispVal] -> IOThrowsError LispVal
+stringToNumber (p@(Pointer _ _) : lvs) = do
+  s <- derefPtr p
+  stringToNumber (s : lvs)
 stringToNumber [(String s)] = do
-  result <- (readExpr s)
+  result <- liftThrows $ readExpr s
   case result of
     n@(Number _) -> return n
     n@(Rational _) -> return n
@@ -611,19 +633,22 @@ stringToNumber [(String s), Number radix] = do
 stringToNumber [badType] = throwError $ TypeMismatch "string" badType
 stringToNumber badArgList = throwError $ NumArgs (Just 1) badArgList
 
-stringToList :: [LispVal] -> ThrowsError LispVal
+stringToList :: [LispVal] -> IOThrowsError LispVal
+stringToList [p@(Pointer _ _)] = derefPtr p >>= box >>= stringToList
 stringToList [(String s)] = return $ List $ map (Char) s
 stringToList [badType] = throwError $ TypeMismatch "string" badType
 stringToList badArgList = throwError $ NumArgs (Just 1) badArgList
 
-listToString :: [LispVal] -> ThrowsError LispVal
+listToString :: [LispVal] -> IOThrowsError LispVal
+listToString [p@(Pointer _ _)] = derefPtr p >>= box >>= listToString
 listToString [(List [])] = return $ String ""
-listToString [(List l)] = buildString l
+listToString [(List l)] = liftThrows $ buildString l
 listToString [badType] = throwError $ TypeMismatch "list" badType
 listToString [] = throwError $ NumArgs (Just 1) []
 listToString args@(_ : _) = throwError $ NumArgs (Just 1) args
 
-stringCopy :: [LispVal] -> ThrowsError LispVal
+stringCopy :: [LispVal] -> IOThrowsError LispVal
+stringCopy [p@(Pointer _ _)] = derefPtr p >>= box >>= stringCopy
 stringCopy [String s] = return $ String s
 stringCopy [badType] = throwError $ TypeMismatch "string" badType
 stringCopy badArgList = throwError $ NumArgs (Just 2) badArgList
@@ -644,17 +669,16 @@ isProcedure ([IOFunc _]) = return $ Bool True
 isProcedure ([EvalFunc _]) = return $ Bool True
 isProcedure _ = return $ Bool False
 
-isVector, isList :: LispVal -> IOThrowsError LispVal
+isVector,isByteVector, isList :: LispVal -> IOThrowsError LispVal
 isVector p@(Pointer _ _) = derefPtr p >>= isVector
 isVector (Vector _) = return $ Bool True
 isVector _ = return $ Bool False
+isByteVector p@(Pointer _ _) = derefPtr p >>= isVector
+isByteVector (ByteVector _) = return $ Bool True
+isByteVector _ = return $ Bool False
 isList p@(Pointer _ _) = derefPtr p >>= isList
 isList (List _) = return $ Bool True
 isList _ = return $ Bool False
-
-isByteVector :: LispVal -> ThrowsError LispVal
-isByteVector (ByteVector _) = return $ Bool True
-isByteVector _ = return $ Bool False
 
 isNull :: [LispVal] -> IOThrowsError LispVal
 isNull ([p@(Pointer _ _)]) = derefPtr p >>= box >>= isNull

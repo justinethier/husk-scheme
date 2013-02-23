@@ -549,6 +549,7 @@ isObject (DottedList _ _) = True
 isObject (String _) = True
 isObject (Vector _) = True
 isObject (HashTable _) = True
+isObject (ByteVector _) = True
 isObject (Pointer _ _) = True
 isObject _ = False
 
