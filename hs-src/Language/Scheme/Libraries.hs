@@ -45,6 +45,9 @@ moduleImport
     -> Env  -- ^ Environment to import from
     -> [LispVal] -- ^ Identifiers to import
     -> IOThrowsError LispVal
+moduleImport to from (p@(Pointer _ _) : is) = do
+  i <- derefPtr p
+  moduleImport to from (i : is)
 moduleImport to from (Atom i : is) = do
   _ <- divertBinding to from i i
   moduleImport to from is

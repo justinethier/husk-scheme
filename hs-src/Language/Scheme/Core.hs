@@ -53,7 +53,7 @@ import qualified Data.Map
 import Data.Word
 import qualified System.Exit
 import System.IO
--- import Debug.Trace
+import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -759,10 +759,10 @@ apply cont (IOFunc func) args = do
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
 apply cont (EvalFunc func) args = do
-    {- An EvalFunc extends the evaluator so it needs access to the current continuation;
-    pass it as the first argument. -}
-  List dargs <- recDerefPtrs $ List args -- Deref any pointers
-  func (cont : dargs)
+    -- An EvalFunc extends the evaluator so it needs access to the current 
+    -- continuation, so pass it as the first argument.
+--List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  func (cont : args)
 apply cont (PrimitiveFunc func) args = do
 -- TODO: 
 --  how to report errors that could contain ptr args (perhaps a new error type?)
@@ -935,8 +935,7 @@ evalfuncApply (cont@(Continuation _ _ _ _ _) : func : args) = do
       List aLastElems -> do
         apply cont func $ (init args) ++ aLastElems
       Pointer pVar pEnv -> do
-        value <- recDerefPtrs aRev
-        applyArgs value
+        derefPtr aRev >>= applyArgs
       other -> throwError $ TypeMismatch "List" other
 evalfuncApply (_ : args) = throwError $ NumArgs (Just 2) args -- Skip over continuation argument
 evalfuncApply _ = throwError $ NumArgs (Just 2) []
@@ -961,8 +960,9 @@ evalfuncImport [
     LispEnv fromEnv, 
     imports,
     _] = do
+    debug <- liftIO $ printEnv fromEnv
     LispEnv toEnv' <- 
-        case toEnv of
+        case (trace ("entered import:" ++ debug) toEnv) of
             LispEnv e -> return toEnv
             Bool False -> do
                 -- A hack to load imports into the main env, which
@@ -972,14 +972,22 @@ evalfuncImport [
                         return $ LispEnv gp
                     Just (Environment Nothing _ _ ) -> throwError $ InternalError "import into empty parent env"
                     Nothing -> throwError $ InternalError "import into empty env"
-
-    case imports of
+-- f this, need to go back and see what this trace is on
+-- master, and figure out what the hell is wrong on this branch after
+-- the pending evalfunc changes...
+    debug2 <- liftIO $ printEnv toEnv'
+    case (trace ("toEnv(" ++ show imports ++ "): " {- ++ debug2 -}) imports) of
+        p@(Pointer _ _) -> do
+            -- TODO: need to do this in a safer way
+            List i <- derefPtr p -- Dangerous, but list is only expected obj
+            result <- moduleImport toEnv' fromEnv i
+            (trace ("exit import (ptr)") continueEval) env cont result
         List i -> do
             result <- moduleImport toEnv' fromEnv i
-            continueEval env cont result
+            (trace ("exit import (list)") continueEval) env cont result
         Bool False -> do -- Export everything
             newEnv <- liftIO $ importEnv toEnv' fromEnv
-            continueEval 
+            (trace ("exit import (bool)") continueEval)
                 env 
                (Continuation env a b c d) 
                (LispEnv newEnv)
@@ -995,6 +1003,10 @@ bootstrapImport [cont@(Continuation env _ _ _ _)] = do
     renv <- defineNamespacedVar env macroNamespace "import" ri
     continueEval env cont renv
 
+
+evalfuncLoad (cont : p@(Pointer _ _) : lvs) = do
+    lv <- derefPtr p
+    evalfuncLoad (cont : lv : lvs)
 
 evalfuncLoad [cont@(Continuation _ a b c d), String filename, LispEnv env] = do
     evalfuncLoad [Continuation env a b c d, String filename]
@@ -1027,8 +1039,12 @@ evalfuncLoad _ = throwError $ NumArgs (Just 1) []
 --
 -- FUTURE: consider allowing env to be specified, per R5RS
 --
-evalfuncEval [cont@(Continuation env _ _ _ _), val] = meval env cont val
-evalfuncEval [cont@(Continuation _ _ _ _ _), val, LispEnv env] = meval env cont val
+evalfuncEval [cont@(Continuation env _ _ _ _), val] = do
+    v <- derefPtr val -- Must deref ptrs for macro subsystem
+    meval env cont v
+evalfuncEval [cont@(Continuation _ _ _ _ _), val, LispEnv env] = do
+    v <- derefPtr val -- Must deref ptrs for macro subsystem
+    meval env cont v
 evalfuncEval (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
 evalfuncEval _ = throwError $ NumArgs (Just 1) []
 
