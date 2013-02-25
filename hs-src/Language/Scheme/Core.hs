@@ -457,7 +457,7 @@ eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
         cpsStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsStr e c idx _ = do
             value <- getVar env var
-            derefValue <- recDerefPtrs value
+            derefValue <- derefPtr value
             meval e (makeCPSWArgs e c cpsSubStr $ [idx]) derefValue
 
         cpsSubStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -482,10 +482,12 @@ eval env cont args@(List [Atom "set-car!", Atom var, argObj]) = do
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do
       value <- getVar env var
-      derefValue <- recDerefPtrs value
-      continueEval env (makeCPS env cont cpsObj) derefValue
+      continueEval env (makeCPS env cont cpsObj) value
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsObj e c obj@(Pointer _ _) x = do
+          o <- derefPtr obj
+          cpsObj e c o x
         cpsObj _ _ obj@(List []) _ = throwError $ TypeMismatch "pair" obj
         cpsObj e c obj@(List (_ : _)) _ = meval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
         cpsObj e c obj@(DottedList _ _) _ =  meval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
@@ -512,7 +514,7 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do
       value <- getVar env var
-      derefValue <- recDerefPtrs value --derefPtr value
+      derefValue <- derefPtr value
       continueEval env (makeCPS env cont cpsObj) derefValue
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -614,7 +616,7 @@ eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
         cpsH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsH e c value (Just [key]) = do
           v <- getVar e var
-          derefVar <- recDerefPtrs v
+          derefVar <- derefPtr v
           meval e (makeCPSWArgs e c cpsEvalH $ [key, value]) derefVar
         cpsH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsH"
 
@@ -645,7 +647,7 @@ eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
         cpsH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsH e c key _ = do
             value <- getVar e var
-            derefValue <- recDerefPtrs value
+            derefValue <- derefPtr value
             meval e (makeCPSWArgs e c cpsEvalH $ [key]) derefValue
 
         cpsEvalH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -683,7 +685,7 @@ substr (s, _, _) = throwError $ TypeMismatch "string" s
 updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
 updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec // [(fromInteger idx, obj)]
 updateVector ptr@(Pointer _ _) i obj = do
-  vec <- recDerefPtrs ptr
+  vec <- derefPtr ptr
   updateVector vec i obj
 updateVector v _ _ = throwError $ TypeMismatch "vector" v
 
@@ -697,7 +699,7 @@ updateByteVector (ByteVector vec) (Number idx) obj =
            return $ ByteVector $ BS.concat [h, BS.pack $ [fromInteger byte :: Word8], BS.tail t]
         badType -> throwError $ TypeMismatch "byte" badType
 updateByteVector ptr@(Pointer _ _) i obj = do
-  vec <- recDerefPtrs ptr
+  vec <- derefPtr ptr
   updateByteVector vec i obj
 updateByteVector v _ _ = throwError $ TypeMismatch "bytevector" v
 
@@ -746,14 +748,12 @@ apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
    cpsApply :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
    cpsApply e c _ _ = doApply e c
    doApply e c = do
-      -- TODO (?): List dargs <- recDerefPtrs $ List args -- Deref any pointers
       case (toInteger $ length args) of
         0 -> throwError $ NumArgs (Just 1) []
         1 -> continueEval e c $ head args
         _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
              continueEval e (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args
 apply cont (IOFunc func) args = do
-  --List dargs <- recDerefPtrs $ List args -- Deref any pointers
   result <- func args
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
@@ -761,7 +761,6 @@ apply cont (IOFunc func) args = do
 apply cont (EvalFunc func) args = do
     -- An EvalFunc extends the evaluator so it needs access to the current 
     -- continuation, so pass it as the first argument.
---List dargs <- recDerefPtrs $ List args -- Deref any pointers
   func (cont : args)
 apply cont (PrimitiveFunc func) args = do
 -- TODO: 
