@@ -53,7 +53,7 @@ import qualified Data.Map
 import Data.Word
 import qualified System.Exit
 import System.IO
-import Debug.Trace
+-- import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -960,9 +960,8 @@ evalfuncImport [
     LispEnv fromEnv, 
     imports,
     _] = do
-    debug <- liftIO $ printEnv fromEnv
     LispEnv toEnv' <- 
-        case (trace ("entered import:" ++ debug) toEnv) of
+        case toEnv of
             LispEnv e -> return toEnv
             Bool False -> do
                 -- A hack to load imports into the main env, which
@@ -972,22 +971,18 @@ evalfuncImport [
                         return $ LispEnv gp
                     Just (Environment Nothing _ _ ) -> throwError $ InternalError "import into empty parent env"
                     Nothing -> throwError $ InternalError "import into empty env"
--- f this, need to go back and see what this trace is on
--- master, and figure out what the hell is wrong on this branch after
--- the pending evalfunc changes...
-    debug2 <- liftIO $ printEnv toEnv'
-    case (trace ("toEnv(" ++ show imports ++ "): " {- ++ debug2 -}) imports) of
+    case imports of
         p@(Pointer _ _) -> do
             -- TODO: need to do this in a safer way
             List i <- derefPtr p -- Dangerous, but list is only expected obj
             result <- moduleImport toEnv' fromEnv i
-            (trace ("exit import (ptr)") continueEval) env cont result
+            continueEval env cont result
         List i -> do
             result <- moduleImport toEnv' fromEnv i
-            (trace ("exit import (list)") continueEval) env cont result
+            continueEval env cont result
         Bool False -> do -- Export everything
             newEnv <- liftIO $ importEnv toEnv' fromEnv
-            (trace ("exit import (bool)") continueEval)
+            continueEval
                 env 
                (Continuation env a b c d) 
                (LispEnv newEnv)
