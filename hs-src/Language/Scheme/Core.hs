@@ -416,37 +416,45 @@ eval env cont args@(List (Atom "define" : List (Atom var : fparams) : fbody )) =
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do 
       -- Experimenting with macro expansion of body of function
-      -- ebody <- mapM (\ lisp -> Language.Scheme.Macro.macroEval env lisp apply) fbody
-      result <- (makeNormalFunc env fparams fbody >>= defineVar env var)
+      ebody <- mapM (\ lisp -> Language.Scheme.Macro.macroEval env lisp apply) fbody
+      result <- (makeNormalFunc env fparams ebody >>= defineVar env var)
       continueEval env cont result
 
 eval env cont args@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) = do
  bound <- liftIO $ isRecBound env "define"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else do result <- (makeVarargs varargs env fparams fbody >>= defineVar env var)
-          continueEval env cont result
+  else do 
+      ebody <- mapM (\ lisp -> Language.Scheme.Macro.macroEval env lisp apply) fbody
+      result <- (makeVarargs varargs env fparams ebody >>= defineVar env var)
+      continueEval env cont result
 
 eval env cont args@(List (Atom "lambda" : List fparams : fbody)) = do
  bound <- liftIO $ isRecBound env "lambda"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else do result <- makeNormalFunc env fparams fbody
-          continueEval env cont result
+  else do 
+      ebody <- mapM (\ lisp -> Language.Scheme.Macro.macroEval env lisp apply) fbody
+      result <- makeNormalFunc env fparams ebody
+      continueEval env cont result
 
 eval env cont args@(List (Atom "lambda" : DottedList fparams varargs : fbody)) = do
  bound <- liftIO $ isRecBound env "lambda"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else do result <- makeVarargs varargs env fparams fbody
-          continueEval env cont result
+  else do 
+      ebody <- mapM (\ lisp -> Language.Scheme.Macro.macroEval env lisp apply) fbody
+      result <- makeVarargs varargs env fparams ebody
+      continueEval env cont result
 
 eval env cont args@(List (Atom "lambda" : varargs@(Atom _) : fbody)) = do
  bound <- liftIO $ isRecBound env "lambda"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else do result <- makeVarargs varargs env [] fbody
-          continueEval env cont result
+  else do 
+      ebody <- mapM (\ lisp -> Language.Scheme.Macro.macroEval env lisp apply) fbody
+      result <- makeVarargs varargs env [] ebody
+      continueEval env cont result
 
 eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
  bound <- liftIO $ isRecBound env "string-set!"
