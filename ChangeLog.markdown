@@ -1,7 +1,8 @@
 v3.7.1
 --------
 
-TBD - map/for-each multiple list args
+- TBD - map/for-each multiple list args
+- Cache macro expansions to allow for a significant performance improvement
 
 v3.7
 --------
