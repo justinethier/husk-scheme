@@ -177,17 +177,58 @@
 (define (assv obj alist)      (foldl (mem-helper (curry eqv? obj) car) #f alist))
 (define (assoc obj alist)     (foldl (mem-helper (curry equal? obj) car) #f alist))
 
-; FUTURE: on map and for-each - Support variable number of args, per spec:
-; http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.4
-;(define (for-each func . lsts) )
+; SRFI 8
+; Reference implementation from: http://srfi.schemers.org/srfi-8/srfi-8.html
+;
+; FUTURE: This may be moved into its own file
+;
+(define-syntax receive
+    (syntax-rules ()
+        ((receive formals expression body ...)
+         (call-with-values (lambda () expression)
+             (lambda formals body ...)))))
+; END SRFI 8
 
-(define (for-each func lst) 
-  (if (eq? 1 (length lst))
-	(func (car lst))
-    (begin (func (car lst))
-           (for-each func (cdr lst)))))
+; Added the following support functions from SRFI 1
+(define (car+cdr pair) (values (car pair) (cdr pair)))
+(define (%cars+cdrs lists)
+  (call-with-current-continuation
+    (lambda (abort)
+      (let recur ((lists lists))
+        (if (pair? lists)
+	    (receive (list other-lists) (car+cdr lists)
+	      (if (null? list) (abort '() '()) ; LIST is empty -- bail out
+		  (receive (a d) (car+cdr list)
+		    (receive (cars cdrs) (recur other-lists)
+		      (values (cons a cars) (cons d cdrs))))))
+	    (values '() '()))))))
+; END support functions
 
-(define (map func lst)        (foldr (lambda (x y) (cons (func x) y)) '() lst))
+(define (map f lis1 . lists)
+;  (check-arg procedure? f map-in-order)
+  (if (pair? lists)
+      (let recur ((lists (cons lis1 lists)))
+        (receive (cars cdrs) (%cars+cdrs lists)
+          (if (pair? cars)
+              (let ((x (apply f cars)))		; Do head first,
+                (cons x (recur cdrs)))		; then tail.
+              '())))
+      ;; Fast path.
+     (foldr (lambda (x y) (cons (f x) y)) '() lis1)))
+
+(define (for-each f lis1 . lists)
+  (if (pair? lists)
+      (let recur ((lists (cons lis1 lists)))
+        (receive (cars cdrs) (%cars+cdrs lists)
+          (if (pair? cars)
+              (begin
+                (apply f cars)
+                (recur cdrs)))))
+      ;; Fast path.
+      (if (eq? 1 (length lis1))
+        (f (car lis1))
+        (begin (f (car lis1))
+               (for-each f (cdr lis1))))))
 
 (define (list-tail lst k) 
         (if (zero? k)
@@ -440,18 +481,6 @@
 
   (set! gcd gcd/entry)
   (set! lcm lcm/entry))  
-
-; SRFI 8
-; Reference implementation from: http://srfi.schemers.org/srfi-8/srfi-8.html
-;
-; FUTURE: This may be moved into its own file
-;
-(define-syntax receive
-    (syntax-rules ()
-        ((receive formals expression body ...)
-         (call-with-values (lambda () expression)
-             (lambda formals body ...)))))
-; END SRFI 8
 
 ; append accepts a variable number of arguments, per R5RS. So a wrapper
 ; has been provided for the standard 2-argument version of (append).
