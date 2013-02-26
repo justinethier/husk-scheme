@@ -44,11 +44,11 @@
     (eqv? #f 'nil)
     #f)
 
-; Fails R5RS test case
-;(assert/equal
-;    (let ((p (lambda (x) x)))
-;         (eqv? p p))
-;    #t)
+; R5RS test case
+(assert/equal
+    (let ((p (lambda (x) x)))
+         (eqv? p p))
+    #t)
 
 (define gen-counter
     (lambda ()
@@ -56,24 +56,20 @@
                   (lambda () (set! n (+ n 1)) n))))
 
 ;Test case from spec:
-;(assert/equal
-;    (let ((g (gen-counter)))
-;        (eqv? g g))
-;    #t)
-
 (assert/equal
-    (eqv? (gen-counter) (gen-counter))
-    #f)
+    (let ((g (gen-counter)))
+        (eqv? g g))
+    #t)
 
 (define gen-loser
     (lambda ()
           (let ((n 0))
                   (lambda () (set! n (+ n 1)) 27))))
 ;Test case from spec:
-;(assert/equal
-;    (let ((g (gen-loser)))
-;        (eqv? g g))
-;    #t)
+(assert/equal
+    (let ((g (gen-loser)))
+        (eqv? g g))
+    #t)
 
 ;(eqv? (gen-loser) (gen-loser))
 ;                                ===>  unspecified
