@@ -23,6 +23,7 @@ module Language.Scheme.Types
     , ThrowsError 
     , IOThrowsError 
     , trapError
+    , showLispError
     , extractValue 
     , liftThrows 
     , runIOThrowsREPL 
@@ -54,6 +55,7 @@ module Language.Scheme.Types
              , hbody
              , hclosure
         , IOFunc
+        , CustFunc
         , EvalFunc
         , Pointer
              , pointerVar
@@ -136,6 +138,12 @@ data LispError = NumArgs (Maybe Integer) [LispVal] -- ^Invalid number of functio
   | InternalError String {- ^An internal error within husk; in theory user (Scheme) code
                          should never allow one of these errors to be triggered. -}
   | Default String -- ^Default error
+
+-- TODO: finish this up, and integrate it into huski/huskc
+-- |
+showLispError :: LispError -> IO String
+--showLispError (TypeMismatch str err) = return $ show err
+showLispError err = return $ show err
 
 -- |Create a textual description for a 'LispError'
 showError :: LispError -> String
@@ -237,7 +245,7 @@ data LispVal = Atom String
          body :: [LispVal],
          closure :: Env
         }
- -- ^Function
+ -- ^Function written in Scheme
  | HFunc {hparams :: [String],
           hvararg :: (Maybe String),
           hbody :: (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal),
@@ -249,6 +257,10 @@ data LispVal = Atom String
  | EvalFunc ([LispVal] -> IOThrowsError LispVal)
  {- ^Function within the IO monad with access to
  the current environment and continuation. -}
+ | CustFunc ([LispVal] -> IOThrowsError LispVal)
+ -- ^A custom function written by code outside of husk.
+ --  Any code that uses the Haskell API should define custom
+ --  functions using this data type.
  | Pointer { pointerVar :: String
             ,pointerEnv :: Env } 
  -- ^Pointer to an environment variable.
@@ -413,6 +425,7 @@ eqv [x@(HFunc _ _ _ _), y@(Func _ _ _ _)] = do
 --
 eqv [x@(PrimitiveFunc _), y@(PrimitiveFunc _)] = return $ Bool $ (show x) == (show y)
 eqv [x@(IOFunc _), y@(IOFunc _)] = return $ Bool $ (show x) == (show y)
+eqv [x@(CustFunc _), y@(CustFunc _)] = return $ Bool $ (show x) == (show y)
 eqv [x@(EvalFunc _), y@(EvalFunc _)] = return $ Bool $ (show x) == (show y)
 -- FUTURE: comparison of two continuations
 eqv [l1@(List _), l2@(List _)] = eqvList eqv [l1, l2]
@@ -476,6 +489,7 @@ showVal (HFunc {hparams = args, hvararg = varargs, hbody = _, hclosure = _}) =
       Just arg -> " . " ++ arg) ++ ") ...)"
 showVal (Port _) = "<IO port>"
 showVal (IOFunc _) = "<IO primitive>"
+showVal (CustFunc _) = "<custom primitive>"
 showVal (EvalFunc _) = "<procedure>"
 showVal (Pointer p _) = "<ptr " ++ p ++ ">"
 showVal (Opaque d) = "<Haskell " ++ show (dynTypeRep d) ++ ">"

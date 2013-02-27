@@ -766,6 +766,12 @@ apply cont (IOFunc func) args = do
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
+apply cont (CustFunc func) args = do
+  List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  result <- func dargs
+  case cont of
+    Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
+    _ -> return result
 apply cont (EvalFunc func) args = do
     -- An EvalFunc extends the evaluator so it needs access to the current 
     -- continuation, so pass it as the first argument.
