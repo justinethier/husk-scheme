@@ -23,7 +23,6 @@ module Language.Scheme.Types
     , ThrowsError 
     , IOThrowsError 
     , trapError
-    , showLispError
     , extractValue 
     , liftThrows 
     , runIOThrowsREPL 
@@ -138,12 +137,6 @@ data LispError = NumArgs (Maybe Integer) [LispVal] -- ^Invalid number of functio
   | InternalError String {- ^An internal error within husk; in theory user (Scheme) code
                          should never allow one of these errors to be triggered. -}
   | Default String -- ^Default error
-
--- TODO: finish this up, and integrate it into huski/huskc
--- |
-showLispError :: LispError -> IO String
---showLispError (TypeMismatch str err) = return $ show err
-showLispError err = return $ show err
 
 -- |Create a textual description for a 'LispError'
 showError :: LispError -> String

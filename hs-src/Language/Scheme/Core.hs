@@ -29,6 +29,7 @@ module Language.Scheme.Core
     , getDataFileFullPath
     , registerExtensions
     , showBanner
+    , showLispError
     , substr
     , updateVector
     , updateByteVector
@@ -73,6 +74,16 @@ showBanner = do
   putStrLn " (c) 2010-2013 Justin Ethier                                             "
   putStrLn $ " Version " ++ version ++ " "
   putStrLn "                                                                         "
+
+-- TODO: finish this up, and integrate it into huski/huskc
+-- |
+showLispError :: LispError -> IO String
+showLispError (TypeMismatch str p@(Pointer _ e)) = do
+  lv' <- evalLisp' e p 
+  case lv' of
+    Left _ -> showLispError $ TypeMismatch str $ String "TODO" -- TODO: ?
+    Right val -> showLispError $ TypeMismatch str val
+showLispError err = return $ show err
 
 -- |Get the full path to a data file installed for husk
 getDataFileFullPath :: String -> IO String
