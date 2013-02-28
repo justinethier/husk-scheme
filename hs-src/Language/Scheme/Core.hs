@@ -74,15 +74,21 @@ showBanner = do
   putStrLn " (c) 2010-2013 Justin Ethier                                             "
   putStrLn $ " Version " ++ version ++ " "
   putStrLn "                                                                         "
+-- TODO: good news is I think this can be completely implemented in husk, no changes necessary to third party code. the bad news is that this guy needs to be called from the runIOThrows* code instead of show which means that code needs to be relocated (maybe to this module, if that is appropriate (not sure it is)...
 
--- TODO: finish this up, and integrate it into huski/huskc
--- |
+-- |This is the recommended function to use to display a lisp error, instead
+--  of just using show directly.
 showLispError :: LispError -> IO String
 showLispError (TypeMismatch str p@(Pointer _ e)) = do
   lv' <- evalLisp' e p 
   case lv' of
-    Left _ -> showLispError $ TypeMismatch str $ String "TODO" -- TODO: ?
+    Left _ -> showLispError $ TypeMismatch str $ Atom $ show p
     Right val -> showLispError $ TypeMismatch str val
+showLispError (BadSpecialForm str p@(Pointer _ e)) = do
+  lv' <- evalLisp' e p 
+  case lv' of
+    Left _ -> showLispError $ BadSpecialForm str $ Atom $ show p
+    Right val -> showLispError $ BadSpecialForm str val
 showLispError err = return $ show err
 
 -- |Get the full path to a data file installed for husk
