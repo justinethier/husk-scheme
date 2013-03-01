@@ -93,7 +93,7 @@ varNamespace = "v"
 
 -- |Create a variable's name in an environment using given arguments
 getVarName :: String -> String -> String
-getVarName namespace name = namespace ++ "_" ++ name
+getVarName namespace name = namespace ++ ('_' : name)
 
 -- |Show the contents of an environment
 printEnv :: Env         -- ^Environment
