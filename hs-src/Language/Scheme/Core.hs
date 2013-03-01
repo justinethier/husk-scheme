@@ -21,6 +21,8 @@ module Language.Scheme.Core
     , evalAndPrint
     , apply
     , continueEval
+    , runIOThrows 
+    , runIOThrowsREPL 
     -- * Core data
     , primitiveBindings
     , r5rsEnv
@@ -58,7 +60,7 @@ import System.IO
 
 -- |husk version number
 version :: String
-version = "3.7"
+version = "3.7.1"
 
 -- |A utility function to display the husk console banner
 showBanner :: IO ()
@@ -74,23 +76,6 @@ showBanner = do
   putStrLn " (c) 2010-2013 Justin Ethier                                             "
   putStrLn $ " Version " ++ version ++ " "
   putStrLn "                                                                         "
--- TODO: good news is I think this can be completely implemented in husk, no changes necessary to third party code. the bad news is that this guy needs to be called from the runIOThrows* code instead of show which means that code needs to be relocated (maybe to this module, if that is appropriate (not sure it is)...
-
--- |This is the recommended function to use to display a lisp error, instead
---  of just using show directly.
-showLispError :: LispError -> IO String
-showLispError (TypeMismatch str p@(Pointer _ e)) = do
-  lv' <- evalLisp' e p 
-  case lv' of
-    Left _ -> showLispError $ TypeMismatch str $ Atom $ show p
-    Right val -> showLispError $ TypeMismatch str val
-showLispError (BadSpecialForm str p@(Pointer _ e)) = do
-  lv' <- evalLisp' e p 
-  case lv' of
-    Left _ -> showLispError $ BadSpecialForm str $ Atom $ show p
-    Right val -> showLispError $ BadSpecialForm str val
-showLispError err = return $ show err
-
 -- |Get the full path to a data file installed for husk
 getDataFileFullPath :: String -> IO String
 getDataFileFullPath s = PHS.getDataFileName s
@@ -110,6 +95,42 @@ registerSRFI env getDataFileName num = do
   (escapeBackslashes filename) ++ "\")"
  return ()
 
+-- TODO: good news is I think this can be completely implemented in husk, no changes necessary to third party code. the bad news is that this guy needs to be called from the runIOThrows* code instead of show which means that code needs to be relocated (maybe to this module, if that is appropriate (not sure it is)...
+
+-- |This is the recommended function to use to display a lisp error, instead
+--  of just using show directly.
+showLispError :: LispError -> IO String
+showLispError (TypeMismatch str p@(Pointer _ e)) = do
+  lv' <- evalLisp' e p 
+  case lv' of
+    Left _ -> showLispError $ TypeMismatch str $ Atom $ show p
+    Right val -> showLispError $ TypeMismatch str val
+showLispError (BadSpecialForm str p@(Pointer _ e)) = do
+  lv' <- evalLisp' e p 
+  case lv' of
+    Left _ -> showLispError $ BadSpecialForm str $ Atom $ show p
+    Right val -> showLispError $ BadSpecialForm str val
+showLispError err = return $ show err
+
+-- |Execute an IO action and return result or an error message.
+--  This is intended for use by a REPL, where a result is always
+--  needed regardless of type.
+runIOThrowsREPL :: IOThrowsError String -> IO String
+runIOThrowsREPL action = do
+    runState <- runErrorT action
+    case runState of
+        Left err -> showLispError err
+        Right val -> return val
+
+-- |Execute an IO action and return error or Nothing if no error was thrown.
+runIOThrows :: IOThrowsError String -> IO (Maybe String)
+runIOThrows action = do
+    runState <- runErrorT action
+    case runState of
+        Left err -> do
+            disp <- showLispError err
+            return $ Just disp
+        Right _ -> return $ Nothing
 
 {- |Evaluate a string containing Scheme code
 

@@ -22,11 +22,7 @@ module Language.Scheme.Types
     , LispError (..)
     , ThrowsError 
     , IOThrowsError 
-    , trapError
-    , extractValue 
     , liftThrows 
-    , runIOThrowsREPL 
-    , runIOThrows 
     -- * Types and related functions
     , LispVal (
           Atom
@@ -163,17 +159,6 @@ instance Error LispError where
 -- |Container used by operations that could throw an error
 type ThrowsError = Either LispError
 
--- |Error handler that returns a string description of any error
-trapError :: -- forall (m :: * -> *) e.
-            (MonadError e m, Show e) =>
-             m String -> m String
-trapError action = catchError action (return . show)
-
--- |Utility function to unwrap a value from ThrowsError
-extractValue :: ThrowsError a -> a
-extractValue (Right val) = val
-extractValue (Left _) = error "Unexpected error in extractValue"
-
 -- |Container used to provide error handling in the IO monad
 type IOThrowsError = ErrorT LispError IO
 
@@ -181,20 +166,6 @@ type IOThrowsError = ErrorT LispError IO
 liftThrows :: ThrowsError a -> IOThrowsError a
 liftThrows (Left err) = throwError err
 liftThrows (Right val) = return val
-
--- |Execute an IO action and return result or an error message.
---  This is intended for use by a REPL, where a result is always
---  needed regardless of type.
-runIOThrowsREPL :: IOThrowsError String -> IO String
-runIOThrowsREPL action = runErrorT (trapError action) >>= return . extractValue
-
--- |Execute an IO action and return error or Nothing if no error was thrown.
-runIOThrows :: IOThrowsError String -> IO (Maybe String)
-runIOThrows action = do
-    runState <- runErrorT action
-    case runState of
-        Left err -> return $ Just (show err)
-        Right _ -> return $ Nothing
 
 -- |Scheme data types
 data LispVal = Atom String
