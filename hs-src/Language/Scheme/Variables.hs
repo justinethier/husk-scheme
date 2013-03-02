@@ -29,7 +29,9 @@ module Language.Scheme.Variables
     , varNamespace 
     -- * Getters
     , getVar
+    , getVar'
     , getNamespacedVar 
+    , getNamespacedVar' 
     -- * Setters
     , defineVar
     , defineNamespacedVar
@@ -40,10 +42,10 @@ module Language.Scheme.Variables
     -- * Predicates
     , isBound
     , isRecBound
-    , isNamespacedBound
     , isNamespacedRecBound 
     -- * Pointers
     , derefPtr
+--    , derefPtrs
     , recDerefPtrs
     ) where
 import Language.Scheme.Types
@@ -92,7 +94,7 @@ varNamespace = "v"
 
 -- |Create a variable's name in an environment using given arguments
 getVarName :: String -> String -> String
-getVarName namespace name = namespace ++ "_" ++ name
+getVarName namespace name = namespace ++ ('_' : name)
 
 -- |Show the contents of an environment
 printEnv :: Env         -- ^Environment
@@ -236,6 +238,13 @@ getVar :: Env       -- ^ Environment
        -> IOThrowsError LispVal -- ^ Contents of the variable
 getVar envRef var = getNamespacedVar envRef varNamespace var
 
+-- |Retrieve the value of a variable defined in the default namespace,
+--  or Nothing if it is not defined
+getVar' :: Env       -- ^ Environment
+        -> String    -- ^ Variable
+        -> IOThrowsError (Maybe LispVal) -- ^ Contents of the variable
+getVar' envRef var = getNamespacedVar' envRef varNamespace var
+
 -- |Retrieve the value of a variable defined in a given namespace
 getNamespacedVar :: Env     -- ^ Environment
                  -> String  -- ^ Namespace
@@ -243,13 +252,29 @@ getNamespacedVar :: Env     -- ^ Environment
                  -> IOThrowsError LispVal -- ^ Contents of the variable
 getNamespacedVar envRef
                  namespace
-                 var = do binds <- liftIO $ readIORef $ bindings envRef
-                          case Data.Map.lookup (getVarName namespace var) binds of
-                            (Just a) -> liftIO $ readIORef a
-                            Nothing -> case parentEnv envRef of
-                                         (Just par) -> getNamespacedVar par namespace var
-                                         Nothing -> (throwError $ UnboundVar "Getting an unbound variable" var)
+                 var = do
+  v <- getNamespacedVar' envRef namespace var
+  case v of
+    Just a -> return a
+    Nothing -> (throwError $ UnboundVar "Getting an unbound variable" var)
 
+-- |Retrieve the value of a variable defined in a given namespace,
+--  or Nothing if it is not defined
+getNamespacedVar' :: Env     -- ^ Environment
+                 -> String  -- ^ Namespace
+                 -> String  -- ^ Variable
+                 -> IOThrowsError (Maybe LispVal) -- ^ Contents of the variable, if found
+getNamespacedVar' envRef
+                 namespace
+                 var = do 
+    binds <- liftIO $ readIORef $ bindings envRef
+    case Data.Map.lookup (getVarName namespace var) binds of
+      (Just a) -> do
+          v <- liftIO $ readIORef a
+          return $ Just v
+      Nothing -> case parentEnv envRef of
+                   (Just par) -> getNamespacedVar' par namespace var
+                   Nothing -> return Nothing
 
 -- |Set a variable in the default namespace
 setVar
@@ -507,6 +532,11 @@ derefPtr (Pointer p env) = do
     derefPtr result
 derefPtr v = return v
 
+-- -- |Return the given list of values, but if any of the
+-- --  original values is a pointer it will be dereferenced
+-- derefPtrs :: [LispVal] -> IOThrowsError LispVal
+-- derefPtrs lvs = mapM (liftThrows $ derefPtr) lvs
+
 -- |Recursively process the given data structure, dereferencing
 --  any pointers found along the way. 
 -- 
@@ -543,6 +573,7 @@ isObject (DottedList _ _) = True
 isObject (String _) = True
 isObject (Vector _) = True
 isObject (HashTable _) = True
+isObject (ByteVector _) = True
 isObject (Pointer _ _) = True
 isObject _ = False
 

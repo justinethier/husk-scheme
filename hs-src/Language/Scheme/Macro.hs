@@ -143,38 +143,35 @@ macroEval env lisp apply = _macroEval env lisp apply
 -- |Do the actual work for the 'macroEval' wrapper func
 _macroEval env lisp@(List (Atom x : _)) apply = do
   -- Note: If there is a procedure of the same name it will be shadowed by the macro.
-  isDefined <- liftIO $ isNamespacedRecBound env macroNamespace x
-  if isDefined
-     then do
-       var <- getNamespacedVar env macroNamespace x
-       -- DEBUG: var <- (trace ("expand: " ++ x) getNamespacedVar) env macroNamespace x
-       case var of
-         -- Explicit Renaming
-         SyntaxExplicitRenaming transformer@(Func _ _ _ _) -> do
-           renameEnv <- liftIO $ nullEnv -- Local environment used just for this
-           expanded <- explicitRenamingTransform env renameEnv 
-                                               lisp transformer apply
-           _macroEval env expanded apply
+  var <- getNamespacedVar' env macroNamespace x
+  -- DEBUG: var <- (trace ("expand: " ++ x) getNamespacedVar) env macroNamespace x
+  case var of
+    -- Explicit Renaming
+    Just (SyntaxExplicitRenaming transformer@(Func _ _ _ _)) -> do
+      renameEnv <- liftIO $ nullEnv -- Local environment used just for this
+      expanded <- explicitRenamingTransform env renameEnv 
+                                          lisp transformer apply
+      _macroEval env expanded apply
 
-         -- Syntax Rules
-         Syntax (Just defEnv) _ definedInMacro identifiers rules -> do
-           renameEnv <- liftIO $ nullEnv -- Local environment used just for this
-                                         -- invocation to hold renamed variables
-           cleanupEnv <- liftIO $ nullEnv -- Local environment used just for 
-                                          -- this invocation to hold new symbols
-                                          -- introduced by renaming. We can use
-                                          -- this to clean up any left after 
-                                          -- transformation
+    -- Syntax Rules
+    Just (Syntax (Just defEnv) _ definedInMacro identifiers rules) -> do
+      renameEnv <- liftIO $ nullEnv -- Local environment used just for this
+                                    -- invocation to hold renamed variables
+      cleanupEnv <- liftIO $ nullEnv -- Local environment used just for 
+                                     -- this invocation to hold new symbols
+                                     -- introduced by renaming. We can use
+                                     -- this to clean up any left after 
+                                     -- transformation
 
-           -- Transform the input and then call macroEval again, 
-           -- since a macro may be contained within...
-           expanded <- macroTransform defEnv env env renameEnv cleanupEnv 
-                                      definedInMacro 
-                                     (List identifiers) rules lisp apply
-           _macroEval env expanded apply
-           -- Useful debug to see all exp's:
-           -- macroEval env (trace ("exp = " ++ show expanded) expanded)
-     else return lisp
+      -- Transform the input and then call macroEval again, 
+      -- since a macro may be contained within...
+      expanded <- macroTransform defEnv env env renameEnv cleanupEnv 
+                                 definedInMacro 
+                                (List identifiers) rules lisp apply
+      _macroEval env expanded apply
+      -- Useful debug to see all exp's:
+      -- macroEval env (trace ("exp = " ++ show expanded) expanded)
+    Nothing -> return lisp
 
 -- No macro to process, just return code as it is...
 _macroEval _ lisp@(_) _ = return lisp
@@ -951,14 +948,13 @@ markBoundIdentifiers _ _ [] renamedVars = return $ List renamedVars
 -- |Expand an atom, optionally recursively
 _expandAtom :: Bool -> Env -> LispVal -> IOThrowsError LispVal
 _expandAtom isRec renameEnv (Atom a) = do
-  isDefined <- liftIO $ isRecBound renameEnv a -- Search parent Env's also
-  if isDefined 
-     then do
-       expanded <- getVar renameEnv a
+  isDefined <- getVar' renameEnv a
+  case isDefined of
+    Just expanded -> do
        case isRec of
          True  -> _expandAtom isRec renameEnv expanded
          False -> return expanded
-     else return $ Atom a 
+    Nothing -> return $ Atom a 
 _expandAtom _ _ a = return a
 
 -- |Recursively expand an atom that may have been renamed multiple times
@@ -1169,10 +1165,10 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
     appendNil d _ _ = d -- Should never be reached...
 
     loadNamespacedBool namespc = do
-        isDef <- liftIO $ isNamespacedBound localEnv namespc a
-        if isDef
-           then getNamespacedVar localEnv namespc a
-           else return $ Bool False
+        val <- getNamespacedVar' localEnv namespc a
+        case val of
+            Just b -> return b
+            Nothing -> return $ Bool False
 
     hasEllipsis = macroElementMatchesMany transform
     ellipsisHere isDefined = do
@@ -1233,13 +1229,11 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
                   -- the same symbol the same new name if it is found more than once, so...
                   -- we need to keep track of the var in two environments to map both ways 
                   -- between the original name and the new name.
-                  isAlreadyRenamed <- liftIO $ isNamespacedBound localEnv "renamed" a
-                  if isAlreadyRenamed
-                     then do
-                       renamed <- getNamespacedVar localEnv "renamed" a
---                       return (trace ("macro call renaming (again) " ++ a ++ " to " ++ show renamed) renamed)
-                       return renamed
-                     else do
+
+                  alreadyRenamed <- getNamespacedVar' localEnv "renamed" a
+                  case alreadyRenamed of
+                    Just renamed -> return renamed
+                    Nothing -> do
                        Atom renamed <- _gensym a
                        _ <- defineNamespacedVar localEnv "renamed" a $ Atom renamed
                        _ <- defineNamespacedVar renameEnv "renamed" a $ Atom renamed

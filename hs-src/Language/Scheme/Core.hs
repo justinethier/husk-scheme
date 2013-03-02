@@ -21,6 +21,8 @@ module Language.Scheme.Core
     , evalAndPrint
     , apply
     , continueEval
+    , runIOThrows 
+    , runIOThrowsREPL 
     -- * Core data
     , primitiveBindings
     , r5rsEnv
@@ -29,6 +31,7 @@ module Language.Scheme.Core
     , getDataFileFullPath
     , registerExtensions
     , showBanner
+    , showLispError
     , substr
     , updateVector
     , updateByteVector
@@ -73,7 +76,6 @@ showBanner = do
   putStrLn " (c) 2010-2013 Justin Ethier                                             "
   putStrLn $ " Version " ++ version ++ " "
   putStrLn "                                                                         "
-
 -- |Get the full path to a data file installed for husk
 getDataFileFullPath :: String -> IO String
 getDataFileFullPath s = PHS.getDataFileName s
@@ -93,6 +95,42 @@ registerSRFI env getDataFileName num = do
   (escapeBackslashes filename) ++ "\")"
  return ()
 
+-- TODO: good news is I think this can be completely implemented in husk, no changes necessary to third party code. the bad news is that this guy needs to be called from the runIOThrows* code instead of show which means that code needs to be relocated (maybe to this module, if that is appropriate (not sure it is)...
+
+-- |This is the recommended function to use to display a lisp error, instead
+--  of just using show directly.
+showLispError :: LispError -> IO String
+showLispError (TypeMismatch str p@(Pointer _ e)) = do
+  lv' <- evalLisp' e p 
+  case lv' of
+    Left _ -> showLispError $ TypeMismatch str $ Atom $ show p
+    Right val -> showLispError $ TypeMismatch str val
+showLispError (BadSpecialForm str p@(Pointer _ e)) = do
+  lv' <- evalLisp' e p 
+  case lv' of
+    Left _ -> showLispError $ BadSpecialForm str $ Atom $ show p
+    Right val -> showLispError $ BadSpecialForm str val
+showLispError err = return $ show err
+
+-- |Execute an IO action and return result or an error message.
+--  This is intended for use by a REPL, where a result is always
+--  needed regardless of type.
+runIOThrowsREPL :: IOThrowsError String -> IO String
+runIOThrowsREPL action = do
+    runState <- runErrorT action
+    case runState of
+        Left err -> showLispError err
+        Right val -> return val
+
+-- |Execute an IO action and return error or Nothing if no error was thrown.
+runIOThrows :: IOThrowsError String -> IO (Maybe String)
+runIOThrows action = do
+    runState <- runErrorT action
+    case runState of
+        Left err -> do
+            disp <- showLispError err
+            return $ Just disp
+        Right _ -> return $ Nothing
 
 {- |Evaluate a string containing Scheme code
 
@@ -198,6 +236,9 @@ continueEval _
  - continuation (if there is one), or we just return the result. Yes technically with
  - CPS you are supposed to keep calling into functions and never return, but in this case
  - when the computation is complete, you have to return something. 
+ -
+ - NOTE: We use 'eval' below instead of 'meval' because macros are already expanded when
+ -       a function is loaded the first time, so there is no need to test for this again here.
  -}
 continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs dynWind) val = do
 --    case (trace ("cBody = " ++ show cBody) cBody) of
@@ -208,8 +249,8 @@ continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraAr
               -- Pass extra args along if last expression of a function, to support (call-with-values)
               continueEval nEnv (Continuation nEnv ncCont nnCont extraArgs nDynWind) val
             _ -> return (val)
-        [lv] -> meval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) Nothing dynWind) lv
-        (lv : lvs) -> meval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing dynWind) lv
+        [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) Nothing dynWind) lv
+        (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing dynWind) lv
 
 -- No current continuation, but a next cont is available; call into it
 continueEval _ (Continuation cEnv Nothing (Just cCont) _ _) val = continueEval cEnv cCont val
@@ -257,6 +298,8 @@ eval env cont val@(Pointer _ _) = continueEval env cont val
 eval env cont (Atom a) = do
   v <- getVar env a
   val <- return $ case v of
+-- TODO: this flag may go away on this branch; it may
+--       not be practical with Pointer used everywhere now
 #ifdef UsePointers
     List _ -> Pointer a env
     DottedList _ _ -> Pointer a env
@@ -313,12 +356,10 @@ eval env cont args@(List (Atom "letrec-syntax" : List _bindings : _body)) = do
 eval env cont args@(List [Atom "define-syntax", 
                           Atom newKeyword,
                           Atom keyword]) = do
-  bound <- liftIO $ isNamespacedRecBound env macroNamespace keyword
-  if bound
-     then do
-       m <- getNamespacedVar env macroNamespace keyword
-       defineNamespacedVar env macroNamespace newKeyword m
-     else throwError $ TypeMismatch "macro" $ Atom keyword
+  bound <- getNamespacedVar' env macroNamespace keyword
+  case bound of
+    Just m -> defineNamespacedVar env macroNamespace newKeyword m
+    Nothing -> throwError $ TypeMismatch "macro" $ Atom keyword
 
 eval env cont args@(List [Atom "define-syntax", Atom keyword,
   (List [Atom "er-macro-transformer", 
@@ -463,7 +504,7 @@ eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
         cpsStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsStr e c idx _ = do
             value <- getVar env var
-            derefValue <- recDerefPtrs value
+            derefValue <- derefPtr value
             meval e (makeCPSWArgs e c cpsSubStr $ [idx]) derefValue
 
         cpsSubStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -488,10 +529,12 @@ eval env cont args@(List [Atom "set-car!", Atom var, argObj]) = do
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do
       value <- getVar env var
-      derefValue <- recDerefPtrs value
-      continueEval env (makeCPS env cont cpsObj) derefValue
+      continueEval env (makeCPS env cont cpsObj) value
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsObj e c obj@(Pointer _ _) x = do
+          o <- derefPtr obj
+          cpsObj e c o x
         cpsObj _ _ obj@(List []) _ = throwError $ TypeMismatch "pair" obj
         cpsObj e c obj@(List (_ : _)) _ = meval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
         cpsObj e c obj@(DottedList _ _) _ =  meval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
@@ -518,7 +561,7 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do
       value <- getVar env var
-      derefValue <- recDerefPtrs value --derefPtr value
+      derefValue <- derefPtr value
       continueEval env (makeCPS env cont cpsObj) derefValue
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -531,11 +574,11 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
         cpsSet e c obj (Just [List (l : _)]) = do
             l' <- recDerefPtrs l
             obj' <- recDerefPtrs obj
-            (liftThrows $ cons [l', obj']) >>= updateObject e var >>= continueEval e c
+            (cons [l', obj']) >>= updateObject e var >>= continueEval e c
         cpsSet e c obj (Just [DottedList (l : _) _]) = do
             l' <- recDerefPtrs l
             obj' <- recDerefPtrs obj
-            (liftThrows $ cons [l', obj']) >>= updateObject e var >>= continueEval e c
+            (cons [l', obj']) >>= updateObject e var >>= continueEval e c
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
 eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
@@ -620,7 +663,7 @@ eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
         cpsH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsH e c value (Just [key]) = do
           v <- getVar e var
-          derefVar <- recDerefPtrs v
+          derefVar <- derefPtr v
           meval e (makeCPSWArgs e c cpsEvalH $ [key, value]) derefVar
         cpsH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsH"
 
@@ -651,7 +694,7 @@ eval env cont args@(List [Atom "hash-table-delete!", Atom var, rkey]) = do
         cpsH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsH e c key _ = do
             value <- getVar e var
-            derefValue <- recDerefPtrs value
+            derefValue <- derefPtr value
             meval e (makeCPSWArgs e c cpsEvalH $ [key]) derefValue
 
         cpsEvalH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -689,7 +732,7 @@ substr (s, _, _) = throwError $ TypeMismatch "string" s
 updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
 updateVector (Vector vec) (Number idx) obj = return $ Vector $ vec // [(fromInteger idx, obj)]
 updateVector ptr@(Pointer _ _) i obj = do
-  vec <- recDerefPtrs ptr
+  vec <- derefPtr ptr
   updateVector vec i obj
 updateVector v _ _ = throwError $ TypeMismatch "vector" v
 
@@ -703,7 +746,7 @@ updateByteVector (ByteVector vec) (Number idx) obj =
            return $ ByteVector $ BS.concat [h, BS.pack $ [fromInteger byte :: Word8], BS.tail t]
         badType -> throwError $ TypeMismatch "byte" badType
 updateByteVector ptr@(Pointer _ _) i obj = do
-  vec <- recDerefPtrs ptr
+  vec <- derefPtr ptr
   updateByteVector vec i obj
 updateByteVector v _ _ = throwError $ TypeMismatch "bytevector" v
 
@@ -752,26 +795,32 @@ apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
    cpsApply :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
    cpsApply e c _ _ = doApply e c
    doApply e c = do
-      -- TODO (?): List dargs <- recDerefPtrs $ List args -- Deref any pointers
       case (toInteger $ length args) of
         0 -> throwError $ NumArgs (Just 1) []
         1 -> continueEval e c $ head args
         _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
              continueEval e (Continuation env ccont ncont (Just $ tail args) ndynwind) $ head args
 apply cont (IOFunc func) args = do
+  result <- func args
+  case cont of
+    Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
+    _ -> return result
+apply cont (CustFunc func) args = do
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
   result <- func dargs
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
 apply cont (EvalFunc func) args = do
-    {- An EvalFunc extends the evaluator so it needs access to the current continuation;
-    pass it as the first argument. -}
-  List dargs <- recDerefPtrs $ List args -- Deref any pointers
-  func (cont : dargs)
+    -- An EvalFunc extends the evaluator so it needs access to the current 
+    -- continuation, so pass it as the first argument.
+  func (cont : args)
 apply cont (PrimitiveFunc func) args = do
-  List dargs <- recDerefPtrs $ List args -- Deref any pointers
-  result <- liftThrows $ func dargs
+-- TODO: 
+--  how to report errors that could contain ptr args (perhaps a new error type?)
+--  - any other complications?
+  --List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  result <- liftThrows $ func args
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
@@ -942,8 +991,7 @@ evalfuncApply (cont@(Continuation _ _ _ _ _) : func : args) = do
       List aLastElems -> do
         apply cont func $ (init args) ++ aLastElems
       Pointer pVar pEnv -> do
-        value <- recDerefPtrs aRev
-        applyArgs value
+        derefPtr aRev >>= applyArgs
       other -> throwError $ TypeMismatch "List" other
 evalfuncApply (_ : args) = throwError $ NumArgs (Just 2) args -- Skip over continuation argument
 evalfuncApply _ = throwError $ NumArgs (Just 2) []
@@ -979,14 +1027,18 @@ evalfuncImport [
                         return $ LispEnv gp
                     Just (Environment Nothing _ _ ) -> throwError $ InternalError "import into empty parent env"
                     Nothing -> throwError $ InternalError "import into empty env"
-
     case imports of
+        p@(Pointer _ _) -> do
+            -- TODO: need to do this in a safer way
+            List i <- derefPtr p -- Dangerous, but list is only expected obj
+            result <- moduleImport toEnv' fromEnv i
+            continueEval env cont result
         List i -> do
             result <- moduleImport toEnv' fromEnv i
             continueEval env cont result
         Bool False -> do -- Export everything
             newEnv <- liftIO $ importEnv toEnv' fromEnv
-            continueEval 
+            continueEval
                 env 
                (Continuation env a b c d) 
                (LispEnv newEnv)
@@ -1002,6 +1054,10 @@ bootstrapImport [cont@(Continuation env _ _ _ _)] = do
     renv <- defineNamespacedVar env macroNamespace "import" ri
     continueEval env cont renv
 
+
+evalfuncLoad (cont : p@(Pointer _ _) : lvs) = do
+    lv <- derefPtr p
+    evalfuncLoad (cont : lv : lvs)
 
 evalfuncLoad [cont@(Continuation _ a b c d), String filename, LispEnv env] = do
     evalfuncLoad [Continuation env a b c d, String filename]
@@ -1034,8 +1090,12 @@ evalfuncLoad _ = throwError $ NumArgs (Just 1) []
 --
 -- FUTURE: consider allowing env to be specified, per R5RS
 --
-evalfuncEval [cont@(Continuation env _ _ _ _), val] = meval env cont val
-evalfuncEval [cont@(Continuation _ _ _ _ _), val, LispEnv env] = meval env cont val
+evalfuncEval [cont@(Continuation env _ _ _ _), val] = do
+    v <- derefPtr val -- Must deref ptrs for macro subsystem
+    meval env cont v
+evalfuncEval [cont@(Continuation _ _ _ _ _), val, LispEnv env] = do
+    v <- derefPtr val -- Must deref ptrs for macro subsystem
+    meval env cont v
 evalfuncEval (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
 evalfuncEval _ = throwError $ NumArgs (Just 1) []
 
@@ -1126,6 +1186,65 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                     String str -> hPutStr port str
                     _ -> hPutStr port $ show obj)),
 
+              ("string=?", strBoolBinop (==)),
+              ("string<?", strBoolBinop (<)),
+              ("string>?", strBoolBinop (>)),
+              ("string<=?", strBoolBinop (<=)),
+              ("string>=?", strBoolBinop (>=)),
+              ("string-ci=?", stringCIEquals),
+              ("string-ci<?", stringCIBoolBinop (<)),
+              ("string-ci>?", stringCIBoolBinop (>)),
+              ("string-ci<=?", stringCIBoolBinop (<=)),
+              ("string-ci>=?", stringCIBoolBinop (>=)),
+              ("string->symbol", string2Symbol),
+
+              ("car", car),
+              ("cdr", cdr),
+              ("cons", cons),
+
+            -- TODO: these need to be rewritten to actually be in 
+            -- the IO monad, tmpWrap is just temporary
+              ("eq?",    tmpWrap eqv),
+              ("eqv?",   tmpWrap eqv),
+              ("equal?", tmpWrap equal),
+
+              ("pair?", isDottedList),
+              ("list?", unaryOp' isList),
+              ("vector?", unaryOp' isVector),
+              ("null?", isNull),
+              ("string?", isString),
+
+              ("string-length", stringLength),
+              ("string-ref", stringRef),
+              ("substring", substring),
+              ("string-append", stringAppend),
+              ("string->number", stringToNumber),
+              ("string->list", stringToList),
+              ("list->string", listToString),
+              ("string-copy", stringCopy),
+              ("string->utf8", byteVectorStr2Utf),
+
+              ("bytevector?", unaryOp' isByteVector),
+              ("bytevector-length", byteVectorLength),
+              ("bytevector-u8-ref", byteVectorRef),
+              ("bytevector-append", byteVectorAppend),
+              ("bytevector-copy", byteVectorCopy),
+              ("utf8->string", byteVectorUtf2Str),
+
+              ("vector-length",wrapLeadObj vectorLength),
+              ("vector-ref",   wrapLeadObj vectorRef),
+              ("vector->list", wrapLeadObj vectorToList),
+              ("list->vector", wrapLeadObj listToVector),
+
+              ("hash-table?",       wrapHashTbl isHashTbl),
+              ("hash-table-exists?",wrapHashTbl hashTblExists),
+              ("hash-table-ref",    wrapHashTbl hashTblRef),
+              ("hash-table-size",   wrapHashTbl hashTblSize),
+              ("hash-table->alist", wrapHashTbl hashTbl2List),
+              ("hash-table-keys",   wrapHashTbl hashTblKeys),
+              ("hash-table-values", wrapHashTbl hashTblValues),
+              ("hash-table-copy",   wrapHashTbl hashTblCopy),
+
                 -- From SRFI 96
                 ("file-exists?", fileExists),
                 ("delete-file", deleteFile),
@@ -1138,16 +1257,25 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("find-module-file", findModuleFile),
                 ("gensym", gensym)]
 
+-- TODO:
+-- This function is a temporary stopgap that will go
+-- away before this branch is merged
+tmpWrap :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> IOThrowsError LispVal
+tmpWrap fnc lvs = do
+    List result <- recDerefPtrs $ List lvs 
+    liftThrows $ fnc result
+
 printEnv' :: [LispVal] -> IOThrowsError LispVal
 printEnv' [LispEnv env] = do
     result <- liftIO $ printEnv env
     return $ String result
+printEnv' [] = throwError $ NumArgs (Just 1) []
+printEnv' args = throwError $ TypeMismatch "env" $ List args
 
 exportsFromEnv' :: [LispVal] -> IOThrowsError LispVal
 exportsFromEnv' [LispEnv env] = do
     result <- liftIO $ exportsFromEnv env
     return $ List result
---exportsFromEnv' err = throwError $ Default $ "bad args: " ++ show err
 exportsFromEnv' err = return $ List []
 
 {- "Pure" primitive functions -}
@@ -1201,16 +1329,6 @@ primitives = [("+", numAdd),
 
               ("&&", boolBoolBinop (&&)),
               ("||", boolBoolBinop (||)),
-              ("string=?", strBoolBinop (==)),
-              ("string<?", strBoolBinop (<)),
-              ("string>?", strBoolBinop (>)),
-              ("string<=?", strBoolBinop (<=)),
-              ("string>=?", strBoolBinop (>=)),
-              ("string-ci=?", stringCIEquals),
-              ("string-ci<?", stringCIBoolBinop (<)),
-              ("string-ci>?", stringCIBoolBinop (>)),
-              ("string-ci<=?", stringCIBoolBinop (<=)),
-              ("string-ci>=?", stringCIBoolBinop (>=)),
 
               ("char=?",  charBoolBinop (==)),
               ("char<?",  charBoolBinop (<)),
@@ -1232,67 +1350,26 @@ primitives = [("+", numAdd),
               ("char-upper", charUpper),
               ("char-lower", charLower),
 
-              ("car", car),
-              ("cdr", cdr),
-              ("cons", cons),
-              ("eq?", eqv),
-              ("eqv?", eqv),
-              ("equal?", equal),
-
-              ("pair?", isDottedList),
               ("procedure?", isProcedure),
               ("number?", isNumber),
               ("complex?", isComplex),
               ("real?", isReal),
               ("rational?", isRational),
               ("integer?", isInteger),
-              ("list?", unaryOp isList),
-              ("null?", isNull),
               ("eof-object?", isEOFObject),
               ("symbol?", isSymbol),
               ("symbol->string", symbol2String),
-              ("string->symbol", string2Symbol),
               ("char?", isChar),
 
-              ("vector?", unaryOp isVector),
               ("make-vector", makeVector),
               ("vector", buildVector),
-              ("vector-length", vectorLength),
-              ("vector-ref", vectorRef),
-              ("vector->list", vectorToList),
-              ("list->vector", listToVector),
 
-              ("bytevector?", unaryOp isByteVector),
               ("make-bytevector", makeByteVector),
               ("bytevector", byteVector),
-              ("bytevector-length", byteVectorLength),
-              ("bytevector-u8-ref", byteVectorRef),
-              ("bytevector-append", byteVectorAppend),
-              ("bytevector-copy", byteVectorCopy),
-              ("utf8->string", byteVectorUtf2Str),
-              ("string->utf8", byteVectorStr2Utf),
 
               ("make-hash-table", hashTblMake),
-              ("hash-table?", isHashTbl),
-              ("hash-table-exists?", hashTblExists),
-              ("hash-table-ref", hashTblRef),
-              ("hash-table-size", hashTblSize),
-              ("hash-table->alist", hashTbl2List),
-              ("hash-table-keys", hashTblKeys),
-              ("hash-table-values", hashTblValues),
-              ("hash-table-copy", hashTblCopy),
-
-              ("string?", isString),
               ("string", buildString),
               ("make-string", makeString),
-              ("string-length", stringLength),
-              ("string-ref", stringRef),
-              ("substring", substring),
-              ("string-append", stringAppend),
-              ("string->number", stringToNumber),
-              ("string->list", stringToList),
-              ("list->string", listToString),
-              ("string-copy", stringCopy),
 
               ("boolean?", isBoolean)]
 

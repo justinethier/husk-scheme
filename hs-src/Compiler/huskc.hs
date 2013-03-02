@@ -138,7 +138,7 @@ process inFile outExec dynamic extraArgs = do
   env <- Language.Scheme.Core.primitiveBindings
   stdlib <- getDataFileName "lib/stdlib.scm"
   srfi55 <- getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
-  result <- (runIOThrows $ liftM show $ compileSchemeFile env stdlib srfi55 inFile)
+  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env stdlib srfi55 inFile)
   case result of
    Just errMsg -> putStrLn errMsg
    _ -> compileHaskellFile outExec dynamic extraArgs

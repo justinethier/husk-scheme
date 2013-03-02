@@ -27,6 +27,7 @@ import Control.Monad.Error
 findModuleFile 
     :: [LispVal]
     -> IOThrowsError LispVal
+findModuleFile [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= findModuleFile
 findModuleFile [String file] 
     -- Built-in modules
 -- TODO: does this work in Windows, since it uses the "wrong" type of slashes for that OS?
@@ -44,6 +45,9 @@ moduleImport
     -> Env  -- ^ Environment to import from
     -> [LispVal] -- ^ Identifiers to import
     -> IOThrowsError LispVal
+moduleImport to from (p@(Pointer _ _) : is) = do
+  i <- derefPtr p
+  moduleImport to from (i : is)
 moduleImport to from (Atom i : is) = do
   _ <- divertBinding to from i i
   moduleImport to from is
