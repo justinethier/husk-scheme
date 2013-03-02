@@ -79,12 +79,10 @@ exRename useEnv renameEnv defEnv [Atom a] = do
        --       renaming the same variable differently within the
        --       same context. This caused the module meta language
        --       to not work properly...
-       isRenamed <- liftIO $ isNamespacedRecBound useEnv "er" a
-       if isRenamed
-          then do
-            renamed <- getNamespacedVar useEnv "er" a
-            return renamed
-          else do
+       r <- getNamespacedVar' useEnv "er" a
+       case r of
+         Just renamed -> return renamed
+         Nothing -> do
             value <- getVar defEnv a
             Atom renamed <- _gensym a -- Unique name
             _ <- defineVar useEnv renamed value -- divert value to Use Env

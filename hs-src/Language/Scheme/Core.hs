@@ -236,6 +236,9 @@ continueEval _
  - continuation (if there is one), or we just return the result. Yes technically with
  - CPS you are supposed to keep calling into functions and never return, but in this case
  - when the computation is complete, you have to return something. 
+ -
+ - NOTE: We use 'eval' below instead of 'meval' because macros are already expanded when
+ -       a function is loaded the first time, so there is no need to test for this again here.
  -}
 continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraArgs dynWind) val = do
 --    case (trace ("cBody = " ++ show cBody) cBody) of
@@ -246,8 +249,8 @@ continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraAr
               -- Pass extra args along if last expression of a function, to support (call-with-values)
               continueEval nEnv (Continuation nEnv ncCont nnCont extraArgs nDynWind) val
             _ -> return (val)
-        [lv] -> meval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) Nothing dynWind) lv
-        (lv : lvs) -> meval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing dynWind) lv
+        [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) Nothing dynWind) lv
+        (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing dynWind) lv
 
 -- No current continuation, but a next cont is available; call into it
 continueEval _ (Continuation cEnv Nothing (Just cCont) _ _) val = continueEval cEnv cCont val
@@ -353,12 +356,10 @@ eval env cont args@(List (Atom "letrec-syntax" : List _bindings : _body)) = do
 eval env cont args@(List [Atom "define-syntax", 
                           Atom newKeyword,
                           Atom keyword]) = do
-  bound <- liftIO $ isNamespacedRecBound env macroNamespace keyword
-  if bound
-     then do
-       m <- getNamespacedVar env macroNamespace keyword
-       defineNamespacedVar env macroNamespace newKeyword m
-     else throwError $ TypeMismatch "macro" $ Atom keyword
+  bound <- getNamespacedVar' env macroNamespace keyword
+  case bound of
+    Just m -> defineNamespacedVar env macroNamespace newKeyword m
+    Nothing -> throwError $ TypeMismatch "macro" $ Atom keyword
 
 eval env cont args@(List [Atom "define-syntax", Atom keyword,
   (List [Atom "er-macro-transformer", 
