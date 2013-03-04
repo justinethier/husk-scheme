@@ -109,11 +109,11 @@ import Data.Array
 --  mean to be used by the husk compiler.
 getDivertedVars :: Env -> IOThrowsError [LispVal]
 getDivertedVars env = do
-  List tmp <- getNamespacedVar env " " "diverted"
+  List tmp <- getNamespacedVar env ' ' "diverted"
   return tmp
 
 clearDivertedVars :: Env -> IOThrowsError LispVal
-clearDivertedVars env = defineNamespacedVar env " " "diverted" $ List []
+clearDivertedVars env = defineNamespacedVar env ' ' "diverted" $ List []
 
 -- |Examines the input AST to see if it is a macro call. 
 --  If a macro call is found, the code is expanded.
@@ -412,7 +412,9 @@ flagUnmatchedAtom defEnv outerEnv localEnv identifiers p improperListFlag = do
 flagUnmatchedVar :: Env -> String -> Bool -> IOThrowsError LispVal
 flagUnmatchedVar localEnv var improperListFlag = do
   _ <- defineVar localEnv var $ Nil "" -- Empty nil will signify the empty match
-  defineNamespacedVar localEnv "unmatched nary pattern variable" var $ Bool $ improperListFlag
+  defineNamespacedVar localEnv 
+                      '_' -- "unmatched nary pattern variable" 
+                      var $ Bool $ improperListFlag
 
 {- 
  - Utility function to insert a True flag to the proper trailing position of the DottedList indicator list
@@ -551,8 +553,8 @@ checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellips
       initializePatternVar _ ellipIndex pat val = do
         let flags = getListFlags ellipIndex listFlags 
         _ <- defineVar localEnv pat (Matches.setData (List []) ellipIndex val)
-        _ <- defineNamespacedVar localEnv "improper pattern" pat $ Bool $ fst flags
-        defineNamespacedVar localEnv "improper input" pat $ Bool $ snd flags
+        _ <- defineNamespacedVar localEnv 'p' {-"improper pattern"-} pat $ Bool $ fst flags
+        defineNamespacedVar localEnv 'i' {-"improper input"-} pat $ Bool $ snd flags
 
 checkLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (Vector p) (Vector i) flags =
   -- For vectors, just use list match for now, since vector input matching just requires a
@@ -662,7 +664,7 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
  -- (currently) unused conditional variables for below test
  --isDiverted <- liftIO $ isRecBound divertEnv a
  --isMacroBound <- liftIO $ isRecBound renameEnv a
- --isLocalRename <- liftIO $ isNamespacedRecBound renameEnv "renamed" a
+ --isLocalRename <- liftIO $ isNamespacedRecBound renameEnv 'r' {-"renamed"-} a
 
  -- Determine if we should recursively rename an atom
  -- This code is a bit of a hack/mess at the moment
@@ -1174,8 +1176,8 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
     ellipsisHere isDefined = do
         if isDefined
              then do 
-                    isImproperPattern <- loadNamespacedBool "improper pattern"
-                    isImproperInput <- loadNamespacedBool "improper input"
+                    isImproperPattern <- loadNamespacedBool 'p' -- "improper pattern"
+                    isImproperInput <- loadNamespacedBool 'i' -- "improper input"
                     -- Load variable and ensure it is a list
                     var <- getVar localEnv a
                     case var of
@@ -1192,8 +1194,8 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
                   transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers ellipsisLevel ellipsisIndex (List result) (List $ tail ts)
 
     noEllipsis isDefined = do
-      isImproperPattern <- loadNamespacedBool "improper pattern"
-      isImproperInput <- loadNamespacedBool "improper input"
+      isImproperPattern <- loadNamespacedBool 'p' -- "improper pattern"
+      isImproperInput <- loadNamespacedBool 'i' -- "improper input"
       t <- if (isDefined)
               then do
                    var <- getVar localEnv a
@@ -1204,7 +1206,9 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
                         -- What's happening here is that the pattern was flagged because it was not matched in
                         -- the pattern. We pick it up and in turn pass a special flag to the outer code (as t)
                         -- so that it can finally be processed correctly.
-                        wasPair <- getNamespacedVar localEnv "unmatched nary pattern variable" a
+                        wasPair <- getNamespacedVar localEnv 
+                                                    '_' --  "unmatched nary pattern variable" 
+                                                    a
                         case wasPair of
                             Bool True -> return $ Nil "var (pair) not defined in pattern"
                             _ -> return $ Nil "var not defined in pattern"
@@ -1230,13 +1234,13 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
                   -- we need to keep track of the var in two environments to map both ways 
                   -- between the original name and the new name.
 
-                  alreadyRenamed <- getNamespacedVar' localEnv "renamed" a
+                  alreadyRenamed <- getNamespacedVar' localEnv 'r' {-"renamed"-} a
                   case alreadyRenamed of
                     Just renamed -> return renamed
                     Nothing -> do
                        Atom renamed <- _gensym a
-                       _ <- defineNamespacedVar localEnv "renamed" a $ Atom renamed
-                       _ <- defineNamespacedVar renameEnv "renamed" a $ Atom renamed
+                       _ <- defineNamespacedVar localEnv  'r' {-"renamed"-} a $ Atom renamed
+                       _ <- defineNamespacedVar renameEnv 'r' {-"renamed"-} a $ Atom renamed
                        -- Keep track of vars that are renamed; maintain reverse mapping
                        _ <- defineVar cleanupEnv renamed $ Atom a -- Global record for final cleanup of macro
                        _ <- defineVar (renameEnv) renamed $ Atom a -- Keep for Clinger
@@ -1317,9 +1321,9 @@ transformLiteralIdentifier defEnv outerEnv divertEnv renameEnv definedInMacro tr
          _ <- defineVar divertEnv renamed value 
 
 -- TODO: this is temporary testing code
-         List diverted <- getNamespacedVar outerEnv " " "diverted"
-         _ <- setNamespacedVar outerEnv " " "diverted" $ 
-             List (diverted ++ [List [Atom renamed, Atom transform]])
+--         List diverted <- getNamespacedVar outerEnv " " "diverted"
+--         _ <- setNamespacedVar outerEnv " " "diverted" $ 
+--             List (diverted ++ [List [Atom renamed, Atom transform]])
 -- END
 
          return $ Atom renamed

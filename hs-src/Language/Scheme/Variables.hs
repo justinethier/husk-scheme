@@ -56,12 +56,12 @@ import qualified Data.Map
 -- import Debug.Trace
 
 -- |Internal namespace for macros
-macroNamespace :: [Char]
-macroNamespace = "m"
+macroNamespace :: Char
+macroNamespace = 'm'
 
 -- |Internal namespace for variables
-varNamespace :: [Char]
-varNamespace = "v"
+varNamespace :: Char
+varNamespace = 'v'
 
 -- Experimental code:
 -- From: http://rafaelbarreto.com/2011/08/21/comparing-objects-by-memory-location-in-haskell/
@@ -93,8 +93,8 @@ varNamespace = "v"
 --
 
 -- |Create a variable's name in an environment using given arguments
-getVarName :: String -> String -> String
-getVarName namespace name = namespace ++ ('_' : name)
+getVarName :: Char -> String -> String
+getVarName namespace name = (namespace : ('_' : name))
 
 -- |Show the contents of an environment
 printEnv :: Env         -- ^Environment
@@ -160,7 +160,7 @@ importEnv dEnv sEnv = do
 
 -- |Extend given environment by binding a series of values to a new environment.
 extendEnv :: Env -- ^ Environment 
-          -> [((String, String), LispVal)] -- ^ Extensions to the environment
+          -> [((Char, String), LispVal)] -- ^ Extensions to the environment
           -> IO Env -- ^ Extended environment
 extendEnv envRef abindings = do 
   bindinglistT <- (mapM addBinding abindings) -- >>= newIORef
@@ -186,7 +186,7 @@ nullEnvWithParent p = do
 findNamespacedEnv 
     :: Env      -- ^Environment to begin the search; 
                 --  parent env's will be searched as well.
-    -> String   -- ^Namespace
+    -> Char     -- ^Namespace
     -> String   -- ^Variable
     -> IO (Maybe Env) -- ^Environment, or Nothing if there was no match.
 findNamespacedEnv envRef namespace var = do
@@ -213,7 +213,7 @@ isRecBound envRef var = isNamespacedRecBound envRef varNamespace var
 -- |Determine if a variable is bound in a given namespace
 isNamespacedBound 
     :: Env      -- ^ Environment
-    -> String   -- ^ Namespace
+    -> Char     -- ^ Namespace
     -> String   -- ^ Variable
     -> IO Bool  -- ^ True if the variable is bound
 isNamespacedBound envRef namespace var = 
@@ -223,7 +223,7 @@ isNamespacedBound envRef namespace var =
 --  or a parent of the given environment.
 isNamespacedRecBound 
     :: Env      -- ^ Environment
-    -> String   -- ^ Namespace
+    -> Char     -- ^ Namespace
     -> String   -- ^ Variable
     -> IO Bool  -- ^ True if the variable is bound
 isNamespacedRecBound envRef namespace var = do
@@ -247,7 +247,7 @@ getVar' envRef var = getNamespacedVar' envRef varNamespace var
 
 -- |Retrieve the value of a variable defined in a given namespace
 getNamespacedVar :: Env     -- ^ Environment
-                 -> String  -- ^ Namespace
+                 -> Char    -- ^ Namespace
                  -> String  -- ^ Variable
                  -> IOThrowsError LispVal -- ^ Contents of the variable
 getNamespacedVar envRef
@@ -261,7 +261,7 @@ getNamespacedVar envRef
 -- |Retrieve the value of a variable defined in a given namespace,
 --  or Nothing if it is not defined
 getNamespacedVar' :: Env     -- ^ Environment
-                 -> String  -- ^ Namespace
+                 -> Char    -- ^ Namespace
                  -> String  -- ^ Variable
                  -> IOThrowsError (Maybe LispVal) -- ^ Contents of the variable, if found
 getNamespacedVar' envRef
@@ -287,7 +287,7 @@ setVar envRef var value = setNamespacedVar envRef varNamespace var value
 -- |Set a variable in a given namespace
 setNamespacedVar 
     :: Env      -- ^ Environment 
-    -> String   -- ^ Namespace
+    -> Char     -- ^ Namespace
     -> String   -- ^ Variable
     -> LispVal  -- ^ Value
     -> IOThrowsError LispVal   -- ^ Value
@@ -321,7 +321,7 @@ setNamespacedVar envRef
 --  for purposes of book-keeping.
 _setNamespacedVar 
     :: Env      -- ^ Environment 
-    -> String   -- ^ Namespace
+    -> Char     -- ^ Namespace
     -> String   -- ^ Variable
     -> LispVal  -- ^ Value
     -> IOThrowsError LispVal   -- ^ Value
@@ -348,7 +348,7 @@ _setNamespacedVarDirect envRef
 
 -- |This helper function is used to keep pointers in sync when
 --  a variable is bound to a different value.
-updatePointers :: Env -> String -> String -> IOThrowsError LispVal
+updatePointers :: Env -> Char -> String -> IOThrowsError LispVal
 updatePointers envRef namespace var = do
   ptrs <- liftIO $ readIORef $ pointers envRef
   case Data.Map.lookup (getVarName namespace var) ptrs of
@@ -385,7 +385,7 @@ updatePointers envRef namespace var = do
  where
   -- |Move the given pointers (ptr) to the list of
   --  pointers for variable (var)
-  movePointers :: Env -> String -> String -> [LispVal] -> IOThrowsError LispVal
+  movePointers :: Env -> Char -> String -> [LispVal] -> IOThrowsError LispVal
   movePointers envRef namespace var ptrs = do
     env <- liftIO $ readIORef $ pointers envRef
     case Data.Map.lookup (getVarName namespace var) env of
@@ -422,7 +422,7 @@ updateObject env var value =
 --  update any associated pointers. So it should probably only be
 --  used internally by husk, unless you really know what you are
 --  doing!
-updateNamespacedObject :: Env -> String -> String -> LispVal -> IOThrowsError LispVal
+updateNamespacedObject :: Env -> Char -> String -> LispVal -> IOThrowsError LispVal
 updateNamespacedObject env namespace var value = do
   varContents <- getNamespacedVar env namespace var
   obj <- findPointerTo varContents
@@ -442,7 +442,7 @@ defineVar envRef var value = defineNamespacedVar envRef varNamespace var value
 -- |Bind a variable in the given namespace
 defineNamespacedVar
     :: Env      -- ^ Environment 
-    -> String   -- ^ Namespace
+    -> Char     -- ^ Namespace
     -> String   -- ^ Variable
     -> LispVal  -- ^ Value
     -> IOThrowsError LispVal   -- ^ Value
@@ -477,7 +477,7 @@ defineNamespacedVar envRef
 --  based on the value passed to the define/set function. Normally this
 --  is straightforward, but there is book-keeping involved if a
 --  pointer is passed, depending on if the pointer resolves to an object.
-getValueToStore :: String -> String -> Env -> LispVal -> IOThrowsError LispVal
+getValueToStore :: Char -> String -> Env -> LispVal -> IOThrowsError LispVal
 getValueToStore namespace var env (Pointer p pEnv) = do
   addReversePointer namespace p pEnv namespace var env
 getValueToStore _ _ _ value = return value
@@ -486,7 +486,7 @@ getValueToStore _ _ _ value = return value
 --  to be assigned to. If that variable is an object then we setup a reverse lookup
 --  for future book-keeping. Otherwise, we just look it up and return it directly, 
 --  no booking-keeping required.
-addReversePointer :: String -> String -> Env -> String -> String -> Env -> IOThrowsError LispVal
+addReversePointer :: Char -> String -> Env -> Char -> String -> Env -> IOThrowsError LispVal
 addReversePointer namespace var envRef ptrNamespace ptrVar ptrEnvRef = do
    env <- liftIO $ readIORef $ bindings envRef
    case Data.Map.lookup (getVarName namespace var) env of

@@ -159,7 +159,7 @@ compileSchemeFile env stdlib srfi55 filename = do
   execC <- compileLisp env filename "exec" Nothing
 
   -- Append any additional import modules
-  List imports <- getNamespacedVar env "internal" "imports"
+  List imports <- getNamespacedVar env 't' {-"internal"-} "imports"
   let moreHeaderImports = map conv imports
 
   outH <- liftIO $ openFile "_tmp.hs" WriteMode
