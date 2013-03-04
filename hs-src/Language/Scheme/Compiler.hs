@@ -170,7 +170,7 @@ header filepath = do
 -- and the imports are explicitly added later on...
 initializeCompiler :: Env -> IOThrowsError [HaskAST]
 initializeCompiler env = do
-  _ <- defineNamespacedVar env "internal" "imports" $ List []
+  _ <- defineNamespacedVar env 't' {-"internal"-} "imports" $ List []
   return []
 
 
@@ -718,9 +718,9 @@ compile env (List [Atom "load-ffi",
 --  Atom symLoadFFI <- _gensym "loadFFI"
 
   -- Only append module again if it is not already in the list
-  List l <- getNamespacedVar env "internal" "imports"
+  List l <- getNamespacedVar env 't' {-"internal"-} "imports"
   _ <- if not ((String moduleName) `elem` l)
-          then setNamespacedVar env "internal" "imports" $ List $ l ++ [String moduleName]
+          then setNamespacedVar env 't' {-"internal"-} "imports" $ List $ l ++ [String moduleName]
           else return $ String ""
 
   -- Pass along moduleName as another top-level import

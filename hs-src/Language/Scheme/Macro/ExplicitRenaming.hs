@@ -74,19 +74,19 @@ exRename useEnv renameEnv defEnv [Atom a] = do
   if isDef
      then do
 
-       -- NOTE: useEnv/"er" is used to store renamed variables due
+       -- NOTE: useEnv/'r' is used to store renamed variables due
        --       to issues with separate invocations of er macros
        --       renaming the same variable differently within the
        --       same context. This caused the module meta language
        --       to not work properly...
-       r <- getNamespacedVar' useEnv "er" a
+       r <- getNamespacedVar' useEnv 'r' a
        case r of
          Just renamed -> return renamed
          Nothing -> do
             value <- getVar defEnv a
             Atom renamed <- _gensym a -- Unique name
             _ <- defineVar useEnv renamed value -- divert value to Use Env
-            _ <- defineNamespacedVar useEnv "er" a $ Atom renamed -- Record renamed sym
+            _ <- defineNamespacedVar useEnv 'r' a $ Atom renamed -- Record renamed sym
 
 -- TODO: this is temporary testing code
 --            List diverted <- getNamespacedVar useEnv " " "diverted"
