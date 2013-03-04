@@ -98,6 +98,7 @@ import Data.Array
 import qualified Data.ByteString as BS
 import Data.Dynamic
 import Data.IORef
+import qualified Data.HashTable.IO as H
 import qualified Data.Map
 -- import Data.Maybe
 import Data.Ratio
@@ -105,20 +106,22 @@ import Data.Word
 import System.IO
 import Text.ParserCombinators.Parsec hiding (spaces)
 
+type HashTable' k v = H.LinearHashTable k v
+
 -- Environment management
 
 -- |A Scheme environment containing variable bindings of form @(namespaceName, variableName), variableValue@
 data Env = Environment {
         parentEnv :: (Maybe Env), 
-        bindings :: (IORef (Data.Map.Map String (IORef LispVal))),
-        pointers :: (IORef (Data.Map.Map String (IORef [LispVal])))
+        bindings :: (IORef (IO (HashTable' String (IORef LispVal)))),
+        pointers :: (IORef (IO (HashTable' String (IORef [LispVal]))))
     }
 
 -- |An empty environment
 nullEnv :: IO Env
 nullEnv = do 
-    nullBindings <- newIORef $ Data.Map.fromList []
-    nullPointers <- newIORef $ Data.Map.fromList []
+    nullBindings <- newIORef $ H.fromList []
+    nullPointers <- newIORef $ H.fromList []
     return $ Environment Nothing nullBindings nullPointers
 
 -- |Types of errors that may occur when evaluating Scheme code
