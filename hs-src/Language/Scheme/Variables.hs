@@ -55,8 +55,6 @@ import Data.IORef
 import qualified Data.HashTable.IO as H
 -- import Debug.Trace
 
-type HashTable' k v = H.LinearHashTable k v
-
 -- |Internal namespace for macros
 macroNamespace :: [Char]
 macroNamespace = "m"
@@ -102,8 +100,7 @@ getVarName namespace name = namespace ++ ('_' : name)
 printEnv :: Env         -- ^Environment
          -> IO String   -- ^Contents of the env as a string
 printEnv env = do
-  binds <- liftIO $ readIORef $ bindings env
-  lst <- H.toList binds
+  lst <- H.toList $ bindings env
   l <- mapM showVar lst -- $ H.toList binds 
   return $ unlines l
  where 
@@ -115,8 +112,8 @@ printEnv env = do
 exportsFromEnv :: Env 
                -> IO [LispVal]
 exportsFromEnv env = do
-  binds <- liftIO $ readIORef $ bindings env
-  return $ getExports [] $ fst $ unzip $ H.toList binds 
+  lst <- H.toList $ bindings env 
+  return $ getExports [] $ fst $ unzip lst
  where 
   getExports acc (('m':'_':b) : bs) = getExports (Atom b:acc) bs
   getExports acc (('v':'_':b) : bs) = getExports (Atom b:acc) bs
@@ -127,17 +124,21 @@ exportsFromEnv env = do
 copyEnv :: Env      -- ^ Source environment
         -> IO Env   -- ^ A copy of the source environment
 copyEnv env = do
-  ptrs <- liftIO $ readIORef $ pointers env
-  ptrList <- newIORef ptrs
+  -- ptrs <- liftIO $ readIORef $ pointers env
+  -- ptrList <- newIORef ptrs
 
-  binds <- liftIO $ readIORef $ bindings env
-  bindingListT <- mapM addBinding $ H.toList binds 
-  bindingList <- newIORef $ H.fromList bindingListT
-  return $ Environment (parentEnv env) bindingList ptrList
- where addBinding (name, val) = do 
-         x <- liftIO $ readIORef val
-         ref <- newIORef x
-         return (name, ref)
+  -- binds <- liftIO $ readIORef $ bindings env
+  ht <- H.fromList []
+  lst <- H.toList $ bindings env --binds 
+  _ <- mapM (addBinding ht) lst
+  --bindingList <- H.fromList bindingListT
+  return $ Environment (parentEnv env) ht $ pointers env
+ where addBinding ht (name, val) = do 
+         _ <- H.insert ht name val
+         return ()
+         -- x <- liftIO $ readIORef val
+         -- ref <- newIORef x
+         -- return (name, ref)
 
 -- |Perform a deep copy of an environment's contents into
 --  another environment.
@@ -221,8 +222,8 @@ isNamespacedBound
     -> String   -- ^ Variable
     -> IO Bool  -- ^ True if the variable is bound
 isNamespacedBound envRef namespace var = do
-    env <- (readIORef $ bindings envRef) 
-    v <- H.lookup env (getVarName namespace var)
+    v <- H.lookup (bindings envRef)
+                  (getVarName namespace var)
     case v of 
         Just _ -> return True
         Nothing -> return False
@@ -275,8 +276,9 @@ getNamespacedVar' :: Env     -- ^ Environment
 getNamespacedVar' envRef
                  namespace
                  var = do 
-    binds <- liftIO $ readIORef $ bindings envRef
-    case H.lookup (getVarName namespace var) binds of
+    --binds <- liftIO $ readIORef $ bindings envRef
+    val <- liftIO $ H.lookup (bindings envRef) (getVarName namespace var)
+    case val of
       (Just a) -> do
           v <- liftIO $ readIORef a
           return $ Just v
@@ -345,8 +347,10 @@ _setNamespacedVar envRef
 _setNamespacedVarDirect envRef
                  namespace
                  var valueToStore = do 
-  env <- liftIO $ readIORef $ bindings envRef
-  case H.lookup (getVarName namespace var) env of
+  --env <- liftIO $ readIORef $ bindings envRef
+  val <- liftIO $ H.lookup (bindings envRef)
+                           (getVarName namespace var)
+  case val of
     (Just a) -> do
       liftIO $ writeIORef a valueToStore
       return valueToStore
@@ -359,7 +363,9 @@ _setNamespacedVarDirect envRef
 updatePointers :: Env -> String -> String -> IOThrowsError LispVal
 updatePointers envRef namespace var = do
   ptrs <- liftIO $ readIORef $ pointers envRef
-  case H.lookup (getVarName namespace var) ptrs of
+  p <- liftIO $ H.lookup (pointers envRef) 
+                         (getVarName namespace var)
+  case p of
     (Just valIORef) -> do
       val <- liftIO $ readIORef valIORef
       case val of 
@@ -395,8 +401,10 @@ updatePointers envRef namespace var = do
   --  pointers for variable (var)
   movePointers :: Env -> String -> String -> [LispVal] -> IOThrowsError LispVal
   movePointers envRef namespace var ptrs = do
-    env <- liftIO $ readIORef $ pointers envRef
-    case H.lookup (getVarName namespace var) env of
+    --env <- liftIO $ readIORef $ pointers envRef
+    p <- liftIO $ H.lookup (pointers envRef)
+                           (getVarName namespace var)
+    case p of
       Just ps' -> do
         -- Append ptrs to existing list of pointers to var
         ps <- liftIO $ readIORef ps'

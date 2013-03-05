@@ -24,6 +24,7 @@ module Language.Scheme.Types
     , IOThrowsError 
     , liftThrows 
     -- * Types and related functions
+    , HashTable'
     , LispVal (
           Atom
         , List
@@ -113,15 +114,15 @@ type HashTable' k v = H.LinearHashTable k v
 -- |A Scheme environment containing variable bindings of form @(namespaceName, variableName), variableValue@
 data Env = Environment {
         parentEnv :: (Maybe Env), 
-        bindings :: (IORef (IO (HashTable' String (IORef LispVal)))),
-        pointers :: (IORef (IO (HashTable' String (IORef [LispVal]))))
+        bindings :: (HashTable' String (IORef LispVal)),
+        pointers :: (HashTable' String (IORef [LispVal]))
     }
 
 -- |An empty environment
 nullEnv :: IO Env
 nullEnv = do 
-    nullBindings <- newIORef $ H.fromList []
-    nullPointers <- newIORef $ H.fromList []
+    nullBindings <- H.fromList []
+    nullPointers <- H.fromList []
     return $ Environment Nothing nullBindings nullPointers
 
 -- |Types of errors that may occur when evaluating Scheme code
