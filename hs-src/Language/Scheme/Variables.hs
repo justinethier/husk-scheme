@@ -53,6 +53,7 @@ import Control.Monad.Error
 import Data.Array
 import Data.IORef
 import qualified Data.HashTable.IO as H
+import qualified Data.Map
 -- import Debug.Trace
 
 -- |Internal namespace for macros
@@ -169,9 +170,12 @@ extendEnv :: Env -- ^ Environment
           -> IO Env -- ^ Extended environment
 extendEnv envRef abindings = do 
   bindinglistT <- (mapM addBinding abindings) -- >>= newIORef
-  bindinglist <- newIORef $ H.fromList bindinglistT
-  nullPointers <- newIORef $ H.fromList []
-  return $ Environment (Just envRef) bindinglist nullPointers
+  htBindings <- H.fromList bindinglistT
+  --bindinglist <- newIORef $ H.fromList bindinglistT
+  nullPointers <- H.fromList []
+  return $ Environment (Just envRef) 
+                       htBindings
+                       nullPointers
  where addBinding ((namespace, name), val) = do ref <- newIORef val
                                                 return (getVarName namespace name, ref)
 
@@ -362,7 +366,7 @@ _setNamespacedVarDirect envRef
 --  a variable is bound to a different value.
 updatePointers :: Env -> String -> String -> IOThrowsError LispVal
 updatePointers envRef namespace var = do
-  ptrs <- liftIO $ readIORef $ pointers envRef
+  --ptrs <- liftIO $ readIORef $ pointers envRef
   p <- liftIO $ H.lookup (pointers envRef) 
                          (getVarName namespace var)
   case p of
@@ -413,7 +417,10 @@ updatePointers envRef namespace var = do
       Nothing -> do
         -- var does not have any pointers; create new list
         valueRef <- liftIO $ newIORef ptrs
-        liftIO $ writeIORef (pointers envRef) (H.insert (getVarName namespace var) valueRef env)
+        --liftIO $ writeIORef (pointers envRef) (H.insert (getVarName namespace var) valueRef env)
+        _ <- liftIO $ H.insert (pointers envRef) 
+                               (getVarName namespace var)
+                               valueRef
         return $ Nil ""
 
   -- |Update each pointer's source to point to pVar
@@ -485,8 +492,11 @@ defineNamespacedVar envRef
       liftIO $ do
         -- Write new value binding
         valueRef <- newIORef valueToStore
-        env <- readIORef $ bindings envRef
-        writeIORef (bindings envRef) (H.insert (getVarName namespace var) valueRef env)
+        --env <- readIORef $ bindings envRef
+        --writeIORef (bindings envRef) (H.insert (getVarName namespace var) valueRef env)
+        _ <- liftIO $ H.insert (bindings envRef)
+                               (getVarName namespace var) 
+                               valueRef
         return valueToStore
 
 -- |An internal helper function to get the value to save to an env
@@ -504,17 +514,24 @@ getValueToStore _ _ _ value = return value
 --  no booking-keeping required.
 addReversePointer :: String -> String -> Env -> String -> String -> Env -> IOThrowsError LispVal
 addReversePointer namespace var envRef ptrNamespace ptrVar ptrEnvRef = do
-   env <- liftIO $ readIORef $ bindings envRef
-   case H.lookup (getVarName namespace var) env of
+   -- env <- liftIO $ readIORef $ bindings envRef
+   -- case H.lookup (getVarName namespace var) env of
+   val <- liftIO $ H.lookup (bindings envRef)
+                            (getVarName namespace var)
+   case val of
      (Just a) -> do
        v <- liftIO $ readIORef a
        if isObject v
           then do
             -- Store a reverse pointer for book keeping
-            ptrs <- liftIO $ readIORef $ pointers envRef
             
-            -- Lookup ptr for var
-            case H.lookup (getVarName namespace var) ptrs of
+            --ptrs <- liftIO $ readIORef $ pointers envRef
+            --
+            ---- Lookup ptr for var
+            --case H.lookup (getVarName namespace var) ptrs of
+            ptrs <- liftIO $ H.lookup (pointers envRef)
+                                      (getVarName namespace var)
+            case ptrs of
               -- Append another reverse ptr to this var
               -- FUTURE: make sure ptr is not already there, 
               --         before adding it to the list again?
@@ -526,7 +543,10 @@ addReversePointer namespace var envRef ptrNamespace ptrVar ptrEnvRef = do
               -- No mapping, add the first reverse pointer
               Nothing -> liftIO $ do
                 valueRef <- newIORef [Pointer ptrVar ptrEnvRef]
-                writeIORef (pointers envRef) (H.insert (getVarName namespace var) valueRef ptrs)
+                --writeIORef (pointers envRef) (H.insert (getVarName namespace var) valueRef ptrs)
+                _ <- liftIO $ H.insert (pointers envRef)
+                                       (getVarName namespace var)
+                                       valueRef
                 return $ Pointer var envRef -- Return non-reverse ptr to caller
           else return v -- Not an object, return value directly
      Nothing -> case parentEnv envRef of
@@ -572,9 +592,9 @@ recDerefPtrs (Vector v) = do
     ds <- mapM recDerefPtrs vs
     return $ Vector $ listArray (0, length vs - 1) ds
 recDerefPtrs (HashTable ht) = do
-    ks <- mapM recDerefPtrs $ map (\ (k, _) -> k) $ H.toList ht
-    vs <- mapM recDerefPtrs $ map (\ (_, v) -> v) $ H.toList ht
-    return $ HashTable $ H.fromList $ zip ks vs
+    ks <- mapM recDerefPtrs $ map (\ (k, _) -> k) $ Data.Map.toList ht
+    vs <- mapM recDerefPtrs $ map (\ (_, v) -> v) $ Data.Map.toList ht
+    return $ HashTable $ Data.Map.fromList $ zip ks vs
 #endif
 recDerefPtrs (Pointer p env) = do
     result <- getVar env p
