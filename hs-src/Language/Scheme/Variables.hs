@@ -51,8 +51,8 @@ module Language.Scheme.Variables
 import Language.Scheme.Types
 import Control.Monad.Error
 import Data.Array
-import Data.IORef
 import qualified Data.HashTable.IO as H
+import Data.IORef
 import qualified Data.Map
 -- import Debug.Trace
 
@@ -141,7 +141,7 @@ copyEnv env = do
          -- ref <- newIORef x
          -- return (name, ref)
 
--- |Perform a deep copy of an environment's contents into
+-- |Import an environment's contents into
 --  another environment.
 --
 --  The destination environment is modified!
@@ -151,7 +151,14 @@ importEnv
   -> Env -- ^ Source environment
   -> IO Env
 importEnv dEnv sEnv = do
--- TODO:
+  -- Insert each source binding into 
+  sPtrs <- liftIO $ H.toList (pointers sEnv)
+  _ <- go (pointers dEnv) sPtrs
+
+  sBinds <- liftIO $ H.toList (bindings sEnv)
+  _ <- go (bindings dEnv) sBinds
+
+-- OBSOLETE:
 --  sPtrs <- liftIO $ readIORef $ pointers sEnv
 --  dPtrs <- liftIO $ readIORef $ pointers dEnv
 --  writeIORef (pointers dEnv) $ Data.Map.union sPtrs dPtrs
@@ -163,7 +170,15 @@ importEnv dEnv sEnv = do
   case parentEnv sEnv of
     Just ps -> importEnv dEnv ps 
     Nothing -> return dEnv 
-
+ where
+    go ht = go'
+      where
+        go' [] = return ()
+        go' ((k,v):xs) = do
+        -- Req's LANGUAGE BangPatterns
+        --go' ((!k,!v):xs) = do
+            H.insert ht k v
+            go' xs
 -- |Extend given environment by binding a series of values to a new environment.
 extendEnv :: Env -- ^ Environment 
           -> [((String, String), LispVal)] -- ^ Extensions to the environment
