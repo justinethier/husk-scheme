@@ -1,4 +1,9 @@
-; A simple example to clear a VT100 terminal
+;;;
+;;; Justin Ethier
+;;; husk scheme
+;;;
+;;; A simple example to clear a VT100 terminal
+;;;
 (display
     (string 
         (integer->char #x1B) 
