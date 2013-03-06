@@ -1,16 +1,21 @@
 v3.7.1
 --------
 
-- TBD - map/for-each multiple list args
-- Cache macro expansions to allow for a significant performance improvement
+TODO: bump this release to 4.0???
 
-OPT branch -  (TODO: need to revise all this. these are just rough notes for what is going on with this branch)
+This release introduces several performance improvements:
 
-Internally, husk uses a Pointer data type to allow dynamic updates to "object" data types. But there were performance issues with the original implementation of Pointer. This release removes many of those performance problems by modifying the evaluator to allow primitive functions to deal with the Pointer type directly, instead of attempting to convert values before passing them to primitive functions.
+- Macro expansions are now cached, significantly improving performance when repeatedly calling a function containing macros.
+- A `Pointer` type was added in version 3.6 as part of the changes to enhance the variable storage model. Unfortunately the initial implementation naively checked for pointers prior to calling into Haskell functions. This release eliminates those inefficiencies by modifying the evaluator to allow primitive functions to deal with the Pointer type directly, instead of attempting to convert values before passing them to primitive functions.
 
-changes to the haskell API:
-- Introduced a new CustFunc type that should be used to define your own functions when using the Haskell API. This negates having to handle Pointer types in your Haskell code. If you know what you are doing, though, you can handle Pointer types and have a more efficient function
-- Moved runIOThrows to Core, and removed obsolete functions trapError and extractValue
+Changes to the Haskell API:
+
+- Introduced a new type of function, `CustFunc`, which is the recommended way to define your own Haskell functions when using the Haskell API. This type negates having to handle Pointer types directly in your Haskell code. If you know what you are doing, though, you can handle Pointer types and avoid the overhead of checking for pointers prior to calling into your function code.
+- Moved `runIOThrows` into Core, and removed obsolete functions `trapError` and `extractValue`.
+
+Bug fixes
+
+- Updated `map` and `for-each` to accept multiple list arguments, per R<sup>5</sup>RS.
 
 v3.7
 --------
