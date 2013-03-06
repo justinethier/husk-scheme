@@ -22,5 +22,5 @@
 (grid-put! grid 3 0 #t)
 (grid-put! grid 3 1 #t)
 (grid-put! grid 3 2 #t)
-;; Run for 80 iterations.
-(life grid 80)
+;; Run for x iterations.
+(life grid 10) ;80
