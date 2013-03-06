@@ -7,6 +7,7 @@ This release introduces several performance improvements:
 
 - Macro expansions are now cached, significantly improving performance when repeatedly calling a function containing macros.
 - A `Pointer` type was added in version 3.6 as part of the changes to enhance the variable storage model. Unfortunately the initial implementation naively checked for pointers prior to calling into Haskell functions. This release eliminates those inefficiencies by modifying the evaluator to allow primitive functions to deal with the Pointer type directly, instead of attempting to convert values before passing them to primitive functions.
+- Restructured code in the Macro module to eliminate redundant calls to `Data.Map.lookup`.
 
 The example game of life program (`examples/game-of-life/life.scm`) demonstrates these performance improvements, as it now runs over 4.5 times faster than in the previous release. 
 
