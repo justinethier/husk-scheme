@@ -8,6 +8,8 @@ This release introduces several performance improvements:
 - Macro expansions are now cached, significantly improving performance when repeatedly calling a function containing macros.
 - A `Pointer` type was added in version 3.6 as part of the changes to enhance the variable storage model. Unfortunately the initial implementation naively checked for pointers prior to calling into Haskell functions. This release eliminates those inefficiencies by modifying the evaluator to allow primitive functions to deal with the Pointer type directly, instead of attempting to convert values before passing them to primitive functions.
 
+TBD: note about `examples/game-of-life/life.scm`
+
 Changes to the Haskell API:
 
 - Introduced a new type of function, `CustFunc`, which is the recommended way to define your own Haskell functions when using the Haskell API. This type negates having to handle Pointer types directly in your Haskell code. If you know what you are doing, though, you can handle Pointer types and avoid the overhead of checking for pointers prior to calling into your function code.
