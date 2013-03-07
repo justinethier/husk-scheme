@@ -6,16 +6,7 @@
 ;;;
 ;;; Test cases from:
 ;;; http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_chap_6
-;;;
-;;;
-;;; NOTE: many test cases are commented-out as they fail due to differences between
-;;;       the (Haskell) memory model we are using and the memory model the spec
-;;;       assumes. This may be addressed at some point, but is not currently a 
-;;;       priority item.
-;;;
-;;;       For more information: https://github.com/justinethier/husk-scheme/wiki/Compatibility
-;;;
-(unit-test-start "standard procedures")
+(unit-test-start "equality procedures")
 
 (assert/equal
     (eqv? 'a 'a)
@@ -32,10 +23,9 @@
 (assert/equal
     (eqv? 100000000 100000000)
     #t)
-; Fails R5RS test case
-;(assert/equal
-;    (eqv? (cons 1 2) (cons 1 2))
-;     #f)
+(assert/equal
+    (eqv? (cons 1 2) (cons 1 2))
+     #f)
 (assert/equal
     (eqv? (lambda () 1)
           (lambda () 2))
@@ -60,6 +50,8 @@
     (let ((g (gen-counter)))
         (eqv? g g))
     #t)
+(assert/equal (eqv? (gen-counter) (gen-counter)) 
+              #f)
 
 (define gen-loser
     (lambda ()
@@ -90,16 +82,15 @@
         (eqv? x x))
     #t)
 
-; Many tests that do not meet spec
 (assert/equal (eq? 'a 'a) #t)
 (assert/equal (eq? '(a) '(a)) #t)
-;(assert/equal (eq? (list 'a) (list 'a))  #f)
+(assert/equal (eq? (list 'a) (list 'a))  #f)
 (assert/equal (eq? "a" "a") #t)
 (assert/equal (eq? "" "") #t)
 (assert/equal (eq? '() '())              #t)
 (assert/equal (eq? 2 2) #t)
 (assert/equal (eq? #\A #\A) #t)
-;(assert/equal (eq? car car)              #t)
+(assert/equal (eq? car car)              #t)
 (assert/equal (let ((n (+ 2 3)))
                    (eq? n n))
               #t) ;  ===>  unspecified
@@ -107,8 +98,8 @@
     (eq? x x))              #t)
 (assert/equal (let ((x '#()))
     (eq? x x))              #t)
-;(assert/equal (let ((p (lambda (x) x)))
-;    (eq? p p))              #t)
+(assert/equal (let ((p (lambda (x) x)))
+    (eq? p p))              #t)
 
 (assert/equal (equal? 'a 'a) #t)
 (assert/equal (equal? '(a) '(a))         #t)
