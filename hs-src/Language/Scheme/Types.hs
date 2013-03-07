@@ -80,6 +80,8 @@ module Language.Scheme.Types
     , makeNullContinuation 
     , makeCPS 
     , makeCPSWArgs 
+    , _eq
+    , _eqv
     , eqv 
     , eqvList
     , eqVal 
@@ -348,6 +350,38 @@ List
 Func
 Others? -}
   compare a b = compare (show a) (show b) -- Hack (??): sort alphabetically when types differ or have no handlers
+
+-- |Implementation of eq?
+_eq :: [LispVal] 
+    -> IOThrowsError LispVal
+-- TODO
+_eq badArgList = throwError $ NumArgs (Just 2) badArgList
+
+-- |Implementation of eqv?
+_eqv :: [LispVal] 
+    -> IOThrowsError LispVal
+_eqv [(Bool arg1), (Bool arg2)] = return $ Bool $ arg1 == arg2
+_eqv [(Number arg1), (Number arg2)] = return $ Bool $ arg1 == arg2
+_eqv [(Complex arg1), (Complex arg2)] = return $ Bool $ arg1 == arg2
+_eqv [(Rational arg1), (Rational arg2)] = return $ Bool $ arg1 == arg2
+_eqv [(Float arg1), (Float arg2)] = return $ Bool $ arg1 == arg2
+_eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
+_eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
+_eqv [x@(Func _ _ xBody _), y@(Func _ _ yBody _)] = do
+  if (show x) /= (show y)
+     then return $ Bool False
+     else eqvList eqv [List xBody, List yBody] 
+_eqv [x@(HFunc _ _ _ _), y@(Func _ _ _ _)] = do
+  if (show x) /= (show y)
+     then return $ Bool False
+     else return $ Bool True
+_eqv [x@(PrimitiveFunc _), y@(PrimitiveFunc _)] = return $ Bool $ (show x) == (show y)
+_eqv [x@(IOFunc _), y@(IOFunc _)] = return $ Bool $ (show x) == (show y)
+_eqv [x@(CustFunc _), y@(CustFunc _)] = return $ Bool $ (show x) == (show y)
+_eqv [x@(EvalFunc _), y@(EvalFunc _)] = return $ Bool $ (show x) == (show y)
+_eqv [_, _] = return $ Bool False
+_eqv badArgList = throwError $ NumArgs (Just 2) badArgList
+_eqv badArgList = throwError $ NumArgs (Just 2) badArgList
 
 -- |Compare two 'LispVal' instances
 eqv :: [LispVal] 

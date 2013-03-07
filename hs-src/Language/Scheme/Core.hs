@@ -1202,11 +1202,9 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
               ("cdr", cdr),
               ("cons", cons),
 
-            -- TODO: these need to be rewritten to actually be in 
-            -- the IO monad, tmpWrap is just temporary
-              ("eq?",    tmpWrap eqv),
-              ("eqv?",   tmpWrap eqv),
-              ("equal?", tmpWrap equal),
+              ("eq?",    _eq),
+              ("eqv?",   _eqv),
+              ("equal?", ioWrap equal),
 
               ("pair?", isDottedList),
               ("list?", unaryOp' isList),
@@ -1257,11 +1255,10 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("find-module-file", findModuleFile),
                 ("gensym", gensym)]
 
--- TODO:
--- This function is a temporary stopgap that will go
--- away before this branch is merged
-tmpWrap :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> IOThrowsError LispVal
-tmpWrap fnc lvs = do
+-- |Simple wrapper for the IO monad; recursively dereferences 
+--  all pointers before invoking the target primitive
+ioWrap :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> IOThrowsError LispVal
+ioWrap fnc lvs = do
     List result <- recDerefPtrs $ List lvs 
     liftThrows $ fnc result
 
