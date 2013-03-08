@@ -22,6 +22,8 @@ module Language.Scheme.Primitives (
  , cdr 
  , cons
  , equal 
+ , _eq
+ , _eqv
  -- ** Vector
  , buildVector 
  , vectorLength 
@@ -331,6 +333,54 @@ equal [arg1, arg2] = do
   eqvEquals <- eqv [arg1, arg2]
   return $ Bool $ (primitiveEquals || let (Bool x) = eqvEquals in x)
 equal badArgList = throwError $ NumArgs (Just 2) badArgList
+
+-- |Implementation of `eq?`
+_eq :: [LispVal] 
+    -> IOThrowsError LispVal
+_eq [Pointer a _, Pointer b _] = return $ Bool $ a == b
+_eq [a, b] = _eqv [a, b]
+_eq badArgList = throwError $ NumArgs (Just 2) badArgList
+
+-- |Implementation of `eqv?`
+_eqv :: [LispVal] 
+    -> IOThrowsError LispVal
+_eqv [(Bool arg1), (Bool arg2)] = return $ Bool $ arg1 == arg2
+_eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
+_eqv [(Number arg1), (Number arg2)] = return $ Bool $ arg1 == arg2
+_eqv [(Complex arg1), (Complex arg2)] = return $ Bool $ arg1 == arg2
+_eqv [(Rational arg1), (Rational arg2)] = return $ Bool $ arg1 == arg2
+_eqv [(Float arg1), (Float arg2)] = return $ Bool $ arg1 == arg2
+_eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
+
+_eqv [List [], List []] = return $ Bool True
+_eqv [ap@(Pointer a aEnv), List []] = do
+    a' <- derefPtr ap
+    case a' of
+        List [] -> return $ Bool True
+        _ -> return $ Bool False
+_eqv [List [], bp@(Pointer b bEnv)] = do
+    b' <- derefPtr bp
+    case b' of
+        List [] -> return $ Bool True
+        _ -> return $ Bool False
+_eqv [ap@(Pointer a aEnv), bp@(Pointer b bEnv)] = do
+    a' <- derefPtr ap
+    b' <- derefPtr bp
+    case (a', b') of
+        (List [], List []) -> return $ Bool True
+        _ -> return $ Bool $ a == b
+
+_eqv [x@(Func _ _ xBody _), y@(Func _ _ yBody _)] = do
+  if (show x) /= (show y)
+     then return $ Bool False
+     else eqvList eqv [List xBody, List yBody] 
+_eqv [x@(HFunc _ _ _ _), y@(Func _ _ _ _)] = return $ Bool $ (show x) == (show y)
+_eqv [x@(PrimitiveFunc _), y@(PrimitiveFunc _)] = return $ Bool $ (show x) == (show y)
+_eqv [x@(IOFunc _), y@(IOFunc _)] = return $ Bool $ (show x) == (show y)
+_eqv [x@(CustFunc _), y@(CustFunc _)] = return $ Bool $ (show x) == (show y)
+_eqv [x@(EvalFunc _), y@(EvalFunc _)] = return $ Bool $ (show x) == (show y)
+_eqv [_, _] = return $ Bool False
+_eqv badArgList = throwError $ NumArgs (Just 2) badArgList
 
 -- ------------ Vector Primitives --------------
 
