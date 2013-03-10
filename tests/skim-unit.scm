@@ -12,7 +12,7 @@
 (define fail-count 0)
 
 (define (unit-test-handler expected actual) 
-  (if (not (eqv? expected actual))
+  (if (not (equal? expected actual))
     (begin 
         (display "Test failed; expected value: [")
         (display expected) 
