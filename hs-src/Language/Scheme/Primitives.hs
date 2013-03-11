@@ -373,7 +373,10 @@ _eqv [ap@(Pointer a aEnv), bp@(Pointer b bEnv)] = do
 _eqv [x@(Func _ _ xBody _), y@(Func _ _ yBody _)] = do
   if (show x) /= (show y)
      then return $ Bool False
-     else eqvList eqv [List xBody, List yBody] 
+     else do
+        List dargs <- recDerefPtrs $ List [List xBody, List yBody]
+        result <- liftThrows $ eqvList eqv [List xBody, List yBody]
+        return $ result
 _eqv [x@(HFunc _ _ _ _), y@(Func _ _ _ _)] = return $ Bool $ (show x) == (show y)
 _eqv [x@(PrimitiveFunc _), y@(PrimitiveFunc _)] = return $ Bool $ (show x) == (show y)
 _eqv [x@(IOFunc _), y@(IOFunc _)] = return $ Bool $ (show x) == (show y)
