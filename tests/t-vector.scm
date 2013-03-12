@@ -19,7 +19,8 @@
 (vector-fill! vec "Num")
 (assert/equal (id vec) '#("Num" "Num" "Num" "Num"))
 
-(assert/equal (eqv? '#("Num" "Num" "Num") '#("Num" "Num" "Num")) #t)
+(assert/equal (eqv? '#("Num" "Num" "Num") '#("Num" "Num" "Num")) #f)
+(assert/equal (equal? '#("Num" "Num" "Num") '#("Num" "Num" "Num")) #t)
 (assert/equal (eqv? '#("Num" "Num" "Num") '#("Num" "Num" "Num2")) #f)
 (assert/equal (eqv? '#("Num" "Num" "Num") '#("Num" "Num" 2)) #f)
 (assert/equal (eqv? '#("1" "2" "3") '#(1 2 3)) #f)
