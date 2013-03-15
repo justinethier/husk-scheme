@@ -1,7 +1,5 @@
-v3.7.1
+v3.8
 --------
-
-TODO: bump this release to 4.0???
 
 This release introduces several performance improvements:
 
