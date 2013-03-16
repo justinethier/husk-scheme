@@ -4,14 +4,14 @@ v3.8
 This release introduces several performance improvements:
 
 - Macro expansions are now cached, significantly improving performance when repeatedly calling a function containing macros.
-- A `Pointer` type was added in version 3.6 as part of the changes to enhance the variable storage model. Unfortunately the initial implementation naively checked for pointers prior to calling into Haskell functions. This release eliminates those inefficiencies by modifying the evaluator to allow primitive functions to deal with the Pointer type directly, instead of attempting to convert values before passing them to primitive functions.
+- A `Pointer` type was added in version 3.6 as part of the changes to enhance the variable storage model. Unfortunately the initial implementation naively checked for pointers prior to calling into any Haskell function. This release eliminates those inefficiencies by allowing primitive functions to deal with the Pointer type directly, instead of attempting to convert values before passing them to primitive functions.
 - Restructured code in the Macro module to eliminate redundant calls to `Data.Map.lookup`.
 
-The example game of life program (`examples/game-of-life/life.scm`) demonstrates these performance improvements, as it now runs over 4.5 times faster than in the previous release. 
+The example game of life program `examples/game-of-life/life.scm` demonstrates these performance improvements, as it now runs over 4.5 times faster than in the previous release. 
 
 Changes to the Haskell API:
 
-- Introduced a new type of function, `CustFunc`, which is the recommended way to define your own Haskell functions when using the Haskell API. This type negates having to handle Pointer types directly in your Haskell code. If you know what you are doing, though, you can handle Pointer types and avoid the overhead of checking for pointers prior to calling into your function code.
+- Introduced a new type of function, `CustFunc`, which is now the recommended way to define your own Haskell functions when using the Haskell API. This type allows you to avoid having to handle Pointer types directly in your Haskell code. If you know what you are doing, though, you can handle Pointer types and avoid the overhead of checking for pointers prior to calling into your function code.
 - Moved `runIOThrows` into Core, and removed obsolete functions `trapError` and `extractValue`.
 
 Bug fixes
