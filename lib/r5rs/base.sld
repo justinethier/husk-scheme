@@ -8,10 +8,42 @@
     +
     -
     /
+    ;=>
+    ;binary-port?
+    ;boolean=?
+    ;bytevector-u8-set!
+    ;call-with-port
+    ;define-record-type
+    ;define-syntax
+    ;error-object-irritants
+    ;error-object-message
+    ;error-object?
+    ;exact-integer-sqrt
+    ;exact?
+    ;features
+    ;floor-remainder
+    ;flush-output-port
+    ;get-output-string
+    ;guard
+    ;inexact
+    ;input-port-open?
+    ;let-syntax
+    ;letrec-syntax
+    ;parameterize
+    ;raise-continuable
+    ;set!
+    ;set-car!
+    ;set-cdr!
+    ;square
+    ;string-set!
+    ;syntax-error
+    ;textual-port?
+    ;truncate-quotient
+    ;truncate/
+    ;with-exception-handler
     <
     <=
     =
-    =>
     >
     >=
     abs
@@ -22,8 +54,6 @@
     assq
     assv
     begin
-    binary-port?
-    boolean=?
     boolean?
     bytevector
     bytevector-append
@@ -31,12 +61,10 @@
     bytevector-copy!
     bytevector-length
     bytevector-u8-ref
-    bytevector-u8-set!
     bytevector?
     caar
     cadr
     call-with-current-continuation
-    call-with-port
     call-with-values
     call/cc
     car
@@ -55,191 +83,165 @@
     char?
     close-input-port
     close-output-port
-    close-port
+    ;close-port
     complex?
     cond
-    cond-expand
+    ;cond-expand
     cons
-    current-error-port
+    ;current-error-port
     current-input-port
     current-output-port
     define
-    define-record-type
-    define-syntax
     define-values
     denominator
     do
     dynamic-wind
-    else
+    ;else
+    ;eof-object
     eof-object?
-    equal?
-    error
-    error-object-message
-    even?
-    exact-integer-sqrt
-    exact?
-    features
-    floor
-    floor-remainder
-    flush-output-port
-    gcd
-    get-output-string
-    if
-    include
-    inexact
-    input-port-open?
-    integer->char
-    lambda
-    length
-    let*
-    let-syntax
-    letrec
-    letrec-syntax
-    list->string
-    list-copy
-    list-set!
-    list?
-    make-list
-    make-string
-    map
-    member
-    memv
-    modulo
-    newline
-    null?
-    number?
-    odd?
-    open-input-string
-    open-output-string
-    output-port-open?
-    pair?
-    peek-char
-    port?
-    procedure?
-    quote
-    raise
-    rational?
-    read-bytevector
-    read-char
-    read-line
-    read-u8
-    remainder
-    round
-    set-car!
-    square
-    string->list
-    string->symbol
-    string->vector
-    eof-object
     eq?
+    equal?
     eqv?
-    error-object-irritants
-    error-object?
-    exact
+    error
+    even?
+    ;exact
+    exact->inexact ; r5rs definition
     exact-integer?
     expt
-    file-error?
-    floor-quotient
-    floor/
+    ;file-error?
+    floor
+    ;floor-quotient
+    ;floor/
     for-each
-    get-output-bytevector
-    guard
+    gcd
+    ;get-output-bytevector
+    if
     import
+    include
     include-ci
+    inexact->exact ; r5rs definition
     inexact?
     input-port?
+    integer->char
     integer?
+    lambda
     lcm
+    length
     let
+    let*
     let*-values
     let-values
+    letrec
     letrec*
     list
+    list->string
     list->vector
+    list-copy
     list-ref
+    list-set!
     list-tail
+    list?
     make-bytevector
+    make-list
     make-parameter
+    make-string
     make-vector
+    map
     max
+    member
     memq
+    memv
     min
+    modulo
     negative?
+    newline
     not
+    null?
     number->string
+    number?
     numerator
+    odd?
     open-input-bytevector
+    open-input-string
     open-output-bytevector
+    open-output-string
     or
+    output-port-open?
     output-port?
-    parameterize
+    pair?
+    peek-char
     peek-u8
+    port?
     positive?
+    procedure?
     quasiquote
+    quote
     quotient
-    raise-continuable
+    raise
+    rational?
     rationalize
+    read-bytevector
     read-bytevector!
+    read-char
     read-error?
+    read-line
     read-string
+    read-u8
     real?
+    remainder
     reverse
-    set!
-    set-cdr!
+    round
     string
+    string->list
     string->number
+    string->symbol
     string->utf8
+    string->vector
     string-append
     string-copy
+    string-copy!
     string-fill!
+    string-for-each
     string-length
+    string-map
     string-ref
     string<=?
-    string=?
-    string>?
-    substring
-    symbol=?
-    syntax-error
-    textual-port?
-    truncate-quotient
-    truncate/
-    unless
-    unquote-splicing
-    values
-    vector->list
-    vector-append
-    vector-copy!
-    vector-for-each
-    vector-map
-    vector-set!
-    when
-    write-bytevector
-    write-string
-    zero?
-    string-copy!
-    string-for-each
-    string-map
-    string-set!
     string<?
+    string=?
     string>=?
+    string>?
     string?
+    substring
     symbol->string
+    symbol=?
     symbol?
     syntax-rules
     truncate
     truncate-remainder
     u8-ready?
+    unless
     unquote
+    unquote-splicing
     utf8->string
+    values
     vector
+    vector->list
     vector->string
+    vector-append
     vector-copy
+    vector-copy!
     vector-fill!
+    vector-for-each
     vector-length
+    vector-map
     vector-ref
+    ;vector-set!
     vector?
-    with-exception-handler
+    when
+    write-bytevector
     write-char
+    write-string
     write-u8
+    zero?
     )
     (import (r5rs)))
