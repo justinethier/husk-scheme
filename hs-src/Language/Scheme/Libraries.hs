@@ -30,8 +30,9 @@ findModuleFile
 findModuleFile [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= findModuleFile
 findModuleFile [String file] 
     -- Built-in modules
--- TODO: does this work in Windows, since it uses the "wrong" type of slashes for that OS?
     | file == "r5rs/base.sld" ||
+      file == "r5rs/load.sld" ||
+      file == "r5rs/write.sld" ||
       file == "scheme/base.sld" ||
       file == "scheme/write.sld" = do
         path <- liftIO $ PHS.getDataFileName $ "lib/" ++ file
