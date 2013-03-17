@@ -2,45 +2,11 @@
 ;       r7rs libraries (char, cxr, etc). that at least makes the 
 ;       libraries sensible
 (define-library (r5rs base)
-    ; TODO: delete this line once below works: (export-all)
     (export
     *
     +
     -
     /
-    ;=>
-    ;binary-port?
-    ;boolean=?
-    ;bytevector-u8-set!
-    ;call-with-port
-    ;define-record-type
-    ;define-syntax
-    ;error-object-irritants
-    ;error-object-message
-    ;error-object?
-    ;exact-integer-sqrt
-    ;exact?
-    ;features
-    ;floor-remainder
-    ;flush-output-port
-    ;get-output-string
-    ;guard
-    ;inexact
-    ;input-port-open?
-    ;let-syntax
-    ;letrec-syntax
-    ;parameterize
-    ;raise-continuable
-    ;set!
-    ;set-car!
-    ;set-cdr!
-    ;square
-    ;string-set!
-    ;syntax-error
-    ;textual-port?
-    ;truncate-quotient
-    ;truncate/
-    ;with-exception-handler
     <
     <=
     =
@@ -83,67 +49,44 @@
     char?
     close-input-port
     close-output-port
-    ;close-port
     complex?
     cond
-    ;cond-expand
     cons
-    ;current-error-port
     current-input-port
     current-output-port
-    define
-    define-values
     denominator
     do
     dynamic-wind
-    ;else
-    ;eof-object
     eof-object?
     eq?
     equal?
     eqv?
     error
     even?
-    ;exact
     exact->inexact ; r5rs definition
-    exact-integer?
     expt
-    ;file-error?
     floor
-    ;floor-quotient
-    ;floor/
     for-each
     gcd
-    ;get-output-bytevector
-    if
     import
     include
     include-ci
     inexact->exact ; r5rs definition
-    inexact?
     input-port?
     integer->char
     integer?
-    lambda
     lcm
     length
     let
     let*
-    let*-values
-    let-values
     letrec
-    letrec*
     list
     list->string
     list->vector
-    list-copy
     list-ref
-    list-set!
     list-tail
     list?
     make-bytevector
-    make-list
-    make-parameter
     make-string
     make-vector
     map
@@ -161,32 +104,17 @@
     number?
     numerator
     odd?
-    open-input-bytevector
-    open-input-string
-    open-output-bytevector
-    open-output-string
     or
-    output-port-open?
     output-port?
     pair?
     peek-char
-    peek-u8
-    port?
     positive?
     procedure?
     quasiquote
-    quote
     quotient
-    raise
     rational?
     rationalize
-    read-bytevector
-    read-bytevector!
     read-char
-    read-error?
-    read-line
-    read-string
-    read-u8
     real?
     remainder
     reverse
@@ -196,14 +124,9 @@
     string->number
     string->symbol
     string->utf8
-    string->vector
     string-append
     string-copy
-    string-copy!
-    string-fill!
-    string-for-each
     string-length
-    string-map
     string-ref
     string<=?
     string<?
@@ -213,35 +136,112 @@
     string?
     substring
     symbol->string
-    symbol=?
     symbol?
-    syntax-rules
     truncate
-    truncate-remainder
-    u8-ready?
-    unless
-    unquote
-    unquote-splicing
     utf8->string
     values
     vector
     vector->list
-    vector->string
-    vector-append
-    vector-copy
-    vector-copy!
-    vector-fill!
-    vector-for-each
     vector-length
-    vector-map
     vector-ref
-    ;vector-set!
     vector?
-    when
-    write-bytevector
     write-char
-    write-string
-    write-u8
     zero?
+
+    ;=>
+    ;binary-port?
+    ;boolean=?
+    ;bytevector-u8-set!
+    ;call-with-port
+    ;close-port
+    ;cond-expand
+    ;current-error-port
+    ;define
+    ;define-record-type
+    ;define-syntax
+    ;define-values
+    ;else
+    ;eof-object
+    ;error-object-irritants
+    ;error-object-message
+    ;error-object?
+    ;exact
+    ;exact-integer-sqrt
+    ;exact-integer?
+    ;exact?
+    ;features
+    ;file-error?
+    ;floor-quotient
+    ;floor-remainder
+    ;floor/
+    ;flush-output-port
+    ;get-output-bytevector
+    ;get-output-string
+    ;guard
+    ;if
+    ;inexact
+    ;inexact?
+    ;input-port-open?
+    ;lambda
+    ;let*-values
+    ;let-syntax
+    ;let-values
+    ;letrec*
+    ;letrec-syntax
+    ;list-copy
+    ;list-set!
+    ;make-list
+    ;make-parameter
+    ;open-input-bytevector
+    ;open-input-string
+    ;open-output-bytevector
+    ;open-output-string
+    ;output-port-open?
+    ;parameterize
+    ;peek-u8
+    ;port?
+    ;quote
+    ;raise
+    ;raise-continuable
+    ;read-bytevector
+    ;read-bytevector!
+    ;read-error?
+    ;read-line
+    ;read-string
+    ;read-u8
+    ;set!
+    ;set-car!
+    ;set-cdr!
+    ;square
+    ;string->vector
+    ;string-copy!
+    ;string-fill!
+    ;string-for-each
+    ;string-map
+    ;string-set!
+    ;symbol=?
+    ;syntax-error
+    ;syntax-rules
+    ;textual-port?
+    ;truncate-quotient
+    ;truncate-remainder
+    ;truncate/
+    ;u8-ready?
+    ;unless
+    ;unquote
+    ;unquote-splicing
+    ;vector->string
+    ;vector-append
+    ;vector-copy
+    ;vector-copy!
+    ;vector-fill!
+    ;vector-for-each
+    ;vector-map
+    ;vector-set!
+    ;when
+    ;with-exception-handler
+    ;write-bytevector
+    ;write-string
+    ;write-u8
     )
     (import (r5rs)))
