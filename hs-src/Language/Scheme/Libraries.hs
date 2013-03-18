@@ -34,8 +34,15 @@ findModuleFile [String file]
       file == "r5rs/char.sld" ||
       file == "r5rs/complex.sld" ||
       file == "r5rs/cxr.sld" ||
+-- TODO: eval
       file == "r5rs/file.sld" ||
+      file == "r5rs/inexact.sld" ||
+      file == "r5rs/lazy.sld" ||
       file == "r5rs/load.sld" ||
+-- TODO: process-context
+      file == "r5rs/read.sld" ||
+-- TODO: repl
+-- TODO: time
       file == "r5rs/write.sld" ||
       file == "scheme/base.sld" ||
       file == "scheme/write.sld" = do
