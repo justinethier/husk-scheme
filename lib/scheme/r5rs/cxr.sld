@@ -1,5 +1,5 @@
 ;;; An r5rs equivalent to the r7rs-small CxR library
-(define-library (r5rs cxr)
+(define-library (scheme r5rs cxr)
     (export
         caaaar
         caaadr
@@ -26,4 +26,4 @@
         cddddr
         cdddr
     )
-    (import (r5rs)))
+    (import (scheme r5rs)))

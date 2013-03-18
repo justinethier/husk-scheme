@@ -1,5 +1,5 @@
 ;;; An r5rs equivalent to the r7rs-small Lazy library
-(define-library (r5rs lazy)
+(define-library (scheme r5rs lazy)
     (export
         ;delay
         ;delay-force
@@ -7,4 +7,4 @@
         make-promise
         ;promise?
     )
-    (import (r5rs)))
+    (import (scheme r5rs)))

@@ -1,7 +1,7 @@
 ; TODO: prune down this list, then let's add stubs for each of the
 ;       r7rs libraries (char, cxr, etc). that at least makes the 
 ;       libraries sensible
-(define-library (r5rs base)
+(define-library (scheme r5rs base)
     (export
     *
     +
@@ -244,4 +244,4 @@
     ;write-string
     ;write-u8
     )
-    (import (r5rs)))
+    (import (scheme r5rs)))

@@ -1,5 +1,5 @@
 ;;; An r5rs equivalent to the r7rs-small Inexact library
-(define-library (r5rs inexact)
+(define-library (scheme r5rs inexact)
     (export
         acos
         asin
@@ -14,4 +14,4 @@
         sqrt
         tan
     )
-    (import (r5rs)))
+    (import (scheme r5rs)))

@@ -1,6 +1,8 @@
 v3.8
 --------
 
+TODO: r5rs equivalent libraries
+
 This release introduces several performance improvements:
 
 - Macro expansions are now cached, significantly improving performance when repeatedly calling a function containing macros.

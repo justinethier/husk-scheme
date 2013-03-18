@@ -1,5 +1,5 @@
 ;;; An r5rs equivalent to the r7rs-small File library
-(define-library (r5rs file)
+(define-library (scheme r5rs file)
     (export
         call-with-input-file
         call-with-output-file
@@ -12,4 +12,4 @@
         ;with-input-from-file
         ;with-output-to-file
     )
-    (import (r5rs)))
+    (import (scheme r5rs)))

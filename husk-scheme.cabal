@@ -42,7 +42,7 @@ Extra-Source-Files:  README.markdown
                      ChangeLog.markdown
                      LICENSE
                      AUTHORS
-Data-Files:          lib/*.scm lib/r5rs/*.sld lib/scheme/*.sld lib/srfi/*.scm
+Data-Files:          lib/*.scm lib/scheme/*.sld lib/scheme/r5rs/*.sld lib/srfi/*.scm
 
 Source-Repository head
     Type:            git

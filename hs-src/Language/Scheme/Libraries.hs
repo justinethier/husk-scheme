@@ -30,20 +30,20 @@ findModuleFile
 findModuleFile [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= findModuleFile
 findModuleFile [String file] 
     -- Built-in modules
-    | file == "r5rs/base.sld" ||
-      file == "r5rs/char.sld" ||
-      file == "r5rs/complex.sld" ||
-      file == "r5rs/cxr.sld" ||
+    | file == "scheme/r5rs/base.sld" ||
+      file == "scheme/r5rs/char.sld" ||
+      file == "scheme/r5rs/complex.sld" ||
+      file == "scheme/r5rs/cxr.sld" ||
 -- TODO: eval
-      file == "r5rs/file.sld" ||
-      file == "r5rs/inexact.sld" ||
-      file == "r5rs/lazy.sld" ||
-      file == "r5rs/load.sld" ||
+      file == "scheme/r5rs/file.sld" ||
+      file == "scheme/r5rs/inexact.sld" ||
+      file == "scheme/r5rs/lazy.sld" ||
+      file == "scheme/r5rs/load.sld" ||
 -- TODO: process-context
-      file == "r5rs/read.sld" ||
+      file == "scheme/r5rs/read.sld" ||
 -- TODO: repl
 -- TODO: time
-      file == "r5rs/write.sld" ||
+      file == "scheme/r5rs/write.sld" ||
       file == "scheme/base.sld" ||
       file == "scheme/write.sld" = do
         path <- liftIO $ PHS.getDataFileName $ "lib/" ++ file

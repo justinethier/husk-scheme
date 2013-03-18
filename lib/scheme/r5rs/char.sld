@@ -1,5 +1,5 @@
 ;;; An r5rs equivalent to the r7rs-small Char library
-(define-library (r5rs char)
+(define-library (scheme r5rs char)
     (export
         char-alphabetic?
         char-ci<=?
@@ -24,4 +24,4 @@
         ;string-foldcase
         ;string-upcase
     )
-    (import (r5rs)))
+    (import (scheme r5rs)))

@@ -1,5 +1,5 @@
 ;;; An r5rs equivalent to the r7rs-small Complex library
-(define-library (r5rs complex)
+(define-library (scheme r5rs complex)
     (export
         angle
         imag-part
@@ -8,4 +8,4 @@
         make-rectangular
         real-part
     )
-    (import (r5rs)))
+    (import (scheme r5rs)))
