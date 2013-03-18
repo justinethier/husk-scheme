@@ -4,6 +4,17 @@ v3.8
 TODO: r5rs equivalent libraries
 Relocated all r5rs libraries (non-standard) to (scheme r5rs)
 - summarize them, and use that to start a documentation page on the website about all of this
+    | file == "scheme/r5rs/base.sld" ||
+      file == "scheme/r5rs/char.sld" ||
+      file == "scheme/r5rs/complex.sld" ||
+      file == "scheme/r5rs/cxr.sld" ||
+      file == "scheme/r5rs/eval.sld" ||
+      file == "scheme/r5rs/file.sld" ||
+      file == "scheme/r5rs/inexact.sld" ||
+      file == "scheme/r5rs/lazy.sld" ||
+      file == "scheme/r5rs/load.sld" ||
+      file == "scheme/r5rs/read.sld" ||
+      file == "scheme/r5rs/write.sld" ||
 
 
 This release introduces several performance improvements:
