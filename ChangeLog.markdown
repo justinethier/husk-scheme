@@ -2,6 +2,9 @@ v3.8
 --------
 
 TODO: r5rs equivalent libraries
+Relocated all r5rs libraries (non-standard) to (scheme r5rs)
+- summarize them, and use that to start a documentation page on the website about all of this
+
 
 This release introduces several performance improvements:
 
