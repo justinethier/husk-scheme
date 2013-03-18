@@ -34,17 +34,18 @@ findModuleFile [String file]
       file == "scheme/r5rs/char.sld" ||
       file == "scheme/r5rs/complex.sld" ||
       file == "scheme/r5rs/cxr.sld" ||
--- TODO: eval
+      file == "scheme/r5rs/eval.sld" ||
       file == "scheme/r5rs/file.sld" ||
       file == "scheme/r5rs/inexact.sld" ||
       file == "scheme/r5rs/lazy.sld" ||
       file == "scheme/r5rs/load.sld" ||
--- TODO: process-context
       file == "scheme/r5rs/read.sld" ||
--- TODO: repl
--- TODO: time
       file == "scheme/r5rs/write.sld" ||
       file == "scheme/base.sld" ||
+-- TODO: scheme case-lambda (r7rs)
+-- TODO: scheme process-context (r7rs)
+-- TODO: scheme repl (r7rs)
+-- TODO: scheme time (r7rs)
       file == "scheme/write.sld" = do
         path <- liftIO $ PHS.getDataFileName $ "lib/" ++ file
         return $ String path
