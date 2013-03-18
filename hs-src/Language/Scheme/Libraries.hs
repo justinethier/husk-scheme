@@ -31,6 +31,10 @@ findModuleFile [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= findModuleFile
 findModuleFile [String file] 
     -- Built-in modules
     | file == "r5rs/base.sld" ||
+      file == "r5rs/char.sld" ||
+      file == "r5rs/complex.sld" ||
+      file == "r5rs/cxr.sld" ||
+      file == "r5rs/file.sld" ||
       file == "r5rs/load.sld" ||
       file == "r5rs/write.sld" ||
       file == "scheme/base.sld" ||
