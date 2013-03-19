@@ -1,22 +1,6 @@
 v3.8
 --------
 
-TODO: r5rs equivalent libraries
-Relocated all r5rs libraries (non-standard) to (scheme r5rs)
-- summarize them, and use that to start a documentation page on the website about all of this
-    | file == "scheme/r5rs/base.sld" ||
-      file == "scheme/r5rs/char.sld" ||
-      file == "scheme/r5rs/complex.sld" ||
-      file == "scheme/r5rs/cxr.sld" ||
-      file == "scheme/r5rs/eval.sld" ||
-      file == "scheme/r5rs/file.sld" ||
-      file == "scheme/r5rs/inexact.sld" ||
-      file == "scheme/r5rs/lazy.sld" ||
-      file == "scheme/r5rs/load.sld" ||
-      file == "scheme/r5rs/read.sld" ||
-      file == "scheme/r5rs/write.sld" ||
-
-
 This release introduces several performance improvements:
 
 - Macro expansions are now cached, significantly improving performance when repeatedly calling a function containing macros.
@@ -25,12 +9,30 @@ This release introduces several performance improvements:
 
 The example game of life program `examples/game-of-life/life.scm` demonstrates these performance improvements, as it now runs over 4.5 times faster than in the previous release. 
 
+This release also adds the following library from R<sup>7</sup>RS:
+
+- `(scheme r5rs)` - Exposes the full husk R<sup>5</sup>RS environment
+
+And, R<sup>5</sup>RS versions of the scheme libraries have been relocated to underneath `(scheme r5rs)`. Each of these libraries exposes a husk subset of the functions recommended by R<sup>7</sup>RS:
+
+- `(scheme r5rs base)`
+- `(scheme r5rs char)`
+- `(scheme r5rs complex)`
+- `(scheme r5rs cxr)`
+- `(scheme r5rs eval)`
+- `(scheme r5rs file)`
+- `(scheme r5rs inexact)`
+- `(scheme r5rs lazy)`
+- `(scheme r5rs load)`
+- `(scheme r5rs read)`
+- `(scheme r5rs write)`
+
 Changes to the Haskell API:
 
 - Introduced a new type of function, `CustFunc`, which is now the recommended way to define your own Haskell functions when using the Haskell API. This type allows you to avoid having to handle Pointer types directly in your Haskell code. If you know what you are doing, though, you can handle Pointer types and avoid the overhead of checking for pointers prior to calling into your function code.
 - Moved `runIOThrows` into Core, and removed obsolete functions `trapError` and `extractValue`.
 
-Bug fixes
+Bug fixes:
 
 - Updated `map` and `for-each` to accept multiple list arguments, per R<sup>5</sup>RS.
 
