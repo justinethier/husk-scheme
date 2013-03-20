@@ -1,7 +1,7 @@
----
+--- 
 layout: post
 title: Released Version 3.8
-excerpt: This introduces several performance improvements, as well as updates to Scheme libraries and the Haskell API.
+excerpt: Many performance improvements are included in this release, as well as updates to Scheme libraries and the Haskell API.
 ---
 # {{ page.title }}
 
