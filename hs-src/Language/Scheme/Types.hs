@@ -442,12 +442,12 @@ showVal (Continuation _ _ _ _ _) = "<continuation>"
 showVal (Syntax _ _ _ _ _) = "<syntax>"
 showVal (SyntaxExplicitRenaming _) = "<er-macro-transformer syntax>"
 showVal (Func {params = args, vararg = varargs, body = _, closure = _}) =
-  "(lambda (" ++ unwords (map show args) ++
+  "(lambda (" ++ unwords args ++
     (case varargs of
       Nothing -> ""
       Just arg -> " . " ++ arg) ++ ") ...)"
 showVal (HFunc {hparams = args, hvararg = varargs, hbody = _, hclosure = _}) =
-  "(lambda (" ++ unwords (map show args) ++
+  "(lambda (" ++ unwords args ++
     (case varargs of
       Nothing -> ""
       Just arg -> " . " ++ arg) ++ ") ...)"
