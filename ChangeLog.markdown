@@ -1,3 +1,9 @@
+v3.9
+--------
+
+- Compiler no longer hardcodes `_tmp.hs` in intermediate file output
+- Removed extaneous quotes when printing a lambda form
+
 v3.8
 --------
 
