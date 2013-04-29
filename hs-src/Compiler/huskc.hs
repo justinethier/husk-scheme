@@ -44,13 +44,14 @@ main = do
      then showUsage
      else do
         let inFile = nonOpts !! 0
+            outHaskell = (dropExtension inFile) ++ ".hs"
             outExec = case output of
               Just inFile -> inFile
               Nothing -> dropExtension inFile
             extraOpts = case extra of
               Just args -> args
               Nothing -> ""
-        process inFile outExec dynamic extraOpts
+        process inFile outHaskell outExec dynamic extraOpts
 
 -- 
 -- For an explanation of the command line options code, see:
@@ -128,8 +129,8 @@ showVersion _ = do
   exitWith ExitSuccess
 
 -- |High level code to compile the given file
-process :: String -> String -> Bool -> String -> IO ()
-process inFile outExec dynamic extraArgs = do
+process :: String -> String -> String -> Bool -> String -> IO ()
+process inFile outHaskell outExec dynamic extraArgs = do
 
 
 -- TODO: how to integrate r5rsEnv and libraries?
@@ -138,14 +139,14 @@ process inFile outExec dynamic extraArgs = do
   env <- Language.Scheme.Core.primitiveBindings
   stdlib <- getDataFileName "lib/stdlib.scm"
   srfi55 <- getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
-  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env stdlib srfi55 inFile)
+  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env stdlib srfi55 inFile outHaskell)
   case result of
    Just errMsg -> putStrLn errMsg
-   _ -> compileHaskellFile outExec dynamic extraArgs
+   _ -> compileHaskellFile outHaskell outExec dynamic extraArgs
 
 -- |Compile a scheme file to haskell
-compileSchemeFile :: Env -> String -> String -> String -> IOThrowsError LispVal
-compileSchemeFile env stdlib srfi55 filename = do
+compileSchemeFile :: Env -> String -> String -> String -> String -> IOThrowsError LispVal
+compileSchemeFile env stdlib srfi55 filename outHaskell = do
   let conv :: LispVal -> String
       conv (String s) = s
   -- TODO: it is only temporary to compile the standard library each time. It should be 
@@ -162,7 +163,7 @@ compileSchemeFile env stdlib srfi55 filename = do
   List imports <- getNamespacedVar env 't' {-"internal"-} "imports"
   let moreHeaderImports = map conv imports
 
-  outH <- liftIO $ openFile "_tmp.hs" WriteMode
+  outH <- liftIO $ openFile outHaskell WriteMode
   _ <- liftIO $ writeList outH headerModule
   _ <- liftIO $ writeList outH $ map (\mod -> "import " ++ mod ++ " ") $ headerImports ++ moreHeaderImports
   filepath <- liftIO $ getDataFileName ""
@@ -176,11 +177,11 @@ compileSchemeFile env stdlib srfi55 filename = do
      else throwError $ Default "Empty file" --putStrLn "empty file"
 
 -- |Compile the intermediate haskell file using GHC
-compileHaskellFile :: String -> Bool -> String -> IO() --ThrowsError LispVal
-compileHaskellFile filename dynamic extraArgs = do
+compileHaskellFile :: String -> String -> Bool -> String -> IO() --ThrowsError LispVal
+compileHaskellFile hsInFile objOutFile dynamic extraArgs = do
   let ghc = "ghc" -- Need to make configurable??
       dynamicArg = if dynamic then "-dynamic" else ""
-  compileStatus <- system $ ghc ++ " " ++ dynamicArg ++ " " ++ extraArgs ++ " -cpp --make -package ghc -o " ++ filename ++ " _tmp.hs"
+  compileStatus <- system $ ghc ++ " " ++ dynamicArg ++ " " ++ extraArgs ++ " -cpp --make -package ghc -o " ++ objOutFile ++ " " ++ hsInFile
 
 -- TODO: delete intermediate hs files if requested
 
