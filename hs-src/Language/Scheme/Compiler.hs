@@ -684,24 +684,24 @@ compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
 -- TODO: eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 
 -- WIP:
---compile env (List [Atom "load", String filename, envSpec]) copts = do
---
----- TODO: how to get comp env at compile time?
----- TODO: how to handle string/atom filename?
---
---  Atom symEnv <- _gensym "loadEnv"
---  Atom symLoad <- _gensym "load"
---  compEnv <- compileExpr env envSpec symEnv
---                         Nothing -- Return env to our custom func
---  compLoad <- compileLisp env filename symLoad Nothing
--- 
---  -- Entry point
---  f <- return $ [
---    AstValue $ "  LispEnv e <- " ++ symEnv ++ " env cont (Nil \"\") [] ",
---    AstValue $ "  result <- " ++ symLoad ++ " e (makeNullContinuation e) (Nil \"\") Nothing",
---    createAstCont copts "result" ""]
---  -- Join compiled code together
---  return $ [createAstFunc copts f] ++ compEnv ++ compLoad
+compile env (List [Atom "load", String filename, envSpec]) copts = do
+
+-- TODO: how to get comp env at compile time?
+-- TODO: how to handle string/atom filename?
+
+  Atom symEnv <- _gensym "loadEnv"
+  Atom symLoad <- _gensym "load"
+  compEnv <- compileExpr env envSpec symEnv
+                         Nothing -- Return env to our custom func
+  compLoad <- compileLisp env filename symLoad Nothing
+ 
+  -- Entry point
+  f <- return $ [
+    AstValue $ "  LispEnv e <- " ++ symEnv ++ " env (makeNullContinuation env) (Nil \"\") [] ",
+    AstValue $ "  result <- " ++ symLoad ++ " e (makeNullContinuation e) (Nil \"\") Nothing",
+    createAstCont copts "result" ""]
+  -- Join compiled code together
+  return $ [createAstFunc copts f] ++ compEnv ++ compLoad
 
 compile env (List [Atom "load", Atom filename]) copts = do
   String filename' <- getVar env filename
