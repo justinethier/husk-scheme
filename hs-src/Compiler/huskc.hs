@@ -169,7 +169,9 @@ compileSchemeFile env stdlib srfi55 filename outHaskell = do
   filepath <- liftIO $ getDataFileName ""
   _ <- liftIO $ writeList outH $ header filepath
   _ <- liftIO $ writeList outH $ map show libsC
+  _ <- liftIO $ writeList outH " ------ END OF STDLIB ------"
   _ <- liftIO $ writeList outH $ map show libSrfi55C
+  _ <- liftIO $ writeList outH " ------ END OF SRFI 55 ------"
   _ <- liftIO $ writeList outH $ map show execC
   _ <- liftIO $ hClose outH
   if not (null execC)
