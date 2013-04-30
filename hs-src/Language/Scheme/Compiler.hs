@@ -683,21 +683,26 @@ compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
  return $ [entryPt, compiledUpdate] ++ compiledIdx
 -- TODO: eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 
--- TODO:
--- Testing this out; idea is to compile-in any code injected via load
-compile env (List [Atom "load", filename, envSpec]) copts = do
-  -- More TODO:
-  -- Hacking around, the issue with require-extension / and-let* is that
-  -- the compiler loads (and-let*) and attempts to compile the argument
-  -- () which cannot be evaluated, hence the special form error on ()
-  --
-  -- LispEnv env
-  y <- Language.Scheme.Core.evalLisp env envSpec
-  -- TODO: I think this is no good because current-environment is really the
-  -- same as env here. it would need to be evaluated and stored when it is first found
-  -- hmm...not quite sure how to proceed here, need to think on it
-  LispEnv env' <- Language.Scheme.Core.evalLisp env y
-  compile env' (List [Atom "load", filename]) copts
+-- WIP:
+--compile env (List [Atom "load", String filename, envSpec]) copts = do
+--
+---- TODO: how to get comp env at compile time?
+---- TODO: how to handle string/atom filename?
+--
+--  Atom symEnv <- _gensym "loadEnv"
+--  Atom symLoad <- _gensym "load"
+--  compEnv <- compileExpr env envSpec symEnv
+--                         Nothing -- Return env to our custom func
+--  compLoad <- compileLisp env filename symLoad Nothing
+-- 
+--  -- Entry point
+--  f <- return $ [
+--    AstValue $ "  LispEnv e <- " ++ symEnv ++ " env cont (Nil \"\") [] ",
+--    AstValue $ "  result <- " ++ symLoad ++ " e (makeNullContinuation e) (Nil \"\") Nothing",
+--    createAstCont copts "result" ""]
+--  -- Join compiled code together
+--  return $ [createAstFunc copts f] ++ compEnv ++ compLoad
+
 compile env (List [Atom "load", Atom filename]) copts = do
   String filename' <- getVar env filename
   compile env (List [Atom "load", String filename']) copts
