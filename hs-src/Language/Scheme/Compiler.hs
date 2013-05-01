@@ -684,19 +684,6 @@ compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
 -- TODO: eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 
 -- WIP:
---test code:
---justin@justin-desktop:~/Documents/husk-scheme$ cat test1.scm
---(define env (current-environment))
---
---(begin (load "test2.scm" env))
---;(begin (load "test2.scm")); env))
---;(load "test2.scm")
---
---(write (from-test-2))
---justin@justin-desktop:~/Documents/husk-scheme$ cat test2.scm
---(define (from-test-2)
---  'hello-from-test-2)
-
 compile env (List [Atom "load", String filename, envSpec]) copts = do
 
 -- TODO: how to get comp env at compile time?
@@ -710,6 +697,8 @@ compile env (List [Atom "load", String filename, envSpec]) copts = do
  
   -- Entry point
   f <- return $ [
+    -- TODO: should do runtime error checking if something else
+    --       besides a LispEnv is returned
     AstValue $ "  LispEnv e <- " ++ symEnv ++ " env (makeNullContinuation env) (Nil \"\") [] ",
     AstValue $ "  result <- " ++ symLoad ++ " e (makeNullContinuation e) (Nil \"\") Nothing",
     createAstCont copts "result" ""]
