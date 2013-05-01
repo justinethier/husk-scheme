@@ -112,7 +112,7 @@ evalfuncLoadFFI [(Continuation env _ _ _ _), String moduleName, String externalF
     return (Unsafe.Coerce.unsafeCoerce fetched :: [LispVal] -> IOThrowsError LispVal)
   defineVar env internalFuncName (IOFunc result) -- >>= continueEval env cont
 
-evalfuncLoadFFI _ = throwError $ NumArgs 3 []
+evalfuncLoadFFI _ = throwError $ NumArgs (Just 3) []
 
 defaultRunGhc :: GHC.Ghc a -> IO a
 defaultRunGhc =
