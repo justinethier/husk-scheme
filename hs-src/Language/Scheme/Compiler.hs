@@ -683,7 +683,9 @@ compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
  return $ [entryPt, compiledUpdate] ++ compiledIdx
 -- TODO: eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 
--- WIP:
+
+-- TODO: cannot assume that filename is a string; it might be 
+-- computed by a function as is done by require-extension
 compile env (List [Atom "load", String filename, envSpec]) copts = do
 
 -- TODO: how to get comp env at compile time?
@@ -875,3 +877,5 @@ compileApply env (List (func : fparams)) (CompileOptions coptsThis _ _ coptsNext
         rest <- compileArgs nextFunc True as -- True indicates nextFunc needs to use value arg passed into it
         return $ [ f, c] ++ _comp ++ rest
 
+compileApply _ err _ = do
+    throwError $ Default $ "compileApply - Unexpected argument: " ++ show err
