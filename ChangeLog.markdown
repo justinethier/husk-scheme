@@ -1,8 +1,9 @@
 v3.9
 --------
 
-- Compiler no longer hardcodes `_tmp.hs` in intermediate file output
-- Removed extaneous quotes when printing a lambda form
+- Fixed a syntax error in the FFI code.
+- Enhanced the compiler to use the source filename in intermediate file output instead of hardcoding the file to `_tmp.hs`.
+- Removed extraneous quotes when printing a lambda form.
 
 v3.8
 --------
