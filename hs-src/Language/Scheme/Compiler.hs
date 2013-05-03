@@ -684,18 +684,7 @@ compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
 -- TODO: eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 
 
--- TODO: cannot assume that filename is a string; it might be 
--- computed by a function as is done by require-extension
 compile env (List [Atom "load", filename, envSpec]) copts = do
-
--- TODO: how to get comp env at compile time?
---       need a way to get the "e" environment at compile time,
---       so any macros are available for expansion. can possibly
---       hack the compiler to load the latest env created by a
---       primitive, and return it back here somehow... is that
---       good enough??
---
--- TODO: how to handle string/atom filename?
 
   -- F*ck it, just run the evaluator here since filename is req'd at compile time
   String filename' <- Language.Scheme.Core.evalLisp env filename
