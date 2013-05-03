@@ -1,8 +1,8 @@
 v3.9
 --------
 
-- Fixed a syntax error in the FFI code.
-- Enhanced the compiler to use the source filename in intermediate file output instead of hardcoding the file to `_tmp.hs`.
+- Fixed a syntax error that prevented the FFI module from building, and thanks to Ricardo Lanziano for bringing this to my attention.
+- Enhanced the compiler to use the name of the source file for the compiled Haskell output instead of hardcoding the file to `_tmp.hs`. For example, `my-file.scm` will compile to `my-file.hs`.
 - Removed extraneous quotes when printing a lambda form.
 
 v3.8
