@@ -686,7 +686,7 @@ compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
 
 -- TODO: cannot assume that filename is a string; it might be 
 -- computed by a function as is done by require-extension
-compile env (List [Atom "load", String filename, envSpec]) copts = do
+compile env (List [Atom "load", filename, envSpec]) copts = do
 
 -- TODO: how to get comp env at compile time?
 --       need a way to get the "e" environment at compile time,
@@ -697,11 +697,14 @@ compile env (List [Atom "load", String filename, envSpec]) copts = do
 --
 -- TODO: how to handle string/atom filename?
 
+  -- F*ck it, just run the evaluator here since filename is req'd at compile time
+  String filename' <- Language.Scheme.Core.evalLisp env filename
+
   Atom symEnv <- _gensym "loadEnv"
   Atom symLoad <- _gensym "load"
   compEnv <- compileExpr env envSpec symEnv
                          Nothing -- Return env to our custom func
-  compLoad <- compileLisp env filename symLoad Nothing
+  compLoad <- compileLisp env filename' symLoad Nothing
  
   -- Entry point
   f <- return $ [
