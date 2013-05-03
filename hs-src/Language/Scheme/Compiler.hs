@@ -687,6 +687,7 @@ compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
 compile env (List [Atom "load", filename, envSpec]) copts = do
 
   -- F*ck it, just run the evaluator here since filename is req'd at compile time
+ -- TODO: error handling for string below
   String filename' <- Language.Scheme.Core.evalLisp env filename
 
   Atom symEnv <- _gensym "loadEnv"
@@ -705,12 +706,11 @@ compile env (List [Atom "load", filename, envSpec]) copts = do
   -- Join compiled code together
   return $ [createAstFunc copts f] ++ compEnv ++ compLoad
 
-compile env (List [Atom "load", Atom filename]) copts = do
-  String filename' <- getVar env filename
-  compile env (List [Atom "load", String filename']) copts
-compile env (List [Atom "load", String filename]) copts = do -- TODO: allow filename from a var, support env optional arg
+compile env (List [Atom "load", filename]) copts = do -- TODO: allow filename from a var, support env optional arg
+ -- TODO: error handling for string below
+ String filename' <- Language.Scheme.Core.evalLisp env filename
  Atom symEntryPt <- _gensym "load"
- result <- compileLisp env filename symEntryPt Nothing
+ result <- compileLisp env filename' symEntryPt Nothing
  return $ result ++ 
    [createAstFunc copts [
     AstValue $ "  result <- " ++ symEntryPt ++ " env (makeNullContinuation env) (Nil \"\") Nothing",
