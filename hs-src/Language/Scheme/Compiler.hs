@@ -684,6 +684,9 @@ compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
 -- TODO: eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 
 
+compile env (List (Atom "%import" : args)) copts = do
+    throwError $ NotImplemented $ "%import, with args: " ++ show args
+
 compile env (List [Atom "load", filename, envSpec]) copts = do
 
   -- F*ck it, just run the evaluator here since filename is req'd at compile time
