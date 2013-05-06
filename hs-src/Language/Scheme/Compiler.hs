@@ -298,6 +298,22 @@ compile env lisp@(List [Atom "define-syntax", Atom keyword,
     ("  defineNamespacedVar env macroNamespace \"" ++ keyword ++ 
      "\" $ Syntax (Just env) Nothing False " ++ idStr ++ " " ++ ruleStr) copts 
 
+{- TODO:
+compile env lisp@(List (Atom "let-syntax" : List _bindings : _body)) copts = do
+--  let idStr = asts2Str identifiers
+--      ruleStr = asts2Str rules
+--
+--  -- Make macro available at compile time
+--  _ <- defineNamespacedVar env macroNamespace keyword $ 
+--         Syntax (Just env) Nothing False identifiers rules
+--
+--  -- And load it at runtime as well
+--  -- Env should be identical to the one loaded at compile time...
+--  compileScalar 
+--    ("  defineNamespacedVar env macroNamespace \"" ++ keyword ++ 
+--     "\" $ Syntax (Just env) Nothing False " ++ idStr ++ " " ++ ruleStr) copts 
+-}
+
 compile env (List [Atom "if", predic, conseq]) copts = 
  compile env (List [Atom "if", predic, conseq, Nil ""]) copts
 
