@@ -206,6 +206,14 @@ compileLambdaList l = do
  where serialize (Atom a) = return $ (show a)
        serialize a = throwError $ Default $ "invalid parameter to lambda list: " ++ show a
 
+-- |Add lambda variables to the compiler's environment
+defineLambdaVars :: Env -> [LispVal] -> IOThrowsError LispVal
+defineLambdaVars env (Atom v : vs) = do
+    _ <- defineVar env v $ Number 0 -- For now it is good enough to define it, actual value does not matter
+    defineLambdaVars env vs
+defineLambdaVars env (_ : vs) = defineLambdaVars env vs
+defineLambdaVars env [] = return $ Nil ""
+
 -- TODO: future enhancement:
 ---- |Compile a macro to an AstValue
 --compileMacro [Atom keyword, 
@@ -225,18 +233,22 @@ compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
 compile _ v@(Vector _) copts = compileScalar (" return $ " ++ ast2Str v) copts
 compile _ v@(ByteVector _) copts = compileScalar (" return $ " ++ ast2Str v) copts
 compile _ ht@(HashTable _) copts = compileScalar (" return $ " ++ ast2Str ht) copts
-compile _ (Atom a) copts = do
- c <- return $ createAstCont copts "val" ""
- return [createAstFunc copts [
-   AstValue $ "  v <- getVar env \"" ++ a ++ "\"",
-   AstValue $ "  val <- return $ case v of",
-   AstValue $ "    List _ -> Pointer \"" ++ a ++ "\" env",
-   AstValue $ "    DottedList _ _ -> Pointer \"" ++ a ++ "\" env",
-   AstValue $ "    String _ -> Pointer \"" ++ a ++ "\" env",
-   AstValue $ "    Vector _ -> Pointer \"" ++ a ++ "\" env",
-   AstValue $ "    ByteVector _ -> Pointer \"" ++ a ++ "\" env",
-   AstValue $ "    HashTable _ -> Pointer \"" ++ a ++ "\" env",
-   AstValue $ "    _ -> v"], c]
+compile env (Atom a) copts = do
+ isDefined <- liftIO $ isRecBound env a
+ case isDefined of
+   True -> do
+     c <- return $ createAstCont copts "val" ""
+     return [createAstFunc copts [
+       AstValue $ "  v <- getVar env \"" ++ a ++ "\"",
+       AstValue $ "  val <- return $ case v of",
+       AstValue $ "    List _ -> Pointer \"" ++ a ++ "\" env",
+       AstValue $ "    DottedList _ _ -> Pointer \"" ++ a ++ "\" env",
+       AstValue $ "    String _ -> Pointer \"" ++ a ++ "\" env",
+       AstValue $ "    Vector _ -> Pointer \"" ++ a ++ "\" env",
+       AstValue $ "    ByteVector _ -> Pointer \"" ++ a ++ "\" env",
+       AstValue $ "    HashTable _ -> Pointer \"" ++ a ++ "\" env",
+       AstValue $ "    _ -> v"], c]
+   False -> throwError $ UnboundVar "Variable is not defined" a
 
 compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ ast2Str val) copts
 
@@ -379,7 +391,8 @@ compile env (List [Atom "define", Atom var, form]) copts@(CompileOptions _ _ _ _
 
 compile env (List (Atom "define" : List (Atom var : fparams) : fbody)) copts@(CompileOptions _ _ _ _) = do
  bodyEnv <- liftIO $ extendEnv env []
--- TODO: need to bind lambda params in the extended env, for purposes of macro processing
+ -- bind lambda params in the extended env
+ _ <- defineLambdaVars bodyEnv (Atom var : fparams)
 
  Atom symCallfunc <- _gensym "defineFuncEntryPt"
  compiledParams <- compileLambdaList fparams
@@ -400,7 +413,8 @@ compile env (List (Atom "define" : List (Atom var : fparams) : fbody)) copts@(Co
 
 compile env (List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) copts@(CompileOptions _ _ _ _) = do
  bodyEnv <- liftIO $ extendEnv env []
--- TODO: need to bind lambda params in the extended env, for purposes of macro processing
+ -- bind lambda params in the extended env
+ _ <- defineLambdaVars bodyEnv $ (Atom var : fparams) ++ [varargs]
 
  Atom symCallfunc <- _gensym "defineFuncEntryPt"
  compiledParams <- compileLambdaList fparams
@@ -426,7 +440,8 @@ compile env (List (Atom "lambda" : List fparams : fbody)) copts@(CompileOptions 
  compiledParams <- compileLambdaList fparams
 
  bodyEnv <- liftIO $ extendEnv env []
--- TODO: need to bind lambda params in the extended env, for purposes of macro processing
+ -- bind lambda params in the extended env
+ _ <- defineLambdaVars bodyEnv fparams
 
  compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
 
@@ -446,7 +461,8 @@ compile env (List (Atom "lambda" : DottedList fparams varargs : fbody)) copts@(C
  compiledParams <- compileLambdaList fparams
 
  bodyEnv <- liftIO $ extendEnv env []
--- TODO: need to bind lambda params in the extended env, for purposes of macro processing
+ -- bind lambda params in the extended env
+ _ <- defineLambdaVars bodyEnv $ fparams ++ [varargs]
 
  compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
 
@@ -463,7 +479,8 @@ compile env (List (Atom "lambda" : varargs@(Atom _) : fbody)) copts@(CompileOpti
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
 
  bodyEnv <- liftIO $ extendEnv env []
--- TODO: need to bind lambda params in the extended env, for purposes of macro processing
+ -- bind lambda params in the extended env
+ _ <- defineLambdaVars bodyEnv [varargs]
 
  compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
 
