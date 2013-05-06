@@ -424,7 +424,7 @@
 
 (define (hash-table-update! hash-table key function)
   (hash-table-set! hash-table key
-                  (function (hash-table-ref hash-table key thunk))))
+                  (function (hash-table-ref hash-table key))))
 
 (define-syntax hash-table-merge!
   (syntax-rules ()
