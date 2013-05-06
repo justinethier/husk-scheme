@@ -206,6 +206,12 @@ compileLambdaList l = do
  where serialize (Atom a) = return $ (show a)
        serialize a = throwError $ Default $ "invalid parameter to lambda list: " ++ show a
 
+-- TODO: future enhancement:
+---- |Compile a macro to an AstValue
+--compileMacro [Atom keyword, 
+--              List [Atom "er-macro-transformer",
+--                    (List (Atom "lambda" 
+
 compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
 compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts
@@ -298,22 +304,6 @@ compile env lisp@(List [Atom "define-syntax", Atom keyword,
     ("  defineNamespacedVar env macroNamespace \"" ++ keyword ++ 
      "\" $ Syntax (Just env) Nothing False " ++ idStr ++ " " ++ ruleStr) copts 
 
-{- TODO:
-compile env lisp@(List (Atom "let-syntax" : List _bindings : _body)) copts = do
---  let idStr = asts2Str identifiers
---      ruleStr = asts2Str rules
---
---  -- Make macro available at compile time
---  _ <- defineNamespacedVar env macroNamespace keyword $ 
---         Syntax (Just env) Nothing False identifiers rules
---
---  -- And load it at runtime as well
---  -- Env should be identical to the one loaded at compile time...
---  compileScalar 
---    ("  defineNamespacedVar env macroNamespace \"" ++ keyword ++ 
---     "\" $ Syntax (Just env) Nothing False " ++ idStr ++ " " ++ ruleStr) copts 
--}
-
 compile env (List [Atom "if", predic, conseq]) copts = 
  compile env (List [Atom "if", predic, conseq, Nil ""]) copts
 
@@ -388,9 +378,12 @@ compile env (List [Atom "define", Atom var, form]) copts@(CompileOptions _ _ _ _
  return $ [createAstFunc copts f] ++ compDefine ++ [compMakeDefine]
 
 compile env (List (Atom "define" : List (Atom var : fparams) : fbody)) copts@(CompileOptions _ _ _ _) = do
+ bodyEnv <- liftIO $ extendEnv env []
+-- TODO: need to bind lambda params in the extended env, for purposes of macro processing
+
  Atom symCallfunc <- _gensym "defineFuncEntryPt"
  compiledParams <- compileLambdaList fparams
- compiledBody <- compileBlock symCallfunc Nothing env [] fbody
+ compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
 
  -- Store var in huskc's env for macro processing (and same for other vers of define)
  _ <- makeNormalFunc env fparams fbody >>= defineVar env var
@@ -406,9 +399,12 @@ compile env (List (Atom "define" : List (Atom var : fparams) : fbody)) copts@(Co
  return $ [createAstFunc copts f] ++ compiledBody
 
 compile env (List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) copts@(CompileOptions _ _ _ _) = do
+ bodyEnv <- liftIO $ extendEnv env []
+-- TODO: need to bind lambda params in the extended env, for purposes of macro processing
+
  Atom symCallfunc <- _gensym "defineFuncEntryPt"
  compiledParams <- compileLambdaList fparams
- compiledBody <- compileBlock symCallfunc Nothing env [] fbody
+ compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
 
  -- Store var in huskc's env for macro processing (and same for other vers of define)
  _ <- makeVarargs varargs env fparams fbody >>= defineVar env var
@@ -429,10 +425,10 @@ compile env (List (Atom "lambda" : List fparams : fbody)) copts@(CompileOptions 
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
  compiledParams <- compileLambdaList fparams
 
--- TODO: need to extend Env below when compiling body?
+ bodyEnv <- liftIO $ extendEnv env []
 -- TODO: need to bind lambda params in the extended env, for purposes of macro processing
 
- compiledBody <- compileBlock symCallfunc Nothing env [] fbody
+ compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
 
  -- Entry point; ensure var is not rebound
 -- TODO: will probably end up creating a common function for this,
@@ -449,10 +445,10 @@ compile env (List (Atom "lambda" : DottedList fparams varargs : fbody)) copts@(C
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
  compiledParams <- compileLambdaList fparams
 
--- TODO: need to extend Env below when compiling body?
+ bodyEnv <- liftIO $ extendEnv env []
 -- TODO: need to bind lambda params in the extended env, for purposes of macro processing
 
- compiledBody <- compileBlock symCallfunc Nothing env [] fbody
+ compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
 
  -- Entry point; ensure var is not rebound
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
@@ -466,10 +462,10 @@ compile env (List (Atom "lambda" : DottedList fparams varargs : fbody)) copts@(C
 compile env (List (Atom "lambda" : varargs@(Atom _) : fbody)) copts@(CompileOptions _ _ _ _) = do
  Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
 
--- TODO: need to extend Env below when compiling body?
+ bodyEnv <- liftIO $ extendEnv env []
 -- TODO: need to bind lambda params in the extended env, for purposes of macro processing
 
- compiledBody <- compileBlock symCallfunc Nothing env [] fbody
+ compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
 
  -- Entry point; ensure var is not rebound
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
