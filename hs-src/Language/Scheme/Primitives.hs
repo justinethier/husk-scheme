@@ -665,8 +665,10 @@ isProcedure :: [LispVal] -> ThrowsError LispVal
 isProcedure ([Continuation _ _ _ _ _]) = return $ Bool True
 isProcedure ([PrimitiveFunc _]) = return $ Bool True
 isProcedure ([Func _ _ _ _]) = return $ Bool True
+isProcedure ([HFunc _ _ _ _]) = return $ Bool True
 isProcedure ([IOFunc _]) = return $ Bool True
 isProcedure ([EvalFunc _]) = return $ Bool True
+isProcedure ([CustFunc _]) = return $ Bool True
 isProcedure _ = return $ Bool False
 
 isVector,isByteVector, isList :: LispVal -> IOThrowsError LispVal
