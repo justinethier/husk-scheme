@@ -38,19 +38,24 @@ import Data.Ratio
 import Data.Word
 -- import Debug.Trace
 
--- A type to store options passed to compile
--- eventually all of this might be able to be integrated into a Compile monad
+-- |A type to store options passed to compile
+--  eventually all of this might be able to be 
+--  integrated into a Compile monad
 data CompOpts = CompileOptions {
     coptsThisFunc :: String,
     coptsThisFuncUseValue :: Bool,
     coptsThisFuncUseArgs :: Bool,
     coptsNextFunc :: Maybe String
     }
---DefaultCompileOptions :: String -> CompileOpts 
+
 defaultCompileOptions :: String -> CompOpts
 defaultCompileOptions thisFunc = CompileOptions thisFunc False False Nothing
 
-createAstFunc :: CompOpts -> [HaskAST] -> HaskAST 
+-- |Create code for a function
+createAstFunc 
+  :: CompOpts  -- ^ Compilation options
+  -> [HaskAST] -- ^ Body of the function
+  -> HaskAST -- ^ Complete function code
 createAstFunc (CompileOptions thisFunc useVal useArgs _) funcBody = do
   let val = case useVal of
               True -> "value"
@@ -60,13 +65,19 @@ createAstFunc (CompileOptions thisFunc useVal useArgs _) funcBody = do
                _ -> "_"
   AstFunction thisFunc (" env cont " ++ val ++ " " ++ args ++ " ") funcBody
 
-createAstCont :: CompOpts -> String -> String -> HaskAST
+-- |Create code for a continutation
+createAstCont 
+  :: CompOpts -- ^ Compilation options
+  -> String -- ^ Value to send to the continuation
+  -> String -- ^ Extra leading indentation (or blank string if none)
+  -> HaskAST -- ^ Generated code
 createAstCont (CompileOptions _ _ _ (Just nextFunc)) var indentation = do
   AstValue $ indentation ++ "  continueEval env (makeCPS env cont " ++ nextFunc ++ ") " ++ var
 createAstCont (CompileOptions _ _ _ Nothing) var indentation = do
   AstValue $ indentation ++ "  continueEval env cont " ++ var
 
--- A very basic type to store a Haskell AST
+-- |A very basic type to store a Haskell AST.
+--  FUTURE: is this even necessary? Would just a string be good enough?
 data HaskAST = AstAssignM String HaskAST
   | AstFunction {astfName :: String,
 --                 astfType :: String,
@@ -91,7 +102,11 @@ showValAST (AstContinuation nextFunc args) = "  continueEval env (makeCPSWArgs e
 
 instance Show HaskAST where show = showValAST
 
-joinL :: forall a. [[a]] -> [a] -> [a]
+-- |A utility function to join list members together
+joinL 
+  :: forall a. [[a]] -- ^ Original list-of-lists
+  -> [a] -- ^ Separator 
+  -> [a] -- ^ Joined list
 joinL ls sep = concat $ Data.List.intersperse sep ls
 
 -- |Convert abstract syntax tree to a string
@@ -145,6 +160,18 @@ headerImports = [
 header :: String -> [String]
 header filepath = do
   [ " "
+    , "-- |Get variable at runtime "
+    , "getRTVar env var = do " 
+    , "  v <- getVar env var " 
+    , "  return $ case v of "
+    , "    List _ -> Pointer var env "
+    , "    DottedList _ _ -> Pointer var env "
+    , "    String _ -> Pointer var env "
+    , "    Vector _ -> Pointer var env "
+    , "    ByteVector _ -> Pointer var env "
+    , "    HashTable _ -> Pointer var env "
+    , "    _ -> v "
+    , " "
     , "getDataFileName' :: FilePath -> IO FilePath "
     , "getDataFileName' name = return $ \"" ++ (Language.Scheme.Util.escapeBackslashes filepath) ++ "\" ++ name "
     , " "
@@ -237,17 +264,9 @@ compile env (Atom a) copts = do
  isDefined <- liftIO $ isRecBound env a
  case isDefined of
    True -> do
-     c <- return $ createAstCont copts "val" ""
      return [createAstFunc copts [
-       AstValue $ "  v <- getVar env \"" ++ a ++ "\"",
-       AstValue $ "  val <- return $ case v of",
-       AstValue $ "    List _ -> Pointer \"" ++ a ++ "\" env",
-       AstValue $ "    DottedList _ _ -> Pointer \"" ++ a ++ "\" env",
-       AstValue $ "    String _ -> Pointer \"" ++ a ++ "\" env",
-       AstValue $ "    Vector _ -> Pointer \"" ++ a ++ "\" env",
-       AstValue $ "    ByteVector _ -> Pointer \"" ++ a ++ "\" env",
-       AstValue $ "    HashTable _ -> Pointer \"" ++ a ++ "\" env",
-       AstValue $ "    _ -> v"], c]
+               AstValue $ "  val <- getRTVar env \"" ++ a ++ "\""], 
+               createAstCont copts "val" ""]
    False -> throwError $ UnboundVar "Variable is not defined" a
 
 compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ ast2Str val) copts
