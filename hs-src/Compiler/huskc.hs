@@ -136,7 +136,7 @@ process inFile outHaskell outExec dynamic extraArgs = do
 -- TODO: how to integrate r5rsEnv and libraries?
 
 
-  env <- Language.Scheme.Core.primitiveBindings
+  env <- Language.Scheme.Core.r5rsEnv
   stdlib <- getDataFileName "lib/stdlib.scm"
   srfi55 <- getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
   result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env stdlib srfi55 inFile outHaskell)
