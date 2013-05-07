@@ -11,10 +11,16 @@
 (define pass-count 0)
 (define fail-count 0)
 
-(define (unit-test-handler expected actual) 
+(define (unit-test-handler expected actual . label) 
   (if (not (equal? expected actual))
     (begin 
-        (display "Test failed; expected value: [")
+        (display "Test ")
+        (if (not (null? (car label))) 
+            (begin
+                (display "[")
+                (display (caar label))
+                (display "] ")))
+        (display "failed; expected value: [")
         (display expected) 
         (display "], actual value: [") 
         (display actual)
@@ -25,10 +31,13 @@
 
 (define (assert proc) (unit-test-handler #t (proc)))
 
-(define (assert-equal proc value) (unit-test-handler value (proc)))
+;(define (assert-equal proc value) (unit-test-handler value (proc)))
 
-(define (assert/equal test expected)
-     (unit-test-handler expected ((lambda () test))))
+(define (assert/equal test expected . label)
+     (unit-test-handler 
+        expected 
+        ((lambda () test))
+        label))
 
 (define (unit-test-start name)
   (display "Testing ")
