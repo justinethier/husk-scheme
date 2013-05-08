@@ -181,7 +181,7 @@ header filepath = do
     , " "
     , "main :: IO () "
     , "main = do "
-    , "  env <- primitiveBindings "
+    , "  env <- r5rsEnv "
     , "  result <- (runIOThrows $ liftM show $ run env (makeNullContinuation env) (Nil \"\") Nothing) "
     , "  case result of "
     , "    Just errMsg -> putStrLn errMsg "
