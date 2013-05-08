@@ -1320,11 +1320,10 @@ transformLiteralIdentifier defEnv outerEnv divertEnv renameEnv definedInMacro tr
          Atom renamed <- _gensym transform
          _ <- defineVar divertEnv renamed value 
 
--- TODO: this is temporary testing code
---         List diverted <- getNamespacedVar outerEnv " " "diverted"
---         _ <- setNamespacedVar outerEnv " " "diverted" $ 
---             List (diverted ++ [List [Atom renamed, Atom transform]])
--- END
+         -- Keep track of diverted values for use by the compiler
+         List diverted <- getNamespacedVar outerEnv ' ' "diverted"
+         _ <- setNamespacedVar outerEnv ' ' "diverted" $ 
+             List (diverted ++ [List [Atom renamed, Atom transform]])
 
          return $ Atom renamed
      else do
