@@ -215,10 +215,11 @@
               1)
 (assert/equal
   (let ((x 5))
+    (define bar #f) ; Only needed for compiled code
     (define foo (lambda (y) (bar x y)))
-      (define bar (lambda (a b) (+ (* a b) a)))
-        (foo (+ x 3)))                        
-   45)
+    (define bar (lambda (a b) (+ (* a b) a)))
+    (foo (+ x 3)))
+  45)
 
 ; General tests
 (assert/equal (+ 1 1) 2)
