@@ -271,475 +271,491 @@ compile env (Atom a) copts = do
 
 compile _ (List [Atom "quote", val]) copts = compileScalar (" return $ " ++ ast2Str val) copts
 
-compile env (List [Atom "expand",  _body]) copts = do
-  -- TODO: check if expand has been rebound?
-  val <- Language.Scheme.Macro.expand env False _body Language.Scheme.Core.apply
-  compileScalar (" return $ " ++ ast2Str val) copts
+compile env ast@(List [Atom "expand",  _body]) copts = do
+  compileSpecialFormBody env ast copts (\ _ -> do
+    val <- Language.Scheme.Macro.expand env False _body Language.Scheme.Core.apply
+    compileScalar (" return $ " ++ ast2Str val) copts)
 
-compile env (List (Atom "let-syntax" : List _bindings : _body)) copts = do
-  -- TODO: check if let-syntax has been rebound?
-  bodyEnv <- liftIO $ extendEnv env []
-  _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
-  -- Expand whole body as a single continuous macro, to ensure hygiene
-  expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) Language.Scheme.Core.apply
-  divertVars bodyEnv expanded copts compexp
+compile env ast@(List (Atom "let-syntax" : List _bindings : _body)) copts = do
+  compileSpecialFormBody env ast copts (\ _ -> do
+    bodyEnv <- liftIO $ extendEnv env []
+    _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
+    -- Expand whole body as a single continuous macro, to ensure hygiene
+    expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) Language.Scheme.Core.apply
+    divertVars bodyEnv expanded copts compexp)
  where 
-   -- Pick up execution here after expansion
-   compexp bodyEnv' expanded' copts' = do
-     case expanded' of
-       List e -> compile bodyEnv' (List $ Atom "begin" : e) copts'
-       e -> compile bodyEnv' e copts'
+     -- Pick up execution here after expansion
+     compexp bodyEnv' expanded' copts' = do
+       case expanded' of
+         List e -> compile bodyEnv' (List $ Atom "begin" : e) copts'
+         e -> compile bodyEnv' e copts'
 
-compile env (List (Atom "letrec-syntax" : List _bindings : _body)) copts = do
-  -- TODO: check if let-syntax has been rebound?
-  bodyEnv <- liftIO $ extendEnv env []
-  _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False _bindings
-  -- Expand whole body as a single continuous macro, to ensure hygiene
-  expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) Language.Scheme.Core.apply
-  divertVars bodyEnv expanded copts compexp
- where 
-   -- Pick up execution here after expansion
-   compexp bodyEnv' expanded' copts' = do
-     case expanded' of
-       List e -> compile bodyEnv' (List $ Atom "begin" : e) copts'
-       e -> compile bodyEnv' e copts'
+compile env ast@(List (Atom "letrec-syntax" : List _bindings : _body)) copts = do
+  compileSpecialFormBody env ast copts (\ _ -> do
+    bodyEnv <- liftIO $ extendEnv env []
+    _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False _bindings
+    -- Expand whole body as a single continuous macro, to ensure hygiene
+    expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) Language.Scheme.Core.apply
+    divertVars bodyEnv expanded copts compexp)
+  where 
+     -- Pick up execution here after expansion
+     compexp bodyEnv' expanded' copts' = do
+       case expanded' of
+         List e -> compile bodyEnv' (List $ Atom "begin" : e) copts'
+         e -> compile bodyEnv' e copts'
 
-compile env (List [Atom "define-syntax", Atom keyword,
+compile env ast@(List [Atom "define-syntax", Atom keyword,
   (List [Atom "er-macro-transformer", 
     (List (Atom "lambda" : List fparams : fbody))])])
   copts = do
-  let fparamsStr = asts2Str fparams
-      fbodyStr = asts2Str fbody
-
-  f <- makeNormalFunc env fparams fbody 
-  _ <- defineNamespacedVar env macroNamespace keyword $ SyntaxExplicitRenaming f
-
-  compFunc <- return $ [
-    AstValue $ "  f <- makeNormalFunc env " ++ fparamsStr ++ " " ++ fbodyStr, 
-    AstValue $ "  defineNamespacedVar env macroNamespace \"" ++ keyword ++ "\" $ SyntaxExplicitRenaming f",
-    createAstCont copts "(Nil \"\")" ""]
-  return $ [createAstFunc copts compFunc]
+  compileSpecialFormBody env ast copts (\ _ -> do
+    let fparamsStr = asts2Str fparams
+        fbodyStr = asts2Str fbody
+  
+    f <- makeNormalFunc env fparams fbody 
+    _ <- defineNamespacedVar env macroNamespace keyword $ SyntaxExplicitRenaming f
+  
+    compFunc <- return $ [
+      AstValue $ "  f <- makeNormalFunc env " ++ fparamsStr ++ " " ++ fbodyStr, 
+      AstValue $ "  defineNamespacedVar env macroNamespace \"" ++ keyword ++ "\" $ SyntaxExplicitRenaming f",
+      createAstCont copts "(Nil \"\")" ""]
+    return $ [createAstFunc copts compFunc])
 
 compile env lisp@(List [Atom "define-syntax", Atom keyword, 
     (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
-  let idStr = asts2Str identifiers
-      ruleStr = asts2Str rules
+  compileSpecialFormBody env lisp copts (\ _ -> do
+    let idStr = asts2Str identifiers
+        ruleStr = asts2Str rules
+  
+    -- Make macro available at compile time
+    _ <- defineNamespacedVar env macroNamespace keyword $ 
+           Syntax (Just env) Nothing False identifiers rules
+  
+    -- And load it at runtime as well
+    -- Env should be identical to the one loaded at compile time...
+    compileScalar 
+      ("  defineNamespacedVar env macroNamespace \"" ++ keyword ++ 
+       "\" $ Syntax (Just env) Nothing False " ++ idStr ++ " " ++ ruleStr) copts)
 
-  -- Make macro available at compile time
-  _ <- defineNamespacedVar env macroNamespace keyword $ 
-         Syntax (Just env) Nothing False identifiers rules
+compile env ast@(List [Atom "if", predic, conseq]) copts = 
+  compileSpecialFormBody env ast copts (\ _ -> do
+    compile env (List [Atom "if", predic, conseq, Nil ""]) copts)
 
-  -- And load it at runtime as well
-  -- Env should be identical to the one loaded at compile time...
-  compileScalar 
-    ("  defineNamespacedVar env macroNamespace \"" ++ keyword ++ 
-     "\" $ Syntax (Just env) Nothing False " ++ idStr ++ " " ++ ruleStr) copts 
+compile env ast@(List [Atom "if", predic, conseq, alt]) copts = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symPredicate <- _gensym "ifPredic"
+    Atom symCheckPredicate <- _gensym "compiledIfPredicate"
+    Atom symConsequence <- _gensym "compiledConsequence"
+    Atom symAlternate <- _gensym "compiledAlternative"
 
-compile env (List [Atom "if", predic, conseq]) copts = 
- compile env (List [Atom "if", predic, conseq, Nil ""]) copts
+    -- Entry point; ensure if is not rebound
+    f <- return [AstValue $ "  " ++ symPredicate ++
+                            " env (makeCPS env cont " ++ symCheckPredicate ++ ") " ++ 
+                            " (Nil \"\") [] "]
+    -- Compile expression for if's args
+    compPredicate <- compileExpr env predic symPredicate Nothing      -- Do not want to call into nextFunc in the middle of (if)
+    compConsequence <- compileExpr env conseq symConsequence nextFunc -- pick up at nextFunc after consequence
+    compAlternate <- compileExpr env alt symAlternate nextFunc        -- or...pick up at nextFunc after alternate
+    -- Special case because we need to check the predicate's value
+    compCheckPredicate <- return $ AstFunction symCheckPredicate " env cont result _ " [
+       AstValue $ "  case result of ",
+       AstValue $ "    Bool False -> " ++ symAlternate ++ " env cont (Nil \"\") [] ",
+       AstValue $ "    _ -> " ++ symConsequence ++ " env cont (Nil \"\") [] "]
+    
+    -- Join compiled code together
+    return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ compConsequence ++ compAlternate)
 
-compile env ast@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions tfnc uvar uargs nextFunc) = do
---  compileSpecialFormBody
-  isDefined <- liftIO $ isRecBound env "if"
-  case isDefined of
-    True -> mfunc env ast compileApply copts 
-    False -> do
-      Atom symPredicate <- _gensym "ifPredic"
-      Atom symCheckPredicate <- _gensym "compiledIfPredicate"
-      Atom symConsequence <- _gensym "compiledConsequence"
-      Atom symAlternate <- _gensym "compiledAlternative"
+compile env ast@(List [Atom "set!", Atom var, form]) copts@(CompileOptions _ _ _ _) = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symDefine <- _gensym "setFunc"
+    Atom symMakeDefine <- _gensym "setFuncMakeSet"
 
-      -- Entry point; ensure if is not rebound
-      f <- return [AstValue $ "  " ++ symPredicate ++
-                              " env (makeCPS env cont " ++ symCheckPredicate ++ ") " ++ 
-                              " (Nil \"\") [] "]
-      -- Compile expression for if's args
-      compPredicate <- compileExpr env predic symPredicate Nothing      -- Do not want to call into nextFunc in the middle of (if)
-      compConsequence <- compileExpr env conseq symConsequence nextFunc -- pick up at nextFunc after consequence
-      compAlternate <- compileExpr env alt symAlternate nextFunc        -- or...pick up at nextFunc after alternate
-      -- Special case because we need to check the predicate's value
-      compCheckPredicate <- return $ AstFunction symCheckPredicate " env cont result _ " [
-         AstValue $ "  case result of ",
-         AstValue $ "    Bool False -> " ++ symAlternate ++ " env cont (Nil \"\") [] ",
-         AstValue $ "    _ -> " ++ symConsequence ++ " env cont (Nil \"\") [] "]
-      
-      -- Join compiled code together
-      return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ compConsequence ++ compAlternate
+    -- Store var in huskc's env for macro processing
+    --
+    -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    -- TODO: this is going to cause problems for er macros
+    --
+    -- TODO: changed this to a 'defineVar' for now, because without lambda forms inserting
+    --       defined variables, using setVar will cause an error when trying to set a
+    --       lambda var...
+    _ <- defineVar env var form -- TODO: setVar (per above comment)
 
-compile env (List [Atom "set!", Atom var, form]) copts@(CompileOptions _ _ _ _) = do
- Atom symDefine <- _gensym "setFunc"
- Atom symMakeDefine <- _gensym "setFuncMakeSet"
+    entryPt <- compileSpecialFormEntryPoint "set!" symDefine copts
+    compDefine <- compileExpr env form symDefine $ Just symMakeDefine
+    compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
+       AstValue $ "  _ <- setVar env \"" ++ var ++ "\" result",
+       createAstCont copts "result" ""]
+    return $ [entryPt] ++ compDefine ++ [compMakeDefine])
 
- -- Store var in huskc's env for macro processing
- --
- -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- -- TODO: this is going to cause problems for er macros
- --
- -- TODO: changed this to a 'defineVar' for now, because without lambda forms inserting
- --       defined variables, using setVar will cause an error when trying to set a
- --       lambda var...
- _ <- defineVar env var form -- TODO: setVar (per above comment)
+compile env ast@(List [Atom "set!", nonvar, _]) copts = do 
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    f <- compileSpecialForm "set!" ("throwError $ TypeMismatch \"variable\" $ String \"" ++ (show nonvar) ++ "\"")  copts
+    return [f])
+compile env ast@(List (Atom "set!" : args)) copts = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    f <- compileSpecialForm "set!" ("throwError $ NumArgs 2 $ [String \"" ++ (show args) ++ "\"]") copts -- TODO: Cheesy to use a string, but fine for now...
+    return [f])
 
- entryPt <- compileSpecialFormEntryPoint "set!" symDefine copts
- compDefine <- compileExpr env form symDefine $ Just symMakeDefine
- compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
-    AstValue $ "  _ <- setVar env \"" ++ var ++ "\" result",
-    createAstCont copts "result" ""]
- return $ [entryPt] ++ compDefine ++ [compMakeDefine]
+compile env ast@(List [Atom "define", Atom var, form]) copts@(CompileOptions _ _ _ _) = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symDefine <- _gensym "defineFuncDefine"
+    Atom symMakeDefine <- _gensym "defineFuncMakeDef"
+   
+    -- Store var in huskc's env for macro processing (and same for other vers of define)
+    _ <- defineVar env var form
+   
+    -- Entry point; ensure var is not rebound
+    f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
+          AstValue $ "  if bound ",
+          AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+          AstValue $ "     else do " ++ symDefine ++ " env cont (Nil \"\") []" ]
+    compDefine <- compileExpr env form symDefine $ Just symMakeDefine
+    compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
+       AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result",
+       createAstCont copts "result" ""]
+    return $ [createAstFunc copts f] ++ compDefine ++ [compMakeDefine])
 
-compile _ (List [Atom "set!", nonvar, _]) copts = do 
- f <- compileSpecialForm "set!" ("throwError $ TypeMismatch \"variable\" $ String \"" ++ (show nonvar) ++ "\"")  copts
- return [f]
-compile _ (List (Atom "set!" : args)) copts = do
- f <- compileSpecialForm "set!" ("throwError $ NumArgs 2 $ [String \"" ++ (show args) ++ "\"]") copts -- TODO: Cheesy to use a string, but fine for now...
- return [f]
+compile env ast@(List (Atom "define" : List (Atom var : fparams) : fbody)) copts@(CompileOptions _ _ _ _) = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    bodyEnv <- liftIO $ extendEnv env []
+    -- bind lambda params in the extended env
+    _ <- defineLambdaVars bodyEnv (Atom var : fparams)
+   
+    Atom symCallfunc <- _gensym "defineFuncEntryPt"
+    compiledParams <- compileLambdaList fparams
+    compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
+   
+    -- Store var in huskc's env for macro processing (and same for other vers of define)
+    _ <- makeNormalFunc env fparams fbody >>= defineVar env var
+   
+    -- Entry point; ensure var is not rebound
+    f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
+          AstValue $ "  if bound ",
+          AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+          AstValue $ "     else do result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
+          AstValue $ "             _ <- defineVar env \"" ++ var ++ "\" result ",
+          createAstCont copts "result" "           "
+          ]
+    return $ [createAstFunc copts f] ++ compiledBody)
 
-compile env (List [Atom "define", Atom var, form]) copts@(CompileOptions _ _ _ _) = do
- Atom symDefine <- _gensym "defineFuncDefine"
- Atom symMakeDefine <- _gensym "defineFuncMakeDef"
+compile env ast@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) copts@(CompileOptions _ _ _ _) = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    bodyEnv <- liftIO $ extendEnv env []
+    -- bind lambda params in the extended env
+    _ <- defineLambdaVars bodyEnv $ (Atom var : fparams) ++ [varargs]
+   
+    Atom symCallfunc <- _gensym "defineFuncEntryPt"
+    compiledParams <- compileLambdaList fparams
+    compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
+   
+    -- Store var in huskc's env for macro processing (and same for other vers of define)
+    _ <- makeVarargs varargs env fparams fbody >>= defineVar env var
+   
+    -- Entry point; ensure var is not rebound
+    f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
+          AstValue $ "  if bound ",
+          AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+          AstValue $ "     else do result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
+          AstValue $ "             _ <- defineVar env \"" ++ var ++ "\" result ",
+          createAstCont copts "result" "           "
+          ]
+    return $ [createAstFunc copts f] ++ compiledBody)
 
- -- Store var in huskc's env for macro processing (and same for other vers of define)
- _ <- defineVar env var form
+compile env ast@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOptions _ _ _ _) = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
+    compiledParams <- compileLambdaList fparams
+   
+    bodyEnv <- liftIO $ extendEnv env []
+    -- bind lambda params in the extended env
+    _ <- defineLambdaVars bodyEnv fparams
+   
+    compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
+   
+    -- Entry point; ensure var is not rebound
+   -- TODO: will probably end up creating a common function for this,
+   --       since it is almost the same as in "if"
+    f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
+          AstValue $ "  if bound ",
+          AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+          AstValue $ "     else do result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
+          createAstCont copts "result" "           "
+          ]
+    return $ [createAstFunc copts f] ++ compiledBody)
 
- -- Entry point; ensure var is not rebound
- f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
-       AstValue $ "  if bound ",
-       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do " ++ symDefine ++ " env cont (Nil \"\") []" ]
- compDefine <- compileExpr env form symDefine $ Just symMakeDefine
- compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
-    AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result",
-    createAstCont copts "result" ""]
- return $ [createAstFunc copts f] ++ compDefine ++ [compMakeDefine]
+compile env ast@(List (Atom "lambda" : DottedList fparams varargs : fbody)) copts@(CompileOptions _ _ _ _) = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
+    compiledParams <- compileLambdaList fparams
+   
+    bodyEnv <- liftIO $ extendEnv env []
+    -- bind lambda params in the extended env
+    _ <- defineLambdaVars bodyEnv $ fparams ++ [varargs]
+   
+    compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
+   
+    -- Entry point; ensure var is not rebound
+    f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
+          AstValue $ "  if bound ",
+          AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+          AstValue $ "     else do result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
+          createAstCont copts "result" "           "
+          ]
+    return $ [createAstFunc copts f] ++ compiledBody)
 
-compile env (List (Atom "define" : List (Atom var : fparams) : fbody)) copts@(CompileOptions _ _ _ _) = do
- bodyEnv <- liftIO $ extendEnv env []
- -- bind lambda params in the extended env
- _ <- defineLambdaVars bodyEnv (Atom var : fparams)
+compile env ast@(List (Atom "lambda" : varargs@(Atom _) : fbody)) copts@(CompileOptions _ _ _ _) = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
+   
+    bodyEnv <- liftIO $ extendEnv env []
+    -- bind lambda params in the extended env
+    _ <- defineLambdaVars bodyEnv [varargs]
+   
+    compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
+   
+    -- Entry point; ensure var is not rebound
+    f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
+          AstValue $ "  if bound ",
+          AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+          AstValue $ "     else do result <- makeHVarargs (" ++ ast2Str varargs ++ ") env [] " ++ symCallfunc,
+          createAstCont copts "result" "           "
+          ]
+    return $ [createAstFunc copts f] ++ compiledBody)
 
- Atom symCallfunc <- _gensym "defineFuncEntryPt"
- compiledParams <- compileLambdaList fparams
- compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
-
- -- Store var in huskc's env for macro processing (and same for other vers of define)
- _ <- makeNormalFunc env fparams fbody >>= defineVar env var
-
- -- Entry point; ensure var is not rebound
- f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
-       AstValue $ "  if bound ",
-       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
-       AstValue $ "             _ <- defineVar env \"" ++ var ++ "\" result ",
-       createAstCont copts "result" "           "
-       ]
- return $ [createAstFunc copts f] ++ compiledBody
-
-compile env (List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) copts@(CompileOptions _ _ _ _) = do
- bodyEnv <- liftIO $ extendEnv env []
- -- bind lambda params in the extended env
- _ <- defineLambdaVars bodyEnv $ (Atom var : fparams) ++ [varargs]
-
- Atom symCallfunc <- _gensym "defineFuncEntryPt"
- compiledParams <- compileLambdaList fparams
- compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
-
- -- Store var in huskc's env for macro processing (and same for other vers of define)
- _ <- makeVarargs varargs env fparams fbody >>= defineVar env var
-
- -- Entry point; ensure var is not rebound
- f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
-       AstValue $ "  if bound ",
-       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
-       AstValue $ "             _ <- defineVar env \"" ++ var ++ "\" result ",
-       createAstCont copts "result" "           "
-       ]
- return $ [createAstFunc copts f] ++ compiledBody
-
-
-
-compile env (List (Atom "lambda" : List fparams : fbody)) copts@(CompileOptions _ _ _ _) = do
- Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
- compiledParams <- compileLambdaList fparams
-
- bodyEnv <- liftIO $ extendEnv env []
- -- bind lambda params in the extended env
- _ <- defineLambdaVars bodyEnv fparams
-
- compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
-
- -- Entry point; ensure var is not rebound
--- TODO: will probably end up creating a common function for this,
---       since it is almost the same as in "if"
- f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
-       AstValue $ "  if bound ",
-       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
-       createAstCont copts "result" "           "
-       ]
- return $ [createAstFunc copts f] ++ compiledBody
-
-compile env (List (Atom "lambda" : DottedList fparams varargs : fbody)) copts@(CompileOptions _ _ _ _) = do
- Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
- compiledParams <- compileLambdaList fparams
-
- bodyEnv <- liftIO $ extendEnv env []
- -- bind lambda params in the extended env
- _ <- defineLambdaVars bodyEnv $ fparams ++ [varargs]
-
- compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
-
- -- Entry point; ensure var is not rebound
- f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
-       AstValue $ "  if bound ",
-       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
-       createAstCont copts "result" "           "
-       ]
- return $ [createAstFunc copts f] ++ compiledBody
-
-compile env (List (Atom "lambda" : varargs@(Atom _) : fbody)) copts@(CompileOptions _ _ _ _) = do
- Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
-
- bodyEnv <- liftIO $ extendEnv env []
- -- bind lambda params in the extended env
- _ <- defineLambdaVars bodyEnv [varargs]
-
- compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
-
- -- Entry point; ensure var is not rebound
- f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
-       AstValue $ "  if bound ",
-       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else do result <- makeHVarargs (" ++ ast2Str varargs ++ ") env [] " ++ symCallfunc,
-       createAstCont copts "result" "           "
-       ]
- return $ [createAstFunc copts f] ++ compiledBody
-compile env (List [Atom "string-set!", Atom var, i, character]) copts = do
- Atom symDefine <- _gensym "stringSetFunc"
- Atom symMakeDefine <- _gensym "stringSetFuncMakeSet"
-
- entryPt <- compileSpecialFormEntryPoint "string-set!" symDefine copts
- compDefine <- compileExpr env i symDefine $ Just symMakeDefine
- compMakeDefine <- return $ AstFunction symMakeDefine " env cont idx _ " [
-    AstValue $ "  tmp <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  derefValue <- recDerefPtrs tmp",
-    -- TODO: not entirely correct below; should compile the character argument rather
-    --       than directly inserting it into the compiled code...
-    AstValue $ "  result <- substr (derefValue, (" ++ ast2Str(character) ++ "), idx)",
-    AstValue $ "  _ <- updateObject env \"" ++ var ++ "\" result",
-    createAstCont copts "result" ""]
- return $ [entryPt] ++ compDefine ++ [compMakeDefine]
+compile env ast@(List [Atom "string-set!", Atom var, i, character]) copts = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symDefine <- _gensym "stringSetFunc"
+    Atom symMakeDefine <- _gensym "stringSetFuncMakeSet"
+   
+    entryPt <- compileSpecialFormEntryPoint "string-set!" symDefine copts
+    compDefine <- compileExpr env i symDefine $ Just symMakeDefine
+    compMakeDefine <- return $ AstFunction symMakeDefine " env cont idx _ " [
+       AstValue $ "  tmp <- getVar env \"" ++ var ++ "\"",
+       AstValue $ "  derefValue <- recDerefPtrs tmp",
+       -- TODO: not entirely correct below; should compile the character argument rather
+       --       than directly inserting it into the compiled code...
+       AstValue $ "  result <- substr (derefValue, (" ++ ast2Str(character) ++ "), idx)",
+       AstValue $ "  _ <- updateObject env \"" ++ var ++ "\" result",
+       createAstCont copts "result" ""]
+    return $ [entryPt] ++ compDefine ++ [compMakeDefine])
 
 -- TODO: eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "string-set!" : args)) = do 
 
-compile env (List [Atom "set-car!", Atom var, argObj]) copts = do
- Atom symGetVar <- _gensym "setCarGetVar"
- Atom symCompiledObj <- _gensym "setCarCompiledObj"
- Atom symObj <- _gensym "setCarObj"
- Atom symDoSet <- _gensym "setCarDoSet"
-
- -- Code to all into next continuation from copts, if one exists
- let finalContinuation = case copts of
-       (CompileOptions _ _ _ (Just nextFunc)) -> "continueEval e (makeCPS e c " ++ nextFunc ++ ")\n"
-       _ -> "continueEval e c\n"
-
- -- Entry point that allows set-car! to be redefined
- entryPt <- compileSpecialFormEntryPoint "set-car!" symGetVar copts
-
- -- Function to read existing var
- compGetVar <- return $ AstFunction symGetVar " env cont idx _ " [
-    AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  derefValue <- recDerefPtrs result",
-    AstValue $ "  " ++ symObj ++ " env cont derefValue Nothing "]
-
- -- Compiled version of argObj
- compiledObj <- compileExpr env argObj symCompiledObj Nothing 
-
- -- Function to check looked-up var and call into appropriate handlers; based on code from Core
- --
- -- This is so verbose because we need to have overloads of symObj to deal with many possible inputs.
- -- FUTURE: consider making these functions part of the runtime.
- compObj <- return $ AstValue $ "" ++
-              symObj ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-              symObj ++ " _ _ obj@(List []) _ = throwError $ TypeMismatch \"pair\" obj\n" ++
--- TODO: below, we want to make sure obj is of the right type. if so, compile obj and call into the "set" 
---       function below to do the actual set-car
-              symObj ++ " e c obj@(List (_ : _)) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
-              symObj ++ " e c obj@(DottedList _ _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
-              symObj ++ " _ _ obj _ = throwError $ TypeMismatch \"pair\" obj\n"
-
- -- Function to do the actual (set!), based on code from Core
- --
- -- This is so verbose because we need to have overloads of symObj to deal with many possible inputs.
- -- FUTURE: consider making these functions part of the runtime.
- compDoSet <- return $ AstValue $ "" ++
-              symDoSet ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-              symDoSet ++ " e c obj (Just [List (_ : ls)]) = updateObject e \"" ++ var ++ "\" (List (obj : ls)) >>= " ++ finalContinuation ++
-              symDoSet ++ " e c obj (Just [DottedList (_ : ls) l]) = updateObject e \"" ++ var ++ "\" (DottedList (obj : ls) l) >>= " ++ finalContinuation ++
-              symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
-
- -- Return a list of all the compiled code
- return $ [entryPt, compGetVar, compObj, compDoSet] ++ compiledObj
+compile env ast@(List [Atom "set-car!", Atom var, argObj]) copts = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symGetVar <- _gensym "setCarGetVar"
+    Atom symCompiledObj <- _gensym "setCarCompiledObj"
+    Atom symObj <- _gensym "setCarObj"
+    Atom symDoSet <- _gensym "setCarDoSet"
+   
+    -- Code to all into next continuation from copts, if one exists
+    let finalContinuation = case copts of
+          (CompileOptions _ _ _ (Just nextFunc)) -> "continueEval e (makeCPS e c " ++ nextFunc ++ ")\n"
+          _ -> "continueEval e c\n"
+   
+    -- Entry point that allows set-car! to be redefined
+    entryPt <- compileSpecialFormEntryPoint "set-car!" symGetVar copts
+   
+    -- Function to read existing var
+    compGetVar <- return $ AstFunction symGetVar " env cont idx _ " [
+       AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
+       AstValue $ "  derefValue <- recDerefPtrs result",
+       AstValue $ "  " ++ symObj ++ " env cont derefValue Nothing "]
+   
+    -- Compiled version of argObj
+    compiledObj <- compileExpr env argObj symCompiledObj Nothing 
+   
+    -- Function to check looked-up var and call into appropriate handlers; based on code from Core
+    --
+    -- This is so verbose because we need to have overloads of symObj to deal with many possible inputs.
+    -- FUTURE: consider making these functions part of the runtime.
+    compObj <- return $ AstValue $ "" ++
+                 symObj ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
+                 symObj ++ " _ _ obj@(List []) _ = throwError $ TypeMismatch \"pair\" obj\n" ++
+   -- TODO: below, we want to make sure obj is of the right type. if so, compile obj and call into the "set" 
+   --       function below to do the actual set-car
+                 symObj ++ " e c obj@(List (_ : _)) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
+                 symObj ++ " e c obj@(DottedList _ _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
+                 symObj ++ " _ _ obj _ = throwError $ TypeMismatch \"pair\" obj\n"
+   
+    -- Function to do the actual (set!), based on code from Core
+    --
+    -- This is so verbose because we need to have overloads of symObj to deal with many possible inputs.
+    -- FUTURE: consider making these functions part of the runtime.
+    compDoSet <- return $ AstValue $ "" ++
+                 symDoSet ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
+                 symDoSet ++ " e c obj (Just [List (_ : ls)]) = updateObject e \"" ++ var ++ "\" (List (obj : ls)) >>= " ++ finalContinuation ++
+                 symDoSet ++ " e c obj (Just [DottedList (_ : ls) l]) = updateObject e \"" ++ var ++ "\" (DottedList (obj : ls) l) >>= " ++ finalContinuation ++
+                 symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
+   
+    -- Return a list of all the compiled code
+    return $ [entryPt, compGetVar, compObj, compDoSet] ++ compiledObj)
 
 -- TODO: eval env cont args@(List [Atom "set-car!" , nonvar , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "set-car!" : args)) = do
 
-compile env (List [Atom "set-cdr!", Atom var, argObj]) copts = do
- Atom symGetVar <- _gensym "setCdrGetVar"
- Atom symCompiledObj <- _gensym "setCdrCompiledObj"
- Atom symObj <- _gensym "setCdrObj"
- Atom symDoSet <- _gensym "setCdrDoSet"
-
- -- Code to all into next continuation from copts, if one exists
- let finalContinuation = case copts of
-       (CompileOptions _ _ _ (Just nextFunc)) -> "continueEval e (makeCPS e c " ++ nextFunc ++ ")\n"
-       _ -> "continueEval e c\n"
-
- -- Entry point that allows set-car! to be redefined
- entryPt <- compileSpecialFormEntryPoint "set-car!" symGetVar copts
-
- -- Function to read existing var
- compGetVar <- return $ AstFunction symGetVar " env cont idx _ " [
-    AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  derefValue <- recDerefPtrs result",
-    AstValue $ "  " ++ symObj ++ " env cont derefValue Nothing "]
-
- -- Compiled version of argObj
- compiledObj <- compileExpr env argObj symCompiledObj Nothing 
-
- -- Function to check looked-up var and call into appropriate handlers; based on code from Core
- --
- -- This is so verbose because we need to have overloads of symObj to deal with many possible inputs.
- -- FUTURE: consider making these functions part of the runtime.
- compObj <- return $ AstValue $ "" ++
-              symObj ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-              symObj ++ " _ _ obj@(List []) _ = throwError $ TypeMismatch \"pair\" obj\n" ++
--- TODO: below, we want to make sure obj is of the right type. if so, compile obj and call into the "set" 
---       function below to do the actual set-car
-              symObj ++ " e c obj@(List (_ : _)) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
-              symObj ++ " e c obj@(DottedList _ _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
-              symObj ++ " _ _ obj _ = throwError $ TypeMismatch \"pair\" obj\n"
-
- -- Function to do the actual (set!), based on code from Core
- --
- -- This is so verbose because we need to have overloads of symObj to deal with many possible inputs.
- -- FUTURE: consider making these functions part of the runtime.
- compDoSet <- return $ AstValue $ "" ++
-              symDoSet ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-              symDoSet ++ " e c obj (Just [List (l : _)]) = do\n" ++
-                          "   l' <- recDerefPtrs l\n" ++
-                          "   obj' <- recDerefPtrs obj\n" ++
-                          "   (cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
-              symDoSet ++ " e c obj (Just [DottedList (l : _) _]) = do\n" ++
-                          "   l' <- recDerefPtrs l\n" ++
-                          "   obj' <- recDerefPtrs obj\n" ++
-                          "   (cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
-              symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
-
- -- Return a list of all the compiled code
- return $ [entryPt, compGetVar, compObj, compDoSet] ++ compiledObj
+compile env ast@(List [Atom "set-cdr!", Atom var, argObj]) copts = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symGetVar <- _gensym "setCdrGetVar"
+    Atom symCompiledObj <- _gensym "setCdrCompiledObj"
+    Atom symObj <- _gensym "setCdrObj"
+    Atom symDoSet <- _gensym "setCdrDoSet"
+   
+    -- Code to all into next continuation from copts, if one exists
+    let finalContinuation = case copts of
+          (CompileOptions _ _ _ (Just nextFunc)) -> "continueEval e (makeCPS e c " ++ nextFunc ++ ")\n"
+          _ -> "continueEval e c\n"
+   
+    -- Entry point that allows set-car! to be redefined
+    entryPt <- compileSpecialFormEntryPoint "set-car!" symGetVar copts
+   
+    -- Function to read existing var
+    compGetVar <- return $ AstFunction symGetVar " env cont idx _ " [
+       AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
+       AstValue $ "  derefValue <- recDerefPtrs result",
+       AstValue $ "  " ++ symObj ++ " env cont derefValue Nothing "]
+   
+    -- Compiled version of argObj
+    compiledObj <- compileExpr env argObj symCompiledObj Nothing 
+   
+    -- Function to check looked-up var and call into appropriate handlers; based on code from Core
+    --
+    -- This is so verbose because we need to have overloads of symObj to deal with many possible inputs.
+    -- FUTURE: consider making these functions part of the runtime.
+    compObj <- return $ AstValue $ "" ++
+                 symObj ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
+                 symObj ++ " _ _ obj@(List []) _ = throwError $ TypeMismatch \"pair\" obj\n" ++
+   -- TODO: below, we want to make sure obj is of the right type. if so, compile obj and call into the "set" 
+   --       function below to do the actual set-car
+                 symObj ++ " e c obj@(List (_ : _)) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
+                 symObj ++ " e c obj@(DottedList _ _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
+                 symObj ++ " _ _ obj _ = throwError $ TypeMismatch \"pair\" obj\n"
+   
+    -- Function to do the actual (set!), based on code from Core
+    --
+    -- This is so verbose because we need to have overloads of symObj to deal with many possible inputs.
+    -- FUTURE: consider making these functions part of the runtime.
+    compDoSet <- return $ AstValue $ "" ++
+                 symDoSet ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
+                 symDoSet ++ " e c obj (Just [List (l : _)]) = do\n" ++
+                             "   l' <- recDerefPtrs l\n" ++
+                             "   obj' <- recDerefPtrs obj\n" ++
+                             "   (cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
+                 symDoSet ++ " e c obj (Just [DottedList (l : _) _]) = do\n" ++
+                             "   l' <- recDerefPtrs l\n" ++
+                             "   obj' <- recDerefPtrs obj\n" ++
+                             "   (cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
+                 symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
+   
+    -- Return a list of all the compiled code
+    return $ [entryPt, compGetVar, compObj, compDoSet] ++ compiledObj)
 
 -- TODO: eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "set-cdr!" : args)) = do
-compile env (List [Atom "vector-set!", Atom var, i, object]) copts = do
- Atom symCompiledIdx <- _gensym "vectorSetIdx"
- Atom symCompiledObj <- _gensym "vectorSetObj"
- Atom symUpdateVec <- _gensym "vectorSetUpdate"
- Atom symIdxWrapper <- _gensym "vectorSetIdxWrapper"
-
- -- Entry point that allows this form to be redefined
- entryPt <- compileSpecialFormEntryPoint "vector-set!" symCompiledIdx copts
- -- Compile index, then use a wrapper to pass it as an arg while compiling obj
- compiledIdx <- compileExpr env i symCompiledIdx (Just symIdxWrapper) 
- compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
-    AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") Nothing " ]
- compiledObj <- compileExpr env object symCompiledObj Nothing
- -- Do actual update
- compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
-    AstValue $ "  vec <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  result <- updateVector vec idx obj >>= updateObject env \"" ++ var ++ "\"",
-    createAstCont copts "result" ""]
-
- return $ [entryPt, compiledIdxWrapper, compiledUpdate] ++ compiledIdx ++ compiledObj
+compile env ast@(List [Atom "vector-set!", Atom var, i, object]) copts = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symCompiledIdx <- _gensym "vectorSetIdx"
+    Atom symCompiledObj <- _gensym "vectorSetObj"
+    Atom symUpdateVec <- _gensym "vectorSetUpdate"
+    Atom symIdxWrapper <- _gensym "vectorSetIdxWrapper"
+   
+    -- Entry point that allows this form to be redefined
+    entryPt <- compileSpecialFormEntryPoint "vector-set!" symCompiledIdx copts
+    -- Compile index, then use a wrapper to pass it as an arg while compiling obj
+    compiledIdx <- compileExpr env i symCompiledIdx (Just symIdxWrapper) 
+    compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
+       AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") Nothing " ]
+    compiledObj <- compileExpr env object symCompiledObj Nothing
+    -- Do actual update
+    compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
+       AstValue $ "  vec <- getVar env \"" ++ var ++ "\"",
+       AstValue $ "  result <- updateVector vec idx obj >>= updateObject env \"" ++ var ++ "\"",
+       createAstCont copts "result" ""]
+   
+    return $ [entryPt, compiledIdxWrapper, compiledUpdate] ++ compiledIdx ++ compiledObj)
 
 -- TODO: eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
 -- TODO: eval env cont fargs@(List (Atom "vector-set!" : args)) = do 
 
-compile env (List [Atom "bytevector-u8-set!", Atom var, i, object]) copts = do
- Atom symCompiledIdx <- _gensym "bytevectorSetIdx"
- Atom symCompiledObj <- _gensym "bytevectorSetObj"
- Atom symUpdateVec <- _gensym "bytevectorSetUpdate"
- Atom symIdxWrapper <- _gensym "bytevectorSetIdxWrapper"
-
- -- Entry point that allows this form to be redefined
- entryPt <- compileSpecialFormEntryPoint "bytevector-u8-set!" symCompiledIdx copts
- -- Compile index, then use a wrapper to pass it as an arg while compiling obj
- compiledIdx <- compileExpr env i symCompiledIdx (Just symIdxWrapper) 
- compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
-    AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") Nothing " ]
- compiledObj <- compileExpr env object symCompiledObj Nothing
- -- Do actual update
- compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
-    AstValue $ "  vec <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  result <- updateByteVector vec idx obj >>= updateObject env \"" ++ var ++ "\"",
-    createAstCont copts "result" ""]
-
- return $ [entryPt, compiledIdxWrapper, compiledUpdate] ++ compiledIdx ++ compiledObj
+compile env ast@(List [Atom "bytevector-u8-set!", Atom var, i, object]) copts = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symCompiledIdx <- _gensym "bytevectorSetIdx"
+    Atom symCompiledObj <- _gensym "bytevectorSetObj"
+    Atom symUpdateVec <- _gensym "bytevectorSetUpdate"
+    Atom symIdxWrapper <- _gensym "bytevectorSetIdxWrapper"
+   
+    -- Entry point that allows this form to be redefined
+    entryPt <- compileSpecialFormEntryPoint "bytevector-u8-set!" symCompiledIdx copts
+    -- Compile index, then use a wrapper to pass it as an arg while compiling obj
+    compiledIdx <- compileExpr env i symCompiledIdx (Just symIdxWrapper) 
+    compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
+       AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") Nothing " ]
+    compiledObj <- compileExpr env object symCompiledObj Nothing
+    -- Do actual update
+    compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
+       AstValue $ "  vec <- getVar env \"" ++ var ++ "\"",
+       AstValue $ "  result <- updateByteVector vec idx obj >>= updateObject env \"" ++ var ++ "\"",
+       createAstCont copts "result" ""]
+   
+    return $ [entryPt, compiledIdxWrapper, compiledUpdate] ++ compiledIdx ++ compiledObj)
 
 -- TODO: eval env cont args@(List [Atom "bytevector-u8-set!" , nonvar , _ , _]) = do 
 -- TODO: eval env cont fargs@(List (Atom "bytevector-u8-set!" : args)) = do 
 
-compile env (List [Atom "hash-table-set!", Atom var, rkey, rvalue]) copts = do
- Atom symCompiledIdx <- _gensym "hashTableSetIdx"
- Atom symCompiledObj <- _gensym "hashTableSetObj"
- Atom symUpdateVec <- _gensym "hashTableSetUpdate"
- Atom symIdxWrapper <- _gensym "hashTableSetIdxWrapper"
+compile env ast@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) copts = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symCompiledIdx <- _gensym "hashTableSetIdx"
+    Atom symCompiledObj <- _gensym "hashTableSetObj"
+    Atom symUpdateVec <- _gensym "hashTableSetUpdate"
+    Atom symIdxWrapper <- _gensym "hashTableSetIdxWrapper"
+   
+    -- Entry point that allows this form to be redefined
+    entryPt <- compileSpecialFormEntryPoint "hash-table-set!" symCompiledIdx copts
+    -- Compile index, then use a wrapper to pass it as an arg while compiling obj
+    compiledIdx <- compileExpr env rkey symCompiledIdx (Just symIdxWrapper) 
+    compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
+       AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") Nothing " ]
+    compiledObj <- compileExpr env rvalue symCompiledObj Nothing
+    -- Do actual update
+    compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [rkey]) " [
+       -- TODO: this should be more robust, than just assuming ht is a HashTable
+       AstValue $ "  HashTable ht <- getVar env \"" ++ var ++ "\"",
+       AstValue $ "  HashTable ht' <- recDerefPtrs $ HashTable ht",
+       AstValue $ "  result <- updateObject env \"" ++ var ++ "\" (HashTable $ Data.Map.insert rkey obj ht') ",
+       createAstCont copts "result" ""]
+   
+    return $ [entryPt, compiledIdxWrapper, compiledUpdate] ++ compiledIdx ++ compiledObj)
 
- -- Entry point that allows this form to be redefined
- entryPt <- compileSpecialFormEntryPoint "hash-table-set!" symCompiledIdx copts
- -- Compile index, then use a wrapper to pass it as an arg while compiling obj
- compiledIdx <- compileExpr env rkey symCompiledIdx (Just symIdxWrapper) 
- compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
-    AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") Nothing " ]
- compiledObj <- compileExpr env rvalue symCompiledObj Nothing
- -- Do actual update
- compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [rkey]) " [
-    -- TODO: this should be more robust, than just assuming ht is a HashTable
-    AstValue $ "  HashTable ht <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  HashTable ht' <- recDerefPtrs $ HashTable ht",
-    AstValue $ "  result <- updateObject env \"" ++ var ++ "\" (HashTable $ Data.Map.insert rkey obj ht') ",
-    createAstCont copts "result" ""]
-
- return $ [entryPt, compiledIdxWrapper, compiledUpdate] ++ compiledIdx ++ compiledObj
 -- TODO: eval env cont args@(List [Atom "hash-table-set!" , nonvar , _ , _]) = do
 -- TODO: eval env cont fargs@(List (Atom "hash-table-set!" : args)) = do
 
-compile env (List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
- Atom symCompiledIdx <- _gensym "hashTableDeleteIdx"
- Atom symDoDelete <- _gensym "hashTableDelete"
-
- -- Entry point that allows this form to be redefined
- entryPt <- compileSpecialFormEntryPoint "hash-table-delete!" symCompiledIdx copts
- -- Compile index, then use a wrapper to pass it as an arg while compiling obj
- compiledIdx <- compileExpr env rkey symCompiledIdx (Just symDoDelete) 
- -- Do actual update
- compiledUpdate <- return $ AstFunction symDoDelete " env cont rkey _ " [
-    -- TODO: this should be more robust, than just assuming ht is a HashTable
-    AstValue $ "  HashTable ht <- getVar env \"" ++ var ++ "\"",
-    AstValue $ "  HashTable ht' <- recDerefPtrs $ HashTable ht",
-    AstValue $ "  result <- updateObject env \"" ++ var ++ "\" (HashTable $ Data.Map.delete rkey ht') ",
-    createAstCont copts "result" ""]
-
- return $ [entryPt, compiledUpdate] ++ compiledIdx
+compile env ast@(List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symCompiledIdx <- _gensym "hashTableDeleteIdx"
+    Atom symDoDelete <- _gensym "hashTableDelete"
+   
+    -- Entry point that allows this form to be redefined
+    entryPt <- compileSpecialFormEntryPoint "hash-table-delete!" symCompiledIdx copts
+    -- Compile index, then use a wrapper to pass it as an arg while compiling obj
+    compiledIdx <- compileExpr env rkey symCompiledIdx (Just symDoDelete) 
+    -- Do actual update
+    compiledUpdate <- return $ AstFunction symDoDelete " env cont rkey _ " [
+       -- TODO: this should be more robust, than just assuming ht is a HashTable
+       AstValue $ "  HashTable ht <- getVar env \"" ++ var ++ "\"",
+       AstValue $ "  HashTable ht' <- recDerefPtrs $ HashTable ht",
+       AstValue $ "  result <- updateObject env \"" ++ var ++ "\" (HashTable $ Data.Map.delete rkey ht') ",
+       createAstCont copts "result" ""]
+   
+    return $ [entryPt, compiledUpdate] ++ compiledIdx)
 -- TODO: eval env cont fargs@(List (Atom "hash-table-delete!" : args)) = do
 
-
-compile env (List (Atom "%import" : args)) copts = do
-    throwError $ NotImplemented $ "%import, with args: " ++ show args
+compile env ast@(List (Atom "%import" : args)) copts = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    throwError $ NotImplemented $ "%import, with args: " ++ show args)
 
 compile env (List [Atom "load", filename, envSpec]) copts = do
+  -- Explicitly do NOT call compileSpecialFormBody here, since load is not normally a special form
 
   -- F*ck it, just run the evaluator here since filename is req'd at compile time
  -- TODO: error handling for string below
@@ -866,11 +882,11 @@ compileSpecialForm formName formCode copts = do
 
 -- |A wrapper for each special form that allows the form variable 
 --  (EG: "if") to be redefined at compile time
-compileSpecialFormBody env ast@(List (Atom fnc : args)) copts spForm = do
+compileSpecialFormBody env ast@(List (Atom fnc : args)) copts@(CompileOptions _ _ _ nextFunc) spForm = do
   isDefined <- liftIO $ isRecBound env fnc
   case isDefined of
     True -> mfunc env ast compileApply copts 
-    False -> spForm
+    False -> spForm nextFunc
 
 -- Compile an intermediate expression (such as an arg to if) and 
 -- call into the next continuation with it's value
