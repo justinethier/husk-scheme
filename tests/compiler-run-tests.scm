@@ -4,7 +4,7 @@
 (display "0\n0\n" p)
 (close-output-port p)
 ; Standard tests
-;(let () (load "t-backquote.scm")) ; Cons error, probably in er-macro handling
+(let () (load "t-backquote.scm"))
 (let () (load "t-case.scm"))
 (let () (load "t-closure.scm"))
 (let () (load "t-cond.scm"))
@@ -21,10 +21,10 @@
 ;(let () (load "t-scoping.scm")) ; "Not implemented" error
 (let () (load "t-special-forms.scm"))
 (let () (load "t-standard-procedures.scm"))
-;(let () (load "t-stdlib.scm")) ; Variable 'bar' not defined error
+;(let () (load "t-stdlib.scm")) ; Variable 'bar' not defined error, due to compiler var validation
 (let () (load "t-storage.scm"))
 (let () (load "t-string.scm"))
-;(let () (load "t-vector.scm")) ; Unbound variable error, looks macro related
+(let () (load "t-vector.scm"))
 (let () (load "t-bytevector.scm"))
 ;; Macro tests
 (let () (load "t-macro.scm"))
