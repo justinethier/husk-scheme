@@ -88,11 +88,10 @@ exRename useEnv renameEnv defEnv [Atom a] = do
             _ <- defineVar useEnv renamed value -- divert value to Use Env
             _ <- defineNamespacedVar useEnv 'r' a $ Atom renamed -- Record renamed sym
 
--- TODO: this is temporary testing code
---            List diverted <- getNamespacedVar useEnv " " "diverted"
---            _ <- setNamespacedVar useEnv " " "diverted" $ 
---                List (diverted ++ [List [Atom renamed, Atom a]])
--- END
+            -- Keep track of diverted values for use by the compiler
+            List diverted <- getNamespacedVar useEnv ' ' "diverted"
+            _ <- setNamespacedVar useEnv ' ' "diverted" $ 
+                List (diverted ++ [List [Atom renamed, Atom a]])
 
             return $ Atom renamed
      else
