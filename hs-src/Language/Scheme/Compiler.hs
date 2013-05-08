@@ -38,25 +38,6 @@ import Data.Ratio
 import Data.Word
 -- import Debug.Trace
 
--- -- TODO: this should probably go somewhere more general
--- isSpecialForm :: String -> Bool
--- isSpecialForm a = do
---         a == "if"
---      || a == "let-syntax" 
---      || a == "letrec-syntax" 
---      || a == "define-syntax" 
---      || a == "define"  
---      || a == "set!"
---      || a == "lambda"
---      || a == "quote"
---      || a == "expand"
---      || a == "string-set!"
---      || a == "set-car!"
---      || a == "set-cdr!"
---      || a == "vector-set!"
---      || a == "hash-table-set!"
---      || a == "hash-table-delete!"
-
 -- |A type to store options passed to compile
 --  eventually all of this might be able to be 
 --  integrated into a Compile monad
@@ -358,56 +339,32 @@ compile env (List [Atom "if", predic, conseq]) copts =
  compile env (List [Atom "if", predic, conseq, Nil ""]) copts
 
 compile env ast@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions tfnc uvar uargs nextFunc) = do
- -- FUTURE: think about it, these could probably be part of compileExpr
- Atom symPredicate <- _gensym "ifPredic"
- Atom symCheckPredicate <- _gensym "compiledIfPredicate"
- Atom symConsequence <- _gensym "compiledConsequence"
- Atom symAlternate <- _gensym "compiledAlternative"
+--  compileSpecialFormBody
+  isDefined <- liftIO $ isRecBound env "if"
+  case isDefined of
+    True -> mfunc env ast compileApply copts 
+    False -> do
+      Atom symPredicate <- _gensym "ifPredic"
+      Atom symCheckPredicate <- _gensym "compiledIfPredicate"
+      Atom symConsequence <- _gensym "compiledConsequence"
+      Atom symAlternate <- _gensym "compiledAlternative"
 
-
--- TODO: 
--- CRAZY IDEA - instead of trying to do isRecBound at runtime, what if the code
--- did the check at compile time? that way there would be less code generated and we
--- could just call out of here into mfunc. Sure there are some edge cases for a REPL
--- but since those only revolve around redefinitions of special forms I think they are
--- acceptable.
-
-
-
--- -- TODO: extract this into a common function
---  -- Create the next continuation for the 'apply' branch.
---  -- Either keep going to the next func, if there is one
---  let nextCont = case nextFunc of
---                     Just nf -> "(makeCPS env cont " ++ nf ++ ")"
---                     Nothing -> "(makeNullContinuation env)"
---  Atom symApply <- _gensym "ifApply"
-
- -- Entry point; ensure if is not rebound
- f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"if\"",
-       AstValue $ "  if bound ",
-       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
---       AstValue $ "     then do " ++ symApply ++ " env " ++ nextCont ++ " (Nil \"\") [] ",
-       AstValue $ "     else do " ++ symPredicate ++ " env (makeCPS env cont " ++ symCheckPredicate ++ ") (Nil \"\") [] "
-       ]
- -- Compile expression for if's args
- compPredicate <- compileExpr env predic symPredicate Nothing      -- Do not want to call into nextFunc in the middle of (if)
- compConsequence <- compileExpr env conseq symConsequence nextFunc -- pick up at nextFunc after consequence
- compAlternate <- compileExpr env alt symAlternate nextFunc        -- or...pick up at nextFunc after alternate
- -- Special case because we need to check the predicate's value
- compCheckPredicate <- return $ AstFunction symCheckPredicate " env cont result _ " [
-    AstValue $ "  case result of ",
-    AstValue $ "    Bool False -> " ++ symAlternate ++ " env cont (Nil \"\") [] ",
-    AstValue $ "    _ -> " ++ symConsequence ++ " env cont (Nil \"\") [] "]
-
---  -- Edge case: use apply when `if` is redefined:
--- -- TODO: are we OK reusing the compile options?? I think so...?
--- -- TODO: this really baloons the size of the compiled code. 
--- --       it would be nice if each expression could be compiled once and used by either branch
--- --       of course, that is tricky because each branch has a different continuation chain
---  compApply <- mfunc env ast compileApply $ CompileOptions tfnc uvar uargs (Just symApply)
-
- -- Join compiled code together
- return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ compConsequence ++ compAlternate -- ++ compApply
+      -- Entry point; ensure if is not rebound
+      f <- return [AstValue $ "  " ++ symPredicate ++
+                              " env (makeCPS env cont " ++ symCheckPredicate ++ ") " ++ 
+                              " (Nil \"\") [] "]
+      -- Compile expression for if's args
+      compPredicate <- compileExpr env predic symPredicate Nothing      -- Do not want to call into nextFunc in the middle of (if)
+      compConsequence <- compileExpr env conseq symConsequence nextFunc -- pick up at nextFunc after consequence
+      compAlternate <- compileExpr env alt symAlternate nextFunc        -- or...pick up at nextFunc after alternate
+      -- Special case because we need to check the predicate's value
+      compCheckPredicate <- return $ AstFunction symCheckPredicate " env cont result _ " [
+         AstValue $ "  case result of ",
+         AstValue $ "    Bool False -> " ++ symAlternate ++ " env cont (Nil \"\") [] ",
+         AstValue $ "    _ -> " ++ symConsequence ++ " env cont (Nil \"\") [] "]
+      
+      -- Join compiled code together
+      return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ compConsequence ++ compAlternate
 
 compile env (List [Atom "set!", Atom var, form]) copts@(CompileOptions _ _ _ _) = do
  Atom symDefine <- _gensym "setFunc"
@@ -895,8 +852,6 @@ meval env cont lisp = mfunc env cont lisp eval
 mprepareApply env cont lisp = mfunc env cont lisp prepareApply
 -}
 
-
--- TODO: a helper function to allow special forms to be redefined at runtime...
 compileSpecialFormEntryPoint :: String -> String -> CompOpts -> IOThrowsError HaskAST
 compileSpecialFormEntryPoint formName formSym copts = do
  compileSpecialForm formName ("do " ++ formSym ++ " env cont (Nil \"\") []") copts
@@ -909,7 +864,13 @@ compileSpecialForm formName formCode copts = do
        AstValue $ "     else " ++ formCode]
  return $ createAstFunc copts f
 
-
+-- |A wrapper for each special form that allows the form variable 
+--  (EG: "if") to be redefined at compile time
+compileSpecialFormBody env ast@(List (Atom fnc : args)) copts spForm = do
+  isDefined <- liftIO $ isRecBound env fnc
+  case isDefined of
+    True -> mfunc env ast compileApply copts 
+    False -> spForm
 
 -- Compile an intermediate expression (such as an arg to if) and 
 -- call into the next continuation with it's value
