@@ -2,6 +2,7 @@ v3.10
 --------
 
 - Enhanced the compiler to detect undefined variables and report an error at compile time, instead of generating code that throws a runtime error.
+- Added `load` as a compiler special form, to allow code to be included at compile time.
 
 v3.9
 --------
