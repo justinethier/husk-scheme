@@ -38,6 +38,25 @@ import Data.Ratio
 import Data.Word
 -- import Debug.Trace
 
+-- -- TODO: this should probably go somewhere more general
+-- isSpecialForm :: String -> Bool
+-- isSpecialForm a = do
+--         a == "if"
+--      || a == "let-syntax" 
+--      || a == "letrec-syntax" 
+--      || a == "define-syntax" 
+--      || a == "define"  
+--      || a == "set!"
+--      || a == "lambda"
+--      || a == "quote"
+--      || a == "expand"
+--      || a == "string-set!"
+--      || a == "set-car!"
+--      || a == "set-cdr!"
+--      || a == "vector-set!"
+--      || a == "hash-table-set!"
+--      || a == "hash-table-delete!"
+
 -- |A type to store options passed to compile
 --  eventually all of this might be able to be 
 --  integrated into a Compile monad
@@ -338,16 +357,36 @@ compile env lisp@(List [Atom "define-syntax", Atom keyword,
 compile env (List [Atom "if", predic, conseq]) copts = 
  compile env (List [Atom "if", predic, conseq, Nil ""]) copts
 
-compile env (List [Atom "if", predic, conseq, alt]) copts@(CompileOptions _ _ _ nextFunc) = do
+compile env ast@(List [Atom "if", predic, conseq, alt]) copts@(CompileOptions tfnc uvar uargs nextFunc) = do
  -- FUTURE: think about it, these could probably be part of compileExpr
  Atom symPredicate <- _gensym "ifPredic"
  Atom symCheckPredicate <- _gensym "compiledIfPredicate"
  Atom symConsequence <- _gensym "compiledConsequence"
  Atom symAlternate <- _gensym "compiledAlternative"
+
+
+-- TODO: 
+-- CRAZY IDEA - instead of trying to do isRecBound at runtime, what if the code
+-- did the check at compile time? that way there would be less code generated and we
+-- could just call out of here into mfunc. Sure there are some edge cases for a REPL
+-- but since those only revolve around redefinitions of special forms I think they are
+-- acceptable.
+
+
+
+-- -- TODO: extract this into a common function
+--  -- Create the next continuation for the 'apply' branch.
+--  -- Either keep going to the next func, if there is one
+--  let nextCont = case nextFunc of
+--                     Just nf -> "(makeCPS env cont " ++ nf ++ ")"
+--                     Nothing -> "(makeNullContinuation env)"
+--  Atom symApply <- _gensym "ifApply"
+
  -- Entry point; ensure if is not rebound
  f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"if\"",
        AstValue $ "  if bound ",
        AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
+--       AstValue $ "     then do " ++ symApply ++ " env " ++ nextCont ++ " (Nil \"\") [] ",
        AstValue $ "     else do " ++ symPredicate ++ " env (makeCPS env cont " ++ symCheckPredicate ++ ") (Nil \"\") [] "
        ]
  -- Compile expression for if's args
@@ -359,8 +398,16 @@ compile env (List [Atom "if", predic, conseq, alt]) copts@(CompileOptions _ _ _ 
     AstValue $ "  case result of ",
     AstValue $ "    Bool False -> " ++ symAlternate ++ " env cont (Nil \"\") [] ",
     AstValue $ "    _ -> " ++ symConsequence ++ " env cont (Nil \"\") [] "]
+
+--  -- Edge case: use apply when `if` is redefined:
+-- -- TODO: are we OK reusing the compile options?? I think so...?
+-- -- TODO: this really baloons the size of the compiled code. 
+-- --       it would be nice if each expression could be compiled once and used by either branch
+-- --       of course, that is tricky because each branch has a different continuation chain
+--  compApply <- mfunc env ast compileApply $ CompileOptions tfnc uvar uargs (Just symApply)
+
  -- Join compiled code together
- return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ compConsequence ++ compAlternate
+ return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ compConsequence ++ compAlternate -- ++ compApply
 
 compile env (List [Atom "set!", Atom var, form]) copts@(CompileOptions _ _ _ _) = do
  Atom symDefine <- _gensym "setFunc"
