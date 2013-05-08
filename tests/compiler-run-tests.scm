@@ -18,7 +18,7 @@
 (let () (load "t-iteration.scm"))
 (let () (load "t-numerical-ops.scm"))
 (let () (load "t-parser.scm"))
-;(let () (load "t-scoping.scm")) ; "Not implemented" error
+(let () (load "t-scoping.scm"))
 (let () (load "t-special-forms.scm"))
 (let () (load "t-standard-procedures.scm"))
 (let () (load "t-stdlib.scm"))
