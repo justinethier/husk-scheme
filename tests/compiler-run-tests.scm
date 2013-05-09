@@ -34,7 +34,7 @@
 (let () (load "t-er-macro.scm"))
 ;; SRFI tests
 ;(let () (load "t-srfi-1.scm")) ; There is a *lot* of code here, may be difficult to test or have long compiles
-;(let () (load "t-srfi-2.scm")) ; Get a variable 'and-let*' not defined error
+(let () (load "t-srfi-2.scm"))
 ;; Summarize test results
 (let () (load "summarize.scm"))
 (delete-file "scm-unit.tmp")

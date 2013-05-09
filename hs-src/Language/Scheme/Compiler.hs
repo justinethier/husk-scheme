@@ -403,6 +403,16 @@ compile env ast@(List [Atom "define", Atom var, form]) copts@(CompileOptions _ _
    
     -- Store var in huskc's env for macro processing (and same for other vers of define)
     _ <- defineVar env var form
+
+
+    -- WORKAROUND #1
+    -- Special case to support require-extension
+    case form of
+        List [Atom "current-environment"] -> 
+            defineVar env var $ LispEnv env
+        _ -> return $ Nil "" 
+    -- End special case
+
    
     -- Entry point; ensure var is not rebound
     f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
@@ -765,7 +775,19 @@ compile env (List [Atom "load", filename, envSpec]) copts = do
   Atom symLoad <- _gensym "load"
   compEnv <- compileExpr env envSpec symEnv
                          Nothing -- Return env to our custom func
-  compLoad <- compileLisp env filename' symLoad Nothing
+
+  -- WORKAROUND #1
+  -- Special case to support require-extension
+  env' <- case envSpec of
+               Atom a -> do
+                   v <- getVar env a
+                   case v of
+                       LispEnv e -> return e
+                       _ -> return env
+               _ -> return env
+  -- End special case
+
+  compLoad <- compileLisp env' filename' symLoad Nothing
  
   -- Entry point
   f <- return $ [
