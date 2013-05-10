@@ -1371,5 +1371,10 @@ primitives = [("+", numAdd),
               ("string", buildString),
               ("make-string", makeString),
 
-              ("boolean?", isBoolean)]
+              ("boolean?", isBoolean),
 
+              ("husk-interpreter?", isInterpreter)]
+
+-- |Custom function used internally in the test suite
+isInterpreter :: [LispVal] -> ThrowsError LispVal
+isInterpreter _ = return $ Bool True
