@@ -71,60 +71,58 @@
 ;
 ;; The below works fine in huski but causes an infinite loop when compiled.
 ;; Interestingly, chicken scheme has the same behavior.
-;; TODO:
-;;   Need to figure out how to keep these in the interpreter but disable them 
-;;   in compiled code
-
-;; (assert/equal (test-cont #f)
-;;               'false)
-;; 
-;; (assert/equal (if (call/cc
-;;                     (lambda (c)
-;;                         (set! test-cont c)
-;;                         #t))
-;;                     'true2)
-;;               'true2)
-;; (assert/equal (test-cont #t)
-;;               'true2)
-;; 
-;; (assert/equal (begin 1 2 (call/cc
-;;                            (lambda (c)
-;;                              (set! test-cont c)
-;;                              3))
-;;                      4)
-;;               4)
-;; (assert/equal (test-cont 4) 4)
-;; (assert/equal (test-cont 3) 4)
-;; 
-;; (define a #f)
-;; (set! a (call/cc (lambda (c) (set! test-cont c) 1)))
-;; (assert/equal a 1)
-;; (test-cont 2)
-;; (assert/equal a 2)
-;; 
-;; ; General function application
-;; ; Tests from: http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
-;; (define handle #f)
-;; (define test-value #f)
-;; (set! test-value (+ 2 (call/cc (lambda (k) (set! handle k) 2))))
-;; (set! test-value (handle 20))
-;; (assert/equal test-value 22)
-;; (set! test-value (handle 100))
-;; (assert/equal test-value 102)
-;; 
-;; (define test "abcdefg")
-;; (string-fill! test (call/cc (lambda (k) (set! handle k) #\a)))
-;; (assert/equal test "aaaaaaa")
-;; (set! test (handle #\b))
-;; (assert/equal test "bbbbbbb")
-;; 
-;; (define test-value #f)
-;; (define test-cont #f)
-;; `(a b c ,(call/cc (lambda (k) (set! test-cont k) 'd)) e f g)
-;; (set! test-value (test-cont 1))
-;; ; For some reason, returns false.
-;; ; But this value is confirmed by csi so not worried about it...
-;; (assert/equal test-value #f)
+(if (husk-interpreter?)
+  (begin
+    (assert/equal (test-cont #f)
+                  'false)
+    
+    (assert/equal (if (call/cc
+                        (lambda (c)
+                            (set! test-cont c)
+                            #t))
+                        'true2)
+                  'true2)
+    (assert/equal (test-cont #t)
+                  'true2)
+    
+    (assert/equal (begin 1 2 (call/cc
+                               (lambda (c)
+                                 (set! test-cont c)
+                                 3))
+                         4)
+                  4)
+    (assert/equal (test-cont 4) 4)
+    (assert/equal (test-cont 3) 4)
+    
+    (define a #f)
+    (set! a (call/cc (lambda (c) (set! test-cont c) 1)))
+    (assert/equal a 1)
+    (test-cont 2)
+    (assert/equal a 2)
+    
+    ; General function application
+    ; Tests from: http://tech.phillipwright.com/2010/05/23/continuations-in-scheme/
+    (define handle #f)
+    (define test-value #f)
+    (set! test-value (+ 2 (call/cc (lambda (k) (set! handle k) 2))))
+    (set! test-value (handle 20))
+    (assert/equal test-value 22)
+    (set! test-value (handle 100))
+    (assert/equal test-value 102)
+    
+    (define test "abcdefg")
+    (string-fill! test (call/cc (lambda (k) (set! handle k) #\a)))
+    (assert/equal test "aaaaaaa")
+    (set! test (handle #\b))
+    (assert/equal test "bbbbbbb")
+    
+    (define test-value #f)
+    (define test-cont #f)
+    `(a b c ,(call/cc (lambda (k) (set! test-cont k) 'd)) e f g)
+    (set! test-value (test-cont 1))
+    ; For some reason, returns false.
+    ; But this value is confirmed by csi so not worried about it...
+    (assert/equal test-value #f)))
 
 ; Tests for passing one *or more* values to a continuation
 (assert/equal (call-with-values (lambda () (values 1)) (lambda (a) a)) 1)
