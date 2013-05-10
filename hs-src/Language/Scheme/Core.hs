@@ -1377,4 +1377,6 @@ primitives = [("+", numAdd),
 
 -- |Custom function used internally in the test suite
 isInterpreter :: [LispVal] -> ThrowsError LispVal
-isInterpreter _ = return $ Bool True
+isInterpreter [] = return $ Bool True
+isInterpreter _ = return $ Bool False
+

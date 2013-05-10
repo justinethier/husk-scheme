@@ -764,11 +764,8 @@ compile env ast@(List (Atom "%import" : args)) copts = do
   compileSpecialFormBody env ast copts (\ nextFunc -> do
     throwError $ NotImplemented $ "%import, with args: " ++ show args)
 
--- TODO: this special form is not working out so well, might work instead
--- to inject the following line at the top of the 'run' function:
---  _ <- defineVar env "husk-interpreter?" $ PrimitiveFunc (\ _ -> return $ Bool False)
--- compile env (List [a@(Atom "husk-interpreter?")]) copts = do
---     mfunc env (List [a, Bool True]) compileApply copts 
+compile env (List [a@(Atom "husk-interpreter?")]) copts = do
+    mfunc env (List [a, Bool True]) compile copts 
 
 compile env (List [Atom "load", filename, envSpec]) copts = do
   -- Explicitly do NOT call compileSpecialFormBody here, since load is not normally a special form
