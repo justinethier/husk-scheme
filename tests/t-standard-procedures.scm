@@ -41,11 +41,12 @@
 ;(assert/equal
 ;    (eqv? (cons 1 2) (cons 1 2))
 ;     #f)
-(assert/equal
-    (eqv? (lambda () 1)
+(if (husk-interpreter?)
+    (assert/equal
+        (eqv? (lambda () 1)
           (lambda () 2))
-    #f
-    "functions not eqv")
+        #f
+        "functions not eqv"))
 (assert/equal
     (eqv? #f 'nil)
     #f
@@ -89,12 +90,13 @@
 ;    (eqv? f g))
 ;                                ===>  unspecified
 
-(assert/equal
-    (letrec ((f (lambda () (if (eqv? f g) 'f 'both)))
+(if (husk-interpreter?)
+    (assert/equal
+        (letrec ((f (lambda () (if (eqv? f g) 'f 'both)))
                   (g (lambda () (if (eqv? f g) 'g 'both))))
-        (eqv? f g))
-    #f
-    "f / g not eqv")
+            (eqv? f g))
+        #f
+        "f / g not eqv"))
 
 (assert/equal
     (let ((x '(a)))
