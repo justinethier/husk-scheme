@@ -385,7 +385,7 @@ eqv [x@(Func _ _ xBody _), y@(Func _ _ yBody _)] = do
 eqv [x@(HFunc _ _ _ _), y@(HFunc _ _ _ _)] = do
   if (show x) /= (show y)
      then return $ Bool False
-     else return $ Bool True -- TODO: compare high-order functions... eqvList eqv [List xBody, List yBody] 
+     else return $ Bool True
 --
 eqv [x@(PrimitiveFunc _), y@(PrimitiveFunc _)] = return $ Bool $ (show x) == (show y)
 eqv [x@(IOFunc _), y@(IOFunc _)] = return $ Bool $ (show x) == (show y)
