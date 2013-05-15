@@ -415,10 +415,8 @@ compile env ast@(List [Atom "define", Atom var, form]) copts@(CompileOptions _ _
 
    
     -- Entry point; ensure var is not rebound
-    f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
-          AstValue $ "  if bound ",
-          AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-          AstValue $ "     else do " ++ symDefine ++ " env cont (Nil \"\") []" ]
+    f <- return $ [
+          AstValue $ "  " ++ symDefine ++ " env cont (Nil \"\") []" ]
     compDefine <- compileExpr env form symDefine $ Just symMakeDefine
     compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
        AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result",
@@ -439,12 +437,10 @@ compile env ast@(List (Atom "define" : List (Atom var : fparams) : fbody)) copts
     _ <- makeNormalFunc env fparams fbody >>= defineVar env var
    
     -- Entry point; ensure var is not rebound
-    f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
-          AstValue $ "  if bound ",
-          AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-          AstValue $ "     else do result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
-          AstValue $ "             _ <- defineVar env \"" ++ var ++ "\" result ",
-          createAstCont copts "result" "           "
+    f <- return $ [
+          AstValue $ "  result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
+          AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result ",
+          createAstCont copts "result" ""
           ]
     return $ [createAstFunc copts f] ++ compiledBody)
 
@@ -462,12 +458,10 @@ compile env ast@(List (Atom "define" : DottedList (Atom var : fparams) varargs :
     _ <- makeVarargs varargs env fparams fbody >>= defineVar env var
    
     -- Entry point; ensure var is not rebound
-    f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"define\"",
-          AstValue $ "  if bound ",
-          AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-          AstValue $ "     else do result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
-          AstValue $ "             _ <- defineVar env \"" ++ var ++ "\" result ",
-          createAstCont copts "result" "           "
+    f <- return $ [
+          AstValue $ "  result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
+          AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result ",
+          createAstCont copts "result" ""
           ]
     return $ [createAstFunc copts f] ++ compiledBody)
 
@@ -485,11 +479,9 @@ compile env ast@(List (Atom "lambda" : List fparams : fbody)) copts@(CompileOpti
     -- Entry point; ensure var is not rebound
    -- TODO: will probably end up creating a common function for this,
    --       since it is almost the same as in "if"
-    f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
-          AstValue $ "  if bound ",
-          AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-          AstValue $ "     else do result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
-          createAstCont copts "result" "           "
+    f <- return $ [
+          AstValue $ "  result <- makeNormalHFunc env (" ++ compiledParams ++ ") " ++ symCallfunc,
+          createAstCont copts "result" ""
           ]
     return $ [createAstFunc copts f] ++ compiledBody)
 
@@ -505,11 +497,9 @@ compile env ast@(List (Atom "lambda" : DottedList fparams varargs : fbody)) copt
     compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
    
     -- Entry point; ensure var is not rebound
-    f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
-          AstValue $ "  if bound ",
-          AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-          AstValue $ "     else do result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
-          createAstCont copts "result" "           "
+    f <- return $ [
+          AstValue $ "  result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
+          createAstCont copts "result" ""
           ]
     return $ [createAstFunc copts f] ++ compiledBody)
 
@@ -524,11 +514,9 @@ compile env ast@(List (Atom "lambda" : varargs@(Atom _) : fbody)) copts@(Compile
     compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
    
     -- Entry point; ensure var is not rebound
-    f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"lambda\"",
-          AstValue $ "  if bound ",
-          AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-          AstValue $ "     else do result <- makeHVarargs (" ++ ast2Str varargs ++ ") env [] " ++ symCallfunc,
-          createAstCont copts "result" "           "
+    f <- return $ [
+          AstValue $ "  result <- makeHVarargs (" ++ ast2Str varargs ++ ") env [] " ++ symCallfunc,
+          createAstCont copts "result" ""
           ]
     return $ [createAstFunc copts f] ++ compiledBody)
 
@@ -899,10 +887,8 @@ compileSpecialFormEntryPoint formName formSym copts = do
 
 compileSpecialForm :: String -> String -> CompOpts -> IOThrowsError HaskAST
 compileSpecialForm formName formCode copts = do
- f <- return $ [AstValue $ "  bound <- liftIO $ isRecBound env \"" ++ formName ++ "\"",
-       AstValue $ "  if bound ",
-       AstValue $ "     then throwError $ NotImplemented \"prepareApply env cont args\" ", -- if is bound to a variable in this scope; call into it
-       AstValue $ "     else " ++ formCode]
+ f <- return $ [
+       AstValue $ "  " ++ formCode]
  return $ createAstFunc copts f
 
 -- |A wrapper for each special form that allows the form variable 
