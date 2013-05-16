@@ -911,18 +911,42 @@ compileExpr env expr symThisFunc fForNextExpr = do
 -- |Compiles each argument to a function call, and then uses apply to call the function
 compileApply :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 compileApply env (List (func : fparams)) (CompileOptions coptsThis _ _ coptsNext) = do
-  Atom stubFunc <- _gensym "applyStubF"
-  Atom wrapperFunc <- _gensym "applyWrapper"
-  Atom nextFunc <- _gensym "applyNextF"
 
-  c <- return $ AstFunction coptsThis " env cont _ _ " [AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ wrapperFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""]  
-  -- Use wrapper to pass high-order function (func) as an argument to apply
-  wrapper <- return $ AstFunction wrapperFunc " env cont value _ " [AstValue $ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " [value]) $ Nil \"\""]
-  _comp <- mcompile env func $ CompileOptions stubFunc False False Nothing
-  rest <- compileArgs nextFunc False fparams -- False since no value passed in this time
+-- TODO: optimizations
+--  - check if func is a primitive func (getVar func is a PrimitiveFunc)
+--  - check if all params are literals, or non-functions
+--
+--  if a primtive func is only passed literals, can evaluate it at compile time, I think
+--  if a func is passed only non-functions, do not need to create continuations for each arg,
+--     but can just add them directly to the array for apply. keep in mind there are cases such
+--     as a var (any others?) where the non-func must be examined/processed prior to being sent.
+--  it is probably possible to mix creating conts and not when there are func and non-func args.
+--  
 
-  return $ [c, wrapper ] ++ _comp ++ rest
+-- TODO:  prim <- isPrim env func
+-- TODO: collectLiterals, returning Maybe a list of literals
+-- TODO: collectNonFuncs, returning Maybe a list of nonfuncs (including value of any vars)
+-- TODO: attempt to implement optimizations/TODO's above
+  compileAllArgs func
+
  where 
+  compileAllArgs func = do
+    Atom stubFunc <- _gensym "applyStubF"
+    Atom wrapperFunc <- _gensym "applyWrapper"
+    Atom nextFunc <- _gensym "applyNextF"
+
+    c <- return $ 
+      AstFunction coptsThis " env cont _ _ " [
+        AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ wrapperFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""]  
+    -- Use wrapper to pass high-order function (func) as an argument to apply
+    wrapper <- return $ 
+      AstFunction wrapperFunc " env cont value _ " [
+          AstValue $ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " [value]) $ Nil \"\""]
+    _comp <- mcompile env func $ CompileOptions stubFunc False False Nothing
+    rest <- compileArgs nextFunc False fparams -- False since no value passed in this time
+
+    return $ [c, wrapper ] ++ _comp ++ rest
+
   -- TODO: this pattern may need to be extracted into a common place for use in other similar
   --       situations, such as params to a lambda expression
   compileArgs :: String -> Bool -> [LispVal] -> IOThrowsError [HaskAST]
@@ -960,3 +984,14 @@ compileApply env (List (func : fparams)) (CompileOptions coptsThis _ _ coptsNext
 
 compileApply _ err _ = do
     throwError $ Default $ "compileApply - Unexpected argument: " ++ show err
+
+-- |Determines if the given lispval is a primitive function
+isPrim :: Env -> LispVal -> IOThrowsError Bool
+isPrim env (Atom func) = do
+  val <- getVar env func >>= recDerefPtrs
+  case val of
+      PrimitiveFunc _ -> return True
+      _ -> return False
+isPrim _ (PrimitiveFunc _) = return True
+isPrim _ _ = return False
+
