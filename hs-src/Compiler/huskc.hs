@@ -139,25 +139,32 @@ process inFile outHaskell outExec dynamic extraArgs = do
   env <- Language.Scheme.Core.r5rsEnv
   stdlib <- getDataFileName "lib/stdlib.scm"
   srfi55 <- getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
-  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env stdlib srfi55 inFile outHaskell)
+-- TODO: replace this with a command line option that will pass Nothing to
+--       skip compilation of standard libraries
+--  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env Nothing srfi55 inFile outHaskell)
+  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env (Just stdlib) srfi55 inFile outHaskell)
   case result of
    Just errMsg -> putStrLn errMsg
    _ -> compileHaskellFile outHaskell outExec dynamic extraArgs
 
 -- |Compile a scheme file to haskell
-compileSchemeFile :: Env -> String -> String -> String -> String -> IOThrowsError LispVal
+compileSchemeFile :: Env -> Maybe String -> String -> String -> String -> IOThrowsError LispVal
 compileSchemeFile env stdlib srfi55 filename outHaskell = do
   let conv :: LispVal -> String
       conv (String s) = s
-  -- TODO: it is only temporary to compile the standard library each time. It should be 
-  --       precompiled and just added during the ghc compilation
-  libsC <- compileLisp env stdlib "run" (Just "exec55")
-  libSrfi55C <- compileLisp env srfi55 "exec55" (Just "exec55_2")
-  liftIO $ Language.Scheme.Core.registerExtensions env getDataFileName
+  (String nextFunc, libsC, libSrfi55C) <- case stdlib of
+    Nothing -> return (String "run", [], [])
+    Just stdlib' -> do
+      -- TODO: it is only temporary to compile the standard library each time. It should be 
+      --       precompiled and just added during the ghc compilation
+      libsC <- compileLisp env stdlib' "run" (Just "exec55")
+      libSrfi55C <- compileLisp env srfi55 "exec55" (Just "exec55_2")
+      liftIO $ Language.Scheme.Core.registerExtensions env getDataFileName
+      return (String "exec", libsC, libSrfi55C)
 
   -- Initialize the compiler module and begin
   _ <- initializeCompiler env
-  execC <- compileLisp env filename "exec" Nothing
+  execC <- compileLisp env filename nextFunc Nothing
 
   -- Append any additional import modules
   List imports <- getNamespacedVar env 't' {-"internal"-} "imports"
@@ -168,10 +175,14 @@ compileSchemeFile env stdlib srfi55 filename outHaskell = do
   _ <- liftIO $ writeList outH $ map (\mod -> "import " ++ mod ++ " ") $ headerImports ++ moreHeaderImports
   filepath <- liftIO $ getDataFileName ""
   _ <- liftIO $ writeList outH $ header filepath
-  _ <- liftIO $ writeList outH $ map show libsC
-  _ <- liftIO $ hPutStrLn outH " ------ END OF STDLIB ------"
-  _ <- liftIO $ writeList outH $ map show libSrfi55C
-  _ <- liftIO $ hPutStrLn outH " ------ END OF SRFI 55 ------"
+  _ <- liftIO $ case stdlib of
+    Just _ -> do
+      _ <- writeList outH $ map show libsC
+      _ <- hPutStrLn outH " ------ END OF STDLIB ------"
+      _ <- writeList outH $ map show libSrfi55C
+      hPutStrLn outH " ------ END OF SRFI 55 ------"
+    Nothing -> do
+      hPutStrLn outH "exec _ _ _ _ = return $ Nil \"\"" -- Placeholder
   _ <- liftIO $ writeList outH $ map show execC
   _ <- liftIO $ hClose outH
   if not (null execC)
