@@ -157,8 +157,11 @@ headerImports = [
  , "Data.Word "
  , "System.IO "]
 
-header :: String -> [String]
-header filepath = do
+header :: String -> Bool -> [String]
+header filepath useCompiledLibs = do
+  let env = if useCompiledLibs
+            then "primitiveBindings"
+            else "r5rsEnv"
   [ " "
     , "-- |Get variable at runtime "
     , "getRTVar env var = do " 
@@ -181,7 +184,7 @@ header filepath = do
     , " "
     , "main :: IO () "
     , "main = do "
-    , "  env <- r5rsEnv "
+    , "  env <- " ++ env ++ " "
     , "  result <- (runIOThrows $ liftM show $ run env (makeNullContinuation env) (Nil \"\") Nothing) "
     , "  case result of "
     , "    Just errMsg -> putStrLn errMsg "

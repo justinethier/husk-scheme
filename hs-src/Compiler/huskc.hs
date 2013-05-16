@@ -38,7 +38,7 @@ main = do
   args <- getArgs
   let (actions, nonOpts, msgs) = getOpt Permute options args
   opts <- foldl (>>=) (return defaultOptions) actions
-  let Options {optOutput = output, optDynamic = dynamic, optCustomOptions = extra} = opts
+  let Options {optOutput = output, optLibs = lib, optDynamic = dynamic, optCustomOptions = extra} = opts
 
   if null nonOpts
      then showUsage
@@ -51,7 +51,7 @@ main = do
             extraOpts = case extra of
               Just args -> args
               Nothing -> ""
-        process inFile outHaskell outExec dynamic extraOpts
+        process inFile outHaskell outExec lib dynamic extraOpts
 
 -- 
 -- For an explanation of the command line options code, see:
@@ -61,6 +61,7 @@ main = do
 -- |Data type to handle command line options that take parameters
 data Options = Options {
     optOutput :: Maybe String, -- Executable file to write
+    optLibs :: Bool, -- Debug flag, whether to compile standard libraries
     optDynamic :: Bool, -- Flag for dynamic linking of compiled executable
     optCustomOptions :: Maybe String -- Custom options to ghc
     }
@@ -69,6 +70,7 @@ data Options = Options {
 defaultOptions :: Options
 defaultOptions = Options {
     optOutput = Nothing,
+    optLibs = True,
     optDynamic = False,
     optCustomOptions = Nothing 
     }
@@ -78,15 +80,19 @@ options :: [OptDescr (Options -> IO Options)]
 options = [
   Option ['V'] ["version"] (NoArg showVersion) "show version number",
   Option ['h', '?'] ["help"] (NoArg showHelp) "show usage information",
-  Option [] ["debug"] (NoArg showDebug) "show debug information",
   Option ['o'] ["output"] (ReqArg writeExec "FILE") "output file to write",
   Option ['d'] ["dynamic"] (NoArg getDynamic) "use dynamic linking for the compiled executable",
-  Option ['x'] ["extra"] (ReqArg getExtraArgs "Args") "extra arguments to ghc"
+  Option ['x'] ["extra"] (ReqArg getExtraArgs "Args") "extra arguments to ghc",
+
+  Option [] ["debug"] (NoArg showDebug) "show debug information",
+  Option [] ["nolibs"] (NoArg getNoLibs) "a DEBUG option to use interpreted libraries instead of compiling them"
   ]
 
 -- |Determine executable file to write. 
 --  This version just takes a name from the command line option
 writeExec arg opt = return opt { optOutput = Just arg }
+
+getNoLibs opt = return opt { optLibs = False }
 
 getDynamic opt = return opt { optDynamic = True }
 
@@ -129,8 +135,8 @@ showVersion _ = do
   exitWith ExitSuccess
 
 -- |High level code to compile the given file
-process :: String -> String -> String -> Bool -> String -> IO ()
-process inFile outHaskell outExec dynamic extraArgs = do
+process :: String -> String -> String -> Bool -> Bool -> String -> IO ()
+process inFile outHaskell outExec libs dynamic extraArgs = do
 
 
 -- TODO: how to integrate r5rsEnv and libraries?
@@ -139,10 +145,12 @@ process inFile outHaskell outExec dynamic extraArgs = do
   env <- Language.Scheme.Core.r5rsEnv
   stdlib <- getDataFileName "lib/stdlib.scm"
   srfi55 <- getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
--- TODO: replace this with a command line option that will pass Nothing to
---       skip compilation of standard libraries
---  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env Nothing srfi55 inFile outHaskell)
-  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env (Just stdlib) srfi55 inFile outHaskell)
+
+  let stdlibArg = if libs
+                     then Just stdlib
+                     else Nothing
+
+  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env stdlibArg srfi55 inFile outHaskell)
   case result of
    Just errMsg -> putStrLn errMsg
    _ -> compileHaskellFile outHaskell outExec dynamic extraArgs
@@ -152,6 +160,10 @@ compileSchemeFile :: Env -> Maybe String -> String -> String -> String -> IOThro
 compileSchemeFile env stdlib srfi55 filename outHaskell = do
   let conv :: LispVal -> String
       conv (String s) = s
+      compileLibraries = case stdlib of
+        Just _ -> True
+        _ -> False
+
   (String nextFunc, libsC, libSrfi55C) <- case stdlib of
     Nothing -> return (String "run", [], [])
     Just stdlib' -> do
@@ -174,14 +186,14 @@ compileSchemeFile env stdlib srfi55 filename outHaskell = do
   _ <- liftIO $ writeList outH headerModule
   _ <- liftIO $ writeList outH $ map (\mod -> "import " ++ mod ++ " ") $ headerImports ++ moreHeaderImports
   filepath <- liftIO $ getDataFileName ""
-  _ <- liftIO $ writeList outH $ header filepath
-  _ <- liftIO $ case stdlib of
-    Just _ -> do
+  _ <- liftIO $ writeList outH $ header filepath compileLibraries
+  _ <- liftIO $ case compileLibraries of
+    True -> do
       _ <- writeList outH $ map show libsC
       _ <- hPutStrLn outH " ------ END OF STDLIB ------"
       _ <- writeList outH $ map show libSrfi55C
       hPutStrLn outH " ------ END OF SRFI 55 ------"
-    Nothing -> do
+    False -> do
       hPutStrLn outH "exec _ _ _ _ = return $ Nil \"\"" -- Placeholder
   _ <- liftIO $ writeList outH $ map show execC
   _ <- liftIO $ hClose outH
