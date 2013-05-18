@@ -97,8 +97,9 @@ showValAST (AstFunction name args code) = do
   fheader ++ fbody 
 showValAST (AstValue v) = v
 
--- TODO: this is too limiting, this is an 'internal' continuation. most should take a value and pass it along, not args
-showValAST (AstContinuation nextFunc args) = "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " " ++ args ++ ") $ Nil \"\""
+showValAST (AstContinuation nextFunc args) =
+    "  continueEval env (makeCPSWArgs env cont " ++ 
+       nextFunc ++ " " ++ args ++ ") $ Nil \"\""
 
 instance Show HaskAST where show = showValAST
 
@@ -910,7 +911,7 @@ compileExpr env expr symThisFunc fForNextExpr = do
 
 -- |Compiles each argument to a function call, and then uses apply to call the function
 compileApply :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
-compileApply env (List (func : fparams)) (CompileOptions coptsThis _ _ coptsNext) = do
+compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ coptsNext) = do
 
 -- TODO: optimizations
 --  - check if func is a primitive func (getVar func is a PrimitiveFunc)
@@ -923,11 +924,26 @@ compileApply env (List (func : fparams)) (CompileOptions coptsThis _ _ coptsNext
 --  it is probably possible to mix creating conts and not when there are func and non-func args.
 --  
 
--- TODO:  prim <- isPrim env func
+  prim <- isPrim env func
+  let lits = collectLiterals fparams []
+
+  --if prim && lits /= Nothing
+  case (prim, lits) of
+     (Just primFunc, Just ls) -> do
+       --paramStrs = map (\ p -> ast2Str p) lits
+       result <- Language.Scheme.Core.apply 
+        (makeNullContinuation env)
+        primFunc
+        ls
+
+       return $ [createAstFunc copts [
+         AstValue $ "  let result = " ++ (ast2Str result),
+         createAstCont copts "result" ""]]
+
 -- TODO: collectLiterals, returning Maybe a list of literals
 -- TODO: collectNonFuncs, returning Maybe a list of nonfuncs (including value of any vars)
 -- TODO: attempt to implement optimizations/TODO's above
-  compileAllArgs func
+     _ -> compileAllArgs func
 
  where 
   compileAllArgs func = do
@@ -986,12 +1002,18 @@ compileApply _ err _ = do
     throwError $ Default $ "compileApply - Unexpected argument: " ++ show err
 
 -- |Determines if the given lispval is a primitive function
-isPrim :: Env -> LispVal -> IOThrowsError Bool
+isPrim :: Env -> LispVal -> IOThrowsError (Maybe LispVal)
 isPrim env (Atom func) = do
   val <- getVar env func >>= recDerefPtrs
   case val of
-      PrimitiveFunc _ -> return True
-      _ -> return False
-isPrim _ (PrimitiveFunc _) = return True
-isPrim _ _ = return False
+      p@(PrimitiveFunc _) -> return $ Just p
+      _ -> return Nothing
+isPrim _ p@(PrimitiveFunc _) = return $ Just p
+isPrim _ _ = return Nothing
+
+collectLiterals :: [LispVal] -> [LispVal] -> (Maybe [LispVal])
+collectLiterals (List _ : _) _ = Nothing
+collectLiterals (Atom a : as) _ = Nothing
+collectLiterals (a : as) nfs = collectLiterals as (a : nfs)
+collectLiterals [] nfs = Just $ reverse nfs
 
