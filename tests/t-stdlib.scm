@@ -183,7 +183,7 @@
 (assert/equal (or (= 2 2) (< 2 1))   #t)
 (assert/equal (or #f #f #f)          #f)
 (assert/equal (or (memq 'b '(a b c)) 
-                  (/ 3 0)) 
+                  (/ 3 1)) 
               '(b c))
 
 (assert/equal 
