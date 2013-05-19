@@ -914,10 +914,7 @@ compileApply :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ coptsNext) = do
 
 -- TODO: optimizations
---  - check if func is a primitive func (getVar func is a PrimitiveFunc)
---  - check if all params are literals, or non-functions
 --
---  if a primtive func is only passed literals, can evaluate it at compile time, I think
 --  if a func is passed only non-functions, do not need to create continuations for each arg,
 --     but can just add them directly to the array for apply. keep in mind there are cases such
 --     as a var (any others?) where the non-func must be examined/processed prior to being sent.
@@ -940,9 +937,6 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
          AstValue $ "  let result = " ++ (ast2Str result),
          createAstCont copts "result" ""]]
 
--- TODO: collectLiterals, returning Maybe a list of literals
--- TODO: collectNonFuncs, returning Maybe a list of nonfuncs (including value of any vars)
--- TODO: attempt to implement optimizations/TODO's above
      _ -> compileAllArgs func
 
  where 
