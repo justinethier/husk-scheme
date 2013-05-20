@@ -260,7 +260,6 @@ compile _ (Float f) copts = compileScalar ("  return $ Float (" ++ (show f) ++ "
 compile _ (Rational r) copts = compileScalar ("  return $ Rational $ (" ++ (show $ numerator r) ++ ") % (" ++ (show $ denominator r) ++ ")") copts 
 compile _ (Number n) copts = compileScalar ("  return $ Number (" ++ (show n) ++ ")") copts
 compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
--- TODO: eval env cont val@(HashTable _) = continueEval env cont val
 compile _ v@(Vector _) copts = compileScalar (" return $ " ++ ast2Str v) copts
 compile _ v@(ByteVector _) copts = compileScalar (" return $ " ++ ast2Str v) copts
 compile _ ht@(HashTable _) copts = compileScalar (" return $ " ++ ast2Str ht) copts
@@ -926,6 +925,8 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
   --if prim && lits /= Nothing
   case (prim, lits) of
+     -- Primitive (non-I/O) function with literal args, 
+     -- evaluate at compile time
      (Just primFunc, Just ls) -> do
        --paramStrs = map (\ p -> ast2Str p) lits
        result <- Language.Scheme.Core.apply 
@@ -937,6 +938,30 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
          AstValue $ "  let result = " ++ (ast2Str result),
          createAstCont copts "result" ""]]
 
+     -- Other function with literal args, no need to create a
+     -- continuation chain
+     (Nothing, Just ls) -> do
+       f <- case func of
+         Atom f -> do
+            isDefined <- liftIO $ isRecBound env f
+            case isDefined of
+              True -> 
+                return $ AstValue $ "  fnc <- getVar env \"" ++ f ++ 
+                                "\" >>= recDerefPtrs"
+              False -> throwError $ UnboundVar "Variable is not defined" f
+-- TODO: not good enough, a raw lambda is NOT handled properly!!!
+         _ -> return $ AstValue $ "  let fnc = " ++ ast2Str func
+                
+       let paramStrs = map (\ l -> ast2Str l) ls
+       let params = AstValue $ "  let params = []" -- TODO: need to join
+       -- paramStrs using a comma sep, and assign it here
+
+       return $ [createAstFunc copts [
+         f,
+         params,
+         AstValue $ "  apply cont fnc params"]]
+     
+     -- Any other function, do it the hard way...
      _ -> compileAllArgs func
 
  where 
