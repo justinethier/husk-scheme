@@ -941,6 +941,9 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 -- handle variables as well. so probably want to use another collection function
 -- to check for this case, and then handle the variables a bit differently than
 -- literals
+--
+-- This case could probably also handle primitives passed vars as params then,
+-- since such code must be evaluated at runtime
 
 
      -- Other function with literal args, no need to create a
