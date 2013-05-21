@@ -923,12 +923,10 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
   prim <- isPrim env func
   let lits = collectLiterals fparams []
 
-  --if prim && lits /= Nothing
   case (prim, lits) of
      -- Primitive (non-I/O) function with literal args, 
      -- evaluate at compile time
      (Just primFunc, Just ls) -> do
-       --paramStrs = map (\ p -> ast2Str p) lits
        result <- Language.Scheme.Core.apply 
         (makeNullContinuation env)
         primFunc
@@ -937,6 +935,13 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
        return $ [createAstFunc copts [
          AstValue $ "  let result = " ++ (ast2Str result),
          createAstCont copts "result" ""]]
+
+
+-- TODO: since the following is handled at runtime, it should be possible to 
+-- handle variables as well. so probably want to use another collection function
+-- to check for this case, and then handle the variables a bit differently than
+-- literals
+
 
      -- Other function with literal args, no need to create a
      -- continuation chain
