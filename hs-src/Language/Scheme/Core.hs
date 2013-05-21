@@ -816,10 +816,9 @@ apply cont (EvalFunc func) args = do
     -- continuation, so pass it as the first argument.
   func (cont : args)
 apply cont (PrimitiveFunc func) args = do
--- TODO: 
---  how to report errors that could contain ptr args (perhaps a new error type?)
---  - any other complications?
-  --List dargs <- recDerefPtrs $ List args -- Deref any pointers
+  -- OK not to deref ptrs here because primitives only operate on
+  -- non-objects, and the error handler execs in the I/O monad and
+  -- handles ptrs just fine
   result <- liftThrows $ func args
   case cont of
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
