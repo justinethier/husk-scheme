@@ -908,25 +908,27 @@ compileExpr :: Env -> LispVal -> String -> Maybe String -> IOThrowsError [HaskAS
 compileExpr env expr symThisFunc fForNextExpr = do
   mcompile env expr (CompileOptions symThisFunc False False fForNextExpr) 
 
--- |Compiles each argument to a function call, and then uses apply to call the function
+-- |Compile a function call
 compileApply :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ coptsNext) = do
 
--- TODO: optimizations
+-- Optimizations
 --
 --  if a func is passed only non-functions, do not need to create continuations for each arg,
 --     but can just add them directly to the array for apply. keep in mind there are cases such
 --     as a var (any others?) where the non-func must be examined/processed prior to being sent.
---  it is probably possible to mix creating conts and not when there are func and non-func args.
+--
+--  TODO: it is probably possible to mix creating conts and not when there are func and non-func args.
 --  
 
-  prim <- isPrim env func
-  let lits = collectLiterals fparams []
+  primitive <- isPrim env func
+  let literals = collectLiterals fparams 
+      nonFunctionCalls = collectLiteralsAndVars fparams
 
-  case (prim, lits) of
+  case (primitive, literals, nonFunctionCalls) of
      -- Primitive (non-I/O) function with literal args, 
      -- evaluate at compile time
-     (Just primFunc, Just ls) -> do
+     (Just primFunc, Just ls, _) -> do
        result <- Language.Scheme.Core.apply 
         (makeNullContinuation env)
         primFunc
@@ -936,27 +938,37 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
          AstValue $ "  let result = " ++ (ast2Str result),
          createAstCont copts "result" ""]]
 
-
--- TODO: since the following is handled at runtime, it should be possible to 
--- handle variables as well. so probably want to use another collection function
--- to check for this case, and then handle the variables a bit differently than
--- literals
---
--- This case could probably also handle primitives passed vars as params then,
--- since such code must be evaluated at runtime
-
-
      -- Other function with literal args, no need to create a
-     -- continuation chain
-     (Nothing, Just ls) -> do
-       let paramStrs = map (\ l -> ast2Str l) ls
-       compileFuncLitArgs func $ "[" ++ joinL paramStrs "," ++ "]"
+     -- continuation chain. But this includes I/O funcs and
+     -- variables, so everything must be executed at runtime
+     (_, _, Just ls) -> do
+       -- Keep track of any variables since we need to do a
+       -- 'getRtVar' lookup for each of them prior to apply
+       let pack (Atom p : ps) strs vars i = do
+             let varName = "v" ++ show i
+             pack ps 
+                  (strs ++ [varName]) 
+                  (vars ++ [(p, varName)]) 
+                  (i + 1)
+           pack (p : ps) strs vars i = 
+             pack ps 
+                  (strs ++ [ast2Str p]) 
+                  vars 
+                  i
+           pack [] strs vars _ = (strs, vars)
+       let (paramStrs, vars) = pack ls [] [] 0
+       compileFuncLitArgs func vars $ "[" ++ joinL paramStrs "," ++ "]"
      
      -- Any other function, do it the hard way...
+     --
+     -- Compile the function and each argument as a link in
+     -- a chain of continuations.
      _ -> compileAllArgs func
 
  where 
-  compileFuncLitArgs func args = do
+  -- |Compile a function call that contains arguments that are not
+  --  function calls executed at runtime.
+  compileFuncLitArgs func vars args = do
     Atom stubFunc <- _gensym "applyStubF"
     Atom nextFunc <- _gensym "applyNextF"
 
@@ -965,13 +977,19 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
         AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ nextFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""]  
     _comp <- mcompile env func $ CompileOptions stubFunc False False Nothing
 
+    -- Haskell variables must be used to retrieve each atom from the env
+    let varLines = 
+          map (\ (rt, cp) -> 
+                  AstValue $ "  " ++ cp ++ " <- getRTVar env \"" ++ rt ++ "\"")
+              vars
+
     rest <- case coptsNext of
              Nothing -> return $ [
                AstFunction nextFunc
-                " env cont value _ " [AstValue $ "  apply cont value " ++ args]]
+                " env cont value _ " $ varLines ++ [AstValue $ "  apply cont value " ++ args]]
              Just fnextExpr -> return $ [
                AstFunction nextFunc 
-                " env cont value _ " [AstValue $ "  apply (makeCPS env cont " ++ fnextExpr ++ ") value " ++ args]]
+                " env cont value _ " $ varLines ++ [AstValue $ "  apply (makeCPS env cont " ++ fnextExpr ++ ") value " ++ args]]
     return $ [c] ++ _comp ++ rest
 
   compileAllArgs func = do
@@ -1039,9 +1057,19 @@ isPrim env (Atom func) = do
 isPrim _ p@(PrimitiveFunc _) = return $ Just p
 isPrim _ _ = return Nothing
 
-collectLiterals :: [LispVal] -> [LispVal] -> (Maybe [LispVal])
-collectLiterals (List _ : _) _ = Nothing
-collectLiterals (Atom a : as) _ = Nothing
-collectLiterals (a : as) nfs = collectLiterals as (a : nfs)
-collectLiterals [] nfs = Just $ reverse nfs
+-- |Determine if the given list of expressions contains only literal identifiers
+--  EG: 1, "2", etc. And return them if that is all that is found.
+--
+-- Atoms are a special case since they denote variables that will only be
+-- available at runtime, so a flag is used to selectively include them.
+--
+_collectLiterals :: [LispVal] -> [LispVal] -> Bool -> (Maybe [LispVal])
+_collectLiterals (List _ : _) _ _ = Nothing
+_collectLiterals (Atom a : as) _ False = Nothing
+_collectLiterals (a : as) nfs varFlag = _collectLiterals as (a : nfs) varFlag
+_collectLiterals [] nfs _ = Just $ reverse nfs
 
+-- Wrappers for the above function
+collectLiterals, collectLiteralsAndVars :: [LispVal] -> (Maybe [LispVal])
+collectLiteralsAndVars args = _collectLiterals args [] True
+collectLiterals args = _collectLiterals args [] False
