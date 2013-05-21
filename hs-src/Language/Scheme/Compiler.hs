@@ -941,30 +941,31 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
      -- Other function with literal args, no need to create a
      -- continuation chain
      (Nothing, Just ls) -> do
-       f <- case func of
-         Atom f -> do
-            isDefined <- liftIO $ isRecBound env f
-            case isDefined of
-              True -> 
-                return $ AstValue $ "  fnc <- getVar env \"" ++ f ++ 
-                                "\" >>= recDerefPtrs"
-              False -> throwError $ UnboundVar "Variable is not defined" f
--- TODO: not good enough, a raw lambda is NOT handled properly!!!
-         _ -> return $ AstValue $ "  let fnc = " ++ ast2Str func
-                
        let paramStrs = map (\ l -> ast2Str l) ls
-       let params = AstValue $ "  let params = []" -- TODO: need to join
-       -- paramStrs using a comma sep, and assign it here
-
-       return $ [createAstFunc copts [
-         f,
-         params,
-         AstValue $ "  apply cont fnc params"]]
+       compileFuncLitArgs func $ "[" ++ joinL paramStrs "," ++ "]"
      
      -- Any other function, do it the hard way...
      _ -> compileAllArgs func
 
  where 
+  compileFuncLitArgs func args = do
+    Atom stubFunc <- _gensym "applyStubF"
+    Atom nextFunc <- _gensym "applyNextF"
+
+    c <- return $ 
+      AstFunction coptsThis " env cont _ _ " [
+        AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ nextFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""]  
+    _comp <- mcompile env func $ CompileOptions stubFunc False False Nothing
+
+    rest <- case coptsNext of
+             Nothing -> return $ [
+               AstFunction nextFunc
+                " env cont value _ " [AstValue $ "  apply cont value " ++ args]]
+             Just fnextExpr -> return $ [
+               AstFunction nextFunc 
+                " env cont value _ " [AstValue $ "  apply (makeCPS env cont " ++ fnextExpr ++ ") value " ++ args]]
+    return $ [c] ++ _comp ++ rest
+
   compileAllArgs func = do
     Atom stubFunc <- _gensym "applyStubF"
     Atom wrapperFunc <- _gensym "applyWrapper"
