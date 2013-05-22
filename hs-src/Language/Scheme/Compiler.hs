@@ -245,12 +245,6 @@ defineLambdaVars env (Atom v : vs) = do
 defineLambdaVars env (_ : vs) = defineLambdaVars env vs
 defineLambdaVars env [] = return $ Nil ""
 
--- TODO: future enhancement:
----- |Compile a macro to an AstValue
---compileMacro [Atom keyword, 
---              List [Atom "er-macro-transformer",
---                    (List (Atom "lambda" 
-
 compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
 compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts
@@ -878,12 +872,6 @@ compileDivertedVars
           [AstValue $ "  " ++ formNext ++ " env cont (" ++ val ++ ") " ++ args]
   return $ createAstFunc copts f
 
-{- TODO: adapt for compilation
-meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-meval env cont lisp = mfunc env cont lisp eval
-mprepareApply env cont lisp = mfunc env cont lisp prepareApply
--}
-
 compileSpecialFormEntryPoint :: String -> String -> CompOpts -> IOThrowsError HaskAST
 compileSpecialFormEntryPoint formName formSym copts = do
  compileSpecialForm formName ("do " ++ formSym ++ " env cont (Nil \"\") []") copts
@@ -912,11 +900,6 @@ compileExpr env expr symThisFunc fForNextExpr = do
 compileApply :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ coptsNext) = do
 
--- Optimizations
---
---  if a func is passed only non-functions, do not need to create continuations for each arg,
---     but can just add them directly to the array for apply. keep in mind there are cases such
---     as a var (any others?) where the non-func must be examined/processed prior to being sent.
 --
 --  TODO: it is probably possible to mix creating conts and not when there are func and non-func args.
 --  
@@ -939,7 +922,7 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
          createAstCont copts "result" ""]]
 
      -- Other function with literal args, no need to create a
-     -- continuation chain. But this includes I/O funcs and
+     -- continuation chain. But this case may include I/O funcs and
      -- variables, so everything must be executed at runtime
      (_, _, Just ls) -> do
        -- Keep track of any variables since we need to do a
@@ -992,6 +975,7 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                 " env cont value _ " $ varLines ++ [AstValue $ "  apply (makeCPS env cont " ++ fnextExpr ++ ") value " ++ args]]
     return $ [c] ++ _comp ++ rest
 
+  -- |Compile function and args as a chain of continuations
   compileAllArgs func = do
     Atom stubFunc <- _gensym "applyStubF"
     Atom wrapperFunc <- _gensym "applyWrapper"
@@ -1038,8 +1022,10 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                 then return $ AstValue $ thisFunc ++ " env cont value (Just args) = do "
                 else return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do "
         c <- if thisFuncUseValue
-                then return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " $ args ++ [value]) " ++ stubFunc ++ ") $ Nil\"\""  
-                else return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
+                then return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ 
+                                         nextFunc ++ " $ args ++ [value]) " ++ stubFunc ++ ") $ Nil\"\""  
+                else return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ 
+                                         nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
 
         rest <- compileArgs nextFunc True as -- True indicates nextFunc needs to use value arg passed into it
         return $ [ f, c] ++ _comp ++ rest
