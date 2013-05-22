@@ -183,6 +183,7 @@ compileSchemeFile env stdlib srfi55 filename outHaskell = do
   let moreHeaderImports = map conv imports
 
   outH <- liftIO $ openFile outHaskell WriteMode
+  _ <- liftIO $ writeList outH headerComment
   _ <- liftIO $ writeList outH headerModule
   _ <- liftIO $ writeList outH $ map (\mod -> "import " ++ mod ++ " ") $ headerImports ++ moreHeaderImports
   filepath <- liftIO $ getDataFileName ""
