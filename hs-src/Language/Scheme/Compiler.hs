@@ -182,6 +182,12 @@ header filepath useCompiledLibs = do
     , "    HashTable _ -> Pointer var env "
     , "    _ -> v "
     , " "
+    , "applyWrapper env cont (Nil _) (Just (a:as))  = do "
+    , "  apply cont a as "
+    , " "
+    , "applyWrapper env cont value (Just (a:as))  = do "
+    , "  apply cont a $ as ++ [value] "
+    , " "
     , "getDataFileName' :: FilePath -> IO FilePath "
     , "getDataFileName' name = return $ \"" ++ (Language.Scheme.Util.escapeBackslashes filepath) ++ "\" ++ name "
     , " "
@@ -930,7 +936,18 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
      -- Other function with literal args, no need to create a
      -- continuation chain. But this case may include I/O funcs and
      -- variables, so everything must be executed at runtime
-     (_, _, Just ls) -> do
+     (_, _, Just ls) -> compileFuncLitArgs ls
+     
+     -- Any other function, do it the hard way...
+     --
+     -- Compile the function and each argument as a link in
+     -- a chain of continuations.
+     _ -> compileAllArgs func
+
+ where 
+  -- |Compile a function call that contains arguments that are not
+  --  function calls executed at runtime.
+  compileFuncLitArgs args = do
        -- Keep track of any variables since we need to do a
        -- 'getRtVar' lookup for each of them prior to apply
        let pack (Atom p : ps) strs vars i = do
@@ -945,19 +962,10 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                   vars 
                   i
            pack [] strs vars _ = (strs, vars)
-       let (paramStrs, vars) = pack ls [] [] 0
-       compileFuncLitArgs func vars $ "[" ++ joinL paramStrs "," ++ "]"
-     
-     -- Any other function, do it the hard way...
-     --
-     -- Compile the function and each argument as a link in
-     -- a chain of continuations.
-     _ -> compileAllArgs func
+       let (paramStrs, vars) = pack args [] [] 0
+       _compileFuncLitArgs func vars $ "[" ++ joinL paramStrs "," ++ "]"
 
- where 
-  -- |Compile a function call that contains arguments that are not
-  --  function calls executed at runtime.
-  compileFuncLitArgs func vars args = do
+  _compileFuncLitArgs func vars args = do
     Atom stubFunc <- _gensym "applyStubF"
     Atom nextFunc <- _gensym "applyNextF"
 
@@ -1004,6 +1012,11 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
   compileArgs :: String -> Bool -> [LispVal] -> IOThrowsError [HaskAST]
   compileArgs thisFunc thisFuncUseValue args = do
     case args of
+
+-- TODO: Issue #111 - the [] case is no longer required, should replace it with a call to
+--  applyWrapper at runtime. May also want to take a look at the last commit and see if
+--  any of this stuff can be cleaned up since it is a bit messy right now
+
       [] -> do
            -- The basic idea is that if there is a next expression, call into it as a new continuation
            -- instead of calling into cont
@@ -1019,21 +1032,31 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                AstFunction thisFunc 
                 " env cont value (Just (a:as)) " [AstValue $ "  apply (makeCPS env cont " ++ fnextExpr ++ ") a $ as ++ [value] "]]
       (a:as) -> do
+        let lastArg = null as
         Atom stubFunc <- _gensym "applyFirstArg" -- Call into compiled stub
-        Atom nextFunc <- _gensym "applyNextArg" -- Next func argument to execute...
+        Atom nextFunc <- do
+            case lastArg of
+                True -> return $ Atom "applyWrapper" -- Use wrapper to call into 'apply'
+                _ -> _gensym "applyNextArg" -- Next func argument to execute...
         _comp <- mcompile env a $ CompileOptions stubFunc False False Nothing
 
         -- Flag below means that the expression's value matters, add it to args
         f <- if thisFuncUseValue
                 then return $ AstValue $ thisFunc ++ " env cont value (Just args) = do "
                 else return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do "
-        c <- if thisFuncUseValue
-                then return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ 
+        c <- do
+             let nextCont = case (lastArg, coptsNext) of
+                                 (True, Just fnextExpr) -> "(makeCPS env cont " ++ fnextExpr ++ ")"
+                                 _ -> "cont"
+             if thisFuncUseValue
+                then return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env " ++ nextCont ++ " " ++
                                          nextFunc ++ " $ args ++ [value]) " ++ stubFunc ++ ") $ Nil\"\""  
-                else return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env cont " ++ 
+                else return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env " ++ nextCont ++ " " ++
                                          nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
 
-        rest <- compileArgs nextFunc True as -- True indicates nextFunc needs to use value arg passed into it
+        rest <- case lastArg of
+                     True -> return [] -- Using apply wrapper, so no more code
+                     _ -> compileArgs nextFunc True as -- True indicates nextFunc needs to use value arg passed into it
         return $ [ f, c] ++ _comp ++ rest
 
 compileApply _ err _ = do
