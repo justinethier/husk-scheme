@@ -913,7 +913,7 @@ compileApply :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ coptsNext) = do
 
 --
---  TODO: it is probably possible to mix creating conts and not when there are func and non-func args.
+-- TODO: it is probably possible to mix creating conts and not when there are func and non-func args.
 --  
 
   primitive <- isPrim env func
@@ -1003,34 +1003,30 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
       AstFunction wrapperFunc " env cont value _ " [
           AstValue $ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " [value]) $ Nil \"\""]
     _comp <- mcompile env func $ CompileOptions stubFunc False False Nothing
-    rest <- compileArgs nextFunc False fparams -- False since no value passed in this time
 
+    rest <- case fparams of
+              [] -> do
+                return [AstFunction 
+                          nextFunc 
+                          " env cont (Nil _) (Just (a:as)) "
+                          [AstValue $ "  apply " ++ applyCont ++ " a as "],
+                        AstFunction 
+                          nextFunc 
+                          " env cont value (Just (a:as)) " 
+                          [AstValue $ "  apply " ++ applyCont ++ " a $ as ++ [value] "]]
+              _ -> compileArgs nextFunc False fparams -- False since no value passed in this time
     return $ [c, wrapper ] ++ _comp ++ rest
 
-  -- TODO: this pattern may need to be extracted into a common place for use in other similar
-  --       situations, such as params to a lambda expression
+  applyCont :: String
+  applyCont = case coptsNext of
+                Nothing -> "cont"
+                Just fnextExpr -> "(makeCPS env cont " ++ fnextExpr ++ ")"
+
+  -- |Compile each argument as its own continuation (lambda), and then
+  --  call the function using "applyWrapper"
   compileArgs :: String -> Bool -> [LispVal] -> IOThrowsError [HaskAST]
   compileArgs thisFunc thisFuncUseValue args = do
     case args of
-
--- TODO: Issue #111 - the [] case is no longer required, should replace it with a call to
---  applyWrapper at runtime. May also want to take a look at the last commit and see if
---  any of this stuff can be cleaned up since it is a bit messy right now
-
-      [] -> do
-           -- The basic idea is that if there is a next expression, call into it as a new continuation
-           -- instead of calling into cont
-           case coptsNext of
-             Nothing -> return $ [
-               AstFunction thisFunc 
-                " env cont (Nil _) (Just (a:as)) " [AstValue "  apply cont a as "],
-               AstFunction thisFunc 
-                " env cont value (Just (a:as)) " [AstValue "  apply cont a $ as ++ [value] "]]
-             Just fnextExpr -> return $ [
-               AstFunction thisFunc 
-                " env cont (Nil _) (Just (a:as)) " [AstValue $ "  apply (makeCPS env cont " ++ fnextExpr ++ ") a as "],
-               AstFunction thisFunc 
-                " env cont value (Just (a:as)) " [AstValue $ "  apply (makeCPS env cont " ++ fnextExpr ++ ") a $ as ++ [value] "]]
       (a:as) -> do
         let lastArg = null as
         Atom stubFunc <- _gensym "applyFirstArg" -- Call into compiled stub
@@ -1058,6 +1054,8 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                      True -> return [] -- Using apply wrapper, so no more code
                      _ -> compileArgs nextFunc True as -- True indicates nextFunc needs to use value arg passed into it
         return $ [ f, c] ++ _comp ++ rest
+
+      _ -> throwError $ TypeMismatch "nonempty list" $ List args
 
 compileApply _ err _ = do
     throwError $ Default $ "compileApply - Unexpected argument: " ++ show err
