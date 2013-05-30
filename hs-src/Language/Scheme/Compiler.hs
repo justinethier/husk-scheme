@@ -442,8 +442,10 @@ compile env ast@(List (Atom "define" : List (Atom var : fparams) : fbody)) copts
     compiledParams <- compileLambdaList fparams
     compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
    
+    -- Cache macro expansions within function body
+    ebody <- mapM (\ lisp -> Language.Scheme.Macro.macroEval env lisp Language.Scheme.Core.apply) fbody
     -- Store var in huskc's env for macro processing (and same for other vers of define)
-    _ <- makeNormalFunc env fparams fbody >>= defineVar env var
+    _ <- makeNormalFunc env fparams ebody >>= defineVar env var
    
     -- Entry point; ensure var is not rebound
     f <- return $ [
@@ -464,7 +466,8 @@ compile env ast@(List (Atom "define" : DottedList (Atom var : fparams) varargs :
     compiledBody <- compileBlock symCallfunc Nothing bodyEnv [] fbody
    
     -- Store var in huskc's env for macro processing (and same for other vers of define)
-    _ <- makeVarargs varargs env fparams fbody >>= defineVar env var
+    ebody <- mapM (\ lisp -> Language.Scheme.Macro.macroEval env lisp Language.Scheme.Core.apply) fbody
+    _ <- makeVarargs varargs env fparams ebody >>= defineVar env var
    
     -- Entry point; ensure var is not rebound
     f <- return $ [
