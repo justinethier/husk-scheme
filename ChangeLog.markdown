@@ -7,6 +7,8 @@ TBD: 40% reduction in compiled code size. but we need to do better
 - Enhanced the compiler to detect undefined variables and report an error at compile time, instead of generating code that throws a runtime error.
 - Added `load` as a compiler special form, to allow code to be included at compile time.
 
+- Fixed an issue where the compiler would not cache macro expansions in its local memory when compiling function definitions. This causes problems for ER macros that are transformed at compile time, as the evaluator may attempt to evaluate a special form thinking that it is a function, resulting in an "unbound variable" error.
+
 v3.9
 --------
 
