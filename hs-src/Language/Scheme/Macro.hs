@@ -901,10 +901,6 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
         -- no conflicts are possible.
         macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts)) apply
       SyntaxExplicitRenaming transformer -> do
-        -- TODO: probably need to take macro hygiene, rename env, etc into account 
-
--- TODO: unfortunately, since apply is required below, it means we need to thread that parameter
--- through all our macro calls. it probably also means that expand will need to prompt for it as well
         erRenameEnv <- liftIO $ nullEnv -- Local environment used just for this
                                         -- Different than the syntax-rules rename env (??)
         expanded <- explicitRenamingTransform 
