@@ -30,11 +30,11 @@ unpackSet = fromOpaque
 
 primSingleton :: [LispVal] -> ThrowsError LispVal
 primSingleton [e] = liftM (toOpaque . S.singleton) (unpackStr e)
-primSingleton badArgs = throwError $ NumArgs 1 badArgs
+primSingleton badArgs = throwError $ NumArgs (Just 1) badArgs
 
 primElem :: [LispVal] -> ThrowsError LispVal
 primElem [e, s] = liftM Bool $ liftM2 (S.member) (unpackStr e) (unpackSet s)
-primElem badArgs = throwError $ NumArgs 2 badArgs
+primElem badArgs = throwError $ NumArgs (Just 2) badArgs
 
 primUnion :: [LispVal] -> ThrowsError LispVal
 primUnion = liftM (toOpaque . S.unions) . mapM unpackSet
