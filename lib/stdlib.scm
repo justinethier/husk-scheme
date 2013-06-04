@@ -119,8 +119,8 @@
 ; updated to take this into acccount, so the pitfall
 ; still fails
 ;
+     (begin result1 result2 ...)) ;; TODO: should use begin
      ;((lambda () result1 result2 ...))) ;; TODO: should use begin
-     (begin result1 result2 ...))
     ((cond (test => result))
      (let ((temp test))
        (if temp (result temp))))
@@ -136,13 +136,13 @@
            temp
            (cond clause1 clause2 ...))))
     ((cond (test result1 result2 ...))
+     (if test (begin result1 result2 ...))) ;; TODO: should use begin
      ;(if test ((lambda () result1 result2 ...)))) ;; TODO: should use begin
-     (if test (begin result1 result2 ...)))
     ((cond (test result1 result2 ...)
            clause1 clause2 ...)
      (if test
+         (begin result1 result2 ...) ;; TODO: should use begin
          ;((lambda () result1 result2 ...)) ;; TODO: should use begin
-         (begin result1 result2 ...)
          (cond clause1 clause2 ...)))))
 ; Case
 ; Form from R5RS:
@@ -154,19 +154,19 @@
        (case atom-key clauses ...)))
     ((case key
        (else result1 result2 ...))
+     (if #t (begin result1 result2 ...))) ;; TODO: should use begin
      ;(if #t ((lambda () result1 result2 ...)))) ;; TODO: should use begin
-     (if #t (begin result1 result2 ...)))
     ((case key
        ((atoms ...) result1 result2 ...))
      (if (memv key '(atoms ...))
+         (begin result1 result2 ...))) ;; TODO: should use begin
          ;((lambda () result1 result2 ...)))) ;; TODO: should use begin
-         (begin result1 result2 ...)))
     ((case key
        ((atoms ...) result1 result2 ...)
        clause clauses ...)
      (if (memv key '(atoms ...))
+         (begin result1 result2 ...) ;; TODO: should use begin
          ;((lambda () result1 result2 ...)) ;; TODO: should use begin
-         (begin result1 result2 ...)
          (case key clause clauses ...)))))
 
 (define (my-mem-helper obj lst cmp-proc)
