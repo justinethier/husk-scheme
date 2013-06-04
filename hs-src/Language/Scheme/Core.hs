@@ -26,7 +26,7 @@ module Language.Scheme.Core
     -- * Core data
     , primitiveBindings
     , r5rsEnv
-    , r7rsEnv
+    -- , r7rsEnv
     , version
     -- * Utility functions
     , getDataFileFullPath
@@ -929,7 +929,7 @@ r5rsEnv = do
 
 -- |Load the standard r7rs environment
 --
--- TODO: all of this is just experimental
+-- TODO: This is just a stub, do not try using it yet!
 --
 r7rsEnv :: IO Env
 r7rsEnv = do
