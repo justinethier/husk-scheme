@@ -767,13 +767,21 @@ compile env ast@(List (Atom "%import" : args)) copts = do
 compile env (List [a@(Atom "husk-interpreter?")]) copts = do
     mfunc env (List [a, Bool True]) compile copts 
 
-compile env (List [Atom "load", filename, envSpec]) copts = do
+compile env args@(List [Atom "load", filename, envSpec]) copts = do
   -- Explicitly do NOT call compileSpecialFormBody here, since load is not normally a special form
 
   -- F*ck it, just run the evaluator here since filename is req'd at compile time
- -- TODO: error handling for string below
-  String filename' <- Language.Scheme.Core.evalLisp env filename
+  --String filename' <- Language.Scheme.Core.evalLisp env filename
+  fname <- Language.Scheme.Core.evalLisp env filename
+  case fname of
+    -- Compile contents of the file
+    String fn -> compileFile fn
 
+    -- Unable to get filename at compile time, fall back to loading at runtime
+    _ -> mfunc env args compileApply copts
+
+ where 
+ compileFile filename' = do
   Atom symEnv <- _gensym "loadEnv"
   Atom symLoad <- _gensym "load"
   compEnv <- compileExpr env envSpec symEnv
