@@ -26,6 +26,7 @@ module Language.Scheme.Core
     -- * Core data
     , primitiveBindings
     , r5rsEnv
+    -- , r7rsEnv
     , version
     -- * Utility functions
     , getDataFileFullPath
@@ -924,6 +925,41 @@ r5rsEnv = do
          "(add-module! '(scheme r5rs) (make-module #f (interaction-environment) '()))"
 #endif
 
+  return env
+
+-- |Load the standard r7rs environment
+--
+-- TODO: This is just a stub, do not try using it yet!
+--
+r7rsEnv :: IO Env
+r7rsEnv = do
+  -- TODO: should there be a primitive bindings for r7rs??
+  --env <- primitiveBindings
+  env <- nullEnv
+
+-- TODO: these are obsolete with r7rs, should use libraries instead
+--  stdlib <- PHS.getDataFileName "lib/stdlib.scm"
+--  srfi55 <- PHS.getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
+--  
+--  -- Load standard library
+--  _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
+--
+--  -- Load (require-extension), which can be used to load other SRFI's
+--  _ <- evalString env $ "(load \"" ++ (escapeBackslashes srfi55) ++ "\")"
+--  registerExtensions env PHS.getDataFileName
+
+  -- Load module meta-language 
+  -- Note: there is no ifdef here because modules are a core part of r7rs
+  metalib <- PHS.getDataFileName "lib/modules.scm"
+  metaEnv <- nullEnvWithParent env -- Load env as parent of metaenv
+  _ <- evalString metaEnv $ "(load \"" ++ (escapeBackslashes metalib) ++ "\")"
+  -- Load meta-env so we can find it later
+  _ <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
+  -- Bit of a hack to load (import)
+  _ <- evalLisp' env $ List [Atom "%bootstrap-import"]
+  -- Load (r5rs base)
+  _ <- evalString metaEnv
+         "(add-module! '(scheme r5rs) (make-module #f (interaction-environment) '()))"
   return env
 
 -- Functions that extend the core evaluator, but that can be defined separately.
