@@ -1,7 +1,7 @@
 --- 
 layout: post
 title: Released Version 3.10
-excerpt: This release includes many important fixes and enhancements to the compiler 
+excerpt: This release is the first major step in moving the compiler from an experimental project to a tool that can be used for real-world applications.
 ---
 # {{ page.title }}
 
