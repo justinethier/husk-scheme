@@ -1,11 +1,11 @@
 --- 
 layout: post
 title: Released Version 3.10
-excerpt: This release is the first major step in moving the compiler from an experimental project to a tool that can be used for real-world applications.
+excerpt: This release is a major step in moving the compiler from an experimental project to a tool that can be used for real-world applications.
 ---
 # {{ page.title }}
 
-This release includes important fixes / enhancements to the compiler, and is the first major step in moving `huskc` from an experimental project to a tool that can be used for real-world applications.
+This release includes important fixes / enhancements to the compiler, and is a major step in moving `huskc` from an experimental project to a tool that can be used for real-world applications.
 
 Most of the changes were inspired by a [Haskell port](https://github.com/justinethier/nugget) of [The 90 Minute Scheme to C compiler](http://www.iro.umontreal.ca/~boucherd/mslug/meetings/20041020/minutes-en.html) by Marc Feeley.
 
