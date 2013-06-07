@@ -130,8 +130,7 @@ showDebug _ = do
 -- |Print version information
 showVersion :: Options -> IO Options
 showVersion _ = do
-  putStrLn Language.Scheme.Core.version
--- TODO: would be nice to be able to print the banner:  Language.Scheme.Core.showBanner
+  Language.Scheme.Core.showBanner
   exitWith ExitSuccess
 
 -- |High level code to compile the given file
