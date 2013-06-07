@@ -1,7 +1,7 @@
 --- 
 layout: post
 title: Released Version 3.10
-excerpt: This release includes many important fixes and enhancements to the compiler
+excerpt: This release includes many important fixes and enhancements to the compiler 
 ---
 # {{ page.title }}
 
