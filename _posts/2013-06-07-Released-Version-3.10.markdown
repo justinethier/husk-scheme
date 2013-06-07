@@ -5,9 +5,9 @@ excerpt: This release is the first major step in moving the compiler from an exp
 ---
 # {{ page.title }}
 
-This release includes many important fixes / enhancements to the compiler, and is the first major step in moving the compiler from an experimental project to a tool that can be used for real applications.
+This release includes important fixes / enhancements to the compiler, and is the first major step in moving `huskc` from an experimental project to a tool that can be used for real-world applications.
 
-All of this work is original, but it was inspired by [The 90 Minute Scheme to C compiler](http://www.iro.umontreal.ca/~boucherd/mslug/meetings/20041020/minutes-en.html) by Marc Feeley, and in particular a [port](https://github.com/justinethier/nugget) of that code to Haskell.
+Most of the changes were inspired by a [Haskell port](https://github.com/justinethier/nugget) of [The 90 Minute Scheme to C compiler](http://www.iro.umontreal.ca/~boucherd/mslug/meetings/20041020/minutes-en.html) by Marc Feeley.
 
 Anyway, the changes for the 3.10 release are as follows:
 
