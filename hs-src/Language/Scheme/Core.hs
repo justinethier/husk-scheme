@@ -72,7 +72,7 @@ showBanner = do
   putStrLn " | | | | |_| \\__ \\   <    /// \\\\\\   \\__ \\ (__| | | |  __/ | | | | |  __/ "
   putStrLn " |_| |_|\\__,_|___/_|\\_\\  ///   \\\\\\  |___/\\___|_| |_|\\___|_| |_| |_|\\___| "
   putStrLn "                                                                         "
-  putStrLn " http://justinethier.github.com/husk-scheme                              "
+  putStrLn " http://justinethier.github.io/husk-scheme                              "
   putStrLn " (c) 2010-2013 Justin Ethier                                             "
   putStrLn $ " Version " ++ version ++ " "
   putStrLn "                                                                         "
