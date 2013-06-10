@@ -38,10 +38,6 @@ import Data.Ratio
 import Data.Word
 -- import Debug.Trace
 
--- | TODO: move somewhere more appropriate
-lispNull :: LispVal
-lispNull = Nil ""
-
 -- |A type to store options passed to compile
 --  eventually all of this might be able to be 
 --  integrated into a Compile monad
@@ -281,7 +277,7 @@ defineTopLevelVars env ((List (Atom "define" : DottedList (Atom var : _) _ : _))
     _ <- defineTopLevelVar env var
     defineTopLevelVars env ls
 defineTopLevelVars env (_ : ls) = defineTopLevelVars env ls
-defineTopLevelVars _ _ = return lispNull 
+defineTopLevelVars _ _ = return nullLisp 
 
 defineTopLevelVar env var = do
   defineVar env var $ Number 0 -- Actual value not loaded at the moment 

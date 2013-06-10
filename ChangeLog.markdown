@@ -3,6 +3,7 @@ v3.11
 --------
 
 Issue #110 - allow huskc to reference variables defined later in the program
+Added nullLisp type (TBD is this is a good idea, and also what about nilLisp?)
 
 v3.10
 --------

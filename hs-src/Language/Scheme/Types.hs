@@ -73,6 +73,7 @@ module Language.Scheme.Types
         , LispEnv
         , EOF
         , Nil)
+    , nullLisp
     , toOpaque
     , fromOpaque
     , DeferredCode (..)
@@ -260,6 +261,10 @@ data LispVal = Atom String
    -- ^ End of file indicator
  | Nil String
  -- ^Internal use only; do not use this type directly.
+
+-- | Scheme "null" value
+nullLisp :: LispVal
+nullLisp = List []
 
 -- |Convert a Haskell value to an opaque Lisp value.
 toOpaque :: Typeable a => a -> LispVal
