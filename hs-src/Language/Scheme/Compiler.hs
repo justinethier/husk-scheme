@@ -38,6 +38,10 @@ import Data.Ratio
 import Data.Word
 -- import Debug.Trace
 
+-- | TODO: move somewhere more appropriate
+lispNull :: LispVal
+lispNull = Nil ""
+
 -- |A type to store options passed to compile
 --  eventually all of this might be able to be 
 --  integrated into a Compile monad
@@ -224,14 +228,19 @@ compileLisp env filename entryPoint exitPoint = load filename >>= compileBlock e
 -- Note: Uses explicit recursion to transform a block of code, because
 --  later lines may depend on previous ones
 compileBlock :: String -> Maybe String -> Env -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST]
-compileBlock symThisFunc symLastFunc env result [c] = do
+compileBlock symThisFunc symLastFunc env result lisps = do
+  _ <- defineTopLevelVars env lisps
+  _compileBlock symThisFunc symLastFunc env result lisps
+
+_compileBlock :: String -> Maybe String -> Env -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST]
+_compileBlock symThisFunc symLastFunc env result [c] = do
   compiled <- mcompile env c $ CompileOptions symThisFunc False False symLastFunc 
   return $ result ++ compiled
-compileBlock symThisFunc symLastFunc env result (c:cs) = do
+_compileBlock symThisFunc symLastFunc env result (c:cs) = do
   Atom symNextFunc <- _gensym "f"
   compiled <- mcompile env c $ CompileOptions symThisFunc False False (Just symNextFunc)
-  compileBlock symNextFunc symLastFunc env (result ++ compiled) cs
-compileBlock _ _ _ result [] = return result
+  _compileBlock symNextFunc symLastFunc env (result ++ compiled) cs
+_compileBlock _ _ _ result [] = return result
 
 -- TODO: could everything just be regular function calls except when a continuation is 'added to the stack' via a makeCPS(makeCPSWArgs ...) ?? I think this could be made more efficient
 
@@ -256,6 +265,26 @@ defineLambdaVars env (Atom v : vs) = do
     defineLambdaVars env vs
 defineLambdaVars env (_ : vs) = defineLambdaVars env vs
 defineLambdaVars env [] = return $ Nil ""
+
+-- |Find all variables defined at "this" level and load their symbols into
+--  the environment. This allows the compiler validation to work even 
+--  though a variable is used in a sub-form before it is defined further
+--  on down in the program
+defineTopLevelVars :: Env -> [LispVal] -> IOThrowsError LispVal
+defineTopLevelVars env (List [Atom "define", Atom var, form] : ls) = do
+    _ <- defineTopLevelVar env var
+    defineTopLevelVars env ls
+defineTopLevelVars env ((List (Atom "define" : List (Atom var : _) : _)) : ls) = do
+    _ <- defineTopLevelVar env var
+    defineTopLevelVars env ls
+defineTopLevelVars env ((List (Atom "define" : DottedList (Atom var : _) _ : _)) : ls) = do
+    _ <- defineTopLevelVar env var
+    defineTopLevelVars env ls
+defineTopLevelVars env (_ : ls) = defineTopLevelVars env ls
+defineTopLevelVars _ _ = return lispNull 
+
+defineTopLevelVar env var = do
+  defineVar env var $ Number 0 -- Actual value not loaded at the moment 
 
 compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts

@@ -1,3 +1,9 @@
+
+v3.11
+--------
+
+Issue #110 - allow huskc to reference variables defined later in the program
+
 v3.10
 --------
 
