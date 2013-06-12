@@ -18,6 +18,7 @@ module Language.Scheme.Variables
     (
     -- * Environments
       printEnv
+    , recPrintEnv
     , exportsFromEnv 
     , copyEnv
     , extendEnv
@@ -107,6 +108,16 @@ printEnv env = do
   showVar (name, val) = do
     v <- liftIO $ readIORef val
     return $ "[" ++ name ++ "]" ++ ": " ++ show v
+
+recPrintEnv :: Env -> IO String
+recPrintEnv env = do
+  envStr <- liftIO $ printEnv env
+
+  case parentEnv env of
+    Just par -> do
+        parEnvStr <- liftIO $ recPrintEnv par
+        return $ envStr ++ "\n" ++ parEnvStr
+    Nothing -> return envStr
 
 -- |Return a list of symbols exported from an environment
 exportsFromEnv :: Env 
