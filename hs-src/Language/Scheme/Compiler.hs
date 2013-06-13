@@ -338,6 +338,26 @@ compile env ast@(List (Atom "letrec-syntax" : List _bindings : _body)) copts = d
          List e -> compile bodyEnv' (List $ Atom "begin" : e) copts'
          e -> compile bodyEnv' e copts'
 
+-- A non-standard way to rebind a macro to another keyword
+compile env 
+        ast@(List [Atom "define-syntax", 
+                   Atom newKeyword,
+                   Atom keyword]) 
+        copts = do
+  bound <- getNamespacedVar' env macroNamespace keyword
+  case bound of
+    Just m -> do
+        defineNamespacedVar env macroNamespace newKeyword m
+        compFunc <- return $ [
+          AstValue $ "  bound <- getNamespacedVar' env macroNamespace \"" ++ keyword ++ "\"",
+          AstValue $ "  case bound of ",
+          AstValue $ "    Just m -> ",
+          AstValue $ "      defineNamespacedVar env macroNamespace \"" ++ newKeyword ++ "\" m",
+          AstValue $ "    Nothing -> throwError $ TypeMismatch \"macro\" $ Atom \"" ++ keyword ++ "\"",
+          createAstCont copts "(Nil \"\")" ""]
+        return $ [createAstFunc copts compFunc]
+    Nothing -> throwError $ TypeMismatch "macro" $ Atom keyword
+
 compile env ast@(List [Atom "define-syntax", Atom keyword,
   (List [Atom "er-macro-transformer", 
     (List (Atom "lambda" : List fparams : fbody))])])

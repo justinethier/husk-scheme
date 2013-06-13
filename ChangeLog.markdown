@@ -8,6 +8,10 @@ Not sure this explains why the compiler does not have imported forms at compile 
 Issue #110 - allow huskc to reference variables defined later in the program
 Added nullLisp type (TBD is this is a good idea, and also what about nilLisp?)
 
+Allow the compiler to redefine macro keywords, EG:
+(define-syntax orig-begin begin)
+note this is non-standard
+
 v3.10
 --------
 
