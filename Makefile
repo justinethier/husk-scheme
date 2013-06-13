@@ -32,6 +32,9 @@ HUSKC = huskc
 HUSKI = huski
 UNIT_TEST_DIR = tests
 
+# Name our phony targets
+.PHONY: config build install sdist doc rpm test testc
+
 all: config build install
 config:
 	cabal configure --prefix=$(HOME) --user $(GHCFLAGS) $(CONFIGFLAGS)
