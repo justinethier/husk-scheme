@@ -3,7 +3,7 @@ v3.11
 --------
 
 TODO: I think %import needs to be executed by the compiler in order to ensure proper bindings in compiled program, but cannot just add as a special form because %import is renamed in repl-import. so need to figure out what to do.
-Not sure this explains why the compiler does not have imported forms at compile time, though. shouldn't the evaluator get the env's setup correctly during compilation? maybe there is another issue?
+Not sure this explains why the compiler does not have imported forms at compile time, though. shouldn't the evaluator get the env's setup correctly during compilation? maybe there is another issue? 
 
 Issue #110 - allow huskc to reference variables defined later in the program
 Added nullLisp type (TBD is this is a good idea, and also what about nilLisp?)
