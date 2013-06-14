@@ -32,8 +32,9 @@ HUSKC = huskc
 HUSKI = huski
 UNIT_TEST_DIR = tests
 
-# Name our phony targets
-.PHONY: config build install sdist doc rpm test testc
+# Mark targets as phony since they do not 
+# correspond to actual files
+.PHONY: config build install sdist doc rpm test testc tags clean
 
 all: config build install
 config:
