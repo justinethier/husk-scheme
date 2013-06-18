@@ -157,10 +157,11 @@
            (cond
             ((find-module-file f)
              => (lambda (path)
-                  (cond (fold?
-                         (let ((in (open-input-file path)))
-                           (set-port-fold-case! in #t)
-                           (load in env)))
+                        ;; JAE
+                  (cond ;(fold?
+                        ; (let ((in (open-input-file path)))
+                        ;   (set-port-fold-case! in #t)
+                        ;   (load in env)))
                         (else
                          (load path env)))))
             (else (error "couldn't find include" f)))))
@@ -187,8 +188,9 @@
           (load-modules (cdr x) "" #f))
          ((include-ci)
           (load-modules (cdr x) "" #t))
-         ((include-shared)
-          (load-modules (cdr x) *shared-object-extension* #f))
+         ;; JAE
+         ;((include-shared)
+         ; (load-modules (cdr x) *shared-object-extension* #f))
          ((body begin)
           (for-each 
             (lambda (expr) 
