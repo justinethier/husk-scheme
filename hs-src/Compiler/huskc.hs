@@ -163,15 +163,19 @@ compileSchemeFile env stdlib srfi55 filename outHaskell = do
         Just _ -> True
         _ -> False
 
-  (String nextFunc, libsC, libSrfi55C) <- case stdlib of
-    Nothing -> return (String "run", [], [])
+  -- TODO: clean this up later
+  moduleFile <- liftIO $ getDataFileName "lib/modules.scm"
+
+  (String nextFunc, libsC, libSrfi55C, libModules) <- case stdlib of
+    Nothing -> return (String "run", [], [], [])
     Just stdlib' -> do
       -- TODO: it is only temporary to compile the standard library each time. It should be 
       --       precompiled and just added during the ghc compilation
       libsC <- compileLisp env stdlib' "run" (Just "exec55")
       libSrfi55C <- compileLisp env srfi55 "exec55" (Just "exec55_2")
+      libModules <- compileLisp env moduleFile "exec55_2" (Just "exec55_3")
       liftIO $ Language.Scheme.Core.registerExtensions env getDataFileName
-      return (String "exec", libsC, libSrfi55C)
+      return (String "exec", libsC, libSrfi55C, libModules)
 
   -- Initialize the compiler module and begin
   _ <- initializeCompiler env
@@ -193,6 +197,8 @@ compileSchemeFile env stdlib srfi55 filename outHaskell = do
       _ <- hPutStrLn outH " ------ END OF STDLIB ------"
       _ <- writeList outH $ map show libSrfi55C
       hPutStrLn outH " ------ END OF SRFI 55 ------"
+      _ <- writeList outH $ map show libModules
+      hPutStrLn outH " ------ END OF MODULES ------"
     False -> do
       hPutStrLn outH "exec _ _ _ _ = return $ Nil \"\"" -- Placeholder
   _ <- liftIO $ writeList outH $ map show execC
