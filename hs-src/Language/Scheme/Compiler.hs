@@ -191,7 +191,7 @@ header filepath useCompiledLibs = do
     , "getDataFileName' :: FilePath -> IO FilePath "
     , "getDataFileName' name = return $ \"" ++ (Language.Scheme.Util.escapeBackslashes filepath) ++ "\" ++ name "
     , " "
-    , "exec55_2 env cont _ _ = do "
+    , "exec55_3 env cont _ _ = do "
     , "  liftIO $ registerExtensions env getDataFileName' "
     , "  continueEval env (makeCPS env cont exec) (Nil \"\")"
     , " "
