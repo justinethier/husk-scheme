@@ -26,6 +26,7 @@ module Language.Scheme.Core
     -- * Core data
     , primitiveBindings
     , r5rsEnv
+    , r5rsEnv'
     -- , r7rsEnv
     , version
     -- * Utility functions
@@ -900,6 +901,16 @@ primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrim
 -- |Load the standard r5rs environment, including libraries
 r5rsEnv :: IO Env
 r5rsEnv = do
+  env <- r5rsEnv'
+  -- Bit of a hack to load (import)
+  _ <- evalLisp' env $ List [Atom "%bootstrap-import"]
+
+  return env
+
+-- |Load the standard r5rs environment, including libraries,
+--  but do not create the (import) binding
+r5rsEnv' :: IO Env
+r5rsEnv' = do
   env <- primitiveBindings
   stdlib <- PHS.getDataFileName "lib/stdlib.scm"
   srfi55 <- PHS.getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
@@ -918,8 +929,6 @@ r5rsEnv = do
   _ <- evalString metaEnv $ "(load \"" ++ (escapeBackslashes metalib) ++ "\")"
   -- Load meta-env so we can find it later
   _ <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
-  -- Bit of a hack to load (import)
-  _ <- evalLisp' env $ List [Atom "%bootstrap-import"]
   -- Load (r5rs base)
   _ <- evalString metaEnv
          "(add-module! '(scheme r5rs) (make-module #f (interaction-environment) '()))"
