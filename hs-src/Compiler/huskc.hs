@@ -164,7 +164,7 @@ compileSchemeFile env stdlib srfi55 filename outHaskell = do
         _ -> False
 
   -- TODO: clean this up later
-  moduleFile <- liftIO $ getDataFileName "lib/modules.scm"
+  --moduleFile <- liftIO $ getDataFileName "lib/modules.scm"
 
   (String nextFunc, libsC, libSrfi55C, libModules) <- case stdlib of
     Nothing -> return (String "run", [], [], [])
@@ -173,9 +173,9 @@ compileSchemeFile env stdlib srfi55 filename outHaskell = do
       --       precompiled and just added during the ghc compilation
       libsC <- compileLisp env stdlib' "run" (Just "exec55")
       libSrfi55C <- compileLisp env srfi55 "exec55" (Just "exec55_2")
-      libModules <- compileLisp env moduleFile "exec55_2" (Just "exec55_3")
+      --libModules <- compileLisp env moduleFile "exec55_2" (Just "exec55_3")
       liftIO $ Language.Scheme.Core.registerExtensions env getDataFileName
-      return (String "exec", libsC, libSrfi55C, libModules)
+      return (String "exec", libsC, libSrfi55C, []) --libModules)
 
   -- Initialize the compiler module and begin
   _ <- initializeCompiler env
@@ -197,7 +197,7 @@ compileSchemeFile env stdlib srfi55 filename outHaskell = do
       _ <- hPutStrLn outH " ------ END OF STDLIB ------"
       _ <- writeList outH $ map show libSrfi55C
       hPutStrLn outH " ------ END OF SRFI 55 ------"
-      _ <- writeList outH $ map show libModules
+      -- _ <- writeList outH $ map show libModules
       hPutStrLn outH " ------ END OF MODULES ------"
     False -> do
       hPutStrLn outH "exec _ _ _ _ = return $ Nil \"\"" -- Placeholder
