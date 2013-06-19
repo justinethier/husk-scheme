@@ -22,7 +22,7 @@ be made for time and space...
 -}
 
 module Language.Scheme.Compiler where 
-import qualified Language.Scheme.Core (apply, evalLisp, version)
+import qualified Language.Scheme.Core (apply, evalLisp, r5rsEnv, version)
 import qualified Language.Scheme.Macro
 import Language.Scheme.Primitives
 import Language.Scheme.Types
@@ -36,7 +36,7 @@ import qualified Data.List
 import qualified Data.Map
 import Data.Ratio
 import Data.Word
--- import Debug.Trace
+import Debug.Trace
 
 -- |A type to store options passed to compile
 --  eventually all of this might be able to be 
@@ -283,6 +283,16 @@ defineTopLevelVar env var = do
   defineVar env var $ Number 0 -- Actual value not loaded at the moment 
 
 compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
+
+-- Experimenting with r7rs library support
+compile env ast@(List (Atom "import" : args)) copts = do
+    envTmp <- liftIO $ Language.Scheme.Core.r5rsEnv
+    _ <- Language.Scheme.Core.evalLisp envTmp (trace ("debug - evaluating " ++ (show ast)) ast)
+
+    LispEnv meta <- getVar envTmp "*meta-env*"
+    debug <- liftIO $ printEnv meta
+    throwError $ Default debug
+
 compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
 compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts
 compile _ (Char c) copts = compileScalar ("  return $ Char " ++ (show c)) copts
