@@ -290,8 +290,15 @@ compile env ast@(List (Atom "import" : args)) copts = do
     _ <- Language.Scheme.Core.evalLisp envTmp (trace ("debug - evaluating " ++ (show ast)) ast)
 
     LispEnv meta <- getVar envTmp "*meta-env*"
-    debug <- liftIO $ printEnv meta
-    throwError $ Default debug
+--    modules <- getVar meta "*modules*" >>= recDerefPtrs
+
+    -- TODO: need to analyze modules somehow and figure out order
+    -- to compile them in, etc
+
+    -- TODO: can use (module-exports) from meta-language to get export lists
+
+    test <- Language.Scheme.Core.evalLisp meta $ List [Atom "find-module", List [Atom "quote", List [Atom "libs", Atom "lib2"]]]
+    throwError $ Default $ show test
 
 compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
 compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts
