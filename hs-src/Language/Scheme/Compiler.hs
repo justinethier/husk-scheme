@@ -292,10 +292,18 @@ compile env ast@(List (Atom "import" : args)) copts = do
     LispEnv meta <- getVar envTmp "*meta-env*"
 --    modules <- getVar meta "*modules*" >>= recDerefPtrs
 
-    -- TODO: need to analyze modules somehow and figure out order
-    -- to compile them in, etc
+    -- TODO: I think modules can be compiled in reverse order, since this is the order they are added by the evaluator
 
     -- TODO: can use (module-exports) from meta-language to get export lists
+    -- actually, might be smarter to do the same thing repl-import does, process
+    -- each import statement, using resolve-import to get the import list.
+    -- then process the module accordingly.
+    --
+    -- should leverage the meta-language as much as possible to avoid duplicating effort
+
+    -- Will probably need to 'cheat' somehow for modules such as r5rs that are really just an environment,
+    -- since the compiler works on lisp expressions and not environments. may need to figure out what
+    -- environment it is somehow and bake that into the compiled code
 
     test <- Language.Scheme.Core.evalLisp meta $ List [Atom "find-module", List [Atom "quote", List [Atom "libs", Atom "lib2"]]]
     throwError $ Default $ show test
