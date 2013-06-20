@@ -8,7 +8,7 @@
 ;;; used to implement modules (r7rs libraries) in husk
 ;;;
 
-;; meta.scm -- meta langauge for describing modules
+;; meta.scm -- meta language for describing modules
 ;; Copyright (c) 2009-2012 Alex Shinn.  All rights reserved.
 ;; BSD-style license: http://synthcode.com/license.txt
 
