@@ -305,6 +305,9 @@ compile env ast@(List (Atom "import" : args)) copts = do
     -- since the compiler works on lisp expressions and not environments. may need to figure out what
     -- environment it is somehow and bake that into the compiled code
 
+    -- TODO: may have trouble with a module that itself calls `import`, since eval-module duplicates
+    -- the code used in repl-import. may need a special case for these imports
+
     test <- Language.Scheme.Core.evalLisp meta $ List [Atom "find-module", List [Atom "quote", List [Atom "libs", Atom "lib2"]]]
     throwError $ Default $ show test
 
