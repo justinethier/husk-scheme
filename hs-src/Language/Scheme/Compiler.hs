@@ -320,7 +320,8 @@ compile env ast@(List (Atom "import" : args)) copts = do
   in order to compile a module, we first need to introduce an env. per eval-module,
   we can use (make-environment) unless the module contains an env, in which case
   we use that (probably this is only applicable to built-in modules such as scheme r5rs).
-  then all code is compiled using this env, much like a lambda. 
+  then all code is compiled using this env, much like a lambda (except will need to
+  create a new env instead of just passing along env like in a lambda def)
   
   we probably need to 
   maintain a *modules* data structure at runtime in the compiled code, so after a module
