@@ -8,5 +8,5 @@
     (export list2)
     (begin
         (define (list2 . objs)  objs)
-
+        (define not-exported 'should-not-be-exported)
         ))

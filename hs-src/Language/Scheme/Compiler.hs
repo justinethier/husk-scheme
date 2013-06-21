@@ -350,12 +350,20 @@ compile env ast@(List (Atom "import" : args)) copts = do
         return [createAstFunc copts [
             -- TODO: need to identify env using module name, and
             -- add it to *modules* at runtime
-            createAstCont copts "(Nil \"\")" ""
-            ]]
+            AstValue $ "  val <- defineVar env \"*modules*\" $ String \"TODO\""], 
+            createAstCont copts "val" ""]
     _ -> -- TODO: this is just TEMPORARY for testing!
         -- TODO: should actually compile the whole module within
         -- its own env, and store the env in *modules* at runtime
-        compileScalar ("  return $ Nil \"\"") copts
+        --compileScalar ("  return $ Nil \"\"") copts
+        return []
+
+-- TODO on above: need to figure out how to tweak copts so unique functions are created; probably need to 
+-- all the appropriate function to update copts, and pass it along as a parameter to compileModule*
+--
+-- also how to figure out where to pick back up? does the outer copts already handle that? I suppose
+-- it would have to in the current compiler
+
 
 compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
 compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts
