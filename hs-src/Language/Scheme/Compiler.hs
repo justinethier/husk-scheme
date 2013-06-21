@@ -290,8 +290,12 @@ compile env ast@(List (Atom "import" : args)) copts = do
     _ <- Language.Scheme.Core.evalLisp envTmp (trace ("debug - evaluating " ++ (show ast)) ast)
 
     LispEnv meta <- getVar envTmp "*meta-env*"
---    modules <- getVar meta "*modules*" >>= recDerefPtrs
+    List modules' <- getVar meta "*modules*" >>= recDerefPtrs
+    let modules = reverse modules'
 
+    case modules of
+        (m : ms) -> compileModule meta m
+        _ -> return []
     -- TODO: I think modules can be compiled in reverse order, since this is the order they are added by the evaluator
 
     -- TODO: can use (module-exports) from meta-language to get export lists
@@ -307,9 +311,17 @@ compile env ast@(List (Atom "import" : args)) copts = do
 
     -- TODO: may have trouble with a module that itself calls `import`, since eval-module duplicates
     -- the code used in repl-import. may need a special case for these imports
+    -- ^ then again, not sure that matters because the interpreter loads all of these
+    --   imports into *modules*
 
-    test <- Language.Scheme.Core.evalLisp meta $ List [Atom "find-module", List [Atom "quote", List [Atom "libs", Atom "lib2"]]]
-    throwError $ Default $ show test
+    --test <- Language.Scheme.Core.evalLisp meta $ List [Atom "find-module", List [Atom "quote", List [Atom "libs", Atom "lib2"]]]
+    --throwError $ Default $ show test
+  where
+ compileModule meta (DottedList [name@(List ns)] mod) = do
+   exports <- Language.Scheme.Core.evalLisp meta $ List [Atom "%module-exports", mod]
+   mEnv <- Language.Scheme.Core.evalLisp meta $ List [Atom "module-env", mod]
+   mData <- Language.Scheme.Core.evalLisp meta $ List [Atom "module-meta-data", mod]
+   throwError $ Default ("module = " ++ (show ns) ++ ", exports = " ++ (show exports) ++ ", data = " ++ (show mData))
 
 compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
 compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts

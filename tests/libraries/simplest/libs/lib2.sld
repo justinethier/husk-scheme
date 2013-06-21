@@ -6,6 +6,7 @@
 ;;;
 (define-library (libs lib2)
     (export lib2-hello)
+    (import (scheme r5rs write))
     (begin
-        (define lib2-hello 
-            "Hello from library #2")))
+        (define (lib2-hello)
+            (write "Hello from library #2"))))
