@@ -309,13 +309,27 @@ compile env ast@(List (Atom "import" : args)) copts = do
     -- since the compiler works on lisp expressions and not environments. may need to figure out what
     -- environment it is somehow and bake that into the compiled code
 
+
     -- TODO: may have trouble with a module that itself calls `import`, since eval-module duplicates
     -- the code used in repl-import. may need a special case for these imports
     -- ^ then again, not sure that matters because the interpreter loads all of these
     --   imports into *modules*
 
-    --test <- Language.Scheme.Core.evalLisp meta $ List [Atom "find-module", List [Atom "quote", List [Atom "libs", Atom "lib2"]]]
-    --throwError $ Default $ show test
+
+  {- notes on module compilation:
+  in order to compile a module, we first need to introduce an env. per eval-module,
+  we can use (make-environment) unless the module contains an env, in which case
+  we use that (probably this is only applicable to built-in modules such as scheme r5rs).
+  then all code is compiled using this env, much like a lambda. 
+  
+  we probably need to 
+  maintain a *modules* data structure at runtime in the compiled code, so after a module
+  is compiled and executed, it's exports are available to other modules
+
+  assume %import statements will also have to be added to the compiled code, since a module
+  that includes another will need to import it's exports, and likewise the top-level will 
+  need to import the exports of each module it uses
+  -}
   where
  compileModule meta (DottedList [name@(List ns)] mod) = do
    exports <- Language.Scheme.Core.evalLisp meta $ List [Atom "%module-exports", mod]
