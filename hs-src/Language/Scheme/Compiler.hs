@@ -292,10 +292,8 @@ compile env ast@(List (Atom "import" : args)) copts = do
     LispEnv meta <- getVar envTmp "*meta-env*"
     List modules' <- getVar meta "*modules*" >>= recDerefPtrs
     let modules = reverse modules'
+    compileModules meta modules
 
-    case modules of
-        (m : ms) -> compileModule meta m
-        _ -> return []
     -- TODO: I think modules can be compiled in reverse order, since this is the order they are added by the evaluator
 
     -- TODO: can use (module-exports) from meta-language to get export lists
@@ -332,11 +330,32 @@ compile env ast@(List (Atom "import" : args)) copts = do
   need to import the exports of each module it uses
   -}
   where
+ compileModules meta modules@(m : ms) = do
+   c <- compileModule meta m
+   rest <- compileModules meta ms
+   return $ c ++ rest
+ compileModules _ [] = return []
+
  compileModule meta (DottedList [name@(List ns)] mod) = do
    exports <- Language.Scheme.Core.evalLisp meta $ List [Atom "%module-exports", mod]
    mEnv <- Language.Scheme.Core.evalLisp meta $ List [Atom "module-env", mod]
    mData <- Language.Scheme.Core.evalLisp meta $ List [Atom "module-meta-data", mod]
-   throwError $ Default ("module = " ++ (show ns) ++ ", exports = " ++ (show exports) ++ ", data = " ++ (show mData))
+--   throwError $ Default ("module = " ++ (show ns) ++ ", exports = " ++ (show exports) ++ ", data = " ++ (show mData))
+   case exports of
+    -- The special case of a module that is just an env, IE r5rs
+    -- Just skip it for now
+    --
+    -- TODO: WTF is exec generated twice??
+    Bool False -> 
+        return [createAstFunc copts [
+            -- TODO: need to identify env using module name, and
+            -- add it to *modules* at runtime
+            createAstCont copts "(Nil \"\")" ""
+            ]]
+    _ -> -- TODO: this is just TEMPORARY for testing!
+        -- TODO: should actually compile the whole module within
+        -- its own env, and store the env in *modules* at runtime
+        compileScalar ("  return $ Nil \"\"") copts
 
 compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
 compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts
