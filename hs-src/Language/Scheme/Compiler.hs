@@ -292,7 +292,7 @@ compile env ast@(List (Atom "import" : args)) copts = do
     LispEnv meta <- getVar envTmp "*meta-env*"
     List modules' <- getVar meta "*modules*" >>= recDerefPtrs
     let modules = reverse modules'
-    compileModules meta modules
+    compileModules meta (trace ("compileModules: " ++ show modules) modules)
 
     -- TODO: I think modules can be compiled in reverse order, since this is the order they are added by the evaluator
 
@@ -341,7 +341,7 @@ compile env ast@(List (Atom "import" : args)) copts = do
    mEnv <- Language.Scheme.Core.evalLisp meta $ List [Atom "module-env", mod]
    mData <- Language.Scheme.Core.evalLisp meta $ List [Atom "module-meta-data", mod]
 --   throwError $ Default ("module = " ++ (show ns) ++ ", exports = " ++ (show exports) ++ ", data = " ++ (show mData))
-   case exports of
+   case (trace ("compileModule: " ++ show name) exports) of
     -- The special case of a module that is just an env, IE r5rs
     -- Just skip it for now
     --
@@ -352,11 +352,15 @@ compile env ast@(List (Atom "import" : args)) copts = do
             -- add it to *modules* at runtime
             AstValue $ "  val <- defineVar env \"*modules*\" $ String \"TODO\""], 
             createAstCont copts "val" ""]
-    _ -> -- TODO: this is just TEMPORARY for testing!
+    List es -> do
+        case mData of
+            List cs -> do
+                let code = findBegin (trace ("findBegin, cs = " ++ show cs) cs)
+                compileBlock "TODO" (Just "TODO2") env [] (trace ("compileBlock: " ++ show code) code)
+            err -> throwError $ Default $ "Unexpected meta data: " ++ show err
         -- TODO: should actually compile the whole module within
         -- its own env, and store the env in *modules* at runtime
-        --compileScalar ("  return $ Nil \"\"") copts
-        return []
+    err -> throwError $ Default $ "Unexpected exports in compileModule: " ++ show err
 
 -- TODO on above: need to figure out how to tweak copts so unique functions are created; probably need to 
 -- all the appropriate function to update copts, and pass it along as a parameter to compileModule*
@@ -364,6 +368,10 @@ compile env ast@(List (Atom "import" : args)) copts = do
 -- also how to figure out where to pick back up? does the outer copts already handle that? I suppose
 -- it would have to in the current compiler
 
+ -- Find the begin statement that contains the main module code
+ findBegin (List (Atom "begin" : code) : cs) = code
+ findBegin (c : cs) = findBegin cs
+ findBegin _ = []
 
 compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
 compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts
