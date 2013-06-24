@@ -287,12 +287,13 @@ compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 -- Experimenting with r7rs library support
 compile env ast@(List (Atom "import" : args)) copts@(CompileOptions thisFunc _ _ lastFunc) = do
     envTmp <- liftIO $ Language.Scheme.Core.r5rsEnv
-    _ <- Language.Scheme.Core.evalLisp envTmp (trace ("debug - evaluating " ++ (show ast)) ast)
+    _ <- Language.Scheme.Core.evalLisp envTmp ast --(trace ("debug - evaluating " ++ (show ast)) ast)
 
     LispEnv meta <- getVar envTmp "*meta-env*"
     List modules' <- getVar meta "*modules*" >>= recDerefPtrs
     let modules = reverse modules'
-    compileModules meta (trace ("compileModules: " ++ show modules) modules) thisFunc lastFunc
+    --compileModules meta (trace ("compileModules: " ++ show modules) modules) thisFunc lastFunc
+    compileModules meta modules thisFunc lastFunc
 
     -- TODO: I think modules can be compiled in reverse order, since this is the order they are added by the evaluator
 
@@ -344,7 +345,8 @@ compile env ast@(List (Atom "import" : args)) copts@(CompileOptions thisFunc _ _
    mEnv <- Language.Scheme.Core.evalLisp meta $ List [Atom "module-env", mod]
    mData <- Language.Scheme.Core.evalLisp meta $ List [Atom "module-meta-data", mod]
 --   throwError $ Default ("module = " ++ (show ns) ++ ", exports = " ++ (show exports) ++ ", data = " ++ (show mData))
-   case (trace ("compileModule: " ++ show name) exports) of
+   --case (trace ("compileModule: " ++ show name) exports) of
+   case (exports) of
     -- The special case of a module that is just an env, IE r5rs
     -- Just skip it for now
     --
@@ -359,8 +361,8 @@ compile env ast@(List (Atom "import" : args)) copts@(CompileOptions thisFunc _ _
     List es -> do
         case mData of
             List cs -> do
-                let code = findBegin (trace ("findBegin, cs = " ++ show cs) cs)
-                compileBlock symThisFunc symLastFunc env [] (trace ("compileBlock: " ++ show code) code)
+                let code = findBegin cs --(trace ("findBegin, cs = " ++ show cs) cs)
+                compileBlock symThisFunc symLastFunc env [] code --(trace ("compileBlock: " ++ show code) code)
             err -> throwError $ Default $ "Unexpected meta data: " ++ show err
         -- TODO: should actually compile the whole module within
         -- its own env, and store the env in *modules* at runtime
