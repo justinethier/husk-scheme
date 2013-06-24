@@ -341,6 +341,11 @@ compile env ast@(List (Atom "import" : args)) copts@(CompileOptions thisFunc _ _
  compileModules _ [] _ _ = return []
 
  compileModule meta (DottedList [name@(List ns)] mod) symThisFunc symLastFunc = do
+
+-- TODO: if  module has already been compiled, we just need to %import it's contents.
+-- otherwise, we need to compile the module code and *then* %imports it's contents
+
+
    exports <- Language.Scheme.Core.evalLisp meta $ List [Atom "%module-exports", mod]
    mEnv <- Language.Scheme.Core.evalLisp meta $ List [Atom "module-env", mod]
    mData <- Language.Scheme.Core.evalLisp meta $ List [Atom "module-meta-data", mod]
@@ -353,9 +358,13 @@ compile env ast@(List (Atom "import" : args)) copts@(CompileOptions thisFunc _ _
     -- TODO: WTF is exec generated twice??
     Bool False -> do
         let copts' = CompileOptions symThisFunc False False symLastFunc
+        let envStr = case name of
+                        List [Atom "scheme", Atom "r5rs"] ->
+                            "interaction-environment"
         return [createAstFunc copts' [
             -- TODO: need to identify env using module name, and
             -- add it to *modules* at runtime
+            AstValue $ "  LispEnv e <- evalLisp env $ List [Atom \"" ++ (show envStr) ++ "\"]"
             AstValue $ "  val <- defineVar env \"*modules*\" $ String \"TODO\""], 
             createAstCont copts' "val" ""]
     List es -> do
