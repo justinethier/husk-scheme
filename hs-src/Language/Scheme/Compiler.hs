@@ -285,14 +285,14 @@ defineTopLevelVar env var = do
 compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 
 -- Experimenting with r7rs library support
-compile env ast@(List (Atom "import" : args)) copts = do
+compile env ast@(List (Atom "import" : args)) copts@(CompileOptions thisFunc _ _ lastFunc) = do
     envTmp <- liftIO $ Language.Scheme.Core.r5rsEnv
     _ <- Language.Scheme.Core.evalLisp envTmp (trace ("debug - evaluating " ++ (show ast)) ast)
 
     LispEnv meta <- getVar envTmp "*meta-env*"
     List modules' <- getVar meta "*modules*" >>= recDerefPtrs
     let modules = reverse modules'
-    compileModules meta (trace ("compileModules: " ++ show modules) modules)
+    compileModules meta (trace ("compileModules: " ++ show modules) modules) thisFunc lastFunc
 
     -- TODO: I think modules can be compiled in reverse order, since this is the order they are added by the evaluator
 
@@ -330,13 +330,16 @@ compile env ast@(List (Atom "import" : args)) copts = do
   need to import the exports of each module it uses
   -}
   where
- compileModules meta modules@(m : ms) = do
-   c <- compileModule meta m
-   rest <- compileModules meta ms
+ compileModules meta modules@[m] symThisFunc symLastFunc = do
+   compileModule meta m symThisFunc symLastFunc
+ compileModules meta modules@(m : ms) symThisFunc symLastFunc = do
+   Atom symNextFunc <- _gensym "mf"
+   c <- compileModule meta m symThisFunc (Just symNextFunc)
+   rest <- compileModules meta ms symNextFunc symLastFunc
    return $ c ++ rest
- compileModules _ [] = return []
+ compileModules _ [] _ _ = return []
 
- compileModule meta (DottedList [name@(List ns)] mod) = do
+ compileModule meta (DottedList [name@(List ns)] mod) symThisFunc symLastFunc = do
    exports <- Language.Scheme.Core.evalLisp meta $ List [Atom "%module-exports", mod]
    mEnv <- Language.Scheme.Core.evalLisp meta $ List [Atom "module-env", mod]
    mData <- Language.Scheme.Core.evalLisp meta $ List [Atom "module-meta-data", mod]
@@ -346,17 +349,18 @@ compile env ast@(List (Atom "import" : args)) copts = do
     -- Just skip it for now
     --
     -- TODO: WTF is exec generated twice??
-    Bool False -> 
-        return [createAstFunc copts [
+    Bool False -> do
+        let copts' = CompileOptions symThisFunc False False symLastFunc
+        return [createAstFunc copts' [
             -- TODO: need to identify env using module name, and
             -- add it to *modules* at runtime
             AstValue $ "  val <- defineVar env \"*modules*\" $ String \"TODO\""], 
-            createAstCont copts "val" ""]
+            createAstCont copts' "val" ""]
     List es -> do
         case mData of
             List cs -> do
                 let code = findBegin (trace ("findBegin, cs = " ++ show cs) cs)
-                compileBlock "TODO" (Just "TODO2") env [] (trace ("compileBlock: " ++ show code) code)
+                compileBlock symThisFunc symLastFunc env [] (trace ("compileBlock: " ++ show code) code)
             err -> throwError $ Default $ "Unexpected meta data: " ++ show err
         -- TODO: should actually compile the whole module within
         -- its own env, and store the env in *modules* at runtime
