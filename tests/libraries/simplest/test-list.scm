@@ -4,4 +4,5 @@
 (import (libs list))
 
 (write  
-    (list 1 2 3))
+    (list2 1 2 3))
+not-exported ; Should throw an error due to env restrictions
