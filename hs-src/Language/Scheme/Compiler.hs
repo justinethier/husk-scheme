@@ -297,8 +297,15 @@ importTL env metaEnv (m : ms) copts = do
 -- END module section
 
 loadModule meta name = do
-    -- TODO: was going to eval findModule, but WTF is that 'load' doing in there??
+    -- Get the module definition, or load it from file if necessary
     mod <- findModule meta name
+    case mod of
+        Bool False -> return mod -- Possible?
+        _ -> do
+            -- TODO:
+            --     (if (and mod (not (module-env mod)))
+            --         (module-env-set! mod (eval-module name mod)))
+            --     mod))
 -- TODO: port the following, will need to use the same
 --       storage model as the meta language
 -- (define (load-module name)
