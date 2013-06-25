@@ -282,19 +282,47 @@ defineTopLevelVars _ _ = return nullLisp
 defineTopLevelVar env var = do
   defineVar env var $ Number 0 -- Actual value not loaded at the moment 
 
-compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 
+-- Module section
+-- TODO: move this into another sub-file, once it is more mature
+
+-- Top-level import
+importTL env metaEnv (m : ms) copts = do
+    -- Resolve import
+    modImps <- evalLisp env m
+    -- Load module
+    -- Get module env
+    -- %import module env into env
+-- TODO: importTL env [m] - special case for last one (?)
+-- END module section
+
+loadModule meta name = do
+    -- TODO: was going to eval findModule, but WTF is that 'load' doing in there??
+    mod <- findModule meta name
+-- TODO: port the following, will need to use the same
+--       storage model as the meta language
+-- (define (load-module name)
+--   (let ((mod (find-module name)))
+--     (if (and mod (not (module-env mod)))
+--         (module-env-set! mod (eval-module name mod)))
+--     mod))
+    
+
+compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 -- Experimenting with r7rs library support
-compile env ast@(List (Atom "import" : args)) copts@(CompileOptions thisFunc _ _ lastFunc) = do
+compile env ast@(List (Atom "import" : mods)) copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    LispEnv meta <- getVar envTmp "*meta-env*"
+    
+
+{- Testing code:
     envTmp <- liftIO $ Language.Scheme.Core.r5rsEnv
     _ <- Language.Scheme.Core.evalLisp envTmp ast --(trace ("debug - evaluating " ++ (show ast)) ast)
 
-    LispEnv meta <- getVar envTmp "*meta-env*"
     List modules' <- getVar meta "*modules*" >>= recDerefPtrs
     let modules = reverse modules'
     --compileModules meta (trace ("compileModules: " ++ show modules) modules) thisFunc lastFunc
     compileModules meta modules thisFunc lastFunc
-
+-}
     -- TODO: I think modules can be compiled in reverse order, since this is the order they are added by the evaluator
 
     -- TODO: can use (module-exports) from meta-language to get export lists
