@@ -289,12 +289,11 @@ defineTopLevelVar env var = do
 -- Top-level import
 importTL env metaEnv (m : ms) copts = do
     -- Resolve import
-    List [mod, imports] <- LSC.evalLisp metaEnv $ List [Atom  "resolve-import", List [Atom "quote", m]]
+    List [moduleName, imports] <- LSC.evalLisp metaEnv $ 
+         List [Atom  "resolve-import", List [Atom "quote", m]]
     -- Load module
-    throwError $ Default $ "modImps = " ++ show modImps
-    -- TODO: modData <- loadModule metaEnv mod
+    modData <- loadModule metaEnv moduleName
 
-    --loadModule metaEnv 
     -- Get module env
     -- %import module env into env
 -- TODO: importTL env [m] - special case for last one (?)
@@ -314,18 +313,15 @@ loadModule meta name = do
         _ -> do
              modEnv <- LSC.evalLisp meta $ List [Atom "module-env", mod]
              case modEnv of
-             -- TODO: 
-                --Bool False -> do
-                --    -- TODO: (module-env-set! mod (eval-module name mod)))
+                Bool False -> do
+-- TODO: create new env for the module, or get it (per eval-module)
+-- TODO: compile the module code, again per eval-module
+-- TODO: set the module env in compiler memory, possibly runtime memory (??????, do this later if necessary)
+-- (module-env-set! mod (eval-module name mod)))
+--                    _ <- LSC.evalLisp meta $ List (Atom "module-env-set!" : 
                 _ -> return mod
--- TODO: port the following, will need to use the same
---       storage model as the meta language
--- (define (load-module name)
---   (let ((mod (find-module name)))
---     (if (and mod (not (module-env mod)))
---         (module-env-set! mod (eval-module name mod)))
---     mod))
-    
+
+-- TODO: write compileModule here, it will be based off of the eval-module code from the meta-language, and can take cues from compileModule below
 
 compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 -- Experimenting with r7rs library support
