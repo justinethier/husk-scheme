@@ -22,7 +22,7 @@ be made for time and space...
 -}
 
 module Language.Scheme.Compiler where 
-import qualified Language.Scheme.Core as LSC (apply, evalLisp, meval, r5rsEnv, version) 
+import qualified Language.Scheme.Core as LSC (apply, evalLisp, evalString, meval, r5rsEnv, version) 
 import qualified Language.Scheme.Macro
 import Language.Scheme.Primitives
 import Language.Scheme.Types
@@ -299,10 +299,16 @@ importTL env metaEnv (m : ms) copts = do
     List [moduleName, imports] <- LSC.evalLisp metaEnv $ 
          List [Atom  "resolve-import", List [Atom "quote", m]]
     -- Load module
-    loadModule metaEnv moduleName copts
+    code <- loadModule metaEnv moduleName copts
 
-    -- Get module env
+    -- Get module env, and 
     -- %import module env into env
+    modEnv <- LSC.evalLisp metaEnv $ List [Atom "module-env", List [Atom "find-module", List [Atom "quote", moduleName]]]
+    _ <- (trace ("modEnv = " ++ show modEnv ++ ", imports = " ++ show imports) eval) env $ List [Atom "%import", LispEnv env, modEnv, imports]
+
+-- TODO: this is not good enough, need to compile the %import as well...
+    return code
+
 -- TODO: importTL env [m] - special case for last one (?)
 -- END module section
 
@@ -333,8 +339,8 @@ loadModule metaEnv name copts = do
                     _ <- eval metaEnv $ List [Atom "add-module!", List [Atom "quote", name], modWEnv]
 
                 -- DEBUG
-                    debug <- LSC.evalLisp metaEnv $ Atom "*modules*"
-                    throwError $ Default $ show debug
+                --    debug <- LSC.evalLisp metaEnv $ Atom "*modules*"
+                --    throwError $ Default $ show debug
                 -- END DEBUG
                     return result
                 _ -> return [] --mod
