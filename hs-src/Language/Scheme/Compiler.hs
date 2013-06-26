@@ -22,7 +22,7 @@ be made for time and space...
 -}
 
 module Language.Scheme.Compiler where 
-import qualified Language.Scheme.Core as LSC (apply, evalLisp, r5rsEnv, version) 
+import qualified Language.Scheme.Core as LSC (apply, evalLisp, meval, r5rsEnv, version) 
 import qualified Language.Scheme.Macro
 import Language.Scheme.Primitives
 import Language.Scheme.Types
@@ -286,6 +286,13 @@ defineTopLevelVar env var = do
 -- Module section
 -- TODO: move this into another sub-file, once it is more mature
 
+
+-- Like evalLisp, but preserve pointers in the output
+eval :: Env -> LispVal -> IOThrowsError LispVal
+eval env lisp = do
+  LSC.meval env (makeNullContinuation env) lisp
+
+
 -- Top-level import
 importTL env metaEnv (m : ms) copts = do
     -- Resolve import
@@ -307,10 +314,11 @@ importTL env metaEnv (m : ms) copts = do
 --
 loadModule metaEnv name copts = do
     -- Get the module definition, or load it from file if necessary
-    mod <- LSC.evalLisp metaEnv $ List [Atom "find-module", List [Atom "quote", name]]
-    case mod of
+    mod' <- eval metaEnv $ List [Atom "find-module", List [Atom "quote", name]]
+    case mod' of
         Bool False -> return [] -- Even possible to reach this line?
         _ -> do
+             mod <- recDerefPtrs mod'
              modEnv <- LSC.evalLisp metaEnv $ List [Atom "module-env", mod]
              case modEnv of
                 Bool False -> do
@@ -319,12 +327,12 @@ loadModule metaEnv name copts = do
                     -- compile the module code, again per eval-module
                     result <- compileModule newEnv metaEnv name mod copts
 -- TODO: set the module env in compiler memory, possibly runtime memory (??????, do this later if necessary)
--- (module-env-set! mod (eval-module name mod)))
-                    _ <- LSC.evalLisp metaEnv $ List (Atom "module-env-set!" : mod : [LispEnv newEnv]) 
+-- (module-env-set! od (eval-module name mod)))
+                    _ <- LSC.evalLisp metaEnv $ List (Atom "module-env-set!" : mod' : [LispEnv newEnv]) 
 
                 -- DEBUG
                     debug <- LSC.evalLisp metaEnv $ Atom "*modules*"
-                    throwError $ Default $ show debug
+                    throwError $ Default $ "DEBUG: " ++ (show mod') ++ ", " ++ (show debug)
                 -- END DEBUG
                     return result
                 _ -> return [] --mod
