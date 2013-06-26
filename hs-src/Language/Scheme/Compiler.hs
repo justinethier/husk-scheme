@@ -280,7 +280,7 @@ defineTopLevelVars env (_ : ls) = defineTopLevelVars env ls
 defineTopLevelVars _ _ = return nullLisp 
 
 defineTopLevelVar env var = do
-  defineVar env var $ Number 0 -- Actual value not loaded at the moment 
+  defineVar env (trace ("define top level - " ++ var) var) $ Number 0 -- Actual value not loaded at the moment 
 
 
 -- Module section
@@ -296,15 +296,18 @@ eval env lisp = do
 -- Top-level import
 importTL env metaEnv (m : ms) copts = do
     -- Resolve import
-    List [moduleName, imports] <- LSC.evalLisp metaEnv $ 
+    List (moduleName : imports) <- LSC.evalLisp metaEnv $ 
          List [Atom  "resolve-import", List [Atom "quote", m]]
     -- Load module
     code <- loadModule metaEnv moduleName copts
 
     -- Get module env, and 
     -- %import module env into env
-    modEnv <- LSC.evalLisp metaEnv $ List [Atom "module-env", List [Atom "find-module", List [Atom "quote", moduleName]]]
-    _ <- (trace ("modEnv = " ++ show modEnv ++ ", imports = " ++ show imports) eval) env $ List [Atom "%import", LispEnv env, modEnv, imports]
+    LispEnv modEnv <- LSC.evalLisp metaEnv $ List [Atom "module-env", List [Atom "find-module", List [Atom "quote", moduleName]]]
+    _ <- eval env $ List [Atom "%import", LispEnv env, LispEnv modEnv, List [Atom "quote", List imports], Bool False]
+
+--    debug <- liftIO $ printEnv modEnv
+--    throwError $ Default debug
 
 -- TODO: this is not good enough, need to compile the %import as well...
     return code
@@ -349,12 +352,14 @@ loadModule metaEnv name copts = do
 compileModule env metaEnv name mod copts@(CompileOptions thisFunc _ _ lastFunc) = do
     -- TODO: set mod meta-data to avoid cyclic references
 
-    metaData <- LSC.evalLisp metaEnv $ List [Atom "quote", mod]
-    cmd env metaEnv metaData [] copts
+    metaData <- LSC.evalLisp metaEnv $ List [Atom "module-meta-data", List [Atom "quote", mod]]
+    cmd env metaEnv (trace ("metaData = " ++ show metaData) metaData) [] copts
 
 -- Compile module directive, rename it later (TODO)
-cmd env metaEnv (List (Atom "begin" : ls)) result copts@(CompileOptions thisFunc _ _ lastFunc) = do
-    compileBlock thisFunc lastFunc env [] ls
+cmd env metaEnv (List ((List (Atom "begin" : code)) : ls)) result copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    compileBlock thisFunc lastFunc env [] code
+cmd env metaEnv (List (_ : ls)) result copts = 
+    cmd env metaEnv (List ls) result copts
 cmd _ _ _ result _ = return result
 
 
