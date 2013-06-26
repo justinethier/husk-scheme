@@ -292,7 +292,7 @@ importTL env metaEnv (m : ms) copts = do
     List [moduleName, imports] <- LSC.evalLisp metaEnv $ 
          List [Atom  "resolve-import", List [Atom "quote", m]]
     -- Load module
-    modData <- loadModule metaEnv moduleName
+    loadModule metaEnv moduleName copts
 
     -- Get module env
     -- %import module env into env
@@ -305,23 +305,44 @@ importTL env metaEnv (m : ms) copts = do
 -- tuple containing both pieces of information. Or do we even need
 -- the module vector, since we can just look it up by name in importTL
 --
-loadModule meta name = do
+loadModule metaEnv name copts = do
     -- Get the module definition, or load it from file if necessary
-    mod <- LSC.evalLisp meta $ List [Atom "findModule", List [Atom "quote", name]]
+    mod <- LSC.evalLisp metaEnv $ List [Atom "find-module", List [Atom "quote", name]]
     case mod of
-        Bool False -> return mod -- Possible?
+        Bool False -> return [] -- Even possible to reach this line?
         _ -> do
-             modEnv <- LSC.evalLisp meta $ List [Atom "module-env", mod]
+             modEnv <- LSC.evalLisp metaEnv $ List [Atom "module-env", mod]
              case modEnv of
                 Bool False -> do
--- TODO: create new env for the module, or get it (per eval-module)
--- TODO: compile the module code, again per eval-module
+                    -- Create new env for module, per eval-module
+                    newEnv <- liftIO $ nullEnv
+                    -- compile the module code, again per eval-module
+                    result <- compileModule newEnv metaEnv name mod copts
 -- TODO: set the module env in compiler memory, possibly runtime memory (??????, do this later if necessary)
 -- (module-env-set! mod (eval-module name mod)))
---                    _ <- LSC.evalLisp meta $ List (Atom "module-env-set!" : 
-                _ -> return mod
+                    _ <- LSC.evalLisp metaEnv $ List (Atom "module-env-set!" : mod : [LispEnv newEnv]) 
+
+                -- DEBUG
+                    debug <- LSC.evalLisp metaEnv $ Atom "*modules*"
+                    throwError $ Default $ show debug
+                -- END DEBUG
+                    return result
+                _ -> return [] --mod
 
 -- TODO: write compileModule here, it will be based off of the eval-module code from the meta-language, and can take cues from compileModule below
+compileModule env metaEnv name mod copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    -- TODO: set mod meta-data to avoid cyclic references
+
+    metaData <- LSC.evalLisp metaEnv $ List [Atom "quote", mod]
+    cmd env metaEnv metaData [] copts
+
+-- Compile module directive, rename it later (TODO)
+cmd env metaEnv (List (Atom "begin" : ls)) result copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    compileBlock thisFunc lastFunc env [] ls
+cmd _ _ _ result _ = return result
+
+
+
 
 compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 -- Experimenting with r7rs library support
