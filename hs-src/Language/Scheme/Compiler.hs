@@ -314,10 +314,11 @@ importTL env metaEnv (m : ms) copts = do
 --
 loadModule metaEnv name copts = do
     -- Get the module definition, or load it from file if necessary
-    mod <- LSC.evalLisp metaEnv $ List [Atom "find-module", List [Atom "quote", name]]
-    case mod of
+    mod' <- eval metaEnv $ List [Atom "find-module", List [Atom "quote", name]]
+    case mod' of
         Bool False -> return [] -- Even possible to reach this line?
         _ -> do
+             mod <- recDerefPtrs mod'
              modEnv <- LSC.evalLisp metaEnv $ List [Atom "module-env", mod]
              case modEnv of
                 Bool False -> do
@@ -327,7 +328,9 @@ loadModule metaEnv name copts = do
                     result <- compileModule newEnv metaEnv name mod copts
 -- TODO: set the module env in compiler memory, possibly runtime memory (??????, do this later if necessary)
 -- (module-env-set! mod (eval-module name mod)))
-                    _ <- LSC.evalLisp metaEnv $ List (Atom "module-env-set!" : mod : [LispEnv newEnv]) 
+                    modWEnv <- eval metaEnv $ List (Atom "module-env-set!" : mod' : [LispEnv newEnv])  -- TODO: needed? does this even do anything? can always delete-module and add again if we care that much
+                    _ <- eval metaEnv $ List [Atom "delete-module!", List [Atom "quote", name]]
+                    _ <- eval metaEnv $ List [Atom "add-module!", List [Atom "quote", name], modWEnv]
 
                 -- DEBUG
                     debug <- LSC.evalLisp metaEnv $ Atom "*modules*"
