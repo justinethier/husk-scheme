@@ -37,6 +37,8 @@ module Language.Scheme.Core
     , substr
     , updateVector
     , updateByteVector
+    -- * Internal use only
+    , meval
     ) where
 import qualified Paths_husk_scheme as PHS (getDataFileName)
 #ifdef UseFfi
