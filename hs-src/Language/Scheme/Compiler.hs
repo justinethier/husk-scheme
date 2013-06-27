@@ -280,7 +280,7 @@ defineTopLevelVars env (_ : ls) = defineTopLevelVars env ls
 defineTopLevelVars _ _ = return nullLisp 
 
 defineTopLevelVar env var = do
-  defineVar env (trace ("define top level - " ++ var) var) $ Number 0 -- Actual value not loaded at the moment 
+  defineVar env var $ Number 0 -- Actual value not loaded at the moment 
 
 
 -- Module section
@@ -294,12 +294,14 @@ eval env lisp = do
 
 
 -- Top-level import
-importTL env metaEnv (m : ms) copts = do
+importTL env metaEnv (m : ms) copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    Atom symImport <- _gensym "importFnc"
+
     -- Resolve import
     List (moduleName : imports) <- LSC.evalLisp metaEnv $ 
          List [Atom  "resolve-import", List [Atom "quote", m]]
     -- Load module
-    code <- loadModule metaEnv moduleName copts
+    code <- loadModule metaEnv moduleName $ CompileOptions thisFunc False False (Just symImport)
 
     -- Get module env, and 
     -- %import module env into env
@@ -308,9 +310,12 @@ importTL env metaEnv (m : ms) copts = do
 
 --    debug <- liftIO $ printEnv modEnv
 --    throwError $ Default debug
+    importFunc <- return $ [
+        AstValue $ "TODO",
+        createAstCont (CompileOptions symImport False False lastFunc) "Nil \"\"" ""]
 
--- TODO: this is not good enough, need to compile the %import as well...
-    return code
+-- TODO: this is not good enough, need to compile the %import as well, using symImport...
+    return $ [createAstFunc (CompileOptions symImport False False lastFunc) importFunc] ++ code
 
 -- TODO: importTL env [m] - special case for last one (?)
 -- END module section
@@ -321,7 +326,7 @@ importTL env metaEnv (m : ms) copts = do
 -- tuple containing both pieces of information. Or do we even need
 -- the module vector, since we can just look it up by name in importTL
 --
-loadModule metaEnv name copts = do
+loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
     -- Get the module definition, or load it from file if necessary
     mod' <- eval metaEnv $ List [Atom "find-module", List [Atom "quote", name]]
     case mod' of
@@ -331,21 +336,24 @@ loadModule metaEnv name copts = do
              modEnv <- LSC.evalLisp metaEnv $ List [Atom "module-env", mod]
              case modEnv of
                 Bool False -> do
+                    Atom symNewEnv <- _gensym "newEnvFnc"
+
+                    newEnvFunc <- return $ [
+                        AstValue $ "  newEnv <- liftIO $ nullEnv",
+                        -- TODO: probably should store env in runtime memory with key of 'name'
+                        AstValue $ "  continueEval newEnv (makeCPS newEnv cont " ++ symNewEnv ++ ") $ Nil \"\""]
+                    
                     -- Create new env for module, per eval-module
                     newEnv <- liftIO $ nullEnv
                     -- compile the module code, again per eval-module
-                    result <- compileModule newEnv metaEnv name mod copts
+                    result <- compileModule newEnv metaEnv name mod $
+                        CompileOptions symNewEnv False False lastFunc
 -- TODO: set the module env in compiler memory, possibly runtime memory (??????, do this later if necessary)
 -- (module-env-set! mod (eval-module name mod)))
                     modWEnv <- eval metaEnv $ List (Atom "module-env-set!" : mod' : [LispEnv newEnv])  -- TODO: needed? does this even do anything? can always delete-module and add again if we care that much
                     _ <- eval metaEnv $ List [Atom "delete-module!", List [Atom "quote", name]]
                     _ <- eval metaEnv $ List [Atom "add-module!", List [Atom "quote", name], modWEnv]
-
-                -- DEBUG
-                --    debug <- LSC.evalLisp metaEnv $ Atom "*modules*"
-                --    throwError $ Default $ show debug
-                -- END DEBUG
-                    return result
+                    return $ [createAstFunc copts newEnvFunc] ++ result
                 _ -> return [] --mod
 
 -- TODO: write compileModule here, it will be based off of the eval-module code from the meta-language, and can take cues from compileModule below
@@ -353,7 +361,7 @@ compileModule env metaEnv name mod copts@(CompileOptions thisFunc _ _ lastFunc) 
     -- TODO: set mod meta-data to avoid cyclic references
 
     metaData <- LSC.evalLisp metaEnv $ List [Atom "module-meta-data", List [Atom "quote", mod]]
-    cmd env metaEnv (trace ("metaData = " ++ show metaData) metaData) [] copts
+    cmd env metaEnv metaData [] copts
 
 -- Compile module directive, rename it later (TODO)
 cmd env metaEnv (List ((List (Atom "begin" : code)) : ls)) result copts@(CompileOptions thisFunc _ _ lastFunc) = do
