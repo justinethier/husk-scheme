@@ -354,6 +354,7 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
                         AstValue $ "  _ <- " ++ symStartLoadNewEnv ++ " newEnv (makeNullContinuation newEnv) (Nil \"\") []",
 -- TODO: need to store env in runtime memory with key of 'name'
 --       that way it is available later if another module wants to import it
+                        AstValue $ "  _ <- evalLisp env $ List [Atom \"hash-table-set!\", Atom \" modules \", List [Atom \"quote\", " ++ (ast2Str name) ++ "], LispEnv newEnv]",
                         createAstCont copts "(LispEnv newEnv)" ""]
                     
                     -- Create new env for module, per eval-module
