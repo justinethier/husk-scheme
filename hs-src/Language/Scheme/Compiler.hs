@@ -335,13 +335,12 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
              case modEnv of
                 Bool False -> do
                 {-
-                Control flow for compiled code should be:
+                    Control flow for compiled code:
 
-                 - create new env
-                 - call into func directly to load it
-                 - return and save new env to memory
-                 - continue on to lastFunc
-                
+                     - create new env
+                     - call into func directly to load it
+                     - return new env and save to memory
+                     - continue on to lastFunc
                 -}
                     Atom symStartLoadNewEnv <- _gensym "startLoadingNewEnvFnc"
                     Atom symEndLoadNewEnv <- _gensym "doneLoadingNewEnvFnc"
@@ -358,11 +357,11 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
                     -- compile the module code, again per eval-module
                     result <- compileModule newEnv metaEnv name mod $
                         CompileOptions symStartLoadNewEnv False False (Just symEndLoadNewEnv)
--- TODO: set the module env in compiler memory, possibly runtime memory (??????, do this later if necessary)
--- (module-env-set! mod (eval-module name mod)))
-                    modWEnv <- eval metaEnv $ List (Atom "module-env-set!" : mod' : [LispEnv newEnv])  -- TODO: needed? does this even do anything? can always delete-module and add again if we care that much
+                    modWEnv <- eval metaEnv $ List (Atom "module-env-set!" : mod' : [LispEnv newEnv]) 
+                    -- Above does not update *modules* correctly, so we del/add below
                     _ <- eval metaEnv $ List [Atom "delete-module!", List [Atom "quote", name]]
                     _ <- eval metaEnv $ List [Atom "add-module!", List [Atom "quote", name], modWEnv]
+
                     return $ [createAstFunc copts newEnvFunc] ++
                              [createAstFunc (CompileOptions symEndLoadNewEnv False False Nothing) [AstValue "  return $ Nil \"\""]] ++
                              result
