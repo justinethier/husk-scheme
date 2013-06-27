@@ -303,19 +303,17 @@ importTL env metaEnv (m : ms) copts@(CompileOptions thisFunc _ _ lastFunc) = do
     -- Load module
     code <- loadModule metaEnv moduleName $ CompileOptions thisFunc False False (Just symImport)
 
-    -- Get module env, and 
-    -- %import module env into env
+    -- Get module env, and import module env into env
     LispEnv modEnv <- LSC.evalLisp metaEnv $ List [Atom "module-env", List [Atom "find-module", List [Atom "quote", moduleName]]]
     _ <- eval env $ List [Atom "%import", LispEnv env, LispEnv modEnv, List [Atom "quote", List imports], Bool False]
 
---    debug <- liftIO $ printEnv modEnv
---    throwError $ Default debug
     importFunc <- return $ [
---        AstValue $ "TODO",
+        -- fromEnv is a LispEnv passed in as the 'value' parameter
+        AstValue $ "  _ <- evalLisp env $ List [Atom \"%import\", LispEnv env, value, List [Atom \"quote\", " ++ (ast2Str $ List imports) ++ "], Bool False]",
         createAstCont (CompileOptions symImport False False lastFunc) "(Nil \"\")" ""]
 
 -- TODO: this is not good enough, need to compile the %import as well, using symImport...
-    return $ [createAstFunc (CompileOptions symImport False False lastFunc) importFunc] ++ code
+    return $ [createAstFunc (CompileOptions symImport True False lastFunc) importFunc] ++ code
 
 -- TODO: importTL env [m] - special case for last one (?)
 -- END module section
