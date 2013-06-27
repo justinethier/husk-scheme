@@ -311,8 +311,8 @@ importTL env metaEnv (m : ms) copts@(CompileOptions thisFunc _ _ lastFunc) = do
 --    debug <- liftIO $ printEnv modEnv
 --    throwError $ Default debug
     importFunc <- return $ [
-        AstValue $ "TODO",
-        createAstCont (CompileOptions symImport False False lastFunc) "Nil \"\"" ""]
+--        AstValue $ "TODO",
+        createAstCont (CompileOptions symImport False False lastFunc) "(Nil \"\")" ""]
 
 -- TODO: this is not good enough, need to compile the %import as well, using symImport...
     return $ [createAstFunc (CompileOptions symImport False False lastFunc) importFunc] ++ code
@@ -336,24 +336,38 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
              modEnv <- LSC.evalLisp metaEnv $ List [Atom "module-env", mod]
              case modEnv of
                 Bool False -> do
-                    Atom symNewEnv <- _gensym "newEnvFnc"
+                {-
+                Control flow for compiled code should be:
+
+                 - create new env
+                 - call into func directly to load it
+                 - return and save new env to memory
+                 - continue on to lastFunc
+                
+                -}
+                    Atom symStartLoadNewEnv <- _gensym "startLoadingNewEnvFnc"
+                    Atom symEndLoadNewEnv <- _gensym "doneLoadingNewEnvFnc"
 
                     newEnvFunc <- return $ [
                         AstValue $ "  newEnv <- liftIO $ nullEnv",
-                        -- TODO: probably should store env in runtime memory with key of 'name'
-                        AstValue $ "  continueEval newEnv (makeCPS newEnv cont " ++ symNewEnv ++ ") $ Nil \"\""]
+                        AstValue $ "  _ <- " ++ symStartLoadNewEnv ++ " newEnv (makeNullContinuation newEnv) (Nil \"\") []",
+-- TODO: need to store env in runtime memory with key of 'name'
+--       that way it is available later if another module wants to import it
+                        createAstCont copts "(LispEnv newEnv)" ""]
                     
                     -- Create new env for module, per eval-module
                     newEnv <- liftIO $ nullEnv
                     -- compile the module code, again per eval-module
                     result <- compileModule newEnv metaEnv name mod $
-                        CompileOptions symNewEnv False False lastFunc
+                        CompileOptions symStartLoadNewEnv False False (Just symEndLoadNewEnv)
 -- TODO: set the module env in compiler memory, possibly runtime memory (??????, do this later if necessary)
 -- (module-env-set! mod (eval-module name mod)))
                     modWEnv <- eval metaEnv $ List (Atom "module-env-set!" : mod' : [LispEnv newEnv])  -- TODO: needed? does this even do anything? can always delete-module and add again if we care that much
                     _ <- eval metaEnv $ List [Atom "delete-module!", List [Atom "quote", name]]
                     _ <- eval metaEnv $ List [Atom "add-module!", List [Atom "quote", name], modWEnv]
-                    return $ [createAstFunc copts newEnvFunc] ++ result
+                    return $ [createAstFunc copts newEnvFunc] ++
+                             [createAstFunc (CompileOptions symEndLoadNewEnv False False Nothing) [AstValue "  return $ Nil \"\""]] ++
+                             result
                 _ -> return [] --mod
 
 -- TODO: write compileModule here, it will be based off of the eval-module code from the meta-language, and can take cues from compileModule below
