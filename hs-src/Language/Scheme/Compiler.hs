@@ -298,6 +298,7 @@ eval env lisp = do
 
 
 -- Top-level import
+-- TODO: may be a bad name, maybe just "importModules"?
 importTL env metaEnv [m] copts@(CompileOptions thisFunc _ _ lastFunc) = do
     _importTL env metaEnv m copts
 importTL env metaEnv (m : ms) copts@(CompileOptions thisFunc _ _ lastFunc) = do
@@ -386,14 +387,45 @@ compileModule env metaEnv name mod copts@(CompileOptions thisFunc _ _ lastFunc) 
     -- TODO: set mod meta-data to avoid cyclic references
 
     metaData <- LSC.evalLisp metaEnv $ List [Atom "module-meta-data", List [Atom "quote", mod]]
-    cmd env metaEnv metaData [] copts
+-- TODO: this is going to cause problems with the chain
+--       may need to give cmd and csd separate start/end funcs
+--       and incorporate code stubs to make it work
+--
+--    moduleImports <- csd env metaEnv metaData copts
+    moduleDirectives <- cmd env metaEnv metaData copts
+    return moduleDirectives -- ++ moduleImports
+
+-- |Compile sub-modules. That is, modules that are imported by
+--  another module in the (define-library) definition
+-- TODO: consider consolidating with common code in cmd below
+--csd env metaEnv (List (
+csd env metaEnv (List ((List (Atom "import" : modules)) : ls)) copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    Atom nextFunc <- _gensym "csdNext"
+    code <- importTL env metaEnv modules $ CompileOptions thisFunc False False (Just nextFunc)
+    rest <- csd env metaEnv (List ls) $ CompileOptions nextFunc False False lastFunc 
+    return $ code ++ rest
+
+    -- TODO: need to call csd to process ls. also what about lastFunc?
+    -- may need to allocate a nextFunc here and then have a lastFunc
+    -- stub generated in the [] case below
+    --
+    -- Note cmd  has exactly the same problem - more motivation to consolidate?
+csd env metaEnv (List (_ : ls)) copts = 
+    csd env metaEnv (List ls) copts
+csd _ _ _ (CompileOptions thisFunc _ _ lastFunc) = 
+    -- TODO: not good enough, need to return a stub w/lastFunc
+    -- does it just have to be named thisfunc, and call into lastfunc?
+    return []
 
 -- Compile module directive, rename it later (TODO)
-cmd env metaEnv (List ((List (Atom "begin" : code)) : ls)) result copts@(CompileOptions thisFunc _ _ lastFunc) = do
+cmd env metaEnv (List ((List (Atom "begin" : code)) : ls)) copts@(CompileOptions thisFunc _ _ lastFunc) = do
     compileBlock thisFunc lastFunc env [] code
-cmd env metaEnv (List (_ : ls)) result copts = 
-    cmd env metaEnv (List ls) result copts
-cmd _ _ _ result _ = return result
+    -- TODO: need to call cmd to process ls. also what about lastFunc?
+    -- may need to allocate a nextFunc here and then have a lastFunc
+    -- stub generated in the [] case below
+cmd env metaEnv (List (_ : ls)) copts = 
+    cmd env metaEnv (List ls) copts
+cmd _ _ _ copts = return []
 
 
 
