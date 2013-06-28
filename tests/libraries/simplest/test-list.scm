@@ -3,12 +3,6 @@
 
 (define x 'main-program)
 
-(import (libs list)
-        (libs lib1))
+(import (libs simple-write))
 
-(write  
-    (list2 1 2 3))
-;not-exported ; Should throw an error due to env restrictions
-
-(write x)
-(write lib1-hello)
+(sw-hello)
