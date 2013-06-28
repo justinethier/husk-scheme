@@ -298,7 +298,16 @@ eval env lisp = do
 
 
 -- Top-level import
+importTL env metaEnv [m] copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    _importTL env metaEnv m copts
 importTL env metaEnv (m : ms) copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    Atom nextFunc <- _gensym "importTL"
+    c <- _importTL env metaEnv m $ CompileOptions thisFunc False False (Just nextFunc)
+    rest <- importTL env metaEnv ms $ CompileOptions nextFunc False False lastFunc
+    return $ c ++ rest
+importTL _ _ [] _ = return []
+
+_importTL env metaEnv m copts@(CompileOptions thisFunc _ _ lastFunc) = do
     Atom symImport <- _gensym "importFnc"
 
     -- Resolve import
