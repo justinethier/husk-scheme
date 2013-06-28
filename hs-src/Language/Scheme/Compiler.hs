@@ -427,6 +427,12 @@ csd env metaEnv (List (_ : ls)) copts =
 csd _ _ _ (CompileOptions thisFunc _ _ lastFunc) = 
     -- TODO: not good enough, need to return a stub w/lastFunc
     -- does it just have to be named thisfunc, and call into lastfunc?
+
+    -- To create an empty continuation:
+--
+--createAstFunc (CompileOptions TODO-funcName-TODO True False Nothing) $
+--    [createAstCont (CompileOptions "" True False Nothing) "value" ""]
+
     return []
 
 -- Compile module directive, rename it later (TODO)
