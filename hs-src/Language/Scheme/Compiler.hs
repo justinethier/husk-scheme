@@ -42,10 +42,22 @@ import Debug.Trace
 --  eventually all of this might be able to be 
 --  integrated into a Compile monad
 data CompOpts = CompileOptions {
-    coptsThisFunc :: String,
+    coptsThisFunc :: String,        
+    -- ^Immediate name to use when creating a compiled function.
+    --  Presumably there is other code that is expecting
+    --  to call into it.
+
     coptsThisFuncUseValue :: Bool,
+    -- ^Whether to include the 'value' parameter in the current function
+    
     coptsThisFuncUseArgs :: Bool,
+    -- ^Whether to include the 'args' parameter in the current function
+    
     coptsNextFunc :: Maybe String
+    -- ^The name to use for the next function after the current
+    --  compiler recursion is finished. For example, after compiling
+    --  a block of code, the control flow would be expected to go
+    --  to this function.
     }
 
 defaultCompileOptions :: String -> CompOpts
