@@ -397,24 +397,43 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
 -- TODO: write compileModule here, it will be based off of the eval-module code from the meta-language, and can take cues from compileModule below
 compileModule env metaEnv name mod copts@(CompileOptions thisFunc _ _ lastFunc) = do
     -- TODO: set mod meta-data to avoid cyclic references
+    Atom afterImportsFnc <- _gensym "modAfterImport"
+    Atom afterDirFunc <- _gensym "modAfterDir"
 
     metaData <- LSC.evalLisp metaEnv $ List [Atom "module-meta-data", List [Atom "quote", mod]]
--- TODO: this is going to cause problems with the chain
---       may need to give cmd and csd separate start/end funcs
---       and incorporate code stubs to make it work
---
---    moduleImports <- csd env metaEnv metaData copts
-    moduleDirectives <- cmd env metaEnv metaData copts
-    return moduleDirectives -- ++ moduleImports
+
+    moduleImports <- csd env metaEnv metaData $ 
+        CompileOptions thisFunc False False (Just afterImportsFnc)
+    moduleDirectives <- cmd env metaEnv metaData $
+        moduleDirsCopts moduleImports afterImportsFnc
+
+    return $ moduleImports ++ 
+             moduleDirectives ++ 
+            (moduleStub moduleImports moduleDirectives afterImportsFnc)
+ where 
+  moduleDirsCopts modImps afterImportsFnc = do
+-- if moduleImports is [] then use same copts for moduleDir
+-- else, use copts (afterImportsFunc, lastFunc)
+    case modImps of
+        [] -> CompileOptions thisFunc False False (Just afterImportsFnc)
+        _ -> CompileOptions afterImportsFnc False False lastFunc
+  moduleStub modImps modDir afterImportsFnc = do
+-- if moduleDir == [] and moduleimports == [] then add stub (this, last)
+-- else if modDir == [] then addstub (afterimports, last)
+-- else, no stub required
+    case (modImps, modDir) of
+        ([], []) -> [createFunctionStub thisFunc lastFunc]
+        (_, []) -> [createFunctionStub afterImportsFnc lastFunc]
+        _ -> [] -- Both have code, no stub needed
 
 -- Helper function to create an empty continuation
 --
 -- TODO: ideally stubs would not be necessary,
 --       should refactor out at some point
-createFunctionStub :: String -> HaskAST
-createFunctionStub thisFunc = do
+--createFunctionStub :: String -> HaskAST
+createFunctionStub thisFunc nextFunc = do
     createAstFunc (CompileOptions thisFunc True False Nothing)
-                  [createAstCont (CompileOptions "" True False Nothing) 
+                  [createAstCont (CompileOptions "" True False nextFunc) 
                                  "value" ""]
 
 -- |Compile sub-modules. That is, modules that are imported by
