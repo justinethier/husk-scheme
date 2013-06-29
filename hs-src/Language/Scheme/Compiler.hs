@@ -423,6 +423,7 @@ compileModule env metaEnv name mod copts@(CompileOptions thisFunc _ _ lastFunc) 
 -- else, no stub required
     case (modImps, modDir) of
         ([], []) -> [createFunctionStub thisFunc lastFunc]
+        ([], _) -> [createFunctionStub afterImportsFnc lastFunc]
         (_, []) -> [createFunctionStub afterImportsFnc lastFunc]
         _ -> [] -- Both have code, no stub needed
 
