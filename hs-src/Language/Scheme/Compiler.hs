@@ -324,6 +324,7 @@ _importTL env metaEnv m copts@(CompileOptions thisFunc _ _ lastFunc) = do
     Atom symImport <- _gensym "importFnc"
 
     -- Resolve import
+TODO: pattern match failure here when compiling test-list.scm - something's up
     List (moduleName : imports) <- LSC.evalLisp metaEnv $ 
          List [Atom  "resolve-import", List [Atom "quote", m]]
     -- Load module
