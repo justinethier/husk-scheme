@@ -320,34 +320,36 @@ importTL env metaEnv (m : ms) copts@(CompileOptions thisFunc _ _ lastFunc) = do
     return $ c ++ rest
 importTL _ _ [] _ = return []
 
-_importTL env metaEnv m copts@(CompileOptions thisFunc _ _ lastFunc) = do
-    Atom symImport <- _gensym "importFnc"
-
+_importTL env metaEnv m copts = do
     -- Resolve import
 --TODO: pattern match failure here when compiling test-list.scm - something's up
     resolved <- LSC.evalLisp metaEnv $ 
          List [Atom  "resolve-import", List [Atom "quote", m]]
     case resolved of
         List (moduleName : imports) -> do
-          -- Load module
-          code <- loadModule metaEnv moduleName $ 
-                    CompileOptions thisFunc False False (Just symImport)
-      
-          -- Get module env, and import module env into env
-          LispEnv modEnv <- LSC.evalLisp metaEnv $ 
-             List [Atom "module-env", List [Atom "find-module", List [Atom "quote", moduleName]]]
-          _ <- eval env $ List [Atom "%import", LispEnv env, LispEnv modEnv, List [Atom "quote", List imports], Bool False]
-      
-          importFunc <- return $ [
-              -- fromEnv is a LispEnv passed in as the 'value' parameter
-              AstValue $ "  _ <- evalLisp env $ List [Atom \"%import\", LispEnv env, value, List [Atom \"quote\", " ++ (ast2Str $ List imports) ++ "], Bool False]",
-              createAstCont (CompileOptions symImport False False lastFunc) "(Nil \"\")" ""]
-      
-      -- TODO: this is not good enough, need to compile the %import as well, using symImport...
-          return $ [createAstFunc (CompileOptions symImport True False lastFunc) importFunc] ++ code
+            importModule env metaEnv moduleName imports copts
+        DottedList moduleName imports@(Bool False) -> do
+            importModule env metaEnv (List (trace ("moduleName = " ++ show moduleName) moduleName)) [imports] copts
+        err -> throwError $ TypeMismatch "module/import" err
 
--- TODO: importTL env [m] - special case for last one (?)
--- END module section
+importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    Atom symImport <- _gensym "importFnc"
+
+    -- Load module
+    code <- loadModule metaEnv moduleName $ 
+              CompileOptions thisFunc False False (Just symImport)
+    
+    -- Get module env, and import module env into env
+    LispEnv modEnv <- LSC.evalLisp metaEnv $ 
+       List [Atom "module-env", List [Atom "find-module", List [Atom "quote", moduleName]]]
+    _ <- eval env $ List [Atom "%import", LispEnv env, LispEnv modEnv, List [Atom "quote", List imports], Bool False]
+    
+    importFunc <- return $ [
+        -- fromEnv is a LispEnv passed in as the 'value' parameter
+        AstValue $ "  _ <- evalLisp env $ List [Atom \"%import\", LispEnv env, value, List [Atom \"quote\", " ++ (ast2Str $ List imports) ++ "], Bool False]",
+        createAstCont (CompileOptions symImport False False lastFunc) "(Nil \"\")" ""]
+    
+    return $ [createAstFunc (CompileOptions symImport True False lastFunc) importFunc] ++ code
 
 -- TODO: should return module vector?
 -- but maybe not, because our eval-module will need to compile the
@@ -477,6 +479,7 @@ cmd _ _ _ copts = return []
 
 
 
+-- END module section
 
 compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 -- Experimenting with r7rs library support
