@@ -317,7 +317,14 @@ importTL env metaEnv (m : ms) copts@(CompileOptions thisFunc _ _ lastFunc) = do
     Atom nextFunc <- _gensym "importTL"
     c <- _importTL env metaEnv m $ CompileOptions thisFunc False False (Just nextFunc)
     rest <- importTL env metaEnv ms $ CompileOptions nextFunc False False lastFunc
-    return $ c ++ rest
+--
+-- TODO: an attempt to try to work around an "importTLXXXX" not defined error when
+--       attempting to import (scheme r5rs) at the top level
+--       but this is not good enough, need to spend more time debugging
+--    stub <- case (trace ("m = " ++ (show m) ++ ", c = " ++ show c) c) of
+--        [] -> return [createFunctionStub nextFunc Nothing]
+--        _ -> return []
+    return $ c ++ rest -- ++ stub
 importTL _ _ [] _ = return []
 
 _importTL env metaEnv m copts = do
