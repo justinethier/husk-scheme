@@ -349,7 +349,11 @@ importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ l
     -- Get module env, and import module env into env
     LispEnv modEnv <- LSC.evalLisp metaEnv $ 
        List [Atom "module-env", List [Atom "find-module", List [Atom "quote", moduleName]]]
-    _ <- (trace ("%import " ++ show moduleName) eval) env $ List [Atom "%import", LispEnv env, LispEnv modEnv, List [Atom "quote", List imports], Bool False]
+-- TODO:
+-- WTF is an empty env doing here????
+-- obviously I am missing something here....
+    debug <- liftIO $ recPrintEnv env
+    _ <- (trace ("%import " ++ (show moduleName) ++ ", env = " ++ show debug) eval) env $ List [Atom "%import", LispEnv env, LispEnv modEnv, List [Atom "quote", List imports], Bool False]
     
     importFunc <- return $ [
         -- fromEnv is a LispEnv passed in as the 'value' parameter
