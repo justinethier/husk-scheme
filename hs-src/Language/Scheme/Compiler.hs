@@ -328,8 +328,8 @@ _importTL env metaEnv m copts = do
     case resolved of
         List (moduleName : imports) -> do
             importModule env metaEnv moduleName imports copts
-        DottedList moduleName imports@(Bool False) -> do
-            importModule env metaEnv (List (trace ("moduleName = " ++ show moduleName) moduleName)) [imports] copts
+        DottedList [List moduleName] imports@(Bool False) -> do
+            importModule env metaEnv moduleName [imports] copts
         err -> throwError $ TypeMismatch "module/import" err
 
 importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ lastFunc) = do
