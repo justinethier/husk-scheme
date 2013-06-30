@@ -1074,6 +1074,10 @@ evalfuncImport [
                     Just (Environment Nothing _ _ ) -> throwError $ InternalError "import into empty parent env"
                     Nothing -> throwError $ InternalError "import into empty env"
     case imports of
+        List [Bool False] -> do -- Export everything
+            exportAll toEnv'
+        Bool False -> do -- Export everything
+            exportAll toEnv'
         p@(Pointer _ _) -> do
             -- TODO: need to do this in a safer way
             List i <- derefPtr p -- Dangerous, but list is only expected obj
@@ -1082,12 +1086,13 @@ evalfuncImport [
         List i -> do
             result <- moduleImport toEnv' fromEnv i
             continueEval env cont result
-        Bool False -> do -- Export everything
-            newEnv <- liftIO $ importEnv toEnv' fromEnv
-            continueEval
-                env 
-               (Continuation env a b c d) 
-               (LispEnv newEnv)
+ where 
+   exportAll toEnv' = do
+     newEnv <- liftIO $ importEnv toEnv' fromEnv
+     continueEval
+         env 
+        (Continuation env a b c d) 
+        (LispEnv newEnv)
 
 -- This is just for debugging purposes:
 evalfuncImport (cont@(Continuation env _ _ _ _ ) : cs) = do
