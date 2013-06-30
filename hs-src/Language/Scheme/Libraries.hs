@@ -69,9 +69,8 @@ moduleImport to from (DottedList [Atom iRenamed] (Atom iOrig) : is) = do
   moduleImport to from is
 moduleImport to from [] = do
   return $ LispEnv to
--- DEBUG:
--- moduleImport to from unknown = do
---   (trace ("MODULE IMPORT DEBUG: " ++ show unknown) return) $ Nil ""
+moduleImport _ _ err = do
+  throwError $ Default $ "Unexpected argument to moduleImport: " ++ show err
 
 -- |Copy a binding from one env to another
 divertBinding
