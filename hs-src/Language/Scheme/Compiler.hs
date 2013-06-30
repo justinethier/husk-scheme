@@ -329,7 +329,7 @@ _importTL env metaEnv m copts = do
         List (moduleName : imports) -> do
             importModule env metaEnv moduleName imports copts
         DottedList [List moduleName] imports@(Bool False) -> do
-            importModule env metaEnv moduleName [imports] copts
+            importModule env metaEnv (List moduleName) [imports] copts
         err -> throwError $ TypeMismatch "module/import" err
 
 importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ lastFunc) = do
@@ -342,7 +342,7 @@ importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ l
     -- Get module env, and import module env into env
     LispEnv modEnv <- LSC.evalLisp metaEnv $ 
        List [Atom "module-env", List [Atom "find-module", List [Atom "quote", moduleName]]]
-    _ <- eval env $ List [Atom "%import", LispEnv env, LispEnv modEnv, List [Atom "quote", List imports], Bool False]
+    _ <- (trace ("%import " ++ show moduleName) eval) env $ List [Atom "%import", LispEnv env, LispEnv modEnv, List [Atom "quote", List imports], Bool False]
     
     importFunc <- return $ [
         -- fromEnv is a LispEnv passed in as the 'value' parameter
