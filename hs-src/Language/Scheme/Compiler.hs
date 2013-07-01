@@ -116,6 +116,9 @@ showValAST (AstContinuation nextFunc args) =
 
 instance Show HaskAST where show = showValAST
 
+-- |Runtime reference to module data
+moduleRuntimeVar = " modules "
+
 -- |A utility function to join list members together
 joinL 
   :: forall a. [[a]] -- ^ Original list-of-lists
@@ -217,7 +220,7 @@ header filepath useCompiledLibs = do
     , "    _ -> return () "
     , " "
     , "hsInit env cont _ _ = do "
-    , "  _ <- defineVar env \" modules \" $ HashTable $ Data.Map.fromList [] "
+    , "  _ <- defineVar env \"" ++ moduleRuntimeVar ++ "\" $ HashTable $ Data.Map.fromList [] "
     , "  run env cont (Nil \"\") []"
     , " "]
 
@@ -391,10 +394,12 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
 
                     newEnvFunc <- return $ [
                         AstValue $ "  newEnv <- liftIO $ nullEnv",
+                        AstValue $ "  mods <- getVar env \"" ++ moduleRuntimeVar ++ "\"",
+                        AstValue $ "  _ <- defineVar newEnv \"" ++ moduleRuntimeVar ++ "\" mods",
                         AstValue $ "  _ <- " ++ symStartLoadNewEnv ++ " newEnv (makeNullContinuation newEnv) (Nil \"\") []",
 -- TODO: need to store env in runtime memory with key of 'name'
 --       that way it is available later if another module wants to import it
-                        AstValue $ "  _ <- evalLisp env $ List [Atom \"hash-table-set!\", Atom \" modules \", List [Atom \"quote\", " ++ (ast2Str name) ++ "], LispEnv newEnv]",
+                        AstValue $ "  _ <- evalLisp env $ List [Atom \"hash-table-set!\", Atom \"" ++ moduleRuntimeVar ++ "\", List [Atom \"quote\", " ++ (ast2Str name) ++ "], LispEnv newEnv]",
                         createAstCont copts "(LispEnv newEnv)" ""]
                     
                     -- Create new env for module, per eval-module
@@ -463,13 +468,10 @@ csd env metaEnv (List ((List (Atom "import" : modules)) : ls)) copts@(CompileOpt
     Atom nextFunc <- _gensym "csdNext"
     code <- importTL env metaEnv modules $ CompileOptions thisFunc False False (Just nextFunc)
     rest <- csd env metaEnv (List ls) $ CompileOptions nextFunc False False lastFunc 
-    return $ code ++ rest
-
-    -- TODO: need to call csd to process ls. also what about lastFunc?
-    -- may need to allocate a nextFunc here and then have a lastFunc
-    -- stub generated in the [] case below
-    --
-    -- Note cmd  has exactly the same problem - more motivation to consolidate?
+    stub <- case rest of 
+        [] -> return [createFunctionStub nextFunc lastFunc]
+        _ -> return []
+    return $ code ++ rest ++ stub
 csd env metaEnv (List (_ : ls)) copts = 
     csd env metaEnv (List ls) copts
 csd _ _ _ (CompileOptions thisFunc _ _ lastFunc) = 
@@ -480,10 +482,13 @@ csd _ _ _ (CompileOptions thisFunc _ _ lastFunc) =
 
 -- Compile module directive, rename it later (TODO)
 cmd env metaEnv (List ((List (Atom "begin" : code)) : ls)) copts@(CompileOptions thisFunc _ _ lastFunc) = do
-    compileBlock thisFunc lastFunc env [] code
-    -- TODO: need to call cmd to process ls. also what about lastFunc?
-    -- may need to allocate a nextFunc here and then have a lastFunc
-    -- stub generated in the [] case below
+    Atom nextFunc <- _gensym "csdNext"
+    code <- compileBlock thisFunc (Just nextFunc) env [] code
+    rest <- cmd env metaEnv (List ls) $ CompileOptions nextFunc False False lastFunc
+    stub <- case rest of 
+        [] -> return [createFunctionStub nextFunc lastFunc]
+        _ -> return []
+    return $ code ++ rest ++ stub
 cmd env metaEnv (List (_ : ls)) copts = 
     cmd env metaEnv (List ls) copts
 cmd _ _ _ copts = return []
