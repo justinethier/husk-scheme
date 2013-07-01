@@ -22,7 +22,8 @@ be made for time and space...
 -}
 
 module Language.Scheme.Compiler where 
-import qualified Language.Scheme.Core as LSC (apply, evalLisp, evalString, meval, r5rsEnv, version) 
+import qualified Language.Scheme.Core as LSC (apply, evalLisp, evalString, 
+                                              meval, primitiveBindings, r5rsEnv, version) 
 import qualified Language.Scheme.Macro
 import Language.Scheme.Primitives
 import Language.Scheme.Types
@@ -349,11 +350,7 @@ importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ l
     -- Get module env, and import module env into env
     LispEnv modEnv <- LSC.evalLisp metaEnv $ 
        List [Atom "module-env", List [Atom "find-module", List [Atom "quote", moduleName]]]
--- TODO:
--- WTF is an empty env doing here????
--- obviously I am missing something here....
-    debug <- liftIO $ recPrintEnv env
-    _ <- (trace ("%import " ++ (show moduleName) ++ ", env = " ++ show debug) eval) env $ List [Atom "%import", LispEnv env, LispEnv modEnv, List [Atom "quote", List imports], Bool False]
+    _ <- eval env $ List [Atom "%import", LispEnv env, LispEnv modEnv, List [Atom "quote", List imports], Bool False]
     
     importFunc <- return $ [
         -- fromEnv is a LispEnv passed in as the 'value' parameter
@@ -398,7 +395,7 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
                         createAstCont copts "(LispEnv newEnv)" ""]
                     
                     -- Create new env for module, per eval-module
-                    newEnv <- liftIO $ nullEnv
+                    newEnv <- liftIO $ LSC.primitiveBindings --nullEnv
                     -- compile the module code, again per eval-module
                     result <- compileModule newEnv metaEnv name mod $
                         CompileOptions symStartLoadNewEnv False False (Just symEndLoadNewEnv)
