@@ -24,6 +24,7 @@ module Language.Scheme.Core
     , runIOThrows 
     , runIOThrowsREPL 
     -- * Core data
+    , nullEnvWithImport
     , primitiveBindings
     , r5rsEnv
     , r5rsEnv'
@@ -895,10 +896,18 @@ apply _ func args = do
 --  For the purposes of using husk as an extension language, /r5rsEnv/ will
 --  probably be more useful.
 primitiveBindings :: IO Env
-primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrimitives
-                                               ++ map (domakeFunc EvalFunc) evalFunctions
-                                               ++ map (domakeFunc PrimitiveFunc) primitives)
-  where domakeFunc constructor (var, func) = ((varNamespace, var), constructor func)
+primitiveBindings = nullEnv >>= 
+    (flip extendEnv $ map (domakeFunc IOFunc) ioPrimitives
+                   ++ map (domakeFunc EvalFunc) evalFunctions
+                   ++ map (domakeFunc PrimitiveFunc) primitives)
+  where domakeFunc constructor (var, func) = 
+            ((varNamespace, var), constructor func)
+
+-- |An empty environment with the %import function. This is presently
+--  just intended for internal use by the compiler.
+nullEnvWithImport :: IO Env
+nullEnvWithImport = nullEnv >>= 
+    (flip extendEnv [((varNamespace, "%import"), EvalFunc evalfuncImport)])
 
 -- |Load the standard r5rs environment, including libraries
 r5rsEnv :: IO Env
