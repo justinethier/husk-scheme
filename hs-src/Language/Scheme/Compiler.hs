@@ -318,14 +318,7 @@ importTL env metaEnv (m : ms) copts@(CompileOptions thisFunc _ _ lastFunc) = do
     Atom nextFunc <- _gensym "importTL"
     c <- _importTL env metaEnv m $ CompileOptions thisFunc False False (Just nextFunc)
     rest <- importTL env metaEnv ms $ CompileOptions nextFunc False False lastFunc
---
--- TODO: an attempt to try to work around an "importTLXXXX" not defined error when
---       attempting to import (scheme r5rs) at the top level
---       but this is not good enough, need to spend more time debugging
---    stub <- case (trace ("m = " ++ (show m) ++ ", c = " ++ show c) c) of
---        [] -> return [createFunctionStub nextFunc Nothing]
---        _ -> return []
-    return $ c ++ rest -- ++ stub
+    return $ c ++ rest
 importTL _ _ [] _ = return []
 
 _importTL env metaEnv m copts = do
@@ -357,7 +350,14 @@ importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ l
         AstValue $ "  _ <- evalLisp env $ List [Atom \"%import\", LispEnv env, value, List [Atom \"quote\", " ++ (ast2Str $ List imports) ++ "], Bool False]",
         createAstCont (CompileOptions symImport False False lastFunc) "(Nil \"\")" ""]
     
-    return $ [createAstFunc (CompileOptions symImport True False lastFunc) importFunc] ++ code
+    -- thisFunc MUST be defined, so include a stub if there was nothing to import
+    stub <- case code of
+        [] -> return [createFunctionStub thisFunc lastFunc]
+        _ -> return []
+
+    return $ [createAstFunc (CompileOptions symImport True False lastFunc) 
+                             importFunc] ++ 
+             code ++ stub
 
 -- TODO: should return module vector?
 -- but maybe not, because our eval-module will need to compile the
