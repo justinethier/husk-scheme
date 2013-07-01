@@ -22,8 +22,9 @@ be made for time and space...
 -}
 
 module Language.Scheme.Compiler where 
-import qualified Language.Scheme.Core as LSC (apply, evalLisp, evalString, 
-                                              meval, primitiveBindings, r5rsEnv, version) 
+import qualified Language.Scheme.Core as LSC 
+    (apply, evalLisp, evalString, meval, nullEnvWithImport, 
+     primitiveBindings, r5rsEnv, version) 
 import qualified Language.Scheme.Macro
 import Language.Scheme.Primitives
 import Language.Scheme.Types
@@ -347,18 +348,28 @@ importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ l
               CompileOptions thisFunc False False (Just symImport)
     
     -- Get module env, and import module env into env
-    LispEnv modEnv <- LSC.evalLisp metaEnv $ 
+    LispEnv modEnv <- (trace ("importModule, name = " ++ (show moduleName) ++ " code length = " ++ (show $ length code)) LSC.evalLisp) metaEnv $ 
        List [Atom "module-env", List [Atom "find-module", List [Atom "quote", moduleName]]]
     _ <- eval env $ List [Atom "%import", LispEnv env, LispEnv modEnv, List [Atom "quote", List imports], Bool False]
     
     importFunc <- return $ [
         -- fromEnv is a LispEnv passed in as the 'value' parameter
+
+        -- This is a hack to compile-in a full environment for the (scheme r5rs) import.
+        -- TODO: This really should be handled by the add-module! that is executed during
+        --  module initialization, instead of having a special case here
+        case moduleName of
+            List [Atom "scheme", Atom "r5rs"] -> AstValue $ "  r5 <- liftIO $ r5rsEnv\n  let value = LispEnv r5"
+
+            _ -> AstValue $ "",
+        -- end hack
+
         AstValue $ "  _ <- evalLisp env $ List [Atom \"%import\", LispEnv env, value, List [Atom \"quote\", " ++ (ast2Str $ List imports) ++ "], Bool False]",
         createAstCont (CompileOptions symImport False False lastFunc) "(Nil \"\")" ""]
     
     -- thisFunc MUST be defined, so include a stub if there was nothing to import
     stub <- case code of
-        [] -> return [createFunctionStub thisFunc lastFunc]
+        [] -> return [createFunctionStub thisFunc (Just symImport)]
         _ -> return []
 
     return $ [createAstFunc (CompileOptions symImport True False lastFunc) 
@@ -374,7 +385,8 @@ importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ l
 loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
     -- Get the module definition, or load it from file if necessary
     mod' <- eval metaEnv $ List [Atom "find-module", List [Atom "quote", name]]
-    case mod' of
+    case (trace ("loadModule " ++ (show name) ++ " = " ++ (show mod')) mod') of
+--    case mod' of
         Bool False -> return [] -- Even possible to reach this line?
         _ -> do
              mod <- recDerefPtrs mod'
@@ -393,7 +405,7 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
                     Atom symEndLoadNewEnv <- _gensym "doneLoadingNewEnvFnc"
 
                     newEnvFunc <- return $ [
-                        AstValue $ "  newEnv <- liftIO $ nullEnv",
+                        AstValue $ "  newEnv <- liftIO $ nullEnvWithImport",
                         AstValue $ "  mods <- getVar env \"" ++ moduleRuntimeVar ++ "\"",
                         AstValue $ "  _ <- defineVar newEnv \"" ++ moduleRuntimeVar ++ "\" mods",
                         AstValue $ "  _ <- " ++ symStartLoadNewEnv ++ " newEnv (makeNullContinuation newEnv) (Nil \"\") []",
@@ -403,8 +415,7 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
                         createAstCont copts "(LispEnv newEnv)" ""]
                     
                     -- Create new env for module, per eval-module
-TODO: this is not good enough, need an env that is *only* %import, and need to make that available here and in the runtime program
-                    newEnv <- liftIO $ LSC.primitiveBindings --nullEnv
+                    newEnv <- liftIO $ LSC.nullEnvWithImport
                     -- compile the module code, again per eval-module
                     result <- compileModule newEnv metaEnv name mod $
                         CompileOptions symStartLoadNewEnv False False (Just symEndLoadNewEnv)
