@@ -318,7 +318,10 @@ importTL env metaEnv (m : ms) copts@(CompileOptions thisFunc _ _ lastFunc) = do
     Atom nextFunc <- _gensym "importTL"
     c <- _importTL env metaEnv m $ CompileOptions thisFunc False False (Just nextFunc)
     rest <- importTL env metaEnv ms $ CompileOptions nextFunc False False lastFunc
-    return $ c ++ rest
+    stub <- case rest of 
+        [] -> return [createFunctionStub nextFunc lastFunc]
+        _ -> return []
+    return $ c ++ rest ++ stub
 importTL _ _ [] _ = return []
 
 _importTL env metaEnv m copts = do
