@@ -476,6 +476,9 @@ createFunctionStub thisFunc nextFunc = do
 --  another module in the (define-library) definition
 -- TODO: consider consolidating with common code in cmd below
 --csd env metaEnv (List (
+csd env metaEnv (List ((List (Atom "import-immutable" : modules)) : ls)) copts = do
+    -- Punt on this for now, although the meta-lang does the same thing
+    csd env metaEnv (List ((List (Atom "import" : modules)) : ls)) copts
 csd env metaEnv (List ((List (Atom "import" : modules)) : ls)) copts@(CompileOptions thisFunc _ _ lastFunc) = do
     Atom nextFunc <- _gensym "csdNext"
     code <- importTL env metaEnv modules $ CompileOptions thisFunc False False (Just nextFunc)
@@ -493,6 +496,12 @@ csd _ _ _ (CompileOptions thisFunc _ _ lastFunc) =
     return []
 
 -- Compile module directive, rename it later (TODO)
+-- TODO: cmd env metaEnv (List ((List (Atom "include" : code)) : ls)) copts = do
+-- TBD
+-- TODO: cmd env metaEnv (List ((List (Atom "include-ci" : code)) : ls)) copts = do
+-- TBD
+cmd env metaEnv (List ((List (Atom "body" : code)) : ls)) copts = do
+    cmd env metaEnv (List ((List (Atom "begin" : code)) : ls)) copts
 cmd env metaEnv (List ((List (Atom "begin" : code)) : ls)) copts@(CompileOptions thisFunc _ _ lastFunc) = do
     Atom nextFunc <- _gensym "csdNext"
     code <- compileBlock thisFunc (Just nextFunc) env [] code
@@ -504,9 +513,6 @@ cmd env metaEnv (List ((List (Atom "begin" : code)) : ls)) copts@(CompileOptions
 cmd env metaEnv (List (_ : ls)) copts = 
     cmd env metaEnv (List ls) copts
 cmd _ _ _ copts = return []
-
-
-
 -- END module section
 
 compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
