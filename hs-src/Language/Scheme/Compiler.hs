@@ -403,6 +403,7 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
                         createAstCont copts "(LispEnv newEnv)" ""]
                     
                     -- Create new env for module, per eval-module
+TODO: this is not good enough, need an env that is *only* %import, and need to make that available here and in the runtime program
                     newEnv <- liftIO $ LSC.primitiveBindings --nullEnv
                     -- compile the module code, again per eval-module
                     result <- compileModule newEnv metaEnv name mod $
