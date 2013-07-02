@@ -366,7 +366,7 @@ importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ l
         -- end hack
 
         AstValue $ "  _ <- evalLisp env $ List [Atom \"%import\", LispEnv env, value, List [Atom \"quote\", " ++ (ast2Str $ List imports) ++ "], Bool False]",
-        createAstCont (CompileOptions symImport False False lastFunc) "(Nil \"\")" ""]
+        createAstCont (CompileOptions symImport False False lastFunc) "(value)" ""]
     
     -- thisFunc MUST be defined, so include a stub if there was nothing to import
     stub <- case code of
@@ -409,7 +409,7 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
                         AstValue $ "  newEnv <- liftIO $ nullEnvWithImport",
                         AstValue $ "  mods <- getVar env \"" ++ moduleRuntimeVar ++ "\"",
                         AstValue $ "  _ <- defineVar newEnv \"" ++ moduleRuntimeVar ++ "\" mods",
-                        AstValue $ "  _ <- " ++ symStartLoadNewEnv ++ " newEnv (makeNullContinuation newEnv) (LispEnv newEnv) []",
+                        AstValue $ "  _ <- " ++ symStartLoadNewEnv ++ " newEnv (makeNullContinuation newEnv) (LispEnv env) []",
 -- TODO: need to store env in runtime memory with key of 'name'
 --       that way it is available later if another module wants to import it
                         AstValue $ "  _ <- evalLisp env $ List [Atom \"hash-table-set!\", Atom \"" ++ moduleRuntimeVar ++ "\", List [Atom \"quote\", " ++ (ast2Str name) ++ "], LispEnv newEnv]",
