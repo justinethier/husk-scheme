@@ -409,7 +409,7 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
                         AstValue $ "  newEnv <- liftIO $ nullEnvWithImport",
                         AstValue $ "  mods <- getVar env \"" ++ moduleRuntimeVar ++ "\"",
                         AstValue $ "  _ <- defineVar newEnv \"" ++ moduleRuntimeVar ++ "\" mods",
-                        AstValue $ "  _ <- " ++ symStartLoadNewEnv ++ " newEnv (makeNullContinuation newEnv) (Nil \"\") []",
+                        AstValue $ "  _ <- " ++ symStartLoadNewEnv ++ " newEnv (makeNullContinuation newEnv) (LispEnv newEnv) []",
 -- TODO: need to store env in runtime memory with key of 'name'
 --       that way it is available later if another module wants to import it
                         AstValue $ "  _ <- evalLisp env $ List [Atom \"hash-table-set!\", Atom \"" ++ moduleRuntimeVar ++ "\", List [Atom \"quote\", " ++ (ast2Str name) ++ "], LispEnv newEnv]",
@@ -521,110 +521,6 @@ compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 compile env ast@(List (Atom "import" : mods)) copts@(CompileOptions thisFunc _ _ lastFunc) = do
     LispEnv meta <- getVar env "*meta-env*"
     importTL env meta mods copts
-    
-
-{- Testing code:
-    envTmp <- liftIO $ LSC.r5rsEnv
-    _ <- LSC.evalLisp envTmp ast --(trace ("debug - evaluating " ++ (show ast)) ast)
-
-    List modules' <- getVar meta "*modules*" >>= recDerefPtrs
-    let modules = reverse modules'
-    --compileModules meta (trace ("compileModules: " ++ show modules) modules) thisFunc lastFunc
-    compileModules meta modules thisFunc lastFunc
--}
-    -- TODO: I think modules can be compiled in reverse order, since this is the order they are added by the evaluator
-
-    -- TODO: can use (module-exports) from meta-language to get export lists
-    -- actually, might be smarter to do the same thing repl-import does, process
-    -- each import statement, using resolve-import to get the import list.
-    -- then process the module accordingly.
-    --
-    -- should leverage the meta-language as much as possible to avoid duplicating effort
-
-    -- Will probably need to 'cheat' somehow for modules such as r5rs that are really just an environment,
-    -- since the compiler works on lisp expressions and not environments. may need to figure out what
-    -- environment it is somehow and bake that into the compiled code
-
-
-    -- TODO: may have trouble with a module that itself calls `import`, since eval-module duplicates
-    -- the code used in repl-import. may need a special case for these imports
-    -- ^ then again, not sure that matters because the interpreter loads all of these
-    --   imports into *modules*
-
-
-  {- notes on module compilation:
-  in order to compile a module, we first need to introduce an env. per eval-module,
-  we can use (make-environment) unless the module contains an env, in which case
-  we use that (probably this is only applicable to built-in modules such as scheme r5rs).
-  then all code is compiled using this env, much like a lambda (except will need to
-  create a new env instead of just passing along env like in a lambda def)
-  
-  we probably need to 
-  maintain a *modules* data structure at runtime in the compiled code, so after a module
-  is compiled and executed, it's exports are available to other modules
-
-  assume %import statements will also have to be added to the compiled code, since a module
-  that includes another will need to import it's exports, and likewise the top-level will 
-  need to import the exports of each module it uses
-  -}
-  where
- compileModules meta modules@[m] symThisFunc symLastFunc = do
-   compileModule meta m symThisFunc symLastFunc
- compileModules meta modules@(m : ms) symThisFunc symLastFunc = do
-   Atom symNextFunc <- _gensym "mf"
-   c <- compileModule meta m symThisFunc (Just symNextFunc)
-   rest <- compileModules meta ms symNextFunc symLastFunc
-   return $ c ++ rest
- compileModules _ [] _ _ = return []
-
- compileModule meta (DottedList [name@(List ns)] mod) symThisFunc symLastFunc = do
-
--- TODO: if  module has already been compiled, we just need to %import it's contents.
--- otherwise, we need to compile the module code and *then* %imports it's contents
-
-
-   exports <- LSC.evalLisp meta $ List [Atom "%module-exports", mod]
-   mEnv <- LSC.evalLisp meta $ List [Atom "module-env", mod]
-   mData <- LSC.evalLisp meta $ List [Atom "module-meta-data", mod]
---   throwError $ Default ("module = " ++ (show ns) ++ ", exports = " ++ (show exports) ++ ", data = " ++ (show mData))
-   --case (trace ("compileModule: " ++ show name) exports) of
-   case (exports) of
-    -- The special case of a module that is just an env, IE r5rs
-    -- Just skip it for now
-    --
-    -- TODO: WTF is exec generated twice??
-    Bool False -> do
-        let copts' = CompileOptions symThisFunc False False symLastFunc
-        let envStr = case name of
-                        List [Atom "scheme", Atom "r5rs"] ->
-                            "interaction-environment"
-        return [createAstFunc copts' [
-            -- TODO: need to identify env using module name, and
-            -- add it to *modules* at runtime
---            AstValue $ "  LispEnv e <- evalLisp env $ List [Atom \"" ++ (show envStr) ++ "\"]"
-            AstValue $ "  val <- defineVar env \"*modules*\" $ String \"TODO\""], 
-            createAstCont copts' "val" ""]
-    List es -> do
-        case mData of
-            List cs -> do
-                let code = findBegin cs --(trace ("findBegin, cs = " ++ show cs) cs)
-                compileBlock symThisFunc symLastFunc env [] code --(trace ("compileBlock: " ++ show code) code)
-            err -> throwError $ Default $ "Unexpected meta data: " ++ show err
-        -- TODO: should actually compile the whole module within
-        -- its own env, and store the env in *modules* at runtime
-    err -> throwError $ Default $ "Unexpected exports in compileModule: " ++ show err
-
--- TODO on above: need to figure out how to tweak copts so unique functions are created; probably need to 
--- all the appropriate function to update copts, and pass it along as a parameter to compileModule*
---
--- also how to figure out where to pick back up? does the outer copts already handle that? I suppose
--- it would have to in the current compiler
-
- -- Find the begin statement that contains the main module code
- findBegin (List (Atom "begin" : code) : cs) = code
- findBegin (c : cs) = findBegin cs
- findBegin _ = []
-
 compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
 compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts
 compile _ (Char c) copts = compileScalar ("  return $ Char " ++ (show c)) copts
