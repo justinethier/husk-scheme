@@ -1104,8 +1104,8 @@ evalfuncImport [
         (LispEnv newEnv)
 
 -- This is just for debugging purposes:
-evalfuncImport (cont@(Continuation env _ _ _ _ ) : cs) = do
-    continueEval env cont $ Nil ""
+evalfuncImport args@(cont@(Continuation env _ _ _ _ ) : cs) = do
+    throwError $ TypeMismatch "import fields" $ List cs
 
 -- |Load import into the main environment
 bootstrapImport [cont@(Continuation env _ _ _ _)] = do
