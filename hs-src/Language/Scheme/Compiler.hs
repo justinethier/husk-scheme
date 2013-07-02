@@ -348,7 +348,8 @@ importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ l
               CompileOptions thisFunc False False (Just symImport)
     
     -- Get module env, and import module env into env
-    LispEnv modEnv <- (trace ("importModule, name = " ++ (show moduleName) ++ " code length = " ++ (show $ length code)) LSC.evalLisp) metaEnv $ 
+--    LispEnv modEnv <- (trace ("importModule, name = " ++ (show moduleName) ++ " code length = " ++ (show $ length code)) LSC.evalLisp) metaEnv $ 
+    LispEnv modEnv <- LSC.evalLisp metaEnv $ 
        List [Atom "module-env", List [Atom "find-module", List [Atom "quote", moduleName]]]
     _ <- eval env $ List [Atom "%import", LispEnv env, LispEnv modEnv, List [Atom "quote", List imports], Bool False]
     
@@ -385,8 +386,8 @@ importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ l
 loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
     -- Get the module definition, or load it from file if necessary
     mod' <- eval metaEnv $ List [Atom "find-module", List [Atom "quote", name]]
-    case (trace ("loadModule " ++ (show name) ++ " = " ++ (show mod')) mod') of
---    case mod' of
+--    case (trace ("loadModule " ++ (show name) ++ " = " ++ (show mod')) mod') of
+    case mod' of
         Bool False -> return [] -- Even possible to reach this line?
         _ -> do
              mod <- recDerefPtrs mod'
