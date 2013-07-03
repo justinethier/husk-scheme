@@ -167,7 +167,7 @@ compileModule env metaEnv name mod lopts copts@(CompileOptions thisFunc _ _ last
 
     moduleImports <- csd env metaEnv metaData lopts $ 
         CompileOptions thisFunc False False (Just afterImportsFnc)
-    moduleDirectives <- cmd env metaEnv metaData lopts $
+    moduleDirectives <- cmd env metaEnv name metaData lopts $
         moduleDirsCopts moduleImports afterImportsFnc
 
     return $ moduleImports ++ 
@@ -226,26 +226,65 @@ csd _ _ _ _ (CompileOptions thisFunc _ _ lastFunc) =
     return []
 
 -- Compile module directive, rename it later (TODO)
--- TODO: cmd env metaEnv (List ((List (Atom "include" : code)) : ls)) copts = do
--- TBD
--- TODO: cmd env metaEnv (List ((List (Atom "include-ci" : code)) : ls)) copts = do
--- TBD
-cmd env metaEnv (List ((List (Atom "body" : code)) : ls)) lopts copts = do
-    cmd env metaEnv (List ((List (Atom "begin" : code)) : ls)) lopts copts
-cmd env metaEnv 
-       (List ((List (Atom "begin" : code)) : ls)) 
-        lopts@(CompileLibraryOptions compileBlock)
-        copts@(CompileOptions thisFunc _ _ lastFunc) = do
-    Atom nextFunc <- _gensym "csdNext"
-    code <- compileBlock thisFunc (Just nextFunc) env [] code
-    rest <- cmd env metaEnv (List ls) lopts $ CompileOptions nextFunc False False lastFunc
+cmd env metaEnv name (List ((List (Atom "include" : files)) : ls)) 
+    lopts@(CompileLibraryOptions _ compileLisp)
+    copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    dir <- LSC.evalLisp metaEnv $ List [Atom "module-name-prefix", 
+                                        List [Atom "quote", name]]
+-- TODO: this pattern is common with the one below in "begin", 
+--       should consolidate (or at least consider doing so)
+    Atom nextFunc <- _gensym "includeNext"
+    code <- includeAll env dir files compileInc lopts $ 
+                       CompileOptions thisFunc False False (Just nextFunc)
+    rest <- cmd env metaEnv name (List ls) lopts $ 
+                CompileOptions nextFunc False False lastFunc
     stub <- case rest of 
         [] -> return [createFunctionStub nextFunc lastFunc]
         _ -> return []
     return $ code ++ rest ++ stub
-cmd env metaEnv (List (_ : ls)) lopts copts = 
-    cmd env metaEnv (List ls) lopts copts
-cmd _ _ _ _ copts = return []
+ where 
+  compileInc (String dir) (String filename) entry exit = do
+    let path = dir ++ filename
+    -- TODO: use "find-module-file" on filename
+    compileLisp env path entry exit
+
+-- TODO: cmd env metaEnv (List ((List (Atom "include-ci" : code)) : ls)) copts = do
+-- TBD
+cmd env metaEnv name (List ((List (Atom "body" : code)) : ls)) lopts copts = do
+    cmd env metaEnv name
+       (List ((List (Atom "begin" : code)) : ls)) lopts copts
+cmd env metaEnv name
+       (List ((List (Atom "begin" : code)) : ls)) 
+        lopts@(CompileLibraryOptions compileBlock _)
+        copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    Atom nextFunc <- _gensym "csdNext"
+    code <- compileBlock thisFunc (Just nextFunc) env [] code
+    rest <- cmd env metaEnv name (List ls) lopts $ 
+                CompileOptions nextFunc False False lastFunc
+    stub <- case rest of 
+        [] -> return [createFunctionStub nextFunc lastFunc]
+        _ -> return []
+    return $ code ++ rest ++ stub
+cmd env metaEnv name (List (_ : ls)) lopts copts = 
+    cmd env metaEnv name (List ls) lopts copts
+cmd _ _ _ _ _ copts = return []
+
+-- |Include one or more files for compilation
+-- TODO: this pattern is used elsewhere (IE, importAll). could be generalized
+includeAll env dir [file] include lopts
+          copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    include dir file thisFunc lastFunc
+includeAll env dir (f : fs) include lopts
+           copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    Atom nextFunc <- _gensym "includeAll"
+    c <- include dir f thisFunc (Just nextFunc)
+    rest <- includeAll env dir fs include lopts $
+                       CompileOptions nextFunc False False lastFunc
+    stub <- case rest of 
+        [] -> return [createFunctionStub nextFunc lastFunc]
+        _ -> return []
+    return $ c ++ rest ++ stub
+includeAll _ _ [] _ _ _ = return []
 
 -- |Like evalLisp, but preserve pointers in the output
 eval :: Env -> LispVal -> IOThrowsError LispVal

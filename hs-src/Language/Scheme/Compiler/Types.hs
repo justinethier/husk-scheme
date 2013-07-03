@@ -70,7 +70,9 @@ defaultCompileOptions thisFunc = CompileOptions thisFunc False False Nothing
 -- |Options passed to the compiler library module
 data CompLibOpts = CompileLibraryOptions {
     compBlock :: String -> Maybe String -> Env 
-              -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST]
+              -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST],
+    compLisp :: Env -> String -> String -> Maybe String 
+              -> IOThrowsError [HaskAST]
     }
 
 -- |Runtime reference to module data structure
