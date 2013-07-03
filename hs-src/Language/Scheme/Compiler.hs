@@ -134,11 +134,11 @@ compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 -- Experimenting with r7rs library support
 compile env ast@(List (Atom "import" : mods)) copts@(CompileOptions thisFunc _ _ lastFunc) = do
     LispEnv meta <- getVar env "*meta-env*"
-    LSCL.importTL env 
-                  meta 
-                  mods 
-                 (CompileLibraryOptions compileBlock) 
-                  copts
+    LSCL.importAll env 
+                   meta 
+                   mods 
+                  (CompileLibraryOptions compileBlock) 
+                   copts
 compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
 compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts
 compile _ (Char c) copts = compileScalar ("  return $ Char " ++ (show c)) copts

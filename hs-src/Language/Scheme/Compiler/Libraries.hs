@@ -13,44 +13,49 @@ This module contains support for compiling libraries of code.
 
 module Language.Scheme.Compiler.Libraries
     ( 
-      importTL
+      importAll
     )
 where 
 import Language.Scheme.Compiler.Types
 import qualified Language.Scheme.Core as LSC 
     (evalLisp, meval, nullEnvWithImport)
---import qualified Language.Scheme.Macro
 import Language.Scheme.Primitives
 import Language.Scheme.Types
---import qualified Language.Scheme.Util (escapeBackslashes)
 import Language.Scheme.Variables
 import Control.Monad.Error
---import qualified Data.Array
---import qualified Data.ByteString as BS
---import Data.Complex
---import qualified Data.List
---import qualified Data.Map
---import Data.Ratio
---import Data.Word
---import Debug.Trace
 
--- |Top-level import
-importTL env metaEnv [m] lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
-    _importTL env metaEnv m lopts copts
-importTL env metaEnv (m : ms) lopts
-         copts@(CompileOptions thisFunc _ _ lastFunc) = do
-    Atom nextFunc <- _gensym "importTL"
-    c <- _importTL env metaEnv m lopts $ CompileOptions thisFunc False False (Just nextFunc)
-    rest <- importTL env metaEnv ms lopts $ CompileOptions nextFunc False False lastFunc
+-- |Import all given modules and generate code for them
+importAll 
+    :: Env 
+    -- ^ Compilation environment
+    -> Env 
+    -- ^ Compilation "meta" environment, containing code from modules.scm
+    -> [LispVal]
+    -- ^ Modules to import
+    -> CompLibOpts
+    -- ^ Misc options required by compiler library functions
+    -> CompOpts
+    -- ^ Misc options required by compiler functions
+    -> IOThrowsError [HaskAST]
+    -- ^ Compiled code
+importAll env metaEnv [m] lopts 
+          copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    _importAll env metaEnv m lopts copts
+importAll env metaEnv (m : ms) lopts
+          copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    Atom nextFunc <- _gensym "importAll"
+    c <- _importAll env metaEnv m lopts $ 
+                    CompileOptions thisFunc False False (Just nextFunc)
+    rest <- importAll env metaEnv ms lopts $
+                      CompileOptions nextFunc False False lastFunc
     stub <- case rest of 
         [] -> return [createFunctionStub nextFunc lastFunc]
         _ -> return []
     return $ c ++ rest ++ stub
-importTL _ _ [] _ _ = return []
+importAll _ _ [] _ _ = return []
 
-_importTL env metaEnv m lopts copts = do
+_importAll env metaEnv m lopts copts = do
     -- Resolve import
---TODO: pattern match failure here when compiling test-list.scm - something's up
     resolved <- LSC.evalLisp metaEnv $ 
          List [Atom  "resolve-import", List [Atom "quote", m]]
     case resolved of
@@ -60,7 +65,9 @@ _importTL env metaEnv m lopts copts = do
             importModule env metaEnv (List moduleName) [imports] lopts copts
         err -> throwError $ TypeMismatch "module/import" err
 
-importModule env metaEnv moduleName imports lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
+-- |Import a single module
+importModule env metaEnv moduleName imports lopts 
+             copts@(CompileOptions thisFunc _ _ lastFunc) = do
     Atom symImport <- _gensym "importFnc"
 
     -- Load module
@@ -101,7 +108,7 @@ importModule env metaEnv moduleName imports lopts copts@(CompileOptions thisFunc
 -- but maybe not, because our eval-module will need to compile the
 -- module, so we may need to do something special like return a 
 -- tuple containing both pieces of information. Or do we even need
--- the module vector, since we can just look it up by name in importTL
+-- the module vector, since we can just look it up by name in importAll
 --
 loadModule metaEnv name lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
     -- Get the module definition, or load it from file if necessary
@@ -204,7 +211,7 @@ csd env metaEnv (List ((List (Atom "import-immutable" : modules)) : ls))
 csd env metaEnv (List ((List (Atom "import" : modules)) : ls)) lopts
     copts@(CompileOptions thisFunc _ _ lastFunc) = do
     Atom nextFunc <- _gensym "csdNext"
-    code <- importTL env metaEnv modules lopts $ CompileOptions thisFunc False False (Just nextFunc)
+    code <- importAll env metaEnv modules lopts $ CompileOptions thisFunc False False (Just nextFunc)
     rest <- csd env metaEnv (List ls) lopts $ CompileOptions nextFunc False False lastFunc 
     stub <- case rest of 
         [] -> return [createFunctionStub nextFunc lastFunc]
