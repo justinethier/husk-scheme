@@ -1,2 +1,2 @@
 (define (raw)
-    (write 'a-raw-included-file))
+    'a-raw-included-file)
