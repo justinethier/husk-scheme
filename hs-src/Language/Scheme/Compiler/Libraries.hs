@@ -248,11 +248,15 @@ cmd env metaEnv name (List ((List (Atom "include" : files)) : ls))
     -- TODO: use "find-module-file" on filename
     compileLisp env path entry exit
 
--- TODO: cmd env metaEnv (List ((List (Atom "include-ci" : code)) : ls)) copts = do
--- TBD
+cmd env metaEnv name (List ((List (Atom "include-ci" : code)) : ls)) lopts copts = do
+    -- NOTE: per r7rs, ci should insert a fold-case directive. But husk does
+    -- not support that, so just do a regular include for now
+    cmd env metaEnv name
+       (List ((List (Atom "include" : code)) : ls)) lopts copts
 cmd env metaEnv name (List ((List (Atom "body" : code)) : ls)) lopts copts = do
     cmd env metaEnv name
        (List ((List (Atom "begin" : code)) : ls)) lopts copts
+
 cmd env metaEnv name
        (List ((List (Atom "begin" : code)) : ls)) 
         lopts@(CompileLibraryOptions compileBlock _)
