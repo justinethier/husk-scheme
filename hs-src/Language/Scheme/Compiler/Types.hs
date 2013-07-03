@@ -7,26 +7,39 @@ Maintainer  : github.com/justinethier
 Stability   : experimental
 Portability : portable
 
-This module contains data types used by the compiler 
+This module contains data types used by the compiler.
 -}
 
-module Language.Scheme.Compiler.Types where 
-import qualified Language.Scheme.Core as LSC 
-    (apply, evalLisp, evalString, meval, nullEnvWithImport, 
-     primitiveBindings, r5rsEnv, version) 
-import qualified Language.Scheme.Macro
-import Language.Scheme.Primitives
+module Language.Scheme.Compiler.Types 
+    (
+    -- * Data types
+      CompOpts (CompileOptions)
+    , defaultCompileOptions
+    , HaskAST (..)
+    -- * Utility functions
+    , ast2Str
+    , asts2Str
+    , createAstFunc 
+    , createAstCont 
+    , joinL 
+    , moduleRuntimeVar
+    , showValAST
+    -- * Headers appended to output file
+    , header
+    , headerComment
+    , headerModule
+    , headerImports
+    )
+where 
+import qualified Language.Scheme.Core as LSC (version) 
 import Language.Scheme.Types
 import qualified Language.Scheme.Util (escapeBackslashes)
-import Language.Scheme.Variables
-import Control.Monad.Error
 import qualified Data.Array
 import qualified Data.ByteString as BS
-import Data.Complex
+import qualified Data.Complex as DC
 import qualified Data.List
 import qualified Data.Map
-import Data.Ratio
-import Data.Word
+import qualified Data.Ratio as DR
 
 -- |A type to store options passed to compile
 --  eventually all of this might be able to be 
@@ -121,8 +134,8 @@ ast2Str (String s) = "String " ++ show s
 ast2Str (Char c) = "Char " ++ show c
 ast2Str (Atom a) = "Atom " ++ show a
 ast2Str (Number n) = "Number (" ++ show n ++ ")"
-ast2Str (Complex c) = "Complex $ (" ++ (show $ realPart c) ++ ") :+ (" ++ (show $ imagPart c) ++ ")"
-ast2Str (Rational r) = "Rational $ (" ++ (show $ numerator r) ++ ") % (" ++ (show $ denominator r) ++ ")"
+ast2Str (Complex c) = "Complex $ (" ++ (show $ DC.realPart c) ++ ") :+ (" ++ (show $ DC.imagPart c) ++ ")"
+ast2Str (Rational r) = "Rational $ (" ++ (show $ DR.numerator r) ++ ") % (" ++ (show $ DR.denominator r) ++ ")"
 ast2Str (Float f) = "Float (" ++ show f ++ ")"
 ast2Str (Bool True) = "Bool True"
 ast2Str (Bool False) = "Bool False"
