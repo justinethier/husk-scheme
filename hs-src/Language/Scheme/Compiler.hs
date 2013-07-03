@@ -137,7 +137,7 @@ compile env ast@(List (Atom "import" : mods)) copts@(CompileOptions thisFunc _ _
     LSCL.importTL env 
                   meta 
                   mods 
-                 (LSCL.CompileLibraryOptions compileBlock) 
+                 (CompileLibraryOptions compileBlock) 
                   copts
 compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
 compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts

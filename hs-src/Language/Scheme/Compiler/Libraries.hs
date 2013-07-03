@@ -18,25 +18,21 @@ module Language.Scheme.Compiler.Libraries
 where 
 import Language.Scheme.Compiler.Types
 import qualified Language.Scheme.Core as LSC 
-    (apply, evalLisp, evalString, meval, nullEnvWithImport, 
-     primitiveBindings, r5rsEnv, version) 
-import qualified Language.Scheme.Macro
+    (evalLisp, meval, nullEnvWithImport)
+--import qualified Language.Scheme.Macro
 import Language.Scheme.Primitives
 import Language.Scheme.Types
-import qualified Language.Scheme.Util (escapeBackslashes)
+--import qualified Language.Scheme.Util (escapeBackslashes)
 import Language.Scheme.Variables
 import Control.Monad.Error
-import qualified Data.Array
-import qualified Data.ByteString as BS
-import Data.Complex
-import qualified Data.List
-import qualified Data.Map
-import Data.Ratio
-import Data.Word
-import Debug.Trace
-
--- |Runtime reference to module data structure
-moduleRuntimeVar = " modules "
+--import qualified Data.Array
+--import qualified Data.ByteString as BS
+--import Data.Complex
+--import qualified Data.List
+--import qualified Data.Map
+--import Data.Ratio
+--import Data.Word
+--import Debug.Trace
 
 -- |Top-level import
 importTL env metaEnv [m] lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do

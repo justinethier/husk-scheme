@@ -14,6 +14,7 @@ module Language.Scheme.Compiler.Types
     (
     -- * Data types
       CompOpts (CompileOptions)
+    , CompLibOpts (..)
     , defaultCompileOptions
     , HaskAST (..)
     -- * Utility functions
@@ -22,6 +23,7 @@ module Language.Scheme.Compiler.Types
     , createAstFunc 
     , createAstCont 
     , joinL 
+    , moduleRuntimeVar
     , showValAST
     -- * Headers appended to output file
     , header
@@ -70,6 +72,9 @@ data CompLibOpts = CompileLibraryOptions {
     compBlock :: String -> Maybe String -> Env 
               -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST]
     }
+
+-- |Runtime reference to module data structure
+moduleRuntimeVar = " modules "
 
 -- |Create code for a function
 createAstFunc 
