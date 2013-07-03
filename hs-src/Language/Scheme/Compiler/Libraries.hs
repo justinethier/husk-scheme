@@ -12,7 +12,9 @@ This module contains support for compiling libraries of code.
 -}
 
 module Language.Scheme.Compiler.Libraries
-    (importTL)
+    ( 
+      importTL
+    )
 where 
 import Language.Scheme.Compiler.Types
 import qualified Language.Scheme.Core as LSC 
@@ -33,37 +35,40 @@ import Data.Ratio
 import Data.Word
 import Debug.Trace
 
+-- |Runtime reference to module data structure
+moduleRuntimeVar = " modules "
 
 -- |Top-level import
-importTL env metaEnv [m] copts@(CompileOptions thisFunc _ _ lastFunc) = do
-    _importTL env metaEnv m copts
-importTL env metaEnv (m : ms) copts@(CompileOptions thisFunc _ _ lastFunc) = do
+importTL env metaEnv [m] lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    _importTL env metaEnv m lopts copts
+importTL env metaEnv (m : ms) lopts
+         copts@(CompileOptions thisFunc _ _ lastFunc) = do
     Atom nextFunc <- _gensym "importTL"
-    c <- _importTL env metaEnv m $ CompileOptions thisFunc False False (Just nextFunc)
-    rest <- importTL env metaEnv ms $ CompileOptions nextFunc False False lastFunc
+    c <- _importTL env metaEnv m lopts $ CompileOptions thisFunc False False (Just nextFunc)
+    rest <- importTL env metaEnv ms lopts $ CompileOptions nextFunc False False lastFunc
     stub <- case rest of 
         [] -> return [createFunctionStub nextFunc lastFunc]
         _ -> return []
     return $ c ++ rest ++ stub
-importTL _ _ [] _ = return []
+importTL _ _ [] _ _ = return []
 
-_importTL env metaEnv m copts = do
+_importTL env metaEnv m lopts copts = do
     -- Resolve import
 --TODO: pattern match failure here when compiling test-list.scm - something's up
     resolved <- LSC.evalLisp metaEnv $ 
          List [Atom  "resolve-import", List [Atom "quote", m]]
     case resolved of
         List (moduleName : imports) -> do
-            importModule env metaEnv moduleName imports copts
+            importModule env metaEnv moduleName imports lopts copts
         DottedList [List moduleName] imports@(Bool False) -> do
-            importModule env metaEnv (List moduleName) [imports] copts
+            importModule env metaEnv (List moduleName) [imports] lopts copts
         err -> throwError $ TypeMismatch "module/import" err
 
-importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ lastFunc) = do
+importModule env metaEnv moduleName imports lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
     Atom symImport <- _gensym "importFnc"
 
     -- Load module
-    code <- loadModule metaEnv moduleName $ 
+    code <- loadModule metaEnv moduleName lopts $ 
               CompileOptions thisFunc False False (Just symImport)
     
     -- Get module env, and import module env into env
@@ -102,7 +107,7 @@ importModule env metaEnv moduleName imports copts@(CompileOptions thisFunc _ _ l
 -- tuple containing both pieces of information. Or do we even need
 -- the module vector, since we can just look it up by name in importTL
 --
-loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
+loadModule metaEnv name lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
     -- Get the module definition, or load it from file if necessary
     mod' <- eval metaEnv $ List [Atom "find-module", List [Atom "quote", name]]
 --    case (trace ("loadModule " ++ (show name) ++ " = " ++ (show mod')) mod') of
@@ -137,7 +142,7 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
                     -- Create new env for module, per eval-module
                     newEnv <- liftIO $ LSC.nullEnvWithImport
                     -- compile the module code, again per eval-module
-                    result <- compileModule newEnv metaEnv name mod $
+                    result <- compileModule newEnv metaEnv name mod lopts $
                         CompileOptions symStartLoadNewEnv False False (Just symEndLoadNewEnv)
                     modWEnv <- eval metaEnv $ List (Atom "module-env-set!" : mod' : [LispEnv newEnv]) 
                     -- Above does not update *modules* correctly, so we del/add below
@@ -150,16 +155,16 @@ loadModule metaEnv name copts@(CompileOptions thisFunc _ _ lastFunc) = do
                 _ -> return [] --mod
 
 -- TODO: write compileModule here, it will be based off of the eval-module code from the meta-language, and can take cues from compileModule below
-compileModule env metaEnv name mod copts@(CompileOptions thisFunc _ _ lastFunc) = do
+compileModule env metaEnv name mod lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
     -- TODO: set mod meta-data to avoid cyclic references
     Atom afterImportsFnc <- _gensym "modAfterImport"
     Atom afterDirFunc <- _gensym "modAfterDir"
 
     metaData <- LSC.evalLisp metaEnv $ List [Atom "module-meta-data", List [Atom "quote", mod]]
 
-    moduleImports <- csd env metaEnv metaData $ 
+    moduleImports <- csd env metaEnv metaData lopts $ 
         CompileOptions thisFunc False False (Just afterImportsFnc)
-    moduleDirectives <- cmd env metaEnv metaData $
+    moduleDirectives <- cmd env metaEnv metaData lopts $
         moduleDirsCopts moduleImports afterImportsFnc
 
     return $ moduleImports ++ 
@@ -196,20 +201,22 @@ createFunctionStub thisFunc nextFunc = do
 --  another module in the (define-library) definition
 -- TODO: consider consolidating with common code in cmd below
 --csd env metaEnv (List (
-csd env metaEnv (List ((List (Atom "import-immutable" : modules)) : ls)) copts = do
+csd env metaEnv (List ((List (Atom "import-immutable" : modules)) : ls)) 
+    lopts copts = do
     -- Punt on this for now, although the meta-lang does the same thing
-    csd env metaEnv (List ((List (Atom "import" : modules)) : ls)) copts
-csd env metaEnv (List ((List (Atom "import" : modules)) : ls)) copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    csd env metaEnv (List ((List (Atom "import" : modules)) : ls)) lopts copts
+csd env metaEnv (List ((List (Atom "import" : modules)) : ls)) lopts
+    copts@(CompileOptions thisFunc _ _ lastFunc) = do
     Atom nextFunc <- _gensym "csdNext"
-    code <- importTL env metaEnv modules $ CompileOptions thisFunc False False (Just nextFunc)
-    rest <- csd env metaEnv (List ls) $ CompileOptions nextFunc False False lastFunc 
+    code <- importTL env metaEnv modules lopts $ CompileOptions thisFunc False False (Just nextFunc)
+    rest <- csd env metaEnv (List ls) lopts $ CompileOptions nextFunc False False lastFunc 
     stub <- case rest of 
         [] -> return [createFunctionStub nextFunc lastFunc]
         _ -> return []
     return $ code ++ rest ++ stub
-csd env metaEnv (List (_ : ls)) copts = 
-    csd env metaEnv (List ls) copts
-csd _ _ _ (CompileOptions thisFunc _ _ lastFunc) = 
+csd env metaEnv (List (_ : ls)) lopts copts = 
+    csd env metaEnv (List ls) lopts copts
+csd _ _ _ _ (CompileOptions thisFunc _ _ lastFunc) = 
     -- TODO: not good enough, need to return a stub w/lastFunc
     -- does it just have to be named thisfunc, and call into lastfunc?
 
@@ -220,19 +227,22 @@ csd _ _ _ (CompileOptions thisFunc _ _ lastFunc) =
 -- TBD
 -- TODO: cmd env metaEnv (List ((List (Atom "include-ci" : code)) : ls)) copts = do
 -- TBD
-cmd env metaEnv (List ((List (Atom "body" : code)) : ls)) copts = do
-    cmd env metaEnv (List ((List (Atom "begin" : code)) : ls)) copts
-cmd env metaEnv (List ((List (Atom "begin" : code)) : ls)) copts@(CompileOptions thisFunc _ _ lastFunc) = do
+cmd env metaEnv (List ((List (Atom "body" : code)) : ls)) lopts copts = do
+    cmd env metaEnv (List ((List (Atom "begin" : code)) : ls)) lopts copts
+cmd env metaEnv 
+       (List ((List (Atom "begin" : code)) : ls)) 
+        lopts@(CompileLibraryOptions compileBlock)
+        copts@(CompileOptions thisFunc _ _ lastFunc) = do
     Atom nextFunc <- _gensym "csdNext"
     code <- compileBlock thisFunc (Just nextFunc) env [] code
-    rest <- cmd env metaEnv (List ls) $ CompileOptions nextFunc False False lastFunc
+    rest <- cmd env metaEnv (List ls) lopts $ CompileOptions nextFunc False False lastFunc
     stub <- case rest of 
         [] -> return [createFunctionStub nextFunc lastFunc]
         _ -> return []
     return $ code ++ rest ++ stub
-cmd env metaEnv (List (_ : ls)) copts = 
-    cmd env metaEnv (List ls) copts
-cmd _ _ _ copts = return []
+cmd env metaEnv (List (_ : ls)) lopts copts = 
+    cmd env metaEnv (List ls) lopts copts
+cmd _ _ _ _ copts = return []
 
 -- |Like evalLisp, but preserve pointers in the output
 eval :: Env -> LispVal -> IOThrowsError LispVal

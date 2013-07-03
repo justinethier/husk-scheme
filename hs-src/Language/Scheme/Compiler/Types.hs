@@ -22,7 +22,6 @@ module Language.Scheme.Compiler.Types
     , createAstFunc 
     , createAstCont 
     , joinL 
-    , moduleRuntimeVar
     , showValAST
     -- * Headers appended to output file
     , header
@@ -65,6 +64,12 @@ data CompOpts = CompileOptions {
 
 defaultCompileOptions :: String -> CompOpts
 defaultCompileOptions thisFunc = CompileOptions thisFunc False False Nothing
+
+-- |Options passed to the compiler library module
+data CompLibOpts = CompileLibraryOptions {
+    compBlock :: String -> Maybe String -> Env 
+              -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST]
+    }
 
 -- |Create code for a function
 createAstFunc 
@@ -117,9 +122,6 @@ showValAST (AstContinuation nextFunc args) =
        nextFunc ++ " " ++ args ++ ") $ Nil \"\""
 
 instance Show HaskAST where show = showValAST
-
--- |Runtime reference to module data structure
-moduleRuntimeVar = " modules "
 
 -- |A utility function to join list members together
 joinL 

@@ -68,6 +68,7 @@ Library
                    Language.Scheme.Types
                    Language.Scheme.Variables
                    Language.Scheme.Compiler
+                   Language.Scheme.Compiler.Libraries
                    Language.Scheme.Compiler.Types
                    Language.Scheme.Plugins.CPUTime
                    Language.Scheme.Macro
