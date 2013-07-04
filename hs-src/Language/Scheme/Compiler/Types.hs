@@ -42,9 +42,9 @@ import qualified Data.List
 import qualified Data.Map
 import qualified Data.Ratio as DR
 
--- |A type to store options passed to compile
---  eventually all of this might be able to be 
---  integrated into a Compile monad
+-- |A type to store options passed to compile.
+--  Eventually all of this might be able to be 
+--  integrated into a Compile monad.
 data CompOpts = CompileOptions {
     coptsThisFunc :: String,        
     -- ^Immediate name to use when creating a compiled function.
@@ -103,8 +103,10 @@ createAstCont (CompileOptions _ _ _ (Just nextFunc)) var indentation = do
 createAstCont (CompileOptions _ _ _ Nothing) var indentation = do
   AstValue $ indentation ++ "  continueEval env cont " ++ var
 
--- |A very basic type to store a Haskell AST.
+
 --  FUTURE: is this even necessary? Would just a string be good enough?
+
+-- |A very basic type to store a Haskell AST.
 data HaskAST = AstAssignM String HaskAST
   | AstFunction {astfName :: String,
 --                 astfType :: String,

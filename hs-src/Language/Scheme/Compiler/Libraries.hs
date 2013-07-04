@@ -29,7 +29,7 @@ importAll
     :: Env 
     -- ^ Compilation environment
     -> Env 
-    -- ^ Compilation "meta" environment, containing code from modules.scm
+    -- ^ Compilation meta environment, containing code from modules.scm
     -> [LispVal]
     -- ^ Modules to import
     -> CompLibOpts
