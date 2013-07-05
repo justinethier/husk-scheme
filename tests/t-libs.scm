@@ -13,13 +13,10 @@
     (import (only (libs basic) list2))
     (assert/equal x 'main-program "x not exported")
     (assert/equal (list2 1 2 3) '(1 2 3) "list2 exported"))
-
-; TODO: not sure why the following fails?
-;(begin
-;    (define x 'main-program)
-;    (import (libs basic))
-;    (assert/equal x 'libs-basic "x exported"))
-
+(begin
+    (define x 'main-program)
+    (import (libs basic))
+    (assert/equal x 'libs-basic "x exported"))
 (begin
     (define x 'main-program)
     ; Demonstrate that multiple imports are OK

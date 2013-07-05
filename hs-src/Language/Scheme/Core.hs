@@ -1076,11 +1076,9 @@ evalfuncImport [
             LispEnv e -> return toEnv
             Bool False -> do
                 -- A hack to load imports into the main env, which
-                -- in modules.scm is the grandparent env
+                -- in modules.scm is the parent env
                 case parentEnv env of
-                    Just (Environment (Just gp) _ _) -> 
-                        return $ LispEnv gp
-                    Just (Environment Nothing _ _ ) -> throwError $ InternalError "import into empty parent env"
+                    Just env -> return $ LispEnv env
                     Nothing -> throwError $ InternalError "import into empty env"
     case imports of
         List [Bool False] -> do -- Export everything
