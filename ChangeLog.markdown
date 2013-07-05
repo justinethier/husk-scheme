@@ -2,15 +2,14 @@
 v3.11
 --------
 
-TODO: I think %import needs to be executed by the compiler in order to ensure proper bindings in compiled program, but cannot just add as a special form because %import is renamed in repl-import. so need to figure out what to do.
-Not sure this explains why the compiler does not have imported forms at compile time, though. shouldn't the evaluator get the env's setup correctly during compilation? maybe there is another issue? 
+The major change in this release is support for R<sup>7</sup>RS style library syntax in the compiler. This enables functionality that was previously only available in the interpreter, and sets the stage for husk to begin adding support for R<sup>7</sup>RS.
 
-Issue #110 - allow huskc to reference variables defined later in the program
-Added nullLisp type (TBD is this is a good idea, and also what about nilLisp?)
+Bug fixes:
 
-Allow the compiler to redefine macro keywords, EG:
-(define-syntax orig-begin begin)
-note this is non-standard
+- Allow the husk compiler to reference variables that are defined later in the program. For example:
+
+    (define (foo) (bar))
+    (define (bar) (foo))
 
 v3.10
 --------
