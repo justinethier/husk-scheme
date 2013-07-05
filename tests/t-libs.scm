@@ -6,7 +6,7 @@
 ;;
 ;; Test cases for r7rs libraries
 ;;
-(unit-test-start "r7rs libraries")
+(unit-test-start "r7rs library syntax")
 
 (begin
     (define x 'main-program)
