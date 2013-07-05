@@ -6,10 +6,7 @@ The major change in this release is support for R<sup>7</sup>RS style library sy
 
 Bug fixes:
 
-- Allow the husk compiler to reference variables that are defined later in the program. For example:
-
-     (define (foo) (bar))
-     (define (bar) (foo))
+- Allow the husk compiler to reference variables that are defined later in the program. For example: `(define (foo) (bar))` `(define (bar) (foo))`
 
 v3.10
 --------
