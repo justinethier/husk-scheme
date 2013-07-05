@@ -8,8 +8,8 @@ Bug fixes:
 
 - Allow the husk compiler to reference variables that are defined later in the program. For example:
 
-    (define (foo) (bar))
-    (define (bar) (foo))
+     (define (foo) (bar))
+     (define (bar) (foo))
 
 v3.10
 --------
