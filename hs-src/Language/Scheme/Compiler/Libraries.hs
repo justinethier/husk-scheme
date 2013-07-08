@@ -75,24 +75,21 @@ importModule env metaEnv moduleName imports lopts
               CompileOptions thisFunc False False (Just symImport)
     
     -- Get module env, and import module env into env
---    LispEnv modEnv <- (trace ("importModule, name = " ++ (show moduleName) ++ " code length = " ++ (show $ length code)) LSC.evalLisp) metaEnv $ 
     LispEnv modEnv <- LSC.evalLisp metaEnv $ 
        List [Atom "module-env", List [Atom "find-module", List [Atom "quote", moduleName]]]
-    _ <- eval env $ List [Atom "%import", LispEnv env, LispEnv modEnv, List [Atom "quote", List imports], Bool False]
+    _ <- eval env $ List [Atom "%import", 
+                          LispEnv env, 
+                          LispEnv modEnv, 
+                          List [Atom "quote", List imports], 
+                          Bool False]
     
     importFunc <- return $ [
-        -- fromEnv is a LispEnv passed in as the 'value' parameter
-
-        -- This is a hack to compile-in a full environment for the (scheme r5rs) import.
-        -- TODO: This really should be handled by the add-module! that is executed during
-        --  module initialization, instead of having a special case here
-        case moduleName of
-            List [Atom "scheme", Atom "r5rs"] -> AstValue $ "  r5 <- liftIO $ r5rsEnv\n  let value = LispEnv r5"
-
-            _ -> AstValue $ "",
-        -- end hack
-
-        AstValue $ "  _ <- evalLisp env $ List [Atom \"%import\", LispEnv env, value, List [Atom \"quote\", " ++ (ast2Str $ List imports) ++ "], Bool False]",
+        -- fromEnv is a LispEnv passed in as the 'value' parameter.
+        -- But the source of 'value' is different depending on the 
+        -- context, so we call into this function to figure it out
+        codeToGetFromEnv moduleName code,
+        AstValue $ "  _ <- evalLisp env $ List [Atom \"%import\", LispEnv env, value, List [Atom \"quote\", " ++ 
+                  (ast2Str $ List imports) ++ "], Bool False]",
         createAstCont (CompileOptions symImport False False lastFunc) "(value)" ""]
     
     -- thisFunc MUST be defined, so include a stub if there was nothing to import
@@ -101,8 +98,28 @@ importModule env metaEnv moduleName imports lopts
         _ -> return []
 
     return $ [createAstFunc (CompileOptions symImport True False lastFunc) 
-                             importFunc] ++ 
-             code ++ stub
+                             importFunc] ++ code ++ stub
+ where 
+  --
+  -- The import's "from" env can come from many places; this function
+  -- figures that out and creates a new 'value' if necessary to send
+  -- the proper value to %import in the above code
+  --
+  codeToGetFromEnv (List [Atom "scheme", Atom "r5rs"]) _ = do
+     -- This is a hack to compile-in a full environment for the (scheme r5rs) import.
+     --
+     -- TODO: This really should be handled by the add-module! that is executed during
+     --  module initialization, instead of having a special case here
+     AstValue $ "  r5 <- liftIO $ r5rsEnv\n  let value = LispEnv r5"
+
+  codeToGetFromEnv name [] = do
+     -- No code was generated because module was loaded previously, so retrieve
+     -- it from runtime memory
+     AstValue $ "  value <- evalLisp env $ List [Atom \"hash-table-ref\", Atom \"" ++ 
+                moduleRuntimeVar ++ "\", List [Atom \"quote\", " ++ 
+               (ast2Str name) ++ "]]" 
+
+  codeToGetFromEnv _ _ = AstValue $ ""
 
 -- TODO: should return module vector?
 -- but maybe not, because our eval-module will need to compile the
@@ -139,7 +156,9 @@ loadModule metaEnv name lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
                         AstValue $ "  _ <- " ++ symStartLoadNewEnv ++ " newEnv (makeNullContinuation newEnv) (LispEnv env) []",
 -- TODO: need to store env in runtime memory with key of 'name'
 --       that way it is available later if another module wants to import it
-                        AstValue $ "  _ <- evalLisp env $ List [Atom \"hash-table-set!\", Atom \"" ++ moduleRuntimeVar ++ "\", List [Atom \"quote\", " ++ (ast2Str name) ++ "], LispEnv newEnv]",
+                        AstValue $ "  _ <- evalLisp env $ List [Atom \"hash-table-set!\", Atom \"" ++ 
+                                   moduleRuntimeVar ++ "\", List [Atom \"quote\", " ++
+                                  (ast2Str name) ++ "], LispEnv newEnv]",
                         createAstCont copts "(LispEnv newEnv)" ""]
                     
                     -- Create new env for module, per eval-module
