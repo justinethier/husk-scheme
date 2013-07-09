@@ -121,16 +121,22 @@ importModule env metaEnv moduleName imports lopts
 
   codeToGetFromEnv _ _ = AstValue $ ""
 
--- TODO: should return module vector?
--- but maybe not, because our eval-module will need to compile the
--- module, so we may need to do something special like return a 
--- tuple containing both pieces of information. Or do we even need
--- the module vector, since we can just look it up by name in importAll
---
+-- | Load module into memory and generate compiled code
+loadModule
+    :: Env 
+    -- ^ Compilation meta environment, containing code from modules.scm
+    -> LispVal
+    -- ^ Name of the module to load
+    -> CompLibOpts
+    -- ^ Misc options required by compiler library functions
+    -> CompOpts
+    -- ^ Misc options required by compiler functions
+    -> IOThrowsError [HaskAST]
+    -- ^ Compiled code, or an empty list if the module was already compiled
+    --   and loaded into memory
 loadModule metaEnv name lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
     -- Get the module definition, or load it from file if necessary
     mod' <- eval metaEnv $ List [Atom "find-module", List [Atom "quote", name]]
---    case (trace ("loadModule " ++ (show name) ++ " = " ++ (show mod')) mod') of
     case mod' of
         Bool False -> return [] -- Even possible to reach this line?
         _ -> do
@@ -138,14 +144,14 @@ loadModule metaEnv name lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
              modEnv <- LSC.evalLisp metaEnv $ List [Atom "module-env", mod]
              case modEnv of
                 Bool False -> do
-                {-
+                {-------------------------------------------
                     Control flow for compiled code:
 
                      - create new env
                      - call into func directly to load it
                      - return new env and save to memory
                      - continue on to lastFunc
-                -}
+                --------------------------------------------}
                     Atom symStartLoadNewEnv <- _gensym "startLoadingNewEnvFnc"
                     Atom symEndLoadNewEnv <- _gensym "doneLoadingNewEnvFnc"
 
@@ -154,8 +160,8 @@ loadModule metaEnv name lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
                         AstValue $ "  mods <- getVar env \"" ++ moduleRuntimeVar ++ "\"",
                         AstValue $ "  _ <- defineVar newEnv \"" ++ moduleRuntimeVar ++ "\" mods",
                         AstValue $ "  _ <- " ++ symStartLoadNewEnv ++ " newEnv (makeNullContinuation newEnv) (LispEnv env) []",
--- TODO: need to store env in runtime memory with key of 'name'
---       that way it is available later if another module wants to import it
+                        -- Save loaded module into runtime memory in case
+                        -- it gets included somewhere else later on
                         AstValue $ "  _ <- evalLisp env $ List [Atom \"hash-table-set!\", Atom \"" ++ 
                                    moduleRuntimeVar ++ "\", List [Atom \"quote\", " ++
                                   (ast2Str name) ++ "], LispEnv newEnv]",
@@ -176,7 +182,8 @@ loadModule metaEnv name lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
                              result
                 _ -> return [] --mod
 
--- TODO: write compileModule here, it will be based off of the eval-module code from the meta-language, and can take cues from compileModule below
+-- |Compile the given module, using metadata loaded into memory.
+--  This code is based off of eval-module from the meta language.
 compileModule env metaEnv name mod lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
     -- TODO: set mod meta-data to avoid cyclic references
     Atom afterImportsFnc <- _gensym "modAfterImport"
@@ -221,8 +228,6 @@ createFunctionStub thisFunc nextFunc = do
 
 -- |Compile sub-modules. That is, modules that are imported by
 --  another module in the (define-library) definition
--- TODO: consider consolidating with common code in cmd below
---csd env metaEnv (List (
 csd env metaEnv (List ((List (Atom "import-immutable" : modules)) : ls)) 
     lopts copts = do
     -- Punt on this for now, although the meta-lang does the same thing
@@ -239,10 +244,8 @@ csd env metaEnv (List ((List (Atom "import" : modules)) : ls)) lopts
 csd env metaEnv (List (_ : ls)) lopts copts = 
     csd env metaEnv (List ls) lopts copts
 csd _ _ _ _ (CompileOptions thisFunc _ _ lastFunc) = 
-    -- TODO: not good enough, need to return a stub w/lastFunc
-    -- does it just have to be named thisfunc, and call into lastfunc?
-
-    return []
+    -- TODO: may need more testing on this, seems like it should work, but...
+    return [createFunctionStub thisFunc lastFunc]
 
 -- Compile module directive, rename it later (TODO)
 cmd env metaEnv name (List ((List (Atom "include" : files)) : ls)) 
@@ -290,7 +293,9 @@ cmd env metaEnv name
     return $ code ++ rest ++ stub
 cmd env metaEnv name (List (_ : ls)) lopts copts = 
     cmd env metaEnv name (List ls) lopts copts
-cmd _ _ _ _ _ copts = return []
+cmd _ _ _ _ _ copts@(CompileOptions thisFunc _ _ lastFunc) =
+    -- TODO: may need more testing on this, seems like it should work, but...
+    return [createFunctionStub thisFunc lastFunc]
 
 -- |Include one or more files for compilation
 -- TODO: this pattern is used elsewhere (IE, importAll). could be generalized
