@@ -85,6 +85,14 @@ showBanner = do
 getDataFileFullPath :: String -> IO String
 getDataFileFullPath s = PHS.getDataFileName s
 
+-- Future use:
+-- getDataFileFullPath' :: [LispVal] -> IOThrowsError LispVal
+-- getDataFileFullPath' [String s] = do
+--     path <- liftIO $ PHS.getDataFileName s
+--     return $ String path
+-- getDataFileFullPath' [] = throwError $ NumArgs (Just 1) []
+-- getDataFileFullPath' args = throwError $ TypeMismatch "string" $ List args
+
 -- |Register optional SRFI extensions
 registerExtensions :: Env -> (FilePath -> IO FilePath) -> IO ()
 registerExtensions env getDataFileName = do
@@ -1312,6 +1320,9 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 -- From SRFI 96
                 ("file-exists?", fileExists),
                 ("delete-file", deleteFile),
+
+                -- husk internal functions
+                --("husk-path", getDataFileFullPath'),
 
                 -- Other I/O functions
                 ("print-env", printEnv'),
