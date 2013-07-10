@@ -451,18 +451,21 @@ compile env ast@(List [Atom "string-set!", Atom var, i, character]) copts = do
   compileSpecialFormBody env ast copts (\ nextFunc -> do
     Atom symDefine <- _gensym "stringSetFunc"
     Atom symMakeDefine <- _gensym "stringSetFuncMakeSet"
+    Atom symChr <- _gensym "stringSetChar"
+    Atom symCompiledI <- _gensym "stringI"
    
-    entryPt <- compileSpecialFormEntryPoint "string-set!" symDefine copts
-    compDefine <- compileExpr env i symDefine $ Just symMakeDefine
-    compMakeDefine <- return $ AstFunction symMakeDefine " env cont idx _ " [
+    entryPt <- compileSpecialFormEntryPoint "string-set!" symChr copts
+    compChr <- compileExpr env character symChr $ Just symDefine
+    compDefine <- return $ AstFunction symDefine " env cont chr _ " [
+        AstValue $ "  " ++ symCompiledI ++ " env (makeCPSWArgs env cont " ++ symMakeDefine ++ " [chr]) (Nil \"\") Nothing " ]
+    compI <- compileExpr env i symCompiledI Nothing
+    compMakeDefine <- return $ AstFunction symMakeDefine " env cont idx (Just [chr]) " [
        AstValue $ "  tmp <- getVar env \"" ++ var ++ "\"",
        AstValue $ "  derefValue <- recDerefPtrs tmp",
-       -- TODO: not entirely correct below; should compile the character argument rather
-       --       than directly inserting it into the compiled code...
-       AstValue $ "  result <- substr (derefValue, (" ++ ast2Str(character) ++ "), idx)",
+       AstValue $ "  result <- substr (derefValue, chr, idx)",
        AstValue $ "  _ <- updateObject env \"" ++ var ++ "\" result",
        createAstCont copts "result" ""]
-    return $ [entryPt] ++ compDefine ++ [compMakeDefine])
+    return $ [entryPt, compDefine, compMakeDefine] ++ compI ++ compChr)
 
 -- TODO: eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do
 -- TODO: eval env cont fargs@(List (Atom "string-set!" : args)) = do 
