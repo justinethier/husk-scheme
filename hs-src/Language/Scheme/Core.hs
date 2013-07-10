@@ -504,17 +504,21 @@ eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
  bound <- liftIO $ isRecBound env "string-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else meval env (makeCPS env cont cpsStr) i
+  else meval env (makeCPS env cont cpsChar) character
  where
+        cpsChar :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsChar e c chr _ = do
+            meval e (makeCPSWArgs e c cpsStr $ [chr]) i
+
         cpsStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsStr e c idx _ = do
+        cpsStr e c idx (Just [chr]) = do
             value <- getVar env var
             derefValue <- derefPtr value
-            meval e (makeCPSWArgs e c cpsSubStr $ [idx]) derefValue
+            meval e (makeCPSWArgs e c cpsSubStr $ [idx, chr]) derefValue
 
         cpsSubStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsSubStr e c str (Just [idx]) =
-            substr (str, character, idx) >>= updateObject e var >>= continueEval e c
+        cpsSubStr e c str (Just [idx, chr]) =
+            substr (str, chr, idx) >>= updateObject e var >>= continueEval e c
         cpsSubStr _ _ _ _ = throwError $ InternalError "Invalid argument to cpsSubStr"
 
 eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do

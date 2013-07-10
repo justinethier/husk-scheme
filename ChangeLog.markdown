@@ -7,6 +7,7 @@ The major change in this release is support for R<sup>7</sup>RS style library sy
 Bug fixes:
 
 - Allow the husk compiler to reference variables that are defined later in the program. For example, the following now compiles: `(define (foo) (bar))` `(define (bar) (foo))`
+- Fixed `string-set!` to allow an expression to be passed as the character argument.
 - Fixed `string-ref` to work when the string argument is passed using a variable.
 
 v3.10
