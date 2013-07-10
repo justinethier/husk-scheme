@@ -907,7 +907,9 @@ primitiveBindings = nullEnv >>=
 --  just intended for internal use by the compiler.
 nullEnvWithImport :: IO Env
 nullEnvWithImport = nullEnv >>= 
-    (flip extendEnv [((varNamespace, "%import"), EvalFunc evalfuncImport)])
+  (flip extendEnv [
+    ((varNamespace, "%import"), EvalFunc evalfuncImport),
+    ((varNamespace, "hash-table-ref"), IOFunc $ wrapHashTbl hashTblRef)])
 
 -- |Load the standard r5rs environment, including libraries
 r5rsEnv :: IO Env
