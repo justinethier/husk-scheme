@@ -42,6 +42,7 @@ findModuleFile [String file]
       file == "scheme/r5rs/read.sld" ||
       file == "scheme/r5rs/write.sld" ||
       file == "scheme/base.sld" ||
+      file == "husk/pretty-print.sld" ||
 -- TODO: scheme case-lambda (r7rs)
 -- TODO: scheme process-context (r7rs)
 -- TODO: scheme repl (r7rs)
