@@ -1,11 +1,12 @@
 ;
-; JAE - this is just an experimental file, it does not work in husk yet
-;
 ; Downloaded from:
 ; http://www.mathematik.uni-muenchen.de/~logik/download/minlog/src/pp-sexp.scm
 
 ; JAE - required for below
+(define pretty-print #f)
+(begin
 (define pp-width 80)
+; End JAE changes
 
 ;; We define a pretty printer for Scheme S-expressions (sexp). While
 ;; Petite Scheme supports that by its own, mzscheme does not. If you
@@ -304,4 +305,6 @@
   (reverse-string-append result))
 
 (define spp sexp-pretty-print)
+(set! pretty-print spp)
+)
 
