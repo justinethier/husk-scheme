@@ -18,7 +18,7 @@ module Language.Scheme.Compiler.Libraries
 where 
 import Language.Scheme.Compiler.Types
 import qualified Language.Scheme.Core as LSC 
-    (evalLisp, meval, nullEnvWithImport)
+    (evalLisp, findFileOrLib, meval, nullEnvWithImport)
 import Language.Scheme.Primitives
 import Language.Scheme.Types
 import Language.Scheme.Variables
@@ -269,7 +269,8 @@ cmd env metaEnv name (List ((List (Atom "include" : files)) : ls))
   compileInc (String dir) (String filename) entry exit = do
     let path = dir ++ filename
     -- TODO: use "find-module-file" on filename
-    compileLisp env path entry exit
+    path' <- LSC.findFileOrLib path
+    compileLisp env path' entry exit
 
 cmd env metaEnv name (List ((List (Atom "include-ci" : code)) : ls)) lopts copts = do
     -- NOTE: per r7rs, ci should insert a fold-case directive. But husk does

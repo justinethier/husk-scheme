@@ -50,7 +50,7 @@ where
 import Language.Scheme.Compiler.Libraries as LSCL
 import Language.Scheme.Compiler.Types
 import qualified Language.Scheme.Core as LSC 
-    (apply, evalLisp, evalString, meval, nullEnvWithImport, 
+    (apply, evalLisp, evalString, findFileOrLib, meval, nullEnvWithImport, 
      primitiveBindings, r5rsEnv, version) 
 import qualified Language.Scheme.Macro
 import Language.Scheme.Primitives
@@ -65,7 +65,7 @@ import qualified Data.List
 import qualified Data.Map
 import Data.Ratio
 import Data.Word
-import Debug.Trace
+-- import Debug.Trace
 
 -- Define imports var here as an empty list.
 -- This list is appended to by (load-ffi) instances,
@@ -77,7 +77,9 @@ initializeCompiler env = do
 
 
 compileLisp :: Env -> String -> String -> Maybe String -> IOThrowsError [HaskAST]
-compileLisp env filename entryPoint exitPoint = load filename >>= compileBlock entryPoint exitPoint env []
+compileLisp env filename entryPoint exitPoint = do
+    filename' <- LSC.findFileOrLib filename 
+    load filename' >>= compileBlock entryPoint exitPoint env []
 -- compileBlock
 --
 -- Note: Uses explicit recursion to transform a block of code, because

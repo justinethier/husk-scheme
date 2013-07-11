@@ -31,6 +31,7 @@ module Language.Scheme.Core
     -- , r7rsEnv
     , version
     -- * Utility functions
+    , findFileOrLib
     , getDataFileFullPath
     , registerExtensions
     , showBanner
@@ -92,6 +93,14 @@ getDataFileFullPath s = PHS.getDataFileName s
 --     return $ String path
 -- getDataFileFullPath' [] = throwError $ NumArgs (Just 1) []
 -- getDataFileFullPath' args = throwError $ TypeMismatch "string" $ List args
+
+findFileOrLib filename = do
+    fileAsLib <- liftIO $ getDataFileFullPath $ "lib/" ++ filename
+    exists <- fileExists [String filename]
+    existsLib <- fileExists [String fileAsLib]
+    case (exists, existsLib) of
+        (Bool False, Bool True) -> return fileAsLib
+        _ -> return filename
 
 -- |Register optional SRFI extensions
 registerExtensions :: Env -> (FilePath -> IO FilePath) -> IO ()
@@ -1135,17 +1144,8 @@ evalfuncLoad [cont@(Continuation _ a b c d), String filename, LispEnv env] = do
     evalfuncLoad [Continuation env a b c d, String filename]
 
 evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
-{-
--- It would be nice to use CPS style below.
---
--- This code mostly works, but causes looping problems in t-cont. need to test to see if
--- those are an artifact of this change or a code problem in that test suite:
-  code <- load filename
-  if not (null code)
-     then continueEval env (Continuation env (Just $ SchemeBody code) (Just cont) Nothing Nothing) $ Nil "" 
-     else return $ Nil "" -- Empty, unspecified value
--}
-    results <- load filename >>= mapM (evaluate env (makeNullContinuation env))
+    filename' <- findFileOrLib filename
+    results <- load filename' >>= mapM (evaluate env (makeNullContinuation env))
     if not (null results)
        then do result <- return . last $ results
                continueEval env cont result
