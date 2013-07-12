@@ -24,11 +24,14 @@ module Language.Scheme.Core
     , runIOThrows 
     , runIOThrowsREPL 
     -- * Core data
+    , nullEnvWithImport
     , primitiveBindings
     , r5rsEnv
+    , r5rsEnv'
     -- , r7rsEnv
     , version
     -- * Utility functions
+    , findFileOrLib
     , getDataFileFullPath
     , registerExtensions
     , showBanner
@@ -36,6 +39,8 @@ module Language.Scheme.Core
     , substr
     , updateVector
     , updateByteVector
+    -- * Internal use only
+    , meval
     ) where
 import qualified Paths_husk_scheme as PHS (getDataFileName)
 #ifdef UseFfi
@@ -80,6 +85,22 @@ showBanner = do
 -- |Get the full path to a data file installed for husk
 getDataFileFullPath :: String -> IO String
 getDataFileFullPath s = PHS.getDataFileName s
+
+-- Future use:
+-- getDataFileFullPath' :: [LispVal] -> IOThrowsError LispVal
+-- getDataFileFullPath' [String s] = do
+--     path <- liftIO $ PHS.getDataFileName s
+--     return $ String path
+-- getDataFileFullPath' [] = throwError $ NumArgs (Just 1) []
+-- getDataFileFullPath' args = throwError $ TypeMismatch "string" $ List args
+
+findFileOrLib filename = do
+    fileAsLib <- liftIO $ getDataFileFullPath $ "lib/" ++ filename
+    exists <- fileExists [String filename]
+    existsLib <- fileExists [String fileAsLib]
+    case (exists, existsLib) of
+        (Bool False, Bool True) -> return fileAsLib
+        _ -> return filename
 
 -- |Register optional SRFI extensions
 registerExtensions :: Env -> (FilePath -> IO FilePath) -> IO ()
@@ -500,17 +521,21 @@ eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
  bound <- liftIO $ isRecBound env "string-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else meval env (makeCPS env cont cpsStr) i
+  else meval env (makeCPS env cont cpsChar) character
  where
+        cpsChar :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsChar e c chr _ = do
+            meval e (makeCPSWArgs e c cpsStr $ [chr]) i
+
         cpsStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsStr e c idx _ = do
+        cpsStr e c idx (Just [chr]) = do
             value <- getVar env var
             derefValue <- derefPtr value
-            meval e (makeCPSWArgs e c cpsSubStr $ [idx]) derefValue
+            meval e (makeCPSWArgs e c cpsSubStr $ [idx, chr]) derefValue
 
         cpsSubStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsSubStr e c str (Just [idx]) =
-            substr (str, character, idx) >>= updateObject e var >>= continueEval e c
+        cpsSubStr e c str (Just [idx, chr]) =
+            substr (str, chr, idx) >>= updateObject e var >>= continueEval e c
         cpsSubStr _ _ _ _ = throwError $ InternalError "Invalid argument to cpsSubStr"
 
 eval env cont args@(List [Atom "string-set!" , nonvar , _ , _ ]) = do
@@ -892,14 +917,34 @@ apply _ func args = do
 --  For the purposes of using husk as an extension language, /r5rsEnv/ will
 --  probably be more useful.
 primitiveBindings :: IO Env
-primitiveBindings = nullEnv >>= (flip extendEnv $ map (domakeFunc IOFunc) ioPrimitives
-                                               ++ map (domakeFunc EvalFunc) evalFunctions
-                                               ++ map (domakeFunc PrimitiveFunc) primitives)
-  where domakeFunc constructor (var, func) = ((varNamespace, var), constructor func)
+primitiveBindings = nullEnv >>= 
+    (flip extendEnv $ map (domakeFunc IOFunc) ioPrimitives
+                   ++ map (domakeFunc EvalFunc) evalFunctions
+                   ++ map (domakeFunc PrimitiveFunc) primitives)
+  where domakeFunc constructor (var, func) = 
+            ((varNamespace, var), constructor func)
+
+-- |An empty environment with the %import function. This is presently
+--  just intended for internal use by the compiler.
+nullEnvWithImport :: IO Env
+nullEnvWithImport = nullEnv >>= 
+  (flip extendEnv [
+    ((varNamespace, "%import"), EvalFunc evalfuncImport),
+    ((varNamespace, "hash-table-ref"), IOFunc $ wrapHashTbl hashTblRef)])
 
 -- |Load the standard r5rs environment, including libraries
 r5rsEnv :: IO Env
 r5rsEnv = do
+  env <- r5rsEnv'
+  -- Bit of a hack to load (import)
+  _ <- evalLisp' env $ List [Atom "%bootstrap-import"]
+
+  return env
+
+-- |Load the standard r5rs environment, including libraries,
+--  but do not create the (import) binding
+r5rsEnv' :: IO Env
+r5rsEnv' = do
   env <- primitiveBindings
   stdlib <- PHS.getDataFileName "lib/stdlib.scm"
   srfi55 <- PHS.getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
@@ -918,8 +963,6 @@ r5rsEnv = do
   _ <- evalString metaEnv $ "(load \"" ++ (escapeBackslashes metalib) ++ "\")"
   -- Load meta-env so we can find it later
   _ <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
-  -- Bit of a hack to load (import)
-  _ <- evalLisp' env $ List [Atom "%bootstrap-import"]
   -- Load (r5rs base)
   _ <- evalString metaEnv
          "(add-module! '(scheme r5rs) (make-module #f (interaction-environment) '()))"
@@ -1056,13 +1099,15 @@ evalfuncImport [
             LispEnv e -> return toEnv
             Bool False -> do
                 -- A hack to load imports into the main env, which
-                -- in modules.scm is the grandparent env
+                -- in modules.scm is the parent env
                 case parentEnv env of
-                    Just (Environment (Just gp) _ _) -> 
-                        return $ LispEnv gp
-                    Just (Environment Nothing _ _ ) -> throwError $ InternalError "import into empty parent env"
+                    Just env -> return $ LispEnv env
                     Nothing -> throwError $ InternalError "import into empty env"
     case imports of
+        List [Bool False] -> do -- Export everything
+            exportAll toEnv'
+        Bool False -> do -- Export everything
+            exportAll toEnv'
         p@(Pointer _ _) -> do
             -- TODO: need to do this in a safer way
             List i <- derefPtr p -- Dangerous, but list is only expected obj
@@ -1071,16 +1116,17 @@ evalfuncImport [
         List i -> do
             result <- moduleImport toEnv' fromEnv i
             continueEval env cont result
-        Bool False -> do -- Export everything
-            newEnv <- liftIO $ importEnv toEnv' fromEnv
-            continueEval
-                env 
-               (Continuation env a b c d) 
-               (LispEnv newEnv)
+ where 
+   exportAll toEnv' = do
+     newEnv <- liftIO $ importEnv toEnv' fromEnv
+     continueEval
+         env 
+        (Continuation env a b c d) 
+        (LispEnv newEnv)
 
 -- This is just for debugging purposes:
-evalfuncImport (cont@(Continuation env _ _ _ _ ) : cs) = do
-    continueEval env cont $ Nil ""
+evalfuncImport args@(cont@(Continuation env _ _ _ _ ) : cs) = do
+    throwError $ TypeMismatch "import fields" $ List cs
 
 -- |Load import into the main environment
 bootstrapImport [cont@(Continuation env _ _ _ _)] = do
@@ -1098,17 +1144,8 @@ evalfuncLoad [cont@(Continuation _ a b c d), String filename, LispEnv env] = do
     evalfuncLoad [Continuation env a b c d, String filename]
 
 evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
-{-
--- It would be nice to use CPS style below.
---
--- This code mostly works, but causes looping problems in t-cont. need to test to see if
--- those are an artifact of this change or a code problem in that test suite:
-  code <- load filename
-  if not (null code)
-     then continueEval env (Continuation env (Just $ SchemeBody code) (Just cont) Nothing Nothing) $ Nil "" 
-     else return $ Nil "" -- Empty, unspecified value
--}
-    results <- load filename >>= mapM (evaluate env (makeNullContinuation env))
+    filename' <- findFileOrLib filename
+    results <- load filename' >>= mapM (evaluate env (makeNullContinuation env))
     if not (null results)
        then do result <- return . last $ results
                continueEval env cont result
@@ -1283,6 +1320,9 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 -- From SRFI 96
                 ("file-exists?", fileExists),
                 ("delete-file", deleteFile),
+
+                -- husk internal functions
+                --("husk-path", getDataFileFullPath'),
 
                 -- Other I/O functions
                 ("print-env", printEnv'),

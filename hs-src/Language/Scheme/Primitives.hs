@@ -550,7 +550,9 @@ stringLength [badType] = throwError $ TypeMismatch "string" badType
 stringLength badArgList = throwError $ NumArgs (Just 1) badArgList
 
 stringRef :: [LispVal] -> IOThrowsError LispVal
-stringRef [p@(Pointer _ _)] = derefPtr p >>= box >>= stringRef
+stringRef [p@(Pointer _ _), k@(Number _)] = do
+    s <- derefPtr p 
+    stringRef [s, k]
 stringRef [(String s), (Number k)] = return $ Char $ s !! fromInteger k
 stringRef [badType] = throwError $ TypeMismatch "string number" badType
 stringRef badArgList = throwError $ NumArgs (Just 2) badArgList

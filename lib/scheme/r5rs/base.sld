@@ -78,8 +78,8 @@
     for-each
     gcd
     import
-    include
-    include-ci
+    ;include
+    ;include-ci
     inexact->exact ; r5rs definition
     input-port?
     integer->char
