@@ -1,6 +1,6 @@
 [<img src="https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png" alt="husk-scheme">](http://justinethier.github.com/husk-scheme)
 
-husk is a dialect of Scheme written in Haskell that adheres to the [R<sup>5</sup>RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Advanced R<sup>5</sup>RS features are provided including continuations, hygienic macros, and a full numeric tower.
+husk is a dialect of Scheme written in Haskell that implements a superset of the [R<sup>5</sup>RS standard](http://www.schemers.org/Documents/Standards/R5RS/HTML/). Advanced R<sup>5</sup>RS features are provided including continuations, hygienic macros, and a full numeric tower.
 
 husk may be used as either a stand-alone interpreter or as an extension language within a larger Haskell application. By closely following the R<sup>5</sup>RS standard, the intent is to develop a Scheme that is as compatible as possible with other R<sup>5</sup>RS Schemes. husk is mature enough for use in production applications, however it is not optimized for performance-critical applications. 
 
