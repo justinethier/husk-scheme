@@ -187,6 +187,7 @@ loadModule metaEnv name lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
 --  This code is based off of eval-module from the meta language.
 compileModule env metaEnv name mod lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
     -- TODO: set mod meta-data to avoid cyclic references
+    -- see modules.scm for how this is done by the interpreter
     Atom afterImportsFnc <- _gensym "modAfterImport"
     Atom afterDirFunc <- _gensym "modAfterDir"
 
@@ -245,7 +246,6 @@ csd env metaEnv (List ((List (Atom "import" : modules)) : ls)) lopts
 csd env metaEnv (List (_ : ls)) lopts copts = 
     csd env metaEnv (List ls) lopts copts
 csd _ _ _ _ (CompileOptions thisFunc _ _ lastFunc) = 
-    -- TODO: may need more testing on this, seems like it should work, but...
     return [createFunctionStub thisFunc lastFunc]
 
 -- Compile module directive, rename it later (TODO)
@@ -296,7 +296,6 @@ cmd env metaEnv name
 cmd env metaEnv name (List (_ : ls)) lopts copts = 
     cmd env metaEnv name (List ls) lopts copts
 cmd _ _ _ _ _ copts@(CompileOptions thisFunc _ _ lastFunc) =
-    -- TODO: may need more testing on this, seems like it should work, but...
     return [createFunctionStub thisFunc lastFunc]
 
 -- |Include one or more files for compilation
