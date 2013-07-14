@@ -568,29 +568,31 @@ compile env ast@(List [Atom "set-cdr!", Atom var, argObj]) copts = do
     -- This is so verbose because we need to have overloads of symObj to deal with many possible inputs.
     -- FUTURE: consider making these functions part of the runtime.
     compObj <- return $ AstValue $ "" ++
-                 symObj ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-                 symObj ++ " _ _ obj@(List []) _ = throwError $ TypeMismatch \"pair\" obj\n" ++
-   -- TODO: below, we want to make sure obj is of the right type. if so, compile obj and call into the "set" 
+      symObj ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
+      symObj ++ " _ _ obj@(List []) _ = throwError $ TypeMismatch \"pair\" obj\n" ++
+   -- TODO: below, we want to make sure obj is of the right type. if so, 
+   -- compile obj and call into the "set" 
    --       function below to do the actual set-car
-                 symObj ++ " e c obj@(List (_ : _)) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
-                 symObj ++ " e c obj@(DottedList _ _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
-                 symObj ++ " _ _ obj _ = throwError $ TypeMismatch \"pair\" obj\n"
+      symObj ++ " e c obj@(List (_ : _)) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
+      symObj ++ " e c obj@(DottedList _ _) _ = " ++ symCompiledObj ++ " e (makeCPSWArgs e c " ++ symDoSet ++ " [obj]) (Nil \"\") Nothing\n" ++
+      symObj ++ " _ _ obj _ = throwError $ TypeMismatch \"pair\" obj\n"
    
     -- Function to do the actual (set!), based on code from Core
     --
-    -- This is so verbose because we need to have overloads of symObj to deal with many possible inputs.
+    -- This is so verbose because we need to have overloads of symObj 
+    -- to deal with many possible inputs.
     -- FUTURE: consider making these functions part of the runtime.
     compDoSet <- return $ AstValue $ "" ++
-                 symDoSet ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
-                 symDoSet ++ " e c obj (Just [List (l : _)]) = do\n" ++
-                             "   l' <- recDerefPtrs l\n" ++
-                             "   obj' <- recDerefPtrs obj\n" ++
-                             "   (cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
-                 symDoSet ++ " e c obj (Just [DottedList (l : _) _]) = do\n" ++
-                             "   l' <- recDerefPtrs l\n" ++
-                             "   obj' <- recDerefPtrs obj\n" ++
-                             "   (cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
-                 symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
+      symDoSet ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal\n" ++
+      symDoSet ++ " e c obj (Just [List (l : _)]) = do\n" ++
+                  "   l' <- recDerefPtrs l\n" ++
+                  "   obj' <- recDerefPtrs obj\n" ++
+                  "   (cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
+      symDoSet ++ " e c obj (Just [DottedList (l : _) _]) = do\n" ++
+                  "   l' <- recDerefPtrs l\n" ++
+                  "   obj' <- recDerefPtrs obj\n" ++
+                  "   (cons [l', obj']) >>= updateObject e \"" ++ var ++ "\" >>= " ++ finalContinuation ++
+      symDoSet ++ " _ _ _ _ = throwError $ InternalError \"Unexpected argument to " ++ symDoSet ++ "\"\n"
    
     -- Return a list of all the compiled code
     return $ [entryPt, compGetVar, compObj, compDoSet] ++ compiledObj)
@@ -749,7 +751,6 @@ compile env args@(List [Atom "load", filename, envSpec]) copts = do
   -- Explicitly do NOT call compileSpecialFormBody here, since load is not normally a special form
 
   -- F*ck it, just run the evaluator here since filename is req'd at compile time
-  --String filename' <- LSC.evalLisp env filename
   fname <- LSC.evalLisp env filename
   case fname of
     -- Compile contents of the file
@@ -795,7 +796,8 @@ compile env (List [Atom "load", filename]) copts = do -- TODO: allow filename fr
  result <- compileLisp env filename' symEntryPt Nothing
  return $ result ++ 
    [createAstFunc copts [
-    AstValue $ "  result <- " ++ symEntryPt ++ " env (makeNullContinuation env) (Nil \"\") Nothing",
+    AstValue $ "  result <- " ++ symEntryPt ++ 
+               " env (makeNullContinuation env) (Nil \"\") Nothing",
     createAstCont copts "result" ""]]
 
 -- FUTURE: eventually it should be possible to evaluate the args instead of assuming
@@ -809,7 +811,8 @@ compile env (List [Atom "load-ffi",
   -- Only append module again if it is not already in the list
   List l <- getNamespacedVar env 't' {-"internal"-} "imports"
   _ <- if not ((String moduleName) `elem` l)
-          then setNamespacedVar env 't' {-"internal"-} "imports" $ List $ l ++ [String moduleName]
+          then setNamespacedVar env 't' {-"internal"-} "imports" $ 
+                                List $ l ++ [String moduleName]
           else return $ String ""
 
   -- Pass along moduleName as another top-level import
@@ -827,7 +830,11 @@ mcompile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 mcompile env lisp copts = mfunc env lisp compile copts
 
 -- |Expand macros and then pass control to the given function 
-mfunc :: Env -> LispVal -> (Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]) -> CompOpts -> IOThrowsError [HaskAST] 
+mfunc :: Env
+      -> LispVal 
+      -> (Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]) 
+      -> CompOpts 
+      -> IOThrowsError [HaskAST] 
 mfunc env lisp func copts = do
   expanded <- Language.Scheme.Macro.macroEval env lisp LSC.apply
   divertVars env expanded copts func
@@ -966,7 +973,8 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
     c <- return $ 
       AstFunction coptsThis " env cont _ _ " [
-        AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ nextFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""]  
+        AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ 
+                   nextFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""]  
     _comp <- mcompile env func $ CompileOptions stubFunc False False Nothing
 
     -- Haskell variables must be used to retrieve each atom from the env
@@ -978,10 +986,13 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
     rest <- case coptsNext of
              Nothing -> return $ [
                AstFunction nextFunc
-                " env cont value _ " $ varLines ++ [AstValue $ "  apply cont value " ++ args]]
+                " env cont value _ " $ varLines ++ 
+                [AstValue $ "  apply cont value " ++ args]]
              Just fnextExpr -> return $ [
                AstFunction nextFunc 
-                " env cont value _ " $ varLines ++ [AstValue $ "  apply (makeCPS env cont " ++ fnextExpr ++ ") value " ++ args]]
+                " env cont value _ " $ varLines ++ 
+                [AstValue $ "  apply (makeCPS env cont " ++ 
+                            fnextExpr ++ ") value " ++ args]]
     return $ [c] ++ _comp ++ rest
 
   -- |Compile function and args as a chain of continuations
@@ -992,11 +1003,13 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
     c <- return $ 
       AstFunction coptsThis " env cont _ _ " [
-        AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ wrapperFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""]  
+        AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ 
+                   wrapperFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""]  
     -- Use wrapper to pass high-order function (func) as an argument to apply
     wrapper <- return $ 
       AstFunction wrapperFunc " env cont value _ " [
-          AstValue $ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " [value]) $ Nil \"\""]
+          AstValue $ "  continueEval env (makeCPSWArgs env cont " ++ 
+                     nextFunc ++ " [value]) $ Nil \"\""]
     _comp <- mcompile env func $ CompileOptions stubFunc False False Nothing
 
     rest <- case fparams of
