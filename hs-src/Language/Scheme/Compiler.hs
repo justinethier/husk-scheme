@@ -383,7 +383,9 @@ compile env ast@(List (Atom "define" : List (Atom var : fparams) : fbody))
           ]
     return $ [createAstFunc copts f] ++ compiledBody)
 
-compile env ast@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) copts@(CompileOptions _ _ _ _) = do
+compile env 
+        ast@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) 
+        copts@(CompileOptions _ _ _ _) = do
   compileSpecialFormBody env ast copts (\ nextFunc -> do
     bodyEnv <- liftIO $ extendEnv env []
     -- bind lambda params in the extended env
@@ -399,10 +401,10 @@ compile env ast@(List (Atom "define" : DottedList (Atom var : fparams) varargs :
    
     -- Entry point; ensure var is not rebound
     f <- return $ [
-          AstValue $ "  result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
-          AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result ",
-          createAstCont copts "result" ""
-          ]
+      AstValue $ "  result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ 
+                       compiledParams ++ ") " ++ symCallfunc,
+      AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result ",
+      createAstCont copts "result" "" ]
     return $ [createAstFunc copts f] ++ compiledBody)
 
 compile env ast@(List (Atom "lambda" : List fparams : fbody)) 
@@ -439,12 +441,13 @@ compile env ast@(List (Atom "lambda" : DottedList fparams varargs : fbody))
    
     -- Entry point; ensure var is not rebound
     f <- return $ [
-          AstValue $ "  result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ compiledParams ++ ") " ++ symCallfunc,
-          createAstCont copts "result" ""
-          ]
+      AstValue $ "  result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ 
+         compiledParams ++ ") " ++ symCallfunc,
+      createAstCont copts "result" "" ]
     return $ [createAstFunc copts f] ++ compiledBody)
 
-compile env ast@(List (Atom "lambda" : varargs@(Atom _) : fbody)) copts@(CompileOptions _ _ _ _) = do
+compile env ast@(List (Atom "lambda" : varargs@(Atom _) : fbody)) 
+        copts@(CompileOptions _ _ _ _) = do
   compileSpecialFormBody env ast copts (\ nextFunc -> do
     Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
    
@@ -471,7 +474,8 @@ compile env ast@(List [Atom "string-set!", Atom var, i, character]) copts = do
     entryPt <- compileSpecialFormEntryPoint "string-set!" symChr copts
     compChr <- compileExpr env character symChr $ Just symDefine
     compDefine <- return $ AstFunction symDefine " env cont chr _ " [
-        AstValue $ "  " ++ symCompiledI ++ " env (makeCPSWArgs env cont " ++ symMakeDefine ++ " [chr]) (Nil \"\") Nothing " ]
+        AstValue $ "  " ++ symCompiledI ++ " env (makeCPSWArgs env cont " ++ 
+          symMakeDefine ++ " [chr]) (Nil \"\") Nothing " ]
     compI <- compileExpr env i symCompiledI Nothing
     compMakeDefine <- return $ AstFunction symMakeDefine " env cont idx (Just [chr]) " [
        AstValue $ "  tmp <- getVar env \"" ++ var ++ "\"",
