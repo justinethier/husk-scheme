@@ -94,6 +94,10 @@ getDataFileFullPath s = PHS.getDataFileName s
 -- getDataFileFullPath' [] = throwError $ NumArgs (Just 1) []
 -- getDataFileFullPath' args = throwError $ TypeMismatch "string" $ List args
 
+-- |Attempts to find the file both in the current directory and in the husk
+--  libraries. If the file is not found in the current directory but exists
+--  as a husk library, return the full path to the file in the library.
+--  Otherwise just return the given filename.
 findFileOrLib filename = do
     fileAsLib <- liftIO $ getDataFileFullPath $ "lib/" ++ filename
     exists <- fileExists [String filename]
