@@ -4,10 +4,9 @@ Copyright   : Justin Ethier
 Licence     : MIT (see LICENSE in the distribution)
 
 Maintainer  : github.com/justinethier
-Stability   : experimental
 Portability : portable
 
-A front-end for an experimental compiler
+A front-end for the husk compiler
 -}
 
 module Main where
@@ -27,13 +26,6 @@ import System.IO
 
 main :: IO ()
 main = do 
-
-  putStrLn ""
-  putStrLn "!!! This version of huskc is Experimental !!!"
-  putStrLn ""
-  putStrLn "You might want to consult the issue list before use:"
-  putStrLn "https://github.com/justinethier/husk-scheme/issues"
-  putStrLn ""
 
   -- Read command line args and process options
   args <- getArgs
