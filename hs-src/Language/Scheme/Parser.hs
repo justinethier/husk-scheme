@@ -337,29 +337,36 @@ parseList = liftM List $ sepBy parseExpr whiteSpace
 parseDottedList :: Parser LispVal
 parseDottedList = do
   phead <- endBy parseExpr whiteSpace
-  ptail <- dot >> parseExpr --char '.' >> whiteSpace >> parseExpr
---  return $ DottedList phead ptail
-  case ptail of
-    DottedList ls l -> return $ DottedList (phead ++ ls) l 
-    -- Issue #41
-    -- Improper lists are tricky because if an improper list ends in a proper list, then it becomes proper as well.
-    -- The following cases handle that, as well as preserving necessary functionality when appropriate, such as for
-    -- unquoting.
-    --
-    -- FUTURE: I am not sure if this is complete, in fact the "unquote" seems like it could either be incorrect or
-    --         one special case among others. Anyway, for the 3.3 release this is good enough to pass all test
-    --         cases. It will be revisited later if necessary.
-    --
-    List (Atom "unquote" : _) -> return $ DottedList phead ptail 
-    List ls -> return $ List $ phead ++ ls
-    {- Regarding above, see http://community.schemewiki.org/?scheme-faq-language#dottedapp
-     
-       Note, however, that most Schemes expand literal lists occurring in function applications, 
-       e.g. (foo bar . (1 2 3)) is expanded into (foo bar 1 2 3) by the reader. It is not entirely 
-       clear whether this is a consequence of the standard - the notation is not part of the R5RS 
-       grammar but there is strong evidence to suggest a Scheme implementation cannot comply with 
-       all of R5RS without performing this transformation. -}
-    _ -> return $ DottedList phead ptail
+  case phead of
+    [] -> pzero -- car is required; no match   
+    _ -> do
+      ptail <- dot >> parseExpr
+      case ptail of
+        DottedList ls l -> return $ DottedList (phead ++ ls) l 
+        -- Issue #41
+        -- Improper lists are tricky because if an improper list ends in a 
+        -- proper list, then it becomes proper as well. The following cases 
+        -- handle that, as well as preserving necessary functionality when 
+        -- appropriate, such as for unquoting.
+        --
+        -- FUTURE: I am not sure if this is complete, in fact the "unquote" 
+        -- seems like it could either be incorrect or one special case among 
+        -- others. Anyway, for the 3.3 release this is good enough to pass all
+        -- test cases. It will be revisited later if necessary.
+        --
+        List (Atom "unquote" : _) -> return $ DottedList phead ptail 
+        List ls -> return $ List $ phead ++ ls
+        {- Regarding above, see 
+           http://community.schemewiki.org/?scheme-faq-language#dottedapp
+         
+           Note, however, that most Schemes expand literal lists occurring in 
+           function applications, e.g. (foo bar . (1 2 3)) is expanded into 
+           (foo bar 1 2 3) by the reader. It is not entirely clear whether this 
+           is a consequence of the standard - the notation is not part of the 
+           R5RS grammar but there is strong evidence to suggest a Scheme 
+           implementation cannot comply with all of R5RS without performing this
+           transformation. -}
+        _ -> return $ DottedList phead ptail
 
 -- |Parse a quoted expression
 parseQuoted :: Parser LispVal
