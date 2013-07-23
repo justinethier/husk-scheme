@@ -107,6 +107,8 @@ runRepl :: String -> IO ()
 runRepl _ = do
     env <- r5rsEnv
 
+--    let settings = Settings (completeScheme env) Nothing True
+--    runInputT settings (loop env)
     runInputT defaultSettings (loop env)
     where
         loop :: Env -> InputT IO ()
@@ -121,6 +123,18 @@ runRepl _ = do
                                     then do outputStrLn result
                                             loop env
                                     else loop env
+
+--completeScheme :: Env -> (String, String) -> IOThrowsError (String, [Completion])
+completeScheme env (lnL, lnR) = do -- -> IOThrowsError (String, [Completion])
+   -- TODO: see completeQuotedWord for an exmaple of how to proceed
+   -- need to split line back to the beginning of the atom, and then 
+   -- create the completion accordingly.
+   -- and if the atom is really a quoted string, call into completeFilename instead
+   tmp <- completeWord (Just '\\') "\"'" $ listScheme env
+   return ("TODO", tmp)
+
+listScheme env code = do
+    return [Completion "TODO" "TODO" False]
 -- End REPL Section
 
 -- Begin Util section, of generic functions
