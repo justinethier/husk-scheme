@@ -19,6 +19,7 @@ import Language.Scheme.Util
 import Language.Scheme.Variables -- Scheme variable operations
 --import Control.Monad (when)
 import Control.Monad.Error
+import qualified Data.List as DL
 import System.Cmd (system)
 import System.Console.GetOpt
 import System.Console.Haskeline
@@ -126,17 +127,30 @@ runRepl _ = do
 
 --completeScheme :: Env -> (String, String) -> IOThrowsError (String, [Completion])
 completeScheme env (lnL, lnR) = do -- -> IOThrowsError (String, [Completion])
-   -- TODO: see completeQuotedWord for an exmaple of how to proceed
-   -- need to split line back to the beginning of the atom, and then 
-   -- create the completion accordingly.
-   -- and if the atom is really a quoted string, call into completeFilename instead
-   --tmp <- completeWord (Just '\\') "\"'" $ listScheme env
-   xps <- recExportsFromEnv env
-   let xpCs = map (\ (Atom a) -> Completion a a False) xps
-   return (lnL, xpCs)
+   -- Complete this symbol for the user
+   let pre = reverse $ readAtom lnL
 
-listScheme env code = do
-    return [Completion "TODO" "TODO" False]
+-- !!
+-- TODO: if in middle of a string, try file completion
+-- !!
+
+   -- Get list of possible completions from ENV
+   xps <- recExportsFromEnv env
+   let xps' = filter (\ (Atom a) -> DL.isPrefixOf pre a) xps
+   let xpCs = map (\ (Atom a) -> Completion a a False) xps'
+
+   -- Get unused portion of the left-hand string
+   let unusedLnL = case DL.stripPrefix (reverse pre) lnL of
+                     Just s -> s
+                     Nothing -> lnL
+   return (unusedLnL, xpCs)
+
+-- Read until the end of the current symbol (atom), if there is one
+-- TODO: this could probably be made much better
+readAtom (c:cs)
+    | c == '(' = []
+    | otherwise = (c : readAtom cs)
+readAtom [] = []
 -- End REPL Section
 
 -- Begin Util section, of generic functions
