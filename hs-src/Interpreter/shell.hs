@@ -107,9 +107,9 @@ runRepl :: String -> IO ()
 runRepl _ = do
     env <- r5rsEnv
 
---    let settings = Settings (completeScheme env) Nothing True
---    runInputT settings (loop env)
-    runInputT defaultSettings (loop env)
+    let settings = Settings (completeScheme env) Nothing True
+    runInputT settings (loop env)
+    --runInputT defaultSettings (loop env)
     where
         loop :: Env -> InputT IO ()
         loop env = do
@@ -130,8 +130,10 @@ completeScheme env (lnL, lnR) = do -- -> IOThrowsError (String, [Completion])
    -- need to split line back to the beginning of the atom, and then 
    -- create the completion accordingly.
    -- and if the atom is really a quoted string, call into completeFilename instead
-   tmp <- completeWord (Just '\\') "\"'" $ listScheme env
-   return ("TODO", tmp)
+   --tmp <- completeWord (Just '\\') "\"'" $ listScheme env
+   xps <- recExportsFromEnv env
+   let xpCs = map (\ (Atom a) -> Completion a a False) xps
+   return (lnL, xpCs)
 
 listScheme env code = do
     return [Completion "TODO" "TODO" False]
