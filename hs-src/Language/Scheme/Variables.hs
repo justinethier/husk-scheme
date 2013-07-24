@@ -19,6 +19,7 @@ module Language.Scheme.Variables
     -- * Environments
       printEnv
     , recPrintEnv
+    , recExportsFromEnv 
     , exportsFromEnv 
     , copyEnv
     , extendEnv
@@ -118,6 +119,16 @@ recPrintEnv env = do
         parEnvStr <- liftIO $ recPrintEnv par
         return $ envStr ++ "\n" ++ parEnvStr
     Nothing -> return envStr
+
+recExportsFromEnv :: Env -> IO [LispVal]
+recExportsFromEnv env = do
+  xs <- exportsFromEnv env
+
+  case parentEnv env of
+    Just par -> do
+        pxs <- liftIO $ recExportsFromEnv par
+        return $ xs ++ pxs
+    Nothing -> return xs
 
 -- |Return a list of symbols exported from an environment
 exportsFromEnv :: Env 
