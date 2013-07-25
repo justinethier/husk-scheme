@@ -131,9 +131,11 @@ completeScheme env (lnL@('"' : _), lnR) = do
     -- TODO: this could be alot better, should complete if there are chars
     liftIO $ HLC.completeFilename (lnL, lnR)
 completeScheme env (lnL, lnR) = do
-   -- Complete this symbol for the user
-   let pre = reverse $ readAtom lnL
-
+   complete $ readAtom lnL
+ where
+  -- TODO: complete ('"' : _) = liftIO $ HLC.completeFilename (lnL, lnR)
+  complete p = do
+   let pre = reverse p 
 -- !!
 -- TODO: if in middle of a string, try file completion
 -- !!
@@ -152,6 +154,7 @@ completeScheme env (lnL, lnR) = do
 -- Read until the end of the current symbol (atom), if there is one
 -- TODO: this could probably be made much better
 readAtom (c:cs)
+-- TODO:    | c == '"' = []
     | c == '(' = []
     | DC.isSpace(c) = []
     | otherwise = (c : readAtom cs)
