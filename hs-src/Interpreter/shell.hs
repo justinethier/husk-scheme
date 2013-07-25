@@ -138,14 +138,33 @@ completeScheme env (lnL, lnR) = do
   complete pre = do
    -- Get list of possible completions from ENV
    xps <- recExportsFromEnv env
-   let xps' = filter (\ (Atom a) -> DL.isPrefixOf pre a) xps
-   let xpCs = map (\ (Atom a) -> HL.Completion a a False) xps'
+   let allDefs = xps ++ specialForms
+   let allDefs' = filter (\ (Atom a) -> DL.isPrefixOf pre a) allDefs
+   let comps = map (\ (Atom a) -> HL.Completion a a False) allDefs'
 
    -- Get unused portion of the left-hand string
    let unusedLnL = case DL.stripPrefix (reverse pre) lnL of
                      Just s -> s
                      Nothing -> lnL
-   return (unusedLnL, xpCs)
+   return (unusedLnL, comps)
+
+  -- Not loaded into an env, so we need to list them here
+  specialForms = map (\ s -> Atom s) [ 
+       "if"
+     , "let-syntax" 
+     , "letrec-syntax" 
+     , "define-syntax" 
+     , "define"  
+     , "set!"
+     , "lambda"
+     , "quote"
+     , "expand"
+     , "string-set!"
+     , "set-car!"
+     , "set-cdr!"
+     , "vector-set!"
+     , "hash-table-set!"
+     , "hash-table-delete!"]
 
   -- Read until the end of the current symbol (atom), if there is one.
   -- There is also a special case for files if a double-quote is found.
