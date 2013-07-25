@@ -19,10 +19,12 @@ import Language.Scheme.Util
 import Language.Scheme.Variables -- Scheme variable operations
 --import Control.Monad (when)
 import Control.Monad.Error
+import qualified Data.Char as DC
 import qualified Data.List as DL
 import System.Cmd (system)
 import System.Console.GetOpt
-import System.Console.Haskeline
+import qualified System.Console.Haskeline as HL
+import qualified System.Console.Haskeline.Completion as HLC
 import System.Environment
 import System.Exit (ExitCode (..), exitWith, exitFailure)
 import System.IO
@@ -108,25 +110,27 @@ runRepl :: String -> IO ()
 runRepl _ = do
     env <- r5rsEnv
 
-    let settings = Settings (completeScheme env) Nothing True
-    runInputT settings (loop env)
+    let settings = HL.Settings (completeScheme env) Nothing True
+    HL.runInputT settings (loop env)
     --runInputT defaultSettings (loop env)
     where
-        loop :: Env -> InputT IO ()
+        loop :: Env -> HL.InputT IO ()
         loop env = do
-            minput <- getInputLine "huski> "
+            minput <- HL.getInputLine "huski> "
             case minput of
                 Nothing -> return ()
                 Just "quit" -> return ()
                 Just "" -> loop env -- FUTURE: integrate with strip to ignore inputs of just whitespace
                 Just input -> do result <- liftIO (evalString env input)
                                  if (length result) > 0
-                                    then do outputStrLn result
+                                    then do HL.outputStrLn result
                                             loop env
                                     else loop env
 
---completeScheme :: Env -> (String, String) -> IOThrowsError (String, [Completion])
-completeScheme env (lnL, lnR) = do -- -> IOThrowsError (String, [Completion])
+completeScheme env (lnL@('"' : _), lnR) = do
+    -- TODO: this could be alot better, should complete if there are chars
+    liftIO $ HLC.completeFilename (lnL, lnR)
+completeScheme env (lnL, lnR) = do
    -- Complete this symbol for the user
    let pre = reverse $ readAtom lnL
 
@@ -137,7 +141,7 @@ completeScheme env (lnL, lnR) = do -- -> IOThrowsError (String, [Completion])
    -- Get list of possible completions from ENV
    xps <- recExportsFromEnv env
    let xps' = filter (\ (Atom a) -> DL.isPrefixOf pre a) xps
-   let xpCs = map (\ (Atom a) -> Completion a a False) xps'
+   let xpCs = map (\ (Atom a) -> HL.Completion a a False) xps'
 
    -- Get unused portion of the left-hand string
    let unusedLnL = case DL.stripPrefix (reverse pre) lnL of
@@ -149,6 +153,7 @@ completeScheme env (lnL, lnR) = do -- -> IOThrowsError (String, [Completion])
 -- TODO: this could probably be made much better
 readAtom (c:cs)
     | c == '(' = []
+    | DC.isSpace(c) = []
     | otherwise = (c : readAtom cs)
 readAtom [] = []
 -- End REPL Section
