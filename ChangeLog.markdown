@@ -2,6 +2,7 @@
 v3.12
 --------
 
+Auto-complete symbols, and filenames within double-quotes
 Issue 126 - do not parse a pair if the car is empty: ie '( . 1)
 
 v3.11
