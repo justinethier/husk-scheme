@@ -112,7 +112,6 @@ runRepl _ = do
 
     let settings = HL.Settings (completeScheme env) Nothing True
     HL.runInputT settings (loop env)
-    --runInputT defaultSettings (loop env)
     where
         loop :: Env -> HL.InputT IO ()
         loop env = do
@@ -127,19 +126,16 @@ runRepl _ = do
                                             loop env
                                     else loop env
 
-completeScheme env (lnL@('"' : _), lnR) = do
-    -- TODO: this could be alot better, should complete if there are chars
-    liftIO $ HLC.completeFilename (lnL, lnR)
+-- |Auto-complete using scheme symbols
 completeScheme env (lnL, lnR) = do
-   complete $ readAtom lnL
+   complete $ reverse $ readAtom lnL
  where
-  -- TODO: complete ('"' : _) = liftIO $ HLC.completeFilename (lnL, lnR)
-  complete p = do
-   let pre = reverse p 
--- !!
--- TODO: if in middle of a string, try file completion
--- !!
+  complete ('"' : _) = do
+    -- Special case, inside a string it seems more
+    -- useful to autocomplete filenames
+    liftIO $ HLC.completeFilename (lnL, lnR)
 
+  complete pre = do
    -- Get list of possible completions from ENV
    xps <- recExportsFromEnv env
    let xps' = filter (\ (Atom a) -> DL.isPrefixOf pre a) xps
@@ -151,20 +147,22 @@ completeScheme env (lnL, lnR) = do
                      Nothing -> lnL
    return (unusedLnL, xpCs)
 
--- Read until the end of the current symbol (atom), if there is one
--- TODO: this could probably be made much better
-readAtom (c:cs)
--- TODO:    | c == '"' = []
+  -- Read until the end of the current symbol (atom), if there is one.
+  -- There is also a special case for files if a double-quote is found.
+  readAtom (c:cs)
+    | c == '"' = ['"'] -- Save to indicate file completion to caller
     | c == '(' = []
+    | c == '[' = []
     | DC.isSpace(c) = []
     | otherwise = (c : readAtom cs)
-readAtom [] = []
+  readAtom [] = []
 -- End REPL Section
 
 -- Begin Util section, of generic functions
 
-{- Remove leading/trailing white space from a string; based on corresponding Python function
-   Code taken from: http://gimbo.org.uk/blog/2007/04/20/splitting-a-string-in-haskell/ -}
+{- Remove leading/trailing white space from a string; based on corresponding 
+   Python function. Code taken from: 
+   http://gimbo.org.uk/blog/2007/04/20/splitting-a-string-in-haskell/ -}
 strip :: String -> String
 strip s = dropWhile ws $ reverse $ dropWhile ws $ reverse s
     where ws = (`elem` [' ', '\n', '\t', '\r'])
