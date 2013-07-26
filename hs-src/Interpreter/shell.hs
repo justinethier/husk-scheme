@@ -16,7 +16,7 @@ import Paths_husk_scheme
 import Language.Scheme.Core      -- Scheme Interpreter
 import Language.Scheme.Types     -- Scheme data types
 import Language.Scheme.Util (strip)
-import Language.Scheme.Variables -- Scheme variable operations
+import qualified Language.Scheme.Variables as LSV -- Scheme variable operations
 --import Control.Monad (when)
 import Control.Monad.Error
 import qualified Data.Char as DC
@@ -43,7 +43,10 @@ main = do
        runRepl schemeRev
      else runOne schemeRev nonOpts
 
+--
 -- Command line options section
+--
+
 data Options = Options {
     optSchemeRev :: String -- RxRS version
     }
@@ -81,15 +84,18 @@ showHelp _ = do
   putStrLn ""
   exitWith ExitSuccess
 
+--
 -- REPL Section
+--
+
 flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
 
 -- |Execute a single scheme file from the command line
 runOne :: String -> [String] -> IO ()
 runOne _ args = do
-  env <- r5rsEnv >>= flip extendEnv
-                          [((varNamespace, "args"),
+  env <- r5rsEnv >>= flip LSV.extendEnv
+                          [((LSV.varNamespace, "args"),
                            List $ map String $ drop 1 args)]
 
   result <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
@@ -97,7 +103,7 @@ runOne _ args = do
     Just errMsg -> putStrLn errMsg
     _  -> do 
       -- Call into (main) if it exists...
-      alreadyDefined <- liftIO $ isBound env "main"
+      alreadyDefined <- liftIO $ LSV.isBound env "main"
       let argv = List $ map String $ args
       when alreadyDefined (do 
         mainResult <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "main", List [Atom "quote", argv]]))
@@ -140,7 +146,7 @@ completeScheme env (lnL, lnR) = do
 
   complete pre = do
    -- Get list of possible completions from ENV
-   xps <- recExportsFromEnv env
+   xps <- LSV.recExportsFromEnv env
    let allDefs = xps ++ specialForms
    let allDefs' = filter (\ (Atom a) -> DL.isPrefixOf pre a) allDefs
    let comps = map (\ (Atom a) -> HL.Completion a a False) allDefs'
@@ -153,21 +159,21 @@ completeScheme env (lnL, lnR) = do
 
   -- Not loaded into an env, so we need to list them here
   specialForms = map (\ s -> Atom s) [ 
-       "if"
+       "define"  
+     , "define-syntax" 
+     , "expand"
+     , "hash-table-delete!"
+     , "hash-table-set!"
+     , "if"
+     , "lambda"
      , "let-syntax" 
      , "letrec-syntax" 
-     , "define-syntax" 
-     , "define"  
-     , "set!"
-     , "lambda"
      , "quote"
-     , "expand"
-     , "string-set!"
+     , "set!"
      , "set-car!"
      , "set-cdr!"
-     , "vector-set!"
-     , "hash-table-set!"
-     , "hash-table-delete!"]
+     , "string-set!"
+     , "vector-set!"]
 
   -- Read until the end of the current symbol (atom), if there is one.
   -- There is also a special case for files if a double-quote is found.
