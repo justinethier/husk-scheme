@@ -15,7 +15,7 @@ module Main where
 import Paths_husk_scheme
 import Language.Scheme.Core      -- Scheme Interpreter
 import Language.Scheme.Types     -- Scheme data types
-import Language.Scheme.Util
+import Language.Scheme.Util (strip)
 import Language.Scheme.Variables -- Scheme variable operations
 --import Control.Monad (when)
 import Control.Monad.Error
@@ -118,13 +118,16 @@ runRepl _ = do
             minput <- HL.getInputLine "huski> "
             case minput of
                 Nothing -> return ()
-                Just "quit" -> return ()
-                Just "" -> loop env -- FUTURE: integrate with strip to ignore inputs of just whitespace
-                Just input -> do result <- liftIO (evalString env input)
-                                 if (length result) > 0
-                                    then do HL.outputStrLn result
-                                            loop env
-                                    else loop env
+                Just i -> do 
+                  case strip i of
+                    "quit" -> return ()
+                    "" -> loop env -- ignore inputs of just whitespace
+                    input -> do
+                        result <- liftIO (evalString env input)
+                        if (length result) > 0
+                           then do HL.outputStrLn result
+                                   loop env
+                           else loop env
 
 -- |Auto-complete using scheme symbols
 completeScheme env (lnL, lnR) = do
@@ -175,15 +178,3 @@ completeScheme env (lnL, lnR) = do
     | DC.isSpace(c) = []
     | otherwise = (c : readAtom cs)
   readAtom [] = []
--- End REPL Section
-
--- Begin Util section, of generic functions
-
-{- Remove leading/trailing white space from a string; based on corresponding 
-   Python function. Code taken from: 
-   http://gimbo.org.uk/blog/2007/04/20/splitting-a-string-in-haskell/ -}
-strip :: String -> String
-strip s = dropWhile ws $ reverse $ dropWhile ws $ reverse s
-    where ws = (`elem` [' ', '\n', '\t', '\r'])
-
--- End Util
