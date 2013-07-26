@@ -4,10 +4,6 @@
 ;  
 ;   ./huski scm-unit-tests/r5rs_pitfall.scm
 ;
-; File has been modified to comment-out cases that do not run in husk.
-; If a case is not listed in the output then assume it fails.
-;
-;
 ;; r5rs_pitfalls.scm
 ;; 
 ;; This program attempts to test a Scheme implementation's conformance
