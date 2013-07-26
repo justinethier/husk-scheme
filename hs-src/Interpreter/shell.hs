@@ -13,11 +13,10 @@ allows execution of stand-alone files containing Scheme code.
 
 module Main where
 import Paths_husk_scheme
-import Language.Scheme.Core      -- Scheme Interpreter
-import Language.Scheme.Types     -- Scheme data types
-import Language.Scheme.Util (strip)
+import qualified Language.Scheme.Core as LSC -- Scheme Interpreter
+import Language.Scheme.Types                 -- Scheme data types
+import qualified Language.Scheme.Util as LSU (strip)
 import qualified Language.Scheme.Variables as LSV -- Scheme variable operations
---import Control.Monad (when)
 import Control.Monad.Error
 import qualified Data.Char as DC
 import qualified Data.List as DL
@@ -39,7 +38,7 @@ main = do
 
   if null nonOpts 
      then do 
-       showBanner
+       LSC.showBanner
        runRepl schemeRev
      else runOne schemeRev nonOpts
 
@@ -94,11 +93,12 @@ flushStr str = putStr str >> hFlush stdout
 -- |Execute a single scheme file from the command line
 runOne :: String -> [String] -> IO ()
 runOne _ args = do
-  env <- r5rsEnv >>= flip LSV.extendEnv
+  env <- LSC.r5rsEnv >>= flip LSV.extendEnv
                           [((LSV.varNamespace, "args"),
                            List $ map String $ drop 1 args)]
 
-  result <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "load", String (args !! 0)]))
+  result <- (LSC.runIOThrows $ liftM show $ 
+             LSC.evalLisp env (List [Atom "load", String (args !! 0)]))
   case result of
     Just errMsg -> putStrLn errMsg
     _  -> do 
@@ -106,7 +106,8 @@ runOne _ args = do
       alreadyDefined <- liftIO $ LSV.isBound env "main"
       let argv = List $ map String $ args
       when alreadyDefined (do 
-        mainResult <- (runIOThrows $ liftM show $ evalLisp env (List [Atom "main", List [Atom "quote", argv]]))
+        mainResult <- (LSC.runIOThrows $ liftM show $ 
+                       LSC.evalLisp env (List [Atom "main", List [Atom "quote", argv]]))
         case mainResult of
           Just errMsg -> putStrLn errMsg
           _  -> return ())
@@ -114,7 +115,7 @@ runOne _ args = do
 -- |Start the REPL (interactive interpreter)
 runRepl :: String -> IO ()
 runRepl _ = do
-    env <- r5rsEnv
+    env <- LSC.r5rsEnv
 
     let settings = HL.Settings (completeScheme env) Nothing True
     HL.runInputT settings (loop env)
@@ -125,11 +126,11 @@ runRepl _ = do
             case minput of
                 Nothing -> return ()
                 Just i -> do 
-                  case strip i of
+                  case LSU.strip i of
                     "quit" -> return ()
                     "" -> loop env -- ignore inputs of just whitespace
                     input -> do
-                        result <- liftIO (evalString env input)
+                        result <- liftIO (LSC.evalString env input)
                         if (length result) > 0
                            then do HL.outputStrLn result
                                    loop env
