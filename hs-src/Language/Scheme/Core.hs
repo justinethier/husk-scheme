@@ -397,6 +397,7 @@ eval env cont args@(List [Atom "define-syntax", Atom keyword,
     -- TODO: ensure fparams is 3 atoms
     -- TODO: now just need to figure out initial entry point to the ER func
     --       for now can ignore complications of an ER found during syn-rules transformation
+    _ <- validateFuncParams fparams (Just 3)
     f <- makeNormalFunc env fparams fbody 
     _ <- defineNamespacedVar env macroNamespace keyword $ SyntaxExplicitRenaming f
     continueEval env cont $ Nil "" 
@@ -480,6 +481,7 @@ eval env cont args@(List (Atom "define" : List (Atom var : fparams) : fbody )) =
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do 
+      _ <- validateFuncParams fparams Nothing
       -- Cache macro expansions within function body
       ebody <- mapM (\ lisp -> Language.Scheme.Macro.macroEval env lisp apply) fbody
       result <- (makeNormalFunc env fparams ebody >>= defineVar env var)
@@ -490,6 +492,7 @@ eval env cont args@(List (Atom "define" : DottedList (Atom var : fparams) vararg
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do 
+      _ <- validateFuncParams (fparams ++ [varargs]) Nothing
       ebody <- mapM (\ lisp -> Language.Scheme.Macro.macroEval env lisp apply) fbody
       result <- (makeVarargs varargs env fparams ebody >>= defineVar env var)
       continueEval env cont result
@@ -499,6 +502,7 @@ eval env cont args@(List (Atom "lambda" : List fparams : fbody)) = do
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do 
+      _ <- validateFuncParams fparams Nothing
       ebody <- mapM (\ lisp -> Language.Scheme.Macro.macroEval env lisp apply) fbody
       result <- makeNormalFunc env fparams ebody
       continueEval env cont result
@@ -508,6 +512,7 @@ eval env cont args@(List (Atom "lambda" : DottedList fparams varargs : fbody)) =
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
   else do 
+      _ <- validateFuncParams (fparams ++ [varargs]) Nothing
       ebody <- mapM (\ lisp -> Language.Scheme.Macro.macroEval env lisp apply) fbody
       result <- makeVarargs varargs env fparams ebody
       continueEval env cont result
