@@ -91,6 +91,7 @@ module Language.Scheme.Types
     , makeHFunc
     , makeNormalHFunc
     , makeHVarargs
+    , validateFuncParams
     )
  where
 import Control.Monad.Error
@@ -98,6 +99,7 @@ import Data.Complex
 import Data.Array
 import qualified Data.ByteString as BS
 import Data.Dynamic
+import qualified Data.List as DL
 import Data.IORef
 import qualified Data.Map
 -- import Data.Maybe
@@ -524,3 +526,32 @@ makeHVarargs :: (Monad m) => LispVal
                         -> (Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal)
                         -> m LispVal
 makeHVarargs = makeHFunc . Just . showVal
+
+-- |Validate that function parameters consist of a list of 
+--  non-duplicate symbols.
+validateFuncParams :: [LispVal] -> Maybe Integer -> IOThrowsError Bool
+validateFuncParams ps (Just n) = do
+  if length ps /= fromInteger n
+     then throwError $ NumArgs (Just n) ps
+     else validateFuncParams ps Nothing
+validateFuncParams ps Nothing = do
+  let syms = filter filterArgs ps
+  if (length syms) /= (length ps)
+     then throwError $ Default $ 
+             "Invalid lambda parameter(s): " ++ (show $ List ps)
+     else do
+         let strs = DL.sort $ map (\ (Atom a) -> a) ps
+         case dupe strs of
+            Just d -> throwError $ Default $ 
+                         "Duplicate lambda parameter " ++ d
+            _ -> return True
+ where
+  filterArgs (Atom a) = True
+  filterArgs _ = False
+
+  dupe (a : b : rest)
+    | a == b = Just a
+    | otherwise = dupe (b : rest)
+  dupe _ = Nothing
+
+
