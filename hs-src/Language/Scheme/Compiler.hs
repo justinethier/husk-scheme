@@ -246,6 +246,7 @@ compile env ast@(List [Atom "define-syntax", Atom keyword,
   (List [Atom "er-macro-transformer", 
     (List (Atom "lambda" : List fparams : fbody))])])
   copts = do
+  _ <- validateFuncParams fparams (Just 3)
   compileSpecialFormBody env ast copts (\ _ -> do
     let fparamsStr = asts2Str fparams
         fbodyStr = asts2Str fbody
@@ -360,6 +361,7 @@ compile env ast@(List [Atom "define", Atom var, form]) copts@(CompileOptions _ _
 
 compile env ast@(List (Atom "define" : List (Atom var : fparams) : fbody)) 
         copts@(CompileOptions _ _ _ _) = do
+  _ <- validateFuncParams fparams Nothing
   compileSpecialFormBody env ast copts (\ nextFunc -> do
     bodyEnv <- liftIO $ extendEnv env []
     -- bind lambda params in the extended env
@@ -386,6 +388,7 @@ compile env ast@(List (Atom "define" : List (Atom var : fparams) : fbody))
 compile env 
         ast@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) 
         copts@(CompileOptions _ _ _ _) = do
+  _ <- validateFuncParams (fparams ++ [varargs]) Nothing
   compileSpecialFormBody env ast copts (\ nextFunc -> do
     bodyEnv <- liftIO $ extendEnv env []
     -- bind lambda params in the extended env
@@ -409,6 +412,7 @@ compile env
 
 compile env ast@(List (Atom "lambda" : List fparams : fbody)) 
         copts@(CompileOptions _ _ _ _) = do
+  _ <- validateFuncParams fparams Nothing
   compileSpecialFormBody env ast copts (\ nextFunc -> do
     Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
     compiledParams <- compileLambdaList fparams
@@ -429,6 +433,7 @@ compile env ast@(List (Atom "lambda" : List fparams : fbody))
 
 compile env ast@(List (Atom "lambda" : DottedList fparams varargs : fbody)) 
         copts@(CompileOptions _ _ _ _) = do
+  _ <- validateFuncParams (fparams ++ [varargs]) Nothing
   compileSpecialFormBody env ast copts (\ nextFunc -> do
     Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
     compiledParams <- compileLambdaList fparams
