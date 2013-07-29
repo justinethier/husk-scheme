@@ -1,5 +1,5 @@
 Name:                husk-scheme
-Version:             3.11
+Version:             3.12
 Synopsis:            R5RS Scheme interpreter, compiler, and library.
 Description:         
   <<https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png>>

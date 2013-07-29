@@ -66,7 +66,7 @@ import System.IO
 
 -- |husk version number
 version :: String
-version = "3.11"
+version = "3.12"
 
 -- |A utility function to display the husk console banner
 showBanner :: IO ()
