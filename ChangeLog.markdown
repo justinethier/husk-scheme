@@ -5,6 +5,7 @@ v3.12
 Auto-complete symbols, and filenames within double-quotes
 allow huski to accept (and ignore) inputs of just whitespace. previously it threw an error
 Issue 126 - do not parse a pair if the car is empty: ie '( . 1)
+Issue 125 - do not allow duplicate lambda parameters: ie (lambda (a a) a)
 
 v3.11
 --------
