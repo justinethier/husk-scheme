@@ -2,10 +2,15 @@
 v3.12
 --------
 
-Auto-complete symbols, and filenames within double-quotes
-allow huski to accept (and ignore) inputs of just whitespace. previously it threw an error
-Issue 126 - do not parse a pair if the car is empty: ie '( . 1)
-Issue 125 - do not allow duplicate lambda parameters: ie (lambda (a a) a)
+Enhanced the huski REPL to:
+- Add tab completion for Scheme variables and special forms. 
+- Tab completion will still fill in filenames when tab is pressed within double-quotes. This makes it easy to find a file in certain cases such as for a load.
+- Accept (and ignore) inputs of just whitespace. Previously this would display a nasty error message.
+
+Bug fixes:
+
+- Duplicate or otherwise invalid lambda parameters are not allowed, and will throw an error. For example: `(lambda (a a 1) a)`
+- Do not parse a form that includes an empty car cell, for example: `'( . 1)`
 
 v3.11
 --------
