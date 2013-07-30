@@ -3,6 +3,7 @@ v3.12
 --------
 
 Enhanced the huski REPL to:
+
 - Add tab completion for Scheme variables and special forms. 
 - Tab completion will still fill in filenames when tab is pressed within double-quotes. This makes it easy to find a file in certain cases such as for a load.
 - Accept (and ignore) inputs of just whitespace. Previously this would display a nasty error message.
@@ -10,7 +11,7 @@ Enhanced the huski REPL to:
 Bug fixes:
 
 - Duplicate or otherwise invalid lambda parameters are not allowed, and will throw an error. For example: `(lambda (a a 1) a)`
-- Do not parse a form that includes an empty car cell, for example: `'( . 1)`
+- It is now a parse error to have a form that includes an empty car cell, for example: `'( . 1)`
 
 v3.11
 --------
