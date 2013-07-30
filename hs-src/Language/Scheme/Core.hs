@@ -29,6 +29,7 @@ module Language.Scheme.Core
     , r5rsEnv
     , r5rsEnv'
     -- , r7rsEnv
+    , r7rsTimeEnv
     , version
     -- * Utility functions
     , findFileOrLib
@@ -1013,6 +1014,19 @@ r7rsEnv = do
   _ <- evalString metaEnv
          "(add-module! '(scheme r5rs) (make-module #f (interaction-environment) '()))"
   return env
+
+
+-- Experimental r7rs time module section
+r7rsTimeEnv :: IO Env
+r7rsTimeEnv = do
+    nullEnv >>= 
+     (flip extendEnv 
+           [((varNamespace, "current-second"), IOFunc currentSecond)])
+
+currentSecond :: [LispVal] -> IOThrowsError LispVal
+currentSecond _ = return $ Number 0 -- TODO
+-- End experimental section
+
 
 -- Functions that extend the core evaluator, but that can be defined separately.
 --
