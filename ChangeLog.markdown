@@ -2,6 +2,8 @@
 v3.12
 --------
 
+TODO: start r7rs changes, but possibly as next release (TBD soon)
+
 Enhanced the huski REPL to:
 
 - Add tab completion for Scheme variables and special forms. 
