@@ -60,7 +60,9 @@ import Data.Array
 import qualified Data.ByteString as BS
 import qualified Data.Char
 import qualified Data.Map
+import qualified Data.Time.Clock.POSIX
 import Data.Word
+import qualified System.CPUTime
 import qualified System.Exit
 import System.IO
 -- import Debug.Trace
@@ -1017,14 +1019,23 @@ r7rsEnv = do
 
 
 -- Experimental r7rs time module section
+-- TODO: relocate this to another Haskell module, along with corresponding import's
 r7rsTimeEnv :: IO Env
 r7rsTimeEnv = do
     nullEnv >>= 
      (flip extendEnv 
-           [((varNamespace, "current-second"), IOFunc currentSecond)])
+           [ ((varNamespace, "current-second"), IOFunc currentSecond)
+           , ((varNamespace, "current-jiffy"), IOFunc currentJiffy)
+           , ((varNamespace, "jiffies-per-second"), Func jiffiesPerSecond)])
 
 currentSecond :: [LispVal] -> IOThrowsError LispVal
-currentSecond _ = return $ Number 0 -- TODO
+currentSecond _ = do
+    cur <- liftIO $ Data.Time.Clock.POSIX.getPOSIXTime
+    return $ Float $ realToFrac cur
+currentJiffy _ = do
+    v <- System.CPUTime.getCPUTime 
+    return $ Number v
+jiffiesPerSecond _ = return $ Number 1000000000000 -- 10^12 picoseconds per sec
 -- End experimental section
 
 
