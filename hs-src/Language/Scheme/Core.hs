@@ -978,6 +978,8 @@ r5rsEnv' = do
   -- Load (r5rs base)
   _ <- evalString metaEnv
          "(add-module! '(scheme r5rs) (make-module #f (interaction-environment) '()))"
+  timeEnv <- liftIO $ r7rsTimeEnv
+  _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "time"]], List [Atom "make-module", Bool False, LispEnv timeEnv, List [Atom "quote", List []]]]
 #endif
 
   return env
@@ -1026,14 +1028,14 @@ r7rsTimeEnv = do
      (flip extendEnv 
            [ ((varNamespace, "current-second"), IOFunc currentSecond)
            , ((varNamespace, "current-jiffy"), IOFunc currentJiffy)
-           , ((varNamespace, "jiffies-per-second"), Func jiffiesPerSecond)])
+           , ((varNamespace, "jiffies-per-second"), PrimitiveFunc jiffiesPerSecond)])
 
-currentSecond :: [LispVal] -> IOThrowsError LispVal
+currentSecond, currentJiffy :: [LispVal] -> IOThrowsError LispVal
 currentSecond _ = do
     cur <- liftIO $ Data.Time.Clock.POSIX.getPOSIXTime
     return $ Float $ realToFrac cur
 currentJiffy _ = do
-    v <- System.CPUTime.getCPUTime 
+    v <- liftIO $ System.CPUTime.getCPUTime 
     return $ Number v
 jiffiesPerSecond _ = return $ Number 1000000000000 -- 10^12 picoseconds per sec
 -- End experimental section
