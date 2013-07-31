@@ -75,6 +75,11 @@ module Language.Scheme.Primitives (
  , char2Int
  , int2Char
 
+ -- ** Time
+ , currentSecond
+ , currentJiffy
+ , jiffiesPerSecond 
+
  -- ** Predicate
  , isHashTbl
  , isChar 
@@ -135,7 +140,9 @@ import Data.Char hiding (isSymbol)
 import Data.Array
 import Data.Unique
 import qualified Data.Map
+import qualified Data.Time.Clock.POSIX
 import Data.Word
+import qualified System.CPUTime
 import System.IO
 import System.Directory (doesFileExist, removeFile)
 import System.IO.Error
@@ -794,3 +801,14 @@ unpackStr notString = throwError $ TypeMismatch "string" notString
 unpackBool :: LispVal -> ThrowsError Bool
 unpackBool (Bool b) = return b
 unpackBool notBool = throwError $ TypeMismatch "boolean" notBool
+
+currentSecond, currentJiffy :: [LispVal] -> IOThrowsError LispVal
+currentSecond _ = do
+    cur <- liftIO $ Data.Time.Clock.POSIX.getPOSIXTime
+    return $ Float $ realToFrac cur
+currentJiffy _ = do
+    v <- liftIO $ System.CPUTime.getCPUTime 
+    return $ Number v
+jiffiesPerSecond :: [LispVal] -> ThrowsError LispVal
+-- TODO: i think this is the wrong conversion value...
+jiffiesPerSecond _ = return $ Number 1000000000000 -- 10^12 picoseconds per sec
