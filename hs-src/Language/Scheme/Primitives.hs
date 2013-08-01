@@ -282,6 +282,7 @@ load filename = do
             -- Skip comment header for shell scripts
             -- TODO: this could be much more robust
             (('#':'!':'/' : _) : ls) -> liftThrows . readExprList $ unlines ls
+            (('#':'!':' ':'/' : _) : ls) -> liftThrows . readExprList $ unlines ls
             _ -> (liftThrows . readExprList) f
      else throwError $ Default $ "File does not exist: " ++ filename
 
