@@ -270,11 +270,19 @@ readContents [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= readContents
 readContents [] = throwError $ NumArgs (Just 1) []
 readContents args@(_ : _) = throwError $ NumArgs (Just 1) args
 
+-- |Parse the given file and return a list of scheme expressions
 load :: String -> IOThrowsError [LispVal]
 load filename = do
   result <- liftIO $ doesFileExist filename
   if result
-     then (liftIO $ readFile filename) >>= liftThrows . readExprList
+     then do
+        f <- liftIO $ readFile filename
+
+        case lines f of
+            -- Skip comment header for shell scripts
+            -- TODO: this could be much more robust
+            (('#':'!':'/' : _) : ls) -> liftThrows . readExprList $ unlines ls
+            _ -> (liftThrows . readExprList) f
      else throwError $ Default $ "File does not exist: " ++ filename
 
 readAll :: [LispVal] -> IOThrowsError LispVal
