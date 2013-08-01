@@ -1,7 +1,12 @@
 #! /usr/bin/env huski
 ;
-; Example code from SRFI-22
+; This is the example code from SRFI-22
 ; http://srfi.schemers.org/srfi-22/srfi-22.html
+;
+; A clone of the UNIX cat command, written in scheme.
+; To run from the command line: 
+;
+;   ./cat.scm filename
 ;
 (define (main arguments)
   (for-each display-file (cdr arguments))
