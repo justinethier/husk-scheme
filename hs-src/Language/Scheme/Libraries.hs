@@ -46,7 +46,7 @@ findModuleFile [String file]
 -- TODO: scheme case-lambda (r7rs)
 -- TODO: scheme process-context (r7rs)
 -- TODO: scheme repl (r7rs)
--- TODO: scheme time (r7rs)
+      file == "scheme/time.sld" ||
       file == "scheme/write.sld" = do
         path <- liftIO $ PHS.getDataFileName $ "lib/" ++ file
         return $ String path
