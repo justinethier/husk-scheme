@@ -977,7 +977,7 @@ r5rsEnv' = do
   _ <- evalString metaEnv
          "(add-module! '(scheme r5rs) (make-module #f (interaction-environment) '()))"
   timeEnv <- liftIO $ r7rsTimeEnv
-  _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "time"]], List [Atom "make-module", Bool False, LispEnv timeEnv, List [Atom "quote", List []]]]
+  _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "time", Atom "posix"]], List [Atom "make-module", Bool False, LispEnv timeEnv, List [Atom "quote", List []]]]
 #endif
 
   return env
@@ -1024,9 +1024,7 @@ r7rsTimeEnv :: IO Env
 r7rsTimeEnv = do
     nullEnv >>= 
      (flip extendEnv 
-           [ ((varNamespace, "current-second"), IOFunc currentSecond)
-           , ((varNamespace, "current-jiffy"), IOFunc currentJiffy)
-           , ((varNamespace, "jiffies-per-second"), PrimitiveFunc jiffiesPerSecond)])
+           [ ((varNamespace, "current-second"), IOFunc currentTimestamp)])
 
 -- End experimental section
 
