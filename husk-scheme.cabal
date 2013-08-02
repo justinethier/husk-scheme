@@ -61,7 +61,7 @@ flag useptrs
     default: True
 
 Library
-  Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, bytestring, utf8-string, time
+  Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, bytestring, utf8-string, time, process
   Extensions:      ExistentialQuantification
   Hs-Source-Dirs:  hs-src
   Exposed-Modules: Language.Scheme.Core

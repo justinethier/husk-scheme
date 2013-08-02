@@ -75,9 +75,6 @@ module Language.Scheme.Primitives (
  , char2Int
  , int2Char
 
- -- ** Time
- , currentTimestamp
-
  -- ** Predicate
  , isHashTbl
  , isChar 
@@ -125,6 +122,11 @@ module Language.Scheme.Primitives (
  -- ** Symbol generation
  , gensym
  , _gensym
+ -- ** Time
+ , currentTimestamp
+ -- ** System
+ , system
+
  ) where
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
@@ -140,8 +142,10 @@ import Data.Unique
 import qualified Data.Map
 import qualified Data.Time.Clock.POSIX
 import Data.Word
-import System.IO
+import qualified System.Cmd
 import System.Directory (doesFileExist, removeFile)
+import System.Exit (ExitCode(..))
+import System.IO
 import System.IO.Error
 -- import Debug.Trace
 
@@ -812,3 +816,12 @@ currentTimestamp :: [LispVal] -> IOThrowsError LispVal
 currentTimestamp _ = do
     cur <- liftIO $ Data.Time.Clock.POSIX.getPOSIXTime
     return $ Float $ realToFrac cur
+
+system :: [LispVal] -> IOThrowsError LispVal
+system [String cmd] = do
+    result <- liftIO $ System.Cmd.system cmd
+    case result of
+        ExitSuccess -> return $ Number 0
+        ExitFailure code -> return $ Number $ toInteger code
+system err = throwError $ TypeMismatch "string" $ List err
+
