@@ -4,7 +4,15 @@ v3.12
 
 TODO: start r7rs changes, but possibly as next release (TBD soon)
 
+Added (scheme time) library
+Add the (system) function to make system calls from a husk program
+
+
 Enhanced the huski REPL to:
+
+- TODO: Added shell script semantics (SRFI 22?) to allow huski to be used to write shell scripts
+
+TODO: example here, maybe mention cat and sum scripts
 
 - Add tab completion for Scheme variables and special forms. 
 - Tab completion will still fill in filenames when tab is pressed within double-quotes. This makes it easy to find a file in certain cases such as for a load.
