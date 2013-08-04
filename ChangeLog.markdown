@@ -4,9 +4,11 @@ v3.12
 
 TODO: start r7rs changes, but possibly as next release (TBD soon)
 
-Added (scheme time) library
-Add the (system) function to make system calls from a husk program
 
+This release adds the following features:
+
+- Added (scheme time) library from R<sup>7</sup>RS.
+- Added the `system` function to make system calls from a husk program. The syntax is `(system "command")`, and the function returns the integer status code that the executing program returns.
 
 Enhanced the huski REPL to:
 
