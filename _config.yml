@@ -13,3 +13,5 @@ lsi:         false
 pygments:    true
 markdown:    maruku
 permalink:   date
+
+husk_build_number:  3.12
