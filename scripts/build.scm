@@ -18,7 +18,7 @@
 ; - run tests
     "make test"
     ;"make testc"
-    "echo \"Check for test failures; press Enter to continue\" ; read"
+    "echo \"Check for test failures; press Enter to continue\" ; read temp"
 ; ?????  - if OK, then prompt for version number and tag it
 ; - prompt user to review tests
 ; - if OK, build docs
