@@ -14,6 +14,8 @@
 
 (define *build-number* "3.12")
 (script
+    "make clean"
+    "make"
 ; - ask user about change log, blog post? (is there a better way to integrate these?)
 ; - run tests
     "make test"
