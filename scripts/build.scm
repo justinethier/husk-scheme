@@ -30,6 +30,8 @@
     ;           (string-append "mkdir API/" *build-number* " ; cp dist/doc/html/husk-scheme/* API/" *build-number*)))
     (string-append "mkdir API/" *build-number* " ; cp dist/doc/html/husk-scheme/* API/" *build-number*)
 ; TODO: _includes/sidebar*.html still need to be updated to reference a new build, need to address that somehow
+; Use the command: sed -i '17s/.*/husk_build_number:  3.12/' _config.yml
+; and save changes using git commit
     "echo \"API documentation updated; press Enter to commit and push to github\" ; read temp"
     (string-append "cd API/" *build-number* " && git add * && git commit * -m \"Build script added/updated API documentation for version " *build-number* "\"")
     "git push origin gh-pages"
