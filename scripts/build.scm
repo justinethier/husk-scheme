@@ -27,7 +27,8 @@
 ;    "make test && make doc"
     "git checkout gh-pages"
     (if (file-exists? (string-append "API/" *build-number*))
-        ""
-        (string-append "mkdir API/" *build-number* " ; cp dist/doc/html/husk-scheme/* API/" *build-number*))
+        (begin (write "docs up to date") "")
+        (begin (write "updating docs")
+               (string-append "mkdir API/" *build-number* " ; cp dist/doc/html/husk-scheme/* API/" *build-number*)))
     "git checkout repl-dev" ; TESTING
     "echo \"TODO\"")
