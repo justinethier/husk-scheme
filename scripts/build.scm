@@ -15,14 +15,19 @@
 
 (define-syntax script
   (syntax-rules ()
+;    ((_) 'done)
     ((_ cmd) (system cmd))
     ((_ cmd cmds ...)
      (if (= (system cmd) 0)
-         (chain cmds ...)))))
+         (script cmds ...)))))
 
+(define *build-number* "3.12")
 (script
 ;    "git checkout master"
-    "make test && make doc"
-;;    "git checkout gh-pages"
+;    "make test && make doc"
+    "git checkout gh-pages"
+    (if (file-exists? (string-append "API/" *build-number*))
+        ""
+        (string-append "mkdir API/" *build-number* " ; cp dist/doc/html/husk-scheme/* API/" *build-number*))
+;    "git checkout repl-dev" ; TESTING
     "echo \"TODO\"")
-
