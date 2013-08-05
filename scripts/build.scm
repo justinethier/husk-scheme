@@ -29,5 +29,5 @@
     (if (file-exists? (string-append "API/" *build-number*))
         ""
         (string-append "mkdir API/" *build-number* " ; cp dist/doc/html/husk-scheme/* API/" *build-number*))
-;    "git checkout repl-dev" ; TESTING
+    "git checkout repl-dev" ; TESTING
     "echo \"TODO\"")
