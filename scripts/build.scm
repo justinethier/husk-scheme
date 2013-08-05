@@ -23,8 +23,10 @@
 
 (define *build-number* "3.12")
 (script
-;    "git checkout master"
-;    "make test && make doc"
+    "make test"
+    ;"make testc"
+    "echo \"Check for test failures; press Enter to continue\""
+    "make doc"
     "git checkout gh-pages"
     (if (file-exists? (string-append "API/" *build-number* "/index.html"))
         "echo \"docs up-to-date\", skipping"
