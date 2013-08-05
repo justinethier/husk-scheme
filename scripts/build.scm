@@ -3,15 +3,6 @@
 ; map over them to execute script (or better, chain over in case one fails)
 ; 
 ; steps:
-; - ask user about change log, blog post? (is there a better way to integrate these?)
-; - run tests
-; - prompt user to review tests
-; - if OK, build docs
-; - if OK, then prompt for version number and tag it
-; - copy docs to gh-pages, commit, push
-; - checkout master branch again (all releases off of master)
-; - make sdist
-; - prompt to upload to hackage, freecode, etc
 
 (define-syntax script
   (syntax-rules ()
@@ -23,14 +14,24 @@
 
 (define *build-number* "3.12")
 (script
+; - ask user about change log, blog post? (is there a better way to integrate these?)
+; - run tests
     "make test"
     ;"make testc"
-    "echo \"Check for test failures; press Enter to continue\""
+    "echo \"Check for test failures; press Enter to continue\" ; read"
+; ?????  - if OK, then prompt for version number and tag it
+; - prompt user to review tests
+; - if OK, build docs
     "make doc"
     "git checkout gh-pages"
-    (if (file-exists? (string-append "API/" *build-number* "/index.html"))
-        "echo \"docs up-to-date\", skipping"
-        (begin (write "updating docs")
-               (string-append "mkdir API/" *build-number* " ; cp dist/doc/html/husk-scheme/* API/" *build-number*)))
+    ;(if (file-exists? (string-append "API/" *build-number* "/index.html"))
+    ;    "echo \"docs up-to-date\", skipping"
+    ;    (begin (write "updating docs")
+    ;           (string-append "mkdir API/" *build-number* " ; cp dist/doc/html/husk-scheme/* API/" *build-number*)))
+    (string-append "mkdir API/" *build-number* " ; cp dist/doc/html/husk-scheme/* API/" *build-number* " ; cd API/" *build-number* " ; git add * ; git commit *")
+    "git push origin gh-pages"
+; - copy docs to gh-pages, commit, push
+; - checkout master branch again (all releases off of master)
     "git checkout repl-dev" ; TESTING
-    "echo \"TODO\"")
+    "make sdist"
+    "echo \"TODO: upload to hackage, freecode, etc\"")
