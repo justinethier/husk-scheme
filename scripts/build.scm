@@ -1,4 +1,4 @@
-(define *build-number* '3.12)
+(define *build-number* "3.12")
 
 (define-syntax script
   (syntax-rules ()
@@ -9,16 +9,17 @@
          (script cmds ...)))))
 
 (script
+    (string-append "Building " *build-number* " ...")
+; TODO: - ask user about change log, blog post? (is there a better way to integrate these?)
     "make clean"
     "make"
-; - ask user about change log, blog post? (is there a better way to integrate these?)
-; - run tests
     "make test"
-    ;"make testc"
-    "echo \"Check for test failures; press Enter to continue\" ; read temp"
-; ?????  - if OK, then prompt for version number and tag it
-; - prompt user to review tests
-; - if OK, build docs
+; TODO:    "make testc"
+    "echo \"Make sure no tests failed, and then press Enter to continue\" ; read temp"
+
+; TODO: ?????  - if OK, then prompt for version number and tag it
+; TODO: (string-append "git tag -a v" *build-number* " -m \"Version " *build-number* "\"")
+
     "make doc"
     "git checkout gh-pages"
     ;(if (file-exists? (string-append "API/" *build-number* "/index.html"))
@@ -26,10 +27,12 @@
     ;    (begin (write "updating docs")
     ;           (string-append "mkdir API/" *build-number* " ; cp dist/doc/html/husk-scheme/* API/" *build-number*)))
     (string-append "mkdir API/" *build-number* " ; cp dist/doc/html/husk-scheme/* API/" *build-number*)
-    (string-append "cd API/" *build-number* " ; git add * ; git commit * -m \"Build script added/updated API documentation for version " *build-number* "\"")
+    "echo \"API documentation updated; press Enter to commit and push to github\" ; read temp"
+    (string-append "cd API/" *build-number* " && git add * && git commit * -m \"Build script added/updated API documentation for version " *build-number* "\"")
     "git push origin gh-pages"
 ; - copy docs to gh-pages, commit, push
 ; - checkout master branch again (all releases off of master)
-    "git checkout repl-dev" ; TESTING
+    "git checkout repl-dev" ; TESTING, should be master
     "make sdist"
+    "echo \"\""
     "echo \"TODO: upload to hackage, freecode, etc\"")
