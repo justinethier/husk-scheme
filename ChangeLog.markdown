@@ -7,7 +7,9 @@ TODO: start r7rs changes, but possibly as next release (TBD soon)
 
 This release adds the following features:
 
-- Added (scheme time) library from R<sup>7</sup>RS.
+- Added the `(scheme time)` library from R<sup>7</sup>RS.
+TODO: are current-seconds in the right units?
+
 - Added the `system` function to make system calls from a husk program. The syntax is `(system "command")`. An integer status code is returned with the same value that the executing program returned to the OS.
 
 Enhanced the huski REPL to:
