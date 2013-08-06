@@ -32,12 +32,15 @@
         ;    "echo \"docs up-to-date\", skipping"
         ;    (begin (write "updating docs")
         ;           (string-append "mkdir API/" *build-number* " ; cp dist/doc/html/husk-scheme/* API/" *build-number*)))
-    (string-append "mkdir API/" *build-number* " ; cp dist/doc/html/husk-scheme/* API/" *build-number*)
+    (string-append "mkdir API/" *build-number* 
+                   " ; cp dist/doc/html/husk-scheme/* API/" *build-number*)
     ; Update build number to point to latest API docs, maybe other stuff
-    (string-append "sed -i '17s/.*/husk_build_number:  " *build-number* "/' _config.yml")
+    (string-append "sed -i '17s/.*/husk_build_number:  " 
+                   *build-number* "/' _config.yml")
 
     "echo \"API documentation updated; press Enter to commit and push to github\" ; read temp"
-    (string-append "cd API/" *build-number* " && git add * && git commit * -m \"Build script added/updated API documentation for version " *build-number* "\"")
+    (string-append "cd API/" *build-number* 
+                   " && git add * && git commit * -m \"Build script added/updated API documentation for version " *build-number* "\"")
     "git commit _config.yml -m \"Build script updated build number\""
     "git push origin gh-pages"
 
