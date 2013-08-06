@@ -18,7 +18,7 @@
     "echo \"\""
     "echo \"Press Enter to continue\" ; read temp"
     
-    (string-append "Building " *build-number* " ...")
+    (string-append "echo \"Building " *build-number* " ...\"")
     "make clean"
     "make"
     "make test"
