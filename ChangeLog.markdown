@@ -8,13 +8,13 @@ TODO: start r7rs changes, but possibly as next release (TBD soon)
 This release adds the following features:
 
 - Added (scheme time) library from R<sup>7</sup>RS.
-- Added the `system` function to make system calls from a husk program. The syntax is `(system "command")`, and the function returns the integer status code that the executing program returns.
+- Added the `system` function to make system calls from a husk program. The syntax is `(system "command")`. An integer status code is returned with the same value that the executing program returned to the OS.
 
 Enhanced the huski REPL to:
 
-- TODO: Added shell script semantics (SRFI 22?) to allow huski to be used to write shell scripts
+- Allow using huski to run Scheme scripts from the shell (SRFI 22). The script needs to start with the line `#! /usr/bin/env huski` or equivalent, and a `main` function may be defined to receive command line arguments. There are example `cat` and `sum` programs under the `examples/scripts` directory to demonstrate how this works.
 
-TODO: example here, maybe mention cat and sum scripts
+TODO: update docs on website for SRFI 22
 
 - Add tab completion for Scheme variables and special forms. 
 - Tab completion will still fill in filenames when tab is pressed within double-quotes. This makes it easy to find a file in certain cases such as for a load.
