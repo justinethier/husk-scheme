@@ -2,9 +2,6 @@
 v3.12
 --------
 
-TODO: start r7rs changes, but possibly as next release (TBD soon)
-
-
 This release adds the following features:
 
 - Added the `(scheme time)` library from R<sup>7</sup>RS.
