@@ -1017,17 +1017,12 @@ r7rsEnv = do
          "(add-module! '(scheme r5rs) (make-module #f (interaction-environment) '()))"
   return env
 
-
--- Experimental r7rs time module section
--- TODO: relocate this to another Haskell module, along with corresponding import's
+-- | Load haskell bindings used for the r7rs time library
 r7rsTimeEnv :: IO Env
 r7rsTimeEnv = do
     nullEnv >>= 
      (flip extendEnv 
            [ ((varNamespace, "current-second"), IOFunc currentTimestamp)])
-
--- End experimental section
-
 
 -- Functions that extend the core evaluator, but that can be defined separately.
 --
