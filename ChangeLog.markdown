@@ -2,6 +2,8 @@
 v3.12
 --------
 
+TODO: check 'make doc', see if anything can be cleaned up here prior to release
+
 Significant enhancements have been made to the huski REPL:
 
 - Allow using huski to run Scheme scripts from the shell, as specified by SRFI 22. The script needs to start with the line `#! /usr/bin/env huski` or equivalent, and a `main` function may be defined to receive command line arguments. The `examples/scripts` directory contains example programs `cat.scm` and `sum.scm` that demonstrate how this works in practice.
