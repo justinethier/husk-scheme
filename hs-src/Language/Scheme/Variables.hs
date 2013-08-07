@@ -110,6 +110,7 @@ printEnv env = do
     v <- liftIO $ readIORef val
     return $ "[" ++ name ++ "]" ++ ": " ++ show v
 
+-- |Recursively print an environment to string
 recPrintEnv :: Env -> IO String
 recPrintEnv env = do
   envStr <- liftIO $ printEnv env
@@ -120,6 +121,7 @@ recPrintEnv env = do
         return $ envStr ++ "\n" ++ parEnvStr
     Nothing -> return envStr
 
+-- |Recursively find all exports from the given environment
 recExportsFromEnv :: Env -> IO [LispVal]
 recExportsFromEnv env = do
   xs <- exportsFromEnv env
@@ -199,6 +201,7 @@ topmostEnv envRef = do
         Just p -> topmostEnv p
         Nothing -> return envRef
 
+-- |Create a null environment with the given environment as its parent.
 nullEnvWithParent :: Env -> IO Env 
 nullEnvWithParent p = do
   Environment _ binds ptrs <- nullEnv

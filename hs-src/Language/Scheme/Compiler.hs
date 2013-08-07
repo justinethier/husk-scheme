@@ -69,23 +69,27 @@ import Data.Ratio
 import Data.Word
 -- import Debug.Trace
 
--- Define imports var here as an empty list.
--- This list is appended to by (load-ffi) instances,
--- and the imports are explicitly added later on...
+-- |Perform one-time initialization of the compiler's environment
 initializeCompiler :: Env -> IOThrowsError [HaskAST]
 initializeCompiler env = do
+  -- Define imports var here as an empty list.
+  -- This list is appended to by (load-ffi) instances,
+  -- and the imports are explicitly added later on...
   _ <- defineNamespacedVar env 't' {-"internal"-} "imports" $ List []
   return []
 
-
-compileLisp :: Env -> String -> String -> Maybe String -> IOThrowsError [HaskAST]
+-- Compile a file containing scheme code
+compileLisp 
+    :: Env  -- ^ Compiler environment 
+    -> String -- ^ Filename
+    -> String -- ^ Function entry point (code calls into this function)
+    -> Maybe String -- ^ Function exit point, if any
+    -> IOThrowsError [HaskAST]
 compileLisp env filename entryPoint exitPoint = do
     filename' <- LSC.findFileOrLib filename 
     load filename' >>= compileBlock entryPoint exitPoint env []
--- compileBlock
---
--- Note: Uses explicit recursion to transform a block of code, because
---  later lines may depend on previous ones
+
+-- |Compile a list (block) of Scheme code
 compileBlock :: String -> Maybe String -> Env -> [HaskAST] -> [LispVal] 
              -> IOThrowsError [HaskAST]
 compileBlock symThisFunc symLastFunc env result lisps = do
@@ -106,13 +110,14 @@ _compileBlock _ _ _ result [] = return result
 
 -- TODO: could everything just be regular function calls except when a continuation is 'added to the stack' via a makeCPS(makeCPSWArgs ...) ?? I think this could be made more efficient
 
--- Helper function to compile expressions consisting of a scalar
+-- |Helper function to compile expressions consisting of a scalar
 compileScalar :: String -> CompOpts -> IOThrowsError [HaskAST]
 compileScalar val copts = do 
   f <- return $ AstAssignM "x1" $ AstValue val 
   c <- return $ createAstCont copts "x1" ""
   return [createAstFunc copts [f, c]]
 
+-- |Compile the list of arguments for a function
 compileLambdaList :: [LispVal] -> IOThrowsError String
 compileLambdaList l = do
   serialized <- mapM serialize l 
@@ -907,10 +912,12 @@ compileDivertedVars
           [AstValue $ "  " ++ formNext ++ " env cont (" ++ val ++ ") " ++ args]
   return $ createAstFunc copts f
 
+-- |Create the function entry point for a special form
 compileSpecialFormEntryPoint :: String -> String -> CompOpts -> IOThrowsError HaskAST
 compileSpecialFormEntryPoint formName formSym copts = do
  compileSpecialForm formName ("do " ++ formSym ++ " env cont (Nil \"\") []") copts
 
+-- | Helper function for compiling a special form
 compileSpecialForm :: String -> String -> CompOpts -> IOThrowsError HaskAST
 compileSpecialForm formName formCode copts = do
  f <- return $ [
@@ -928,8 +935,8 @@ compileSpecialFormBody env
     True -> mfunc env ast compileApply copts 
     False -> spForm nextFunc
 
--- Compile an intermediate expression (such as an arg to if) and 
--- call into the next continuation with it's value
+-- | Compile an intermediate expression (such as an arg to if) and 
+--   call into the next continuation with it's value
 compileExpr :: Env -> LispVal -> String -> Maybe String -> IOThrowsError [HaskAST]
 compileExpr env expr symThisFunc fForNextExpr = do
   mcompile env expr (CompileOptions symThisFunc False False fForNextExpr) 
