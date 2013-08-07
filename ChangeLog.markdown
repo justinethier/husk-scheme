@@ -9,9 +9,8 @@ This release adds the following features:
 
 Enhanced the huski REPL to:
 
-- Allow using huski to run Scheme scripts from the shell (SRFI 22). The script needs to start with the line `#! /usr/bin/env huski` or equivalent, and a `main` function may be defined to receive command line arguments. There are example programs `cat.scm` and `sum.scm` under the `examples/scripts` directory to demonstrate how this works.
-- Add tab completion for Scheme variables and special forms. 
-- Tab completion will still fill in filenames when tab is pressed within double-quotes. This makes it easy to find a file in certain cases such as for a load.
+- Allow using huski to run Scheme scripts from the shell, as specified by SRFI 22. The script needs to start with the line `#! /usr/bin/env huski` or equivalent, and a `main` function may be defined to receive command line arguments. The `examples/scripts` directory contains example programs `cat.scm` and `sum.scm` that demonstrate how this works in practice.
+- Add tab completion for Scheme variables and special forms. Tab completion will still fill in filenames when tab is pressed within double-quotes. This makes it easy to find a file in certain cases such as for a `load`.
 - Accept (and ignore) inputs of just whitespace. Previously this would display a nasty error message.
 
 Bug fixes:
