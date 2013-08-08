@@ -872,6 +872,14 @@ Nothing -> apply thunk [] -}
 hashTblRef [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblRef badArgList = throwError $ NumArgs (Just 2) badArgList
 
+-- | Return the number of key/value associations in the hashtable
+--
+--   Arguments:
+--
+--   * HashTable
+--
+--   Returns: Number - number of associations
+--
 hashTblSize :: [LispVal] -> ThrowsError LispVal
 hashTblSize [(HashTable ht)] = return $ Number $ toInteger $ Data.Map.size ht
 hashTblSize [badType] = throwError $ TypeMismatch "hash-table" badType
@@ -1413,6 +1421,7 @@ unpackEquals arg1 arg2 (AnyUnpacker unpacker) =
      return $ unpacked1 == unpacked2
   `catchError` (const $ return False)
 
+-- |Helper function to perform a binary logic operation on two LispVal arguments.
 boolBinop :: (LispVal -> ThrowsError a) -> (a -> a -> Bool) -> [LispVal] -> ThrowsError LispVal
 boolBinop unpacker op args = if length args /= 2
                              then throwError $ NumArgs (Just 2) args
@@ -1420,22 +1429,28 @@ boolBinop unpacker op args = if length args /= 2
                                      right <- unpacker $ args !! 1
                                      return $ Bool $ left `op` right
 
+-- |Perform the given function against a single LispVal argument
 unaryOp :: (LispVal -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
 unaryOp f [v] = f v
 unaryOp _ [] = throwError $ NumArgs (Just 1) []
 unaryOp _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 
+-- |Same as unaryOp but in the IO monad
 unaryOp' :: (LispVal -> IOThrowsError LispVal) -> [LispVal] -> IOThrowsError LispVal
 unaryOp' f [v] = f v
 unaryOp' _ [] = throwError $ NumArgs (Just 1) []
 unaryOp' _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 
+-- |Perform boolBinop against two string arguments
 strBoolBinop :: (String -> String -> Bool) -> [LispVal] -> IOThrowsError LispVal
 strBoolBinop fnc args = do
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
   liftThrows $ boolBinop unpackStr fnc dargs
 
+-- |Perform boolBinop against two char arguments
 charBoolBinop = boolBinop unpackChar
+
+-- |Perform boolBinop against two boolean arguments
 boolBoolBinop :: (Bool -> Bool -> Bool) -> [LispVal] -> ThrowsError LispVal
 boolBoolBinop = boolBinop unpackBool
 
