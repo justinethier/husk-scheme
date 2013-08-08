@@ -160,31 +160,87 @@ try' = tryIOError
 -- These primitives all execute within the IO monad
 ---------------------------------------------------
 
+-- |Open the given file
+--
+--   LispVal Arguments:
+--
+--   * String - filename
+--
+--   Returns: Port
+--
 makePort :: IOMode -> [LispVal] -> IOThrowsError LispVal
 makePort mode [String filename] = liftM Port $ liftIO $ openFile filename mode
 makePort mode [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= makePort mode
 makePort _ [] = throwError $ NumArgs (Just 1) []
 makePort _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 
+-- |Close the given port
+--
+--   Arguments:
+--
+--   * Port
+--
+--   Returns: Bool - True if the port was closed, false otherwise
+--
 closePort :: [LispVal] -> IOThrowsError LispVal
 closePort [Port port] = liftIO $ hClose port >> (return $ Bool True)
 closePort _ = return $ Bool False
 
-currentInputPort, currentOutputPort :: [LispVal] -> IOThrowsError LispVal
+
 {- FUTURE: For now, these are just hardcoded to the standard i/o ports.
 a future implementation that includes with-*put-from-file
 would require a more involved implementation here as well as
 other I/O functions hooking into these instead of std* -}
+
+-- |Return the current input port
+--
+--   LispVal Arguments: (None)
+--
+--   Returns: Port
+--
+currentInputPort :: [LispVal] -> IOThrowsError LispVal
 currentInputPort _ = return $ Port stdin
+-- |Return the current input port
+--
+--   LispVal Arguments: (None)
+--
+--   Returns: Port
+--
+currentOutputPort :: [LispVal] -> IOThrowsError LispVal
 currentOutputPort _ = return $ Port stdout
 
-isInputPort, isOutputPort :: [LispVal] -> IOThrowsError LispVal
+-- |Determine if the given objects is an input port
+--
+--   LispVal Arguments:
+--
+--   * Port
+--
+--   Returns: Bool - True if an input port, false otherwise
+--
+isInputPort :: [LispVal] -> IOThrowsError LispVal
 isInputPort [Port port] = liftM Bool $ liftIO $ hIsReadable port
 isInputPort _ = return $ Bool False
 
+-- |Determine if the given objects is an output port
+--
+--   LispVal Arguments:
+--
+--   * Port
+--
+--   Returns: Bool - True if an output port, false otherwise
+--
+isOutputPort :: [LispVal] -> IOThrowsError LispVal
 isOutputPort [Port port] = liftM Bool $ liftIO $ hIsWritable port
 isOutputPort _ = return $ Bool False
 
+-- |Determine if a character is ready on the port
+--
+--   LispVal Arguments:
+--
+--   * Port
+--
+--   Returns: Bool
+--
 isCharReady :: [LispVal] -> IOThrowsError LispVal
 isCharReady [Port port] = do --liftM Bool $ liftIO $ hReady port
     result <- liftIO $ try' (liftIO $ hReady port)
@@ -195,6 +251,14 @@ isCharReady [Port port] = do --liftM Bool $ liftIO $ hReady port
         Right _ -> return $ Bool True
 isCharReady _ = return $ Bool False
 
+-- |Read from the given port
+--
+--   LispVal Arguments:
+--
+--   * Port
+--
+--   Returns: LispVal
+--
 readProc :: [LispVal] -> IOThrowsError LispVal
 readProc [] = readProc [Port stdin]
 readProc [Port port] = do
@@ -207,6 +271,14 @@ readProc [Port port] = do
             liftThrows $ readExpr inpStr
 readProc args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 
+-- |Read character from port
+--
+--   LispVal Arguments:
+--
+--   * Port
+--
+--   Returns: Char
+--
 readCharProc :: (Handle -> IO Char) -> [LispVal] -> IOThrowsError LispVal
 readCharProc func [] = readCharProc func [Port stdin]
 readCharProc func [Port port] = do
@@ -221,6 +293,16 @@ readCharProc func [Port port] = do
             return $ Char inpChr
 readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 
+-- |Write to the given port
+--
+--   LispVal Arguments:
+--
+--   * LispVal
+--
+--   * Port (optional)
+--
+--   Returns: (None)
+--
 {- writeProc :: --forall a (m :: * -> *).
              (MonadIO m, MonadError LispError m) =>
              (Handle -> LispVal -> IO a) -> [LispVal] -> m LispVal -}
