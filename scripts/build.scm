@@ -21,10 +21,10 @@
     (string-append "echo \"Building " *build-number* " ...\"")
     "make clean"
     "make"
+    "make sdist"
     "make test"
 ; TODO:    "make testc"
     "echo \"Make sure no tests failed, and then press Enter to continue\" ; read temp"
-    "make sdist"
 
     "make doc"
     "git checkout gh-pages"
