@@ -237,6 +237,16 @@ writeProc _ other = if length other == 2
                      then throwError $ TypeMismatch "(value port)" $ List other
                      else throwError $ NumArgs (Just 2) other
 
+-- |Write character to the given port
+--
+--   Arguments:
+--
+--   * Char - Value to write
+--
+--   * Port (optional) - Port to write to, defaults to standard output
+--
+--   Returns: (None)
+--
 writeCharProc :: [LispVal] -> IOThrowsError LispVal
 writeCharProc [obj] = writeCharProc [obj, Port stdout]
 writeCharProc [obj@(Char _), Port port] = do
@@ -248,7 +258,15 @@ writeCharProc other = if length other == 2
                      then throwError $ TypeMismatch "(character port)" $ List other
                      else throwError $ NumArgs (Just 2) other
 
-fileExists, deleteFile :: [LispVal] -> IOThrowsError LispVal
+-- |Determine if the given file exists
+--
+--   Arguments:
+--
+--   * String - Filename to check
+--
+--   Returns: Bool - True if file exists, false otherwise
+--
+fileExists :: [LispVal] -> IOThrowsError LispVal
 fileExists [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= fileExists
 fileExists [String filename] = do
     exists <- liftIO $ doesFileExist filename
@@ -256,6 +274,15 @@ fileExists [String filename] = do
 fileExists [] = throwError $ NumArgs (Just 1) []
 fileExists args@(_ : _) = throwError $ NumArgs (Just 1) args
 
+-- |Delete the given file
+--
+--   Arguments:
+--
+--   * String - Filename to delete
+--
+--   Returns: Bool - True if file was deleted, false if an error occurred
+--
+deleteFile :: [LispVal] -> IOThrowsError LispVal
 deleteFile [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= deleteFile
 deleteFile [String filename] = do
     output <- liftIO $ try' (liftIO $ removeFile filename)
@@ -265,6 +292,14 @@ deleteFile [String filename] = do
 deleteFile [] = throwError $ NumArgs (Just 1) []
 deleteFile args@(_ : _) = throwError $ NumArgs (Just 1) args
 
+-- |Read the given file and return the raw string content 
+--
+--   Arguments:
+--
+--   * String - Filename to read
+--
+--   Returns: String - Actual text read from the file
+--
 readContents :: [LispVal] -> IOThrowsError LispVal
 readContents [String filename] = liftM String $ liftIO $ readFile filename
 readContents [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= readContents
@@ -272,6 +307,13 @@ readContents [] = throwError $ NumArgs (Just 1) []
 readContents args@(_ : _) = throwError $ NumArgs (Just 1) args
 
 -- |Parse the given file and return a list of scheme expressions
+--
+--   Arguments:
+--
+--   * String - Filename to read
+--
+--   Returns: [LispVal] - Raw contents of the file parsed as scheme code
+--
 load :: String -> IOThrowsError [LispVal]
 load filename = do
   result <- liftIO $ doesFileExist filename
@@ -287,6 +329,14 @@ load filename = do
             _ -> (liftThrows . readExprList) f
      else throwError $ Default $ "File does not exist: " ++ filename
 
+-- | Read the contents of the given scheme source file into a list
+--
+--   Arguments:
+--
+--   * String - Filename to read
+--
+--   Returns: List - Raw contents of the file parsed as scheme code
+--
 readAll :: [LispVal] -> IOThrowsError LispVal
 readAll [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= readAll
 readAll [String filename] = liftM List $ load filename
@@ -301,6 +351,13 @@ _gensym prefix = do
 
 -- |Generate a (reasonably) unique symbol, given an optional prefix.
 --  This function is provided even though it is not part of R5RS.
+--
+--   Arguments:
+--
+--   * String - Prefix of the unique symbol
+--
+--   Returns: Atom
+--
 gensym :: [LispVal] -> IOThrowsError LispVal
 gensym [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= gensym
 gensym [String prefix] = _gensym prefix
@@ -313,6 +370,15 @@ gensym args@(_ : _) = throwError $ NumArgs (Just 1) args
 ---------------------------------------------------
 
 -- List primitives
+
+-- | Retrieve the first item from a list
+--
+--   Arguments:
+--
+--   * List (or DottedList)
+--
+--   Returns: LispVal - First item in the list
+--
 car :: [LispVal] -> IOThrowsError LispVal
 car [p@(Pointer _ _)] = derefPtr p >>= box >>= car
 car [List (x : _)] = return x
@@ -320,6 +386,14 @@ car [DottedList (x : _) _] = return x
 car [badArg] = throwError $ TypeMismatch "pair" badArg
 car badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Return the "tail" of a list, with the first element removed
+--
+--   Arguments:
+--
+--   * List (or DottedList)
+--
+--   Returns: List (or DottedList)
+--
 cdr :: [LispVal] -> IOThrowsError LispVal
 cdr [p@(Pointer _ _)] = derefPtr p >>= box >>= cdr
 cdr [List (_ : xs)] = return $ List xs
@@ -328,6 +402,16 @@ cdr [DottedList (_ : xs) x] = return $ DottedList xs x
 cdr [badArg] = throwError $ TypeMismatch "pair" badArg
 cdr badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | The LISP "cons" operation - create a list from two values
+--
+--   Arguments:
+--
+--   * LispVal
+--
+--   * LispVal
+--
+--   Returns: List (or DottedList) containing new value(s)
+--
 cons :: [LispVal] -> IOThrowsError LispVal
 cons [x, p@(Pointer _ _)] = do
   y <- derefPtr p
@@ -338,6 +422,16 @@ cons [x, DottedList xs xlast] = return $ DottedList (x : xs) xlast
 cons [x1, x2] = return $ DottedList [x1] x2
 cons badArgList = throwError $ NumArgs (Just 2) badArgList
 
+-- | Recursively compare two LispVals for equality
+--
+--   Arguments:
+--
+--   * LispVal
+--
+--   * LispVal
+--
+--   Returns: Bool - True if equal, false otherwise
+--
 equal :: [LispVal] -> ThrowsError LispVal
 equal [(Vector arg1), (Vector arg2)] = eqvList equal [List $ (elems arg1), List $ (elems arg2)]
 equal [l1@(List _), l2@(List _)] = eqvList equal [l1, l2]
