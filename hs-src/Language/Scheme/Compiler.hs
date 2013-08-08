@@ -78,7 +78,7 @@ initializeCompiler env = do
   _ <- defineNamespacedVar env 't' {-"internal"-} "imports" $ List []
   return []
 
--- Compile a file containing scheme code
+-- | Compile a file containing scheme code
 compileLisp 
     :: Env  -- ^ Compiler environment 
     -> String -- ^ Filename
