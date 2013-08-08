@@ -351,7 +351,17 @@ equal badArgList = throwError $ NumArgs (Just 2) badArgList
 
 -- ------------ Vector Primitives --------------
 
-makeVector, buildVector, vectorLength, vectorRef, vectorToList, listToVector :: [LispVal] -> ThrowsError LispVal
+-- | Create a new vector
+--
+--   Arguments:
+--
+--   * Number - Length of the vector
+--
+--   * LispVal - Value to fill the vector with
+--
+--   Returns: Vector
+--
+makeVector :: [LispVal] -> ThrowsError LispVal
 makeVector [(Number n)] = makeVector [Number n, List []]
 makeVector [(Number n), a] = do
   let l = replicate (fromInteger n) a
@@ -359,14 +369,43 @@ makeVector [(Number n), a] = do
 makeVector [badType] = throwError $ TypeMismatch "integer" badType
 makeVector badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Create a vector from the given lisp values
+--
+--   Arguments:
+--
+--   * LispVal (s)
+--
+--   Returns: Vector
+--
+buildVector :: [LispVal] -> ThrowsError LispVal
 buildVector lst@(o : os) = do
   return $ Vector $ (listArray (0, length lst - 1)) lst
 buildVector badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Determine the length of the given vector
+--
+--   Arguments:
+--
+--   * Vector
+--
+--   Returns: Number
+--
+vectorLength :: [LispVal] -> ThrowsError LispVal
 vectorLength [(Vector v)] = return $ Number $ toInteger $ length (elems v)
 vectorLength [badType] = throwError $ TypeMismatch "vector" badType
 vectorLength badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Retrieve the object at the given position of a vector
+--
+--   Arguments:
+--
+--   * Vector
+--
+--   * Number - Index of the vector to retrieve
+--
+--   Returns: Object at the given index
+--
+vectorRef :: [LispVal] -> ThrowsError LispVal
 vectorRef [(Vector v), (Number n)] = do
     let len = toInteger $ (length $ elems v) - 1
     if n > len || n < 0
@@ -375,16 +414,45 @@ vectorRef [(Vector v), (Number n)] = do
 vectorRef [badType] = throwError $ TypeMismatch "vector integer" badType
 vectorRef badArgList = throwError $ NumArgs (Just 2) badArgList
 
+-- | Convert the given vector to a list
+--
+--   Arguments:
+--
+--   * Vector
+--
+--   Returns: List
+--
+vectorToList :: [LispVal] -> ThrowsError LispVal
 vectorToList [(Vector v)] = return $ List $ elems v
 vectorToList [badType] = throwError $ TypeMismatch "vector" badType
 vectorToList badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Convert the given list to a vector
+--
+--   Arguments:
+--
+--   * List to convert
+--
+--   Returns: Vector
+--
+listToVector :: [LispVal] -> ThrowsError LispVal
 listToVector [(List l)] = return $ Vector $ (listArray (0, length l - 1)) l
 listToVector [badType] = throwError $ TypeMismatch "list" badType
 listToVector badArgList = throwError $ NumArgs (Just 1) badArgList
 
 -- ------------ Bytevector Primitives --------------
-makeByteVector, byteVector :: [LispVal] -> ThrowsError LispVal
+
+-- | Create a new bytevector
+--
+--   Arguments:
+--
+--   * Number - Length of the new bytevector
+--
+--   * Number (optional) - Byte value to fill the bytevector with
+--
+--   Returns: ByteVector - A new bytevector
+--
+makeByteVector :: [LispVal] -> ThrowsError LispVal
 makeByteVector [(Number n)] = do
   let ls = replicate (fromInteger n) (0 :: Word8)
   return $ ByteVector $ BS.pack ls
@@ -394,13 +462,35 @@ makeByteVector [Number n, Number byte] = do
 makeByteVector [badType] = throwError $ TypeMismatch "integer" badType
 makeByteVector badArgList = throwError $ NumArgs (Just 2) badArgList
 
+-- | Create new bytevector containing the given data
+--
+--   Arguments:
+--
+--   * Objects - Objects to convert to bytes for the bytevector
+--
+--   Returns: ByteVector - A new bytevector
+--
+byteVector :: [LispVal] -> ThrowsError LispVal
 byteVector bs = do
  return $ ByteVector $ BS.pack $ map conv bs
  where 
    conv (Number n) = fromInteger n :: Word8
    conv n = 0 :: Word8
 
-byteVectorLength, byteVectorRef, byteVectorCopy, byteVectorAppend, byteVectorUtf2Str :: [LispVal] -> IOThrowsError LispVal
+byteVectorCopy :: [LispVal] -> IOThrowsError LispVal
+
+-- | Create a copy of the given bytevector
+--
+--   Arguments:
+--
+--   * ByteVector - Bytevector to copy
+--
+--   * Number (optional) - Start of the region to copy
+--
+--   * Number (optional) - End of the region to copy
+--
+--   Returns: ByteVector - A new bytevector containing the copied region
+--
 byteVectorCopy (p@(Pointer _ _) : lvs) = do
     bv <- derefPtr p
     byteVectorCopy (bv : lvs)
@@ -420,6 +510,15 @@ byteVectorCopy [ByteVector bv, Number start, Number end] = do
 byteVectorCopy [badType] = throwError $ TypeMismatch "bytevector" badType
 byteVectorCopy badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Append many bytevectors into a new bytevector
+--
+--   Arguments:
+--
+--   * ByteVector (one or more) - Bytevectors to concatenate
+--
+--   Returns: ByteVector - A new bytevector containing the values
+--
+byteVectorAppend :: [LispVal] -> IOThrowsError LispVal
 byteVectorAppend bs = do
     let acc = BS.pack []
         conv :: LispVal -> IOThrowsError BSU.ByteString
@@ -432,11 +531,31 @@ byteVectorAppend bs = do
     return $ ByteVector $ BS.concat bs'
 -- TODO: error handling
 
+-- | Find the length of a bytevector
+--
+--   Arguments:
+--
+--   * ByteVector
+--
+--   Returns: Number - Length of the given bytevector
+--
+byteVectorLength :: [LispVal] -> IOThrowsError LispVal
 byteVectorLength [p@(Pointer _ _)] = derefPtr p >>= box >>= byteVectorLength
 byteVectorLength [(ByteVector bv)] = return $ Number $ toInteger $ BS.length bv
 byteVectorLength [badType] = throwError $ TypeMismatch "bytevector" badType
 byteVectorLength badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Return object at the given index of a bytevector
+--
+--   Arguments:
+--
+--   * ByteVector
+--
+--   * Number - Index of the bytevector to query
+--
+--   Returns: Object at the index
+--
+byteVectorRef :: [LispVal] -> IOThrowsError LispVal
 byteVectorRef (p@(Pointer _ _) : lvs) = do
     bv <- derefPtr p
     byteVectorRef (bv : lvs)
@@ -448,6 +567,15 @@ byteVectorRef [(ByteVector bv), (Number n)] = do
 byteVectorRef [badType] = throwError $ TypeMismatch "bytevector integer" badType
 byteVectorRef badArgList = throwError $ NumArgs (Just 2) badArgList
 
+-- | Convert a bytevector to a string
+--
+--   Arguments:
+--
+--   * ByteVector
+--
+--   Returns: String
+--
+byteVectorUtf2Str :: [LispVal] -> IOThrowsError LispVal
 byteVectorUtf2Str [p@(Pointer _ _)] = derefPtr p >>= box >>= byteVectorUtf2Str
 byteVectorUtf2Str [(ByteVector bv)] = do
     return $ String $ BSU.toString bv 
@@ -455,6 +583,14 @@ byteVectorUtf2Str [(ByteVector bv)] = do
 byteVectorUtf2Str [badType] = throwError $ TypeMismatch "bytevector" badType
 byteVectorUtf2Str badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Convert a string to a bytevector
+--
+--   Arguments:
+--
+--   * String
+--
+--   Returns: ByteVector
+--
 byteVectorStr2Utf :: [LispVal] -> IOThrowsError LispVal
 byteVectorStr2Utf [p@(Pointer _ _)] = derefPtr p >>= box >>= byteVectorStr2Utf
 byteVectorStr2Utf [(String s)] = do
@@ -466,7 +602,11 @@ byteVectorStr2Utf badArgList = throwError $ NumArgs (Just 1) badArgList
 
 -- ------------ Ptr Helper Primitives --------------
 
-wrapHashTbl, wrapLeadObj :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> IOThrowsError LispVal
+-- | A helper function to allow a pure function to work with pointers, by
+--   dereferencing the leading object in the argument list if it is
+--   a pointer. This is a special hash-table specific function that will
+--   also dereference a hash table key if it is included.
+wrapHashTbl :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> IOThrowsError LispVal
 wrapHashTbl fnc [p@(Pointer _ _)] = do
   val <- derefPtr p
   liftThrows $ fnc [val]
@@ -476,6 +616,10 @@ wrapHashTbl fnc (p@(Pointer _ _) : key : args) = do
   liftThrows $ fnc (ht : k : args)
 wrapHashTbl fnc args = liftThrows $ fnc args
 
+-- | A helper function to allow a pure function to work with pointers, by
+--   dereferencing the leading object in the argument list if it is
+--   a pointer.
+wrapLeadObj :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> IOThrowsError LispVal
 wrapLeadObj fnc [p@(Pointer _ _)] = do
   val <- derefPtr p
   liftThrows $ fnc [val]
@@ -487,12 +631,39 @@ wrapLeadObj fnc args = liftThrows $ fnc args
 -- ------------ Hash Table Primitives --------------
 
 -- Future: support (equal?), (hash) parameters
-hashTblMake, isHashTbl, hashTblExists, hashTblRef, hashTblSize, hashTbl2List, hashTblKeys, hashTblValues, hashTblCopy :: [LispVal] -> ThrowsError LispVal
+
+-- | Create a new hashtable
+--
+--   Arguments: (None)
+--
+--   Returns: HashTable
+--
+hashTblMake :: [LispVal] -> ThrowsError LispVal
 hashTblMake _ = return $ HashTable $ Data.Map.fromList []
 
+-- | Determine if a given object is a hashtable
+--
+--   Arguments:
+--
+--   * Object to inspect
+--
+--   Returns: Bool - True if arg was a hashtable, false otherwise
+--
+isHashTbl :: [LispVal] -> ThrowsError LispVal
 isHashTbl [(HashTable _)] = return $ Bool True
 isHashTbl _ = return $ Bool False
 
+-- | Determine if the given key is found in the hashtable
+--
+--   Arguments:
+--
+--   * HashTable to search
+--
+--   * Key to search for
+--
+--   Returns: Bool - True if found, False otherwise
+--
+hashTblExists :: [LispVal] -> ThrowsError LispVal
 hashTblExists [(HashTable ht), key@(_)] = do
   case Data.Map.lookup key ht of
     Just _ -> return $ Bool True
@@ -500,6 +671,18 @@ hashTblExists [(HashTable ht), key@(_)] = do
 hashTblExists [] = throwError $ NumArgs (Just 2) []
 hashTblExists args@(_ : _) = throwError $ NumArgs (Just 2) args
 
+-- | Retrieve the value from the hashtable for the given key.
+--   An error is thrown if the key is not found.
+--
+--   Arguments:
+--
+--   * HashTable to copy
+--
+--   * Object that is the key to query the table for
+--
+--   Returns: Object containing the key's value
+--
+hashTblRef :: [LispVal] -> ThrowsError LispVal
 hashTblRef [(HashTable ht), key@(_)] = do
   case Data.Map.lookup key ht of
     Just val -> return val
@@ -513,25 +696,62 @@ Nothing -> apply thunk [] -}
 hashTblRef [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblRef badArgList = throwError $ NumArgs (Just 2) badArgList
 
+hashTblSize :: [LispVal] -> ThrowsError LispVal
 hashTblSize [(HashTable ht)] = return $ Number $ toInteger $ Data.Map.size ht
 hashTblSize [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblSize badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Create a list containing all key/value pairs in the hashtable
+--
+--   Arguments:
+--
+--   * HashTable
+--
+--   Returns: List of (key, value) pairs
+--
+hashTbl2List :: [LispVal] -> ThrowsError LispVal
 hashTbl2List [(HashTable ht)] = do
   return $ List $ map (\ (k, v) -> List [k, v]) $ Data.Map.toList ht
 hashTbl2List [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTbl2List badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Create a list containing all keys in the hashtable
+--
+--   Arguments:
+--
+--   * HashTable
+--
+--   Returns: List containing the keys
+--
+hashTblKeys :: [LispVal] -> ThrowsError LispVal
 hashTblKeys [(HashTable ht)] = do
   return $ List $ map (\ (k, _) -> k) $ Data.Map.toList ht
 hashTblKeys [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblKeys badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Create a list containing all values in the hashtable
+--
+--   Arguments:
+--
+--   * HashTable
+--
+--   Returns: List containing the values
+--
+hashTblValues :: [LispVal] -> ThrowsError LispVal
 hashTblValues [(HashTable ht)] = do
   return $ List $ map (\ (_, v) -> v) $ Data.Map.toList ht
 hashTblValues [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblValues badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Create a new copy of a hashtable
+--
+--   Arguments:
+--
+--   * HashTable to copy
+--
+--   Returns: HashTable
+--
+hashTblCopy :: [LispVal] -> ThrowsError LispVal
 hashTblCopy [(HashTable ht)] = do
   return $ HashTable $ Data.Map.fromList $ Data.Map.toList ht
 hashTblCopy [badType] = throwError $ TypeMismatch "hash-table" badType
