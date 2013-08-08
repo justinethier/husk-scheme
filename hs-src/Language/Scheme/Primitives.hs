@@ -539,6 +539,14 @@ hashTblCopy badArgList = throwError $ NumArgs (Just 1) badArgList
 
 -- ------------ String Primitives --------------
 
+-- | Convert a list of characters to a string
+--
+--   Arguments:
+--
+--   * Character (one or more) - Character(s) to add to the string
+--
+--   Returns: String - new string built from given chars
+--
 buildString :: [LispVal] -> ThrowsError LispVal
 buildString [(Char c)] = return $ String [c]
 buildString (Char c : rest) = do
@@ -549,23 +557,53 @@ buildString (Char c : rest) = do
 buildString [badType] = throwError $ TypeMismatch "character" badType
 buildString badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Make a new string
+--
+--   Arguments:
+--
+--   * Number - number of characters in the string
+--
+--   * Char (optional) - Character to fill in each position of string.
+--                       Defaults to space
+--
+--   Returns: String - new string
+--
 makeString :: [LispVal] -> ThrowsError LispVal
 makeString [(Number n)] = return $ doMakeString n ' ' ""
 makeString [(Number n), (Char c)] = return $ doMakeString n c ""
 makeString badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- |Helper function
 doMakeString :: forall a . (Num a, Eq a) => a -> Char -> String -> LispVal
 doMakeString n char s =
     if n == 0
        then String s
        else doMakeString (n - 1) char (s ++ [char])
 
+-- | Determine the length of the given string
+--
+--   Arguments:
+--
+--   * String - String to examine
+--
+--   Returns: Number - Length of the given string
+--
 stringLength :: [LispVal] -> IOThrowsError LispVal
 stringLength [p@(Pointer _ _)] = derefPtr p  >>= box >>= stringLength
 stringLength [String s] = return $ Number $ foldr (const (+ 1)) 0 s -- Could probably do 'length s' instead...
 stringLength [badType] = throwError $ TypeMismatch "string" badType
 stringLength badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Get character at the given position of a string
+--
+--   Arguments:
+--
+--   * String - String to examine
+--
+--   * Number - Get the character at this position
+--
+--   Returns: Char
+--
 stringRef :: [LispVal] -> IOThrowsError LispVal
 stringRef [p@(Pointer _ _), k@(Number _)] = do
     s <- derefPtr p 
@@ -574,6 +612,18 @@ stringRef [(String s), (Number k)] = return $ Char $ s !! fromInteger k
 stringRef [badType] = throwError $ TypeMismatch "string number" badType
 stringRef badArgList = throwError $ NumArgs (Just 2) badArgList
 
+-- | Get a part of the given string
+--
+--   Arguments:
+--
+--   * String - Original string
+--
+--   * Number - Starting position of the substring
+--
+--   * Number - Ending position of the substring
+--
+--   Returns: String - substring of the original string
+--
 substring :: [LispVal] -> IOThrowsError LispVal
 substring (p@(Pointer _ _) : lvs) = do
   s <- derefPtr p
@@ -585,6 +635,16 @@ substring [(String s), (Number start), (Number end)] =
 substring [badType] = throwError $ TypeMismatch "string number number" badType
 substring badArgList = throwError $ NumArgs (Just 3) badArgList
 
+-- | Perform a case insensitive comparison of the given strings
+--
+--   Arguments:
+--
+--   * String - String to compare
+--
+--   * String - String to compare
+--
+--   Returns: Bool - True if strings are equal, false otherwise
+--
 stringCIEquals :: [LispVal] -> IOThrowsError LispVal
 stringCIEquals args = do
   List dargs <- recDerefPtrs $ List args
@@ -602,6 +662,7 @@ stringCIEquals args = do
                     then ciCmp s1 s2 (idx + 1)
                     else False
 
+-- |Helper function
 stringCIBoolBinop :: ([Char] -> [Char] -> Bool) -> [LispVal] -> IOThrowsError LispVal
 stringCIBoolBinop op args = do 
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
@@ -612,11 +673,20 @@ stringCIBoolBinop op args = do
     badArgList -> throwError $ NumArgs (Just 2) badArgList
   where strToLower str = map (toLower) str
 
+-- |Helper function
 charCIBoolBinop :: (Char -> Char -> Bool) -> [LispVal] -> ThrowsError LispVal
 charCIBoolBinop op [(Char s1), (Char s2)] = boolBinop unpackChar op [(Char $ toLower s1), (Char $ toLower s2)]
 charCIBoolBinop _ [badType] = throwError $ TypeMismatch "character character" badType
 charCIBoolBinop _ badArgList = throwError $ NumArgs (Just 2) badArgList
 
+-- | Append all given strings together into a single string
+--
+--   Arguments:
+--
+--   * String (one or more) - String(s) to concatenate
+--
+--   Returns: String - all given strings appended together as a single string
+--
 stringAppend :: [LispVal] -> IOThrowsError LispVal
 stringAppend (p@(Pointer _ _) : lvs) = do
   s <- derefPtr p
@@ -630,6 +700,16 @@ stringAppend (String st : sts) = do
 stringAppend [badType] = throwError $ TypeMismatch "string" badType
 stringAppend badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Convert given string to a number
+--
+--   Arguments:
+--
+--   * String - String to convert
+--
+--   * Number (optional) - Number base to convert from, defaults to base 10 (decimal)
+--
+--   Returns: Numeric type, actual type will depend upon given string
+--
 stringToNumber :: [LispVal] -> IOThrowsError LispVal
 stringToNumber (p@(Pointer _ _) : lvs) = do
   s <- derefPtr p
@@ -652,12 +732,28 @@ stringToNumber [(String s), Number radix] = do
 stringToNumber [badType] = throwError $ TypeMismatch "string" badType
 stringToNumber badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Convert the given string to a list of chars
+--
+--   Arguments:
+--
+--   * String - string to deconstruct
+--
+--   Returns: List - list of characters
+--
 stringToList :: [LispVal] -> IOThrowsError LispVal
 stringToList [p@(Pointer _ _)] = derefPtr p >>= box >>= stringToList
 stringToList [(String s)] = return $ List $ map (Char) s
 stringToList [badType] = throwError $ TypeMismatch "string" badType
 stringToList badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Convert the given list of characters to a string
+--
+--   Arguments:
+--
+--   * List - list of chars to convert
+--
+--   Returns: String - Resulting string
+--
 listToString :: [LispVal] -> IOThrowsError LispVal
 listToString [p@(Pointer _ _)] = derefPtr p >>= box >>= listToString
 listToString [(List [])] = return $ String ""
@@ -666,12 +762,28 @@ listToString [badType] = throwError $ TypeMismatch "list" badType
 listToString [] = throwError $ NumArgs (Just 1) []
 listToString args@(_ : _) = throwError $ NumArgs (Just 1) args
 
+-- | Create a copy of the given string
+--
+--   Arguments:
+--
+--   * String - String to copy
+--
+--   Returns: String - New copy of the given string
+--
 stringCopy :: [LispVal] -> IOThrowsError LispVal
 stringCopy [p@(Pointer _ _)] = derefPtr p >>= box >>= stringCopy
 stringCopy [String s] = return $ String s
 stringCopy [badType] = throwError $ TypeMismatch "string" badType
 stringCopy badArgList = throwError $ NumArgs (Just 2) badArgList
 
+-- | Determine if given object is an improper list
+--
+--   Arguments:
+--
+--   * Value to check
+--
+--   Returns: Bool - True if improper list, False otherwise
+--
 isDottedList :: [LispVal] -> IOThrowsError LispVal
 isDottedList ([p@(Pointer _ _)]) = derefPtr p >>= box >>= isDottedList
 isDottedList ([DottedList _ _]) = return $ Bool True
@@ -680,6 +792,14 @@ isDottedList ([List []]) = return $ Bool False
 isDottedList ([List _]) = return $ Bool True
 isDottedList _ = return $ Bool False
 
+-- | Determine if given object is a procedure
+--
+--   Arguments:
+--
+--   * Value to check
+--
+--   Returns: Bool - True if procedure, False otherwise
+--
 isProcedure :: [LispVal] -> ThrowsError LispVal
 isProcedure ([Continuation _ _ _ _ _]) = return $ Bool True
 isProcedure ([PrimitiveFunc _]) = return $ Bool True
@@ -690,36 +810,104 @@ isProcedure ([EvalFunc _]) = return $ Bool True
 isProcedure ([CustFunc _]) = return $ Bool True
 isProcedure _ = return $ Bool False
 
-isVector,isByteVector, isList :: LispVal -> IOThrowsError LispVal
+-- | Determine if given object is a bytevector
+--
+--   Arguments:
+--
+--   * Value to check
+--
+--   Returns: Bool - True if bytevector, False otherwise
+--
+isVector :: LispVal -> IOThrowsError LispVal
 isVector p@(Pointer _ _) = derefPtr p >>= isVector
 isVector (Vector _) = return $ Bool True
 isVector _ = return $ Bool False
+
+-- | Determine if given object is a bytevector
+--
+--   Arguments:
+--
+--   * Value to check
+--
+--   Returns: Bool - True if bytevector, False otherwise
+--
+isByteVector :: LispVal -> IOThrowsError LispVal
 isByteVector p@(Pointer _ _) = derefPtr p >>= isVector
 isByteVector (ByteVector _) = return $ Bool True
 isByteVector _ = return $ Bool False
+
+-- | Determine if given object is a list
+--
+--   Arguments:
+--
+--   * Value to check
+--
+--   Returns: Bool - True if list, False otherwise
+--
+isList :: LispVal -> IOThrowsError LispVal
 isList p@(Pointer _ _) = derefPtr p >>= isList
 isList (List _) = return $ Bool True
 isList _ = return $ Bool False
 
+-- | Determine if given object is the null list
+--
+--   Arguments:
+--
+--   * Value to check
+--
+--   Returns: Bool - True if null list, False otherwise
+--
 isNull :: [LispVal] -> IOThrowsError LispVal
 isNull ([p@(Pointer _ _)]) = derefPtr p >>= box >>= isNull
 isNull ([List []]) = return $ Bool True
 isNull _ = return $ Bool False
 
+-- | Determine if given object is the EOF marker
+--
+--   Arguments:
+--
+--   * Value to check
+--
+--   Returns: Bool - True if EOF, False otherwise
+--
 isEOFObject :: [LispVal] -> ThrowsError LispVal
 isEOFObject ([EOF]) = return $ Bool True
 isEOFObject _ = return $ Bool False
 
+-- | Determine if given object is a symbol
+--
+--   Arguments:
+--
+--   * Value to check
+--
+--   Returns: Bool - True if a symbol, False otherwise
+--
 isSymbol :: [LispVal] -> ThrowsError LispVal
 isSymbol ([Atom _]) = return $ Bool True
 isSymbol _ = return $ Bool False
 
+-- | Convert the given symbol to a string
+--
+--   Arguments:
+--
+--   * Atom - Symbol to convert
+--
+--   Returns: String
+--
 symbol2String :: [LispVal] -> ThrowsError LispVal
 symbol2String ([Atom a]) = return $ String a
 symbol2String [notAtom] = throwError $ TypeMismatch "symbol" notAtom
 symbol2String [] = throwError $ NumArgs (Just 1) []
 symbol2String args@(_ : _) = throwError $ NumArgs (Just 1) args
 
+-- | Convert a string to a symbol
+--
+--   Arguments:
+--
+--   * String (or pointer) - String to convert
+--
+--   Returns: Atom
+--
 string2Symbol :: [LispVal] -> IOThrowsError LispVal
 string2Symbol ([p@(Pointer _ _)]) = derefPtr p >>= box >>= string2Symbol
 string2Symbol ([String s]) = return $ Atom s
@@ -727,18 +915,50 @@ string2Symbol [] = throwError $ NumArgs (Just 1) []
 string2Symbol [notString] = throwError $ TypeMismatch "string" notString
 string2Symbol args@(_ : _) = throwError $ NumArgs (Just 1) args
 
+-- | Convert a character to uppercase
+--
+--   Arguments:
+--
+--   * Char
+--
+--   Returns: Char - Character in uppercase
+--
 charUpper :: [LispVal] -> ThrowsError LispVal
 charUpper [Char c] = return $ Char $ toUpper c
 charUpper [notChar] = throwError $ TypeMismatch "char" notChar
 
+-- | Convert a character to lowercase
+--
+--   Arguments:
+--
+--   * Char
+--
+--   Returns: Char - Character in lowercase
+--
 charLower :: [LispVal] -> ThrowsError LispVal
 charLower [Char c] = return $ Char $ toLower c
 charLower [notChar] = throwError $ TypeMismatch "char" notChar
 
+-- | Convert from a charater to an integer
+--
+--   Arguments:
+--
+--   * Char
+--
+--   Returns: Number
+--
 char2Int :: [LispVal] -> ThrowsError LispVal
 char2Int [Char c] = return $ Number $ toInteger $ ord c 
 char2Int [notChar] = throwError $ TypeMismatch "char" notChar
 
+-- | Convert from an integer to a character
+--
+--   Arguments:
+--
+--   * Number
+--
+--   Returns: Char
+--
 int2Char :: [LispVal] -> ThrowsError LispVal
 int2Char [Number n] = return $ Char $ chr $ fromInteger n 
 int2Char [notInt] = throwError $ TypeMismatch "integer" notInt
@@ -748,15 +968,39 @@ charPredicate :: (Char -> Bool) -> [LispVal] -> ThrowsError LispVal
 charPredicate pred ([Char c]) = return $ Bool $ pred c 
 charPredicate _ _ = return $ Bool False
 
+-- | Determine if the given value is a character
+--
+--   Arguments:
+--
+--   * LispVal to check
+--
+--   Returns: Bool - True if the argument is a character, False otherwise
+--
 isChar :: [LispVal] -> ThrowsError LispVal
 isChar ([Char _]) = return $ Bool True
 isChar _ = return $ Bool False
 
+-- | Determine if the given value is a string
+--
+--   Arguments:
+--
+--   * LispVal to check
+--
+--   Returns: Bool - True if the argument is a string, False otherwise
+--
 isString :: [LispVal] -> IOThrowsError LispVal
 isString [p@(Pointer _ _)] = derefPtr p >>= box >>= isString
 isString ([String _]) = return $ Bool True
 isString _ = return $ Bool False
 
+-- | Determine if the given value is a boolean
+--
+--   Arguments:
+--
+--   * LispVal to check
+--
+--   Returns: Bool - True if the argument is a boolean, False otherwise
+--
 isBoolean :: [LispVal] -> ThrowsError LispVal
 isBoolean ([Bool _]) = return $ Bool True
 isBoolean _ = return $ Bool False
@@ -765,6 +1009,7 @@ isBoolean _ = return $ Bool False
 -- Utility functions
 data Unpacker = forall a . Eq a => AnyUnpacker (LispVal -> ThrowsError a)
 
+-- |Determine if two lispval's are equal
 unpackEquals :: LispVal -> LispVal -> Unpacker -> ThrowsError Bool
 unpackEquals arg1 arg2 (AnyUnpacker unpacker) =
   do unpacked1 <- unpacker arg1
@@ -798,25 +1043,56 @@ charBoolBinop = boolBinop unpackChar
 boolBoolBinop :: (Bool -> Bool -> Bool) -> [LispVal] -> ThrowsError LispVal
 boolBoolBinop = boolBinop unpackBool
 
+-- | Unpack a LispVal char
+--
+--   Arguments:
+--
+--   * Char - Character to unpack
+--
 unpackChar :: LispVal -> ThrowsError Char
 unpackChar (Char c) = return c
 unpackChar notChar = throwError $ TypeMismatch "character" notChar
 
+-- | Unpack a LispVal String
+--
+--   Arguments:
+--
+--   * String - String to unpack
+--
 unpackStr :: LispVal -> ThrowsError String
 unpackStr (String s) = return s
 unpackStr (Number s) = return $ show s
 unpackStr (Bool s) = return $ show s
 unpackStr notString = throwError $ TypeMismatch "string" notString
 
+-- | Unpack a LispVal boolean
+--
+--   Arguments:
+--
+--   * Bool - Boolean to unpack
+--
 unpackBool :: LispVal -> ThrowsError Bool
 unpackBool (Bool b) = return b
 unpackBool notBool = throwError $ TypeMismatch "boolean" notBool
 
+-- | Return the current time, in seconds
+--
+--   Arguments: (None)
+--
+--   Returns: Current UNIX timestamp in seconds
 currentTimestamp :: [LispVal] -> IOThrowsError LispVal
 currentTimestamp _ = do
     cur <- liftIO $ Data.Time.Clock.POSIX.getPOSIXTime
     return $ Float $ realToFrac cur
 
+-- | Execute a system command on the underlying OS.
+--
+--   Arguments:
+--
+--   * String - Command to execute
+--
+--   Returns: Integer - program return status
+--
 system :: [LispVal] -> IOThrowsError LispVal
 system [String cmd] = do
     result <- liftIO $ System.Cmd.system cmd
