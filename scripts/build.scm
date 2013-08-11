@@ -23,7 +23,7 @@
     "make"
     "make sdist"
     "make test"
-; TODO:    "make testc"
+    "make testc"
     "echo \"Make sure no tests failed, and then press Enter to continue\" ; read temp"
 
     "make doc"
