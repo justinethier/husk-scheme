@@ -1,3 +1,7 @@
+#! /usr/bin/env huski
+;
+; husk automated build script
+;
 (define *build-number* "3.12")
 
 (define-syntax script
