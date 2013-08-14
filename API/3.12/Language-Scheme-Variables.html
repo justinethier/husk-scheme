@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Language.Scheme.Variables</title><link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" /><script src="haddock-util.js" type="text/javascript"></script><script type="text/javascript">//<![CDATA[
 window.onload = function () {pageLoad();setSynopsis("mini_Language-Scheme-Variables.html");};
 //]]>
-</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">husk-scheme-3.12: R5RS Scheme interpreter, compiler, and library.</p></div><div id="content"><div id="module-header"><table class="info"><tr><th>Portability</th><td>portable</td></tr><tr><th>Stability</th><td>experimental</td></tr><tr><th>Maintainer</th><td>github.com/justinethier</td></tr><tr><th>Safe Haskell</th><td>Safe-Infered</td></tr></table><p class="caption">Language.Scheme.Variables</p></div><div id="table-of-contents"><p class="caption">Contents</p><ul><li><a href="#g:1">Environments
+</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">husk-scheme-3.12: R5RS Scheme interpreter, compiler, and library.</p></div><div id="content"><div id="module-header"><table class="info"><tr><th>Portability</th><td>portable</td></tr><tr><th>Stability</th><td>experimental</td></tr><tr><th>Maintainer</th><td>github.com/justinethier</td></tr><tr><th>Safe Haskell</th><td>Safe-Inferred</td></tr></table><p class="caption">Language.Scheme.Variables</p></div><div id="table-of-contents"><p class="caption">Contents</p><ul><li><a href="#g:1">Environments
 </a></li><li><a href="#g:2">Getters
 </a></li><li><a href="#g:3">Setters
 </a></li><li><a href="#g:4">Predicates
@@ -12,7 +12,9 @@ and the environments that contain them.
 </h1><div class="top"><p class="src"><a name="v:printEnv" class="def">printEnv</a></p><div class="subs arguments"><p class="caption">Arguments</p><table><tr><td class="src">:: <a href="Language-Scheme-Types.html#t:Env">Env</a></td><td class="doc"><p>Environment
 </p></td></tr><tr><td class="src">-&gt; IO String</td><td class="doc"><p>Contents of the env as a string
 </p></td></tr></table></div><div class="doc"><p>Show the contents of an environment
-</p></div></div><div class="top"><p class="src"><a name="v:recPrintEnv" class="def">recPrintEnv</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; IO String</p></div><div class="top"><p class="src"><a name="v:recExportsFromEnv" class="def">recExportsFromEnv</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; IO [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>]</p></div><div class="top"><p class="src"><a name="v:exportsFromEnv" class="def">exportsFromEnv</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; IO [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>]</p><div class="doc"><p>Return a list of symbols exported from an environment
+</p></div></div><div class="top"><p class="src"><a name="v:recPrintEnv" class="def">recPrintEnv</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; IO String</p><div class="doc"><p>Recursively print an environment to string
+</p></div></div><div class="top"><p class="src"><a name="v:recExportsFromEnv" class="def">recExportsFromEnv</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; IO [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>]</p><div class="doc"><p>Recursively find all exports from the given environment
+</p></div></div><div class="top"><p class="src"><a name="v:exportsFromEnv" class="def">exportsFromEnv</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; IO [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>]</p><div class="doc"><p>Return a list of symbols exported from an environment
 </p></div></div><div class="top"><p class="src"><a name="v:copyEnv" class="def">copyEnv</a></p><div class="subs arguments"><p class="caption">Arguments</p><table><tr><td class="src">:: <a href="Language-Scheme-Types.html#t:Env">Env</a></td><td class="doc"><p>Source environment
 </p></td></tr><tr><td class="src">-&gt; IO <a href="Language-Scheme-Types.html#t:Env">Env</a></td><td class="doc"><p>A copy of the source environment
 </p></td></tr></table></div><div class="doc"><p>Create a deep copy of an environment
@@ -26,7 +28,8 @@ and the environments that contain them.
   another environment.
 </p><p>The destination environment is modified!
 </p></div></div><div class="top"><p class="src"><a name="v:topmostEnv" class="def">topmostEnv</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; IO <a href="Language-Scheme-Types.html#t:Env">Env</a></p><div class="doc"><p>Find the top-most environment
-</p></div></div><div class="top"><p class="src"><a name="v:nullEnvWithParent" class="def">nullEnvWithParent</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; IO <a href="Language-Scheme-Types.html#t:Env">Env</a></p></div><div class="top"><p class="src"><a name="v:findNamespacedEnv" class="def">findNamespacedEnv</a></p><div class="subs arguments"><p class="caption">Arguments</p><table><tr><td class="src">:: <a href="Language-Scheme-Types.html#t:Env">Env</a></td><td class="doc"><p>Environment to begin the search; 
+</p></div></div><div class="top"><p class="src"><a name="v:nullEnvWithParent" class="def">nullEnvWithParent</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; IO <a href="Language-Scheme-Types.html#t:Env">Env</a></p><div class="doc"><p>Create a null environment with the given environment as its parent.
+</p></div></div><div class="top"><p class="src"><a name="v:findNamespacedEnv" class="def">findNamespacedEnv</a></p><div class="subs arguments"><p class="caption">Arguments</p><table><tr><td class="src">:: <a href="Language-Scheme-Types.html#t:Env">Env</a></td><td class="doc"><p>Environment to begin the search; 
   parent env's will be searched as well.
 </p></td></tr><tr><td class="src">-&gt; Char</td><td class="doc"><p>Namespace
 </p></td></tr><tr><td class="src">-&gt; String</td><td class="doc"><p>Variable
@@ -110,4 +113,4 @@ and the environments that contain them.
   any pointers found along the way. 
 </p><p>This could potentially be expensive on large data structures 
   since it must walk the entire object.
-</p></div></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.10.0</p></div></body></html>
+</p></div></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.13.2</p></div></body></html>
