@@ -34,6 +34,7 @@ module Language.Scheme.Variables
     , getVar'
     , getNamespacedVar 
     , getNamespacedVar' 
+    , getNamespacedRef 
     -- * Setters
     , defineVar
     , defineNamespacedVar
@@ -270,6 +271,20 @@ getVar' :: Env       -- ^ Environment
         -> IOThrowsError (Maybe LispVal) -- ^ Contents of the variable
 getVar' envRef var = getNamespacedVar' envRef varNamespace var
 
+-- |Retrieve an ioRef defined in a given namespace
+getNamespacedRef :: Env     -- ^ Environment
+                 -> Char    -- ^ Namespace
+                 -> String  -- ^ Variable
+                 -> IOThrowsError (IORef LispVal)
+getNamespacedRef envRef
+                 namespace
+                 var = do
+  let fnc io = return io
+  v <- getNamespacedObj' envRef namespace var fnc
+  case v of
+    Just a -> return a
+    Nothing -> (throwError $ UnboundVar "Getting an unbound variable" var)
+
 -- |Retrieve the value of a variable defined in a given namespace
 getNamespacedVar :: Env     -- ^ Environment
                  -> Char    -- ^ Namespace
@@ -292,13 +307,25 @@ getNamespacedVar' :: Env     -- ^ Environment
 getNamespacedVar' envRef
                  namespace
                  var = do 
+    getNamespacedObj' envRef namespace var fnc
+  where fnc io = readIORef io
+
+getNamespacedObj' :: Env     -- ^ Environment
+                 -> Char    -- ^ Namespace
+                 -> String  -- ^ Variable
+                 -> (IORef LispVal -> IO a)
+                 -> IOThrowsError (Maybe a) -- ^ Contents of the variable, if found
+getNamespacedObj' envRef
+                 namespace
+                 var 
+                 unpackFnc = do 
     binds <- liftIO $ readIORef $ bindings envRef
     case Data.Map.lookup (getVarName namespace var) binds of
       (Just a) -> do
-          v <- liftIO $ readIORef a
+          v <- liftIO $ unpackFnc a
           return $ Just v
       Nothing -> case parentEnv envRef of
-                   (Just par) -> getNamespacedVar' par namespace var
+                   (Just par) -> getNamespacedObj' par namespace var unpackFnc
                    Nothing -> return Nothing
 
 -- |Set a variable in the default namespace
