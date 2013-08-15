@@ -1295,7 +1295,7 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
 
             -- TODO: these need to be rewritten to actually be in 
             -- the IO monad, tmpWrap is just temporary
-              ("eq?",    tmpWrap eqv),
+              ("eq?",    eq),
               ("eqv?",   tmpWrap eqv),
               ("equal?", tmpWrap equal),
 
@@ -1352,6 +1352,7 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
                 ("system", system),
                 ("gensym", gensym)]
 
+
 -- TODO:
 -- This function is a temporary stopgap that will go
 -- away before this branch is merged
@@ -1359,6 +1360,20 @@ tmpWrap :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> IOThrowsError Lisp
 tmpWrap fnc lvs = do
     List result <- recDerefPtrs $ List lvs 
     liftThrows $ fnc result
+
+-- TODO: move this to a more appropriate place
+eq :: [LispVal] -> IOThrowsError LispVal
+eq [(Pointer pA envA), (Pointer pB envB)] = do
+    if pA == pB 
+       then do
+         -- TODO: but, what if the parent bindings match?
+         refA <- getNamespacedRef envA varNamespace pA
+         refB <- getNamespacedRef envB varNamespace pB
+         return $ Bool $ refA == refB
+       else return $ Bool False
+eq args = tmpWrap eqv args
+-- End TODO section
+
 
 printEnv' :: [LispVal] -> IOThrowsError LispVal
 printEnv' [LispEnv env] = do
