@@ -50,6 +50,7 @@ module Language.Scheme.Variables
     , derefPtr
 --    , derefPtrs
     , recDerefPtrs
+    , recDerefToFnc
     ) where
 import Language.Scheme.Types
 import Control.Monad.Error
@@ -616,6 +617,14 @@ recDerefPtrs (Pointer p env) = do
     result <- getVar env p
     recDerefPtrs result 
 recDerefPtrs v = return v
+
+-- |A helper to recursively dereference all pointers and
+--  pass results to a function
+recDerefToFnc :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] 
+            -> IOThrowsError LispVal
+recDerefToFnc fnc lvs = do
+    List result <- recDerefPtrs $ List lvs 
+    liftThrows $ fnc result
 
 -- |A predicate to determine if the given lisp value 
 --  is an "object" that can be pointed to.

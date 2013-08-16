@@ -21,6 +21,7 @@ module Language.Scheme.Primitives (
    car
  , cdr 
  , cons
+ , eq
  , equal 
  -- ** Vector
  , buildVector 
@@ -503,6 +504,18 @@ cons [x, List xs] = return $ List $ x : xs
 cons [x, DottedList xs xlast] = return $ DottedList (x : xs) xlast
 cons [x1, x2] = return $ DottedList [x1] x2
 cons badArgList = throwError $ NumArgs (Just 2) badArgList
+
+-- | Use pointer equality to compare two objects if possible, otherwise
+--   fall back to the normal equality comparison
+eq :: [LispVal] -> IOThrowsError LispVal
+eq [(Pointer pA envA), (Pointer pB envB)] = do
+    if pA == pB 
+       then do
+         refA <- getNamespacedRef envA varNamespace pA
+         refB <- getNamespacedRef envB varNamespace pB
+         return $ Bool $ refA == refB
+       else return $ Bool False
+eq args = recDerefToFnc eqv args
 
 -- | Recursively compare two LispVals for equality
 --
