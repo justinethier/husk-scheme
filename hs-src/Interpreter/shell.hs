@@ -75,11 +75,10 @@ showHelp _ = do
   putStrLn "  Options may be any of the following:"
   putStrLn ""
   putStrLn "  -h -? --help      Display this information"
--- TODO: specify scheme rev via command line
---  putStrLn "  -r --revision     Specify the scheme revision to use:"
---  putStrLn ""
---  putStrLn "                      5 - r5rs (default)"
---  putStrLn "                      7 - r7rs small"
+  putStrLn "  -r --revision     Specify the scheme revision to use:"
+  putStrLn ""
+  putStrLn "                      5 - r5rs (default)"
+  putStrLn "                      7 - r7rs small"
   putStrLn ""
   exitWith ExitSuccess
 
@@ -92,8 +91,11 @@ flushStr str = putStr str >> hFlush stdout
 
 -- |Execute a single scheme file from the command line
 runOne :: String -> [String] -> IO ()
-runOne _ args = do
-  env <- LSC.r5rsEnv >>= flip LSV.extendEnv
+runOne "7" args = runOneWenv LSC.r7rsEnv args
+runOne _ args = runOneWenv LSC.r5rsEnv args
+
+runOneWenv initEnv args = do
+  env <- initEnv >>= flip LSV.extendEnv
                           [((LSV.varNamespace, "args"),
                            List $ map String $ drop 1 args)]
 
@@ -114,9 +116,15 @@ runOne _ args = do
 
 -- |Start the REPL (interactive interpreter)
 runRepl :: String -> IO ()
+runRepl "7" = do
+    env <- liftIO $ LSC.r7rsEnv
+    runReplWenv env
 runRepl _ = do
-    env <- LSC.r5rsEnv
+    env <- liftIO $ LSC.r5rsEnv 
+    runReplWenv env
 
+runReplWenv :: Env -> IO ()
+runReplWenv env = do
     let settings = HL.Settings (completeScheme env) Nothing True
     HL.runInputT settings (loop env)
     where

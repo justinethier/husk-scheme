@@ -28,7 +28,7 @@ module Language.Scheme.Core
     , primitiveBindings
     , r5rsEnv
     , r5rsEnv'
-    -- , r7rsEnv
+    , r7rsEnv
     , r7rsTimeEnv
     , version
     -- * Utility functions
