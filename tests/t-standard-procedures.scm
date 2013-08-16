@@ -104,16 +104,15 @@
     #t
     "x eqv")
 
-; Many tests that do not meet spec
 (assert/equal (eq? 'a 'a) #t "a's eq")
 (assert/equal (eq? '(a) '(a)) #t "a lists eq")
-;(assert/equal (eq? (list 'a) (list 'a))  #f)
+(assert/equal (eq? (list 'a) (list 'a))  #f)
 (assert/equal (eq? "a" "a") #t "a strings eq")
 (assert/equal (eq? "" "") #t "empty strings eq")
 (assert/equal (eq? '() '())              #t)
 (assert/equal (eq? 2 2) #t "2's eq")
 (assert/equal (eq? #\A #\A) #t "A chars eq")
-;(assert/equal (eq? car car)              #t)
+(assert/equal (eq? car car)              #t)
 (assert/equal (let ((n (+ 2 3)))
                    (eq? n n))
               #t
@@ -122,8 +121,8 @@
     (eq? x x))              #t "x as a list eq")
 (assert/equal (let ((x '#()))
     (eq? x x))              #t "x as vector eq")
-;(assert/equal (let ((p (lambda (x) x)))
-;    (eq? p p))              #t)
+(assert/equal (let ((p (lambda (x) x)))
+    (eq? p p))              #t)
 
 (assert/equal (equal? 'a 'a) #t "a's equal")
 (assert/equal (equal? '(a) '(a))         #t "a lists equal")
