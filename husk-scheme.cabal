@@ -65,6 +65,7 @@ Library
   Extensions:      ExistentialQuantification
   Hs-Source-Dirs:  hs-src
   Exposed-Modules: Language.Scheme.Core
+                   Language.Scheme.Environments
                    Language.Scheme.Types
                    Language.Scheme.Variables
                    Language.Scheme.Compiler
