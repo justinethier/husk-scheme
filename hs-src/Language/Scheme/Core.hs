@@ -983,39 +983,46 @@ r5rsEnv' = do
 
   return env
 
+-- |Load the standard r7rs environment, including libraries
+r7rsEnv :: IO Env
+r7rsEnv = do
+  env <- r7rsEnv'
+  -- Bit of a hack to load (import)
+  _ <- evalLisp' env $ List [Atom "%bootstrap-import"]
+
+  return env
 -- |Load the standard r7rs environment
 --
 -- TODO: This is just a stub, do not try using it yet!
 --
-r7rsEnv :: IO Env
-r7rsEnv = do
-  -- TODO: should there be a primitive bindings for r7rs??
-  --env <- primitiveBindings
-  env <- nullEnv
+r7rsEnv' :: IO Env
+r7rsEnv' = do
+  -- TODO: longer term, will need r7rs bindings instead of these
+  env <- primitiveBindings
 
--- TODO: these are obsolete with r7rs, should use libraries instead
---  stdlib <- PHS.getDataFileName "lib/stdlib.scm"
---  srfi55 <- PHS.getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
---  
---  -- Load standard library
---  _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
+  -- TODO: longer term, should only need (scheme base), I think
+  stdlib <- PHS.getDataFileName "lib/stdlib.scm"
+  
+  -- Load standard library
+  _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
 --
---  -- Load (require-extension), which can be used to load other SRFI's
---  _ <- evalString env $ "(load \"" ++ (escapeBackslashes srfi55) ++ "\")"
---  registerExtensions env PHS.getDataFileName
+-- TODO: probably will have to load some scheme libraries for modules.scm to work
+--  maybe the 'base' libraries from (scheme base) would be good enough?
 
+#ifdef UseLibraries
   -- Load module meta-language 
-  -- Note: there is no ifdef here because modules are a core part of r7rs
   metalib <- PHS.getDataFileName "lib/modules.scm"
   metaEnv <- nullEnvWithParent env -- Load env as parent of metaenv
   _ <- evalString metaEnv $ "(load \"" ++ (escapeBackslashes metalib) ++ "\")"
   -- Load meta-env so we can find it later
   _ <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
-  -- Bit of a hack to load (import)
-  _ <- evalLisp' env $ List [Atom "%bootstrap-import"]
-  -- Load (r5rs base)
+  -- Load base primitives
   _ <- evalString metaEnv
-         "(add-module! '(scheme r5rs) (make-module #f (interaction-environment) '()))"
+         "(add-module! '(scheme) (make-module #f (bootstrap-r7rs-environment) '()))"
+  timeEnv <- liftIO $ r7rsTimeEnv
+  _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "time", Atom "posix"]], List [Atom "make-module", Bool False, LispEnv timeEnv, List [Atom "quote", List []]]]
+#endif
+
   return env
 
 -- | Load haskell bindings used for the r7rs time library
@@ -1148,6 +1155,10 @@ evalfuncImport [
 evalfuncImport args@(cont@(Continuation env _ _ _ _ ) : cs) = do
     throwError $ TypeMismatch "import fields" $ List cs
 
+bootstrapR7rsEnv _ = do
+    env <- liftIO $ primitiveBindings
+    return $ LispEnv env
+
 -- |Load import into the main environment
 bootstrapImport [cont@(Continuation env _ _ _ _)] = do
     LispEnv me <- getVar env "*meta-env*"
@@ -1240,6 +1251,7 @@ evalFunctions =  [  ("apply", evalfuncApply)
 #ifdef UseLibraries
                   , ("%import", evalfuncImport)
                   , ("%bootstrap-import", bootstrapImport)
+                  , ("%bootstrap-r7rs-environment", bootstrapR7rsEnv)
 #endif
                   , ("exit-fail", evalfuncExitFail)
                   , ("exit-success", evalfuncExitSuccess)
