@@ -1,14 +1,4 @@
-; TODO: This file is just a stub for
-;       future r7rs library support
-;;
-;;
-;; need to build it out now...
-;;
-;;
-
-;(define-library (scheme base)
-;    (export-all)
-;    (import (scheme)))
+;; TODO: this is incomplete at the moment
 
 ;;;
 ;;; husk-scheme
@@ -16,13 +6,12 @@
 ;;;
 ;;; Written by Justin Ethier
 ;;;
-;;; r5rs equivalent libraries
-;;;
-;;; This library exposes an R5RS equivalent to 
-;;; the corresponding R7RS-small library.
+;;; r7rs-small base library
 ;;;
 
 (define-library (scheme base)
+; TODO: load scheme defs from another file?
+; maybe good enough that that other file is part of (scheme)
     (export
     *
     +
@@ -265,13 +254,4 @@
     ;write-string
     ;write-u8
     )
-    (import (scheme r5rs))) ;; TODO: r5rs is not ideal, should use a different env,
-                            ;; and can just add the stdlib scheme code here
-                            ;; instead of using stdlib.scm.
-                            ;;
-                            ;; that file's contents will just be interspersed here...
-                            ;;
-                            ;; not thrilled with the code duplication, but there
-                            ;; is probably no helping that, at least in the
-                            ;; short term
-
+    (import (scheme)))

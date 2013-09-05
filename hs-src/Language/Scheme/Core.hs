@@ -64,7 +64,7 @@ import qualified Data.Map
 import Data.Word
 import qualified System.Exit
 import System.IO
--- import Debug.Trace
+import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -1017,10 +1017,11 @@ r7rsEnv' = do
   -- Load meta-env so we can find it later
   _ <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
   -- Load base primitives
-  _ <- evalString metaEnv
-         "(add-module! '(scheme) (make-module #f (bootstrap-r7rs-environment) '()))"
+  debug <- evalString metaEnv
+-- TODO: should be able to use evalLisp' and r7rsEnv below, instead of bootstrap
+         "(add-module! '(scheme) (make-module #f (%bootstrap-r7rs-environment) '()))"
   timeEnv <- liftIO $ r7rsTimeEnv
-  _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "time", Atom "posix"]], List [Atom "make-module", Bool False, LispEnv timeEnv, List [Atom "quote", List []]]]
+  _ <- (trace ("DEBUG: " ++ show debug) evalLisp') metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "time", Atom "posix"]], List [Atom "make-module", Bool False, LispEnv timeEnv, List [Atom "quote", List []]]]
 #endif
 
   return env
