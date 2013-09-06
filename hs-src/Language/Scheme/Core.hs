@@ -64,7 +64,7 @@ import qualified Data.Map
 import Data.Word
 import qualified System.Exit
 import System.IO
-import Debug.Trace
+-- import Debug.Trace
 
 -- |husk version number
 version :: String
@@ -935,6 +935,12 @@ primitiveBindings = nullEnv >>=
   where domakeFunc constructor (var, func) = 
             ((varNamespace, var), constructor func)
 
+--baseBindings :: IO Env
+--baseBindings = nullEnv >>= 
+--    (flip extendEnv $ map (domakeFunc EvalFunc) evalFunctions)
+--  where domakeFunc constructor (var, func) = 
+--            ((varNamespace, var), constructor func)
+
 -- |An empty environment with the %import function. This is presently
 --  just intended for internal use by the compiler.
 nullEnvWithImport :: IO Env
@@ -998,13 +1004,16 @@ r7rsEnv = do
 r7rsEnv' :: IO Env
 r7rsEnv' = do
   -- TODO: longer term, will need r7rs bindings instead of these
-  env <- primitiveBindings
+  -- basically want to limit the base bindings to the absolute minimum, but
+  -- need enough to get the meta language working
+  env <- primitiveBindings --baseBindings
+--  baseEnv <- primitiveBindings
 
   -- TODO: longer term, should only need (scheme base), I think
   stdlib <- PHS.getDataFileName "lib/stdlib.scm"
   
   -- Load standard library
-  _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
+  _ <- evalString env {-baseEnv-} $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
 --
 -- TODO: probably will have to load some scheme libraries for modules.scm to work
 --  maybe the 'base' libraries from (scheme base) would be good enough?
@@ -1017,11 +1026,10 @@ r7rsEnv' = do
   -- Load meta-env so we can find it later
   _ <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
   -- Load base primitives
-  debug <- evalString metaEnv
--- TODO: should be able to use evalLisp' and r7rsEnv below, instead of bootstrap
-         "(add-module! '(scheme) (make-module #f (%bootstrap-r7rs-environment) '()))"
+  _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme"]], List [Atom "make-module", Bool False, LispEnv env {-baseEnv-}, List [Atom "quote", List []]]]
+
   timeEnv <- liftIO $ r7rsTimeEnv
-  _ <- (trace ("DEBUG: " ++ show debug) evalLisp') metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "time", Atom "posix"]], List [Atom "make-module", Bool False, LispEnv timeEnv, List [Atom "quote", List []]]]
+  _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "time", Atom "posix"]], List [Atom "make-module", Bool False, LispEnv timeEnv, List [Atom "quote", List []]]]
 #endif
 
   return env
@@ -1156,10 +1164,6 @@ evalfuncImport [
 evalfuncImport args@(cont@(Continuation env _ _ _ _ ) : cs) = do
     throwError $ TypeMismatch "import fields" $ List cs
 
-bootstrapR7rsEnv _ = do
-    env <- liftIO $ primitiveBindings
-    return $ LispEnv env
-
 -- |Load import into the main environment
 bootstrapImport [cont@(Continuation env _ _ _ _)] = do
     LispEnv me <- getVar env "*meta-env*"
@@ -1252,7 +1256,6 @@ evalFunctions =  [  ("apply", evalfuncApply)
 #ifdef UseLibraries
                   , ("%import", evalfuncImport)
                   , ("%bootstrap-import", bootstrapImport)
-                  , ("%bootstrap-r7rs-environment", bootstrapR7rsEnv)
 #endif
                   , ("exit-fail", evalfuncExitFail)
                   , ("exit-success", evalfuncExitSuccess)
