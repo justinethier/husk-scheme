@@ -15,6 +15,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; modules
 
+; JAE - load necessary scheme libraries
+; TODO: this is too much stuff (core), make this more specific
+;(load "cxr.scm")
+;(load "core.scm")
+; END loading
+
 ;; Hacked version of this function req'd to get everything to work
 (define (identifier->symbol s) s)
 

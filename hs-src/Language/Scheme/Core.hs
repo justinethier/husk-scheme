@@ -1014,7 +1014,7 @@ r7rsEnv' = do
   
   -- Load standard library
   _ <- evalString env {-baseEnv-} $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
---
+
 -- TODO: probably will have to load some scheme libraries for modules.scm to work
 --  maybe the 'base' libraries from (scheme base) would be good enough?
 
