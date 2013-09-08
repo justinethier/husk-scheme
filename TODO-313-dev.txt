@@ -1,6 +1,9 @@
 TODO on the 313-dev branch:
 
 - migrate (scheme r5rs) libraries up to (scheme), per r7rs
+- review each library, there are missing functions and functions exposed at top level
+  (and possibly base) that should not be - such as load, read, write, eval, etc
+
 - delete the temporary (scheme r5rs) libs after suitable r7rs versions are created
 - consider creating r7rs primitiveBindings in core, to minimize exported bindings
   file-exists, delete would be good choices to reorganize, there should be others as well
