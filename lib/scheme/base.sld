@@ -73,7 +73,8 @@
     eqv?
     error
     even?
-    exact->inexact ; r5rs definition
+    (rename inexact->exact exact)
+    (rename exact->inexact inexact)
     expt
     floor
     for-each
@@ -81,7 +82,6 @@
     import
     ;include
     ;include-ci
-    inexact->exact ; r5rs definition
     input-port?
     integer->char
     integer?
