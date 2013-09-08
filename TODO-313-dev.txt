@@ -11,3 +11,4 @@ TODO on the 313-dev branch:
 - what else?
 - remember to delete this file before merging back to master
 - hang on import of (scheme r5rs) in r7rs mode
+- need to add an r7rs test suite, and consider also pulling in tests from chibi-scheme
