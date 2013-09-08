@@ -8,5 +8,9 @@
 ;;;
 
 (define-library (scheme r5rs)
+
+
+; TODO: this is broken somehow, goes into a 100% CPU loop
+;       when imported by the REPL
     (export-all)
     (import (scheme r5rs)))
