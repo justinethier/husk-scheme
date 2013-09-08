@@ -1009,11 +1009,12 @@ r7rsEnv' = do
   env <- primitiveBindings --baseBindings
 --  baseEnv <- primitiveBindings
 
-  -- TODO: longer term, should only need (scheme base), I think
-  stdlib <- PHS.getDataFileName "lib/stdlib.scm"
-  
-  -- Load standard library
-  _ <- evalString env {-baseEnv-} $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
+  -- Load necessary libraries
+  -- Unfortunately this adds them in the top-level environment (!!)
+  cxr <- PHS.getDataFileName "lib/cxr.scm"
+  _ <- evalString env {-baseEnv-} $ "(load \"" ++ (escapeBackslashes cxr) ++ "\")" 
+  core <- PHS.getDataFileName "lib/core.scm"
+  _ <- evalString env {-baseEnv-} $ "(load \"" ++ (escapeBackslashes core) ++ "\")" 
 
 -- TODO: probably will have to load some scheme libraries for modules.scm to work
 --  maybe the 'base' libraries from (scheme base) would be good enough?

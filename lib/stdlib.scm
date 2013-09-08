@@ -9,3 +9,4 @@
 
 (load "cxr.scm")
 (load "core.scm")
+(load "lazy.scm")
