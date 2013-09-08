@@ -4,7 +4,7 @@
 ;;;
 ;;; Written by Justin Ethier
 ;;;
-;;; r5rs inexact library
+;;; r7rs-small inexact library
 ;;;
 
 (define-library (scheme inexact)

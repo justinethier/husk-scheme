@@ -4,7 +4,7 @@
 ;;;
 ;;; Written by Justin Ethier
 ;;;
-;;; r5rs lazy library
+;;; r7rs lazy library
 ;;;
 
 (define-library (scheme lazy)

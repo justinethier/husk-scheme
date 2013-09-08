@@ -4,7 +4,7 @@
 ;;;
 ;;; Written by Justin Ethier
 ;;;
-;;; r5rs load library
+;;; r7rs load library
 ;;;
 
 (define-library (scheme load)

@@ -4,7 +4,7 @@
 ;;;
 ;;; Written by Justin Ethier
 ;;;
-;;; r5rs write library
+;;; r7rs write library
 ;;;
 
 (define-library (scheme write)

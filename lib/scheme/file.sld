@@ -4,23 +4,20 @@
 ;;;
 ;;; Written by Justin Ethier
 ;;;
-;;; r5rs equivalent libraries
-;;;
-;;; This library exposes an R5RS equivalent to 
-;;; the corresponding R7RS-small library.
+;;; r7rs file library
 ;;;
 
-(define-library (scheme r5rs file)
+(define-library (scheme file)
     (export
         call-with-input-file
         call-with-output-file
         delete-file
         file-exists?
-        ;open-binary-input-file
-        ;open-binary-output-file
+        ;TODO: open-binary-input-file
+        ;TODO: open-binary-output-file
         open-input-file
         open-output-file
-        ;with-input-from-file
-        ;with-output-to-file
+        ;TODO: with-input-from-file
+        ;TODO: with-output-to-file
     )
-    (import (scheme r5rs)))
+    (import (scheme)))

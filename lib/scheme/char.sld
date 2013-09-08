@@ -4,13 +4,10 @@
 ;;;
 ;;; Written by Justin Ethier
 ;;;
-;;; r5rs equivalent libraries
-;;;
-;;; This library exposes an R5RS equivalent to 
-;;; the corresponding R7RS-small library.
+;;; r7rs-small char library
 ;;;
 
-(define-library (scheme r5rs char)
+(define-library (scheme char)
     (export
         char-alphabetic?
         char-ci<=?
@@ -35,4 +32,4 @@
         ;string-foldcase
         ;string-upcase
     )
-    (import (scheme r5rs)))
+    (import (scheme)))

@@ -4,7 +4,7 @@
 ;;;
 ;;; Written by Justin Ethier
 ;;;
-;;; r5rs read library
+;;; r7rs read library
 ;;;
 
 (define-library (scheme  read)

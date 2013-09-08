@@ -4,7 +4,7 @@
 ;;;
 ;;; Written by Justin Ethier
 ;;;
-;;; r5rs eval library
+;;; r7rs eval library
 ;;;
 
 (define-library (scheme eval)
