@@ -5,10 +5,9 @@ TODO on the 313-dev branch:
 
 - consider creating r7rs primitiveBindings in core, to minimize exported bindings
   file-exists, delete would be good choices to reorganize, there should be others as well
-- need to rename some functions in base (inexact, exact???)
 - it would be nice to have an empty top-level environment in r7rs mode, but it might
   not be practical at this time
-- what else?
 - remember to delete this file before merging back to master
 - hang on import of (scheme r5rs) in r7rs mode
 - need to add an r7rs test suite, and consider also pulling in tests from chibi-scheme
+- what else?

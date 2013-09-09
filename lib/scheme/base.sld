@@ -175,7 +175,6 @@
     ;error-object-irritants
     ;error-object-message
     ;error-object?
-    ;exact
     ;exact-integer-sqrt
     ;exact-integer?
     ;exact?
@@ -189,7 +188,6 @@
     ;get-output-string
     ;guard
     ;if
-    ;inexact
     ;inexact?
     ;input-port-open?
     ;lambda
