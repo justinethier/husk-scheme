@@ -162,6 +162,7 @@ _macroEval env lisp@(List (Atom x : _)) apply = do
       expanded <- macroTransform defEnv env env renameEnv cleanupEnv 
                                  definedInMacro 
                                 (List identifiers) rules lisp apply
+                                ellipsis
       _macroEval env expanded apply
       -- Useful debug to see all exp's:
       -- macroEval env (trace ("exp = " ++ show expanded) expanded)
@@ -204,7 +205,11 @@ macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers (rule@(
     Nil _ -> macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers rs input apply esym
     _ -> do
         -- Walk the resulting code, performing the Clinger algorithm's 4 components
-        walkExpanded defEnv env divertEnv renameEnv cleanupEnv dim True False (List []) (result) apply esym
+        --
+        -- Note:
+        -- Ellipsis symbol does not need to be passed down because the syntax
+        -- object will be queried for it (and other data) when encountered
+        walkExpanded defEnv env divertEnv renameEnv cleanupEnv dim True False (List []) (result) apply
 
 -- Ran out of rules to match...
 macroTransform _ _ _ _ _ _ _ _ input _ _ = throwError $ BadSpecialForm "Input does not match a macro pattern" input
@@ -237,7 +242,7 @@ matchRule defEnv outerEnv divertEnv dim identifiers localEnv renameEnv cleanupEn
         case match of
            Bool False -> return $ Nil ""
            _ -> do
-                transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers 0 [] (List []) template
+                transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym 0 [] (List []) template
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
 
  where
@@ -251,18 +256,20 @@ matchRule defEnv outerEnv divertEnv dim identifiers localEnv renameEnv cleanupEn
                                   (List is)
                                    0 []
                                   (flagDottedLists [] (False, False) 0)
+                                  esym
        (List _ : _) -> do 
          loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers 
                                   (List $ ds ++ [d, Atom esym])
                                   (List is)
                                    0 []
                                   (flagDottedLists [] (True, False) 0)
-       _ -> loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers (List ps) (List is) 0 [] []
+                                  esym
+       _ -> loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers (List ps) (List is) 0 [] [] esym
 
    -- No pair, immediately begin matching
    checkPattern ps is _ = loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers (List ps) (List is) 0 [] [] esym
 
-matchRule _ _ _ _ _ _ _ _ rule input = do
+matchRule _ _ _ _ _ _ _ _ rule input _ = do
   throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ List [Atom "rule: ", rule, Atom "input: ", input]
 
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
@@ -323,10 +330,11 @@ loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers pattern input
               -- There was a match
               _ -> if nextHasEllipsis
                       then 
-                           loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers pattern (List is) esym
+                           loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers pattern (List is)
                             ellipsisLevel -- Do not increment level, just wait until the next go-round when it will be incremented above
                             idx -- Must keep index since it is incremented each time
                             listFlags
+                            esym
                       else loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex listFlags esym
 
        -- Base case - All data processed
@@ -374,10 +382,10 @@ flagUnmatchedVars defEnv outerEnv localEnv identifiers (List (p : ps)) partOfImp
   _ <- flagUnmatchedVars defEnv outerEnv localEnv identifiers p partOfImproperPattern esym
   flagUnmatchedVars defEnv outerEnv localEnv identifiers (List ps) partOfImproperPattern esym
 
-flagUnmatchedVars _ _ _ _ (Atom a) _ esym = return $ Bool $ a == esym
-
 flagUnmatchedVars defEnv outerEnv localEnv identifiers (Atom p) partOfImproperPattern esym =
-  flagUnmatchedAtom defEnv outerEnv localEnv identifiers p partOfImproperPattern esym
+  if p == esym
+     then return $ Bool True
+     else flagUnmatchedAtom defEnv outerEnv localEnv identifiers p partOfImproperPattern
 
 flagUnmatchedVars _ _ _ _ _ _ _ = return $ Bool True 
 
@@ -895,9 +903,9 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
          -- implementation, and that this solution may not be complete.
          --
          List lexpanded <- cleanExpanded defEnv useEnv divertEnv renameEnv renameEnv True False (List []) (List ts) apply
-         macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : lexpanded)) apply
+         macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : lexpanded)) apply ellipsis
       Syntax (Just _defEnv) _ definedInMacro ellipsis identifiers rules -> do 
-        macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts)) apply
+        macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts)) apply ellipsis
       Syntax Nothing _ definedInMacro ellipsis identifiers rules -> do 
         -- A child renameEnv is not created because for a macro call there is no way an
         -- renamed identifier inserted by the macro could override one in the outer env.
@@ -905,7 +913,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
         -- This is because the macro renames non-matched identifiers and stores mappings
         -- from the {rename ==> original}. Each new name is unique by definition, so
         -- no conflicts are possible.
-        macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts)) apply
+        macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts)) apply ellipsis
       SyntaxExplicitRenaming transformer -> do
         erRenameEnv <- liftIO $ nullEnv -- Local environment used just for this
                                         -- Different than the syntax-rules rename env (??)
@@ -1282,6 +1290,7 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
       transformRule defEnv outerEnv divertEnv 
                     localEnv
                     renameEnv cleanupEnv dim identifiers 
+                    esym
                     ellipsisLevel 
                     ellipsisIndex 
                    (List $ results)
