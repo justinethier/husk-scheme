@@ -91,16 +91,10 @@ import Data.Array
 -- This should work because any env changes would only affect the new environment and not
 -- the parent one. The disadvantage is that macroEval is called in several places in Core.
 -- It's calls will need to be modified to use a new function that will pass along the
--- extended env if necessary. I am a bit concerned about suble errors occuring if any
+-- extended env if necessary. I am a bit concerned about subtle errors occurring if any
 -- continuations in the chain are not updated and still have the old environment in them.
 -- It may be tricky to get this right. But otherwise the change *should* be straightforward.
 
-
--- Currently unused, and likely to go away:
--- A support function for Core that will be used as part of the above...
---needToExtendEnv :: LispVal -> Bool --IOThrowsError LispVal
---needToExtendEnv (List [Atom "define-syntax", Atom _, (List (Atom "syntax-rules" : (List _ : _)))]) = True
---needToExtendEnv _ = False 
 
 -- |Get a list of variables that the macro hygiene 
 --  subsystem diverted back into the calling environment.
@@ -154,7 +148,7 @@ _macroEval env lisp@(List (Atom x : _)) apply = do
       _macroEval env expanded apply
 
     -- Syntax Rules
-    Just (Syntax (Just defEnv) _ definedInMacro identifiers rules) -> do
+    Just (Syntax (Just defEnv) _ definedInMacro ellipsis identifiers rules) -> do
       renameEnv <- liftIO $ nullEnv -- Local environment used just for this
                                     -- invocation to hold renamed variables
       cleanupEnv <- liftIO $ nullEnv -- Local environment used just for 
@@ -778,11 +772,19 @@ walkExpandedAtom _ _ _ _ _ _ True _ _ "letrec-syntax" ts False _ _ = do
 
 walkExpandedAtom _ useEnv _ renameEnv _ _ True _ (List _)
     "define-syntax" 
+    ([Atom keyword, (List (Atom "syntax-rules" : Atom ellipsis : (List identifiers : rules)))])
+    False _ _ = do
+        -- Do we need to rename the keyword, or at least take that into account?
+        renameEnvClosure <- liftIO $ copyEnv renameEnv
+        _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax (Just useEnv) (Just renameEnvClosure) True ellipsis identifiers rules
+        return $ Nil "" -- Sentinal value
+walkExpandedAtom _ useEnv _ renameEnv _ _ True _ (List _)
+    "define-syntax" 
     ([Atom keyword, (List (Atom "syntax-rules" : (List identifiers : rules)))])
     False _ _ = do
         -- Do we need to rename the keyword, or at least take that into account?
         renameEnvClosure <- liftIO $ copyEnv renameEnv
-        _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax (Just useEnv) (Just renameEnvClosure) True identifiers rules
+        _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax (Just useEnv) (Just renameEnvClosure) True "..." identifiers rules
         return $ Nil "" -- Sentinal value
 walkExpandedAtom _ useEnv _ renameEnv _ _ True _ (List _)
     "define-syntax" 
@@ -877,7 +879,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
 --    within another macro. So defEnv is not modified by this macro definition, and
 --    there is no need to insert it.
 --
-      Syntax _ (Just renameClosure) definedInMacro identifiers rules -> do 
+      Syntax _ (Just renameClosure) definedInMacro ellipsis identifiers rules -> do 
          -- Before expanding the macro, make a pass across the macro body to mark
          -- any instances of renamed variables. 
          -- 
@@ -890,9 +892,9 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
          --
          List lexpanded <- cleanExpanded defEnv useEnv divertEnv renameEnv renameEnv True False (List []) (List ts) apply
          macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : lexpanded)) apply
-      Syntax (Just _defEnv) _ definedInMacro identifiers rules -> do 
+      Syntax (Just _defEnv) _ definedInMacro ellipsis identifiers rules -> do 
         macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts)) apply
-      Syntax Nothing _ definedInMacro identifiers rules -> do 
+      Syntax Nothing _ definedInMacro ellipsis identifiers rules -> do 
         -- A child renameEnv is not created because for a macro call there is no way an
         -- renamed identifier inserted by the macro could override one in the outer env.
         --
@@ -1456,10 +1458,22 @@ loadMacros e be Nothing dim
     (List 
         [Atom keyword, 
          (List (Atom "syntax-rules" : 
+                Atom ellipsis :
                 (List identifiers : rules)))] : 
         bs) = do
   _ <- defineNamespacedVar be macroNamespace keyword $ 
-        Syntax (Just e) Nothing dim identifiers rules
+        Syntax (Just e) Nothing dim ellipsis identifiers rules
+  loadMacros e be Nothing dim bs
+
+-- Standard processing for a syntax-rules transformer
+loadMacros e be Nothing dim 
+    (List 
+        [Atom keyword, 
+         (List (Atom "syntax-rules" : 
+                (List identifiers : rules)))] : 
+        bs) = do
+  _ <- defineNamespacedVar be macroNamespace keyword $ 
+        Syntax (Just e) Nothing dim "..." identifiers rules
   loadMacros e be Nothing dim bs
 
 -- Standard processing for an explicit renaming transformer
@@ -1486,6 +1500,12 @@ loadMacros e be (Just re) dim
 
   case (exSynRules, spec) of
     (Atom "syntax-rules", 
+     (Atom ellipsis :
+      (List identifiers : rules))) -> do
+        _ <- defineNamespacedVar be macroNamespace exKeyword $ 
+             Syntax (Just e) (Just re) dim ellipsis identifiers rules
+        loadMacros e be (Just re) dim bs
+    (Atom "syntax-rules", 
       (List identifiers : rules)) -> do
 --        -- Temporary hack to expand the rules
 --        List exRules <- cleanExpanded e e e re re dim False False (List []) (List rules)
@@ -1494,7 +1514,7 @@ loadMacros e be (Just re) dim
         _ <- defineNamespacedVar be macroNamespace exKeyword $ 
 --             Syntax (Just e) (Just re) dim identifiers (trace ("exRules = " ++ show exRules) exRules) --rules
 --             Syntax (Just e) (Just re) dim identifiers exRules --rules
-             Syntax (Just e) (Just re) dim identifiers rules
+             Syntax (Just e) (Just re) dim "..." identifiers rules
         loadMacros e be (Just re) dim bs
     --
     -- TODO: should check for lambda instead of _

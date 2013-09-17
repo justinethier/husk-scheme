@@ -67,6 +67,7 @@ module Language.Scheme.Types
              , synClosure
              , synRenameClosure
              , synDefinedInMacro
+             , synEllipsis
              , synIdentifiers
              , synRules
         , SyntaxExplicitRenaming
@@ -246,6 +247,7 @@ data LispVal = Atom String
           , synRenameClosure :: Maybe Env -- ^ Renames (from macro hygiene) in effect at def time;
                                           --   only applicable if this macro defined inside another macro.
           , synDefinedInMacro :: Bool     -- ^ Set if macro is defined within another macro
+          , synEllipsis :: String         -- ^ String to use as the ellipsis identifier
           , synIdentifiers :: [LispVal]   -- ^ Literal identifiers from syntax-rules 
           , synRules :: [LispVal]         -- ^ Rules from syntax-rules
    } -- ^ Type to hold a syntax object that is created by a macro definition.
@@ -446,7 +448,7 @@ showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showVal t ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
 showVal (Continuation _ _ _ _ _) = "<continuation>"
-showVal (Syntax _ _ _ _ _) = "<syntax>"
+showVal (Syntax _ _ _ _ _ _) = "<syntax>"
 showVal (SyntaxExplicitRenaming _) = "<er-macro-transformer syntax>"
 showVal (Func {params = args, vararg = varargs, body = _, closure = _}) =
   "(lambda (" ++ unwords args ++

@@ -405,6 +405,16 @@ eval env cont args@(List [Atom "define-syntax", Atom keyword,
     continueEval env cont $ Nil "" 
 
 eval env cont args@(List [Atom "define-syntax", Atom keyword, 
+    (List (Atom "syntax-rules" : Atom ellipsis : (List identifiers : rules)))]) = do
+ bound <- liftIO $ isRecBound env "define-syntax"
+ if bound
+  then prepareApply env cont args -- if bound to a variable in this scope; call into it
+  else do 
+    _ <- defineNamespacedVar env macroNamespace keyword $ 
+            Syntax (Just env) Nothing False ellipsis identifiers rules
+    continueEval env cont $ Nil "" 
+
+eval env cont args@(List [Atom "define-syntax", Atom keyword, 
     (List (Atom "syntax-rules" : (List identifiers : rules)))]) = do
  bound <- liftIO $ isRecBound env "define-syntax"
  if bound
@@ -427,7 +437,7 @@ eval env cont args@(List [Atom "define-syntax", Atom keyword,
     -- Anyway, this may come back. But not using it for now...
     --
     --    defEnv <- liftIO $ copyEnv env
-    _ <- defineNamespacedVar env macroNamespace keyword $ Syntax (Just env) Nothing False identifiers rules
+    _ <- defineNamespacedVar env macroNamespace keyword $ Syntax (Just env) Nothing False "..." identifiers rules
     continueEval env cont $ Nil "" 
 
 eval env cont args@(List [Atom "if", predic, conseq, alt]) = do

@@ -267,6 +267,22 @@ compile env ast@(List [Atom "define-syntax", Atom keyword,
     return $ [createAstFunc copts compFunc])
 
 compile env lisp@(List [Atom "define-syntax", Atom keyword, 
+    (List (Atom "syntax-rules" : Atom ellipsis : (List identifiers : rules)))]) copts = do
+  compileSpecialFormBody env lisp copts (\ _ -> do
+    let idStr = asts2Str identifiers
+        ruleStr = asts2Str rules
+  
+    -- Make macro available at compile time
+    _ <- defineNamespacedVar env macroNamespace keyword $ 
+           Syntax (Just env) Nothing False ellipsis identifiers rules
+  
+    -- And load it at runtime as well
+    -- Env should be identical to the one loaded at compile time...
+    compileScalar 
+      ("  defineNamespacedVar env macroNamespace \"" ++ keyword ++ 
+       "\" $ Syntax (Just env) Nothing False \"" ++ ellipsis ++ "\" " ++ idStr ++ " " ++ ruleStr) copts)
+
+compile env lisp@(List [Atom "define-syntax", Atom keyword, 
     (List (Atom "syntax-rules" : (List identifiers : rules)))]) copts = do
   compileSpecialFormBody env lisp copts (\ _ -> do
     let idStr = asts2Str identifiers
@@ -274,13 +290,13 @@ compile env lisp@(List [Atom "define-syntax", Atom keyword,
   
     -- Make macro available at compile time
     _ <- defineNamespacedVar env macroNamespace keyword $ 
-           Syntax (Just env) Nothing False identifiers rules
+           Syntax (Just env) Nothing False "..." identifiers rules
   
     -- And load it at runtime as well
     -- Env should be identical to the one loaded at compile time...
     compileScalar 
       ("  defineNamespacedVar env macroNamespace \"" ++ keyword ++ 
-       "\" $ Syntax (Just env) Nothing False " ++ idStr ++ " " ++ ruleStr) copts)
+       "\" $ Syntax (Just env) Nothing False \"...\" " ++ idStr ++ " " ++ ruleStr) copts)
 
 compile env ast@(List [Atom "if", predic, conseq]) copts = 
   compileSpecialFormBody env ast copts (\ _ -> do
