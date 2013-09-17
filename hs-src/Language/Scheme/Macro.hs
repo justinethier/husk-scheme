@@ -54,7 +54,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
--- import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -137,7 +137,8 @@ macroEval env lisp apply = _macroEval env lisp apply
 -- |Do the actual work for the 'macroEval' wrapper func
 _macroEval env lisp@(List (Atom x : _)) apply = do
   -- Note: If there is a procedure of the same name it will be shadowed by the macro.
-  var <- getNamespacedVar' env macroNamespace x
+  --var <- getNamespacedVar' env macroNamespace x
+  var <- (trace ("expand: " ++ x) getNamespacedVar') env macroNamespace x
   -- DEBUG: var <- (trace ("expand: " ++ x) getNamespacedVar) env macroNamespace x
   case var of
     -- Explicit Renaming
@@ -163,7 +164,7 @@ _macroEval env lisp@(List (Atom x : _)) apply = do
                                  definedInMacro 
                                 (List identifiers) rules lisp apply
                                 ellipsis
-      _macroEval env expanded apply
+      _macroEval env (trace ("expanded from mTrans = " ++ show expanded) expanded) apply
       -- Useful debug to see all exp's:
       -- macroEval env (trace ("exp = " ++ show expanded) expanded)
     Nothing -> return lisp
@@ -205,10 +206,6 @@ macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers (rule@(
     Nil _ -> macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers rs input apply esym
     _ -> do
         -- Walk the resulting code, performing the Clinger algorithm's 4 components
-        --
-        -- Note:
-        -- Ellipsis symbol does not need to be passed down because the syntax
-        -- object will be queried for it (and other data) when encountered
         walkExpanded defEnv env divertEnv renameEnv cleanupEnv dim True False (List []) (result) apply
 
 -- Ran out of rules to match...
@@ -236,13 +233,13 @@ matchRule defEnv outerEnv divertEnv dim identifiers localEnv renameEnv cleanupEn
                                   (Atom l : ls) -> (List [Atom l, DottedList ls d], True)
                                   _ -> (pattern, False)
               _ -> (pattern, False)
-   case p of
+   case (trace ("matchRule, p = " ++ show p) p) of
       ((List (Atom _ : ps)), flag) -> do
         match <- checkPattern ps is flag 
-        case match of
+        case (trace ("match from checkPattern = " ++ show match) match) of
            Bool False -> return $ Nil ""
            _ -> do
-                transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym 0 [] (List []) template
+                (trace "matchRule calling transformRule" transformRule) defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym 0 [] (List []) template
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
 
  where
@@ -572,7 +569,7 @@ checkLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers ellipsisLeve
 
 checkLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (DottedList ps p) input@(List (_ : _)) flags esym = do
   loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers 
-                                  (List $ ps ++ [p, Atom "..."])
+                                  (List $ ps ++ [p, Atom esym])
                                   input
                                    ellipsisLevel -- Incremented in the list/list match below
                                    ellipsisIndex
@@ -1062,10 +1059,10 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
   let nextHasEllipsis = macroElementMatchesMany transform esym
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
-  if (nextHasEllipsis)
+  if (trace ("esym = " ++ esym ++ " nextHasEllipsis = " ++ show nextHasEllipsis) nextHasEllipsis)
      then do
              curT <- transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym level idx (List []) (List l)
-             case (curT) of
+             case (trace ("curT = " ++ show curT) curT) of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers 
                                           esym
