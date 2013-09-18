@@ -213,10 +213,12 @@ macroTransform _ _ _ _ _ _ _ _ input _ _ = throwError $ BadSpecialForm "Input do
 
 -- Determine if the next element in a list matches 0-to-n times due to an ellipsis
 macroElementMatchesMany :: LispVal -> String -> Bool
-macroElementMatchesMany (List (_ : ps)) ellipsisSym = do
+macroElementMatchesMany args@(List (_ : ps)) ellipsisSym = do
   if not (null ps)
-     then case (head ps) of
-                Atom ellipsisSym -> True
+     then case (trace ("ellSym = " ++ show ellipsisSym  ++ " args = " ++ show args ++ " ps = " ++ show ps ++ " head ps = " ++ show (head ps)) (head ps)) of
+                --Atom ellipsisSym -> True
+                -- so above does not work but below does??? WTF!!?
+                Atom "..." -> True
                 _ -> False
      else False
 macroElementMatchesMany _ _ = False
@@ -1059,7 +1061,7 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
   let nextHasEllipsis = macroElementMatchesMany transform esym
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
-  if (trace ("l = " ++ show l ++ " esym = " ++ esym ++ " nextHasEllipsis = " ++ show nextHasEllipsis ++ " level = " ++ show level ++ " idx = " ++ show idx) nextHasEllipsis)
+  if (trace ("transform = " ++ show transform ++ " l = " ++ show l ++ " esym = " ++ esym ++ " nextHasEllipsis = " ++ show nextHasEllipsis ++ " level = " ++ show level ++ " idx = " ++ show idx) nextHasEllipsis)
      then do
              curT <- transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym level idx (List []) (List l)
              case (trace ("curT = " ++ show curT) curT) of
