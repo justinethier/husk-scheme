@@ -54,7 +54,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+-- import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -137,9 +137,8 @@ macroEval env lisp apply = _macroEval env lisp apply
 -- |Do the actual work for the 'macroEval' wrapper func
 _macroEval env lisp@(List (Atom x : _)) apply = do
   -- Note: If there is a procedure of the same name it will be shadowed by the macro.
-  --var <- getNamespacedVar' env macroNamespace x
-  var <- (trace ("expand: " ++ x) getNamespacedVar') env macroNamespace x
-  -- DEBUG: var <- (trace ("expand: " ++ x) getNamespacedVar) env macroNamespace x
+  var <- getNamespacedVar' env macroNamespace x
+  -- DEBUG: var <- (trace ("expand: " ++ x) getNamespacedVar') env macroNamespace x
   case var of
     -- Explicit Renaming
     Just (SyntaxExplicitRenaming transformer@(Func _ _ _ _)) -> do
@@ -164,7 +163,7 @@ _macroEval env lisp@(List (Atom x : _)) apply = do
                                  definedInMacro 
                                 (List identifiers) rules lisp apply
                                 ellipsis
-      _macroEval env (trace ("expanded from mTrans = " ++ show expanded) expanded) apply
+      _macroEval env expanded apply
       -- Useful debug to see all exp's:
       -- macroEval env (trace ("exp = " ++ show expanded) expanded)
     Nothing -> return lisp
@@ -215,11 +214,7 @@ macroTransform _ _ _ _ _ _ _ _ input _ _ = throwError $ BadSpecialForm "Input do
 macroElementMatchesMany :: LispVal -> String -> Bool
 macroElementMatchesMany args@(List (_ : ps)) ellipsisSym = do
   if not (null ps)
-     then case (trace ("ellSym = " ++ show ellipsisSym  ++ " args = " ++ show args ++ " ps = " ++ show ps ++ " head ps = " ++ show (head ps)) (head ps)) of
-                --Atom ellipsisSym -> True
-                -- so above does not work but below does??? WTF!!?
-                Atom "..." -> True
-                _ -> False
+     then (head ps) == (Atom ellipsisSym)
      else False
 macroElementMatchesMany _ _ = False
 
@@ -235,13 +230,13 @@ matchRule defEnv outerEnv divertEnv dim identifiers localEnv renameEnv cleanupEn
                                   (Atom l : ls) -> (List [Atom l, DottedList ls d], True)
                                   _ -> (pattern, False)
               _ -> (pattern, False)
-   case (trace ("matchRule, p = " ++ show p) p) of
+   case p of
       ((List (Atom _ : ps)), flag) -> do
         match <- checkPattern ps is flag 
-        case (trace ("match from checkPattern = " ++ show match) match) of
+        case match of
            Bool False -> return $ Nil ""
            _ -> do
-                (trace "matchRule calling transformRule" transformRule) defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym 0 [] (List []) template
+                transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym 0 [] (List []) template
       _ -> throwError $ BadSpecialForm "Malformed rule in syntax-rules" $ String $ show p
 
  where
@@ -1061,10 +1056,10 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
   let nextHasEllipsis = macroElementMatchesMany transform esym
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
-  if (trace ("transform = " ++ show transform ++ " l = " ++ show l ++ " esym = " ++ esym ++ " nextHasEllipsis = " ++ show nextHasEllipsis ++ " level = " ++ show level ++ " idx = " ++ show idx) nextHasEllipsis)
+  if nextHasEllipsis
      then do
              curT <- transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym level idx (List []) (List l)
-             case (trace ("curT = " ++ show curT) curT) of
+             case curT of
                Nil _ -> -- No match ("zero" case). Use tail to move past the "..."
                         continueTransform defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers 
                                           esym
@@ -1144,7 +1139,7 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
   Bool isIdent <- findAtom (Atom a) identifiers -- Literal Identifier
   isDefined <- liftIO $ isBound localEnv a -- Pattern Variable
 
-  if (trace ("a = " ++ a ++ " isIdent = " ++ show isIdent ++ " hasEllipsis = " ++ show hasEllipsis) isIdent)
+  if isIdent
      then literalHere
      else do
         if hasEllipsis
