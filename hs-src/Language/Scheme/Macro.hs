@@ -1059,7 +1059,7 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
   let nextHasEllipsis = macroElementMatchesMany transform esym
   let level = calcEllipsisLevel nextHasEllipsis ellipsisLevel
   let idx = calcEllipsisIndex nextHasEllipsis level ellipsisIndex
-  if (trace ("esym = " ++ esym ++ " nextHasEllipsis = " ++ show nextHasEllipsis) nextHasEllipsis)
+  if (trace ("l = " ++ show l ++ " esym = " ++ esym ++ " nextHasEllipsis = " ++ show nextHasEllipsis ++ " level = " ++ show level ++ " idx = " ++ show idx) nextHasEllipsis)
      then do
              curT <- transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym level idx (List []) (List l)
              case (trace ("curT = " ++ show curT) curT) of
@@ -1142,7 +1142,7 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
   Bool isIdent <- findAtom (Atom a) identifiers -- Literal Identifier
   isDefined <- liftIO $ isBound localEnv a -- Pattern Variable
 
-  if isIdent
+  if (trace ("a = " ++ a ++ " isIdent = " ++ show isIdent ++ " hasEllipsis = " ++ show hasEllipsis) isIdent)
      then literalHere
      else do
         if hasEllipsis
