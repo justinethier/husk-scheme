@@ -4,6 +4,7 @@ v3.13
 
 TODO:
 Added r7rs libraries, ...
+Extended syntax-rules to allow another identifier to be used to specify the ellipsis symbol, per r7rs
 
 
 v3.12
