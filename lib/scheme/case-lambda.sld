@@ -7,6 +7,10 @@
 ;;; r7rs-small case-lambda library
 ;;;
 
+
+; TODO: this is the macro from the spec, but husk
+; does not handle the let-syntax portion...
+
 (define-library (scheme case-lambda)
     (export
         case-lambda)
