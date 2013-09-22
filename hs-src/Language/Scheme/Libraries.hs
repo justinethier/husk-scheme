@@ -29,27 +29,27 @@ findModuleFile
     -> IOThrowsError LispVal
 findModuleFile [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= findModuleFile
 findModuleFile [String file] 
-    -- Built-in modules
-    | file == "scheme/r5rs/base.sld" ||
-      file == "scheme/r5rs/char.sld" ||
-      file == "scheme/r5rs/complex.sld" ||
-      file == "scheme/r5rs/cxr.sld" ||
-      file == "scheme/r5rs/eval.sld" ||
-      file == "scheme/r5rs/file.sld" ||
-      file == "scheme/r5rs/inexact.sld" ||
-      file == "scheme/r5rs/lazy.sld" ||
-      file == "scheme/r5rs/load.sld" ||
-      file == "scheme/r5rs/read.sld" ||
-      file == "scheme/r5rs/write.sld" ||
-      file == "scheme/base.sld" ||
-      file == "husk/pretty-print.sld" ||
--- TODO: scheme case-lambda (r7rs)
--- TODO: scheme process-context (r7rs)
--- TODO: scheme repl (r7rs)
-      file == "scheme/time.sld" ||
-      file == "scheme/write.sld" = do
-        path <- liftIO $ PHS.getDataFileName $ "lib/" ++ file
-        return $ String path
+--    -- Built-in modules
+--    | --file == "scheme/r5rs/base.sld" ||
+--      --file == "scheme/r5rs/char.sld" ||
+--      --file == "scheme/r5rs/complex.sld" ||
+--      --file == "scheme/r5rs/cxr.sld" ||
+--      --file == "scheme/r5rs/eval.sld" ||
+--      --file == "scheme/r5rs/file.sld" ||
+--      --file == "scheme/r5rs/inexact.sld" ||
+--      --file == "scheme/r5rs/lazy.sld" ||
+--      --file == "scheme/r5rs/load.sld" ||
+--      --file == "scheme/r5rs/read.sld" ||
+--      --file == "scheme/r5rs/write.sld" ||
+--      --file == "scheme/base.sld" ||
+--      file == "husk/pretty-print.sld" ||
+---- TODO: scheme case-lambda (r7rs)
+---- TODO: scheme process-context (r7rs)
+---- TODO: scheme repl (r7rs)
+--      file == "scheme/time.sld" ||
+--      file == "scheme/write.sld" = do
+--        path <- liftIO $ PHS.getDataFileName $ "lib/" ++ file
+--        return $ String path
     | otherwise = return $ String file
 findModuleFile _ = return $ Bool False
 
