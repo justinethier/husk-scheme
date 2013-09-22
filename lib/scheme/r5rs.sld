@@ -11,6 +11,6 @@
 
 
 ; TODO: this is broken somehow, goes into a 100% CPU loop
-;       when imported by the REPL
+;       when imported by the REPL in r7rs mode
     (export-all)
     (import (scheme r5rs)))
