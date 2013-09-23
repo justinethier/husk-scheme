@@ -29,6 +29,8 @@ findModuleFile
     -> IOThrowsError LispVal
 findModuleFile [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= findModuleFile
 findModuleFile [String file] 
+-- This is no longer required since load has been enhanced to
+-- attempt to load a file from 'lib' if it does not exist
 --    -- Built-in modules
 --    | --file == "scheme/r5rs/base.sld" ||
 --      --file == "scheme/r5rs/char.sld" ||
