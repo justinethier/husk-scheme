@@ -7,10 +7,12 @@
 ;;; r7rs-small r5rs library
 ;;;
 
-(define-library (scheme r5rs)
 
-
-; TODO: this is broken somehow, goes into a 100% CPU loop
-;       when imported by the REPL in r7rs mode
-    (export-all)
-    (import (scheme r5rs)))
+; TODO: well obviously this won't work, since it includes itself
+; need a way to load r5rsEnv on demand. unfortunately the direct bindings
+; null-env, etc are supposed to be in r5rs. so may need a  husk-specific
+; function to do it...
+;
+;(define-library (scheme r5rs)
+;    (export-all)
+;    (import (scheme r5rs)))
