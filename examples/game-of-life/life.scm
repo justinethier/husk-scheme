@@ -10,7 +10,7 @@
 ;;;  > cd examples/game-of-life
 ;;;  > huski life.scm
 ;;;
-(import (scheme r5rs base)
+(import (scheme base)
         (only (example life) life)
         (rename (prefix (example grid) grid-)
                 (grid-make make-grid)))

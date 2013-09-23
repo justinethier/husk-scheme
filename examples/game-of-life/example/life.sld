@@ -1,7 +1,7 @@
 (define-library (example life)
   (export life)
-  (import (scheme r5rs base) ;TODO: (except (scheme base) set!)
-          (scheme r5rs write)
+  (import (scheme base) ;TODO: (except (scheme base) set!)
+          (scheme write)
           (example grid))
   (begin
     (define (life-count grid i j)
