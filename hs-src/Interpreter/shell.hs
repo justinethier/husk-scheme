@@ -74,11 +74,11 @@ showHelp _ = do
   putStrLn ""
   putStrLn "  Options may be any of the following:"
   putStrLn ""
-  putStrLn "  -h -? --help      Display this information"
-  putStrLn "  -r --revision     Specify the scheme revision to use:"
+  putStrLn "  --help        Display this information"
+  putStrLn "  --revision    Specify the scheme revision to use:"
   putStrLn ""
-  putStrLn "                      5 - r5rs (default)"
-  putStrLn "                      7 - r7rs small"
+  putStrLn "                  5 - r5rs (default)"
+  putStrLn "                  7 - r7rs small"
   putStrLn ""
   exitWith ExitSuccess
 

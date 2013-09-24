@@ -71,6 +71,7 @@ defaultOptions = Options {
 -- |Command line options
 options :: [OptDescr (Options -> IO Options)]
 options = [
+  Option ['r'] ["revision"] (ReqArg writeRxRSVersion "Scheme") "scheme RxRS version",
   Option ['V'] ["version"] (NoArg showVersion) "show version number",
   Option ['h', '?'] ["help"] (NoArg showHelp) "show usage information",
   Option ['o'] ["output"] (ReqArg writeExec "FILE") "output file to write",
@@ -105,6 +106,11 @@ showHelp _ = do
   putStrLn "Options:"
   putStrLn "  --help                Display this information"
   putStrLn "  --version             Display husk version information"
+  putStrLn "  --revision            Specify the scheme revision to use:"
+  putStrLn ""
+  putStrLn "                          5 - r5rs (default)"
+  putStrLn "                          7 - r7rs small"
+  putStrLn ""
   putStrLn "  --output filename     Write executable to the given filename"
   putStrLn "  --dynamic             Use dynamic Haskell libraries, if available"
   putStrLn "                        (Requires libraries built via --enable-shared)"
