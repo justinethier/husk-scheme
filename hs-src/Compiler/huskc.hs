@@ -31,7 +31,7 @@ main = do
   args <- getArgs
   let (actions, nonOpts, msgs) = getOpt Permute options args
   opts <- foldl (>>=) (return defaultOptions) actions
-  let Options {optOutput = output, optLibs = lib, optDynamic = dynamic, optCustomOptions = extra} = opts
+  let Options {optOutput = output, optLibs = lib, optDynamic = dynamic, optCustomOptions = extra, optSchemeRev = langrev} = opts
 
   if null nonOpts
      then showUsage
@@ -44,6 +44,7 @@ main = do
             extraOpts = case extra of
               Just args -> args
               Nothing -> ""
+-- TODO: pass language revision
         process inFile outHaskell outExec lib dynamic extraOpts
 
 -- 
@@ -56,7 +57,8 @@ data Options = Options {
     optOutput :: Maybe String, -- Executable file to write
     optLibs :: Bool, -- Debug flag, whether to compile standard libraries
     optDynamic :: Bool, -- Flag for dynamic linking of compiled executable
-    optCustomOptions :: Maybe String -- Custom options to ghc
+    optCustomOptions :: Maybe String, -- Custom options to ghc
+    optSchemeRev :: String -- Scheme Language version
     }
 
 -- |Default values for the command line options
@@ -65,7 +67,8 @@ defaultOptions = Options {
     optOutput = Nothing,
     optLibs = True,
     optDynamic = False,
-    optCustomOptions = Nothing 
+    optCustomOptions = Nothing, 
+    optSchemeRev = "5"
     }
 
 -- |Command line options
@@ -81,6 +84,8 @@ options = [
   Option [] ["debug"] (NoArg showDebug) "show debug information",
   Option [] ["nolibs"] (NoArg getNoLibs) "a DEBUG option to use interpreted libraries instead of compiling them"
   ]
+
+writeRxRSVersion arg opt = return opt { optSchemeRev = arg }
 
 -- |Determine executable file to write. 
 --  This version just takes a name from the command line option
