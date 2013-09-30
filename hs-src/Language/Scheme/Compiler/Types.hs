@@ -213,6 +213,12 @@ header filepath useCompiledLibs langRev = do
             else case langRev of
                    "7" -> "r7rsEnv"
                    _ -> "r5rsEnv"
+      initSrfi55 = 
+        case langRev of
+          "7" -> []
+          _ -> [ "exec55_3 env cont _ _ = do "
+               , "  liftIO $ registerExtensions env getDataFileName' "
+               , "  continueEval env (makeCPS env cont exec) (Nil \"\")"]
   [ " "
     , "-- |Get variable at runtime "
     , "getRTVar env var = do " 
@@ -234,11 +240,9 @@ header filepath useCompiledLibs langRev = do
     , " "
     , "getDataFileName' :: FilePath -> IO FilePath "
     , "getDataFileName' name = return $ \"" ++ (Language.Scheme.Util.escapeBackslashes filepath) ++ "\" ++ name "
-    , " "
-    , "exec55_3 env cont _ _ = do "
-    , "  liftIO $ registerExtensions env getDataFileName' "
-    , "  continueEval env (makeCPS env cont exec) (Nil \"\")"
-    , " "
+    , " "]
+    ++ initSrfi55 ++ 
+    [ " "
     , "main :: IO () "
     , "main = do "
     , "  env <- " ++ env ++ " "
