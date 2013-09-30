@@ -45,7 +45,7 @@ main = do
               Just args -> args
               Nothing -> ""
 -- TODO: pass language revision
-        process inFile outHaskell outExec lib dynamic extraOpts
+        process inFile outHaskell outExec lib dynamic extraOpts langrev
 
 -- 
 -- For an explanation of the command line options code, see:
@@ -138,14 +138,11 @@ showVersion _ = do
   exitWith ExitSuccess
 
 -- |High level code to compile the given file
-process :: String -> String -> String -> Bool -> Bool -> String -> IO ()
-process inFile outHaskell outExec libs dynamic extraArgs = do
-
-
--- TODO: how to integrate r5rsEnv and libraries?
-
-
-  env <- Language.Scheme.Core.r5rsEnv'
+process :: String -> String -> String -> Bool -> Bool -> String -> String -> IO ()
+process inFile outHaskell outExec libs dynamic extraArgs langrev = do
+  env <- case langrev of
+            "7" -> Language.Scheme.Core.r7rsEnv'
+            _ -> Language.Scheme.Core.r5rsEnv'
   stdlib <- getDataFileName "lib/stdlib.scm"
   srfi55 <- getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
 
@@ -153,14 +150,14 @@ process inFile outHaskell outExec libs dynamic extraArgs = do
                      then Just stdlib
                      else Nothing
 
-  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env stdlibArg srfi55 inFile outHaskell)
+  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env stdlibArg srfi55 inFile outHaskell langrev)
   case result of
    Just errMsg -> putStrLn errMsg
    _ -> compileHaskellFile outHaskell outExec dynamic extraArgs
 
 -- |Compile a scheme file to haskell
-compileSchemeFile :: Env -> Maybe String -> String -> String -> String -> IOThrowsError LispVal
-compileSchemeFile env stdlib srfi55 filename outHaskell = do
+compileSchemeFile :: Env -> Maybe String -> String -> String -> String -> String -> IOThrowsError LispVal
+compileSchemeFile env stdlib srfi55 filename outHaskell langrev = do
   let conv :: LispVal -> String
       conv (String s) = s
       compileLibraries = case stdlib of
@@ -170,9 +167,8 @@ compileSchemeFile env stdlib srfi55 filename outHaskell = do
   -- TODO: clean this up later
   --moduleFile <- liftIO $ getDataFileName "lib/modules.scm"
 
-  (String nextFunc, libsC, libSrfi55C, libModules) <- case stdlib of
-    Nothing -> return (String "run", [], [], [])
-    Just stdlib' -> do
+  (String nextFunc, libsC, libSrfi55C, libModules) <- case (stdlib, langrev) of
+    (Just stdlib', "5") -> do
       -- TODO: it is only temporary to compile the standard library each time. It should be 
       --       precompiled and just added during the ghc compilation
       libsC <- compileLisp env stdlib' "run" (Just "exec55")
@@ -180,6 +176,7 @@ compileSchemeFile env stdlib srfi55 filename outHaskell = do
       --libModules <- compileLisp env moduleFile "exec55_2" (Just "exec55_3")
       liftIO $ Language.Scheme.Core.registerExtensions env getDataFileName
       return (String "exec", libsC, libSrfi55C, []) --libModules)
+    (_, _) -> return (String "run", [], [], [])
 
   -- Initialize the compiler module and begin
   _ <- initializeCompiler env
@@ -194,7 +191,7 @@ compileSchemeFile env stdlib srfi55 filename outHaskell = do
   _ <- liftIO $ writeList outH headerModule
   _ <- liftIO $ writeList outH $ map (\mod -> "import " ++ mod ++ " ") $ headerImports ++ moreHeaderImports
   filepath <- liftIO $ getDataFileName ""
-  _ <- liftIO $ writeList outH $ header filepath compileLibraries
+  _ <- liftIO $ writeList outH $ header filepath compileLibraries langrev
   _ <- liftIO $ case compileLibraries of
     True -> do
       _ <- writeList outH $ map show libsC

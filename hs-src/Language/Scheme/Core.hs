@@ -29,6 +29,7 @@ module Language.Scheme.Core
     , r5rsEnv
     , r5rsEnv'
     , r7rsEnv
+    , r7rsEnv'
     , r7rsTimeEnv
     , version
     -- * Utility functions
