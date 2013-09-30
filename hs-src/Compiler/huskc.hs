@@ -141,7 +141,7 @@ showVersion _ = do
 process :: String -> String -> String -> Bool -> Bool -> String -> String -> IO ()
 process inFile outHaskell outExec libs dynamic extraArgs langrev = do
   env <- case langrev of
-            "7" -> Language.Scheme.Core.r7rsEnv
+            "7" -> Language.Scheme.Core.r7rsEnv'
             _ -> Language.Scheme.Core.r5rsEnv'
   stdlib <- getDataFileName "lib/stdlib.scm"
   srfi55 <- getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
