@@ -111,7 +111,7 @@ showHelp _ = do
   putStrLn "Options:"
   putStrLn "  --help                Display this information"
   putStrLn "  --version             Display husk version information"
-  putStrLn "  --revision            Specify the scheme revision to use:"
+  putStrLn "  --revision rev        Specify the scheme revision to use:"
   putStrLn ""
   putStrLn "                          5 - r5rs (default)"
   putStrLn "                          7 - r7rs small"
@@ -141,7 +141,7 @@ showVersion _ = do
 process :: String -> String -> String -> Bool -> Bool -> String -> String -> IO ()
 process inFile outHaskell outExec libs dynamic extraArgs langrev = do
   env <- case langrev of
-            "7" -> Language.Scheme.Core.r7rsEnv'
+            "7" -> Language.Scheme.Core.r7rsEnv
             _ -> Language.Scheme.Core.r5rsEnv'
   stdlib <- getDataFileName "lib/stdlib.scm"
   srfi55 <- getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
