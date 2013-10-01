@@ -111,9 +111,11 @@ importModule env metaEnv moduleName imports lopts
      -- TODO: This really should be handled by the add-module! that is executed during
      --  module initialization, instead of having a special case here
      AstValue $ "  r5 <- liftIO $ r5rsEnv\n  let value = LispEnv r5"
+  codeToGetFromEnv (List [Atom "scheme"]) _ = do
+     -- hack to compile-in full env for the (scheme) import by r7rs
+     AstValue $ "  r7 <- liftIO $ r7rsEnv\n  let value = LispEnv r7"
   codeToGetFromEnv (List [Atom "scheme", Atom "time", Atom "posix"]) _ = do
      AstValue $ "  e <- liftIO $ r7rsTimeEnv\n  let value = LispEnv e"
-
   codeToGetFromEnv name [] = do
      -- No code was generated because module was loaded previously, so retrieve
      -- it from runtime memory
