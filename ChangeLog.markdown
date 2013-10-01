@@ -3,6 +3,7 @@ v3.13
 --------
 
 TODO:
+Added "--revision 7" or "-r7" command line flags to allow huski and huskc to start in R7RS mode
 Added r7rs libraries, ...
 Extended syntax-rules to allow another identifier to be used to specify the ellipsis symbol, per r7rs
 
