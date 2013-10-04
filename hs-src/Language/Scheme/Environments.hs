@@ -84,6 +84,8 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
               ("null?", isNull),
               ("string?", isString),
 
+              ("list-copy", listCopy),
+
               ("string-length", stringLength),
               ("string-ref", stringRef),
               ("substring", substring),
@@ -228,6 +230,7 @@ primitives = [("+", numAdd),
               ("symbol->string", symbol2String),
               ("char?", isChar),
 
+              ("make-list", makeList),
               ("make-vector", makeVector),
               ("vector", buildVector),
 

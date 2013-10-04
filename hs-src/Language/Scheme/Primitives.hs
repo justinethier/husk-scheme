@@ -18,9 +18,10 @@ Most of these map directly to an equivalent Scheme function.
 -- TODO: add primitives for the following functions from r7rs (and document in changelog as finished):
 -- Done:
 -- make-list
+-- list-copy
 --
 -- Remaining:
--- list-copy, list-set!,
+-- list-set!,
 -- string-map, string-for-each, string->vector,
 -- vector-append, vector-copy, vector-map,
 -- vector-for-each, vector->string, vector-copy!,
@@ -35,6 +36,7 @@ module Language.Scheme.Primitives (
  , eq
  , equal 
  , makeList
+ , listCopy
  -- ** Vector
  , buildVector 
  , vectorLength 
@@ -527,7 +529,12 @@ makeList [badType] = throwError $ TypeMismatch "integer" badType
 makeList badArgList = throwError $ NumArgs (Just 1) badArgList
 
 listCopy :: [LispVal] -> IOThrowsError LispVal
-listCopy [p@(Pointer _ _)] = 
+listCopy [p@(Pointer _ _)] = do
+  l <- derefPtr p
+  listCopy [l]
+listCopy [(List ls)] = return $ List ls
+listCopy [badType] = return badType
+listCopy badArgList = throwError $ NumArgs (Just 1) badArgList
 
 -- | Use pointer equality to compare two objects if possible, otherwise
 --   fall back to the normal equality comparison
