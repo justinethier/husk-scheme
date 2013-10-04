@@ -16,11 +16,15 @@ Most of these map directly to an equivalent Scheme function.
 -}
 
 -- TODO: add primitives for the following functions from r7rs (and document in changelog as finished):
-make-list, list-copy, list-set!,
-string-map, string-for-each, string->vector,
-vector-append, vector-copy, vector-map,
-vector-for-each, vector->string, vector-copy!,
-and string-copy!
+-- Done:
+-- make-list
+--
+-- Remaining:
+-- list-copy, list-set!,
+-- string-map, string-for-each, string->vector,
+-- vector-append, vector-copy, vector-map,
+-- vector-for-each, vector->string, vector-copy!,
+-- and string-copy!
 
 module Language.Scheme.Primitives (
  -- * Pure functions
@@ -30,6 +34,7 @@ module Language.Scheme.Primitives (
  , cons
  , eq
  , equal 
+ , makeList
  -- ** Vector
  , buildVector 
  , vectorLength 
@@ -146,9 +151,10 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.UTF8 as BSU
 import Data.Char hiding (isSymbol)
 import Data.Array
-import Data.Unique
+--import qualified Data.List as DL
 import qualified Data.Map
 import qualified Data.Time.Clock.POSIX
+import Data.Unique
 import Data.Word
 import qualified System.Cmd
 import System.Directory (doesFileExist, removeFile)
@@ -511,6 +517,17 @@ cons [x, List xs] = return $ List $ x : xs
 cons [x, DottedList xs xlast] = return $ DottedList (x : xs) xlast
 cons [x1, x2] = return $ DottedList [x1] x2
 cons badArgList = throwError $ NumArgs (Just 2) badArgList
+
+makeList :: [LispVal] -> ThrowsError LispVal
+makeList [(Number n)] = makeList [Number n, List []]
+makeList [(Number n), a] = do
+  let l = replicate (fromInteger n) a
+  return $ List l
+makeList [badType] = throwError $ TypeMismatch "integer" badType
+makeList badArgList = throwError $ NumArgs (Just 1) badArgList
+
+listCopy :: [LispVal] -> IOThrowsError LispVal
+listCopy [p@(Pointer _ _)] = 
 
 -- | Use pointer equality to compare two objects if possible, otherwise
 --   fall back to the normal equality comparison
