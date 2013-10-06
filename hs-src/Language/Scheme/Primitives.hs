@@ -21,11 +21,19 @@ Most of these map directly to an equivalent Scheme function.
 -- list-copy
 --
 -- Remaining:
--- list-set!,
--- string-map, string-for-each, string->vector,
--- vector-append, vector-copy, vector-map,
--- vector-for-each, vector->string, vector-copy!,
--- and string-copy!
+--   string->vector -- TODO: this and the string->list from R5RS now take start/end optional args
+--   vector->string, -- so they are partially implemented, but do not meet this requirement
+-- vector-append, vector-copy, 
+--
+-- Stdlib (??)
+-- string-map, string-for-each, 
+-- vector-map,
+-- vector-for-each, 
+--
+-- Special forms (?)
+-- list-set! -- needs to be a special form, so var is available
+--vector-copy!, and string-copy!
+--
 
 module Language.Scheme.Primitives (
  -- * Pure functions
@@ -77,6 +85,8 @@ module Language.Scheme.Primitives (
  , stringToNumber
  , stringToList 
  , listToString
+ , stringToVector
+ , vectorToString
  , stringCopy 
  , symbol2String 
  , string2Symbol
@@ -1209,6 +1219,23 @@ listToString [(List l)] = liftThrows $ buildString l
 listToString [badType] = throwError $ TypeMismatch "list" badType
 listToString [] = throwError $ NumArgs (Just 1) []
 listToString args@(_ : _) = throwError $ NumArgs (Just 1) args
+
+stringToVector :: [LispVal] -> IOThrowsError LispVal
+stringToVector args = do
+    List l <- stringToList args
+    return $ Vector $ listArray (0, length l - 1) l
+vectorToString :: [LispVal] -> IOThrowsError LispVal
+vectorToString [p@(Pointer _ _)] = derefPtr p >>= box >>= listToString
+--vectorToString [(List [])] = return $ String ""
+--vectorToString [(List l)] = liftThrows $ buildString l
+vectorToString [(Vector v)] = do
+    let l = elems v
+    case l of
+        [] -> return $ String ""
+        _ -> liftThrows $ buildString l
+vectorToString [badType] = throwError $ TypeMismatch "vector" badType
+vectorToString [] = throwError $ NumArgs (Just 1) []
+vectorToString args@(_ : _) = throwError $ NumArgs (Just 1) args
 
 -- | Create a copy of the given string
 --

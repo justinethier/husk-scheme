@@ -93,6 +93,8 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
               ("string->number", stringToNumber),
               ("string->list", stringToList),
               ("list->string", listToString),
+              ("string->vector", stringToVector),
+              ("vector->string", vectorToString),
               ("string-copy", stringCopy),
               ("string->utf8", byteVectorStr2Utf),
 

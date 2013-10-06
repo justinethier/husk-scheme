@@ -174,6 +174,11 @@
                                   (string->symbol "K. Harper, M.D.")))  
                  #t)
 
+(assert/equal (string->vector "ABC")
+             #(A B C))
+(assert/equal (vector->string #(#\1 #\2 #\3))
+              "123")
+
 (assert/equal (and (= 2 2) (> 2 1))   #t)
 (assert/equal (and (= 2 2) (< 2 1))   #f)
 (assert/equal (and 1 2 'c '(f g))     '(f g))
