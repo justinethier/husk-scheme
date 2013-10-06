@@ -175,7 +175,7 @@
                  #t)
 
 (assert/equal (string->vector "ABC")
-             #(A B C))
+             #(#\A #\B #\C))
 (assert/equal (vector->string #(#\1 #\2 #\3))
               "123")
 
