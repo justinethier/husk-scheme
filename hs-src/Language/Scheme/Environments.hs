@@ -107,6 +107,7 @@ ioPrimitives = [("open-input-file", makePort ReadMode),
 
               ("vector-length",wrapLeadObj vectorLength),
               ("vector-ref",   wrapLeadObj vectorRef),
+              ("vector-copy",  vectorCopy),
               ("vector->list", wrapLeadObj vectorToList),
               ("list->vector", wrapLeadObj listToVector),
 

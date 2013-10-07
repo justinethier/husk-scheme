@@ -19,11 +19,12 @@ Most of these map directly to an equivalent Scheme function.
 -- Done:
 -- make-list
 -- list-copy
+-- vector-copy 
 --
 -- Remaining:
 --   string->vector -- TODO: this and the string->list from R5RS now take start/end optional args
 --   vector->string, -- so they are partially implemented, but do not meet this requirement
--- vector-append, vector-copy, 
+-- vector-append
 --
 -- Stdlib (??)
 -- string-map, string-for-each, 
@@ -49,6 +50,7 @@ module Language.Scheme.Primitives (
  , buildVector 
  , vectorLength 
  , vectorRef 
+ , vectorCopy
  , vectorToList 
  , listToVector
  , makeVector
@@ -545,6 +547,16 @@ listCopy [p@(Pointer _ _)] = do
 listCopy [(List ls)] = return $ List ls
 listCopy [badType] = return badType
 listCopy badArgList = throwError $ NumArgs (Just 1) badArgList
+
+vectorCopy :: [LispVal] -> IOThrowsError LispVal
+vectorCopy [p@(Pointer _ _)] = do
+  v <- derefPtr p
+  vectorCopy [v]
+vectorCopy [(Vector vs)] = do
+    let l = elems vs
+    return $ Vector $ listArray (0, length l - 1) l 
+vectorCopy [badType] = return badType
+vectorCopy badArgList = throwError $ NumArgs (Just 1) badArgList
 
 -- | Use pointer equality to compare two objects if possible, otherwise
 --   fall back to the normal equality comparison
