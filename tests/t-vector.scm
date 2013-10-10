@@ -86,4 +86,12 @@
     (vector-append #(a b c) #(d e f))
     #(a b c d e f))
 
+(assert/equal
+    (string->vector "ABC")
+    #(#\A #\B #\C))
+
+(assert/equal
+    (vector->string #(#\1 #\2 #\3))
+    "123")
+
 (unit-test-handler-results)

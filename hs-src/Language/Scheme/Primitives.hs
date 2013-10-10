@@ -24,14 +24,12 @@ Most of these map directly to an equivalent Scheme function.
 -- vector-for-each, 
 -- vector-append
 -- string-map, string-for-each, 
---
--- Remaining:
 --   string->vector -- TODO: this and the string->list from R5RS now take start/end optional args
 --   vector->string, -- so they are partially implemented, but do not meet this requirement
 --
 -- Special forms (?)
 -- list-set! -- needs to be a special form, so var is available
--- vector-copy!, and string-copy!
+-- vector-copy!, and string-copy! -- presumably these must be special forms as well 
 --
 
 module Language.Scheme.Primitives (
