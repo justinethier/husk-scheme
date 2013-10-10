@@ -454,6 +454,27 @@
           (car lst)
           (foldl (lambda (a b) (append-2 b a)) (car lst) (cdr lst)))))
 
+;;
+;; Vector functions from r7rs
+;; These help round-out the standard list/vector/string functions
+(define (vector-map fnc . vargs)
+    (let* ((ls (map (lambda (v) (vector->list v)) vargs)))
+        (list->vector 
+            (apply map 
+                   (cons fnc ls)))))
+
+(define (vector-for-each fnc . vargs)
+    (let ((ls (map (lambda (v) (vector->list v)) vargs)))
+        (apply for-each 
+               (cons fnc ls))))
+
+(define (vector-append . vargs)
+    (let ((ls (map (lambda (v) (vector->list v)) vargs)))
+        (list->vector 
+            (apply append 
+                   ls))))
+;; END
+
 ; Quasi-quotation as a macro
 ; Based on code from chibi-scheme
 ;
