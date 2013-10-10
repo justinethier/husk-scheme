@@ -49,4 +49,41 @@
     (list->vector lst))
     #(0 1 2 3 4))
 
+(assert/equal
+    (vector-map cadr '#((a b) (d e) (g h)))
+    #(b e h))
+
+(assert/equal
+    (vector-map (lambda (n) (expt n n))
+        '#(1 2 3 4 5))
+    #(1.0 4.0 27.0 256.0 3125.0))
+
+(assert/equal
+    (vector-map + '#(1 2 3) '#(4 5 6 7))
+    #(5 7 9))
+
+(assert/equal
+  (let ((count 0))
+    (vector-map
+      (lambda (ignored)
+        (set! count (+ count 1))
+        count)
+      '#(a b)))
+    ; #(1 2)
+    ; or
+    ; #(2 1)
+  #(2 1))
+      
+(assert/equal
+    (let ((v (make-vector 5)))
+        (vector-for-each
+            (lambda (i) (vector-set! v i (* i i)))
+            '#(0 1 2 3 4))
+        v)
+    #(0 1 4 9 16))
+
+(assert/equal
+    (vector-append #(a b c) #(d e f))
+    #(a b c d e f))
+
 (unit-test-handler-results)

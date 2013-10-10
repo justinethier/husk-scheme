@@ -1,25 +1,4 @@
 ; TODO: this is a testpad, need to integrate all this back into husk
-(define (vector-map fnc . vargs)
-    (let* ((ls (map (lambda (v) (vector->list v)) vargs))
-           (ms (apply map (cons fnc ls)))
-;           (vs (map (lambda (l) (list->vector l) ms)))
-           )
-        (list->vector ms)
-        ))
-
-(define (vector-for-each fnc . vargs)
-    (let ((ls (map 
-                (lambda (v) (vector->list v)) 
-                vargs)))
-        (apply for-each 
-               (cons fnc ls))))
-
-(define (vector-append . vargs)
-    (let ((ls (map 
-                (lambda (v) (vector->list v)) 
-                vargs)))
-        (list->vector (apply append ls))))
-
 (write
 (vector-map cadr '#((a b) (d e) (g h)))
     ;#(b e h)
