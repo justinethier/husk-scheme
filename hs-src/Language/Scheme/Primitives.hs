@@ -23,17 +23,15 @@ Most of these map directly to an equivalent Scheme function.
 -- vector-map,
 -- vector-for-each, 
 -- vector-append
+-- string-map, string-for-each, 
 --
 -- Remaining:
 --   string->vector -- TODO: this and the string->list from R5RS now take start/end optional args
 --   vector->string, -- so they are partially implemented, but do not meet this requirement
 --
--- Stdlib (??) - yes, should be easy (ish) to convert to lists, call appropriate funcs and convert results back
--- string-map, string-for-each, 
---
 -- Special forms (?)
 -- list-set! -- needs to be a special form, so var is available
---vector-copy!, and string-copy!
+-- vector-copy!, and string-copy!
 --
 
 module Language.Scheme.Primitives (
