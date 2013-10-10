@@ -473,6 +473,17 @@
         (list->vector 
             (apply append 
                    ls))))
+;;
+;; String functions from r7rs
+(define (string-map fnc . sargs)
+    (let* ((ls (map (lambda (s) (string->list s)) sargs)))
+        (list->string 
+            (apply map 
+                   (cons fnc ls)))))
+(define (string-for-each fnc . sargs)
+    (let ((ls (map (lambda (v) (string->list v)) sargs)))
+        (apply for-each 
+               (cons fnc ls))))
 ;; END
 
 ; Quasi-quotation as a macro

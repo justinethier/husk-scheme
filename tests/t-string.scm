@@ -29,4 +29,19 @@
 (assert/equal (string-fill! test #\a)
               "aaaaaaa")
 
+(assert/equal
+    (string-map
+        (lambda (c)
+            (integer->char (+ 1 (char->integer c))))
+            "HAL")
+    "IBM")
+
+(assert/equal
+    (let ((v '()))
+        (string-for-each
+            (lambda (c) (set! v (cons (char->integer c) v)))
+            "abcde")
+        v)
+    '(101 100 99 98 97))
+
 (unit-test-handler-results)
