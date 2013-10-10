@@ -20,16 +20,16 @@ Most of these map directly to an equivalent Scheme function.
 -- make-list
 -- list-copy
 -- vector-copy 
+-- vector-map,
+-- vector-for-each, 
+-- vector-append
 --
 -- Remaining:
 --   string->vector -- TODO: this and the string->list from R5RS now take start/end optional args
 --   vector->string, -- so they are partially implemented, but do not meet this requirement
--- vector-append
 --
 -- Stdlib (??) - yes, should be easy (ish) to convert to lists, call appropriate funcs and convert results back
 -- string-map, string-for-each, 
--- vector-map,
--- vector-for-each, 
 --
 -- Special forms (?)
 -- list-set! -- needs to be a special form, so var is available
