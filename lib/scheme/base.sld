@@ -197,9 +197,9 @@
     ;let-values
     ;letrec*
     ;letrec-syntax
-    ;list-copy
+    list-copy
     ;list-set!
-    ;make-list
+    make-list
     ;make-parameter
     ;open-input-bytevector
     ;open-input-string
@@ -222,11 +222,11 @@
     ;set-car!
     ;set-cdr!
     ;square
-    ;string->vector
-    ;string-copy!
+    string->vector
+    string-copy!
     ;string-fill!
-    ;string-for-each
-    ;string-map
+    string-for-each
+    string-map
     ;string-set!
     ;symbol=?
     ;syntax-error
@@ -239,13 +239,13 @@
     ;unless
     ;unquote
     ;unquote-splicing
-    ;vector->string
-    ;vector-append
-    ;vector-copy
-    ;vector-copy!
+    vector->string
+    vector-append
+    vector-copy
+    vector-copy!
     ;vector-fill!
-    ;vector-for-each
-    ;vector-map
+    vector-for-each
+    vector-map
     ;vector-set!
     ;when
     ;with-exception-handler
