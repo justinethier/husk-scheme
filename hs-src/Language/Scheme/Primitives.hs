@@ -27,10 +27,8 @@ Most of these map directly to an equivalent Scheme function.
 -- string-map, string-for-each, 
 --   string->vector -- TODO: this and the string->list from R5RS now take start/end optional args
 --   vector->string, -- so they are partially implemented, but do not meet this requirement
---
--- Special forms (?)
--- vector-copy!, and string-copy! -- presumably these must be special forms as well 
---  OR... can these go in the stdlib??
+--   vector-copy! -- done but same notes as above
+--   string-copy! 
 --
 
 module Language.Scheme.Primitives (
