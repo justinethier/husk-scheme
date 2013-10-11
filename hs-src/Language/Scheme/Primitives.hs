@@ -19,6 +19,7 @@ Most of these map directly to an equivalent Scheme function.
 -- Done:
 -- make-list
 -- list-copy
+-- list-set!
 -- vector-copy 
 -- vector-map,
 -- vector-for-each, 
@@ -28,8 +29,8 @@ Most of these map directly to an equivalent Scheme function.
 --   vector->string, -- so they are partially implemented, but do not meet this requirement
 --
 -- Special forms (?)
--- list-set! -- needs to be a special form, so var is available
 -- vector-copy!, and string-copy! -- presumably these must be special forms as well 
+--  OR... can these go in the stdlib??
 --
 
 module Language.Scheme.Primitives (
