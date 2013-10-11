@@ -22,4 +22,10 @@
 (assert/equal (list->string '(#\s #\k #\i #\m)) "skim")
 (assert/equal (list->string '()) "")
 
+(assert/equal
+    (let ((ls (list 'one 'two 'five!)))
+        (list-set! ls 2 'three)
+        ls)
+    '(one two three))
+
 (unit-test-handler-results)

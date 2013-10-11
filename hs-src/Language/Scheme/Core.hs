@@ -35,10 +35,12 @@ module Language.Scheme.Core
     -- * Utility functions
     , findFileOrLib
     , getDataFileFullPath
+    , replaceAtIndex
     , registerExtensions
     , showBanner
     , showLispError
     , substr
+    , updateList
     , updateVector
     , updateByteVector
     -- * Internal use only
@@ -641,6 +643,35 @@ eval env cont fargs@(List (Atom "set-cdr!" : args)) = do
   then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
   else throwError $ NumArgs (Just 2) args
 
+eval env cont args@(List [Atom "list-set!", Atom var, i, object]) = do
+ bound <- liftIO $ isRecBound env "list-set!"
+ if bound
+  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
+  else meval env (makeCPS env cont cpsObj) i
+ where
+        cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsObj e c idx _ = meval e (makeCPSWArgs e c cpsList $ [idx]) object
+
+        cpsList :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsList e c obj (Just [idx]) = (meval e (makeCPSWArgs e c cpsUpdateList $ [idx, obj]) =<< getVar e var)
+        cpsList _ _ _ _ = throwError $ InternalError "Invalid argument to cpsList"
+
+        cpsUpdateList :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsUpdateList e c list (Just [idx, obj]) =
+            updateList list idx obj >>= updateObject e var >>= continueEval e c
+        cpsUpdateList _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateList"
+
+eval env cont args@(List [Atom "list-set!" , nonvar , _ , _]) = do 
+ bound <- liftIO $ isRecBound env "list-set!"
+ if bound
+  then prepareApply env cont args -- if is bound to a variable in this scope; call into it
+  else throwError $ TypeMismatch "variable" nonvar
+eval env cont fargs@(List (Atom "list-set!" : args)) = do 
+ bound <- liftIO $ isRecBound env "list-set!"
+ if bound
+  then prepareApply env cont fargs -- if is bound to a variable in this scope; call into it
+  else throwError $ NumArgs (Just 3) args
+
 eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
  bound <- liftIO $ isRecBound env "vector-set!"
  if bound
@@ -775,6 +806,19 @@ substr (String str, Char char, Number ii) = do
 substr (String _, Char _, n) = throwError $ TypeMismatch "number" n
 substr (String _, c, _) = throwError $ TypeMismatch "character" c
 substr (s, _, _) = throwError $ TypeMismatch "string" s
+
+-- |Replace a list element, by index. Taken from:
+--  http://stackoverflow.com/questions/10133361/haskell-replace-element-in-list
+replaceAtIndex n item ls = a ++ (item:b) where (a, (_:b)) = splitAt n ls
+
+-- |A helper function for /(list-set!)/
+updateList :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
+updateList (List list) (Number idx) obj = do
+    return $ List $ replaceAtIndex (fromInteger idx) obj list
+updateList ptr@(Pointer _ _) i obj = do
+  list <- derefPtr ptr
+  updateList list i obj
+updateList l _ _ = throwError $ TypeMismatch "list" l
 
 -- |A helper function for the special form /(vector-set!)/
 updateVector :: LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
