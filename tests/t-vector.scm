@@ -94,4 +94,18 @@
     (vector->string #(#\1 #\2 #\3))
     "123")
 
+(define a "12345")
+(define b (string-copy "abcde"))
+(assert/equal 
+    (string-copy! b 0 a) ; 0 2)
+    "12345")
+; TODO: (string-copy! b 1 a 0 2)
+
+(define a (vector 1 2 3 4 5))
+(define b (vector 10 20 30 40 50))
+(assert/equal
+    (vector-copy! b 0 a)
+    #(1 2 3 4 5))
+;TODO: (vector-copy! b 1 a 0 2)
+
 (unit-test-handler-results)

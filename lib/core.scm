@@ -454,45 +454,6 @@
           (car lst)
           (foldl (lambda (a b) (append-2 b a)) (car lst) (cdr lst)))))
 
-;;
-;; Vector functions from r7rs
-;; These help round-out the standard list/vector/string functions
-(define (vector-map fnc . vargs)
-    (let* ((ls (map (lambda (v) (vector->list v)) vargs)))
-        (list->vector 
-            (apply map 
-                   (cons fnc ls)))))
-
-(define (vector-for-each fnc . vargs)
-    (let ((ls (map (lambda (v) (vector->list v)) vargs)))
-        (apply for-each 
-               (cons fnc ls))))
-
-(define (vector-append . vargs)
-    (let ((ls (map (lambda (v) (vector->list v)) vargs)))
-        (list->vector 
-            (apply append 
-                   ls))))
-(define (vector->string v)
-    (list->string 
-        (vector->list v)))
-
-(define (string->vector s)
-    (list->vector
-        (string->list s)))
-;;
-;; String functions from r7rs
-(define (string-map fnc . sargs)
-    (let* ((ls (map (lambda (s) (string->list s)) sargs)))
-        (list->string 
-            (apply map 
-                   (cons fnc ls)))))
-(define (string-for-each fnc . sargs)
-    (let ((ls (map (lambda (v) (string->list v)) sargs)))
-        (apply for-each 
-               (cons fnc ls))))
-;; END
-
 ; Quasi-quotation as a macro
 ; Based on code from chibi-scheme
 ;
@@ -537,3 +498,60 @@
 ;        ((if (symbol? x) #t (null? x)) (list (rename 'quote) x))
 ;        (else x)))
 ;     (qq (cadr expr) 0))))
+
+
+;;
+;; Vector functions from r7rs
+;; These help round-out the standard list/vector/string functions
+(define (vector-map fnc . vargs)
+    (let* ((ls (map (lambda (v) (vector->list v)) vargs)))
+        (list->vector 
+            (apply map 
+                   (cons fnc ls)))))
+
+(define (vector-for-each fnc . vargs)
+    (let ((ls (map (lambda (v) (vector->list v)) vargs)))
+        (apply for-each 
+               (cons fnc ls))))
+
+(define (vector-append . vargs)
+    (let ((ls (map (lambda (v) (vector->list v)) vargs)))
+        (list->vector 
+            (apply append 
+                   ls))))
+(define (vector->string v)
+    (list->string 
+        (vector->list v)))
+
+(define (string->vector s)
+    (list->vector
+        (string->list s)))
+;;
+;; String functions from r7rs
+(define (string-map fnc . sargs)
+    (let* ((ls (map (lambda (s) (string->list s)) sargs)))
+        (list->string 
+            (apply map 
+                   (cons fnc ls)))))
+(define (string-for-each fnc . sargs)
+    (let ((ls (map (lambda (v) (string->list v)) sargs)))
+        (apply for-each 
+               (cons fnc ls))))
+;; END
+
+;; More functions from r7rs
+(define-syntax def-copy-in-place
+    (er-macro-transformer
+        (lambda (expr rename compare)
+            (let* ((base (symbol->string (cadr expr)))
+                   (sym (lambda (rstr)
+                            (string->symbol
+                                 (string-append base "-" rstr)))))
+            `(define (,(sym "copy!") to at from)
+                (do ((i 0 (+ i 1)))
+                    ((= i (,(sym "length") from)) to)
+                     (,(sym "set!") to (+ at i) (,(sym "ref") from i))))))))
+(def-copy-in-place string)
+(def-copy-in-place vector)
+;; END
+
