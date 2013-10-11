@@ -1,3 +1,4 @@
+; TODO: this is just a temporary work area, integrate back into husk
 ; TODO: string-copy! and vector-copy! are structurally identical and could both be generated using the same macro
 (define (string-copy! to at from)
     (do ((i 0 (+ i 1)))
