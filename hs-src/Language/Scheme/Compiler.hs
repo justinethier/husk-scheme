@@ -653,6 +653,39 @@ compile env ast@(List (Atom "set-cdr!" : args)) copts = do
             (show args) ++ "\"]") copts
     return [f])
 
+compile env ast@(List [Atom "list-set!", Atom var, i, object]) copts = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    Atom symCompiledIdx <- _gensym "listSetIdx"
+    Atom symCompiledObj <- _gensym "listSetObj"
+    Atom symUpdateVec <- _gensym "listSetUpdate"
+    Atom symIdxWrapper <- _gensym "listSetIdxWrapper"
+   
+    -- Entry point that allows this form to be redefined
+    entryPt <- compileSpecialFormEntryPoint "list-set!" symCompiledIdx copts
+    -- Compile index, then use a wrapper to pass it as an arg while compiling obj
+    compiledIdx <- compileExpr env i symCompiledIdx (Just symIdxWrapper) 
+    compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
+       AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") Nothing " ]
+    compiledObj <- compileExpr env object symCompiledObj Nothing
+    -- Do actual update
+    compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
+       AstValue $ "  vec <- getVar env \"" ++ var ++ "\"",
+       AstValue $ "  result <- updateList vec idx obj >>= updateObject env \"" ++ var ++ "\"",
+       createAstCont copts "result" ""]
+   
+    return $ [entryPt, compiledIdxWrapper, compiledUpdate] ++ compiledIdx ++ compiledObj)
+
+compile env ast@(List [Atom "list-set!", nonvar, _, _]) copts = do 
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    f <- compileSpecialForm "list-set!" ("throwError $ TypeMismatch \"variable\"" ++
+                            " $ String \"" ++ (show nonvar) ++ "\"")  copts
+    return [f])
+compile env ast@(List (Atom "list-set!" : args)) copts = do
+  compileSpecialFormBody env ast copts (\ nextFunc -> do
+    f <- compileSpecialForm "list-set!" ("throwError $ NumArgs 3 $ [String \"" ++ 
+            (show args) ++ "\"]") copts
+    return [f])
+
 compile env ast@(List [Atom "vector-set!", Atom var, i, object]) copts = do
   compileSpecialFormBody env ast copts (\ nextFunc -> do
     Atom symCompiledIdx <- _gensym "vectorSetIdx"
