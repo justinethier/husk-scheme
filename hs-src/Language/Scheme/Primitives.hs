@@ -15,22 +15,6 @@ Most of these map directly to an equivalent Scheme function.
 
 -}
 
--- TODO: add primitives for the following functions from r7rs (and document in changelog as finished):
--- Done:
--- make-list
--- list-copy
--- list-set!
--- vector-copy 
--- vector-map,
--- vector-for-each, 
--- vector-append
--- string-map, string-for-each, 
---   string->vector -- TODO: this and the string->list from R5RS now take start/end optional args
---   vector->string, -- so they are partially implemented, but do not meet this requirement
---   vector-copy! -- done but same notes as above
---   string-copy! 
---
-
 module Language.Scheme.Primitives (
  -- * Pure functions
  -- ** List
