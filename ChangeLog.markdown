@@ -2,28 +2,12 @@
 v3.13
 --------
 
-- Added the command line flag `--revision 7` (or `-r7` for short) to allow huski and huskc to start in R7RS mode.
-- Added placeholders for most of the r7rs libraries, EG: `(scheme base)`.
-- Extended syntax-rules to allow another identifier to be used to specify the ellipsis symbol, per r7rs
+- Added the command line flag `--revision 7` (or `-r7` for short) to allow huski and huskc to start in R<sup>7</sup>RS mode.
+- Added most of the standard R<sup>7</sup>RS libraries, for example: `(scheme base)`.
+- Extended syntax-rules to allow another identifier to be used to specify the ellipsis symbol, per R<sup>7</sup>RS
 TODO: show syntax for this
 
-Support optional `start` and `end` arguments to `vector-copy` and `string-copy`. TODO: possibly other functions as well... TBD
-
-TODO: Added the following functions from r7rs:
-- `make-list`
-- `list-copy`
-- `list-set!`
-- `vector-copy`
-- `vector-map`
-- `vector-for-each` 
-- `vector-append`
-- `string-map` 
-- `string-for-each` 
-- `string->vector` -- TODO: this and the string->list from R5RS now take start/end optional args
-- `vector->string` -- so they are partially implemented, but do not meet this requirement
-- `vector-copy!` -- done but same notes as above
-- `string-copy!` 
-
+- Added the following functions from R<sup>7</sup>RS: `make-list` , `list-copy` , `list-set!` , `vector-copy` , `vector-map` , `vector-for-each` , `vector-append` , `string-map` , `string-for-each` , `string->vector` , `vector->string` , `vector-copy!` , `string-copy!` 
 
 v3.12
 --------
