@@ -7,6 +7,7 @@ v3.13
 - Extended syntax-rules to allow another identifier to be used to specify the ellipsis symbol, per r7rs
 TODO: show syntax for this
 
+Support optional `start` and `end` arguments to `vector-copy` and `string-copy`. TODO: possibly other functions as well... TBD
 
 TODO: Added the following functions from r7rs:
 - `make-list`
