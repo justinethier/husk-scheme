@@ -528,11 +528,20 @@ listCopy [badType] = return badType
 listCopy badArgList = throwError $ NumArgs (Just 1) badArgList
 
 vectorCopy :: [LispVal] -> IOThrowsError LispVal
-vectorCopy [p@(Pointer _ _)] = do
+vectorCopy (p@(Pointer _ _) : args) = do
   v <- derefPtr p
-  vectorCopy [v]
-vectorCopy [(Vector vs)] = do
+  vectorCopy (v : args)
+vectorCopy [Vector vs] = do
     let l = elems vs
+    return $ Vector $ listArray (0, length l - 1) l 
+vectorCopy [Vector vs, Number start] = do
+    let l = drop (fromInteger start) $ 
+              elems vs
+    return $ Vector $ listArray (0, length l - 1) l 
+vectorCopy [Vector vs, Number start, Number end] = do
+    let l = take (fromInteger $ end - start) $
+              drop (fromInteger start) $ 
+                elems vs
     return $ Vector $ listArray (0, length l - 1) l 
 vectorCopy [badType] = return badType
 vectorCopy badArgList = throwError $ NumArgs (Just 1) badArgList
@@ -1237,8 +1246,17 @@ vectorToString args@(_ : _) = throwError $ NumArgs (Just 1) args
 --   Returns: String - New copy of the given string
 --
 stringCopy :: [LispVal] -> IOThrowsError LispVal
-stringCopy [p@(Pointer _ _)] = derefPtr p >>= box >>= stringCopy
+stringCopy (p@(Pointer _ _) : args) = do
+    s <- derefPtr p 
+    stringCopy (s : args)
 stringCopy [String s] = return $ String s
+stringCopy [String s, Number start] = do
+    return $ String $ 
+        drop (fromInteger start) s
+stringCopy [String s, Number start, Number end] = do
+    return $ String $ 
+        take (fromInteger $ end - start) $
+            drop (fromInteger start) s
 stringCopy [badType] = throwError $ TypeMismatch "string" badType
 stringCopy badArgList = throwError $ NumArgs (Just 2) badArgList
 

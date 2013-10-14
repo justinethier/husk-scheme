@@ -101,6 +101,13 @@
     "12345")
 ; TODO: (string-copy! b 1 a 0 2)
 
+(define a #(1 8 2 8)) ; a may be immutable
+(define b (vector-copy a))
+(vector-set! b 0 3) ; b is mutable
+(assert/equal b #(3 8 2 8))
+(define c (vector-copy b 1 3))
+(assert/equal c #(8 2))
+
 (define a (vector 1 2 3 4 5))
 (define b (vector 10 20 30 40 50))
 (assert/equal
