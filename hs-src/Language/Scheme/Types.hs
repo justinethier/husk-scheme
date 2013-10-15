@@ -529,9 +529,11 @@ makeHVarargs :: (Monad m) => LispVal
                         -> m LispVal
 makeHVarargs = makeHFunc . Just . showVal
 
--- |Validate that function parameters consist of a list of 
---  non-duplicate symbols.
+-- |Validate formal function parameters.
+--  Typically parameters consist of a list of non-duplicate symbols,
+--  although an atom is allowed to indicate an unbound number of params.
 validateFuncParams :: [LispVal] -> Maybe Integer -> IOThrowsError Bool
+validateFuncParams [Atom _] _ = return True
 validateFuncParams ps (Just n) = do
   if length ps /= fromInteger n
      then throwError $ NumArgs (Just n) ps
