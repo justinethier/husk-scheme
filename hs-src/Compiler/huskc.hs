@@ -108,7 +108,8 @@ showHelp :: Options -> IO Options
 showHelp _ = do
   putStrLn "Usage: huskc [options] file"
   putStrLn ""
-  putStrLn "Options:"
+  putStrLn "  Options:"
+  putStrLn ""
   putStrLn "  --help                Display this information"
   putStrLn "  --version             Display husk version information"
   putStrLn "  --revision rev        Specify the scheme revision to use:"
