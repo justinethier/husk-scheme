@@ -6,10 +6,10 @@ v3.13
 - Added most of the standard R<sup>7</sup>RS libraries, for example: `(scheme base)`.
 - Extended syntax-rules to allow another identifier to be used to specify the ellipsis symbol, per R<sup>7</sup>RS. For example:
 
-    (define-syntax and
-      (syntax-rules ::: ()
-        ((and test1 test2 :::)
-         (if test1 (and test2 :::) #f))))
+     (define-syntax and
+       (syntax-rules ::: ()
+         ((and test1 test2 :::)
+          (if test1 (and test2 :::) #f))))
 
 - Added the following functions from R<sup>7</sup>RS: `make-list` , `list-copy` , `list-set!` , `vector-copy` , `vector-map` , `vector-for-each` , `vector-append` , `string-map` , `string-for-each` , `string->vector` , `vector->string` , `vector-copy!` , `string-copy!` 
 
