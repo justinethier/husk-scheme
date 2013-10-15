@@ -13,6 +13,16 @@ v3.13
 
 - Added the following functions from R<sup>7</sup>RS: `make-list` , `list-copy` , `list-set!` , `vector-copy` , `vector-map` , `vector-for-each` , `vector-append` , `string-map` , `string-for-each` , `string->vector` , `vector->string` , `vector-copy!` , `string-copy!` 
 
+
+TODO: Bug fix for issue #135 - According to r5rs, the formal argument list for lambda can be a list to denote a fixed number of arguments
+
+    (define len
+      (lambda args
+        (length args)))
+    
+    >(len 1 2 3)
+    3
+
 v3.12
 --------
 
