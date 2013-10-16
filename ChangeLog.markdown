@@ -3,8 +3,8 @@ v3.13
 --------
 
 - Added the command line flag `--revision 7` (or `-r7` for short) to allow huski and huskc to start in R<sup>7</sup>RS mode.
-- Added most of the standard R<sup>7</sup>RS libraries, for example: `(scheme base)`.
-- Extended syntax-rules to allow another identifier to be used to specify the ellipsis symbol, per R<sup>7</sup>RS. For example:
+- Added most of the standard R<sup>7</sup>RS libraries: `(scheme base)`, `(scheme char)`, etc.
+- Extended syntax-rules to allow another identifier to be used to specify the ellipsis symbol, per R<sup>7</sup>RS. For example, `:::` could be used instead:
 
         (define-syntax and
           (syntax-rules ::: ()
@@ -12,7 +12,7 @@ v3.13
              (if test1 (and test2 :::) #f))))
 
 - Added the following functions from R<sup>7</sup>RS: `make-list` , `list-copy` , `list-set!` , `vector-copy` , `vector-map` , `vector-for-each` , `vector-append` , `string-map` , `string-for-each` , `string->vector` , `vector->string` , `vector-copy!` , `string-copy!` 
-- Allow a function to take any number of arguments by specifying a single identifier as the formal argument list. For example:
+- Allow a function to take any number of arguments by specifying a single identifier as the formal argument list. This is required by both R<sup>5</sup>RS and R<sup>7</sup>RS. For example:
 
         (define len
           (lambda args
