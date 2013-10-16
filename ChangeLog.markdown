@@ -12,16 +12,14 @@ v3.13
              (if test1 (and test2 :::) #f))))
 
 - Added the following functions from R<sup>7</sup>RS: `make-list` , `list-copy` , `list-set!` , `vector-copy` , `vector-map` , `vector-for-each` , `vector-append` , `string-map` , `string-for-each` , `string->vector` , `vector->string` , `vector-copy!` , `string-copy!` 
+- Allow a function to take any number of arguments by specifying a single identifier as the formal argument list. For example:
 
-
-TODO: Bug fix for issue #135 - According to r5rs, the formal argument list for lambda can be a list to denote a fixed number of arguments
-
-    (define len
-      (lambda args
-        (length args)))
-    
-    >(len 1 2 3)
-    3
+        (define len
+          (lambda args
+            (length args)))
+        
+        >(len 1 2 3)
+        3
 
 v3.12
 --------
