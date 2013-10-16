@@ -53,16 +53,19 @@ doc:
 rpm:
 	rpmbuild -ba misc/ghc-husk-scheme.spec
 
-# Run all unit tests
+# Run interpreter unit tests
 test:
 	$(HUSKI) $(UNIT_TEST_DIR)/r5rs_pitfall.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) run-tests.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) -r7 run-tests7.scm
 
-# Run (experimental) compiler unit tests
+# Run compiler unit tests
 testc:
-	@cd $(UNIT_TEST_DIR) && $(HUSKC) compiler-run-tests.scm && ./compiler-run-tests
-	@cd $(UNIT_TEST_DIR) && $(HUSKC) -r7 run-tests7.scm && ./run-tests7
+	@cd $(UNIT_TEST_DIR) && \
+        $(HUSKC) compiler-run-tests.scm && \
+        $(HUSKC) -r7 run-tests7.scm  && \
+        ./compiler-run-tests && \
+        ./run-tests7
 #	$(HUSKC) $(UNIT_TEST_DIR)/compiler/t-basic.scm
 #	$(UNIT_TEST_DIR)/compiler/t-basic
 #	$(HUSKC) $(UNIT_TEST_DIR)/compiler/er-macro.scm
