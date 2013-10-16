@@ -115,4 +115,12 @@
     '("Invoked outer (before)" connect talk1 disconnect connect talk2 disconnect . "Invoked outer (after)")
     "dynamic-wind before and after")
 
+(assert/equal 
+    ((lambda x x) 3 4 5 6) 
+    '(3 4 5 6))
+(assert/equal
+    ((lambda (x y . z) z)
+        3 4 5 6) 
+    '(5 6))
+
 (unit-test-handler-results)
