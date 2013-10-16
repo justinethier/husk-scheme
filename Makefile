@@ -57,6 +57,7 @@ rpm:
 test:
 	$(HUSKI) $(UNIT_TEST_DIR)/r5rs_pitfall.scm
 	@cd $(UNIT_TEST_DIR) ; $(HUSKI) run-tests.scm
+	@cd $(UNIT_TEST_DIR) ; $(HUSKI) -r7 run-tests7.scm
 
 # Run (experimental) compiler unit tests
 testc:
