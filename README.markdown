@@ -33,7 +33,6 @@ Before running husk you may also need to add the cabal executable directory to y
     (lambda () ...)
     huski> (hello)
     world
-    huski>
 
 husk has been tested on Windows, Linux, and FreeBSD.
 
