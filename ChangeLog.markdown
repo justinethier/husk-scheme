@@ -12,14 +12,6 @@ v3.13
              (if test1 (and test2 :::) #f))))
 
 - Added the following functions from R<sup>7</sup>RS: `make-list` , `list-copy` , `list-set!` , `vector-copy` , `vector-map` , `vector-for-each` , `vector-append` , `string-map` , `string-for-each` , `string->vector` , `vector->string` , `vector-copy!` , `string-copy!` 
-- Allow a function to take any number of arguments by specifying a single identifier as the formal argument list. This is required by both R<sup>5</sup>RS and R<sup>7</sup>RS. For example:
-
-        (define len
-          (lambda args
-            (length args)))
-        
-        >(len 1 2 3)
-        3
 
 v3.12
 --------
