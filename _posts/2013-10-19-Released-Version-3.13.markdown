@@ -1,7 +1,7 @@
 --- 
 layout: post
 title: Released Version 3.13
-excerpt: Many enhancements to support R<sup>7</sup>RS
+excerpt: This release includes many smaller enhancements to support R<sup>7</sup>RS.
 ---
 # {{ page.title }}
 
