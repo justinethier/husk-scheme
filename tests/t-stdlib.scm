@@ -325,4 +325,11 @@
   #f)
 (assert/equal (if (test) 'true 'false) 'false)
 
+(when (= 1 1.0)
+    (assert/equal #t #t)
+    (assert/equal #t #t))
+(unless (= 1 1.0)
+    (assert/equal #t #f)
+    (assert/equal #t #f))
+
 (unit-test-handler-results)
