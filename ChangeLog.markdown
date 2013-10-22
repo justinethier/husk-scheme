@@ -2,6 +2,7 @@
 v3.14
 --------
 
+- WIP: log second argument (base)
 - Added `when` and `unless` syntax, per r7rs.
 
 v3.13

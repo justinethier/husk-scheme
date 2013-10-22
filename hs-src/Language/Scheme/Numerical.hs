@@ -406,9 +406,13 @@ numExp badArgList = throwError $ NumArgs (Just 1) badArgList
 -- |Compute the log of a given number
 numLog :: [LispVal] -> ThrowsError LispVal
 numLog [(Number n)] = return $ Float $ log $ fromInteger n
+numLog [Number n, Number base] = return $ Float $ logBase (fromInteger base) (fromInteger n)
 numLog [(Float n)] = return $ Float $ log n
+numLog [Float n, Number base] = return $ Float $ logBase (fromInteger base) n
 numLog [(Rational n)] = return $ Float $ log $ fromRational n
+numLog [Rational n, Number base] = return $ Float $ logBase (fromInteger base) (fromRational n)
 numLog [(Complex n)] = return $ Complex $ log n
+numLog [Complex n, Number base] = return $ Complex $ logBase (fromInteger base) n
 numLog [x] = throwError $ TypeMismatch "number" x
 numLog badArgList = throwError $ NumArgs (Just 1) badArgList
 
