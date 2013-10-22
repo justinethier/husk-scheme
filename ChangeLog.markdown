@@ -1,4 +1,9 @@
 
+v3.14
+--------
+
+- Added `when` and `unless` syntax, per r7rs.
+
 v3.13
 --------
 
