@@ -2,6 +2,7 @@
 v3.14
 --------
 
+- Issue #138 - Allow parsing of unicode and special ASCII characters
 - WIP: log second argument (base)
 - Added `when` and `unless` syntax, per r7rs.
 
