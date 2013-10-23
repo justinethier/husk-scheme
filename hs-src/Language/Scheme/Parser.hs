@@ -48,7 +48,7 @@ import Language.Scheme.Types
 import Control.Monad.Error
 import Data.Array
 import qualified Data.ByteString as BS
-import qualified Data.Char as Char
+import qualified Data.Char as DC
 import Data.Complex
 import qualified Data.Map
 import Data.Ratio
@@ -142,7 +142,9 @@ parseChar = do
     "tab"       -> return $ Char '\t'
     _ -> case (c : r) of
         [c] -> return $ Char c
-        ('x' : hexs) -> return $ String "TODO"
+        ('x' : hexs) -> do
+            rv <- parseHexScalar hexs
+            return $ Char rv
         _ -> pzero
 
 -- |Parse an integer in octal notation, base 8
@@ -163,8 +165,8 @@ parseBinaryNumber = do
   sign <- many (oneOf "-")
   num <- many1 (oneOf "01")
   case (length sign) of
-     0 -> return $ Number $ fst $ Numeric.readInt 2 (`elem` "01") Char.digitToInt num !! 0
-     1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ Numeric.readInt 2 (`elem` "01") Char.digitToInt num !! 0
+     0 -> return $ Number $ fst $ Numeric.readInt 2 (`elem` "01") DC.digitToInt num !! 0
+     1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ Numeric.readInt 2 (`elem` "01") DC.digitToInt num !! 0
      _ -> pzero
 
 -- |Parse an integer in hexadecimal notation, base 16
@@ -288,11 +290,24 @@ parseEscapedChar :: forall st .
 parseEscapedChar = do
   _ <- char '\\'
   c <- anyChar
-  return $ case c of
-    'n' -> '\n'
-    't' -> '\t'
-    'r' -> '\r'
-    _ -> c
+  case c of
+    'a' -> return '\a'
+    'b' -> return '\b'
+    'n' -> return '\n'
+    't' -> return '\t'
+    'r' -> return '\r'
+    'x' -> do
+        num <- many $ letter <|> digit
+        _ <- char ';'
+        parseHexScalar num
+    _ -> return c
+
+-- |Parse a hexidecimal scalar
+parseHexScalar num = do
+    let ns = Numeric.readHex num
+    case ns of
+        [] -> fail $ "Unable to parse hex value " ++ show num
+        _ -> return $ DC.chr $ fst $ ns !! 0
 
 -- |Parse a string
 parseString :: Parser LispVal
