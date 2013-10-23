@@ -11,8 +11,8 @@
 (define pass-count 0)
 (define fail-count 0)
 
-(define (unit-test-handler expected actual . label) 
-  (if (not (equal? expected actual))
+(define (unit-test-handler cmp expected actual . label) 
+  (if (not (cmp expected actual))
     (begin 
         (display "Test ")
         (if (not (null? (car label))) 
@@ -29,12 +29,20 @@
         (set! fail-count (+ fail-count 1)))
     (set! pass-count (+ pass-count 1))))
 
-(define (assert proc) (unit-test-handler #t (proc)))
+(define (assert proc) (unit-test-handler equal? #t (proc)))
 
 ;(define (assert-equal proc value) (unit-test-handler value (proc)))
 
 (define (assert/equal test expected . label)
      (unit-test-handler 
+        equal?
+        expected 
+        ((lambda () test))
+        label))
+
+(define (assert/= test expected . label)
+     (unit-test-handler 
+        =
         expected 
         ((lambda () test))
         label))

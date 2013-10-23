@@ -145,4 +145,7 @@
 (assert/equal (> 2 1 0.5 0.3 0.2 0.1 0) #t)
 (assert/equal (< 0 1 2 3 4 5 6 7 8 9 10.0) #t)
 (assert/equal (< 2 18/9) #f)
+
+(assert/= (log 1000 10) 3)
+
 (unit-test-handler-results)
