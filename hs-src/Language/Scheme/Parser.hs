@@ -128,13 +128,22 @@ parseChar :: Parser LispVal
 parseChar = do
   _ <- try (string "#\\")
   c <- anyChar
-  r <- many (letter)
+  r <- many (letter <|> digit)
   let pchr = c : r
-  return $ case pchr of
-    "space" -> Char ' '
-    "newline" -> Char '\n'
-    _ -> Char c
-
+  case pchr of
+    "space"     -> return $ Char ' '
+    "newline"   -> return $ Char '\n'
+    "alarm"     -> return $ Char '\a' 
+    "backspace" -> return $ Char '\b' 
+    "delete"    -> return $ Char '\DEL'
+    "escape"    -> return $ Char '\ESC' 
+    "null"      -> return $ Char '\0' 
+    "return"    -> return $ Char '\n' 
+    "tab"       -> return $ Char '\t'
+    _ -> case (c : r) of
+        [c] -> return $ Char c
+        ('x' : hexs) -> return $ String "TODO"
+        _ -> pzero
 
 -- |Parse an integer in octal notation, base 8
 parseOctalNumber :: Parser LispVal
