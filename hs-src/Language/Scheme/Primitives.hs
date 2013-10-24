@@ -78,6 +78,7 @@ module Language.Scheme.Primitives (
  , charPredicate
  , charUpper
  , charLower
+ , charDigitValue
  , char2Int
  , int2Char
 
@@ -1422,6 +1423,16 @@ charUpper [notChar] = throwError $ TypeMismatch "char" notChar
 charLower :: [LispVal] -> ThrowsError LispVal
 charLower [Char c] = return $ Char $ toLower c
 charLower [notChar] = throwError $ TypeMismatch "char" notChar
+
+charDigitValue :: [LispVal] -> ThrowsError LispVal
+charDigitValue [Char c] = do
+    -- This is not really good enough, since unicode chars
+    -- are supposed to be processed, and r7rs does not
+    -- spec hex chars, but it is a decent start for now...
+    if isHexDigit c
+       then return $ Number $ toInteger $ digitToInt c
+       else return $ Bool False
+charDigitValue [notChar] = throwError $ TypeMismatch "char" notChar
 
 -- | Convert from a charater to an integer
 --

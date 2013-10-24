@@ -22,7 +22,7 @@
         ;char-upcase
         char-upper-case?
         char-whitespace?
-        ;digit-value
+        digit-value
         string-ci<=?
         string-ci<?
         string-ci=?

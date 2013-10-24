@@ -221,6 +221,7 @@ primitives = [("+", numAdd),
               ("integer->char", int2Char),
               ("char-upper", charUpper),
               ("char-lower", charLower),
+              ("digit-value", charDigitValue),
 
               ("procedure?", isProcedure),
               ("number?", isNumber),
