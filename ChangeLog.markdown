@@ -2,9 +2,10 @@
 v3.14
 --------
 
-- Issue #138 - Allow parsing of unicode and special ASCII characters
+- Issue #138 - Allow parsing of unicode and special ASCII characters - see ticket
+  in addition: "Strings and symbols now allow mnemonic and numeric escape sequences, and the list of named characters has been extended."
 - WIP: log second argument (base)
-- Added `when` and `unless` syntax, per r7rs.
+- Added `letrec*`, `when`, and `unless` syntax, per r7rs.
 
 v3.13
 --------
