@@ -566,4 +566,11 @@
     ((unless test result1 result2 ...)
      (if (not test)
          (begin result1 result2 ...)))))
+(define-syntax letrec*
+  (syntax-rules ()
+    ((letrec* ((var1 init1) ...) body1 body2 ...)
+     (let ((var1 #f) ...)
+        (set! var1 init1)
+        ...
+        (let () body1 body2 ...)))))
 ;; END

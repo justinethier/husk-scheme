@@ -449,4 +449,18 @@
     (let ((f -)) (let f ((n (f 1))) n))
     -1)
 
+(assert/equal
+    (letrec* ((p
+               (lambda (x)
+                 (+ 1 (q (- x 1)))))
+              (q
+               (lambda (y)
+                (if (zero? y)
+                    0
+                    (+ 1 (p (- y 1))))))
+              (x (p 5))
+              (y x))
+        y)
+    5)
+
 (unit-test-handler-results)
