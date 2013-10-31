@@ -267,17 +267,20 @@ isCharReady _ = return $ Bool False
 --
 --   Returns: LispVal
 --
-readProc :: [LispVal] -> IOThrowsError LispVal
-readProc [] = readProc [Port stdin]
-readProc [Port port] = do
+readProc :: Bool -> [LispVal] -> IOThrowsError LispVal
+readProc mode [] = readProc mode [Port stdin]
+readProc mode [Port port] = do
     input <- liftIO $ try' (liftIO $ hGetLine port)
     case input of
         Left e -> if isEOFError e
                      then return $ EOF
                      else throwError $ Default "I/O error reading from port" -- FUTURE: ioError e
         Right inpStr -> do
-            liftThrows $ readExpr inpStr
-readProc args@(_ : _) = throwError $ BadSpecialForm "" $ List args
+            liftThrows $ 
+                case mode of
+                    True -> readExpr inpStr
+                    _ -> return $ String inpStr
+readProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 
 -- |Read character from port
 --
