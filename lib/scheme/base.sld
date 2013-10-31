@@ -195,7 +195,7 @@
     ;let*-values
     ;let-syntax
     ;let-values
-    ;letrec*
+    letrec*
     ;letrec-syntax
     list-copy
     ;list-set!
@@ -215,7 +215,7 @@
     ;read-bytevector
     ;read-bytevector!
     ;read-error?
-    ;read-line
+    read-line
     ;read-string
     ;read-u8
     ;set!
