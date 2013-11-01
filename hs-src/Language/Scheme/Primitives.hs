@@ -88,6 +88,7 @@ module Language.Scheme.Primitives (
  , isString 
  , isBoolean 
  , isBooleanEq
+ , isSymbolEq
  , isDottedList 
  , isProcedure 
  , isList 
@@ -1509,6 +1510,12 @@ isBooleanEq (Bool a : Bool b : bs)
     | otherwise = return $ Bool False
 isBooleanEq [Bool _] = return $ Bool True
 isBooleanEq _ = return $ Bool False
+
+isSymbolEq (Atom a : Atom b : bs)
+    | a == b = isSymbolEq (Atom b : bs)
+    | otherwise = return $ Bool False
+isSymbolEq [Atom _] = return $ Bool True
+isSymbolEq _ = return $ Bool False
 
 -- Utility functions
 data Unpacker = forall a . Eq a => AnyUnpacker (LispVal -> ThrowsError a)

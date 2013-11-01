@@ -232,6 +232,7 @@ primitives = [("+", numAdd),
               ("integer?", isInteger),
               ("eof-object?", isEOFObject),
               ("symbol?", isSymbol),
+              ("symbol=?", isSymbolEq),
               ("symbol->string", symbol2String),
               ("char?", isChar),
 
