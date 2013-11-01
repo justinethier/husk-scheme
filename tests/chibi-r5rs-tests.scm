@@ -264,6 +264,14 @@
 
 (test #f (boolean? '()))
 
+(test #f (boolean=?))
+(test #f (boolean=?))
+(test #t (boolean=? #t))
+(test #t (boolean=? #f))
+(test #f) huski> (boolean=? #f #t)
+(test #t (boolean=? #t #t #t))
+(test #f (boolean=? #t #t #t 1))
+
 (test #t (pair? '(a . b)))
 
 (test #t (pair? '(a b c)))

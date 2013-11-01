@@ -87,6 +87,7 @@ module Language.Scheme.Primitives (
  , isChar 
  , isString 
  , isBoolean 
+ , isBooleanEq
  , isDottedList 
  , isProcedure 
  , isList 
@@ -1503,6 +1504,11 @@ isBoolean :: [LispVal] -> ThrowsError LispVal
 isBoolean ([Bool _]) = return $ Bool True
 isBoolean _ = return $ Bool False
 
+isBooleanEq (Bool a : Bool b : bs)
+    | a == b = isBooleanEq (Bool b : bs)
+    | otherwise = return $ Bool False
+isBooleanEq [Bool _] = return $ Bool True
+isBooleanEq _ = return $ Bool False
 
 -- Utility functions
 data Unpacker = forall a . Eq a => AnyUnpacker (LispVal -> ThrowsError a)

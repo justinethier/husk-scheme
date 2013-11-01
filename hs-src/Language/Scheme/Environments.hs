@@ -247,6 +247,7 @@ primitives = [("+", numAdd),
               ("make-string", makeString),
 
               ("boolean?", isBoolean),
+              ("boolean=?", isBooleanEq),
 
               ("husk-interpreter?", isInterpreter)]
 
