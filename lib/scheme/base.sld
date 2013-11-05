@@ -172,7 +172,7 @@
     ;define-syntax
     ;define-values
     ;else
-    ;eof-object
+    eof-object
     ;error-object-irritants
     ;error-object-message
     ;error-object?

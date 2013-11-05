@@ -134,6 +134,7 @@ module Language.Scheme.Primitives (
  -- ** Time
  , currentTimestamp
  -- ** System
+ , eofObject 
  , system
 
  ) where
@@ -1363,6 +1364,10 @@ isNull _ = return $ Bool False
 isEOFObject :: [LispVal] -> ThrowsError LispVal
 isEOFObject ([EOF]) = return $ Bool True
 isEOFObject _ = return $ Bool False
+
+-- | Return the EOF object
+eofObject :: [LispVal] -> ThrowsError LispVal
+eofObject _ = return $ EOF
 
 -- | Determine if given object is a symbol
 --
