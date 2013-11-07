@@ -2,6 +2,8 @@
 v3.14
 --------
 
+added random.scm (TODO: add an sld for this, too, per pp)
+
 - Issue #138 - Allow parsing of unicode and special ASCII characters - see ticket
   in addition: "Strings and symbols now allow mnemonic and numeric escape sequences, and the list of named characters has been extended."
 - WIP: log second argument (base)
