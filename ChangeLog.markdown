@@ -2,9 +2,16 @@
 v3.14
 --------
 
-added random.scm (TODO: add an sld for this, too, per pp)
+Added a library to compute simple random numbers, based on [this Stack Overflow answer](http://stackoverflow.com/questions/14674165/scheme-generate-random):
 
-- Issue #138 - Allow parsing of unicode and special ASCII characters - see ticket
+    (import (husk random))
+    (randon num) ; Seed the RNG
+    (random) ; Random number from 0 to 1
+    (randint lo hi) ; Generate random integer between lo (optional) and hi
+
+Made the following enhancements to improve R<sup>7</sup>RS support:
+
+- Issue #138 - Allow parsing of Unicode and special ASCII characters - see ticket
   in addition: "Strings and symbols now allow mnemonic and numeric escape sequences, and the list of named characters has been extended."
 - WIP: log second argument (base)
 - Added `boolean=?`, `symbol=?`, `read-line`, `eof-object`
