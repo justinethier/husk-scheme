@@ -125,11 +125,14 @@
 ; Case
 ; Form from R5RS:
 (define-syntax case
-  (syntax-rules (else)
+  (syntax-rules (else =>)
     ((case (key ...)
        clauses ...)
      (let ((atom-key (key ...)))
        (case atom-key clauses ...)))
+    ((case key
+       (else => result))
+     (result key))
     ((case key
        (else result1 result2 ...))
      (if #t ((lambda () result1 result2 ...)))) ;; Intentionally not using begin, see above
@@ -137,6 +140,12 @@
        ((atoms ...) result1 result2 ...))
      (if (memv key '(atoms ...))
          ((lambda () result1 result2 ...)))) ;; Intentionally not using begin, see above
+    ((case key
+       ((atoms ...) => result)
+       clause clauses ...)
+     (if (memv key '(atoms ...))
+         (result key)
+         (case key clause clauses ...)))
     ((case key
        ((atoms ...) result1 result2 ...)
        clause clauses ...)

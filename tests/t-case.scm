@@ -52,4 +52,11 @@
 (assert/equal (case 1 (() 'test) (else 'pass))
               'pass)
 
+(assert/equal
+    (case (car '(c d))
+        ((a e i o u) 'vowel)
+        ((w y) 'semivowel)
+        (else => (lambda (x) x)))
+    'c)
+
 (unit-test-handler-results)
