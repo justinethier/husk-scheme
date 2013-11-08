@@ -11,6 +11,7 @@ Added a library to compute simple random numbers, based on [this Stack Overflow 
 
 Made the following enhancements to improve R<sup>7</sup>RS support:
 
+- Added support for the `=>` syntax to the `case` conditional.
 - Issue #138 - Allow parsing of Unicode and special ASCII characters - see ticket
   in addition: "Strings and symbols now allow mnemonic and numeric escape sequences, and the list of named characters has been extended."
 - WIP: log second argument (base)
