@@ -4,6 +4,7 @@ v3.14
 
 
 TODO: working on adding cond-expand per r7rs, see core.scm
+TODO: add exact-integer?, square, and exact-integer-sqrt from r7rs
 
 
 Added a library to compute simple random numbers, based on [this Stack Overflow answer](http://stackoverflow.com/questions/14674165/scheme-generate-random):
