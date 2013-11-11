@@ -4,7 +4,7 @@ v3.14
 
 TODO: working on adding cond-expand per r7rs, see core.scm
 
-Added a library to compute simple random numbers, based on [this Stack Overflow answer](http://stackoverflow.com/questions/14674165/scheme-generate-random):
+Added a library to compute simple random numbers, based on [this Stack Overflow answer](http://stackoverflow.com/a/14675103/101258):
 
     (import (husk random))
     (randon num) ; Seed the RNG
