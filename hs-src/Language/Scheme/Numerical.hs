@@ -536,10 +536,10 @@ isNumInfinite ([Float n]) = return    $ Bool $ isInfinite n
 isNumInfinite _ = return $ Bool False
 
 isNumFinite :: [LispVal] -> ThrowsError LispVal
-isNumber ([Number _]) = return $ Bool True
+isNumFinite ([Number _]) = return $ Bool True
 isNumFinite ([Float n]) = return $ Bool $ not $ isInfinite n
-isNumber ([Complex _]) = return $ Bool True
-isNumber ([Rational _]) = return $ Bool True
+isNumFinite ([Complex _]) = return $ Bool True
+isNumFinite ([Rational _]) = return $ Bool True
 isNumFinite _ = return $ Bool False
 
 -- |Predicate to determine if given value is a number
