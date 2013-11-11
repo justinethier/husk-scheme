@@ -4,13 +4,6 @@ v3.14
 
 TODO: working on adding cond-expand per r7rs, see core.scm
 
-Added a library to compute simple random numbers, based on [this Stack Overflow answer](http://stackoverflow.com/a/14675103/101258):
-
-    (import (husk random))
-    (randon num) ; Seed the RNG
-    (random) ; Random number from 0 to 1
-    (randint lo hi) ; Generate random integer between lo (optional) and hi
-
 Made the following enhancements to improve R<sup>7</sup>RS support:
 
 - Added support for the `=>` syntax to the `case` conditional.
@@ -19,6 +12,13 @@ Made the following enhancements to improve R<sup>7</sup>RS support:
 - WIP: log second argument (base)
 - Added `nan?`, `finite?`, `infinite?`, `exact-integer?`, `exact?`, `inexact?`, `square`, `boolean=?`, `symbol=?`, `read-line`, `eof-object`
 - Added `include`, `letrec*`, `syntax-error`, `when`, and `unless` syntax, per r7rs.
+
+Added a library to compute simple random numbers, based on [this Stack Overflow answer](http://stackoverflow.com/a/14675103/101258):
+
+    (import (husk random))
+    (randon num) ; Seed the RNG
+    (random) ; Random number from 0 to 1
+    (randint lo hi) ; Generate random integer between lo (optional) and hi
 
 v3.13
 --------
