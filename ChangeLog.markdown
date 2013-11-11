@@ -4,7 +4,6 @@ v3.14
 
 
 TODO: working on adding cond-expand per r7rs, see core.scm
-TODO: add exact-integer?, square, and exact-integer-sqrt from r7rs
 TODO: reader should support infinite and nan. see exact syntax from r7rs - +nan.0, -nan.0, etc
 
 
@@ -21,7 +20,7 @@ Made the following enhancements to improve R<sup>7</sup>RS support:
 - Issue #138 - Allow parsing of Unicode and special ASCII characters - see ticket
   in addition: "Strings and symbols now allow mnemonic and numeric escape sequences, and the list of named characters has been extended."
 - WIP: log second argument (base)
-- Added `nan?`, `finite?`, `infinite?`, `boolean=?`, `symbol=?`, `read-line`, `eof-object`
+- Added `nan?`, `finite?`, `infinite?`, `exact-integer?`, `exact?`, `inexact?`, `square`, `boolean=?`, `symbol=?`, `read-line`, `eof-object`
 - Added `include`, `letrec*`, `syntax-error`, `when`, and `unless` syntax, per r7rs.
 
 v3.13

@@ -33,6 +33,7 @@
 
 (define (sum . lst)     (foldl + 0 lst))
 (define (product . lst) (foldl * 1 lst))
+(define (square z) (* z z))
 
 ; Forms from R5RS for and/or
 (define-syntax and
@@ -63,6 +64,8 @@
 (define negative?    (curry > 0))
 (define (odd? num)   (= (modulo num 2) 1))
 (define (even? num)  (= (modulo num 2) 0))
+(define (exact-integer? num)
+    (and (exact? num) (integer? num)))
 
 (define (length lst)    (foldl (lambda (x y) (+ y 1)) 0 lst))
 (define (reverse lst)   (foldl (flip cons) '() lst))

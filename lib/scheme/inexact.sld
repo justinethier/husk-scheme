@@ -14,10 +14,10 @@
         atan
         cos
         exp
-        ;TODO: finite?
-        ;TODO: infinite?
+        finite?
+        infinite?
         log
-        ;TODO: nan?
+        nan?
         sin
         sqrt
         tan

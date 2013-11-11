@@ -178,7 +178,7 @@
     ;error-object?
     ;exact-integer-sqrt
     ;exact-integer?
-    ;exact?
+    exact?
     ;features
     ;file-error?
     ;floor-quotient
@@ -189,7 +189,7 @@
     ;get-output-string
     ;guard
     ;if
-    ;inexact?
+    inexact?
     ;input-port-open?
     ;lambda
     ;let*-values
@@ -221,7 +221,7 @@
     ;set!
     ;set-car!
     ;set-cdr!
-    ;square
+    square
     string->vector
     string-copy!
     ;string-fill!

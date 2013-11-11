@@ -65,6 +65,8 @@ module Language.Scheme.Numerical (
  , isNumNaN
  , isNumInfinite
  , isNumFinite
+ , isNumExact
+ , isNumInexact
 ) where
 import Language.Scheme.Types
 
@@ -541,6 +543,20 @@ isNumFinite ([Float n]) = return $ Bool $ not $ isInfinite n
 isNumFinite ([Complex _]) = return $ Bool True
 isNumFinite ([Rational _]) = return $ Bool True
 isNumFinite _ = return $ Bool False
+
+isNumExact :: [LispVal] -> ThrowsError LispVal
+isNumExact ([Number _]) = return $ Bool True
+isNumExact ([Float _]) = return $ Bool False
+isNumExact ([Complex _]) = return $ Bool False -- TODO: could be either
+isNumExact ([Rational _]) = return $ Bool True
+isNumExact _ = return $ Bool False
+
+isNumInexact :: [LispVal] -> ThrowsError LispVal
+isNumInexact n@([Number _])   = return $ Bool False
+isNumInexact n@([Float _])    = return $ Bool True
+isNumInexact n@([Complex _])  = return $ Bool True
+isNumInexact n@([Rational _]) = return $ Bool False
+isNumInexact _ = return $ Bool False
 
 -- |Predicate to determine if given value is a number
 isNumber :: [LispVal] -> ThrowsError LispVal
