@@ -62,6 +62,9 @@ module Language.Scheme.Numerical (
  , isInteger
  , isNumber
  , isFloatAnInteger
+ , isNumNaN
+ , isNumInfinite
+ , isNumFinite
 ) where
 import Language.Scheme.Types
 
@@ -522,6 +525,22 @@ num2String [(Float n)] = return $ String $ show n
 num2String [n@(Complex _)] = return $ String $ show n
 num2String [x] = throwError $ TypeMismatch "number" x
 num2String badArgList = throwError $ NumArgs (Just 1) badArgList
+
+
+isNumNaN :: [LispVal] -> ThrowsError LispVal
+isNumNaN ([Float n]) = return    $ Bool $ isNaN n
+isNumNaN _ = return $ Bool False
+
+isNumInfinite :: [LispVal] -> ThrowsError LispVal
+isNumInfinite ([Float n]) = return    $ Bool $ isInfinite n
+isNumInfinite _ = return $ Bool False
+
+isNumFinite :: [LispVal] -> ThrowsError LispVal
+isNumber ([Number _]) = return $ Bool True
+isNumFinite ([Float n]) = return $ Bool $ not $ isInfinite n
+isNumber ([Complex _]) = return $ Bool True
+isNumber ([Rational _]) = return $ Bool True
+isNumFinite _ = return $ Bool False
 
 -- |Predicate to determine if given value is a number
 isNumber :: [LispVal] -> ThrowsError LispVal
