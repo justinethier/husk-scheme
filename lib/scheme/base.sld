@@ -81,7 +81,7 @@
     gcd
 ; JAE TODO: should import be included???
     ;import
-    ;include
+    include
     ;include-ci
     input-port?
     integer->char
