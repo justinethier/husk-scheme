@@ -177,7 +177,7 @@
     ;error-object-message
     ;error-object?
     ;exact-integer-sqrt
-    ;exact-integer?
+    exact-integer?
     exact?
     ;features
     ;file-error?

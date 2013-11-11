@@ -148,4 +148,10 @@
 
 (assert/= (log 1000 10) 3)
 
+(assert/equal (exact? 3.0) #f)
+(assert/equal (inexact? 3.0) #t)
+(assert/equal (exact-integer? 32) #t)
+(assert/equal (exact-integer? 32.0) #f)
+(assert/equal (exact-integer? 32/5) #f)
+
 (unit-test-handler-results)
