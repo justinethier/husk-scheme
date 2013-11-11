@@ -2,10 +2,7 @@
 v3.14
 --------
 
-
 TODO: working on adding cond-expand per r7rs, see core.scm
-TODO: reader should support infinite and nan. see exact syntax from r7rs - +nan.0, -nan.0, etc
-
 
 Added a library to compute simple random numbers, based on [this Stack Overflow answer](http://stackoverflow.com/questions/14674165/scheme-generate-random):
 

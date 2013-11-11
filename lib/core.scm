@@ -599,10 +599,6 @@
 ;;
 ;; SRFI-0 (cond-expand) from r7rs
 ;;
-
-; TODO: this is just temporary, need to set this in Haskell code (core.hs?)
-;   in order to incorporate system-level fields such as POSIX, windows, etc
-(define *features* '(r7rs husk ratios))
 (define-syntax cond-expand
   (er-macro-transformer
    (lambda (expr rename compare)

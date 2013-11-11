@@ -67,6 +67,7 @@ import qualified Data.Map
 import Data.Word
 import qualified System.Exit
 import System.IO
+import qualified System.Info as SysInfo
 -- import Debug.Trace
 
 -- |husk version number
@@ -87,6 +88,19 @@ showBanner = do
   putStrLn " (c) 2010-2013 Justin Ethier                                             "
   putStrLn $ " Version " ++ version ++ " "
   putStrLn "                                                                         "
+
+getHuskFeatures :: IO [LispVal]
+getHuskFeatures = do
+    -- TODO: windows posix
+    return [ Atom "r7rs"
+           , Atom "husk"
+           , Atom $ "husk-" ++ version 
+           , Atom $ SysInfo.arch
+           , Atom $ SysInfo.os
+           , Atom "full-unicode"
+           , Atom "ratios"
+           ]
+
 -- |Get the full path to a data file installed for husk
 getDataFileFullPath :: String -> IO String
 getDataFileFullPath s = PHS.getDataFileName s
@@ -1022,6 +1036,8 @@ r5rsEnv' = do
   srfi55 <- PHS.getDataFileName "lib/srfi/srfi-55.scm" -- (require-extension)
   
   -- Load standard library
+  features <- getHuskFeatures
+  _ <- evalString env $ "(define *features* '" ++ (show $ List features) ++ ")"
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
 
   -- Load (require-extension), which can be used to load other SRFI's
@@ -1066,6 +1082,8 @@ r7rsEnv' = do
 
   -- Load necessary libraries
   -- Unfortunately this adds them in the top-level environment (!!)
+  features <- getHuskFeatures
+  _ <- evalString env $ "(define *features* '" ++ (show $ List features) ++ ")"
   cxr <- PHS.getDataFileName "lib/cxr.scm"
   _ <- evalString env {-baseEnv-} $ "(load \"" ++ (escapeBackslashes cxr) ++ "\")" 
   core <- PHS.getDataFileName "lib/core.scm"
