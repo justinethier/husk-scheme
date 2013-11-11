@@ -6,12 +6,11 @@ TODO: working on adding cond-expand per r7rs, see core.scm
 
 Made the following enhancements to improve R<sup>7</sup>RS support:
 
+- Updated the parser for strings, symbols, and character literals. The reader now understands Unicode hex values, strings and symbols now allow mnemonic and numeric escape sequences, and the list of named characters has been extended.
 - Added support for the `=>` syntax to the `case` conditional.
-- Issue #138 - Allow parsing of Unicode and special ASCII characters - see ticket
-  in addition: "Strings and symbols now allow mnemonic and numeric escape sequences, and the list of named characters has been extended."
-- WIP: log second argument (base)
-- Added `nan?`, `finite?`, `infinite?`, `exact-integer?`, `exact?`, `inexact?`, `square`, `boolean=?`, `symbol=?`, `read-line`, `eof-object`
-- Added `include`, `letrec*`, `syntax-error`, `when`, and `unless` syntax, per r7rs.
+- Added an optional second argument to `log` to allow specifying the base.
+- Added the following functions: `nan?`, `finite?`, `infinite?`, `exact-integer?`, `exact?`, `inexact?`, `square`, `boolean=?`, `symbol=?`, `read-line`, `eof-object`.
+- Added support for `include`, `letrec*`, `syntax-error`, `unless`, and `when` syntax.
 
 Added a library to compute simple random numbers, based on [this Stack Overflow answer](http://stackoverflow.com/a/14675103/101258):
 
@@ -130,7 +129,7 @@ Bug fixes:
 v3.7
 --------
 
-A major change for this release is the introduction of Scheme libraries using R7RS library syntax. For an example of how to use libraries, see `examples/hello-library/hello.scm` in the husk source tree. Note that since R7RS is not currently implemented by husk, the library system only has the built-in import `(r5rs base)` to allow you to import the standard husk R5RS environment. Also, please keep in mind this is still a beta feature that is not yet implemented by the compiler.
+A major change for this release is the introduction of Scheme libraries using R<sup>7</sup>RS library syntax. For an example of how to use libraries, see `examples/hello-library/hello.scm` in the husk source tree. Note that since R<sup>7</sup>RS is not currently implemented by husk, the library system only has the built-in import `(r5rs base)` to allow you to import the standard husk R5RS environment. Also, please keep in mind this is still a beta feature that is not yet implemented by the compiler.
 
 This release also contains many improvements to the Haskell API:
 
