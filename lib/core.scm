@@ -72,6 +72,13 @@
     ((begin exp ...)
       ((lambda () exp ...)))))
 
+(define-syntax include
+  (syntax-rules ()
+    ((include file1 file2 ...)
+     (begin
+       (load file1) 
+       (load file2) ...))))
+
 ;
 ;
 ; NOTE: The below cond/case forms do NOT use begin to prevent
