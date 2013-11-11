@@ -2,6 +2,10 @@
 v3.14
 --------
 
+
+TODO: working on adding cond-expand per r7rs, see core.scm
+
+
 Added a library to compute simple random numbers, based on [this Stack Overflow answer](http://stackoverflow.com/questions/14674165/scheme-generate-random):
 
     (import (husk random))
@@ -16,7 +20,7 @@ Made the following enhancements to improve R<sup>7</sup>RS support:
   in addition: "Strings and symbols now allow mnemonic and numeric escape sequences, and the list of named characters has been extended."
 - WIP: log second argument (base)
 - Added `boolean=?`, `symbol=?`, `read-line`, `eof-object`
-- Added `include`, `letrec*`, `when`, and `unless` syntax, per r7rs.
+- Added `include`, `letrec*`, `syntax-error`, `when`, and `unless` syntax, per r7rs.
 
 v3.13
 --------
