@@ -126,6 +126,17 @@ findFileOrLib filename = do
         (Bool False, Bool True) -> return fileAsLib
         _ -> return filename
 
+libraryExists :: [LispVal] -> IOThrowsError LispVal
+libraryExists [p@(Pointer _ _)] = do
+    p' <- recDerefPtrs p
+    libraryExists [p']
+libraryExists [(String filename)] = do
+    fileAsLib <- liftIO $ getDataFileFullPath $ "lib/" ++ filename
+    Bool exists <- fileExists [String filename]
+    Bool existsLib <- fileExists [String fileAsLib]
+    return $ Bool $ exists || existsLib
+libraryExists _ = return $ Bool False
+
 -- |Register optional SRFI extensions
 registerExtensions :: Env -> (FilePath -> IO FilePath) -> IO ()
 registerExtensions env getDataFileName = do
@@ -1057,6 +1068,11 @@ r5rsEnv' = do
          "(add-module! '(scheme r5rs) (make-module #f (interaction-environment) '()))"
   timeEnv <- liftIO $ r7rsTimeEnv
   _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "time", Atom "posix"]], List [Atom "make-module", Bool False, LispEnv timeEnv, List [Atom "quote", List []]]]
+  _ <- evalLisp' metaEnv $ List [
+    Atom "define", 
+    Atom "library-exists?",
+    List [Atom "quote", 
+          IOFunc libraryExists]]
 #endif
 
   return env
@@ -1108,6 +1124,11 @@ r7rsEnv' = do
 
   processContextEnv <- liftIO $ r7rsProcessContextEnv
   _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "process-context"]], List [Atom "make-module", Bool False, LispEnv processContextEnv, List [Atom "quote", List []]]]
+  _ <- evalLisp' metaEnv $ List [
+    Atom "define", 
+    Atom "library-exists?",
+    List [Atom "quote", 
+          IOFunc libraryExists]]
 #endif
 
   return env
