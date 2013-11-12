@@ -114,6 +114,7 @@ module Language.Scheme.Primitives (
  -- ** Input / Output 
  , makePort 
  , closePort
+ , flushOutputPort
  , currentOutputPort 
  , currentInputPort 
  , isOutputPort 
@@ -219,6 +220,12 @@ currentInputPort _ = return $ Port stdin
 --
 currentOutputPort :: [LispVal] -> IOThrowsError LispVal
 currentOutputPort _ = return $ Port stdout
+
+-- | Flush the given output port
+flushOutputPort :: [LispVal] -> IOThrowsError LispVal
+flushOutputPort [] = liftIO $ hFlush stdout >> (return $ Bool True)
+flushOutputPort [Port port] = liftIO $ hFlush port >> (return $ Bool True)
+flushOutputPort _ = return $ Bool False
 
 -- |Determine if the given objects is an input port
 --

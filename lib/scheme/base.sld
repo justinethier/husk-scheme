@@ -184,7 +184,7 @@
     ;floor-quotient
     ;floor-remainder
     ;floor/
-    ;flush-output-port
+    flush-output-port
     ;get-output-bytevector
     ;get-output-string
     ;guard

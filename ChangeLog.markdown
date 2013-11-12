@@ -8,7 +8,7 @@ Made the following enhancements to improve R<sup>7</sup>RS support:
 - Added support for the `=>` syntax to the `case` conditional.
 - Added `cond-expand` syntax to statically expand different expressions depending upon whether features are present in the Scheme implementation. This could help allow the same code to work in husk as well as other R<sup>7</sup>RS implementations.
 - Added an optional second argument to `log` to allow specifying the base.
-- Added the following functions: `nan?`, `finite?`, `infinite?`, `exact-integer?`, `exact?`, `inexact?`, `square`, `boolean=?`, `symbol=?`, `read-line`, `eof-object`.
+- Added the following functions: `nan?`, `finite?`, `infinite?`, `exact-integer?`, `exact?`, `inexact?`, `square`, `boolean=?`, `symbol=?`, `read-line`, `flush-output-port`, `eof-object`.
 - Added support for `include`, `letrec*`, `syntax-error`, `unless`, and `when` syntax.
 
 Added a library to compute simple random numbers, based on [this Stack Overflow answer](http://stackoverflow.com/a/14675103/101258):
