@@ -98,6 +98,7 @@ getHuskFeatures = do
            , Atom $ SysInfo.arch
            , Atom $ SysInfo.os
            , Atom "full-unicode"
+           , Atom "complex"
            , Atom "ratios"
            ]
 
