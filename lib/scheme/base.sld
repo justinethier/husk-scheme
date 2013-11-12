@@ -165,7 +165,7 @@
     ;bytevector-u8-set!
     ;call-with-port
     ;close-port
-    ;cond-expand
+    cond-expand
     ;current-error-port
     ;define
     ;define-record-type
