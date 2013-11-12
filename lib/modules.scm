@@ -59,6 +59,13 @@
              (path (find-module-file file)))
         (if path (load path meta-env))))))
 
+(define (module-exists? name)
+  (let* ((file (module-name->file name))
+         (path (find-module-file file)))
+    (if path
+        (library-exists? path)
+        #f)))
+
 (define (find-module name)
   (cond
    ((assoc name *modules*) => cdr)
