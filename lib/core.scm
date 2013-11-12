@@ -611,6 +611,12 @@
              ((not) (not (check (cadr x))))
 ; TODO: almost works, but errors out if library not found
 ; EG: (cond-expand ((library (base2)) (write "test")) (else (write "none found")))
+;
+; what needs to happen is to use findFileOrLib (maybe add to meta or something)
+; to get the path, then call file-exists? on this path to determine if the lib is
+; found. maybe create a specialized function for this, and call here instead 
+; of find-module
+;
              ((library) (eval `(find-module ',(cadr x)) *meta-env*))
              (else (error "cond-expand: bad feature" x)))
            (memq (identifier->symbol x) *features*)))
