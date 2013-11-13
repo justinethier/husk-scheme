@@ -272,6 +272,7 @@
 (assert/equal (memq 'a '(b c d)) #f)
 ;Not currently supported due to husk memory model: (assert/equal (memq (list 'a) '(b (a) c))) #f)
 (assert/equal (member (list 'a) '(b (a) c)) '((a) c))
+(assert/equal '("b" "c") (member "B" '("a" "b" "c") string-ci=?))
 (assert/equal (memv 101 '(100 101 102)) '(101 102))
 
 (define e '((a 1) (b 2) (c 3)))

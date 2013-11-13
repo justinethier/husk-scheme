@@ -170,12 +170,18 @@
    (else (my-mem-helper obj (cdr lst) cmp-proc))))
 (define (memq obj lst) (my-mem-helper obj lst eq?))
 (define (memv obj lst) (my-mem-helper obj lst eqv?))
-(define (member obj lst) (my-mem-helper obj lst equal?))
+(define (member obj lst . compare) 
+    (if (pair? compare)
+        (my-mem-helper obj lst (car compare))
+        (my-mem-helper obj lst equal?)))
 
 (define (mem-helper pred op)  (lambda (next acc) (if (and (not acc) (pred (op next))) next acc)))
 (define (assq obj alist)      (foldl (mem-helper (curry eq? obj) car) #f alist))
 (define (assv obj alist)      (foldl (mem-helper (curry eqv? obj) car) #f alist))
-(define (assoc obj alist)     (foldl (mem-helper (curry equal? obj) car) #f alist))
+(define (assoc obj alist . compare)
+    (if (pair? compare)
+        (foldl (mem-helper (curry (car compare) obj) car) #f alist)
+        (foldl (mem-helper (curry equal? obj) car) #f alist)))
 
 ; SRFI 8
 ; Reference implementation from: http://srfi.schemers.org/srfi-8/srfi-8.html
