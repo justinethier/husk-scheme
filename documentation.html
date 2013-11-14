@@ -33,22 +33,43 @@ Maintainer  : github.com/justinethier
 	<div id="content">
 	<h1 class="title">Documentation</h1>
         <div>
-            <!-- <h2>Contents</h2> -->
+            <div><a href="#section-usage">Usage</a></div>
             <div><a href="#section-features">Features</a></div>
             <div><a href="#section-libs">Libraries and Extensions</a></div>
-            <div><a href="#section-usage">Usage</a></div>
             <div><a href="#section-lang-ref">Scheme Language Reference</a></div>
+            <div><a href="#section-macros">Macro Debugging</a></div>
             <div><a href="#section-api">Haskell API</a></div>
             <div><a href="#section-ffi">Foreign Function Interface</a></div>
-            <div><a href="#section-macros">Macro Debugging</a></div>
         </div>
 
         <br />
         <br />
 
 		<div>
-            <h2 id="section-features" class="title">Features</h2>
-            <p>
+<h2 id="section-usage" class="title">Usage</h2>
+<p>
+                The interactive interpreter (sometimes called a REPL) may be invoked by running it directly from the command line:
+
+                {% highlight console %}
+huski
+                {% endhighlight %}
+
+                Alternatively, you may run an individual Scheme program:
+
+                {% highlight console %}
+huski my-scheme-file.scm
+                {% endhighlight %}
+
+                A compiler is also provided to allow you to create native executables:
+
+                {% highlight console %}
+huskc my-scheme-program.scm
+./my-scheme-program
+                {% endhighlight %}
+</p>
+
+<h2 id="section-features" class="title">Features</h2>
+<p>
 husk includes most features from the <a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/">R<sup>5</sup>RS standard</a>, including:
 
 <br />
@@ -98,20 +119,6 @@ The following standard libraries are supported:
     <li><a href="http://srfi.schemers.org/srfi-69/srfi-69.html">SRFI 69</a>: Basic hash tables.</li>
 </ul>
 </p>
-            <h2 id="section-usage" class="title">Usage</h2>
-            <p>
-                The interpreter may be invoked by running it directly from the command line:
-
-                {% highlight console %}
-./huski
-                {% endhighlight %}
-
-                Alternatively, you may run an individual scheme program:
-
-                {% highlight console %}
-./huski my-scheme-file.scm
-                {% endhighlight %}
-</p>
 
 <h2 id="section-lang-ref" class="title">Scheme Language Reference</h2>
 <p>
@@ -128,6 +135,27 @@ The goal of husk is to implement the full R<sup>5</sup>RS Scheme language, excep
 <h2 class="title">Non-standard Scheme Extensions</h2>
 <p> gensym, others? </p>
 -->
+
+<h2 id="section-macros" class="title">Macro Debugging</h2>
+<p>
+A custom special form <strong>expand</strong> can be used to see the result of a macro expansion, for debugging purposes.
+For example, we can see that the <strong>let*</strong> expression
+
+                {% highlight scheme %}
+(expand 
+  (let* ((x 42)
+         (y x))
+    y))
+                {% endhighlight %}
+
+is transformed into
+
+                {% highlight scheme %}
+((lambda (x30) ((lambda (y34) ((lambda () y34))) x30)) 42)
+                {% endhighlight %}
+                 
+Note that any variables in the expanded code are renamed by husk's macro hygiene algorithm.
+</p>
 
 <h2 id="section-api" class="title">Haskell API</h2>
 <p>
@@ -148,7 +176,7 @@ Finally, see <strong>shell.hs</strong> in the husk source code for a quick examp
 
 <h2 id="section-ffi" class="title">Foreign Function Interface</h2>
 <p>
-A foreign function interface (FFI) is provided to allow husk to call into arbitrary Haskell code. The interface is currently available via the <strong>load-ffi</strong> function:
+An optional foreign function interface (FFI) is provided to allow husk to call into arbitrary Haskell code. The interface is currently available via the <strong>load-ffi</strong> function:
 
                 {% highlight scheme %}
 (load-ffi "Language.Scheme.Plugins.CPUTime" "precision" "cpu-time:precision")
@@ -178,28 +206,8 @@ See husk's <a href="http://hackage.haskell.org/packages/archive/husk-scheme/3.5.
 
 <br />
 <br />
-Finally, it is possible to disable the FFI by passing the option <strong>-f-useffi</strong> to cabal. With the FFI disabled, husk does not link to the GHC API, which significantly reduces its compiled size. You might want to consider doing this if husk is statically linked and you are not using the FFI. For example, if you are using husk as an extension language in your Haskell application.
-</p>
 
-<h2 id="section-macros" class="title">Macro Debugging</h2>
-<p>
-A custom special form <strong>expand</strong> can be used to see the result of a macro expansion, for debugging purposes.
-For example, we can see that the <strong>let*</strong> expression
-
-                {% highlight scheme %}
-(expand 
-  (let* ((x 42)
-         (y x))
-    y))
-                {% endhighlight %}
-
-is transformed into
-
-                {% highlight scheme %}
-((lambda (x30) ((lambda (y34) ((lambda () y34))) x30)) 42)
-                {% endhighlight %}
-                 
-Note that any variables in the expanded code are renamed by husk's macro hygiene algorithm.
+<b>Note</b> by default the FFI is disabled, which allows husk to avoid unnecessarily linking to the GHC API. This significantly reduces its compiled size out-of-the-box. To enable the FFI just pass the option <strong>-fuseffi</strong> to cabal.
 </p>
 		</div>
 	</div>
