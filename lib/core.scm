@@ -565,6 +565,7 @@
 ;; END
 
 ;; More functions from r7rs
+(define (features) *features*)
 (define-syntax def-copy-in-place
     (er-macro-transformer
         (lambda (expr rename compare)
