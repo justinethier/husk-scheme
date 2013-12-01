@@ -26,6 +26,12 @@ Description:
   Husk may be used as either a stand-alone interpreter or as an extension language within a larger Haskell application. By closely following the R5RS standard, the intent is to develop a Scheme that is as compatible as possible with other R5RS Schemes. Husk is mature enough for use in production, however it is not optimized for performance-critical applications. 
   .
   Scheme is one of two main dialects of Lisp. Scheme follows a minimalist design philosophy: the core language consists of a small number of fundamental forms which may be used to implement other built-in forms. Scheme is an excellent language for writing small, elegant programs, and may also be used to write scripts or embed scripting functionality within a larger application.
+  .
+  For documentation and examples, see 
+  <http://justinethier.github.io/husk-scheme/documentation.html>.
+  .
+  For detailed information on each release, see 
+  <http://justinethier.github.io/husk-scheme/news.html>.
 
 License:             MIT
 License-file:        LICENSE
