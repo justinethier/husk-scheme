@@ -8,7 +8,10 @@
 ;;; To execute from the husk directory:
 ;;;
 ;;;  > cd examples/game-of-life
-;;;  > huski life.scm
+;;;  > huski -r7 life.scm
+;;;
+;;; Note the '-r7' flag is required in order to use R7RS scheme, with
+;;; full library support.
 ;;;
 (import (scheme base)
         (only (example life) life)
