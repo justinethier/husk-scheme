@@ -13,9 +13,9 @@
     current-jiffy
     jiffies-per-second)
   (import 
-    (scheme r5rs) ; TODO: use proper r7rs library for inexact->exact!!!!!
+    (scheme base)
     (scheme time posix))
   (begin
     (define (jiffies-per-second) 10000)
     (define (current-jiffy)
-      (inexact->exact (* (jiffies-per-second) (current-second))))))
+      (exact (* (jiffies-per-second) (current-second))))))

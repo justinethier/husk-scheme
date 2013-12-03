@@ -2,6 +2,6 @@
     (export 
         random
         randint)
-    (import (scheme r5rs))
+    (import (scheme base))
     (include "random.scm"))
 

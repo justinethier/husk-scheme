@@ -1,4 +1,10 @@
 
+v3.15
+--------
+
+Improved library support, and added rudimentary support for the `(scheme r5rs)` library.
+TODO: attempted to unify r5rs and r7rs "modes" as much as possible
+
 v3.14
 --------
 

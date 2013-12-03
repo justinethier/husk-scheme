@@ -1,4 +1,4 @@
 (define-library (husk pretty-print)
     (export pretty-print)
-    (import (scheme r5rs))
+    (import (scheme base))
     (include "pp-sexp.scm"))
