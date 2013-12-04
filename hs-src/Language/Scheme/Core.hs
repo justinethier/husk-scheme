@@ -1069,11 +1069,6 @@ r5rsEnv' = do
 --         "(add-module! '(scheme r5rs) (make-module #f (interaction-environment) '()))"
   timeEnv <- liftIO $ r7rsTimeEnv
   _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "time", Atom "posix"]], List [Atom "make-module", Bool False, LispEnv timeEnv, List [Atom "quote", List []]]]
-  _ <- evalLisp' metaEnv $ List [
-    Atom "define", 
-    Atom "library-exists?",
-    List [Atom "quote", 
-          IOFunc libraryExists]]
 
   processContextEnv <- liftIO $ r7rsProcessContextEnv
   _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "process-context"]], List [Atom "make-module", Bool False, LispEnv processContextEnv, List [Atom "quote", List []]]]
