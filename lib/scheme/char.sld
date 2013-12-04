@@ -15,11 +15,11 @@
         char-ci=?
         char-ci>=?
         char-ci>?
-        ;char-downcase
+        char-downcase
         ;char-foldcase
         char-lower-case?
         char-numeric?
-        ;char-upcase
+        char-upcase
         char-upper-case?
         char-whitespace?
         digit-value
