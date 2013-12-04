@@ -9,7 +9,9 @@
 
 (define-library (scheme process-context)
     (export 
-
+         system
+         exit-success
+         exit-fail
 ; TODO:
 ;        command-line
 ;        emergency-exit
