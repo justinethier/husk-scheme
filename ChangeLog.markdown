@@ -2,11 +2,11 @@
 v3.15
 --------
 
-Improved library support, and added back support for the `(scheme r5rs)` library.
-Added missing functions to `(scheme base)`
-TODO: attempted to unify r5rs and r7rs "modes" as much as possible
-
-- Added libraries for SRFI 1, 2, and 69
+- Improved library support so that examples do not require running in a special mode.
+- Added back support for the `(scheme r5rs)` library.
+- Added missing functions to `(scheme base)`.
+- Added libraries for SRFI 1, 2, and 69 so that these features are available via `import`.
+- Renamed `char-upper` and `char-lower` to `char-upcase` and `char-downcase` to match the Scheme specs.
 
 v3.14
 --------
