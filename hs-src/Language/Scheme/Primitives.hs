@@ -1542,11 +1542,21 @@ unpackEquals arg1 arg2 (AnyUnpacker unpacker) =
 
 -- |Helper function to perform a binary logic operation on two LispVal arguments.
 boolBinop :: (LispVal -> ThrowsError a) -> (a -> a -> Bool) -> [LispVal] -> ThrowsError LispVal
-boolBinop unpacker op args = if length args /= 2
+boolBinop unpacker op args = if length args < 2
                              then throwError $ NumArgs (Just 2) args
-                             else do left <- unpacker $ args !! 0
-                                     right <- unpacker $ args !! 1
-                                     return $ Bool $ left `op` right
+                             else do
+                                 result <- cmp op (head args) (tail args)
+                                 return $ Bool result
+ where 
+    cmp op b1 (b2 : bs) = do
+      b1' <- unpacker b1
+      b2' <- unpacker b2
+      let result = op b1' b2'
+      if result
+         then cmp op b2 bs
+         else return False
+    cmp _ _ _ = return True
+       
 
 -- |Perform the given function against a single LispVal argument
 unaryOp :: (LispVal -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
