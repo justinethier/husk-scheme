@@ -6,7 +6,7 @@
 ;;;
 (define-library (libs lib1)
     (export lib1-hello)
-    (import (scheme r5rs write)
+    (import (scheme write)
             (libs lib2))
     (begin
         (define (internal-func)

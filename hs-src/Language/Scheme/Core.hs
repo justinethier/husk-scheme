@@ -1063,11 +1063,15 @@ r5rsEnv' = do
   _ <- evalString metaEnv $ "(load \"" ++ (escapeBackslashes metalib) ++ "\")"
   -- Load meta-env so we can find it later
   _ <- evalLisp' env $ List [Atom "define", Atom "*meta-env*", LispEnv metaEnv]
-  -- Load (r5rs base)
-  _ <- evalString metaEnv
-         "(add-module! '(scheme r5rs) (make-module #f (interaction-environment) '()))"
+  -- Load base primitives
+  _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme"]], List [Atom "make-module", Bool False, LispEnv env {-baseEnv-}, List [Atom "quote", List []]]]
+--  _ <- evalString metaEnv
+--         "(add-module! '(scheme r5rs) (make-module #f (interaction-environment) '()))"
   timeEnv <- liftIO $ r7rsTimeEnv
   _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "time", Atom "posix"]], List [Atom "make-module", Bool False, LispEnv timeEnv, List [Atom "quote", List []]]]
+
+  processContextEnv <- liftIO $ r7rsProcessContextEnv
+  _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "process-context"]], List [Atom "make-module", Bool False, LispEnv processContextEnv, List [Atom "quote", List []]]]
   _ <- evalLisp' metaEnv $ List [
     Atom "define", 
     Atom "library-exists?",

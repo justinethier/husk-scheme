@@ -179,7 +179,7 @@
     ;exact-integer-sqrt
     exact-integer?
     exact?
-    ;features
+    features
     ;file-error?
     ;floor-quotient
     ;floor-remainder
@@ -224,7 +224,7 @@
     square
     string->vector
     string-copy!
-    ;string-fill!
+    string-fill!
     string-for-each
     string-map
     ;string-set!
@@ -236,18 +236,18 @@
     ;truncate-remainder
     ;truncate/
     ;u8-ready?
-    ;unless
+    unless
     ;unquote
     ;unquote-splicing
     vector->string
     vector-append
     vector-copy
     vector-copy!
-    ;vector-fill!
+    vector-fill!
     vector-for-each
     vector-map
     ;vector-set!
-    ;when
+    when
     ;with-exception-handler
     ;write-bytevector
     ;write-string
