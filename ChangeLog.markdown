@@ -2,6 +2,8 @@
 v3.15
 --------
 
+- Allow character and string comparison predicates (such as `string=?` and `char=?`) to support more than two arguments.
+
 - Improved library support so that examples do not require running in a special mode.
 - Added back support for the `(scheme r5rs)` library.
 - Added missing functions to `(scheme base)`.
