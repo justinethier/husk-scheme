@@ -2,6 +2,10 @@
 v3.15
 --------
 
+Added:
+                ("textual-port?", isTextPort),
+                ("binary-port?", isBinaryPort),
+
 - Allow character and string comparison predicates (such as `string=?` and `char=?`) to support more than two arguments.
 
 - Improved library support so that examples do not require running in a special mode.

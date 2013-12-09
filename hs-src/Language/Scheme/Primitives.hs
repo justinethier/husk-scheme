@@ -117,6 +117,8 @@ module Language.Scheme.Primitives (
  , flushOutputPort
  , currentOutputPort 
  , currentInputPort 
+ , isTextPort
+ , isBinaryPort
  , isOutputPort 
  , isInputPort
  , isCharReady
@@ -226,6 +228,25 @@ flushOutputPort :: [LispVal] -> IOThrowsError LispVal
 flushOutputPort [] = liftIO $ hFlush stdout >> (return $ Bool True)
 flushOutputPort [Port port] = liftIO $ hFlush port >> (return $ Bool True)
 flushOutputPort _ = return $ Bool False
+
+isTextPort :: [LispVal] -> IOThrowsError LispVal
+isTextPort [Port port] = do
+    val <- liftIO $ isTextPort' port
+    return $ Bool val
+isTextPort _ = return $ Bool False
+
+isBinaryPort :: [LispVal] -> IOThrowsError LispVal
+isBinaryPort [Port port] = do
+    val <- liftIO $ isTextPort' port
+    return $ Bool $ not val
+isBinaryPort _ = return $ Bool False
+
+-- | Determine if a file handle is in text mode
+isTextPort' port = do
+    textEncoding <- hGetEncoding port
+    case textEncoding of
+        Nothing -> return False
+        _ -> return True
 
 -- |Determine if the given objects is an input port
 --
