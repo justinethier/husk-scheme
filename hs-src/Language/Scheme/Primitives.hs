@@ -184,11 +184,15 @@ try' = tryIOError
 --
 --   Returns: Port
 --
-makePort :: IOMode -> [LispVal] -> IOThrowsError LispVal
-makePort mode [String filename] = liftM Port $ liftIO $ openFile filename mode
-makePort mode [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= makePort mode
-makePort _ [] = throwError $ NumArgs (Just 1) []
-makePort _ args@(_ : _) = throwError $ NumArgs (Just 1) args
+makePort
+    :: (FilePath -> IOMode -> IO Handle)
+    -> IOMode
+    -> [LispVal]
+    -> IOThrowsError LispVal
+makePort openFnc mode [String filename] = liftM Port $ liftIO $ openFnc filename mode
+makePort fnc mode [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= makePort fnc mode
+makePort _ _ [] = throwError $ NumArgs (Just 1) []
+makePort _ _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 
 -- |Close the given port
 --

@@ -7,6 +7,8 @@ Added (TODO: need to add tests):
                 ("binary-port?", isBinaryPort),
                 ("input-port-open?", isInputPortOpen),
                 ("output-port-open?", isOutputPortOpen),
+                ("open-binary-input-file", makePort openBinaryFile ReadMode),
+                ("open-binary-output-file", makePort openBinaryFile WriteMode),
 
 - Allow character and string comparison predicates (such as `string=?` and `char=?`) to support more than two arguments.
 
