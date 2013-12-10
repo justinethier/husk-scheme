@@ -2,9 +2,11 @@
 v3.15
 --------
 
-Added:
+Added (TODO: need to add tests):
                 ("textual-port?", isTextPort),
                 ("binary-port?", isBinaryPort),
+                ("input-port-open?", isInputPortOpen),
+                ("output-port-open?", isOutputPortOpen),
 
 - Allow character and string comparison predicates (such as `string=?` and `char=?`) to support more than two arguments.
 

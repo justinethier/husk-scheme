@@ -121,6 +121,8 @@ module Language.Scheme.Primitives (
  , isBinaryPort
  , isOutputPort 
  , isInputPort
+ , isInputPortOpen
+ , isOutputPortOpen
  , isCharReady
  , readProc 
  , readCharProc 
@@ -247,6 +249,21 @@ isTextPort' port = do
     case textEncoding of
         Nothing -> return False
         _ -> return True
+
+
+isInputPortOpen :: [LispVal] -> IOThrowsError LispVal
+isInputPortOpen [Port port] = do
+    r <- liftIO $ hIsReadable port
+    o <- liftIO $ hIsOpen port
+    return $ Bool $ r && o
+isInputPortOpen _ = return $ Bool False
+
+isOutputPortOpen :: [LispVal] -> IOThrowsError LispVal
+isOutputPortOpen [Port port] = do
+    w <- liftIO $ hIsWritable port
+    o <- liftIO $ hIsOpen port
+    return $ Bool $ w && o
+isOutputPortOpen _ = return $ Bool False
 
 -- |Determine if the given objects is an input port
 --
