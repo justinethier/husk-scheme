@@ -610,32 +610,34 @@
   (er-macro-transformer
    (lambda (expr rename compare)
 
-; TODO: need to test this
-(define (any lst)
-  (cond
-  ((null? lst)
-   #f)
-  ((car lst)
-   #t)
-  (else
-   (any (cdr lst)))))
-(define (every lst)
-  (cond
-  ((null? lst)
-   #t)
-  ((car lst)
-   (every (cdr lst)))
-  (else
-   #f)))
-; END test code
-
+; TODO: probably  need to use named let below instead of 
+;    ref to any*
+     (define (any check lst)
+       (let* ((c-lst (map check lst))
+              (any* (lambda (l)
+                      (cond
+                       ((null? l)
+                        #f)
+                       ((car l)
+                        #t)
+                       (else
+                        (any* (cdr l)))))))
+         (any* c-lst)))
+; TODO:     (define (every check lst)
+; TODO:      (set! lst (map check lst))
+; TODO:      (cond
+; TODO:       ((null? lst)
+; TODO:        #t)
+; TODO:       ((car lst)
+; TODO:        (every (cdr lst)))
+; TODO:       (else
+; TODO:        #f)))
      (define (identifier->symbol i) i)
      (define (check x)
        (if (pair? x)
            (case (car x)
-; TODO: these fail because and/or not part of stdlib, but SRFI 1
-; TODO:              ((and) (every check (cdr x)))
-; TODO:              ((or) (any check (cdr x)))
+             ((and) (every check (cdr x)))
+             ((or) (any check (cdr x)))
              ((not) (not (check (cadr x))))
              ((library) (eval `(module-exists? ',(cadr x)) *meta-env*))
              (else (error "cond-expand: bad feature" x)))
