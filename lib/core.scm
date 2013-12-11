@@ -613,16 +613,14 @@
 ; TODO: probably  need to use named let below instead of 
 ;    ref to any*
      (define (any check lst)
-       (let* ((c-lst (map check lst))
-              (any* (lambda (l)
-                      (cond
-                       ((null? l)
-                        #f)
-                       ((car l)
-                        #t)
-                       (else
-                        (any* (cdr l)))))))
-         (any* c-lst)))
+       (let any* ((l (map check lst)))
+           (cond
+             ((null? l)
+              #f)
+             ((car l)
+              #t)
+             (else
+              (any* (cdr l))))))
 ; TODO:     (define (every check lst)
 ; TODO:      (set! lst (map check lst))
 ; TODO:      (cond
