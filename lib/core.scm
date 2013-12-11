@@ -609,6 +609,26 @@
 (define-syntax cond-expand
   (er-macro-transformer
    (lambda (expr rename compare)
+
+; TODO: need to test this
+(define (any lst)
+  (cond
+  ((null? lst)
+   #f)
+  ((car lst)
+   #t)
+  (else
+   (any (cdr lst)))))
+(define (every lst)
+  (cond
+  ((null? lst)
+   #t)
+  ((car lst)
+   (every (cdr lst)))
+  (else
+   #f)))
+; END test code
+
      (define (identifier->symbol i) i)
      (define (check x)
        (if (pair? x)
