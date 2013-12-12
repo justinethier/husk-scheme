@@ -584,6 +584,23 @@
 (def-copy-in-place vector)
 ;; END
 
+;; Simplified versions of every/any from SRFI-1
+(define (any pred lst)
+  (let any* ((l (map pred lst)))
+      (cond
+        ((null? l) #f) ; Empty list
+        ((car l)   #t) ; Done
+        (else 
+           (any* (cdr l))))))
+(define (every pred lst)
+  (let every* ((l (map pred lst)))
+      (cond
+        ((null? l) #t) ; Empty list
+        ((car l)
+           (every* (cdr l)))
+        (else 
+           #f))))
+
 ;; Macros from r7rs
 (define-syntax when
   (syntax-rules ()
@@ -607,22 +624,101 @@
    (lambda (expr rename compare)
      (apply error (cdr expr)))))
 
-;; Simplified versions of every/any from SRFI-1
-(define (any pred lst)
-  (let any* ((l (map pred lst)))
-      (cond
-        ((null? l) #f) ; Empty list
-        ((car l)   #t) ; Done
-        (else 
-           (any* (cdr l))))))
-(define (every pred lst)
-  (let every* ((l (map pred lst)))
-      (cond
-        ((null? l) #t) ; Empty list
-        ((car l)
-           (every* (cdr l)))
-        (else 
-           #f))))
+(define-syntax
+  let-values
+  (syntax-rules
+    ()
+    ((let-values (binding ...) body0 body1 ...)
+     (let-values
+       "bind"
+       (binding ...)
+       ()
+       ((lambda () body0 body1 ...))))
+       ;(begin body0 body1 ...)))
+    ((let-values "bind" () tmps body)
+     (let tmps body))
+    ((let-values
+       "bind"
+       ((b0 e0) binding ...)
+       tmps
+       body)
+     (let-values
+       "mktmp"
+       b0
+       e0
+       ()
+       (binding ...)
+       tmps
+       body))
+    ((let-values
+       "mktmp"
+       ()
+       e0
+       args
+       bindings
+       tmps
+       body)
+     (call-with-values
+       (lambda () e0)
+       (lambda args
+         (let-values "bind" bindings tmps body))))
+    ((let-values
+       "mktmp"
+       (a . b)
+       e0
+       (arg ...)
+       bindings
+       (tmp ...)
+       body)
+     (let-values
+       "mktmp"
+       b
+       e0
+       (arg ... x)
+       bindings
+       (tmp ... (a x))
+       body))
+    ((let-values
+       "mktmp"
+       a
+       e0
+       (arg ...)
+       bindings
+       (tmp ...)
+       body)
+     (call-with-values
+       (lambda () e0)
+       (lambda (arg ... . x)
+         (let-values "bind" bindings (tmp ... (a x)) body))))))
+;; (define-syntax let-values
+;; (syntax-rules ()
+;; ((let-values (binding ...) body0 body1 ...)
+;; (let-values "bind"
+;; (binding ...) () (begin body0 body1 ...)))
+;; ((let-values "bind" () tmps body)
+;; (let tmps body))
+;; ((let-values "bind" ((b0 e0)
+;; binding ...) tmps body)
+;; (let-values "mktmp" b0 e0 ()
+;; (binding ...) tmps body))
+;; ((let-values "mktmp" () e0 args
+;; bindings tmps body)
+;; (call-with-values
+;; (lambda () e0)
+;; (lambda args
+;; (let-values "bind"
+;; bindings tmps body))))
+;; ((let-values "mktmp" (a . b) e0 (arg ...)
+;; bindings (tmp ...) body)
+;; (let-values "mktmp" b e0 (arg ... x)
+;; bindings (tmp ... (a x)) body))
+;; ((let-values "mktmp" a e0 (arg ...)
+;; bindings (tmp ...) body)
+;; (call-with-values
+;; (lambda () e0)
+;; (lambda (arg ... . x)
+;; (let-values "bind"
+;; bindings (tmp ... (a x)) body))))))
 
 ;;
 ;; SRFI-0 (cond-expand) from r7rs
