@@ -1230,9 +1230,7 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
                                        return $ appendNil (Matches.getData var ellipsisIndex) 
                                                            isImproperPattern 
                                                            isImproperInput 
-                                  else if length v > 0 
-                                          then return var -- Just return the elements directly, so all can be appended
-                                          else return $ Nil "" -- A 0 match case, flag it to calling code
+                                  else return var -- no ellipsis, just return elements directly, so all can be appended
                      _ -> if ellipsisLevel > 0
                              then -- List req'd for 0-or-n match
                                   throwError $ Default "Unexpected error processing data in transformRule" 
