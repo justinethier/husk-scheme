@@ -14,10 +14,6 @@
 (define (list . objs)  objs)
 (define (id obj)       obj)
 
-; TODO: this is not flipping args. not part of R5RS, but 
-;       as it is now, what is the point?
-(define (flip func)    (lambda (arg1 arg2) (func arg1 arg2)))
-
 (define (curry func arg1)  (lambda (arg) (apply func (cons arg1 (list arg)))))
 (define (compose f g)      (lambda (arg) (f (apply g arg))))
 
@@ -68,7 +64,7 @@
     (and (exact? num) (integer? num)))
 
 (define (length lst)    (foldl (lambda (x y) (+ y 1)) 0 lst))
-(define (reverse lst)   (foldl (flip cons) '() lst))
+(define (reverse lst)   (foldl cons '() lst))
 
 (define-syntax begin
   (syntax-rules ()
@@ -603,33 +599,30 @@
   (er-macro-transformer
    (lambda (expr rename compare)
      (apply error (cdr expr)))))
+
+;; Simplified versions of every/any from SRFI-1
+(define (any pred lst)
+  (let any* ((l (map pred lst)))
+      (cond
+        ((null? l) #f) ; Empty list
+        ((car l)   #t) ; Done
+        (else 
+           (any* (cdr l))))))
+(define (every pred lst)
+  (let every* ((l (map pred lst)))
+      (cond
+        ((null? l) #t) ; Empty list
+        ((car l)
+           (every* (cdr l)))
+        (else 
+           #f))))
+
 ;;
 ;; SRFI-0 (cond-expand) from r7rs
 ;;
 (define-syntax cond-expand
   (er-macro-transformer
    (lambda (expr rename compare)
-
-; TODO: probably  need to use named let below instead of 
-;    ref to any*
-     (define (any check lst)
-       (let any* ((l (map check lst)))
-           (cond
-             ((null? l)
-              #f)
-             ((car l)
-              #t)
-             (else
-              (any* (cdr l))))))
-; TODO:     (define (every check lst)
-; TODO:      (set! lst (map check lst))
-; TODO:      (cond
-; TODO:       ((null? lst)
-; TODO:        #t)
-; TODO:       ((car lst)
-; TODO:        (every (cdr lst)))
-; TODO:       (else
-; TODO:        #f)))
      (define (identifier->symbol i) i)
      (define (check x)
        (if (pair? x)
