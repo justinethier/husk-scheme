@@ -467,5 +467,11 @@
     (let-values (((root rem) (exact-integer-sqrt 32)))
         (* root rem))
     35)
+(assert/equal 
+    (let ((a 'a) (b 'b) (x 'x) (y 'y))
+        (let*-values (((a b) (values x y))
+                      ((x y) (values a b)))
+            (list a b x y))) 
+   '(x y x y))
 
 (unit-test-handler-results)

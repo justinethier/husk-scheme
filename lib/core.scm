@@ -692,6 +692,17 @@
        (lambda (arg ... . x)
          (let-values "bind" bindings (tmp ... (a x)) body))))))
 
+(define-syntax let*-values
+  (syntax-rules ()
+    ((let*-values () body0 body1 ...)
+     (let () body0 body1 ...))
+
+    ((let*-values (binding0 binding1 ...)
+        body0 body1 ...)
+     (let-values (binding0)
+                 (let*-values (binding1 ...)
+                    body0 body1 ...)))))
+
 ;;
 ;; SRFI-0 (cond-expand) from r7rs
 ;;

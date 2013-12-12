@@ -15,7 +15,7 @@ Added (TODO: need to add tests):
 - Improved library support so that examples do not require running in a special mode.
 - Added back support for the `(scheme r5rs)` library.
 - Added missing functions to `(scheme base)`.
-- Added `let-values` from R<sup>7</sup>RS.
+- Added `let-values` and `let*-values` from R<sup>7</sup>RS.
 - Added `exact-integer-sqrt` from the chibi scheme reference implementation.
 - Added support for the `(scheme case-lambda)` library.
 - Added libraries for SRFI 1, 2, and 69 so that these features are available via `import`.
