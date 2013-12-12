@@ -16,6 +16,7 @@ Added (TODO: need to add tests):
 - Added back support for the `(scheme r5rs)` library.
 - Added missing functions to `(scheme base)`.
 - Added `exact-integer-sqrt` from the chibi scheme reference implementation.
+- Added support for the `(scheme case-lambda)` library.
 - Added libraries for SRFI 1, 2, and 69 so that these features are available via `import`.
 - Renamed `char-upper` and `char-lower` to `char-upcase` and `char-downcase` to match the Scheme specs.
 
