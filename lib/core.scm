@@ -31,6 +31,13 @@
 (define (product . lst) (foldl * 1 lst))
 (define (square z) (* z z))
 
+(define (exact-integer-sqrt x)
+  (let ((res (sqrt x)))
+    (if (exact? res)
+        (values res 0)
+        (let ((res (inexact->exact (truncate res))))
+          (values res (- x (* res res)))))))
+
 ; Forms from R5RS for and/or
 (define-syntax and
   (syntax-rules ()
