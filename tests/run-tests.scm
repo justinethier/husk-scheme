@@ -8,6 +8,7 @@
 (let () (load "t-case.scm"))
 (let () (load "t-closure.scm"))
 (let () (load "t-cond.scm"))
+(let () (load "t-cond-expand.scm"))
 (let () (load "t-cont.scm"))
 (let () (load "t-delay.scm"))
 (let () (load "t-eval.scm"))
