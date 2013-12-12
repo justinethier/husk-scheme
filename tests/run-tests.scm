@@ -6,6 +6,7 @@
 ; Standard tests
 (let () (load "t-backquote.scm"))
 (let () (load "t-case.scm"))
+(let () (load "t-case-lambda.scm"))
 (let () (load "t-closure.scm"))
 (let () (load "t-cond.scm"))
 (let () (load "t-cond-expand.scm"))
