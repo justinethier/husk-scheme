@@ -463,4 +463,9 @@
         y)
     5)
 
+(assert/equal 
+    (let-values (((root rem) (exact-integer-sqrt 32)))
+        (* root rem))
+    35)
+
 (unit-test-handler-results)
