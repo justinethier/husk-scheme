@@ -11,7 +11,7 @@ Added (TODO: need to add tests):
                 ("open-binary-output-file", makePort openBinaryFile WriteMode),
 
 - Allow character and string comparison predicates (such as `string=?` and `char=?`) to support more than two arguments.
-
+- Fixed `cond-expand` to support `and` / `or` clauses.
 - Improved library support so that examples do not require running in a special mode.
 - Added back support for the `(scheme r5rs)` library.
 - Added missing functions to `(scheme base)`.
