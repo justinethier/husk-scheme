@@ -1281,7 +1281,7 @@ stringToVector args = do
     List l <- stringToList args
     return $ Vector $ listArray (0, length l - 1) l
 vectorToString :: [LispVal] -> IOThrowsError LispVal
-vectorToString [p@(Pointer _ _)] = derefPtr p >>= box >>= listToString
+vectorToString [p@(Pointer _ _)] = derefPtr p >>= box >>= vectorToString
 --vectorToString [(List [])] = return $ String ""
 --vectorToString [(List l)] = liftThrows $ buildString l
 vectorToString [(Vector v)] = do
