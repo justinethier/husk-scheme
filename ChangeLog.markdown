@@ -6,6 +6,7 @@ Added (TODO: need to add tests):
                 ("textual-port?", isTextPort),
                 ("binary-port?", isBinaryPort),
                 ("input-port-open?", isInputPortOpen),
+                "close-port"
                 ("output-port-open?", isOutputPortOpen),
                 ("open-binary-input-file", makePort openBinaryFile ReadMode),
                 ("open-binary-output-file", makePort openBinaryFile WriteMode),
