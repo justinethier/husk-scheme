@@ -160,8 +160,8 @@
     zero?
 
     ;=>
-    ;binary-port?
-    ;boolean=?
+    binary-port?
+    boolean=?
     ;bytevector-u8-set!
     ;call-with-port
     ;close-port
@@ -176,7 +176,7 @@
     ;error-object-irritants
     ;error-object-message
     ;error-object?
-    ;exact-integer-sqrt
+    exact-integer-sqrt
     exact-integer?
     exact?
     features
@@ -190,11 +190,11 @@
     ;guard
     ;if
     inexact?
-    ;input-port-open?
+    input-port-open?
     ;lambda
-    ;let*-values
+    let*-values
     ;let-syntax
-    ;let-values
+    let-values
     letrec*
     ;letrec-syntax
     list-copy
@@ -205,7 +205,7 @@
     ;open-input-string
     ;open-output-bytevector
     ;open-output-string
-    ;output-port-open?
+    output-port-open?
     ;parameterize
     ;peek-u8
     ;port?
@@ -231,7 +231,7 @@
     ;symbol=?
     syntax-error
     ;syntax-rules
-    ;textual-port?
+    textual-port?
     ;truncate-quotient
     ;truncate-remainder
     ;truncate/
