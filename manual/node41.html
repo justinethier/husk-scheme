@@ -1,0 +1,142 @@
+---
+title: Dynamic bindings
+nav_next: node42.html
+nav_next_lbl: Exception handling
+nav_up: node35.html
+nav_up_lbl: Derived expression types 
+nav_prev: node40.html
+nav_prev_lbl: Delayed evaluation
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<P>
+Dynamic bindings have not been implemented by Husk yet, but will be included
+ in a future release.
+</P>
+<!-- 
+
+<P>
+The <EM>dynamic extent</EM> of a procedure call is the time between
+when it is initiated and when it returns.  In Scheme, <code>  call-with-current-continuation</code> (section&nbsp;<A HREF="node79.html#continuations">6.10</A>) allows
+reentering a dynamic extent after its procedure call has returned.
+Thus, the dynamic extent of a call might not be a single, continuous time
+period.
+</P>
+<P>
+This sections introduces <EM>parameter objects</EM>, which can be
+bound to new values for the duration of a dynamic extent.  The set of
+all parameter bindings at a given time is called the
+  <EM>dynamic environment</EM>.
+</P>
+<P>
+<div id="make-parameter" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(make-parameter </span>
+    <span class="code-var">init</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(make-parameter </span>
+    <span class="code-var">init converter</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+Returns a newly allocated parameter object,
+which is a procedure that accepts zero arguments and
+returns the value associated with the parameter object.
+Initially, this value is the value of
+<code>(<I>converter</I> <I>init</I>)</code>, or of <I>init</I>
+if the conversion procedure <I>converter</I> is not specified.
+The associated value can be temporarily changed
+using <code>parameterize</code>, which is described below.
+<P>
+The effect of passing arguments to a parameter object is
+implementation-dependent.
+</p>
+</div>
+</p>
+<P>
+<div id="parameterize" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(parameterize </span>
+    <span class="code-var">(({param1} {value1}) ...) </span>
+    <span class="code">{body})</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<EM>Syntax: </EM>
+Both param1 and value1 are expressions.
+<P>
+It is an error if the value of any param expression is not a parameter object.
+</P>
+<P>
+<EM>Semantics: </EM>
+A <code>parameterize</code> expression is used to change the values returned by
+specified parameter objects during the evaluation of the body.
+</P>
+<P>
+The param and value expressions
+are evaluated in an unspecified order.  The body is
+evaluated in a dynamic environment in which calls to the
+parameters return the results of passing the corresponding values
+to the conversion procedure specified when the parameters were created.
+Then the previous values of the parameters are restored without passing
+them to the conversion procedure.
+The results of the last
+expression in the body are returned as the results of the entire
+<code>parameterize</code> expression.
+</P>
+<P>
+<EM>Note:</EM> If the conversion procedure is not idempotent, the results of
+<code>(parameterize ((x (x))) ...)</code>,
+which appears to bind the parameter <I>x</I> to its current value,
+might not be what the user expects.
+</P>
+<P>
+Parameter objects can be used to specify configurable settings for a
+computation without the need to pass the value to every
+procedure in the call chain explicitly.
+</P>
+<P>
+<div class="code-block">
+(define radix
+  (make-parameter
+   10
+   (lambda (x)
+     (if (and (exact-integer? x) (<= 2 x 16))
+         x
+         (error "invalid radix")))))
+
+(define (f n) (number->string n (radix)))
+(f 12)      ==&gt; "12"
+
+(parameterize ((radix 2))
+  (f 12))   ==&gt; "1100"
+(f 12)      ==&gt; "12"
+
+(radix 16)  ==&gt; unspecified
+
+(parameterize ((radix 0))
+  (f 12))     ==&gt; error
+</div>
+</p>
+</div>
+</p>
+-->
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

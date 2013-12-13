@@ -1,0 +1,132 @@
+---
+title: Binding constructs for syntactic keywords
+nav_next: node47.html
+nav_next_lbl: Pattern language
+nav_up: 45.html
+nav_up_lbl: Macros
+nav_prev: node45.html
+nav_prev_lbl: Macros
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+The <code>let-syntax</code> and <code>letrec-syntax</code> binding constructs are
+analogous to <code>let</code> and <code>letrec</code>, but they bind
+syntactic keywords to macro transformers instead of binding variables
+to locations that contain values.  Syntactic keywords can also be
+bound globally or locally with <code>define-syntax</code>;
+see section&nbsp;<A HREF="node56.html#define-syntax">5.4</A>.
+</P>
+<P>
+<div id="let-syntax" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(let-syntax </span>
+    <span class="code-var">{bindings} {body}</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<EM>Syntax: </EM>
+Bindings has the form
+<P>
+<div class="code-block">
+(({keyword} {transformer spec}) ...)
+</div>
+</p>
+<p>
+Each keyword is an identifier,
+each transformer spec is an instance of <code>syntax-rules</code>, and
+body is a sequence of one or more definitions followed
+by one or more expressions.  It is an error
+for a keyword to appear more than once in the list of keywords
+being bound.
+</P>
+<P>
+<EM>Semantics: </EM>
+The body is expanded in the syntactic environment
+obtained by extending the syntactic environment of the
+<code>let-syntax</code> expression with macros whose keywords are
+the keywords, bound to the specified transformers.
+Each binding of a keyword has body as its region.
+</P>
+<P>
+<div class="code-block">
+(let-syntax ((given-that (syntax-rules ()
+                ((given-that test stmt1 stmt2 ...)
+                 (if test
+                     (begin stmt1
+                            stmt2 ...))))))
+  (let ((if #t))
+    (given-that if (set! if 'now))
+    if)) ==&gt; now
+
+(let ((x 'outer))
+  (let-syntax ((m (syntax-rules () ((m) x))))
+    (let ((x 'inner))
+      (m)))) ==&gt; outer
+</div>
+</p>
+</div>
+</p>
+
+<P>
+<div id="letrec-syntax" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(letrec-syntax </span>
+    <span class="code-var">{bindings} {body}</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<EM>Syntax: </EM>
+Same as for <code>let-syntax</code>.
+<P>
+<EM>Semantics: </EM>
+ The body is expanded in the syntactic environment obtained by
+extending the syntactic environment of the <code>letrec-syntax</code>
+expression with macros whose keywords are the
+keywords, bound to the specified transformers.
+Each binding of a keyword has the transformer specs
+as well as the body within its region,
+so the transformers can
+transcribe expressions into uses of the macros
+introduced by the <code>letrec-syntax</code> expression.
+</P>
+<P>
+<div class="code-block">
+(letrec-syntax
+    ((my-or (syntax-rules ()
+              ((my-or) #f)
+              ((my-or e) e)
+              ((my-or e1 e2 ...)
+               (let ((temp e1))
+                 (if temp
+                     temp
+                     (my-or e2 ...)))))))
+  (let ((x #f)
+        (y 7)
+        (temp 8)
+        (let odd?)
+        (if even?))
+    (my-or x
+           (let temp)
+           (if y)
+           y)))     ==&gt; 7
+</div>
+</p>
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

@@ -1,0 +1,80 @@
+---
+title: Internal definitions
+nav_next: node55.html
+nav_next_lbl: Multiple-value definitions
+nav_up: node52.html
+nav_up_lbl: Variable declarations
+nav_prev: node53.html
+nav_prev_lbl: Top level definitions
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+Definitions can occur at the
+beginning of a body (that is, the body of a <code>lambda</code>,
+<code>let</code>, <code>let*</code>, <code>letrec</code>, <code>letrec*</code>,
+<code>let-values</code>, <code>let*-values</code>, <code>let-syntax</code>, <code>letrec-syntax</code>,
+<code>parameterize</code>, <code>guard</code>, or <code>case-lambda</code>).  Note that
+such a body might not be apparent until after expansion of other syntax.
+Such definitions are known as <EM>internal definitions</EM>
+ as opposed to the global definitions described above.
+The variables defined by internal definitions are local to the
+body.  That is, variable is bound rather than assigned,
+and the region of the binding is the entire body.  For example,
+</P>
+<P>
+<div class="code-block">
+(let ((x 5))
+  (define foo (lambda (y) (bar x y)))
+  (define bar (lambda (a b) (+ (* a b) a)))
+  (foo (+ x 3)))        ==&gt; 45
+</div>
+</p>
+<P>
+An expanded body containing internal definitions
+can always be
+converted into a completely equivalent <code>letrec*</code> expression.  For
+example, the <code>let</code> expression in the above example is equivalent
+to
+</P>
+<P>
+<div class="code-block">
+(let ((x 5))
+  (letrec* ((foo (lambda (y) (bar x y)))
+            (bar (lambda (a b) (+ (* a b) a))))
+    (foo (+ x 3))))
+</div>
+</p>
+<P>
+Just as for the equivalent <code>letrec*</code> expression, it is an error if it is not
+possible to evaluate each expression of every internal
+definition in a body without assigning or referring to
+the value of the corresponding variable or the variable
+of any of the definitions that follow it in body.
+</P>
+<P>
+It is an error to define the same identifier more than once in the
+same body.
+</P>
+<P>
+Wherever an internal definition can occur,
+<code>(begin {definition1} ...)</code>
+is equivalent to the sequence of definitions
+that form the body of the <code>begin</code>.
+</P>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

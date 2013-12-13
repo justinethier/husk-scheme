@@ -1,0 +1,370 @@
+---
+title: Conditionals
+nav_next: node37.html
+nav_next_lbl: Binding constructs
+nav_up: node35.html
+nav_up_lbl: Derived expression types
+nav_prev: node35.html
+nav_prev_lbl: Derived expression types
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+<div id="cond" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(cond </span>
+    <span class="code-var">{clause1} {clause 2} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">else </span>
+    <span class="obj-type">auxiliary syntax</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">=&gt; </span>
+    <span class="obj-type">auxiliary syntax</span>
+  </div>
+<p>
+<EM>Syntax: </EM>
+Clauses take one of two forms, either
+</p>
+<p>
+<div class="code-block">
+({test} {expression1} ...)
+</div>
+</p>
+<p>
+where test is any expression, or
+</p>
+<p>
+<div class="code-block">
+({test} =&gt; {expression})
+</div>
+</p>
+<p>
+The last clause can be an "else clause," which has the form
+</p>
+<P>
+<div class="code-block">
+(else {expression1} {expression2} ...)
+</div>
+</p>
+<p>
+<EM>Semantics: </EM>
+A <code>cond</code> expression is evaluated by evaluating the test
+expressions of successive clauses in order until one of them
+evaluates to a true value (see
+section&nbsp;<A HREF="node72.html#booleansection">6.3</A>).  When a test evaluates to a true
+value, the remaining expressions in its clause are
+evaluated in order, and the results of the last expression in the
+clause are returned as the results of the entire <code>cond</code>
+expression.
+</P>
+<P>
+If the selected clause contains only the
+test and no expressions, then the value of the
+test is returned as the result.  If the selected clause uses the
+<code>=&gt;</code> alternate form, then the expression is evaluated.
+It is an error if its value is not a procedure that accepts one argument.  This procedure is then
+called on the value of the test and the values returned by this
+procedure are returned by the <code>cond</code> expression.
+</P>
+<P>
+If all tests evaluate
+to <code>#f</code>, and there is no else clause, then the result of
+the conditional expression is unspecified; if there is an else
+clause, then its expressions are evaluated in order, and the values of
+the last one are returned.
+</P>
+<P>
+<P>
+<div class="code-block">
+(cond ((&gt; 3 2) 'greater)
+      ((&lt; 3 2) 'less))       ==&gt; greater
+(cond ((&gt; 3 3) 'greater)
+      ((&lt; 3 3) 'less)
+      (else 'equal))            ==&gt; equal
+(cond ((assv 'b '((a 1) (b 2))) =&gt; cadr)
+      (else #f))                ==&gt; 2
+</div>
+</p>
+</div>
+</p>
+
+<P>
+<div id="case" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(case </span>
+    <span class="code-var">{key} {clause1} {clause2} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<EM>Syntax: </EM>
+Key can be any expression.  Each clause has
+the form
+
+<p>
+<div class="code-block">
+(({datum1} ...) {expression1} {expression2} ...)
+</div>
+</p>
+<p>
+where each datum is an external representation of some object.
+It is an error if any of the datums are the same anywhere in the expression.
+Alternatively, a clause can be of the form
+</p>
+<p>
+<div class="code-block">
+(({datum1} ...) =&gt; {expression})
+</div>
+</P>
+<p>
+The last clause can be an "else clause," which has one of the forms
+</p>
+<p>
+<div class="code-block">
+(else {expression1} {expression2} ...)
+</div>
+</P>
+<p>
+or
+</p>
+<p>
+<div class="code-block">
+(else =&gt; {expression})
+</div>
+</P>
+<p>
+<EM>Semantics: </EM>
+A <code>case</code> expression is evaluated as follows.  Key is
+evaluated and its result is compared against each datum.  If the
+result of evaluating key is the same (in the sense of
+<code>eqv?</code>; see section&nbsp;<A HREF="node63.html#eqv_">6.1</A>) to a datum, then the
+expressions in the corresponding clause are evaluated in order
+and the results of the last expression in the clause are
+returned as the results of the <code>case</code> expression.
+</P>
+<P>
+If the result of
+evaluating key is different from every datum, then if
+there is an else clause, its expressions are evaluated and the
+results of the last are the results of the <code>case</code> expression;
+otherwise the result of the <code>case</code> expression is unspecified.
+</P>
+<P>
+If the selected clause or else clause uses the
+<code>=&gt;</code> alternate form, then the expression is evaluated.
+It is an error if its value is not a procedure accepting one argument.
+This procedure is then
+called on the value of the key and the values returned by this
+procedure are returned by the <code>case</code> expression.
+</p>
+<P>
+<div class="code-block">
+(case (* 2 3)
+  ((2 3 5 7) 'prime)
+  ((1 4 6 8 9) 'composite))     ==&gt; composite
+(case (car '(c d))
+  ((a) 'a)
+  ((b) 'b))                     ==&gt; unspecified
+(case (car '(c d))
+  ((a e i o u) 'vowel)
+  ((w y) 'semivowel)
+  (else =&gt; (lambda (x) x)))  ==&gt; c
+</div>
+</p>
+</div>
+</p>
+<P>
+<div id="and" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(and </span>
+    <span class="code-var">{test1} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<EM>Semantics: </EM>
+The test expressions are evaluated from left to right, and if
+any expression evaluates to <code>#f</code> (see
+section&nbsp;<A HREF="node72.html#booleansection">6.3</A>), then <code>#f</code> is returned.  Any remaining
+expressions are not evaluated.  If all the expressions evaluate to
+true values, the values of the last expression are returned.  If there
+are no expressions, then <code>#t</code> is returned.
+<P>
+<div class="code-block">
+(and (= 2 2) (&gt; 2 1)) ==&gt; #t
+(and (= 2 2) (&lt; 2 1)) ==&gt; #f
+(and 1 2 'c '(f g))   ==&gt; (f g)
+(and)                 ==&gt; #t
+</div>
+</P>
+</div>
+</p>
+
+<P>
+<div id="or" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(or </span>
+    <span class="code-var">{test1} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<EM>Semantics: </EM>
+The test expressions are evaluated from left to right, and the value of the
+first expression that evaluates to a true value (see
+section&nbsp;<A HREF="node72.html#booleansection">6.3</A>) is returned.  Any remaining expressions
+are not evaluated.  If all expressions evaluate to <code>#f</code>
+or if there are no expressions, then <code>#f</code> is returned.
+<P>
+<div class="code-block">
+(or (= 2 2) (&gt; 2 1))    =) #t
+(or (= 2 2) (&lt; 2 1))    =) #t
+(or #f #f #f)           =) #f
+(or (memq 'b '(a b c))
+    (/ 3 0))            =) (b c)
+</div>
+</P>
+</div>
+</p>
+
+<P>
+<div id="when" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(when </span>
+    <span class="code-var">{test} {expression1} {expression2} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<EM>Syntax: </EM>
+The test is an expression.
+</P
+<P>
+<EM>Semantics: </EM>
+The test is evaluated, and if it evaluates to a true value,
+the expressions are evaluated in order.  The result of the <code>when</code>
+expression is unspecified.
+</P>
+<P>
+<div class="code-block">
+(when (= 1 1.0)
+  (display "1")
+  (display "2"))    ==&gt; unspecified and prints 12
+</div>
+</p>
+</div>
+</p>
+
+<P>
+<div id="unless" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(unless </span>
+    <span class="code-var">{test} {expression1} {expression2} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<EM>Syntax: </EM>
+The test is an expression.
+</P>
+<P>
+<EM>Semantics: </EM>
+The test is evaluated, and if it evaluates to <code>#f</code>,
+the expressions are evaluated in order.  The result of the <code>unless</code>
+expression is unspecified.
+</P>
+<P>
+<div class="code-block">
+(unless (= 1 1.0)
+  (display "1")
+  (display "2"))    ==&gt; unspecified and prints nothing
+</div>
+</p>
+</div>
+</p>
+
+<P>
+<div id="cond-expand" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(cond-expand </span>
+    <span class="code-var">{ce-clause1} {ce-clause2} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<EM>Syntax: </EM>
+The <code>cond-expand</code> expression type
+provides a way to statically
+expand different expressions depending on the
+implementation.  A
+ce-clause takes the following form:
+<P>
+<div class="code-block">
+({feature requirement} {expression} ...)
+</div>
+</p>
+<P>
+The last clause can be an "else clause," which has the form
+</P>
+<P>
+<div class="code-block">
+(else {expression})
+</div>
+</P>
+<P>
+A feature requirement takes one of the following forms:
+</P>
+<P>
+  <UL>
+    <LI><code>{feature identifier}</code> </LI>
+    <LI><code>(library {library name})</code> </LI>
+    <!-- JAE TODO: and/or not currently supported by husk! -->
+    <LI><code>(and {feature requirement} ...)</code> </LI>
+    <LI><code>(or {feature requirement} ...)</code> </LI>
+    <LI><code>(not {feature requirement} ...)</code> </LI>
+  </UL>
+</P>
+<P>
+<EM>Semantics: </EM>
+Each implementation maintains a list of feature identifiers which are
+present, as well as a list of libraries which can be imported.  The
+value of a feature requirement is determined by replacing
+each feature identifier and <code>(library library name)</code>
+on the implementation's lists with <code>#t</code>, and all other feature
+identifiers and library names with <code>#f</code>, then evaluating the
+resulting expression as a Scheme boolean expression under the normal
+interpretation of <code>and</code>, <code>or</code>, and <code>not</code>.
+</P
+<P>
+A <code>cond-expand</code> is then expanded by evaluating the
+feature requirements of successive ce-clauses
+in order until one of them returns <code>#t</code>.  When a true clause is
+found, the corresponding expressions are expanded to a
+<code>begin</code>, and the remaining clauses are ignored.
+If none of the feature requirements evaluate to <code>#t</code>, then
+if there is an else clause, its expressions are
+included.  Otherwise, the behavior of the <code>cond-expand</code> is unspecified.
+Unlike <code>cond</code>, <code>cond-expand</code> does not depend on the value
+of any variables.
+</P>
+<P>
+The exact features provided are implementation-defined, but for
+portability a core set of features is given in
+appendix&nbsp;<A HREF="node98.html#stdfeatures">B</A>.
+</P>
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

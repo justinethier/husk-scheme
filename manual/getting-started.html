@@ -1,0 +1,46 @@
+---
+title: Getting Started
+nav_next: command-line-tools.html
+nav_next_lbl: Command Line Tools
+nav_up: index.html
+nav_up_lbl: Summary
+nav_prev: node5.html
+nav_prev_lbl: Acknowledgements
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<p>
+The <a href="http://www.haskell.org/ghc/">Glasgow Haskell Compiler (GHC)</a> is required to build, install, and run husk. All recent versions of GHC are supported, including 6.10, 7.0, 7.2, 7.4, and 7.6. The easiest way to get GHC is via the <a href="http://hackage.haskell.org/platform/">Haskell Platform</a>.
+</p>
+
+<p>
+The recommended installation method is to use <a href="http://www.haskell.org/cabal/">Cabal</a>:
+
+<div class="code-block">
+cabal update
+cabal install husk-scheme
+
+</div>
+</p>
+
+<p>
+Before running husk you may also need to add the cabal executable directory to your path. On Linux this is <code>~/.cabal/bin</code>.
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>
+

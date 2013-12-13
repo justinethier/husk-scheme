@@ -1,0 +1,64 @@
+---
+title: Haskell API
+nav_next: ffi.html
+nav_next_lbl: Foreign Function Interface
+nav_up: haskell-interface.html
+nav_up_lbl: Haskell Interface
+nav_prev: haskell-interface.html
+nav_prev_lbl: Haskell Interface
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<p>
+A Haskell API is provided to allow you to embed a Scheme interpreter within a Haskell program. The key API modules are:
+
+<ul>
+    <li><a href="http://hackage.haskell.org/packages/archive/husk-scheme/latest/doc/html/Language-Scheme-Core.html">Language.Scheme.Core</a> - Contains functions to evaluate (execute) Scheme code</li>
+    <li><a href="http://hackage.haskell.org/packages/archive/husk-scheme/latest/doc/html/Language-Scheme-Types.html">Language.Scheme.Types</a> - Contains Haskell data types used to represent Scheme primitives</li>
+</ul>
+
+There are a few things to be aware of when developing using the API regarding the <code>Pointer</code> type:
+
+<ul>
+  <li>
+  A pointer is an object that references a <code>String</code> variable name within an environment <code>Env</code>. 
+  In general you do not need to worry about pointers, but you need to be aware that they exist. 
+  </li>
+  <li>
+  The <a href="http://hackage.haskell.org/packages/archive/husk-scheme/latest/doc/html/Language-Scheme-Variables.html#g:5">Language.Scheme.Variables</a> 
+  module contains functions that can be used to dereference pointers.
+  </li>
+  <li>
+  Functions should usually be defined using the <code>CustFunc</code> type. 
+  This allows you to write your own Haskell functions without worrying about pointers.
+  But this does introduce some overhead as the Husk interpreter will automatically
+  attempt to dereference any pointers in objects passed to your custom Haskell function.
+  </li>
+</ul>
+</p>
+
+<p>
+The full API documentation is available online. You may also run <code>make doc</code> to generate API documentation directly from the source code. 
+</p>
+
+<p>
+Finally, see <a href="https://github.com/justinethier/husk-scheme/blob/master/hs-src/Interpreter/shell.hs">shell.hs</a> in the husk source code for a quick example of how you might get started using the API.
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>
+

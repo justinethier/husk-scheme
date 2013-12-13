@@ -1,0 +1,71 @@
+---
+title: Foreign Function Interface
+nav_next: node103.html
+nav_next_lbl: Additional material
+nav_up: haskell-interface.html
+nav_up_lbl: Haskell Interface
+nav_prev: haskell-api.html
+nav_prev_lbl: Haskell API
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<p>
+A foreign function interface (FFI) is provided to allow husk to call into arbitrary Haskell code. The interface is available via the <code>load-ffi</code> function:
+
+<div class="code-block">
+(load-ffi "Language.Scheme.Plugins.CPUTime" "precision" "cpu-time:precision")
+
+</div>
+</p>
+
+<p>
+<code>load-ffi</code> accepts the following string arguments:
+
+<ul>
+    <li>Name of a Haskell module to dynamically load</li>
+    <li>Haskell function to load from that module</li>
+    <li>Name to use for the function after it is loaded into husk</li>
+</ul>
+
+From the previous example, once <code>cpu-time:precision</code> is loaded, it may be called directly from husk just like a regular Scheme function:
+
+<div class="code-block">
+(cpu-time:precision)
+
+</div>
+</p>
+
+<p>
+Any Haskell function loaded via the FFI must be of the following type:
+
+<div class="code-block">
+ [LispVal] -&gt; IOThrowsError LispVal
+
+</div>
+</P>
+
+<p>
+See the <a href="http://hackage.haskell.org/packages/archive/husk-scheme/3.5.2.1/doc/html/Language-Scheme-Plugins-CPUTime.html">Language.Scheme.Plugins.CPUTime</a> module for an example of how to use the FFI.
+</p>
+
+<P>
+<b>Note</b> by default the FFI is disabled, which allows husk to avoid unnecessarily linking to the GHC API. This significantly reduces its compiled size out-of-the-box. To enable the FFI just pass the option <code>-fuseffi</code> to cabal when installing or upgrading Husk. 
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>
+

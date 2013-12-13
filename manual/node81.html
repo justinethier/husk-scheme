@@ -1,0 +1,144 @@
+---
+title: Environments and evaluation
+nav_next: node82.html
+nav_next_lbl: Input and output
+nav_up: node62.html
+nav_up_lbl: Standard procedures
+nav_prev: node80.html
+nav_prev_lbl: Exceptions
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+<p>
+
+<!-- JAE TODO: not currently supported
+<div id="environment" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(environment </span>
+    <span class="code-var">list1 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">eval library procedure</span>
+  </div>
+  <div class="p"> </div>
+This procedure returns a specifier for the environment that
+results by starting with an empty environment and then
+importing each list , considered as an import set, into it.
+(See section 5.6 for a description of import sets.) The
+bindings of the environment represented by the specifier
+are immutable, as is the environment itself.
+</div></p>
+<p>
+<div id="scheme-report-environment" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(scheme-report-environment </span>
+    <span class="code-var">version</span>
+    <span class="code">)</span>
+    <span class="obj-type">r5rs library procedure</span>
+  </div>
+  <div class="p"> </div>
+
+<br />
+<br />
+
+If version is equal to 5, corresponding to R5RS,
+scheme-report-environment returns a specifier for an environment
+that contains only the bindings defined in the
+R5RS library. Implementations must support this value of
+version.
+  <div class="p"> </div>
+  <br />
+Implementations may also support other values of version,
+in which case they return a specifier for an environment
+containing bindings corresponding to the specified version
+of the report. If version is neither 5 nor another value
+supported by the implementation, an error is signaled.
+  <div class="p"> </div>
+  <br />
+The effect of defining or assigning (through the use of eval)
+an identifier bound in a scheme-report-environment (for
+example car) is unspecified. Thus both the environment
+and the bindings it contains may be immutable.
+</div></p>
+-->
+<p>
+<div id="null-environment" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(null-environment </span>
+    <span class="code-var">version</span>
+    <span class="code">)</span>
+    <span class="obj-type">r5rs library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+If version is equal to 5, corresponding to R5RS, the
+null-environment procedure returns a specifier for an environment
+that contains only the bindings for all syntactic
+keywords defined in the R5RS library. Implementations
+must support this value of version.
+  <div class="p"><!----></div>
+  <br />
+Implementations may also support other values of version,
+in which case they return a specifier for an environment
+containing appropriate bindings corresponding to the speci
+fied version of the report. If version is neither 5 nor another
+value supported by the implementation, an error is
+signaled.
+</div></p>
+<p>
+<div id="interaction-environment" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(interaction-environment </span>
+    <span class="code">)</span>
+    <span class="obj-type">repl library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+This procedure returns a specifier for a mutable environment
+that contains an implementation-defined set of bindings,
+typically a superset of those exported by (scheme
+base). The intent is that this procedure will return the
+environment in which the implementation would evaluate
+expressions entered by the user into a REPL.
+</div></p>
+<p>
+<div id="eval" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(eval </span>
+    <span class="code-var">expr-or-def environment-specifier</span>
+    <span class="code">)</span>
+    <span class="obj-type">eval library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+If expr-or-def is an expression, it is evaluated in the speci-
+fied environment and its values are returned. If it is a defi-
+nition, the specified identifier(s) are defined in the specified
+environment, provided the environment is not immutable.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(eval '(* 7 3) (environment '(scheme base)))
+==&gt; 21
+(let ((f (eval '(lambda (f x) (f x x))
+(null-environment 5))))
+(f + 10))
+==&gt; 20
+(eval '(define foo 32)
+(environment '(scheme base)))
+==&gt; error is signaled
+</div>
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

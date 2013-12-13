@@ -1,0 +1,65 @@
+---
+title: Whitespace and comments
+nav_next: node18.html
+nav_next_lbl: Other notations
+nav_up: node15.html
+nav_up_lbl: Lexical conventions
+nav_prev: node16.html
+nav_prev_lbl: Identifiers
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+<EM>Whitespace</EM> characters include the space, tab, and newline characters.
+(Implementations may provide additional whitespace characters such
+as page break.)  Whitespace is used for improved readability and
+as necessary to separate tokens from each other, a token being an
+indivisible lexical unit such as an identifier or number, but is
+otherwise insignificant.  Whitespace can occur between any two tokens,
+but not within a token.  Whitespace occurring inside a string
+or inside a symbol delimited by vertical lines
+is significant.
+</p>
+<P>
+The lexical syntax includes several comment forms.  
+Comments are treated exactly like whitespace.
+</p>
+<P>
+A semicolon (<code>;</code>) indicates the start of a line comment.
+The comment continues to the
+end of the line on which the semicolon appears.  
+</p>
+<P>
+<P>
+Block comments are indicated with properly nested <code>#|</code> and <code>|#</code> pairs.
+</p>
+<P>
+<div class="code-block">
+#|
+    The FACT procedure computes the factorial
+    of a non-negative integer.
+|#
+
+(define fact
+  (lambda (n)
+    (if (= n 0)
+        1 ;Base case: return 1
+        (* n (fact (- n 1))))))
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

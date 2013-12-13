@@ -1,0 +1,50 @@
+---
+title: Variable references
+nav_next: node29.html
+nav_next_lbl: Literal expressions
+nav_up: node27.html
+nav_up_lbl: Primitive expression types
+nav_prev: node27.html
+nav_prev_lbl: Primitive expression types
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+<p>
+<div id="variable" class="obj-box">
+  <div class="obj-header">
+    <span class="code">{variable} </span>
+    <span class="code-var"></span>
+    <span class="code"></span>
+    <span class="obj-type">syntax</span>
+  </div>
+  <div class="p"><!----></div>
+An expression consisting of a variable
+(section&nbsp;<A HREF="node21.html#variablesection">3.1</A>) is a variable reference.  The value of
+the variable reference is the value stored in the location to which the
+variable is bound.  It is an error to reference an
+unbound variable.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(define x 28)
+x    ==&gt; 28
+  </div>
+</div>
+</p>
+<P>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

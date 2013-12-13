@@ -1,0 +1,87 @@
+---
+title: Semantics
+nav_next: node8.html
+nav_next_lbl: Syntax
+nav_up: node6.html
+nav_up_lbl: Overview of Scheme
+nav_prev: node6.html
+nav_prev_lbl: Overview of Scheme
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+This section gives an overview of Scheme's semantics.  A
+detailed informal semantics is the subject of
+chapters&nbsp;<A HREF="node20.html#basicchapter">3</A> through&nbsp;<A HREF="node62.html#builtinchapter">6</A>. 
+<P>
+Scheme is a statically scoped programming
+language.  Each use of a variable is associated with a lexically
+apparent binding of that variable.
+</P>
+<P>
+Scheme is a dynamically typed language.  Types
+are associated with values (also called objects) rather than
+with variables.  
+Statically typed languages, by contrast, associate types with
+variables and expressions as well as with values.
+<P>
+All objects created in the course of a Scheme computation, including
+procedures and continuations, have unlimited extent.
+No Scheme object is ever destroyed.  The reason that
+implementations of Scheme do not (usually!) run out of storage is that
+they are permitted to reclaim the storage occupied by an object if
+they can prove that the object cannot possibly matter to any future
+computation.  
+<P>
+Implementations of Scheme are required to be properly tail-recursive.
+This allows the execution of an iterative computation in constant space,
+even if the iterative computation is described by a syntactically
+recursive procedure.  Thus with a properly tail-recursive implementation,
+iteration can be expressed using the ordinary procedure-call
+mechanics, so that special iteration constructs are useful only as
+syntactic sugar.  See section&nbsp;<A HREF="node25.html#proper_tail_recursion">3.5</A>.
+<P>
+Scheme procedures are objects in their own right.  Procedures can be
+created dynamically, stored in data structures, returned as results of
+procedures, and so on.  
+</P>
+<P>
+One distinguishing feature of Scheme is that continuations, which
+in most other languages only operate behind the scenes, also have
+``first-class'' status.  Continuations are useful for implementing a
+wide variety of advanced control constructs, including non-local exits,
+backtracking, and coroutines.  See section&nbsp;<A HREF="node79.html#continuations">6.10</A>.
+</P>
+<P>
+Arguments to Scheme procedures are always passed by value, which
+means that the actual argument expressions are evaluated before the
+procedure gains control, regardless of whether the procedure needs the
+result of the evaluation.  
+</P>
+<P>
+Scheme's model of arithmetic is designed to remain as independent as
+possible of the particular ways in which numbers are represented within a
+computer. In Scheme, every integer is a rational number, every rational is a
+real, and every real is a complex number.  Thus the distinction between integer
+and real arithmetic, so important to many programming languages, does not
+appear in Scheme.  In its place is a distinction between exact arithmetic,
+which corresponds to the mathematical ideal, and inexact arithmetic on
+approximations.  Exact arithmetic is not limited to integers.
+</P>
+<P>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

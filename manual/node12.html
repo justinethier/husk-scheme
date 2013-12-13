@@ -1,0 +1,195 @@
+---
+title: Entry format
+nav_next: node13.html
+nav_next_lbl: Evaluation examples
+nav_up: node9.html
+nav_up_lbl: Notation and terminology
+nav_prev: node11.html
+nav_prev_lbl: Error situations and unspecified behavior
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+Chapters&nbsp;<A HREF="node26.html#expressionchapter">4</A> and&nbsp;<A HREF="node62.html#builtinchapter">6</A> are organized
+into entries.  Each entry describes one language feature or a group of
+related features, where a feature is either a syntactic construct or a
+procedure.  An entry begins with one or more header lines of the form
+</p>
+<P>
+<div class="obj-box">
+  <div class="obj-header">
+    <span class="code">template </span>
+    <span class="obj-type">category</span>
+  </div>
+</div>
+</p>
+<P>
+for identifiers in the base library, or
+</p>
+<P>
+<div class="obj-box">
+  <div class="obj-header">
+    <span class="code">template </span>
+    <span class="obj-type">name library category</span>
+  </div>
+</div>
+</p>
+<P>
+where <I>name</I> is the short name of a library
+as defined in Appendix&nbsp;<A HREF="node97.html#stdlibraries">A</A>.
+</p>
+<P>
+If <I>category</I> is "syntax," the entry describes an expression
+type, and the template gives the syntax of the expression type.
+Components of expressions are designated by syntactic variables, which
+are written using brackets, for example {expression} and
+{variable}.  Syntactic variables are intended to denote segments of
+program text; for example, expression stands for any string of
+characters which is a syntactically valid expression.  The notation
+</p>
+<p>
+<div class="code-block">
+{thing} ...
+</div>
+</p>
+<p>
+indicates zero or more occurrences of a thing, and
+<p>
+<div class="code-block">
+{thing1} {thing2} ...
+</div>
+</p>
+<p>
+indicates one or more occurrences of a thing.
+</p>
+<P>
+If <I>category</I> is "auxiliary syntax," then the entry describes a
+syntax binding that occurs only as part of specific surrounding
+expressions. Any use as an independent syntactic construct or
+variable is an error.
+</p>
+<p>
+If <I>category</I> is "special form," then the entry describes an expression
+type that is built directly into the Husk interpreter.
+</p>
+<P>
+If <I>category</I> is "procedure," then the entry describes a procedure, and
+the header line gives a template for a call to the procedure.  
+Thus the header line
+</p>
+<P>
+<div class="obj-box">
+  <div class="obj-header">
+    <span class="code">(vector-ref </span>
+    <span class="code-var">vector k</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+</div>
+</p>
+<P>
+indicates that the procedure bound to the <span class="code">vector-ref</span> variable takes
+two arguments, a vector <I>vector</I> and an exact non-negative integer
+<I>k</I> (see below).  The header lines
+</p>
+<P>
+<div class="obj-box">
+  <div class="obj-header">
+    <span class="code">(make-vector </span>
+    <span class="code-var">k</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(make-vector </span>
+    <span class="code-var">k fill</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+</div>
+</p>
+<P>
+indicate that the <span class="code">make-vector</span> procedure must be
+ defined to take either one or two arguments.
+</p>
+<P>
+<A NAME="typeconventions"></A>It is an error for a procedure to be presented with an argument that it
+is not specified to handle.  For succinctness, we follow the convention
+that if an argument name is also the name of a type listed in
+section&nbsp;<A HREF="node22.html#disjointness">3.2</A>, then it is an error if that argument is not of the named type.
+For example, the header line for <span class="code">vector-ref</span> given above dictates that the
+first argument to <span class="code">vector-ref</span> is a vector.  The following naming
+conventions also imply type restrictions:
+</p>
+<p>
+<div class="code-block">
+alist                           association list (list of pairs)
+boolean                         boolean value (#t or #f)
+byte                            exact integer 0  byte &lt; 256
+bytevector                      bytevector
+char                            character
+end                             exact non-negative integer
+k, k1, ... kj , ...             exact non-negative integer
+letter                          alphabetic character
+list, list1, ... listj , ...    list (see section 6.4)
+n, n1, ... nj , ...             integer
+obj                             any object
+pair                            pair
+port                            port
+proc                            procedure
+q, q1, ... qj , ...             rational number
+start                           exact non-negative integer
+string                          string
+symbol                          symbol
+thunk                           zero-argument procedure
+vector                          vector
+x, x1, ... xj , ...             real number
+y, y1, ... yj , ...             real number
+z, z1, ... zj , ...             complex number
+</div>
+</p>
+<P>
+The names <i>start</i> and <i>end</i>
+are used as indexes into strings,
+vectors, and bytevectors.  Their use implies the following:
+
+<UL>
+<LI>It is an error if <I>start</I> is greater than <I>end</I>.
+
+</LI>
+<LI>It is an error if <I>end</I> is greater than the length of the
+string, vector, or bytevector.
+
+</LI>
+<LI>If <I>start</I> is omitted, it is assumed to be zero.
+
+</LI>
+<LI>If <I>end</I> is omitted, it assumed to be the length of the string,
+vector, or bytevector.
+
+</LI>
+<LI>The index <I>start</I> is always inclusive and the index <I>end</I> is always
+exclusive.  As an example, consider a string.  If
+<I>start</I> and <I>end</I> are the same, an empty
+substring is referred to, and if <I>start</I> is zero and <I>end</I> is
+the length of <I>string</I>, then the entire string is referred to.
+
+</LI>
+</UL>
+</P>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

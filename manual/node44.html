@@ -1,0 +1,81 @@
+---
+title: Case-lambda
+nav_next: node45.html
+nav_next_lbl: Macros
+nav_up: node35.html
+nav_up_lbl: Derived expression types
+nav_prev: node43.html
+nav_prev_lbl: Quasiquotation
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<p>
+Note case-lambda has not been implemented by Husk yet, but will be
+included in a future release.
+
+<!-- 
+
+
+<P>
+<div id="case-lambda" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(case-lambda </span>
+    <span class="code-var">{clause} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">case-lambda library syntax</span>
+  </div>
+<EM>Syntax: </EM>
+Each clause is of the form
+(formals body),
+where formals and body have the same syntax
+as in a <code>lambda</code> expression.
+<P>
+<EM>Semantics: </EM>
+A <code>case-lambda</code> expression evaluates to a procedure that accepts
+a variable number of arguments and is lexically scoped in the same
+manner as a procedure resulting from a <code>lambda</code> expression. When the procedure
+is called, the first clause for which the arguments agree
+with formals is selected, where agreement is specified as for
+the formals of a <code>lambda</code> expression. The variables of formals are
+bound to fresh locations, the values of the arguments are stored in those
+locations, the body is evaluated in the extended environment,
+and the results of body are returned as the results of the
+procedure call.
+</P>
+<P>
+It is an error for the arguments not to agree with
+the formals of any clause.
+</P>
+<P>
+<div class="code-block">
+(define range
+  (case-lambda
+    ((e) (range 0 e))
+    ((b e) (do ((r '() (cons e r))
+                (e (- e 1) (- e 1)))
+             ((&lt; e b) r)))))
+
+(range 3) ==&gt; (0 1 2)
+(range 3 5) ==&gt; (3 4)
+</div>
+</p>
+</div>
+</p>
+-->
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

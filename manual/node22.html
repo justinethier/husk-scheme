@@ -1,0 +1,60 @@
+---
+title: Disjointness of types
+nav_next: node23.html
+nav_next_lbl: External representations
+nav_up: node20.html
+nav_up_lbl: Basic concepts
+nav_prev: node21.html
+nav_prev_lbl: Variables, syntactic keywords, and regions
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+No object satisfies more than one of the following predicates:
+
+<br />
+<div class="code-block">
+boolean?          bytevector?
+char?             eof-object?
+null?             number?
+pair?             port?
+procedure?        string?
+symbol?           vector?
+</div>
+<br />
+
+and all predicates created by <code>define-record-type</code>.
+</p>
+
+<P>
+These predicates define the types 
+<EM>boolean, bytevector, character</EM>, the empty list object,
+<EM>eof-object, number, pair, port, procedure, string, symbol, vector</EM>,
+and all record types.
+</p>
+<P>
+Although there is a separate boolean type,
+any Scheme value can be used as a boolean value for the purpose of a
+conditional test.  As explained in section&nbsp;<A HREF="node72.html#booleansection">6.3</A>, all
+values count as true in such a test except for <code>#f</code>.
+This report uses the word "true" to refer to any
+Scheme value except <code>#f</code>, and the word "false" to refer to
+<code>#f</code>.
+</p>
+
+{% include nav-bottom.html %}
+<!--End of Navigation Panel-->
+{% include footer.html %}
+</BODY>
+</HTML>

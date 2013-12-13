@@ -1,0 +1,89 @@
+---
+title: Sequencing
+nav_next: node39.html
+nav_next_lbl: Iteration
+nav_up: node35.html
+nav_up_lbl: Derived expressions
+nav_prev: node37.html
+nav_prev_lbl: Binding constructs
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<!--
+JAE TODO: first form is not implmented?? will need to come back to this
+
+<p>
+Both of Scheme's sequencing constructs are named <code>begin</code>, but the two
+have slightly different forms and uses:
+</p>
+<P>
+<div id="begin" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(begin </span>
+    <span class="code-var">{expression or definition} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+This form of <code>begin</code> can appear as part of a body, or at the
+outermost level of a program, or at the REPL, or directly nested
+in a <code>begin</code> that is itself of this form.
+It causes the contained expressions and definitions to be evaluated
+exactly as if the enclosing <code>begin</code> construct were not present.
+<P>
+<EM>Rationale:</EM> This form is commonly used in the output of
+macros (see section&nbsp;<A HREF="node45.html#macrosection">4.3</A>)
+which need to generate multiple definitions and
+splice them into the context in which they are expanded.
+</div>
+</p>
+-->
+
+<p>
+<div id="" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(begin </span>
+    <span class="code-var">{expression1} {expression2} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+This form of <code>begin</code> can be used as an ordinary expression.
+The expressions are evaluated sequentially from left to right,
+and the values of the last expression are returned. This
+expression type is used to sequence side effects such as assignments
+or input and output.
+<br />
+<div class="code-block">
+(define x 0)
+
+(and (= x 0)
+  (begin (set! x 5)
+    (+ x 1)))           ==&gt; 6
+
+(begin (display "4 plus 1 equals ")
+  (display (+ 4 1)))   ==&gt; unspecified and prints
+                              4 plus 1 equals 5
+</div>
+</div>
+</p>
+<p>
+Note that there is another form of <code>begin</code> used as a library declaration:
+see section&nbsp;<A HREF="node59.html#librarydeclarations">5.6.1</A>.
+</p>
+
+{% include nav-bottom.html %}
+
+{% include footer.html %}
+</BODY>
+</HTML>

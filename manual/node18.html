@@ -1,0 +1,125 @@
+---
+title: Other notations
+nav_next: node20.html
+nav_next_lbl: Basic concepts
+nav_up: node15.html
+nav_up_lbl: Lexical conventions
+nav_prev: node17.html
+nav_prev_lbl: Whitespace and comments
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<P>
+For a description of the notations used for numbers, see
+section&nbsp;<A HREF="node64.html#numbersection">6.2</A>.
+</p>
+<P>
+<code>. + -</code>
+These are used in numbers, and can also occur anywhere in an identifier.
+A delimited plus or minus sign by itself
+is also an identifier.
+A delimited period (not occurring within a number or identifier) is used
+in the notation for pairs (section&nbsp;<A HREF="node73.html#listsection">6.4</A>), and to indicate a
+rest-parameter in a  formal parameter list (section&nbsp;<A HREF="node31.html#lambda">4.1.4</A>).
+Note that a sequence of two or more periods <EM>is</EM> an identifier.
+</p>
+
+<P>
+<code>( )</code>
+Parentheses are used for grouping and to notate lists
+(section&nbsp;<A HREF="node73.html#listsection">6.4</A>).
+
+</P>
+<p>
+<code>'</code>
+The apostrophe (single quote) character is used to indicate literal data (section&nbsp;<A HREF="node29.html#quote">4.1.2</A>).
+</p>
+
+<P>
+<code>&#18;</code>
+The grave accent (backquote) character is used to indicate partly constant
+data (section&nbsp;<A HREF="node43.html#quasiquote">4.2.8</A>).
+</p>
+
+<P>
+<code>, ,@</code>
+The character comma and the sequence comma at-sign are used in conjunction
+with quasiquotation (section&nbsp;<A HREF="node43.html#quasiquote">4.2.8</A>).
+</p>
+
+<P>
+<code>"</code>
+The quotation mark character is used to delimit strings (section&nbsp;<A HREF="node76.html#stringsection">6.7</A>).
+</p>
+
+<P>
+<code>&#92;</code>
+Backslash is used in the syntax for character constants
+(section&nbsp;<A HREF="node75.html#charactersection">6.6</A>) and as an escape character within string
+constants (section&nbsp;<A HREF="node76.html#stringsection">6.7</A>) and identifiers.
+</p>
+
+<P>
+<code>[</code> <code>]</code> <code>{</code> <code>}</code>
+Left and right square and curly brackets (braces)
+are reserved for possible future extensions to the language.
+</p>
+
+<P>
+<code>#</code>
+The number sign is used for a variety of purposes depending on
+the character that immediately follows it:
+</p>
+
+<P>
+<code>#t</code> <code>#f</code>
+These are the boolean constants (section&nbsp;<A HREF="node72.html#booleansection">6.3</A>),
+along with the alternatives <code>#true</code> and <code>#false</code>.
+
+</p>
+<P>
+</DD>
+<code>#&#92;</code>
+This introduces a character constant (section&nbsp;<A HREF="node75.html#charactersection">6.6</A>).
+</p>
+
+<P>
+<code>#(</code>
+This introduces a vector constant (section&nbsp;<A HREF="node77.html#vectorsection">6.8</A>).  Vector constants
+are terminated by&nbsp;<code>)</code>&nbsp;.
+</p>
+
+<P>
+<code>#u8(</code>
+This introduces a bytevector constant (section&nbsp;<A HREF="node78.html#bytevectorsection">6.9</A>).  Bytevector constants
+are terminated by&nbsp;<code>)</code>&nbsp;.
+</p>
+
+<P>
+<code>#e #i #b #o #d #x</code>
+These are used in the notation for numbers (section&nbsp;<A HREF="node69.html#numbernotations">6.2.5</A>).
+</p>
+
+<!--
+<P>
+<DT><STRONG><TT>#n= #n#</TT></STRONG></DT>
+<DD>These are used for labeling and referencing other literal data (section&nbsp;<A HREF="node19.html#labelsection">2.4</A>).
+</p>
+-->
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

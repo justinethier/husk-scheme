@@ -1,0 +1,111 @@
+---
+title: Booleans
+nav_next: node73.html
+nav_next_lbl: Pairs and lists
+nav_up: node62.html
+nav_up_lbl: Standard procedures
+nav_prev: node71.html
+nav_prev_lbl: Numerical input and output
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+Booleans
+</H1>
+<P>
+The standard boolean objects for true and false are written as
+<span class="code">#t</span> and <span class="code">#f</span>.  
+Alternatively, they can be written <span class="code">#true</span> and <span class="code">#false</span>,
+respectively.  What really
+matters, though, are the objects that the Scheme conditional expressions
+( <span class="code">if</span>,  <span class="code">cond</span>,  <span class="code">and</span>,  <span class="code">or</span>,  <span class="code">when</span>,  <span class="code">unless</span>,  <span class="code">do</span>) treat as
+true or false.  The phrase "a true value"
+(or sometimes just "true") means any object treated as true by the
+conditional expressions, and the phrase "a false value" (or
+"false") means any object treated as false by the conditional expressions.
+</P>
+<P>
+ Of all the Scheme values, only <span class="code">#f</span>
+counts as false in conditional expressions.
+All other Scheme values, including <span class="code">#t</span>,
+count as true.
+</P>
+<P>
+Unlike some other dialects of Lisp,
+Scheme distinguishes <span class="code">#f</span> and the empty list 
+from each other and from the symbol <span class="code">nil</span>.
+</p>
+<p>
+ Boolean constants evaluate to themselves, so they do not need to be quoted
+in programs.
+</P>
+
+<P>
+<div id="not" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(not </span><span class="code-var">obj</span><span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+
+  <div class="p"><!----></div>
+  The <span class="code">not</span> procedure returns <span class="code">#t</span> if <span class="code-var">obj</span> is false, and returns <span class="code">#f</span> otherwise.
+  
+  <div class="p"><!----></div>
+  <div class="code-block">
+  (not )            ==&gt; #f
+  (not 3)           ==&gt; #f 
+  (not (list 3))    ==&gt; #f 
+  (not )            ==&gt; #t 
+  (not '())         ==&gt; #f
+  (not (list))      ==&gt; #f
+  (not 'nil)        ==&gt; #f
+  </div>
+</div>
+</P>
+
+<P>
+<div id="boolean?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(boolean? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+  The  boolean? predicate returns <span class="code">#t</span> if <span class="code-var">obj</span> is either <span class="code">#t</span> or <span class="code">#f</span>
+   and returns <span class="code">#f</span> otherwise.
+  
+  <div class="p"><!----></div>
+  <div class="code-block">
+  (boolean? #f)          ==&gt; #t
+  (boolean? 0)           ==&gt; #f 
+  (boolean? '())         ==&gt; #f 
+  </div>
+</div>
+</p>
+<p>
+<div id="boolean=?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(boolean=?</span>
+    <span class="code-var">boolean1 boolean2 boolean3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+  Returns <span class="code">#t</span> if all the arguments are booleans and all 
+  are <span class="code">#t</span> or all are <span class="code">#f</span>.
+</div>
+</P>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

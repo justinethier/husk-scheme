@@ -1,0 +1,59 @@
+---
+title: The REPL
+nav_next: node62.html
+nav_next_lbl: Standard procedures
+nav_up: node49.html
+nav_up_lbl: Program structure
+nav_prev: node60.html
+nav_prev_lbl: Library example
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+Husk provides an interactive session called a
+<EM>REPL</EM> (Read-Eval-Print Loop), where import declarations,
+expressions and definitions can be
+entered and evaluated one at a time.  For convenience and ease of use,
+the global Scheme environment in a REPL
+must not be empty, but must start out with at least the bindings provided by the
+base library.  This library includes the core syntax of Scheme
+and generally useful procedures that manipulate data.  For example, the
+variable <code>abs</code> is bound to a
+procedure of one argument that computes the absolute value of a
+number, and the variable <code>+</code> is bound to a procedure that computes
+sums.  The full list of <code>(scheme base)</code> bindings can be found in
+Appendix&nbsp;<A HREF="node97.html#stdlibraries">A</A>.
+</P>
+<!--
+<P>
+Implementations may provide an initial REPL environment 
+which behaves as if all possible variables are bound to locations, most of
+which contain unspecified values.  Top level REPL definitions in
+such an implementation are truly equivalent to assignments,
+unless the identifier is defined as a syntax keyword.
+</P>-->
+<P>
+An implementation may provide a mode of operation in which the REPL
+reads its input from a file.  Such a file is not, in general, the same
+as a program, because it can contain import declarations in places other than
+the beginning.
+</P>
+<P>
+The Husk REPL can be started by running the <code>huski</code> program.
+</P>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

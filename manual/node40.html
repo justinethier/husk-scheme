@@ -1,0 +1,145 @@
+---
+title: Delayed evaluation
+nav_next: node41.html
+nav_next_lbl: Dynamic bindings
+nav_up: 35.html
+nav_up_lbl: Derived expression types
+nav_prev: node39.html
+nav_prev_lbl: Iteration
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<!-- JAE TODO: promises have not been implemented yet. delay-force and promise? are not available, and need to check example code as well  -->
+
+<P>
+<div id="delay" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(delay </span>
+    <span class="code-var">{expression}</span>
+    <span class="code">)</span>
+    <span class="obj-type">lazy library syntax</span>
+  </div>
+<EM>Semantics: </EM>
+The <code>delay</code> construct is used together with the procedure <code>force</code> to
+implement <EM>lazy evaluation</EM> or <EM>call by need</EM>.
+<code>(delay&nbsp;expression)</code> returns an object called a
+<EM>promise</EM> which at some point in the future can be asked (by
+the <code>force</code> procedure) to evaluate
+expression, and deliver the resulting value.
+
+The effect of expression returning multiple values
+is unspecified.
+</div>
+</p>
+
+<P>
+<div id="delay-force" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(delay-force </span>
+    <span class="code-var">{expression}</span>
+    <span class="code">)</span>
+    <span class="obj-type">lazy library syntax</span>
+  </div>
+<EM>Semantics: </EM>
+The expression <code>(delay-force <I>expression</I>)</code> is conceptually similar to 
+<code>(delay (force <I>expression</I>))</code>,
+with the difference that forcing the result
+of <code>delay-force</code> will in effect result in a tail call to 
+<code>(force <I>expression</I>)</code>,
+while forcing the result of
+<code>(delay (force <I>expression</I>))</code>
+might not.  Thus
+iterative lazy algorithms that might result in a long series of chains of
+<code>delay</code> and <code>force</code>
+can be rewritten using <code>delay-force</code> to prevent consuming
+unbounded space during evaluation.
+</div>
+</p>
+
+<P>
+<div id="force" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(force </span>
+    <span class="code-var">{expression}</span>
+    <span class="code">)</span>
+    <span class="obj-type">lazy library procedure</span>
+  </div>
+The <code>force</code> procedure forces the value of a <I>promise</I> created
+by <code>delay</code>, <code>delay-force</code>, or <code>make-promise</code>.
+If no value has been computed for the promise, then a value is
+computed and returned.  The value of the promise must be cached (or
+"memoized") so that if it is forced a second time, the previously
+computed value is returned.
+Consequently, a delayed expression is evaluated using the parameter
+values and exception handler of the call to <code>force</code> which first
+requested its value.
+If <I>promise</I> is not a promise, it may be returned unchanged.
+<p>
+<div class="code-block">
+(force (delay (+ 1 2)))         ==&gt; 3
+(let ((p (delay (+ 1 2))))
+  (list (force p) (force p)))
+                                ==&gt; (3 3)
+
+(define integers
+  (letrec ((next
+            (lambda (n)
+              (delay (cons n (next (+ n 1)))))))
+    (next 0)))
+(define head
+  (lambda (stream) (car (force stream))))
+(define tail
+  (lambda (stream) (cdr (force stream))))
+(head (tail (tail integers)))
+                                ==&gt; 2
+</div>
+</p>
+</div>
+</p>
+
+<P>
+<div id="promise?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(promise? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">lazy library procedure</span>
+  </div>
+The <code>promise?</code> procedure returns 
+<code>#t</code> if its argument is a promise, and <code>#f</code> otherwise.  Note
+that promises are not necessarily disjoint from other Scheme types such
+as procedures.
+</div>
+</P>
+
+<P>
+<div id="make-promise" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(make-promise </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">lazy library procedure</span>
+  </div>
+The <code>make-promise</code> procedure returns a promise which, when forced, will return
+<I>obj</I>.  It is similar to <code>delay</code>, but does not delay
+its argument: it is a procedure rather than syntax.
+If <I>obj</I> is already a promise, it is returned.
+</div>
+</P>
+
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

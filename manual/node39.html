@@ -1,0 +1,135 @@
+---
+title: Iteration
+nav_next: node40.html
+nav_next_lbl: Delayed evaluation
+nav_up: node35.html
+nav_up_lbl: Derived expression types
+nav_prev: node38.html
+nav_prev_lbl: Sequencing
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+<div id="do" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(do </span>
+    <span class="code-var">  (({variable1} {init1} {step1}) ...) </span>
+    <span class="obj-type">syntax</span>
+  </div>
+  <div class="obj-header">
+    <span class="code-var">  ({test} {expression} ...) </span>
+  </div>
+  <div class="obj-header">
+    <span class="code-var">{command} ...)</span>
+  </div>
+<EM>Syntax</EM>
+All of init, step, test, and command
+are expressions.
+<P>
+<EM>Semantics: </EM>
+A <code>do</code> expression is an iteration construct.  It specifies a set of variables to
+be bound, how they are to be initialized at the start, and how they are
+to be updated on each iteration.  When a termination condition is met,
+the loop exits after evaluating the expressions.
+</P>
+<P>
+A <code>do</code> expression is evaluated as follows:
+The init expressions are evaluated (in some unspecified order),
+the variables are bound to fresh locations, the results of the
+init expressions are stored in the bindings of the
+variables, and then the iteration phase begins.
+</P>
+<P>
+Each iteration begins by evaluating test; if the result is
+false (see section&nbsp;<A HREF="node72.html#booleansection">6.3</A>), then the command
+expressions are evaluated in order for effect, the step
+expressions are evaluated in some unspecified order, the
+variables are bound to fresh locations, the results of the
+steps are stored in the bindings of the
+variables, and the next iteration begins.
+</P>
+<P>
+If test evaluates to a true value, then the
+expressions are evaluated from left to right and the values of
+the last expression are returned.  If no expressions
+are present, then the value of the <code>do</code> expression is unspecified.
+</P>
+<P>
+The region of the binding of a variable
+consists of the entire <code>do</code> expression except for the inits.
+It is an error for a variable to appear more than once in the
+list of <code>do</code> variables.
+</P>
+<P>
+A step can be omitted, in which case the effect is the
+same as if <code>(variable init variable)</code> had
+been written instead of <code>(variable init)</code>.
+</P>
+<P>
+<div class="code-block">
+(do ((vec (make-vector 5))
+     (i 0 (+ i 1)))
+    ((= i 5) vec)
+  (vector-set! vec i i))        ==&gt; #(0 1 2 3 4)
+
+(let ((x '(1 3 5 7 9)))
+  (do ((x x (cdr x))
+       (sum 0 (+ sum (car x))))
+      ((null? x) sum)))         ==&gt; 25
+</div>
+</p>
+</div>
+</p>
+
+<P>
+<div id="named-let" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(let </span>
+    <span class="code-var">{variable} {bindings} {body}</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<EM>Semantics: </EM>
+"Named <code>let</code>" is a variant on the syntax of <code>let</code> which provides
+a more general looping construct than <code>do</code> and can also be used to express
+recursion.
+It has the same syntax and semantics as ordinary <code>let</code>
+except that variable is bound within body to a procedure
+whose formal arguments are the bound variables and whose body is
+body.  Thus the execution of body can be repeated by
+invoking the procedure named by variable.
+<P>
+<div class="code-block">
+(let loop ((numbers '(3 -2 1 6 -5))
+           (nonneg '())
+           (neg '()))
+  (cond ((null? numbers) (list nonneg neg))
+        ((&gt;= (car numbers) 0)
+         (loop (cdr numbers)
+               (cons (car numbers) nonneg)
+               neg))
+        ((&lt; (car numbers) 0)
+         (loop (cdr numbers)
+               nonneg
+               (cons (car numbers) neg)))))
+        ==&gt; ((6 1 3) (-5 -2))
+</div>
+</p>
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

@@ -1,0 +1,85 @@
+---
+title: Summary
+nav_next: node3.html
+nav_next_lbl: Contents
+nav_up: index.html
+nav_up_lbl: Summary
+nav_prev: index.html
+nav_prev_lbl: Title
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<P>
+Husk is an implementation of the Scheme programming language that runs on top of the Haskell Platform.
+TBD: standalone interpreter, rudimentary compiler, embedability
+</p>
+<P>
+This user manual provides documentation for Husk Scheme, including a detailed description of the Scheme language as implemented by Husk. This manual is based on the Revised<sup>7</sup> Report on the Algorithmic Language Scheme (R<sup>7</sup>RS). 
+
+As such it provides a detailed description of the Scheme language, and is meant to be good enough that in most cases a user will not need to reference the Scheme reports. However, this manual does not copy the R<sup>7</sup>RS verbatim and does leave out many details that are of more interest to a Scheme implementor rather than a practical user of the language. If those details are important to you, you may need to reference the Scheme report itself. 
+</p>
+
+<P>
+Scheme is a statically scoped and properly tail recursive
+dialect of the Lisp programming language&nbsp;[<A
+ HREF="node105.html#McCarthy">23</A>] invented by Guy Lewis
+Steele&nbsp;Jr. and Gerald Jay&nbsp;Sussman.  It was designed to have
+exceptionally clear and simple semantics and few different ways to
+form expressions.  A wide variety of programming paradigms, including
+imperative, functional, and object-oriented styles, find convenient
+expression in Scheme.
+</p>
+
+<P>
+The introduction offers a brief history of the language and of
+the report.
+</p>
+
+<P>
+The first three chapters present the fundamental ideas of the
+language and describe the notational conventions used for describing the
+language and for writing programs in the language.
+</p>
+
+<P>
+Chapters&nbsp;<A HREF="node26.html#expressionchapter">4</A> and&nbsp;<A HREF="node49.html#programchapter">5</A> describe
+the syntax and semantics of expressions, definitions, programs, and libraries.
+</p>
+
+<P>
+Chapter&nbsp;<A HREF="node62.html#builtinchapter">6</A> describes Scheme's built-in
+procedures, which include all of the language's data manipulation and
+input/output primitives.
+</p>
+
+<P>
+Appendix&nbsp;<A HREF="node97.html#stdlibraries">A</A> provides a list of the standard libraries
+and the identifiers that they export.
+</p>
+
+<P>
+Appendix&nbsp;<A HREF="node98.html#stdfeatures">B</A> provides a list of optional but standardized
+implementation feature names.
+</p>
+
+<P>
+The report concludes with a list of references and an
+alphabetic index.
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

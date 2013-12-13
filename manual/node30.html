@@ -1,0 +1,82 @@
+---
+title: Procedure calls
+nav_next: node31.html
+nav_next_lbl: Procedures
+nav_up: node27.html
+nav_up_lbl: Primitive expression types
+nav_prev: node29.html
+nav_prev_lbl: Literal expressions
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+<div id="" class="obj-box">
+  <div class="obj-header">
+    <span class="code">({operator} </span>
+    <span class="code-var">{operand1} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+  <div class="p"><!----></div>
+A procedure call is written by enclosing in parentheses an
+expression for the procedure to be called followed by expressions for the arguments to be
+passed to it.  The operator and operand expressions are evaluated (in an
+unspecified order) and the resulting procedure is passed the resulting
+arguments.
+  <div class="p"><!----></div>
+  <div class="p"><!----></div>
+<div class="code-block">
+(+ 3 4)             ==&gt; 7
+((if #f + *) 3 4)   ==&gt; 12
+</div>
+  <div class="p"><!----></div>
+  <p>
+The procedures in this document are available as the values of variables exported by the
+standard libraries.  For example, the addition and multiplication
+procedures in the above examples are the values of the variables <code>+</code>
+and <code>*</code> in the base library.  New procedures are created by evaluating <code>lambda</code> expressions
+(see section&nbsp;<A HREF="node31.html#lambda">4.1.4</A>).
+</p>
+  <div class="p"><!----></div>
+<p>
+Procedure calls can return any number of values (see <code>values</code> in
+section&nbsp;<A HREF="node79.html#proceduresection">6.10</A>).
+Most of the procedures defined in this report return one
+value or, for procedures such as <code>apply</code>, pass on the values returned
+by a call to one of their arguments.
+Exceptions are noted in the individual descriptions.
+</p>
+  <div class="p"><!----></div>
+<P>
+<EM>Note:</EM> In contrast to other dialects of Lisp, the order of
+evaluation is unspecified, and the operator expression and the operand
+expressions are always evaluated with the same evaluation rules.
+</p>
+  <div class="p"><!----></div>
+</p>
+<p>
+<EM>Note:</EM> Although the order of evaluation is otherwise unspecified, the effect of
+any concurrent evaluation of the operator and operand expressions is
+constrained to be consistent with some sequential order of evaluation.
+The order of evaluation may be chosen differently for each procedure call.
+  <div class="p"><!----></div>
+<EM>Note:</EM> In many dialects of Lisp, the empty list, <code>()</code>, is a legitimate expression evaluating to itself.  In Scheme, it is an error.
+</p>
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

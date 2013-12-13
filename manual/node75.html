@@ -1,0 +1,333 @@
+---
+title: Characters
+nav_next: node76.html
+nav_next_lbl: Strings
+nav_up: node62.html
+nav_up_lbl: Standard procedures
+nav_prev: node74.html
+nav_prev_lbl: Symbols
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+Characters are objects that represent printed characters
+such as letters and digits. All Scheme implementations
+must support at least the ASCII character repertoire: that
+is, Unicode characters U+0000 through U+007F. Implementations
+may support any other Unicode characters they
+see fit, and may also support non-Unicode characters as
+well. Except as otherwise specified, the result of applying
+any of the following procedures to a non-Unicode character
+is implementation-dependent.
+</p>
+<p>
+Characters are written using the notation <span class="code">#\{character}</span> or
+<span class="code">#\{character name}</span> or <span class="code">#\x{hex scalar value}</span>.
+</p>
+<p>
+The following character names are supported:
+<div class="code-block">
+#\alarm ; U+0007
+#\backspace ; U+0008
+#\delete ; U+007F
+#\escape ; U+001B
+#\newline ; the linefeed character, U+000A
+#\null ; the null character, U+0000
+#\return ; the return character, U+000D
+#\space ; the preferred way to write a space
+#\tab ; the tab character, U+0009
+</div>
+</p>
+<P>
+Here are some additional examples:
+<div class="code-block">
+#\a ; lower case letter
+#\A ; upper case letter
+#\( ; left parenthesis
+#\ ; the space character
+</div>
+</p>
+<p>
+Case is significant in #{character}, and in #{character
+name}, but not in #\xhhex scalar value}. If {character}
+in #{character} is alphabetic, then any character immediately
+following {character} cannot be one that can appear
+in an identifier. This rule resolves the ambiguous case
+where, for example, the sequence of characters \#\space"
+could be taken to be either a representation of the space
+character or a representation of the character \#\s" followed
+by a representation of the symbol \pace."
+</p>
+<p>
+Characters written in the #\ notation are self-evaluating.
+That is, they do not have to be quoted in programs.
+Some of the procedures that operate on characters ignore
+the difference between upper and lower case. The procedures that
+ignore case have "-ci" (for case insensitive) embedded in their names.
+</p>
+<p>
+<div id="char?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(char? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if obj is a character, otherwise returns #f.
+</div>
+</p>
+
+<p>
+<div id="char=?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(char=? </span>
+    <span class="code-var">char1 char2 char3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char&lt;? </span>
+    <span class="code-var">char1 char2 char3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char&gt;? </span>
+    <span class="code-var">char1 char2 char3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char&lt;=? </span>
+    <span class="code-var">char1 char2 char3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char&gt;=? </span>
+    <span class="code-var">char1 char2 char3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures return #t if the results of passing their
+arguments to char-&gt;integer are respectively equal, monotonically
+increasing, monotonically decreasing, monotonically
+non-decreasing, or monotonically non-increasing.
+These predicates are required to be transitive.
+</div>
+</p>
+<p>
+<div id="char-ci?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(char-ci=? </span>
+    <span class="code-var">char1 char2 char3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char-ci&lt;? </span>
+    <span class="code-var">char1 char2 char3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char-ci&gt;? </span>
+    <span class="code-var">char1 char2 char3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char-ci&lt;=? </span>
+    <span class="code-var">char1 char2 char3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char-ci&gt;=? </span>
+    <span class="code-var">char1 char2 char3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures are similar to char=? et cetera, but they
+treat upper case and lower case letters as the same. For
+example, (char-ci=? #\A #\a) returns #t.
+  <div class="p"><!----></div>
+  <br />
+Specifically, these procedures behave as if char-foldcase
+were applied to their arguments before they were compared.
+</div>
+</p>
+
+<p>
+<div id="char-alphabetic?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(char-alphabetic? </span>
+    <span class="code-var">char</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char-numeric? </span>
+    <span class="code-var">char</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char-whitespace? </span>
+    <span class="code-var">char</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char-upper-case? </span>
+    <span class="code-var">char</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char-lower-case? </span>
+    <span class="code-var">char</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures return #t if their arguments are alphabetic,
+numeric, whitespace, upper case, or lower case characters,
+respectively, otherwise they return #f.
+  <div class="p"><!----></div>
+  <br />
+Specifically, they must return #t when applied to characters
+with the Unicode properties Alphabetic, Numeric
+Digit, White Space, Uppercase, and Lowercase respectively,
+and #f when applied to any other Unicode characters.
+Note that many Unicode characters are alphabetic
+but neither upper nor lower case.
+</diV>
+</p>
+
+<p>
+<div id="digit-value" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(digit-value </span>
+    <span class="code-var">char</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+This procedure returns the numeric value (0 to 9) of its
+argument if it is a numeric digit (that is, if char-numeric?
+returns #t), or #f on any other character.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(digit-value #\3) ==&gt; 3
+(digit-value #\x0664) ==&gt; 4
+(digit-value #\x0AE6) ==&gt; 0
+(digit-value #\x0EA6) ==&gt; #f
+</div></div></p>
+
+<p>
+<div id="char->integer" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(char-&gt;integer </span>
+    <span class="code-var">char</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(integer-&gt;char </span>
+    <span class="code-var">n</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Given a Unicode character, char-&gt;integer returns an exact
+integer between 0 and #xD7FF or between #xE000 and
+#x10FFFF which is equal to the Unicode scalar value of
+that character. Given a non-Unicode character, it returns
+an exact integer greater than #x10FFFF. This is true independent
+of whether the implementation uses the Unicode
+representation internally.
+  <div class="p"><!----></div>
+  <br />
+Given an exact integer that is the value returned by a character
+when char-&gt;integer is applied to it, integer-&gt;char
+returns that character.
+</div>
+</p>
+<p>
+<div id="char-upcase" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(char-upcase </span>
+    <span class="code-var">char</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char-downcase </span>
+    <span class="code-var">char</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <!--
+  <div class="obj-header">
+    <span class="code">(char-foldcase </span>
+    <span class="code-var">char</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  -->
+  <div class="p"><!----></div>
+The char-upcase procedure, given an argument that is
+the lowercase part of a Unicode casing pair, returns the
+uppercase member of the pair, provided that both characters
+are supported by the Scheme implementation. Note
+that language-sensitive casing pairs are not used. If the
+argument is not the lowercase member of such a pair, it is
+returned.
+  <div class="p"><!----></div>
+  <br />
+The char-downcase procedure, given an argument that is
+the uppercase part of a Unicode casing pair, returns the
+lowercase member of the pair, provided that both characters
+are supported by the Scheme implementation. Note
+that language-sensitive casing pairs are not used. If the
+argument is not the uppercase member of such a pair, it is
+returned.
+  <div class="p"><!----></div>
+  <!--
+  <br />
+  <p style="color: red">TODO: husk does not support this!</p>
+The char-foldcase procedure applies the Unicode simple
+case-folding algorithm to its argument and returns the result.
+Note that language-sensitive folding is not used. If
+the argument is an uppercase letter, the result will be either
+a lowercase letter or the same as the argument if the
+lowercase letter does not exist or is not supported by the
+implementation. See UAX #29 [11] (part of the Unicode
+Standard) for details.
+  <div class="p"><!-- -- ></div>
+  <br />
+Note that many Unicode lowercase characters do not have
+uppercase equivalents.
+-->
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

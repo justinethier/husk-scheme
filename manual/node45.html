@@ -1,0 +1,112 @@
+---
+title: Macros
+nav_next: node46.html
+nav_next_lbl: Binding constructs for syntactic keywords
+nav_up: node26.html
+nav_up_lbl: Expressions
+nav_prev: node44.html
+nav_prev_lbl: Case-lambda
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+Scheme programs can define and use new derived expression types,
+ called <EM>macros</EM>.
+Program-defined expression types have the syntax
+
+<br />
+<div class="code-block">
+({keyword} {datum} ...)
+</div>
+</p>
+<P>
+where keyword is an identifier that uniquely determines the
+expression type.  This identifier is called the <EM>syntactic keyword</EM>, or simply <EM>keyword</EM>, of the macro.  The
+number of the datums, and their syntax, depends on the
+expression type.
+</P>
+<P>
+Each instance of a macro is called a <EM>use</EM>
+of the macro.
+The set of rules that specifies
+how a use of a macro is transcribed into a more primitive expression
+is called the <EM>transformer</EM>
+of the macro.
+</P>
+<P>
+The macro definition facility consists of two parts:
+</P>
+<P>
+  <UL>
+    <LI>A set of expressions used to establish that certain identifiers
+    are macro keywords, associate them with macro transformers, and control
+    the scope within which a macro is defined, and
+    </LI>
+    <LI>a pattern language for specifying macro transformers.
+    </LI>
+  </UL>
+</p>
+<P>
+The syntactic keyword of a macro can shadow variable bindings, and local
+variable bindings can shadow syntactic bindings.
+Two mechanisms are provided to prevent unintended conflicts:
+</P>
+<P>
+<UL>
+<LI>If a macro transformer inserts a binding for an identifier
+(variable or keyword), the identifier will in effect be renamed
+throughout its scope to avoid conflicts with other identifiers.
+Note that a global variable definition may or may not introduce a binding;
+see section&nbsp;<A HREF="node52.html#defines">5.3</A>.
+
+</LI>
+<LI>If a macro transformer inserts a free reference to an
+identifier, the reference refers to the binding that was visible
+where the transformer was specified, regardless of any local
+bindings that surround the use of the macro.
+
+</LI>
+</UL>
+<P>
+In consequence, all macros
+defined using the pattern language  are "hygienic" and "referentially
+transparent" and thus preserve Scheme's lexical scoping.&nbsp;[<A
+ HREF="node105.html#Kohlbecker86">21</A>,<A
+ HREF="node105.html#hygienic">22</A>,<A
+ HREF="node105.html#Bawden88">2</A>,<A
+ HREF="node105.html#macrosthatwork">9</A>,<A
+ HREF="node105.html#syntacticabstraction">12</A>]
+</P>
+<P>
+<b>Note</b>
+Implementations may provide macro facilities of other types. Husk also provides explicit renaming macros that are compatible with hygienic macros but that also provide a low-level facility that can break hygiene if desired.
+</P>
+
+<p>
+<UL CLASS="ChildLinks">
+<LI><A NAME="tex2html891"
+  HREF="node46.html">Binding constructs for syntactic keywords</A>
+<LI><A NAME="tex2html892"
+  HREF="node47.html">Pattern language</A>
+<LI><A NAME="tex2html893"
+  HREF="node48.html">Signaling errors in macro transformers</A>
+<LI><A
+  HREF="macro-debugging.html">Macro debugging</A>
+</UL>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

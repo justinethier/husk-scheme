@@ -1,0 +1,88 @@
+---
+title: Exactness
+nav_next: node69.html
+nav_next_lbl: Syntax of numerical constants
+nav_up: node64.html
+nav_up_lbl: Numbers
+nav_prev: node65.html
+nav_prev_lbl: Numerical types
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+It is useful to distinguish between numbers that are represented
+exactly and those that might not be. For example,
+indexes into data structures must be known exactly, as
+must some polynomial coefficients in a symbolic algebra
+system. On the other hand, the results of measurements
+are inherently inexact, and irrational numbers may be approximated
+by rational and therefore inexact approximations.
+In order to catch uses of inexact numbers where exact
+numbers are required, Scheme explicitly distinguishes
+exact from inexact numbers. This distinction is orthogonal
+to the dimension of type.
+</p>
+<p>
+A Scheme number is exact if it was written as an exact
+constant or was derived from exact numbers using only exact
+operations. A number is inexact if it was written as
+an inexact constant, if it was derived using inexact ingredients,
+or if it was derived using inexact operations. Thus
+inexactness is a contagious property of a number. In particular,
+an exact complex number has an exact real part
+and an exact imaginary part; all other complex numbers
+are inexact complex numbers.
+</p>
+<p>
+If two implementations produce exact results for a computation
+that did not involve inexact intermediate results, the
+two ultimate results will be mathematically equal. This
+is generally not true of computations involving inexact
+numbers since approximate methods such as floating-point
+arithmetic may be used, but it is the duty of each implementation
+to make the result as close as practical to the
+mathematically ideal result.
+</p>
+<p>
+Rational operations such as + should always produce exact
+results when given exact arguments. If the operation
+is unable to produce an exact result, then it may either
+report the violation of an implementation restriction or it
+may silently coerce its result to an inexact value. However,
+(/ 3 4) must not return the mathematically incorrect
+value 0. See section 6.2.3.
+</p>
+<p>
+Except for exact, the operations described in this section
+must generally return inexact results when given any inexact
+arguments. An operation may, however, return an
+exact result if it can prove that the value of the result is
+unaffected by the inexactness of its arguments. For example,
+multiplication of any number by an exact zero may
+produce an exact zero result, even if the other argument is
+inexact.
+</p>
+<p>
+Specifically, the expression (* 0 +inf.0) may return 0, or
++nan.0, or report that inexact numbers are not supported,
+or report that non-rational real numbers are not supported,
+or fail silently or noisily in other implementation-specific
+ways.
+</p>
+
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

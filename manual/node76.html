@@ -1,0 +1,424 @@
+---
+title: Strings
+nav_next: node77.html
+nav_next_lbl: Vectors
+nav_up: node62.html
+nav_up_lbl: Standard procedures
+nav_prev: node75.html
+nav_prev_lbl: Characters
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+Strings are sequences of characters. Strings are written as
+sequences of characters enclosed within quotation marks
+("). Within a string literal, various escape sequences represent
+characters other than themselves. Escape sequences
+always start with a backslash (\):
+
+<div class="code-block">
+\a : alarm, U+0007
+{\b : backspace, U+0008
+46 Revised7 Scheme
+%\t : character tabulation, U+0009
+ \n : linefeed, U+000A
+i\r : return, U+000D
+n\" : double quote, U+0022
+c\\ : backslash, U+005C
+l\| : vertical line, U+007C
+\{intraline whitespace}*{line ending}
+{intraline whitespace}* : nothing
+<\x{hex scalar valuer}; : specified character (note the
+terminating semi-colon).
+</div>
+</p>
+<p>
+The result is unspecified if any other character in a string
+occurs after a backslash.
+</p>
+<p>
+Except for a line ending, any character outside of an escape
+sequence stands for itself in the string literal. A line ending
+which is preceded by \{intraline whitespace} expands
+to nothing (along with any trailing intraline whitespace),
+and can be used to indent strings for improved legibility.
+Any other line ending has the same effect as inserting a \n
+character into the string.
+</p>
+<p>
+Examples:
+<div class="code-block">
+"The word \"recursion\" has many meanings."
+"Another example:\ntwo lines of text"
+"Here's text \
+     containing just one line"
+"\x03B1; is named GREEK SMALL LETTER ALPHA."
+</div>
+</p>
+
+<p>
+The length of a string is the number of characters that it
+contains. This number is an exact, non-negative integer
+that is fixed when the string is created. The valid indexes
+of a string are the exact non-negative integers less than
+the length of the string. The first character of a string has
+index 0, the second has index 1, and so on.
+difference between upper and lower case characters. 
+The versions that ignore case end with "-ci" (for "case
+insensitive").
+</p>
+
+<p>
+<div id="string?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if obj is a string, otherwise returns #f.
+</div></p>
+<p>
+<div id="make-string" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(make-string </span>
+    <span class="code-var">k</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(make-string </span>
+    <span class="code-var">k char</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The make-string procedure returns a newly allocated
+string of length k. If char is given, then all the characters
+of the string are initialized to char, otherwise the contents
+of the string are unspecified.
+</div></p>
+<p>
+<div id="string" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string </span>
+    <span class="code-var">char ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns a newly allocated string composed of the arguments.
+It is analogous to list.
+</div></p>
+<p>
+<div id="string-length" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string-length </span>
+    <span class="code-var">string</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns the number of characters in the given string.
+</div></p>
+<p>
+<div id="string-ref" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string-ref </span>
+    <span class="code-var">string k</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if k is not a valid index of string.
+  <div class="p"><!----></div>
+  <br />
+The string-ref procedure returns character k of string
+using zero-origin indexing. There is no requirement for
+this procedure to execute in constant time.
+</div></p>
+<p>
+<div id="string-set!" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string-set! </span>
+    <span class="code-var">string k char</span>
+    <span class="code">)</span>
+    <span class="obj-type">special form</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if k is not a valid index of string.
+  <div class="p"><!----></div>
+  <br />
+The string-set! procedure stores char in element k of
+string. There is no requirement for this procedure to execute
+in constant time.
+<div class="code-block">
+(define (f) (make-string 3 #\*))
+(string-set! (f) 0 #\?) ==&gt; unspecified
+</div></div></p>
+<p>
+<div id="string=?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string=? </span>
+    <span class="code-var">string1 string2 string3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if all the strings are the same length and contain
+exactly the same characters in the same positions, otherwise
+returns #f.
+</div></p>
+<p>
+<div id="string-ci=?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string-ci=? </span>
+    <span class="code-var">string1 string2 string3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if, after case-folding, all the strings are the
+same length and contain the same characters in the same
+positions, otherwise returns #f. Specifically, these procedures
+behave as if string-foldcase were applied to their
+arguments before comparing them.
+</div></p>
+<p>
+<div id="string<?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string&lt;? </span>
+    <span class="code-var">string1 string2 string3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-ci&lt;? </span>
+    <span class="code-var">string1 string2 string3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string&gt;? </span>
+    <span class="code-var">string1 string2 string3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-ci&gt;? </span>
+    <span class="code-var">string1 string2 string3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string&lt;=? </span>
+    <span class="code-var">string1 string2 string3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-ci&lt;=? </span>
+    <span class="code-var">string1 string2 string3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string&gt;=? </span>
+    <span class="code-var">string1 string2 string3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-ci&gt;=? </span>
+    <span class="code-var">string1 string2 string3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">char library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures return #t if their arguments are (respectively):
+monotonically increasing, monotonically decreasing,
+monotonically non-decreasing, or monotonically nonincreasing.
+These predicates are transitive.
+  <div class="p"><!----></div>
+In all cases, a pair of strings must satisfy exactly one
+of string&lt;?, string=?, and string&gt;?, and must satisfy
+string&lt;=? if and only if they do not satisfy string&gt;? and
+string&gt;=? if and only if they do not satisfy string&lt;?.
+  <div class="p"><!----></div>
+  <br />
+The "-ci" procedures behave as if they applied
+string-foldcase to their arguments before invoking the
+corresponding procedures without "-ci".
+</div></p>
+
+<p>
+<div id="substring" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(substring </span>
+    <span class="code-var">string start end</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The substring procedure returns a newly allocated string
+formed from the characters of string beginning with index
+start and ending with index end. This is equivalent to calling
+string-copy with the same arguments, but is provided
+for backward compatibility and stylistic flexibility.
+</div></p>
+
+<p>
+<div id="string-append" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string-append </span>
+    <span class="code-var">string ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns a newly allocated string whose characters are the
+concatenation of the characters in the given strings.
+</div></p>
+<p>
+<div id="string->list" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string-&gt;list </span>
+    <span class="code-var">string</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-&gt;list </span>
+    <span class="code-var">string start</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-&gt;list </span>
+    <span class="code-var">string start end</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(list-&gt;string </span>
+    <span class="code-var">list</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if any element of list is not a character.
+  <div class="p"><!----></div>
+  <br />
+The string-&gt;list procedure returns a newly allocated list
+of the characters of string between start and end. list-&gt;
+string returns a newly allocated string formed from the
+elements in the list list . In both procedures, order is preserved.
+string-&gt;list and list-&gt;string are inverses so
+far as equal? is concerned.
+</div></p>
+<p>
+<div id="string-copy" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string-copy </span>
+    <span class="code-var">string</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-copy </span>
+    <span class="code-var">string start</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-copy </span>
+    <span class="code-var">string start end</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns a newly allocated copy of the part of the given
+string between start and end.
+</div></p>
+<p>
+<div id="string-copy!" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string-copy! </span>
+    <span class="code-var">to at from</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-copy! </span>
+    <span class="code-var">to at from start</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-copy! </span>
+    <span class="code-var">to at from start end</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if at is less than zero or greater than the length
+of to. It is also an error if (- (string-length to) at) is less
+than (- end start).
+  <div class="p"><!----></div>
+  <br />
+Copies the characters of string from between start and end
+to string to, starting at at. The order in which characters
+are copied is unspecified, except that if the source and destination
+overlap, copying takes place as if the source is first
+copied into a temporary string and then into the destination.
+<div class="code-block">
+(define a "12345")
+(define b (string-copy "abcde"))
+(string-copy! b 1 a 0 2)
+b ==&gt; "a12de"
+</div>
+</div>
+</p>
+<p>
+<div id="string-fill!" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string-fill! </span>
+    <span class="code-var">string fill</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-fill! </span>
+    <span class="code-var">string fill start</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-fill! </span>
+    <span class="code-var">string fill start end</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if fill is not a character.
+  <div class="p"><!----></div>
+  <br />
+The string-fill! procedure stores fill in the elements of
+string between start and end.
+</div></p>
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

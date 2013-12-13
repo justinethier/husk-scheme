@@ -1,0 +1,56 @@
+---
+title: Numerical types
+nav_next: node66.html
+nav_next_lbl: Exactness
+nav_up: node64.html
+nav_up_lbl: Numbers
+nav_prev: node64.html
+nav_prev_lbl: Numbers
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<p>
+Mathematically, numbers are arranged into a tower of subtypes
+in which each level is a subset of the level above it:
+</p>
+
+<ul>
+    <li>number</li>
+    <li>complex number</li>
+    <li>real number</li>
+    <li>rational number</li>
+    <li>integer</li>
+</ul>
+
+<p>
+For example, 3 is an integer. Therefore 3 is also a rational,
+a real, and a complex number. The same is true of the
+Scheme numbers that model 3. For Scheme numbers, these
+types are defined by the predicates number?, complex?,
+the same integer.
+</p>
+<p>
+Scheme's numerical operations treat numbers as abstract
+data, as independent of their representation as possible.
+Although Husk may use multiple
+internal representations of numbers, this ought not to be
+apparent to a casual programmer writing simple programs.
+</p>
+
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

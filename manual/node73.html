@@ -1,0 +1,675 @@
+---
+title: Pairs and lists
+nav_next: node74.html
+nav_next_lbl: Symbols
+nav_up: node62.html
+nav_up_lbl: Standard procedures
+nav_prev: node72.html
+nav_prev_lbl: Booleans
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+A pair (sometimes called a dotted pair) is a record structure
+with two fields called the car and cdr fields (for historical
+reasons). Pairs are created by the procedure cons. The
+car and cdr fields are accessed by the procedures car and
+cdr. The car and cdr fields are assigned by the procedures
+set-car! and set-cdr!.
+</p>
+<p>
+Pairs are used primarily to represent lists. A list can be
+defined recursively as either the empty list or a pair whose
+cdr is a list. More precisely, the set of lists is defined as
+the smallest set X such that
+</p>
+<p>
+<ul>
+<li>
+The empty list is in X.
+</li>
+<li>
+If list is in X, then any pair whose cdr field contains
+list is also in X.
+</li>
+</ul>
+<p>
+The objects in the car fields of successive pairs of a list are
+the elements of the list. For example, a two-element list
+is a pair whose car is the first element and whose cdr is a
+pair whose car is the second element and whose cdr is the
+empty list. The length of a list is the number of elements,
+which is the same as the number of pairs.
+</p>
+<p>
+The empty list is a special object of its own type. It is not
+a pair, it has no elements, and its length is zero.
+Note: The above definitions imply that all lists have finite
+length and are terminated by the empty list.
+</p>
+<p>
+The most general notation (external representation) for
+Scheme pairs is the "dotted" notation <span class="code">(c1 . c2)</span> where c1
+is the value of the car field and c2 is the value of the cdr
+field. For example <span class="code">(4 . 5)</span> is a pair whose car is 4 and
+whose cdr is 5. Note that <span class="code">(4 . 5)</span> is the external representation
+of a pair, not an expression that evaluates to a
+pair.
+</p>
+<p>
+A more streamlined notation can be used for lists: the
+elements of the list are simply enclosed in parentheses and
+separated by spaces. The empty list is written (). For
+example,
+(a b c d e)
+and
+(a . (b . (c . (d . (e . ())))))
+are equivalent notations for a list of symbols.
+A chain of pairs not ending in the empty list is called an
+improper list. Note that an improper list is not a list.
+The list and dotted notations can be combined to represent
+improper lists:
+(a b c . d)
+is equivalent to
+(a . (b . (c . d)))
+</p>
+<p>
+Whether a given pair is a list depends upon what is stored
+in the cdr field. When the set-cdr! procedure is used, an
+object can be a list one moment and not the next:
+</p>
+<p>
+  <div class="code-block">
+(define x (list 'a 'b 'c))
+(define y x)
+y ==&gt; (a b c)
+(list? y) ==&gt; #t
+(set-cdr! x 4) ==&gt; unspecified
+x ==&gt; (a . 4)
+(eqv? x y) ==&gt; #t
+y ==&gt; (a . 4)
+(list? y) ==&gt; #f
+(set-cdr! x x) ==&gt; unspecified
+(list? x) ==&gt; #f
+</div>
+
+</p>
+<p>
+Within literal expressions and representations of objects
+read by the read procedure, the forms '{datum},
+`{datum}, ,{datum}, and ,@{datum} denote two-element
+lists whose first elements are the symbols quote,
+quasiquote, unquote, and unquote-splicing, respectively.
+The second element in each case is {datum}. This
+convention is supported so that arbitrary Scheme programs
+can be represented as lists. That is, according to Scheme's
+grammar, every expression is also a datum. Among other things,
+this permits the read procedure to parse Scheme programs. See section 3.3.
+</p>
+
+<p>
+<div id="pair?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(pair? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The pair? predicate returns #t if obj is a pair, and otherwise
+returns #f.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(pair? '(a . b)) ==&gt; #t
+(pair? '(a b c)) ==&gt; #t
+(pair? '()) ==&gt; #f
+(pair? '#(a b)) ==&gt; #f
+  </div>
+  </div>
+</p>
+
+<p>
+<div id="cons" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(cons </span>
+    <span class="code-var">obj1 obj2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns a newly allocated pair whose car is obj1 and whose
+cdr is obj2. The pair is guaranteed to be 
+different(sense of eqv?) from every existing object.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(cons 'a '()) ==&gt; (a)
+(cons '(a) '(b c d)) ==&gt; ((a) b c d)
+(cons "a" '(b c)) ==&gt; ("a" b c)
+(cons 'a 3) ==&gt; (a . 3)
+(cons '(a b) 'c) ==&gt; ((a b) . c)
+  </div>
+  </div>
+</p>
+<p>
+<div id="car" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(car </span>
+    <span class="code-var">pair</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns the contents of the car field of pair . Note that it
+is an error to take the car of the empty list.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(car '(a b c)) ==&gt; a
+(car '((a) b c d)) ==&gt; (a)
+(car '(1 . 2)) ==&gt; 1
+(car '()) ==&gt; error
+  </div>
+  </div>
+</p>
+<p>
+<div id="cdr" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(cdr </span>
+    <span class="code-var">pair</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns the contents of the cdr field of pair . Note that it
+is an error to take the cdr of the empty list.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(cdr '((a) b c d)) ==&gt; (b c d)
+(cdr '(1 . 2)) ==&gt; 2
+(cdr '()) ==&gt; error
+  </div>
+  </div>
+</p>
+<p>
+<div id="set-car!" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(set-car! </span>
+    <span class="code-var">pair obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">special form</span>
+  </div>
+  <div class="p"><!----></div>
+Stores obj in the car field of pair.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(define (f) (list 'not-a-constant-list))
+(set-car! (f) 3) ==&gt; unspecified
+  </div>
+  </div>
+</p>
+
+<p>
+<div id="set-cdr!" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(set-cdr! </span>
+    <span class="code-var">pair obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">special form</span>
+  </div>
+  <div class="p"><!----></div>
+Stores obj in the cdr field of pair.
+</div>
+</p>
+
+<p>
+<div id="caar" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(caar </span>
+    <span class="code-var">pair</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(cadr </span>
+    <span class="code-var">pair</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(cdar </span>
+    <span class="code-var">pair</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(cddr </span>
+    <span class="code-var">pair</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures are compositions of car and cdr as follows:
+  <div class="p"><!----></div>
+  <div class="code-block">
+(define (caar x) (car (car x)))
+(define (cadr x) (car (cdr x)))
+(define (cdar x) (cdr (car x)))
+(define (cddr x) (cdr (cdr x)))
+  </div>
+  </div>
+</p>
+
+<p>
+<div id="caaar" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(caaar </span>
+    <span class="code-var">pair</span>
+    <span class="code">)</span>
+    <span class="obj-type">cxr library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(caadr </span>
+    <span class="code-var">pair</span>
+    <span class="code">)</span>
+    <span class="obj-type">cxr library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">...</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">...</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(cdddar </span>
+    <span class="code-var">pair</span>
+    <span class="code">)</span>
+    <span class="obj-type">cxr library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(cddddr </span>
+    <span class="code-var">pair</span>
+    <span class="code">)</span>
+    <span class="obj-type">cxr library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These twenty-four procedures are further compositions of
+car and cdr on the same principles. For example, caddr
+could be defined by
+  <div class="p"><!----></div>
+  <div class="code-block">
+(define caddr (lambda (x) (car (cdr (cdr x))))).
+</div>
+  <div class="p"><!----></div>
+  <br />
+Arbitrary compositions up to four deep are provided.
+</div>
+</p>
+
+<p>
+<div id="null?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(null? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if obj is the empty list, otherwise returns #f.
+  <div class="p"><!----></div>
+</div>
+</p>
+
+<p>
+<div id="list?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(list? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if obj is a list. Otherwise, it returns #f. By
+definition, all lists have finite length and are terminated by
+the empty list.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(list? obj ) procedure
+(list? '(a b c)) ==&gt; #t
+(list? '()) ==&gt; #t
+(list? '(a . b)) ==&gt; #f
+(let ((x (list 'a)))
+(set-cdr! x x)
+(list? x)) ==&gt; #f
+  </div>
+</div>
+</p>
+<p>
+<div id="make-list" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(make-list </span>
+    <span class="code-var">k</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(make-list </span>
+    <span class="code-var">k fill</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns a newly allocated list of k elements. If a second
+argument is given, then each element is initialized to fill.
+Otherwise the initial contents of each element is unspecified.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(make-list 2 3) ==&gt; (3 3)
+  </div>
+</div>
+</p>
+
+<p>
+<div id="list" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(list </span>
+    <span class="code-var">obj ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns a newly allocated list of its arguments.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(list 'a (+ 3 4) 'c) ==&gt; (a 7 c)
+(list) ==&gt; ()
+  </div>
+</div>
+</p>
+<p>
+<div id="length" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(length </span>
+    <span class="code-var">list</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns the length of list .
+  <div class="p"><!----></div>
+  <div class="code-block">
+(length '(a b c)) ==&gt; 3
+(length '(a (b) (c d e))) ==&gt; 3
+(length '()) ==&gt; 0
+  </div>
+</div>
+</p>
+<p>
+<div id="append" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(append </span>
+    <span class="code-var">list ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The last argument, if there is one, can be of any type.
+<br />
+<br />
+  <div class="p"><!----></div>
+Returns a list consisting of the elements of the first list
+followed by the elements of the other list s. If there are no
+arguments, the empty list is returned. If there is exactly
+one argument, it is returned. Otherwise the resulting list
+is always newly allocated, except that it shares structure
+with the last argument. An improper list results if the last
+argument is not a proper list.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(append '(x) '(y)) ==&gt; (x y)
+(append '(a) '(b c d)) ==&gt; (a b c d)
+(append '(a (b)) '((c))) ==&gt; (a (b) (c))
+(append '(a b) '(c . d)) ==&gt; (a b c . d)
+(append '() 'a) ==&gt; a
+  </div>
+</div>
+</p>
+<p>
+<div id="reverse" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(reverse </span>
+    <span class="code-var">list</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns a newly allocated list consisting of the elements of
+list in reverse order.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(reverse '(a b c)) ==&gt; (c b a)
+(reverse '(a (b c) d (e (f))))
+==&gt; ((e (f)) d (b c) a)
+  </div>
+</div>
+</p>
+<p>
+<div id="list-tail" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(list-tail </span>
+    <span class="code-var">list k</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if list has fewer than k elements.
+  <br />
+  <br />
+  <div class="p"><!----></div>
+Returns the sublist of list obtained by omitting the first k
+elements.
+  </div>
+</p>
+
+<p>
+<div id="list-ref" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(list-ref </span>
+    <span class="code-var">list k</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if list has fewer than k elements.
+<br />
+<br />
+  <div class="p"><!----></div>
+Returns the kth element of list . (This is the same as the
+car of (list-tail list k).)
+  <div class="p"><!----></div>
+  <div class="code-block">
+(list-ref '(a b c d) 2) ==&gt; c
+(list-ref '(a b c d)
+(exact (round 1.8)))
+==&gt; c
+  </div>
+</div>
+</p>
+
+<p>
+<div id="list-set!" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(list-set! </span>
+    <span class="code-var">list k obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">special form</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if k is not a valid index of list.
+<br />
+<br />
+  <div class="p"><!----></div>
+The list-set! procedure stores obj in element k of
+list.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(let ((ls (list 'one 'two 'five!)))
+(list-set! ls 2 'three)
+ls)
+==&gt; (one two three)
+  </div>
+</div>
+</p>
+
+<P>
+<div id="memq" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(memq </span>
+    <span class="code-var">obj list</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(memv </span>
+    <span class="code-var">obj list</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(member </span>
+    <span class="code-var">obj list</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(member </span>
+    <span class="code-var">obj list compare</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures return the first sublist of list whose car
+is obj , where the sublists of list are the non-empty lists
+returned by (list-tail list k) for k less than the length
+of list . If obj does not occur in list , then #f (not the empty
+list) is returned. The memq procedure uses eq? to compare
+obj with the elements of list , while memv uses eqv? and
+member uses compare, if given, and equal? otherwise.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(memq 'a '(a b c)) ==&gt; (a b c)
+(memq 'b '(a b c)) ==&gt; (b c)
+(memq 'a '(b c d)) ==&gt; #f
+(memq (list 'a) '(b (a) c)) ==&gt; #f
+(member (list 'a)
+'(b (a) c)) ==&gt; ((a) c)
+(member "B"
+'("a" "b" "c")
+string-ci=?) ==&gt; ("b" "c")
+(memq 101 '(100 101 102)) ==&gt; unspecified
+(memv 101 '(100 101 102)) ==&gt; (101 102)
+  </div>
+</div>
+</p>
+
+<P>
+<div id="assq" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(assq </span>
+    <span class="code-var">obj alist</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(assv </span>
+    <span class="code-var">obj alist</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(assoc </span>
+    <span class="code-var">obj alist</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(assoc </span>
+    <span class="code-var">obj alist compare</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if alist (for \association list") is not a list of pairs.
+  <br />
+  <div class="p"><!----></div>
+These procedures find the first pair in alist whose car field
+is obj , and returns that pair. If no pair in alist has obj
+as its car, then #f (not the empty list) is returned. The
+assq procedure uses eq? to compare obj with the car fields
+of the pairs in alist , while assv uses eqv? and assoc uses
+compare if given and equal? otherwise.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(define e '((a 1) (b 2) (c 3)))
+(assq 'a e) ==&gt; (a 1)
+(assq 'b e) ==&gt; (b 2)
+(assq 'd e) ==&gt; #f
+(assq (list 'a) '(((a)) ((b)) ((c))))
+==&gt; #f
+(assoc (list 'a) '(((a)) ((b)) ((c))))
+==&gt; ((a))
+(assoc 2.0 '((1 1) (2 4) (3 9)) ==&gt;
+==&gt; (2 4)
+(assq 5 '((2 3) (5 7) (11 13)))
+==&gt; unspecified
+(assv 5 '((2 3) (5 7) (11 13)))
+==&gt; (5 7)
+  </div>
+  <div class="p"><!----></div>
+  <br />
+Rationale: Although they are often used as predicates, memq,
+memv, member, assq, assv, and assoc do not have question
+marks in their names because they return potentially useful
+values rather than just #t or #f.
+</div>
+</p>
+<P>
+<div id="list-copy" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(list-copy </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns a newly allocated copy of the given obj if it is a
+list. Only the pairs themselves are copied; the cars of the
+result are the same (in the sense of eqv?) as the cars of list .
+If obj is an improper list, so is the result, and the final cdrs
+are the same in the sense of eqv?. An obj which is not a
+list is returned unchanged. It is an error if obj is a circular
+list.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(define a '(1 8 2 8))
+(define b (list-copy a))
+(set-car! b 3)
+b ==&gt; (3 8 2 8)
+a ==&gt; (1 8 2 8)
+  </div>
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

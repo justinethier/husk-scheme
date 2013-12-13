@@ -1,0 +1,48 @@
+---
+title: Inclusion
+nav_next: node35.html
+nav_next_lbl: Derived expression types 
+nav_up: node27.html
+nav_up_lbl: Primitive expression types
+nav_prev: node33.html
+nav_prev_lbl: Assignments
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+<div id="include" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(include </span>
+    <span class="code-var">{string1} {string2} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<p>
+<EM>Semantics: </EM>
+<code>include</code> takes one or more filenames expressed as string literals,
+applies an implementation-specific algorithm to find corresponding files,
+reads the contents of the files in the specified order as if by repeated applications
+of <code>read</code>,
+and effectively replaces the <code>include</code> expression
+with a <code>begin</code> expression containing what was read from the files.
+<P>
+<EM>Note:</EM> 
+By default, Husk will search for files from the current directory. If a file is not found, Husk will attempt to load it from the Husk system directory.
+</p>
+</div></p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

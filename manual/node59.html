@@ -1,0 +1,140 @@
+---
+title: Library syntax
+nav_next: node60.html
+nav_next_lbl: Library example
+nav_up: node58.html
+nav_up_lbl: Libraries
+nav_prev: node58.html
+nav_prev_lbl: Libraries
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+A library definition takes the following form:
+</p>
+<P>
+<div class="code-block">
+(define-library {library-name}
+  {library declaration} ...)
+</div>
+</p>
+<P>
+{library name} is a list whose members are identifiers and exact non-negative integers.  It is used to
+identify the library uniquely when importing from other programs or
+libraries.
+Libraries whose first identifier is <code>scheme</code> are reserved for use by this
+report and future versions of this report.
+Libraries whose first identifier is <code>srfi</code> are reserved for libraries
+implementing Scheme Requests for Implementation.
+It is inadvisable, but not an error, for identifiers in library names to
+contain any of the characters <code>| <code>&#92;</code> ? * &lt; " : &gt; + [ ] /</code>
+or control characters after escapes are expanded.
+</P>
+<P>
+A library declaration is any of:
+</P>
+<P>
+<UL>
+<LI><code>(export {export spec} ...)</code>
+</LI>
+<LI><code>(import {import set} ...) </code>
+</LI>
+<LI><code>(begin {command or definition} ...)</code>
+</LI>
+<LI><code>(include {filename1} {filename2} ...)</code>
+</LI>
+<LI><code>(include-library-declarations {filename1}
+{filename2} ...)</code>
+</LI>
+<LI><code>(cond-expand {ce-clause1} {ce-clause2} ...)</code>
+</LI>
+</UL>
+</p>
+<P>
+An <code>export</code> declaration specifies a list of identifiers which
+can be made visible to other libraries or programs.
+An export spec takes one of the following forms:
+</P>
+<P>
+<UL>
+<LI><code>{identifier}</code>
+</LI>
+<LI><code>(rename {identifier1} {identifier2})</code>
+</LI>
+</UL>
+</p>
+<P>
+In an export spec, an identifier names a single
+binding defined within or imported into the library, where the
+external name for the export is the same as the name of the binding
+within the library. A <code>rename</code> spec exports the binding 
+defined within or imported into the library and named by
+{identifier1} in each ({identifier1} {identifier2} pairing, using 
+{identifier2} as the external name.
+</P>
+<P>
+An <code>import</code> declaration provides a way to import the identifiers
+exported by another library.  It has the same syntax and semantics as
+an import declaration used in a program or at the REPL (see section&nbsp;<A HREF="node51.html#import">5.2</A>).
+</P>
+<P>
+The <code>begin</code> and <code>include</code> declarations are
+used to specify the body of
+the library.  They have the same syntax and semantics as the corresponding
+expression types.
+This form of <code>begin</code> is analogous to, but not the same as, the
+two types of <code>begin</code> defined in section&nbsp;<A HREF="node38.html#sequencing">4.2.3</A>.
+</P>
+<P>
+The <code>include-library-declarations</code> declaration is similar to
+<code>include</code> except that the contents of the file are spliced directly into the
+current library definition.  This can be used, for example, to share the
+same <code>export</code> declaration among multiple libraries as a simple
+form of library interface.
+</P>
+<P>
+The <code>cond-expand</code> declaration has the same syntax and semantics as
+the <code>cond-expand</code> expression type, except that it expands to
+spliced-in library declarations rather than expressions enclosed in <code>begin</code>.
+</P>
+<P>
+When a library is loaded, its expressions are executed
+in textual order.
+If a library's definitions are referenced in the expanded form of a
+program or library body, then that library must be loaded before the
+expanded program or library body is evaluated. This rule applies
+transitively.  If a library is imported by more than one program or
+library, it may possibly be loaded additional times.
+</P>
+<P>
+Similarly, during the expansion of a library <code>(foo)</code>, if any syntax
+keywords imported from another library <code>(bar)</code> are needed to expand
+the library, then the library <code>(bar)</code> must be expanded and its syntax
+definitions evaluated before the expansion of <code>(foo)</code>.
+</P>
+<P>
+Regardless of the number of times that a library is loaded, each
+program or library that imports bindings from a library must do so from a
+single loading of that library, regardless of the number of import
+declarations in which it appears.
+That is, <code>(import (only (foo) a))</code> followed by <code>(import (only (foo) b))</code>
+has the same effect as <code>(import (only (foo) a b))</code>.
+</P>
+<P>
+
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

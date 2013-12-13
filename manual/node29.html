@@ -1,0 +1,95 @@
+---
+title: Literal expressions
+nav_next: node30.html
+nav_next_lbl: Procedure calls
+nav_up: node27.html
+nav_up_lbl: Primitive expression types
+nav_prev: node28.html
+nav_prev_lbl: Variable references
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+<div id="quote" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(quote </span>
+    <span class="code-var">{datum}</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">'</span>
+    <span class="code-var">{datum}</span>
+    <span class="code"></span>
+    <span class="obj-type">syntax</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">{constant} </span>
+    <span class="code-var"></span>
+    <span class="code"></span>
+    <span class="obj-type">syntax</span>
+  </div>
+<BR>
+<code>(quote datum)</code> evaluates to datum.
+Datum
+can be any external representation of a Scheme object (see
+section&nbsp;<A HREF="node23.html#externalreps">3.3</A>).  This notation is used to include literal
+constants in Scheme code.
+<br />
+<div class="code-block">
+(quote a) =) a
+(quote #(a b c)) =) #(a b c)
+(quote (+ 1 2)) =) (+ 1 2)
+</div>
+<br />
+<code>(quote datum)</code> can be abbreviated as
+<code>'</code>datum.  The two notations are equivalent in all
+respects.
+<br />
+<div class="code-block">
+'a          ==&gt; a
+'#(a b c)   ==&gt; #(a b c)
+'()         ==&gt; ()
+'(+ 1 2)    ==&gt; (+ 1 2)
+'(quote a)  ==&gt; (quote a)
+''a         ==&gt; (quote a)
+</div>
+<br />
+Numerical constants, string constants, character constants, vector
+constants, bytevector constants, and boolean constants evaluate to
+themselves; they need not be quoted.
+<br />
+<div class="code-block">
+'145932         ==&gt; 145932
+145932          ==&gt; 145932
+'"abc"          ==&gt; "abc"
+"abc"           ==&gt; "abc"
+'#(a 10)        ==&gt; #(a 10)
+#(a 10)         ==&gt; #(a 10)
+'#u8(64 65)     ==&gt; #u8(64 65)
+#u8(64 65)      ==&gt; #u8(64 65)
+'#t             ==&gt; #t
+#t              ==&gt; #t
+</div>
+<br />
+As noted in section&nbsp;<A HREF="node24.html#storagemodel">3.4</A>, it is an error to attempt to alter a constant
+(i.e.&nbsp;the value of a literal expression) using a mutation procedure like
+<code>set-car!</code> or <code>string-set!</code>.
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

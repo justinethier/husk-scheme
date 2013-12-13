@@ -1,0 +1,60 @@
+---
+title: Assignments
+nav_next: node34.html
+nav_next_lbl: Inclusion
+nav_up: node27.html
+nav_up_lbl: Primitive expression types
+nav_prev: node32.html
+nav_prev_lbl: Conditionals
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+<div id="set!" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(set! </span>
+    <span class="code-var">{variable} {expression}</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<p>
+<EM>Semantics: </EM>
+Expression is evaluated, and the resulting value is stored in
+the location to which variable is bound.  It is an error if variable is not
+bound either in some region enclosing the <code>set!</code> expression
+or else globally.
+The result of the <code>set!</code> expression is
+unspecified.
+</P
+<P>
+<div class="code-block">
+(define x 2)
+(+ x 1)         ==&gt; 3
+(set! x 4)      ==&gt; unspecified
+(+ x 1)         ==&gt; 5
+</div>
+
+<p>
+<b>Note</b> that Husk will return the value of the expression evaluated by <code>set!</code>.
+This is not standard and may not be portable to other Schemes.
+</p>
+
+</div>
+</p>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

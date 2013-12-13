@@ -1,0 +1,44 @@
+---
+title: Proper tail recursion
+nav_next: node26.html
+nav_next_lbl: Expressions
+nav_up: node20.html
+nav_up_lbl: Basic concepts
+nav_prev: node24.html
+nav_prev_lbl: Storage model
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+Implementations of Scheme are required to be
+<EM>properly tail-recursive</EM>.
+Procedure calls that occur in certain syntactic
+contexts defined below are <EM>tail calls</EM>.  A Scheme implementation is
+properly tail-recursive if it supports an unbounded number of active
+tail calls.  A call is <EM>active</EM> if the called procedure might still
+return.  Note that this includes calls that might be returned from either
+by the current continuation or by continuations captured earlier by
+<code>call-with-current-continuation</code> that are later invoked.
+In the absence of captured continuations, calls could
+return at most once and the active calls would be those that had not
+yet returned.
+A formal definition of proper tail recursion can be found
+in&nbsp;[<A
+ HREF="node105.html#propertailrecursion">6</A>].
+</P>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

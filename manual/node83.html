@@ -1,0 +1,379 @@
+---
+title: Ports
+nav_next: node84.html
+nav_next_lbl: Input
+nav_up: node82.html
+nav_up_lbl: Input and output
+nav_prev: node82.html
+nav_prev_lbl: Input and output
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+Ports represent input and output devices. To Scheme, an
+input port is a Scheme object that can deliver data upon
+command, while an output port is a Scheme object that can
+accept data. Different port types operate on different data.
+</p>
+<p>
+A textual port supports reading or writing of individual
+characters from or to a backing store containing characters
+using read-char and write-char below, and it supports
+operations defined in terms of characters, such as read and
+write.
+</p>
+<p>
+A binary port supports reading or writing of individual
+bytes from or to a backing store containing bytes using
+read-u8 and write-u8 below, as well as operations defined
+in terms of bytes. 
+</p>
+<p>
+Ports can be used to access files, devices, and similar things
+on the host system on which the Scheme program is running.
+</p>
+<p>
+
+<!--
+<p style="color: red">
+JAE TODO:
+
+(call-with-port port proc) procedure
+It is an error if proc does not accept one argument.
+The call-with-port procedure calls proc with port as an
+argument. If proc returns, then the port is closed automatically
+and the values yielded by the proc are returned.
+If proc does not return, then the port must not be closed
+automatically unless it is possible to prove that the port
+will never again be used for a read or write operation.
+Rationale: Because Scheme's escape procedures have unlimited
+extent, it is possible to escape from the current continuation
+but later to resume it. If implementations were permitted to
+close the port on any escape from the current continuation,
+then it would be impossible to write portable code using both
+call-with-current-continuation and call-with-port.
+</p>
+-->
+
+<p>
+<div id="call-with-input-file" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(call-with-input-file </span>
+    <span class="code-var">string proc</span>
+    <span class="code">)</span>
+    <span class="obj-type">file library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(call-with-output-file </span>
+    <span class="code-var">string proc</span>
+    <span class="code">)</span>
+    <span class="obj-type">file library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if proc does not accept one argument.
+  <div class="p"><!----></div>
+  <br />
+These procedures obtain a textual port obtained by
+opening the named file for input or output as if by
+open-input-file or open-output-file. The port and
+proc are then passed to a procedure equivalent to
+call-with-port.
+</div></p>
+<p>
+<div id="input-port?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(input-port? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(output-port? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(textual-port? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(binary-port? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(port? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures return #t if obj is an input port, output
+port, textual port, binary port, or any kind of port,
+respectively. Otherwise they return #f.
+</div></p>
+<p>
+<div id="input-port-open?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(input-port-open? </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(output-port-open? </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if port is still open and capable of performing
+input or output, respectively, and #f otherwise.
+</div></p>
+<p>
+<div id="current-input-port" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(current-input-port </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(current-output-port </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(current-error-port </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns the current default input port, output port, or
+error port (an output port), respectively.
+
+<!--
+<label style="color: red">JAE TODO: These procedures
+are parameter objects, which can be overridden with
+parameterize (see section 4.2.6). The initial bindings for
+these are implementation-defined textual ports.</label>
+-->
+
+</div></p>
+
+<!--
+<p>
+<div id="with-input-from-file" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(with-input-from-file </span>
+    <span class="code-var">string thunk</span>
+    <span class="code">)</span>
+    <span class="obj-type">file library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(with-output-from-file </span>
+    <span class="code-var">string thunk</span>
+    <span class="code">)</span>
+    <span class="obj-type">file library procedure</span>
+  </div>
+  <div class="p"> &nbsp; </div>
+The file is opened for input or output as if by
+open-input-file or open-output-file, and the new port
+is made to be the value returned by current-input-port
+or current-output-port (as used by (read), (write
+obj ), and so forth). The thunk is then called with no
+arguments. When the thunk returns, the port is closed
+and the previous default is restored. It is an error if thunk
+does not accept zero arguments. Both procedures return
+the values yielded by thunk. If an escape procedure is used
+to escape from the continuation of these procedures, they
+behave exactly as if the current input or output port had
+been bound dynamically with parameterize.
+</div></p>
+-->
+
+<p>
+<div id="open-input-file" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(open-input-file </span>
+    <span class="code-var">string</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(open-binary-input-file </span>
+    <span class="code-var">string</span>
+    <span class="code">)</span>
+    <span class="obj-type">file library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Takes a string for an existing file and returns a textual
+input port or binary input port that is capable of delivering
+data from the file. If the file does not exist or cannot be
+opened, an error that satisfies file-error? is signaled.
+</div></p>
+<p>
+<div id="open-output-file" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(open-output-file </span>
+    <span class="code-var">string</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(open-binary-output-file </span>
+    <span class="code-var">string</span>
+    <span class="code">)</span>
+    <span class="obj-type">file library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Takes a string naming an output file to be created and returns
+a textual output port or binary output port that is
+capable of writing data to a new file by that name. If a
+file with the given name already exists, the effect is unspecified. If the file cannot be opened, an error that satisfies
+file-error? is signaled.
+</div></p>
+<p>
+<div id="close-port" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(close-port </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(close-input-port </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(close-output-port </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Closes the resource associated with port, rendering the port
+incapable of delivering or accepting data. It is an error to
+apply the last two procedures to a port which is not an
+input or output port, respectively. Scheme implementations
+may provide ports which are simultaneously input
+and output ports, such as sockets; the close-input-port
+and close-output-port procedures can then be used to
+close the input and output sides of the port independently.
+  <div class="p"><!----></div>
+  <br />
+These routines have no effect if the port has already been
+closed.
+</div></p>
+
+<!--
+<p>
+<div id="open-input-string" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(open-input-string </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Takes a string and returns a textual input port that delivers
+characters from the string. If the string is modified, the
+effect is unspecified.
+</div></p>
+<p>
+<div id="open-output-string" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(open-output-string </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Returns a textual output port that will accumulate characters
+for retrieval by get-output-string.
+</div></p>
+<p>
+<div id="get-output-string" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(get-output-string </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+It is an error if port was not created with open-output-string.
+  <div class="p"></div>
+  <br />
+Returns a string consisting of the characters that have been
+output to the port so far in the order they were output. If
+the result string is modified, the effect is unspecified.
+  <div class="p"></div>
+  <div class="code-block">
+(parameterize
+((current-output-port
+(open-output-string)))
+(display "piece")
+(display " by piece ")
+(display "by piece.")
+(newline)
+(get-output-string (current-output-port)))
+==&gt; "piece by piece by piece.\n"
+</div>
+</div></p>
+<p>
+<div id="open-input-bytevector" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(open-input-bytevector </span>
+    <span class="code-var">bytevector</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Takes a bytevector and returns a binary input port that
+delivers bytes from the bytevector.
+</div></p>
+<div id="open-output-bytevector" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(open-output-bytevector </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Returns a binary output port that will accumulate bytes
+for retrieval by get-output-bytevector.
+</div></p>
+<div id="get-output-bytevector" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(get-output-bytevector </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+It is an error if port was not created with open-output-bytevector.
+  <div class="p"></div>
+  <br />
+Returns a bytevector consisting of the bytes that have been
+output to the port so far in the order they were output.
+</div></p>
+-->
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

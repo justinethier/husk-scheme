@@ -1,0 +1,71 @@
+---
+title: Variables, syntactic keywords, and regions
+nav_next: node22.html
+nav_next_lbl: Disjointness of types
+nav_up: node20.html
+nav_up_lbl: Basic concepts
+nav_prev: node20.html
+nav_prev_lbl: Basic concepts
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+An identifier can name either a type of syntax or
+a location where a value can be stored.  An identifier that names a type
+of syntax is called a <EM>syntactic keyword</EM>
+and is said to be <EM>bound</EM> to a transformer for that syntax.  An identifier that names a
+location is called a <EM>variable</EM> and is said to be
+<EM>bound</EM> to that location.  The set of all visible
+bindings in effect at some point in a program is
+known as the <EM>environment</EM> in effect at that point.  The value
+stored in the location to which a variable is bound is called the
+variable's value.  By abuse of terminology, the variable is sometimes
+said to name the value or to be bound to the value.  This is not quite
+accurate, but confusion rarely results from this practice.
+</p>
+<P>
+Certain expression types are used to create new kinds of syntax
+and to bind syntactic keywords to those new syntaxes, while other
+expression types create new locations and bind variables to those
+locations.  These expression types are called <EM>binding constructs</EM>.
+Those that bind syntactic keywords are listed in section&nbsp;<A HREF="node45.html#macrosection">4.3</A>.
+The most fundamental of the variable binding constructs is the
+<code>lambda</code> expression, because all other variable binding constructs
+can be explained in terms of <code>lambda</code> expressions.  The other
+variable binding constructs are <code>let</code>, <code>let*</code>, <code>letrec</code>,
+<code>letrec*</code>, <code>let-values</code>, <code>let*-values</code>,
+and <code>do</code> expressions (see sections&nbsp;<A HREF="node31.html#lambda">4.1.4</A>, <A HREF="node37.html#letrec">4.2.2</A>, and
+<A HREF="node39.html#do">4.2.4</A>).
+</p>
+<P>
+Scheme is a language with
+block structure.  To each place where an identifier is bound in a program
+there corresponds a <EM>region</EM> of the program text within which
+the binding is visible.  The region is determined by the particular
+binding construct that establishes the binding; if the binding is
+established by a <code>lambda</code> expression, for example, then its region
+is the entire <code>lambda</code> expression.  Every mention of an identifier
+refers to the binding of the identifier that established the
+innermost of the regions containing the use.  If there is no binding of
+the identifier whose region contains the use, then the use refers to the
+binding for the variable in the global environment, if any
+(chapters&nbsp;<A HREF="node26.html#expressionchapter">4</A> and <A HREF="node62.html#initialenv">6</A>); if there is no
+binding for the identifier,
+it is said to be <EM>unbound</EM>.
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

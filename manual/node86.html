@@ -1,0 +1,289 @@
+---
+title: System interface
+nav_next: node97.html
+nav_next_lbl: Standard Libraries
+nav_up: node62.html
+nav_up_lbl: Standard procedures
+nav_prev: node85.html
+nav_prev_lbl: Output
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+<div id="load" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(load </span>
+    <span class="code-var">filename</span>
+    <span class="code">)</span>
+    <span class="obj-type">load library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(load </span>
+    <span class="code-var">filename environment-specifier</span>
+    <span class="code">)</span>
+    <span class="obj-type">load library procedure</span>
+  </div>
+It is an error if <I>filename</I> is not a string.
+<P>
+An implementation-dependent operation is used to transform
+<I>filename</I> into the name of an existing file
+containing Scheme source code.  The <code>load</code> procedure reads
+expressions and definitions from the file and evaluates them
+sequentially in the environment specified by <I>environment-specifier</I>.
+If <I>environment-specifier</I> is omitted, <code>(interaction-environment)</code>
+is assumed.
+</P>
+<P>
+It is unspecified whether the results of the expressions
+are printed.  The <code>load</code> procedure does not affect the values
+returned by <code>current-input-port</code> and <code>current-output-port</code>.
+It returns an unspecified value.
+</P>
+<P>
+<EM>Rationale:</EM> For portability, <code>load</code> must operate on source files.
+Its operation on other kinds of files necessarily varies among
+implementations.
+</p>
+</div>
+</p>
+
+<P>
+<div id="file-exists?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(file-exists? </span>
+    <span class="code-var">filename</span>
+    <span class="code">)</span>
+    <span class="obj-type">file library procedure</span>
+  </div>
+It is an error if <I>filename</I> is not a string.
+<P>
+The <code>file-exists?</code> procedure returns
+<code>#t</code> if the named file exists at the time the procedure is called,
+and <code>#f</code> otherwise.
+</P>
+</div>
+</p>
+
+<P>
+<div id="delete-file" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(delete-file </span>
+    <span class="code-var">filename</span>
+    <span class="code">)</span>
+    <span class="obj-type">file library procedure</span>
+  </div>
+It is an error if <I>filename</I> is not a string.
+<P>
+The <code>delete-file</code> procedure deletes the
+named file if it exists and can be deleted, and returns an unspecified
+value.  If the file does not exist or cannot be deleted, an error
+that satisfies <code>file-error?</code> is signaled.
+</P>
+</div>
+</p>
+
+<!--
+<P>
+<div id="command-line" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(command-line)</span>
+    <span class="code-var"></span>
+    <span class="obj-type">process-context library procedure</span>
+  </div>
+Returns the command line passed to the process as a list of
+strings.  The first string corresponds to the command name, and is
+implementation-dependent.  It is an error to mutate any of these strings.
+</div>
+</p>
+
+<P>
+<div id="exit" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(exit)</span>
+    <span class="code-var"></span>
+    <span class="obj-type">process-context library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(exit </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">process-context library procedure</span>
+  </div>
+Runs all outstanding dynamic-wind <I>after</I> procedures, terminates the
+running program, and communicates an exit value to the operating system.
+If no argument is supplied, or if <I>obj</I> is <code>#t</code>, the <code>exit</code> procedure should communicate to the operating system that the
+program exited normally.  If <I>obj</I> is <code>#f</code>, the <code>exit</code>
+procedure should communicate to the operating system that the program
+exited abnormally.  Otherwise, <code>exit</code> should translate <I>obj</I> into
+an appropriate exit value for the operating system, if possible.
+<P>
+The <code>exit</code> procedure
+must not signal an exception or return to its continuation.
+</P>
+<P>
+<EM>Note:</EM> Because of the requirement to run handlers, this procedure is not just the
+operating system's exit procedure.
+</p>
+</div>
+</p>
+<P>
+<div id="emergency-exit" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(emergency-exit)</span>
+    <span class="code-var"></span>
+    <span class="obj-type">process-context library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(emergency-exit </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">process-context library procedure</span>
+  </div>
+Terminates the program without running any
+outstanding dynamic-wind <I>after</I> procedures
+and communicates an exit value to the operating system
+in the same manner as <code>exit</code>.
+</div>
+</p>
+
+<P>
+<div id="get-environment-variable" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(get-environment-variable </span>
+    <span class="code-var">name</span>
+    <span class="code">)</span>
+    <span class="obj-type">process-context library procedure</span>
+  </div>
+Many operating systems provide each running process with an
+<EM>environment</EM> consisting of <EM>environment variables</EM>.
+(This environment is not to be confused with the Scheme environments that
+can be passed to <code>eval</code>: see section&nbsp;<A HREF="node81.html#environments">6.12</A>.)
+Both the name and value of an environment variable are strings.
+The procedure <code>get-environment-variable</code> returns the value 
+of the environment variable <I>name</I>,
+or <code>#f</code> if the named
+environment variable is not found.  It may
+use locale information to encode the name and decode the value
+of the environment variable.  It is an error if 
+<BR><code>get-environment-variable</code> can't decode the value.
+It is also an error to mutate the resulting string.
+<P>
+<div class="code-block">
+(get-environment-variable "PATH")
+
+    ==&gt; "/usr/local/bin:/usr/bin:/bin"
+</div>
+</p>
+</div>
+</p>
+
+<P>
+<div id="get-environment-variables" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(get-environment-variables)</span>
+    <span class="code-var"></span>
+    <span class="obj-type">process-context library procedure</span>
+  </div>
+Returns the names and values of all the environment variables as an
+alist, where the car of each entry is the name of an environment
+variable and the cdr is its value, both as strings.  The order of the list is unspecified.
+It is an error to mutate any of these strings or the alist itself.
+</div>
+</p>
+-->
+
+<P>
+<div id="current-second" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(current-second)</span>
+    <span class="code-var"></span>
+    <span class="obj-type">time library procedure</span>
+  </div>
+Returns an inexact number representing the current time on the International Atomic
+Time (TAI) scale.  The value 0.0 represents midnight
+on January 1, 1970 TAI (equivalent to ten seconds before midnight Universal Time)
+and the value 1.0 represents one TAI
+second later.  Neither high accuracy nor high precision are required; in particular,
+returning Coordinated Universal Time plus a suitable constant might be
+the best an implementation can do.
+</div>
+</p>
+
+<P>
+<div id="current-jiffy" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(current-jiffy)</span>
+    <span class="code-var"></span>
+    <span class="obj-type">time library procedure</span>
+  </div>
+Returns the number of <EM>jiffies</EM> as an exact integer that have elapsed since an arbitrary,
+implementation-defined epoch. A jiffy is an implementation-defined
+fraction of a second which is defined by the return value of the
+<code>jiffies-per-second</code> procedure. The starting epoch is guaranteed to be
+constant during a run of the program, but may vary between runs.
+</div>
+</p>
+
+<P>
+<div id="jiffies-per-second" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(jiffies-per-second)</span>
+    <span class="obj-type">time library procedure</span>
+  </div>
+Returns an exact integer representing the number of jiffies per SI
+second. This value is an implementation-specified constant.
+<p>
+<div class="code-block">
+(define (time-length)
+  (let ((list (make-list 100000))
+        (start (current-jiffy)))
+    (length list)
+    (/ (- (current-jiffy) start)
+       (jiffies-per-second))))
+</div>
+</p>
+</div>
+</p>
+
+<P>
+<div id="features" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(features) </span>
+    <span class="code-var"></span>
+    <span class="obj-type">procedure</span>
+  </div>
+Returns a list of the feature identifiers which <code>cond-expand</code>
+treats as true.  It is an error to modify this list.
+</div>
+</p>
+
+<P>
+<div id="system" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(system </span>
+    <span class="code-var">command</span>
+    <span class="code">) </span>
+    <span class="obj-type">procedure</span>
+  </div>
+It is an error if <I>command</I> is not a string.
+<p>
+Executes the given operating system command, displays the results to standard output, and returns the OS return code from the command.
+</p>
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

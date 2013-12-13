@@ -1,0 +1,66 @@
+---
+title: Conditionals
+nav_next: node33.html
+nav_next_lbl: Assignments
+nav_up: node27.html
+nav_up_lbl: Primitive expression types
+nav_prev: node31.html
+nav_prev_lbl: Procedures
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+<div id="if" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(if </span>
+    <span class="code-var">{test} {consequent} {alternate}</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(if </span>
+    <span class="code-var">{test} {consequent}</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<p>
+<EM>Syntax: </EM>
+Test, consequent, and alternate are
+expressions.
+</P>
+<P>
+<EM>Semantics: </EM>
+An <code>if</code> expression is evaluated as follows: first,
+test is evaluated.  If it yields a true value (see
+section&nbsp;<A HREF="node72.html#booleansection">6.3</A>), then consequent is evaluated and
+its values are returned.  Otherwise alternate is evaluated and its
+values are returned.  If test yields a false value and no
+alternate is specified, then the result of the expression is
+unspecified.
+</p>
+<P>
+<div class="code-block">
+(if (> 3 2) 'yes 'no)   ==&gt; yes
+(if (> 2 3) 'yes 'no)   ==&gt; no
+(if (> 3 2)
+    (- 3 2)
+    (+ 3 2))            ==&gt; 1
+</div>
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

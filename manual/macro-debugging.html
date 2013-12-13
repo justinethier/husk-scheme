@@ -1,0 +1,67 @@
+---
+title: Macro debugging
+nav_next: node49.html
+nav_next_lbl: Program structure
+nav_up: node45.html
+nav_up_lbl: Macros
+nav_prev: node48.html
+nav_prev_lbl: Signaling errors in macro transformers
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<p>
+<div id="expand" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(expand </span>
+    <span class="code-var">{expression}</span>
+    <span class="code">)</span>
+    <span class="obj-type">special form</span>
+  </div>
+A custom special form <code>expand</code> can be used to see the result of a macro expansion of a given expression, for debugging purposes.
+<p>
+For example, we can see that the <code>let*</code> expression:
+</p>
+
+<div class="code-block">
+(expand
+  (let* ((x 42)
+         (y x))
+    y))
+
+</div>
+</p>
+
+<p>
+is transformed into:
+
+<div class="code-block">
+((lambda (x390) 
+  ((lambda (y394) 
+    ((lambda () y394))) x390)) 42)
+
+</div>
+</p>
+                 
+<p>
+Note that any variables in the expanded code are renamed by husk's macro hygiene algorithm.
+</p>
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>
+

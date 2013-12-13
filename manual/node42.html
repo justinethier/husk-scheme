@@ -1,0 +1,88 @@
+---
+title: Exception handling
+nav_next: node43.html
+nav_next_lbl: Quasiquotation
+nav_up: 35.html
+nav_up_lbl: Derived expression types
+nav_prev: node41.html
+nav_prev_lbl: Dynamic bindings
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<p>
+Exception handling has not been implemented in Husk yet, but will be
+included in a future release.
+</p>
+<!--
+
+
+<P>
+<div id="guard" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(guard </span>
+    <span class="code-var">({variable}</span>
+    <span class="code"></span>
+    <span class="obj-type">syntax</span>
+  </div>
+  <div class="obj-header">
+    <span class="code-var">{cond clause1} {cond clause2} ...)</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">{body})</span>
+  </div>
+<EM>Syntax: </EM>
+Each cond clause is as in the specification of <code>cond</code>.
+<P>
+<EM>Semantics: </EM>
+The body is evaluated with an exception
+handler that binds the raised object (see <code>raise</code> in section&nbsp;<A HREF="node80.html#exceptionsection">6.11</A>)
+to variable and, within the scope of
+that binding, evaluates the clauses as if they were the clauses of a
+<code>cond</code> expression. That implicit <code>cond</code> expression is evaluated with the
+continuation and dynamic environment of the <code>guard</code> expression. If every
+cond clause's test evaluates to <code>#f</code> and there
+is no else clause, then
+<code>raise-continuable</code> is invoked on the raised object within the dynamic
+environment of the original call to <code>raise</code>
+or <code>raise-continuable</code>, except that the current
+exception handler is that of the <code>guard</code> expression.
+</P>
+<P>
+See section&nbsp;<A HREF="node80.html#exceptionsection">6.11</A> for a more complete discussion of
+exceptions.
+</P>
+<P>
+<div class="code-block">
+(guard (condition
+        ((assq 'a condition) =&gt; cdr)
+        ((assq 'b condition)))
+  (raise (list (cons 'a 42))))
+            ==&gt; 42
+
+(guard (condition
+        ((assq 'a condition) =&gt; cdr)
+        ((assq 'b condition)))
+  (raise (list (cons 'b 23))))
+            ==&gt; (b . 23)
+</div>
+</p>
+</div>
+</p>
+-->
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

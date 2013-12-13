@@ -1,0 +1,61 @@
+---
+title: Signaling errors in macro transformers
+nav_next: macro-debugging.html
+nav_next_lbl: Macro debugging
+nav_up: 45.html
+nav_up_lbl: Macros
+nav_prev: explicit-renaming-transformer.html
+nav_prev_lbl: Explicit renaming
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+<div id="syntax-error" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(syntax-error </span>
+    <span class="code-var">{message} {args} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<code>syntax-error</code> behaves similarly to <code>error</code> (<A HREF="node80.html#exceptionsection">6.11</A>) except that implementations
+with an expansion pass separate from evaluation should signal an error
+as soon as <code>syntax-error</code> is expanded.  This can be used as
+a <code>syntax-rules</code> template for a pattern that is
+an invalid use of the macro, which can provide more descriptive error
+messages.  message is a string literal, and args
+arbitrary expressions providing additional information.
+Applications cannot count on being able to catch syntax errors with
+exception handlers or guards.
+<P>
+<div class="code-block">
+(define-syntax simple-let
+  (syntax-rules ()
+    ((_ (head ... ((x . y) val) . tail)
+         body1 body2 ...)
+     (syntax-error
+       "expected an identifier but got"
+       (x . y)))
+    ((_ ((name val) ...) body1 body2 ...)
+     ((lambda (name ...) body1 body2 ...)
+       val ...))))
+</div>
+</p>
+</div>
+</p>
+<P>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

@@ -1,0 +1,306 @@
+---
+title: Bytevectors
+nav_next: node79.html
+nav_next_lbl: Control features
+nav_up: node62.html
+nav_up_lbl: Standard procedures
+nav_prev: node77.html
+nav_prev_lbl: Vectors
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+Bytevectors represent blocks of binary data. They are
+fixed-length sequences of bytes, where a byte is an exact
+integer in the range from 0 to 255 inclusive. A bytevector
+is typically more space-exactcient than a vector containing
+the same values.
+</p>
+<p>
+The length of a bytevector is the number of elements that
+it contains. This number is a non-negative integer that is
+fixed when the bytevector is created. The valid indexes of
+a bytevector are the exact non-negative integers less than
+the length of the bytevector, starting at index zero as with
+vectors.
+</p>
+<p>
+Bytevectors are written using the notation <code>#u8(byte ...)</code>.
+For example, a bytevector of length 3 containing the byte
+0 in element 0, the byte 10 in element 1, and the byte 5 in
+element 2 can be written as follows:
+<div class="code-block">
+#u8(0 10 5)
+</div>
+</p>
+<p>
+Bytevector constants are self-evaluating, so they do not
+need to be quoted in programs.
+</p>
+<p>
+<div id="bytevector?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(bytevector? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if obj is a bytevector. Otherwise, #f is returned.
+</div></p>
+<p>
+<div id="make-bytevector" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(make-bytevector </span>
+    <span class="code-var">k</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(make-bytevector </span>
+    <span class="code-var">k byte</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The make-bytevector procedure returns a newly allocated
+bytevector of length k. If byte is given, then all elements
+of the bytevector are initialized to byte, otherwise the contents
+of each element are unspecified.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(make-bytevector 2 12) ==&gt; #u8(12 12)
+</div></div></p>
+<p>
+<div id="bytevector" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(bytevector </span>
+    <span class="code-var">byte ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns a newly allocated bytevector containing its arguments.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(bytevector 1 3 5 1 3 5) ==&gt; #u8(1 3 5 1 3 5)
+(bytevector) ==&gt; #u8()
+</div></div></p>
+<p>
+<div id="bytevector-length" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(bytevector-length </span>
+    <span class="code-var">bytevector</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns the length of bytevector in bytes as an exact integer.
+</div></p>
+<p>
+<div id="bytevector-u8-ref" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(bytevector-u8-ref </span>
+    <span class="code-var">bytevector k</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if k is not a valid index of bytevector.
+  <div class="p"><!----></div>
+  <br />
+Returns the kth byte of bytevector.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(bytevector-u8-ref '#u8(1 1 2 3 5 8 13 21)
+5)
+==&gt; 8
+</div></div></p>
+<p>
+<div id="bytevector-u8-set!" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(bytevector-u8-set! </span>
+    <span class="code-var">bytevector k byte</span>
+    <span class="code">)</span>
+    <span class="obj-type">special form</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if k is not a valid index of bytevector.
+  <div class="p"><!----></div>
+  <br />
+Stores byte as the kth byte of bytevector.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(let ((bv (bytevector 1 2 3 4)))
+(bytevector-u8-set! bv 1 3)
+bv)
+==&gt; #u8(1 3 3 4)
+</div>
+</div>
+</p>
+<p>
+<div id="bytevector-copy" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(bytevector-copy </span>
+    <span class="code-var">bytevector</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(bytevector-copy </span>
+    <span class="code-var">bytevector start</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(bytevector-copy </span>
+    <span class="code-var">bytevector start end</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns a newly allocated bytevector containing the bytes
+in bytevector between start and end.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(define a #u8(1 2 3 4 5))
+(bytevector-copy a 2 4)) ==&gt; #u8(3 4)
+</div></div></p>
+<p>
+<div id="bytevector-copy!" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(bytevector-copy! </span>
+    <span class="code-var">to at from</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(bytevector-copy! </span>
+    <span class="code-var">to at from start</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(bytevector-copy! </span>
+    <span class="code-var">to at from start end</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if at is less than zero or greater than the length
+of to. It is also an error if (- (bytevector-length to) at) is
+less than (- end start).
+  <div class="p"><!----></div>
+  <br />
+Copies the bytes of bytevector from between start and end
+to bytevector to, starting at at. The order in which bytes
+are copied is unspecified, except that if the source and destination
+overlap, copying takes place as if the source is first
+copied into a temporary bytevector and then into the destination.
+This can be achieved without allocating storage
+by making sure to copy in the correct direction in such
+circumstances.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(define a (bytevector 1 2 3 4 5))
+(define b (bytevector 10 20 30 40 50))
+(bytevector-copy! b 1 a 0 2)
+b ==&gt; #u8(10 1 2 40 50)
+</div>
+  <div class="p"><!----></div>
+  <br />
+Note: This procedure appears in R6RS, but places the source
+before the destination, contrary to other such procedures in
+Scheme.
+</div>
+</p>
+<p>
+<div id="bytevector-append" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(bytevector-append </span>
+    <span class="code-var">bytevector ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns a newly allocated bytevector whose elements are
+the concatenation of the elements in the given bytevectors.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(bytevector-append #u8(0 1 2) #u8(3 4 5))
+==&gt; #u8(0 1 2 3 4 5)
+</div>
+</div>
+</p>
+<p>
+<div id="utf8->string" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(utf8-&gt;string </span>
+    <span class="code-var">bytevector</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(utf8-&gt;string </span>
+    <span class="code-var">bytevector start</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(utf8-&gt;string </span>
+    <span class="code-var">bytevector start end</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-&gt;utf8 </span>
+    <span class="code-var">string</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-&gt;utf8 </span>
+    <span class="code-var">string start</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-&gt;utf8 </span>
+    <span class="code-var">string start end</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error for bytevector to contain invalid UTF-8 byte se-
+quences.
+  <div class="p"><!----></div>
+  <br />
+These procedures translate between strings and bytevectors
+that encode those strings using the UTF-8 encoding.
+The utf8-&gt;string procedure decodes the bytes of
+a bytevector between start and end and returns the corresponding
+string; the string-&gt;utf8 procedure encodes the
+characters of a string between start and end and returns
+the corresponding bytevector.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(utf8-&gt;string #u8(#x41)) ==&gt; "A"
+</div>
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

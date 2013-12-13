@@ -1,0 +1,96 @@
+---
+title: Syntax definitions
+nav_next: node57.html
+nav_next_lbl: Record-type definitions
+nav_up: node49.html
+nav_up_lbl: Program structures
+nav_prev: node55.html
+nav_prev_lbl: Multiple-value definitions
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+Syntax definitions have this form:
+</P>
+<P>
+<div class="code-block">
+(define-syntax keyword transformer spec)
+</div>
+</P>
+<P>
+Keyword is an identifier, and
+the transformer spec is an instance of <code>syntax-rules</code>.
+Like variable definitions, syntax definitions can appear at the outermost level or
+nested within a <code>body</code>.
+</P>
+<P>
+If the <code>define-syntax</code> occurs at the outermost level, then the global
+syntactic environment is extended by binding the
+keyword to the specified transformer, but previous expansions
+of any global binding for keyword remain unchanged.
+Otherwise, it is an <EM>internal syntax definition</EM>, and is local to the
+body in which it is defined.
+Any use of a syntax keyword before its corresponding definition is an error.
+In particular, a use that precedes an inner definition will not apply an outer
+definition.
+</P>
+<P>
+<div class="code-block">
+(let ((x 1) (y 2))
+  (define-syntax swap!
+    (syntax-rules ()
+      ((swap! a b)
+        (let ((tmp a))
+          (set! a b)
+          (set! b tmp)))))
+  (swap! x y)
+  (list x y))       ==&gt; (2 1)
+</div>
+</p>
+<P>
+Macros can expand into definitions in any context that permits
+them. However, it is an error for a definition to define an
+identifier whose binding has to be known in order to determine the meaning of the
+definition itself, or of any preceding definition that belongs to the
+same group of internal definitions. Similarly, it is an error for an
+internal definition to define an identifier whose binding has to be known
+in order
+to determine the boundary between the internal definitions and the
+expressions of the body it belongs to. For example, the following are
+errors:
+</P>
+
+<!-- JAE TODO: husk accepts these, should this be removed or the syntax revisited? -->
+<div class="code-block">
+(define define 3)
+
+(begin (define begin list))
+
+(let-syntax
+  ((foo (syntax-rules ()
+         ((foo (proc args ...) body ...)
+          (define proc
+            (lambda (args ...)
+             body ...))))))
+  (let ((x 3))
+    (foo (plus x y) (+ x y))
+    (define foo x)
+    (plus foo x)))
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

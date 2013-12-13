@@ -1,0 +1,142 @@
+---
+title: Numerical input and output
+nav_next: node72.html
+nav_next_lbl: Booleans
+nav_up: node64.html
+nav_up_lbl: Numbers
+nav_prev: node70.html
+nav_prev_lbl: Numerical operations
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<p>
+<div id="number->string" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(number-&gt;string </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(number-&gt;string </span>
+    <span class="code-var">z radix</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if radix is not one of 2, 8, 10, or 16.
+  <div class="p"><!----></div>
+  <br />
+The procedure number-&gt;string takes a number and a
+radix and returns as a string an external representation
+of the given number in the given radix such that
+<div class="code-block">
+(let ((number number)
+(radix radix))
+(eqv? number
+(string-&gt;number (number-&gt;string number
+radix)
+radix)))
+</div>
+<div class="p"><!----></div>
+is true. It is an error if no possible result makes this expression
+true. If omitted, radix defaults to 10.
+<div class="p"><!----></div>
+<br />
+If z is inexact, the radix is 10, and the above expression
+can be satisfied by a result that contains a decimal point,
+then the result contains a decimal point and is expressed
+using the minimum number of digits (exclusive of exponent
+and trailing zeroes) needed to make the above expression
+true [4, 5]; otherwise the format of the result is unspecified.
+<div class="p"><!----></div>
+<br />
+The result returned by number-&gt;string never contains an
+explicit radix prefix.
+<div class="p"><!----></div>
+<br />
+Note: The error case can occur only when z is not a complex
+number or is a complex number with a non-rational real or
+imaginary part.
+<div class="p"><!----></div>
+<br />
+Rationale: If z is an inexact number and the radix is 10, then
+the above expression is normally satisfied by a result containing
+a decimal point. The unspecified case allows for infinities, NaNs,
+and unusual representations.
+</div></p>
+<p>
+<div id="string->number" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string-&gt;number </span>
+    <span class="code-var">string</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(string-&gt;number </span>
+    <span class="code-var">string radix</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns a number of the maximally precise representation
+expressed by the given string. It is an error if radix is not
+2, 8, 10, or 16.
+  <div class="p"><!----></div>
+  <br />
+If supplied, radix is a default radix that will be overridden
+if an explicit radix prefix is present in string (e.g.
+"#o177"). If radix is not supplied, then the default radix
+is 10. If string is not a syntactically valid notation for a
+number, or would result in a number that the implementation
+cannot represent, then string-&gt;number returns #f.
+  <div class="p"><!----></div>
+  <br />
+An error is never signaled due to the content of string.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(string-&gt;number "100") ==&gt; 100
+(string-&gt;number "100" 16) ==&gt; 256
+(string-&gt;number "1e2") ==&gt; 100.0
+</div>
+<br />
+Note: The domain of string-&gt;number may be restricted by im-
+plementations in the following ways. If all numbers supported
+by an implementation are real, then string-&gt;number is permit-
+ted to return #f whenever string uses the polar or rectangular
+notations for complex numbers. If all numbers are integers, then
+string-&gt;number may return #f whenever the fractional nota-
+tion is used. If all numbers are exact, then string-&gt;number
+may return #f whenever an exponent marker or explicit exact-
+ness prefix is used. If all inexact numbers are integers, then
+string-&gt;number may return #f whenever a decimal point is
+used.
+  <div class="p"><!----></div>
+  <br />
+The rules used by a particular implementation for
+string-&gt;number must also be applied to read and to the
+routine that reads programs, in order to maintain consistency
+between internal numeric processing, I/O, and the processing
+of programs. As a consequence, the R5RS permission to
+return #f when string has an explicit radix prefix has been
+withdrawn.
+</div></p>
+
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

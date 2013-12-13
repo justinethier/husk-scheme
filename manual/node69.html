@@ -1,0 +1,84 @@
+---
+title: Syntax of numerical constants
+nav_next: node70.html
+nav_next_lbl: Numerical operations
+nav_up: node64.html
+nav_up_lbl: Numbers
+nav_prev: node66.html
+nav_prev_lbl: Exactness
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+A number can be written in binary, octal, decimal, or hexadecimal
+by the use of a radix prefix. The radix prefixes
+are #b (binary), #o (octal), #d (decimal), and #x (hexadecimal).
+With no radix prefix, a number is assumed to be
+expressed in decimal.
+</p>
+<!--
+<p>
+A numerical constant can be specified to be either exact or
+inexact by a prefix. The prefixes are #e for exact, and #i
+for inexact. An exactness prefix can appear before or after
+any radix prefix that is used. If the written representation
+of a number has no exactness prefix, the constant is inexact
+if it contains a decimal point or an exponent. Otherwise,
+it is exact.
+</p>
+<p>
+In systems with inexact numbers of varying precisions it
+can be useful to specify the precision of a constant. For
+this purpose, implementations may accept numerical constants
+written with an exponent marker that indicates the
+desired precision of the inexact representation. If so, the
+letter s, f, d, or l, meaning short, single, double, or long
+precision, respectively, can be used in place of e. The default
+precision has at least as much precision as double,
+but implementations may allow this default to be set by
+the user.
+3.14159265358979F0
+Round to single | 3.141593
+
+</p>
+<p>
+Extend to long | .600000000000000
+The numbers positive infinity, negative infinity, and NaN
+are written +inf.0, -inf.0 and +nan.0 respectively. NaN
+may also be written -nan.0. The use of signs in the written
+representation does not necessarily re
+ect the underlying
+sign of the NaN value, if any. Implementations are not required
+to support these numbers, but if they do, they must
+do so in general conformance with IEEE 754. However, implementations
+</p>
+<p>
+There are two notations provided for non-real complex
+numbers: the rectangular notation a+bi, where a is the
+real part and b is the imaginary part; and the polar no-
+tation r@ where r is the magnitude and is the phase
+(angle) in radians. These are related by the equation
+a + bi = r cos + (r sin i. All of a, b, r , and are real
+numbers.
+</p>
+-->
+<p>
+Complex numbers may be specified using the syntax a+bi, where
+a is the real part and b is the imaginary part.
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

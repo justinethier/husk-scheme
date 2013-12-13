@@ -1,0 +1,54 @@
+---
+title: Naming conventions
+nav_next: node15.html
+nav_next_lbl: Lexical conventions
+nav_up: node9.html
+nav_up_lbl: Notation and terminology
+nav_prev: node13.html
+nav_prev_lbl: Evaluation examples
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+By convention, <span class="code">?</span> is the final character of the names
+of procedures that always return a boolean value.
+Such procedures are called <EM>predicates</EM>.
+Predicates are generally understood to be side-effect free, except that they
+may raise an exception when passed the wrong type of argument.
+</p>
+<P>
+Similarly, <span class="code">!</span> is the final character of the names
+of procedures that store values into previously
+allocated locations (see section&nbsp;<A HREF="node24.html#storagemodel">3.4</A>).
+Such procedures are called <EM>mutation procedures</EM>.
+The value returned by a mutation procedure is unspecified.
+</p>
+<P>
+By convention, <span class="code">-&gt;</span> appears within the names of procedures that
+take an object of one type and return an analogous object of another type.
+For example, <span class="code">list-&gt;vector</span> takes a list and returns a vector whose
+elements are the same as those of the list.
+</p>
+<P>
+A <EM>command</EM> is a procedure that does not return useful values
+to its continuation.
+</p>
+<P>
+A <EM>thunk</EM> is a procedure that does not accept arguments.
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

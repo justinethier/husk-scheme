@@ -1,0 +1,70 @@
+---
+title: Programs
+nav_next: node51.html
+nav_next_lbl: Import declarations
+nav_up: node49.html
+nav_up_lbl: Program structure
+nav_prev: node49.html
+nav_prev_lbl: Program structure
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+A Scheme program consists of  
+one or more import declarations followed by a sequence of
+expressions and definitions.
+Import declarations specify the libraries on which a program or library depends;
+a subset of the identifiers exported by the libraries are made available to
+the program.
+Expressions are described in chapter&nbsp;<A HREF="node26.html#expressionchapter">4</A>.
+Definitions are either variable definitions, syntax definitions, or
+record-type definitions, all of which are explained in this chapter.
+They are valid in some, but not all, contexts where expressions
+are allowed, specifically at the outermost level of a program
+and at the beginning of a body.
+</P>
+<P>
+At the outermost level of a program, <code>(begin {expression or definition}</code> is
+equivalent to the sequence of expressions and definitions
+in the <code>begin</code>.   
+Similarly, in a body, <code>(begin {definition})</code> is equivalent
+to the sequence <code>{definition} ...</code>.
+Macros can expand into such <code>begin</code> forms.
+For the formal definition, see&nbsp;<A HREF="node38.html#sequencing">4.2.3</A>.
+</P>
+<P>
+Import declarations and definitions
+cause bindings to be created in the global
+environment or modify the value of existing global bindings.
+The initial environment of a program is empty,
+so at least one import declaration is needed to introduce initial bindings.
+</P>
+<P>
+Expressions occurring at the outermost level of a program
+do not create any bindings.  They are
+executed in order when the program is
+invoked or loaded, and typically perform some kind of initialization.
+</P>
+<P>
+Programs and libraries are typically stored in files, although
+in some implementations they can be entered interactively into a running
+Scheme system.  Other paradigms are possible.
+Implementations which store libraries in files should document the
+mapping from the name of a library to its location in the file system.
+</P>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

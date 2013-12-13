@@ -1,0 +1,79 @@
+---
+title: Overview of Scheme
+nav_next: node7.html
+nav_next_lbl: Semantics
+nav_up: index.html
+nav_up_lbl: Summary
+nav_prev: libraries-and-extensions.html
+nav_prev_lbl: Libraries and Extensions
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+Programming languages should be designed not by piling feature on top of
+feature, but by removing the weaknesses and restrictions that make additional
+features appear necessary.  Scheme demonstrates that a very small number
+of rules for forming expressions, with no restrictions on how they are
+composed, suffice to form a practical and efficient programming language
+that is flexible enough to support most of the major programming
+paradigms in use today.
+</p>
+<P>
+Scheme
+was one of the first programming languages to incorporate first-class
+procedures as in the lambda calculus, thereby proving the usefulness of
+static scope rules and block structure in a dynamically typed language.
+Scheme was the first major dialect of Lisp to distinguish procedures
+from lambda expressions and symbols, to use a single lexical
+environment for all variables, and to evaluate the operator position
+of a procedure call in the same way as an operand position.  By relying
+entirely on procedure calls to express iteration, Scheme emphasized the
+fact that tail-recursive procedure calls are essentially GOTOs that
+pass arguments, thus allowing a programming style that is both coherent
+and efficient.  Scheme was the first widely used programming language to
+embrace first-class escape procedures, from which all previously known
+sequential control structures can be synthesized.  A subsequent
+version of Scheme introduced the concept of exact and inexact numbers,
+an extension of Common Lisp's generic arithmetic.
+More recently, Scheme became the first programming language to support
+hygienic macros, which permit the syntax of a block-structured language
+to be extended in a consistent and reliable manner.
+</P>
+
+<UL CLASS="ChildLinks">
+<LI><A NAME="tex2html299"
+  HREF="node7.html">Semantics</A>
+<LI><A NAME="tex2html300"
+  HREF="node8.html">Syntax</A>
+<LI><A NAME="tex2html301"
+  HREF="node9.html">Notation and terminology</A>
+<UL>
+<LI><A NAME="tex2html302"
+  HREF="node10.html">Base and optional features</A>
+<LI><A NAME="tex2html303"
+  HREF="node11.html">Error situations and unspecified behavior</A>
+<LI><A NAME="tex2html304"
+  HREF="node12.html">Entry format</A>
+<LI><A NAME="tex2html305"
+  HREF="node13.html">Evaluation examples</A>
+<LI><A NAME="tex2html306"
+  HREF="node14.html">Naming conventions</A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<BR><HR>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

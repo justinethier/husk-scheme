@@ -1,0 +1,132 @@
+---
+title: Symbols
+nav_next: node75.html
+nav_next_lbl: Characters
+nav_up: node62.html
+nav_up_lbl: Standard procedures
+nav_prev: node73.html
+nav_prev_lbl: Pairs and lists
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+Symbols are objects whose usefulness rests on the fact that
+two symbols are identical (in the sense of eqv?) if and only
+if their names are spelled the same way. For instance, they
+can be used the way enumerated values are used in other
+languages.
+</p>
+<p>
+The rules for writing a symbol are exactly the same as the
+rules for writing an identifier; see sections 2.1 and 7.1.1.
+It is guaranteed that any symbol that has been returned
+as part of a literal expression, or read using the read procedure,
+and subsequently written out using the write procedure,
+will read back in as the identical symbol (in the
+sense of eqv?).
+</p>
+<p>
+<div id="symbol?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(symbol? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if obj is a symbol, otherwise returns #f.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(symbol? 'foo) ==&gt; #t
+(symbol? (car '(a b))) ==&gt; #t
+(symbol? "bar") ==&gt; #f
+(symbol? 'nil) ==&gt; #t
+(symbol? '()) ==&gt; #f
+(symbol? #f) ==&gt; #f
+  </div>
+</div>
+</p>
+
+<p>
+<div id="symbol=?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(symbol=? </span>
+    <span class="code-var">symbol1 symbol2 symbol3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if all the arguments are symbols and all have
+the same names in the sense of string=?.
+</div>
+</p>
+
+<p>
+<div id="symbol->string" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(symbol-&gt;string </span>
+    <span class="code-var">symbol</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns the name of symbol as a string, but without adding
+escapes. 
+  <div class="p"><!----></div>
+  <div class="code-block">
+(symbol-&gt;string 'flying-fish)
+==&gt; "flying-fish"
+(symbol-&gt;string 'Martin) ==&gt; "Martin"
+(symbol-&gt;string
+(string-&gt;symbol "Malvina"))
+==&gt; "Malvina"
+  </div>
+</div>
+</p>
+
+<p>
+<div id="string->symbol" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string-&gt;symbol </span>
+    <span class="code-var">string</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns the symbol whose name is string. This procedure
+can create symbols with names containing special characters
+that would require escaping when written, but does
+not interpret escapes in its input.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(string-&gt;symbol "mISSISSIppi")
+==&gt; mISSISSIppi
+(eqv? 'bitBlt (string-&gt;symbol "bitBlt"))
+==&gt; #t
+(eqv? 'LollyPop
+(string-&gt;symbol
+(symbol-&gt;string 'LollyPop)))
+==&gt; #t
+(string=? "K. Harper, M.D."
+(symbol-&gt;string
+(string-&gt;symbol "K. Harper, M.D.")))
+==&gt; #t
+  </div>
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

@@ -1,0 +1,96 @@
+---
+title: Identifiers
+nav_next: node17.html
+nav_next_lbl: Whitespace and comments
+nav_up: node15.html
+nav_up_lbl: Lexical conventions
+nav_prev: node15.html
+nav_prev_lbl: Lexical conventions
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+An identifier is any sequence of letters, digits, and
+"extended identifier characters" provided that it does not have a prefix
+which is a valid number.  
+However, the  <TT>.</TT> token (a single period) used in the list syntax
+is not an identifier.
+</p>
+<P>
+All implementations of Scheme must support the following extended identifier
+characters:
+<br />
+<div class="code-block">
+! $ % &amp; * + - . / : &lt; = &gt; ? @ ^ _ ~
+</div>
+</p>
+
+<!--
+<P style="color: red">
+JAE TODO: not supported yet
+
+Alternatively, an identifier can be represented by a sequence of zero or more
+characters enclosed within vertical lines (|), analogous to
+string literals.  Any character, including whitespace characters, but
+excluding the backslash and vertical line characters,
+can appear verbatim in such an identifier.
+In addition, characters can be
+specified using either an inline hex escape
+or the same escapes available in strings.
+< /p >
+-->
+
+<P>
+For example, the
+identifier <code>|H\x65;llo|</code> is the same identifier as
+<code>Hello</code>, and in an implementation that supports the appropriate
+Unicode character the identifier <code>|\x3BB;|</code> is the same as the
+identifier <code>&lambda;</code>.  
+What is more, <code>|\t\t|</code> and <code>|\x9;\x9;|</code> are the
+same.
+Note that <code>||</code> is a valid identifier that is different from any other
+identifier.
+</p>
+
+<P>
+Here are some examples of identifiers:
+<br />
+<div class="code-block">
+...                 +
++soup+              <=?
+->string            a34kTMNs
+lambda              list-&gt;vector
+q                   V17a
+|two words|         |two\x20;words|
+the-word-recursion-has-many-meanings
+</div>
+</p>
+<P>
+Identifiers have two uses within Scheme programs:
+<UL>
+<LI>Any identifier can be used as a variable
+ or as a syntactic keyword 
+(see sections&nbsp;<A HREF="node21.html#variablesection">3.1</A> and&nbsp;<A HREF="node45.html#macrosection">4.3</A>).
+</LI>
+<LI>When an identifier appears as a literal or within a literal
+(see section&nbsp;<A HREF="node29.html#quote">4.1.2</A>), it is being used to denote a <EM>symbol</EM>
+(see section&nbsp;<A HREF="node74.html#symbolsection">6.5</A>).
+</LI>
+</UL>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

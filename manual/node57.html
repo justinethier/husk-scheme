@@ -1,0 +1,158 @@
+---
+title: Record-type definitions
+nav_next: node58.html
+nav_next_lbl: Libraries
+nav_up: node49.html
+nav_up_lbl: Program structure
+nav_prev: node56.html
+nav_prev_lbl: Syntax definitions
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+Record types are not supported by Husk yet, but will be included
+in a future release.
+
+<!--
+<P>
+<EM>Record-type definitions</EM> are used to introduce new data types, called
+<EM>record types</EM>.
+Like other definitions, they can appear either at the outermost level or in a body.
+The values of a record type are called <EM>records</EM> and are
+aggregations of zero or more <EM>fields</EM>, each of which holds a single location.
+A predicate, a constructor, and field accessors and
+mutators are defined for each record type.
+</P>
+<P>
+<div id="define-record-type" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(define-record-type </span>
+    <span class="code-var">{name} {constructor} {pred} {field} ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+<EM>Syntax: </EM>
+name and pred are identifiers.
+The constructor is of the form
+<P>
+<div class="code-block">
+({constructor name} {field name} ...)
+</div>
+</p>
+<p>
+and each field is either of the form
+</p>
+<p>
+<div class="code-block">
+({field name} {accessor name})
+</div>
+</p>
+<p>
+or of the form
+</p>
+<p>
+<div class="code-block">
+({field name} {accessor name} {modifier name})
+</div>
+</p>
+<p>
+It is an error for the same identifier to occur more than once as a
+field name.
+It is also an error for the same identifier to occur more than once
+as an accessor or mutator name.
+</P>
+<P>
+The <code>define-record-type</code> construct is generative: each use creates a new record
+type that is distinct from all existing types, including Scheme's
+predefined types and other record types -- even record types of
+the same name or structure.
+</P>
+<P>
+An instance of <code>define-record-type</code> is equivalent to the following
+definitions:
+</P>
+<P>
+<UL>
+<LI>name is bound to a representation of the record type itself.
+This may be a run-time object or a purely syntactic representation.
+The representation is not utilized in this report, but it serves as a
+means to identify the record type for use by further language extensions.
+
+</LI>
+<LI>{constructor name} is bound to a procedure that takes as
+  many arguments as there are field names in the
+  <code>({constructor name} ...)</code> subexpression and returns a
+  new record of type name.  Fields whose names are listed with
+  constructor name have the corresponding argument as their
+  initial value.  The initial values of all other fields are
+  unspecified.  It is an error for a field name to appear in
+  constructor but not as a field name.
+
+</LI>
+<LI>pred is bound to a predicate that returns <code>#t</code> when given a
+  value returned by the procedure bound to {constructor name} and <code>#f</code> for
+  everything else.
+
+</LI>
+<LI>Each {accessor name} is bound to a procedure that takes a record of
+  type name and returns the current value of the corresponding
+  field.  It is an error to pass an accessor a value which is not a
+  record of the appropriate type.
+
+</LI>
+<LI>Each {modifier name} is bound to a procedure that takes a record of
+  type name and a value which becomes the new value of the
+  corresponding field; an unspecified value is returned.  It is an
+  error to pass a modifier a first argument which is not a record of
+  the appropriate type.
+
+</LI>
+</UL>
+</p>
+<P>
+For instance, the following record-type definition
+</P>
+<P>
+<div class="code-block">
+(define-record-type <pare>
+  (kons x y)
+  pare?
+  (x kar set-kar!)
+  (y kdr))
+</div>
+</p>
+<P>
+defines <code>kons</code> to be a constructor, <code>kar</code> and <code>kdr</code>
+to be accessors, <code>set-kar!</code> to be a modifier, and <code>pare?</code>
+to be a predicate for instances of <code>&lt;pare&gt;</code>.
+</P>
+<P>
+<div class="code-block">
+(pare? (kons 1 2))      ==&gt; #t
+(pare? (cons 1 2))      ==&gt; #f
+(kar (kons 1 2))        ==&gt; 1
+(kdr (kons 1 2))        ==&gt; 2
+(let ((k (kons 1 2)))
+  (set-kar! k 3)
+  (kar k))              ==&gt; 3
+</div>
+</p>
+</div>
+</p>
+-->
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

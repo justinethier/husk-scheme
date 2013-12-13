@@ -1,0 +1,875 @@
+---
+title: Numerical operations
+nav_next: node71.html
+nav_next_lbl: Numerical input and output
+nav_up: node64.html
+nav_up_lbl: Numbers
+nav_prev: node69.html
+nav_prev_lbl: Syntax of numerical constants
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<p>
+<div id="number?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(number? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(complex? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(real? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(rational? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(integer? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These numerical type predicates can be applied to any kind
+of argument, including non-numbers. They return #t if the
+object is of the named type, and otherwise they return #f.
+In general, if a type predicate is true of a number then
+all higher type predicates are also true of that number.
+Consequently, if a type predicate is false of a number, then
+all lower type predicates are also false of that number.
+  <div class="p"><!----></div>
+  <br />
+If z is a complex number, then (real? z) is true if and
+only if (zero? (imag-part z)) is true. If x is an inexact
+real number, then (integer? x) is true if and only if (=
+x (round x)).
+  <div class="p"><!----></div>
+  <br />
+The numbers +inf.0, -inf.0, and +nan.0 are real but not
+rational.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(complex? 3+4i) ==&gt; #t
+(complex? 3) ==&gt; #t
+(real? 3) ==&gt; #t
+(real? -2.5+0i) ==&gt; #t
+(real? -2.5+0.0i) ==&gt; #f
+(real? #e1e10) ==&gt; #t
+(real? +inf.0) ==&gt; #t
+(real? +nan.0) ==&gt; #t
+(rational? -inf.0) ==&gt; #f
+(rational? 3.5) ==&gt; #t
+(rational? 6/10) ==&gt; #t
+(rational? 6/3) ==&gt; #t
+(integer? 3+0i) ==&gt; #t
+(integer? 3.0) ==&gt; #t
+(integer? 8/4) ==&gt; #t
+</div>
+  <div class="p"><!----></div>
+  <br />
+Note: The behavior of these type predicates on inexact numbers is unreliable, since any inaccuracy might affect the result.
+  <div class="p"><!----></div>
+  <br />
+Note: In many implementations the complex? procedure will
+be the same as number?, but unusual implementations may represent some irrational numbers exactly or may extend the number system 
+to support some kind of non-complex numbers.
+</div></p>
+<p>
+<div id="exact?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(exact? </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(inexact? </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These numerical predicates provide tests for the exactness
+of a quantity. For any Scheme number, precisely one of
+these predicates is true.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(exact? 3.0) ==&gt; #f
+(exact? #e3.0) ==&gt; #t
+(inexact? 3.) ==&gt; #t
+</div></div></p>
+<p>
+<div id="exact-integer?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(exact-integer? </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if z is both exact and an integer; otherwise
+returns #f.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(exact-integer? 32) ==&gt; #t
+(exact-integer? 32.0) ==&gt; #f
+(exact-integer? 32/5) ==&gt; #f
+</div></div></p>
+<p>
+<div id="finite?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(finite? </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The finite? procedure returns #t on all real numbers except
++inf.0, -inf.0, and +nan.0, and on complex numbers
+if their real and imaginary parts are both finite. Otherwise
+it returns #f.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(finite? 3) ==&gt; #t
+(finite? +inf.0) ==&gt; #f
+(finite? 3.0+inf.0i) ==&gt; #f
+</div></div></p>
+<p>
+<div id="infinite?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(infinite? </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The infinite? procedure returns #t on the real numbers
++inf.0 and -inf.0, and on complex numbers if their real
+or imaginary parts or both are infinite. Otherwise it returns
+#f.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(infinite? 3) ==&gt; #f
+(infinite? +inf.0) ==&gt; #t
+(infinite? +nan.0) ==&gt; #f
+(infinite? 3.0+inf.0i) ==&gt; #t
+</div></div></p>
+<p>
+<div id="nan?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(nan? </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The nan? procedure returns #t on +nan.0, and on complex
+numbers if their real or imaginary parts or both are +nan.0.
+Otherwise it returns #f.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(nan? +nan.0) ==&gt; #t
+(nan? 32) ==&gt; #f
+(nan? +nan.0+5.0i) ==&gt; #t
+(nan? 1+2i) ==&gt; #f
+</div></div></p>
+<p>
+<div id="=" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(= </span>
+    <span class="code-var">z1 z2 z3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(&lt; </span>
+    <span class="code-var">x1 x2 x3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(&gt; </span>
+    <span class="code-var">x1 x2 x3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(&lt;= </span>
+    <span class="code-var">x1 x2 x3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(&gt;= </span>
+    <span class="code-var">x1 x2 x3 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures return #t if their arguments are (respectively):
+equal, monotonically increasing, monotonically decreasing,
+monotonically non-decreasing, or monotonically
+non-increasing, and #f otherwise. If any of the arguments
+are +nan.0, all the predicates return #f. They do not distinguish
+between inexact zero and inexact negative zero.
+  <div class="p"><!----></div>
+  <br />
+These predicates are transitive.
+  <div class="p"><!----></div>
+  <br />
+Note: While it is not an error to compare inexact numbers
+using these predicates, the results are unreliable because a small
+inaccuracy can affect the result; this is especially true of = and
+zero?. When in doubt, consult a numerical analyst.
+</div></p>
+<p>
+<div id="zero?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(zero? </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(positive? </span>
+    <span class="code-var">x</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(negative? </span>
+    <span class="code-var">x</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(odd? </span>
+    <span class="code-var">n</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(even? </span>
+    <span class="code-var">n</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These numerical predicates test a number for a particular
+property, returning #t or #f.
+</div></p>
+<p>
+<div id="max" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(max </span>
+    <span class="code-var">x1 x2 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(min </span>
+    <span class="code-var">x1 x2 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures return the maximum or minimum of their
+arguments.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(max 3 4) ==&gt; 4 ; exact
+(max 3.9 4) ==&gt; 4.0 ; inexact
+</div>
+  <div class="p"><!----></div>
+  <br />
+Note: If any argument is inexact, then the result will also be
+inexact (unless the procedure can prove that the inaccuracy is
+not large enough to affect the result, which is possible only in
+unusual implementations). If min or max is used to compare
+numbers of mixed exactness, and the numerical value of the
+result cannot be represented as an inexact number without loss
+of accuracy, then the procedure may report a violation of an
+implementation restriction.
+</div></p>
+<p>
+<div id="+" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(+ </span>
+    <span class="code-var">z1 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(* </span>
+    <span class="code-var">z1 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures return the sum or product of their arguments.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(+ 3 4) ==&gt; 7
+(+ 3) ==&gt; 3
+(+) ==&gt; 0
+(* 4) ==&gt; 4
+(*) ==&gt; 1
+</div></div></p>
+<p>
+<div id="-" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(- </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(- </span>
+    <span class="code-var">z1 z2 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(/ </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(/ </span>
+    <span class="code-var">z1 z2 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+With two or more arguments, these procedures return the
+difference or quotient of their arguments, associating to the
+left. With one argument, however, they return the additive
+or multiplicative inverse of their argument.
+  <div class="p"><!----></div>
+  <br />
+It is an error if any argument of / other than the first is
+an exact zero. If the first argument is an exact zero, an
+implementation may return an exact zero unless one of the
+other arguments is a NaN.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(- 3 4) ==&gt; -1
+(- 3 4 5) ==&gt; -6
+(- 3) ==&gt; -3
+(/ 3 4 5) ==&gt; 3/20
+(/ 3) ==&gt; 1/3
+</div></div></p>
+<p>
+<div id="abs" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(abs </span>
+    <span class="code-var">x</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The abs procedure returns the absolute value of its argument.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(abs -7) ==&gt; 7
+</div></div></p>
+<p>
+<div id="floor/" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(floor/ </span>
+    <span class="code-var">n1 n2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(floor-quotient </span>
+    <span class="code-var">n1 n2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(floor-remainder </span>
+    <span class="code-var">n1 n2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(truncate/ </span>
+    <span class="code-var">n1 n2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(truncate-quotient </span>
+    <span class="code-var">n1 n2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(truncate-remainder </span>
+    <span class="code-var">n1 n2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures implement number-theoretic (integer) division.
+It is an error if n2 is zero. The procedures ending
+in / return two integers; the other procedures return an
+integer. All the procedures compute a quotient nq and remainder
+nr such that n1 = n2nq + nr. For each of the
+division operators, there are three procedures defined as
+follows:
+  <div class="p"><!----></div>
+  <div class="code-block">
+({operator}/ n1 n2) ==&gt; nq nr
+({operator}-quotient n1 n2) ==&gt; nq
+({operator}-remainder n1 n2) ==&gt; nr
+</div>
+  <div class="p"><!----></div>
+Examples:
+  <div class="p"><!----></div>
+  <div class="code-block">
+(floor/ 5 2) ==&gt; 2 1
+(floor/ -5 2) ==&gt; -3 1
+(floor/ 5 -2) ==&gt; -3 -1
+(floor/ -5 -2) ==&gt; 2 -1
+(truncate/ 5 2) ==&gt; 2 1
+(truncate/ -5 2) ==&gt; -2 -1
+(truncate/ 5 -2) ==&gt; -2 1
+(truncate/ -5 -2) ==&gt; 2 -1
+(truncate/ -5.0 -2) ==&gt; 2.0 -1.0
+</div></div></p>
+<p>
+<div id="quotient" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(quotient </span>
+    <span class="code-var">n1 n2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(remainder </span>
+    <span class="code-var">n1 n2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(modulo </span>
+    <span class="code-var">n1 n2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The quotient and remainder procedures are equivalent
+to truncate-quotient and truncate-remainder, respectively,
+and modulo is equivalent to floor-remainder.
+</div></p>
+<p>
+<div id="gcd" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(gcd </span>
+    <span class="code-var">n1 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(lcm </span>
+    <span class="code-var">n1 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures return the greatest common divisor or
+least common multiple of their arguments. The result is
+always non-negative.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(gcd 32 -36) ==&gt; 4
+(gcd) ==&gt; 0
+(lcm 32 -36) ==&gt; 288
+(lcm 32.0 -36) ==&gt; 288.0 ; inexact
+(lcm) ==&gt; 1
+</div></div></p>
+<p>
+<div id="numerator" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(numerator </span>
+    <span class="code-var">q</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(denominator </span>
+    <span class="code-var">q</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures return the numerator or denominator of
+their argument; the result is computed as if the argument
+was represented as a fraction in lowest terms. The denominator
+is always positive. The denominator of 0 is defined
+to be 1.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(numerator (/ 6 4)) ==&gt; 3
+(denominator (/ 6 4)) ==&gt; 2
+(denominator
+(inexact (/ 6 4))) ==&gt; 2.0
+</div></div></p>
+<p>
+<div id="floor" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(floor </span>
+    <span class="code-var">x</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(ceiling </span>
+    <span class="code-var">x</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(truncate </span>
+    <span class="code-var">x</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(round </span>
+    <span class="code-var">x</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures return integers. The floor procedure
+returns the largest integer not larger than x. The ceiling
+procedure returns the smallest integer not smaller than x,
+truncate returns the integer closest to x whose absolute
+value is not larger than the absolute value of x, and round
+returns the closest integer to x, rounding to even when x
+is halfway between two integers.
+  <div class="p"><!----></div>
+  <br />
+Rationale: The round procedure rounds to even for consistency
+with the default rounding mode specified by the IEEE 754 IEEE
+floating-point standard.
+  <div class="p"><!----></div>
+  <br />
+Note: If the argument to one of these procedures is inexact,
+then the result will also be inexact. If an exact value is needed,
+the result can be passed to the exact procedure. If the argu-
+ment is infinite or a NaN, then it is returned.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(floor -4.3) ==&gt; -5.0
+(ceiling -4.3) ==&gt; -4.0
+(truncate -4.3) ==&gt; -4.0
+(round -4.3) ==&gt; -4.0
+(floor 3.5) ==&gt; 3.0
+(ceiling 3.5) ==&gt; 4.0
+(truncate 3.5) ==&gt; 3.0
+(round 3.5) ==&gt; 4.0 ; inexact
+(round 7/2) ==&gt; 4 ; exact
+(round 7) ==&gt; 7
+</div></div></p>
+<p>
+<div id="rationalize" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(rationalize </span>
+    <span class="code-var">x y</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The rationalize procedure returns the simplest rational
+number differing from x by no more than y.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(rationalize
+    (exact .3) 1/10) ==&gt; 1/3 ; exact
+(rationalize .3 1/10) ==&gt; #i1/3 ; inexact
+</div></div></p>
+<p>
+<div id="exp" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(exp </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(log </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(log </span>
+    <span class="code-var">z1 z2</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(sin </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(cos </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(tan </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(asin </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(acos </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(atan </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(atan </span>
+    <span class="code-var">y x</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+These procedures compute the usual transcendental functions.
+  <div class="p"><!----></div>
+  <br />
+The log procedure computes the natural logarithm
+of z (not the base ten logarithm) if a single argument is
+given, or the base-z2 logarithm of z1 if two arguments are
+given. 
+</div>
+</p>
+<p>
+<div id="square" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(square </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns the square of z. This is equivalent to (* z z).
+  <div class="p"><!----></div>
+  <div class="code-block">
+(square 42) ==&gt; 1764
+(square 2.0) ==&gt; 4.0
+</div></div></p>
+<p>
+<div id="sqrt" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(sqrt </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">inexact library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns the principal square root of z. The result will
+have either a positive real part, or a zero real part and a
+non-negative imaginary part.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(sqrt 9) ==&gt; 3
+(sqrt -1) ==&gt; +i
+</div></div></p>
+<p>
+<div id="exact-integer-sqrt" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(exact-integer-sqrt </span>
+    <span class="code-var">k</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns two non-negative exact integers s and r where k =
+s2 + r and k &lt; (s + 1)2.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(exact-integer-sqrt 4) ==&gt; 2 0
+(exact-integer-sqrt 5) ==&gt; 2 1
+</div></div></p>
+<p>
+<div id="expt" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(expt </span>
+    <span class="code-var">z1 z2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns z1 raised to the power z2.
+</div></p>
+<p>
+<div id="make-rectangular" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(make-rectangular </span>
+    <span class="code-var">x1 x2</span>
+    <span class="code">)</span>
+    <span class="obj-type">complex library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(make-polar </span>
+    <span class="code-var">x3 x4</span>
+    <span class="code">)</span>
+    <span class="obj-type">complex library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(real-part </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">complex library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(imag-part </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">complex library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(magnitude </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">complex library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(angle </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">complex library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Let x1, x2, x3, and x4 be real numbers and z be a complex
+number such that
+z = x1 + x2i = x3 * e ^ (ix4)
+Then all of
+  <div class="p"><!----></div>
+  <div class="code-block">
+(make-rectangular x1 x2) ==&gt; z
+(make-polar x3 x4) ==&gt; z
+(real-part z) ==&gt; x1
+(imag-part z) ==&gt; x2
+(magnitude z) ==&gt; jx3j
+(angle z) ==&gt; xangle
+</div>
+  <div class="p"><!----></div>
+are true.
+  <div class="p"><!----></div>
+  <br />
+The make-polar procedure may return an inexact complex
+number even if its arguments are exact. The real-part
+and imag-part procedures may return exact real numbers
+when applied to an inexact complex number if the corresponding
+argument passed to make-rectangular was exact.
+  <div class="p"><!----></div>
+  <br />
+Rationale: The magnitude procedure is the same as abs for a
+real argument, but abs is in the base library, whereas magnitude
+is in the optional complex library.
+</div></p>
+<p>
+<div id="inexact" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(inexact </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(exact </span>
+    <span class="code-var">z</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The procedure inexact returns an inexact representation
+of z. The value returned is the inexact number that is numerically
+closest to the argument. For inexact arguments,
+the result is the same as the argument. For exact complex
+numbers, the result is a complex number whose real and
+imaginary parts are the result of applying inexact to the
+real and imaginary parts of the argument, respectively. If
+an exact argument has no reasonably close inexact equivalent
+(in the sense of ==&gt;, then a violation of an implementation
+restriction may be reported.
+  <div class="p"><!----></div>
+  <br />
+The procedure exact returns an exact representation of
+z. The value returned is the exact number that is numerically
+closest to the argument. For exact arguments,
+the result is the same as the argument. For inexact nonintegral
+real arguments, the implementation may return a
+rational approximation, or may report an implementation
+violation. For inexact complex arguments, the result is a
+complex number whose real and imaginary parts are the
+result of applying exact to the real and imaginary parts
+of the argument, respectively. If an inexact argument has
+no reasonably close exact equivalent, (in the sense of ==&gt;,
+then a violation of an implementation restriction may be
+reported.
+  <div class="p"><!----></div>
+  <br />
+These procedures implement the natural one-to-one correspondence
+between exact and inexact integers throughout
+an implementation-dependent range.
+  <div class="p"><!----></div>
+  <br />
+Note: These procedures were known in R5RS as
+exact-&gt;inexact and inexact-&gt;exact, respectively, but they
+have always accepted arguments of any exactness. The new
+names are clearer and shorter, as well as being compatible with
+R6RS.
+</div></p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

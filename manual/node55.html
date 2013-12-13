@@ -1,0 +1,69 @@
+---
+title: Multiple-value definitions
+nav_next: node56.html
+nav_next_lbl: Syntax definitions
+nav_up: node52.html
+nav_up_lbl: Variable definitions
+nav_prev: node54.html
+nav_prev_lbl: Internal definitions
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+The define-values syntax is not supported by Husk yet, but 
+will be included in a future release.
+
+<!-- JAE TODO: define-values not implemented yet! -->
+<!--
+
+<P>
+Another kind of definition is provided by <code>define-values</code>, 
+which creates multiple definitions from a single
+expression returning multiple values.
+It is allowed wherever <code>define</code> is allowed.
+</P>
+<P>
+<div id="define-values" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(define-values </span>
+    <span class="code-var">{formals} {expression}</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+It is an error if a variable appears more than once in the set of formals.
+<P>
+Semantics: </EM>
+Expression is evaluated, and the formals are bound
+to the return values in the same way that the formals in a
+<code>lambda</code> expression are matched to the arguments in a procedure
+call.
+</p>
+<P>
+<div class="code-block">
+(define-values (x y) (integer-sqrt 17))
+(list x y)      ==&gt; (4 1)
+
+(let ()
+  (define-values (x y) (values 1 2))
+  (+ x y))        ==&gt; 3
+</div>
+</p>
+</div>
+</p>
+-->
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

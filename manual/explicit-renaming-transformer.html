@@ -1,0 +1,80 @@
+---
+title: Explicit renaming
+nav_next: node48.html
+nav_next_lbl: Signaliing errors in macro transformers
+nav_up: node45.html
+nav_up_lbl: Macros
+nav_prev: node47.html
+nav_prev_lbl: Pattern language
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+Explicit renaming (ER) macros provide an alternative macro transformer spec that allows a macro to execute the full Scheme language. Note that, unlike <code>syntax-rules</code>, <code>er-macro-transformer</code> is a low-level macro system that does not support hygiene unless identifiers are explicitly renamed using the <code>rename</code> function parameter.
+</p>
+<P>
+The explicit renaming transformer has the following form:
+</P>
+<P>
+<div id="er-macro-transformer" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(er-macro-transformer </span>
+    <span class="code-var"> (lambda ({expression} rename compare) {body})</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+</div>
+</p>
+
+<p>
+Expression is the code to be transformed by the macro.
+</p>
+<p>
+<code>rename</code> is a procedure passed to the macro that takes a single symbol as its argument. The function will explicitly rename the symbol by returning another unique symbol.
+</p>
+<p>
+<code>compare</code> is a function that takes two symbols and returns a boolean indicating whether the symbols refer to the same object.
+</p>
+<p>
+Body is the Scheme code that will be executed when the macro is called, to transform the given expression.
+</p>
+
+<p>
+For example, here is an explicit renaming macro <code>(swap! x y)</code> to swap the contents of two variables:
+
+<div class="code-block">
+(define-syntax swap!
+  (er-macro-transformer
+    (lambda (form rename compare?)
+      (let (
+        (x (cadr form))
+        (y (caddr form))
+        (%tmp (rename 'tmp))
+        (%let (rename 'let))
+        (%set! (rename 'set!))
+        )
+        `(,%let ((,%tmp ,x))
+           (,%set! ,x ,y)
+           (,%set! ,y ,%tmp))))))
+</div>
+</p>
+
+<p>
+Husk's implementation of explicit renaming macros is based on the paper <a href="http://www.google.com/search?q=Hygienic+Macros+Through+Explicit+Renaming">Hygienic Macros Through Explicit Renaming</a> by William Clinger, which explains them in more detail.
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

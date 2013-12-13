@@ -1,0 +1,96 @@
+---
+title: Import declarations
+nav_next: node52.html
+nav_next_lbl: Variable definitions
+nav_up: node49.html
+nav_up_lbl: Program structure
+nav_prev: node50.html
+nav_prev_lbl: Programs
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+An import declaration takes the following form:
+<br />
+<div class="code-block">
+(import {import-set} ...)
+</div>
+</p>
+<P>
+An import declaration provides a way to import identifiers
+exported by a library.  Each import set names a set of bindings
+from a library and possibly specifies local names for the
+imported bindings. It takes one of the following forms:
+</P>
+<P>
+    <UL>
+        <LI><code>library name</code>
+        </LI>
+        <LI><code>(only {import set} {identifier} ...)</code>
+        </LI>
+        <LI><code>(except {import set} {identifier} ...)</code>
+        </LI>
+        <LI><code>(prefix {import set} {identifier})</code>
+        </LI>
+        <LI><code>(rename {import set} ({identifier1} {identifier2}) ...)</code>
+        </LI>
+    </UL>
+</p>
+<P>
+In the first form, all of the identifiers in the named library's export
+clauses are imported with the same names (or the exported names if
+exported with <code>rename</code>).  The additional import set
+forms modify this set as follows:
+</P>
+<P>
+    <UL>
+        <LI><code>only</code> produces a subset of the given
+          import set including only the listed identifiers (after any
+          renaming).  It is an error if any of the listed identifiers are
+          not found in the original set.
+        
+        </LI>
+        <LI><code>except</code> produces a subset of the given
+          import set, excluding the listed identifiers (after any
+          renaming). It is an error if any of the listed identifiers are not
+          found in the original set.
+        
+        </LI>
+        <LI><code>rename</code> modifies the given import set,
+          replacing each instance of identifier1 with identifier2.
+          It is an error if any of the listed
+          identifier1's are
+          not found in the original set.
+        
+        </LI>
+        <LI><code>prefix</code> automatically renames all identifiers in
+          the given import set, prefixing each with the specified
+          identifier.
+        
+        <P>
+        </LI>
+    </UL>
+</p>
+<P>
+In a program or library declaration, it is an error to import the same
+identifier more than once with different bindings, or to redefine or
+mutate an imported binding with a definition
+or with <code>set!</code>, or to refer to an identifier before it is imported.
+However, a REPL should permit these actions.
+</P>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

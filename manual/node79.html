@@ -1,0 +1,527 @@
+---
+title: Control features
+nav_next: node80.html
+nav_next_lbl: Exceptions
+nav_up: node62.html
+nav_up_lbl: Standard procedures
+nav_prev: node78.html
+nav_prev_lbl: Bytevectors
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+This section describes various primitive procedures which
+control the flow of program execution in special ways. Procedures
+in this section that invoke procedure arguments always
+do so in the same dynamic environment as the call of
+the original procedure. The <code>procedure?</code> predicate is also
+described here.
+</p>
+<p>
+<div id="procedure?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(procedure? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if obj is a procedure, otherwise returns #f.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(procedure? car) ==&gt; #t
+(procedure? 'car) ==&gt; #f
+(procedure? (lambda (x) (* x x)))
+==&gt; #t
+(procedure? '(lambda (x) (* x x)))
+==&gt; #f
+(call-with-current-continuation procedure?)
+==&gt; #t
+</div>
+</div>
+</p>
+<p>
+<div id="apply" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(apply </span>
+    <span class="code-var">proc arg1 ... args</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The apply procedure calls proc with the elements of the list
+  <div class="p"><!----></div> 
+  <div class="code-block">
+(append (list arg1 ... ) args) as the actual arguments.
+(apply + (list 3 4)) ==&gt; 7
+(define compose
+(lambda (f g)
+(lambda args
+(f (apply g args)))))
+((compose sqrt *) 12 75) ==&gt; 30
+</div>
+</div>
+</p>
+<p>
+<div id="map" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(map </span>
+    <span class="code-var">proc list1 list2 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if proc does not accept as many arguments as there
+are lists and return a single value.
+  <div class="p"><!----></div>
+  <br />
+The map procedure applies proc element-wise to the elements
+of the lists and returns a list of the results, in order.
+If more than one list is given and not all lists have the
+same length, map terminates when the shortest list runs out.
+It is an error for proc to mutate any of
+the lists. The dynamic order in which proc is applied to
+the elements of the lists is unspecified. If multiple returns
+occur from map, the values returned by earlier returns are
+not mutated.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(map cadr '((a b) (d e) (g h)))
+==&gt; (b e h)
+(map (lambda (n) (expt n n))
+'(1 2 3 4 5))
+==&gt; (1 4 27 256 3125)
+(map + '(1 2 3) '(4 5 6 7)) ==&gt; (5 7 9)
+(let ((count 0))
+(map (lambda (ignored)
+(set! count (+ count 1))
+count)
+'(a b))) ==&gt; (1 2) or (2 1)
+</div></div></p>
+<p>
+<div id="string-map" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string-map </span>
+    <span class="code-var">proc string1 string2 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if proc does not accept as many arguments as there
+are strings and return a single character.
+  <div class="p"><!----></div>
+  <br />
+The string-map procedure applies proc element-wise to
+the elements of the strings and returns a string of the results,
+in order. If more than one string is given and not
+all strings have the same length, string-map terminates
+when the shortest string runs out. The dynamic order in
+which proc is applied to the elements of the strings is unspecified. If multiple returns occur from string-map, the
+values returned by earlier returns are not mutated.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(string-map char-foldcase "AbdEgH")
+==&gt; "abdegh"
+(string-map
+(lambda (c)
+(integer->char (+ 1 (char->integer c))))
+"HAL")
+==&gt; "IBM"
+(string-map
+(lambda (c k)
+((if (eqv? k #\u) char-upcase char-downcase)
+c))
+"studlycaps xxx"
+"ululululul")
+==&gt; "StUdLyCaPs"
+</div>
+</div>
+</p>
+<p>
+<div id="vector-map" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(vector-map </span>
+    <span class="code-var">proc vector1 vector2 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if proc does not accept as many arguments as there
+are vectors and return a single value.
+  <div class="p"><!----></div>
+  <br />
+The vector-map procedure applies proc element-wise to
+the elements of the vectors and returns a vector of the
+results, in order. If more than one vector is given and not
+all vectors have the same length, vector-map terminates
+when the shortest vector runs out. The dynamic order
+in which proc is applied to the elements of the vectors is
+unspecified. If multiple returns occur from vector-map,
+the values returned by earlier returns are not mutated.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(vector-map cadr '#((a b) (d e) (g h)))
+==&gt; #(b e h)
+(vector-map (lambda (n) (expt n n))
+'#(1 2 3 4 5))
+==&gt; #(1 4 27 256 3125)
+(vector-map + '#(1 2 3) '#(4 5 6 7))
+==&gt; #(5 7 9)
+(let ((count 0))
+(vector-map
+(lambda (ignored)
+(set! count (+ count 1))
+count)
+'#(a b))) ==&gt; #(1 2) or #(2 1)
+</div>
+</div>
+</p>
+<p>
+<div id="for-each" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(for-each </span>
+    <span class="code-var">proc list1 list2 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if proc does not accept as many arguments as there
+are lists.
+  <div class="p"><!----></div>
+  <br />
+The arguments to for-each are like the arguments to map,
+but for-each calls proc for its side ects rather than for
+its values. Unlike map, for-each is guaranteed to call proc
+on the elements of the lists in order from the first element(
+s) to the last, and the value returned by for-each
+is unspecified. If more than one list is given and not all
+lists have the same length, for-each terminates when the
+shortest list runs out. 
+  <div class="p"><!----></div>
+  <br />
+It is an error for proc to mutate any of the lists.
+  <div class="p"><!----></div>
+<div class="code-block">
+(let ((v (make-vector 5)))
+(for-each (lambda (i)
+(vector-set! v i (* i i)))
+'(0 1 2 3 4))
+v) ==&gt; #(0 1 4 9 16)
+</div>
+</div>
+</p>
+<p>
+<div id="string-for-each" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(string-for-each </span>
+    <span class="code-var">proc string1 string2 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if proc does not accept as many arguments as there
+are strings.
+  <div class="p"><!----></div>
+  <br />
+The arguments to string-for-each are like the arguments
+to string-map, but string-for-each calls proc for its
+side ects rather than for its values. Unlike string-map,
+string-for-each is guaranteed to call proc on the elements
+of the lists in order from the first element(s) to
+the last, and the value returned by string-for-each is
+unspecified. If more than one string is given and not all
+strings have the same length, string-for-each terminates
+when the shortest string runs out. It is an error for proc
+to mutate any of the strings.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(let ((v '()))
+(string-for-each
+(lambda (c) (set! v (cons (char-&gt;integer c) v)))
+"abcde")
+v) ==&gt; (101 100 99 98 97)
+</div>
+</div>
+</p>
+<p>
+<div id="vector-for-each" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(vector-for-each </span>
+    <span class="code-var">proc vector1 vector2 ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if proc does not accept as many arguments as there
+are vectors.
+  <div class="p"><!----></div>
+  <br />
+The arguments to vector-for-each are like the arguments
+to vector-map, but vector-for-each calls proc for its
+side ects rather than for its values. Unlike vector-map,
+vector-for-each is guaranteed to call proc on the elements
+of the vectors in order from the first element(s) to
+the last, and the value returned by vector-for-each is unspeci
+fied. If more than one vector is given and not all vectors
+have the same length, vector-for-each terminates
+when the shortest vector runs out. It is an error for proc
+to mutate any of the vectors.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(let ((v (make-list 5)))
+(vector-for-each
+(lambda (i) (list-set! v i (* i i)))
+'#(0 1 2 3 4))
+v) ==&gt; (0 1 4 9 16)
+</div>
+</div>
+</p>
+<p>
+<div id="call-with-current-continuation" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(call-with-current-continuation </span>
+    <span class="code-var">proc</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(call/cc </span>
+    <span class="code-var">proc</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+It is an error if proc does not accept one argument.
+  <div class="p"><!----></div>
+The procedure call-with-current-continuation (or its
+equivalent abbreviation call/cc) packages the current
+continuation (see the rationale below) as an "escape procedure"
+and passes it as an argument to proc. The escape
+procedure is a Scheme procedure that, if it is later called,
+will abandon whatever continuation is in ect at that later
+time and will instead use the continuation that was in effect
+when the escape procedure was created. Calling the
+escape procedure will cause the invocation of before and
+after thunks installed using dynamic-wind.
+  <div class="p"><!----></div>
+  <br />
+The escape procedure accepts the same number of arguments
+as the continuation to the original call to
+call-with-current-continuation. Most continuations
+take only one value. Continuations created by the
+call-with-values procedure (including the initialization
+expressions of define-values, let-values, and
+let*-values expressions), take the number of values
+that the consumer expects. The continuations
+of all non-final expressions within a sequence of expressions,
+such as in lambda, case-lambda, begin,
+let, let*, letrec, letrec*, let-values, let*-values,
+let-syntax, letrec-syntax, parameterize, guard,
+case, cond, when, and unless expressions, take an arbitrary
+number of values because they discard the values
+passed to them in any event. The ect of passing no values
+or more than one value to continuations that were not
+created in one of these ways is unspecified.
+  <div class="p"><!----></div>
+  <br />
+The escape procedure that is passed to proc has unlimited
+extent just like any other procedure in Scheme. It can be
+stored in variables or data structures and can be called as
+many times as desired. However, like the raise and error
+procedures, it never returns to its caller.
+  <div class="p"><!----></div>
+  <br />
+The following examples show only the simplest ways
+in which call-with-current-continuation is used. If
+all real uses were as simple as these examples, there
+would be no need for a procedure with the power of
+call-with-current-continuation.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(call-with-current-continuation
+  (lambda (exit)
+    (for-each (lambda (x)
+                (if (negative? x)
+                    (exit x)))
+        '(54 0 37 -3 245 19))
+  #t)) ==&gt; -3
+
+(define list-length
+  (lambda (obj)
+    (call-with-current-continuation
+      (lambda (return)
+        (letrec ((r
+            (lambda (obj)
+              (cond ((null? obj) 0)
+                    ((pair? obj)
+                     (+ (r (cdr obj)) 1))
+                    (else (return #f))))))
+          (r obj))))))
+(list-length '(1 2 3 4)) ==&gt; 4
+(list-length '(a b . c)) ==&gt; #f
+</div>
+<div class="p"><!----></div>
+<br />
+Rationale:
+<div class="p"><!----></div>
+<br />
+A common use of call-with-current-continuation is for
+structured, non-local exits from loops or procedure bodies, but
+in fact call-with-current-continuation is useful for imple-
+menting a wide variety of advanced control structures. In fact,
+raise and guard provide a more structured mechanism for non-
+local exits.
+<div class="p"><!----></div>
+<br />
+Whenever a Scheme expression is evaluated there is a contin-
+uation wanting the result of the expression. The continuation
+represents an entire (default) future for the computation. If the
+expression is evaluated at the REPL, for example, then the con-
+tinuation might take the result, print it on the screen, prompt
+for the next input, evaluate it, and so on forever. Most of the
+time the continuation includes actions specified by user code,
+as in a continuation that will take the result, multiply it by
+the value stored in a local variable, add seven, and give the an-
+swer to the REPL's continuation to be printed. Normally these
+ubiquitous continuations are hidden behind the scenes and pro-
+grammers do not think much about them. On rare occasions,
+however, a programmer needs to deal with continuations explic-
+itly. The call-with-current-continuation procedure allows
+Scheme programmers to do that by creating a procedure that
+acts just like the current continuation.
+</div>
+</p>
+<p>
+<div id="values" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(values </span>
+    <span class="code-var">obj ...</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Delivers all of its arguments to its continuation.
+</div></p>
+<p>
+<div id="call-with-values" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(call-with-values </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Calls its producer argument with no arguments and a
+continuation that, when passed some values, calls the
+consumer procedure with those values as arguments. The
+continuation for the call to consumer is the continuation
+of the call to call-with-values.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(call-with-values (lambda () (values 4 5))
+(lambda (a b) b))
+==&gt; 5
+(call-with-values * -) ==&gt; -1
+</div></div></p>
+<p>
+<div id="dynamic-wind" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(dynamic-wind </span>
+    <span class="code-var">before thunk after</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Calls thunk without arguments, returning the result(s) of
+this call. Before and after are called, also without arguments,
+as required by the following rules. Note that,
+in the absence of calls to continuations captured using
+call-with-current-continuation, the three arguments
+are called once each, in order. Before is called whenever
+execution enters the dynamic extent of the call to thunk
+and after is called whenever it exits that dynamic extent.
+The dynamic extent of a procedure call is the period between
+when the call is initiated and when it returns. The
+before and after thunks are called in the same dynamic
+environment as the call to dynamic-wind. In Scheme, because
+of call-with-current-continuation, the dynamic
+extent of a call is not always a single, connected time period.
+It is defined as follows:
+  <div class="p"><!----></div>
+  <ul>
+
+<li>The dynamic extent is entered when execution of the
+body of the called procedure begins.</li>
+
+<li>The dynamic extent is also entered when execution
+is not within the dynamic extent and a
+continuation is invoked that was captured (using
+call-with-current-continuation) during the dynamic
+extent.</li>
+<li>It is exited when the called procedure returns.</li>
+<li>It is also exited when execution is within the dynamic
+extent and a continuation is invoked that was captured
+while not within the dynamic extent.</li>
+</ul>
+
+  <div class="p"><!----></div>
+  <br />
+If a second call to dynamic-wind occurs within the dynamic
+extent of the call to thunk and then a continuation is invoked
+in such a way that the after s from these two invocations
+of dynamic-wind are both to be called, then the after
+associated with the second (inner) call to dynamic-wind is
+called first.
+  <div class="p"><!----></div>
+  <br />
+If a second call to dynamic-wind occurs within the dynamic
+extent of the call to thunk and then a continuation
+is invoked in such a way that the befores from these
+two invocations of dynamic-wind are both to be called,
+then the before associated with the first (outer) call to
+dynamic-wind is called first.
+  <div class="p"><!----></div>
+  <br />
+If invoking a continuation requires calling the before from
+one call to dynamic-wind and the after from another, then
+the after is called first.
+The ect of using a captured continuation to enter or exit
+the dynamic extent of a call to before or after is unspecified.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(let ((path '())
+      (c #f))
+  (let ((add (lambda (s)
+                (set! path (cons s path)))))
+    (dynamic-wind
+      (lambda () (add 'connect))
+      (lambda ()
+        (add (call-with-current-continuation
+                (lambda (c0)
+                  (set! c c0)
+                  'talk1))))
+      (lambda () (add 'disconnect)))
+(if (&lt; (length path) 4)
+    (c 'talk2)
+    (reverse path))))
+==&gt; (connect talk1 disconnect
+         connect talk2 disconnect)
+</div>
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

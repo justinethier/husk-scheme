@@ -1,0 +1,331 @@
+---
+title: Input
+nav_next: node85.html
+nav_next_lbl: Output
+nav_up: node82.html
+nav_up_lbl: Input and output
+nav_prev: node83.html
+nav_prev_lbl: Ports
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+If port is omitted from any input procedure, it defaults
+to the value returned by (current-input-port). It is an
+error to attempt an input operation on a closed port.
+</p>
+<p>
+<div id="read" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(read </span>
+    <span class="code">)</span>
+    <span class="obj-type">read library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(read </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">read library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The read procedure converts external representations of
+Scheme objects into the objects themselves. That is, it is
+a parser for the non-terminal {datum} (see section
+6.4). It returns the next object parsable from the
+given textual input port, updating port to point to the
+first character past the end of the external representation
+of the object.
+  <div class="p"><!----></div>
+  <br />
+Implementations may support extended syntax to represent
+record types or other types that do not have datum
+representations.
+  <div class="p"><!----></div>
+  <br />
+If an end of file is encountered in the input before any
+characters are found that can begin an object, then an
+end-of-file object is returned. The port remains open, and
+further attempts to read will also return an end-of-file object.
+If an end of file is encountered after the beginning of
+an object's external representation, but the external representation
+is incomplete and therefore not parsable, an error
+that satisfies read-error? is signaled.
+</div></p>
+<p>
+<div id="read-char" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(read-char </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(read-char </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns the next character available from the textual input
+port, updating the port to point to the following character.
+If no more characters are available, an end-of-file object is
+returned.
+</div></p>
+<p>
+<div id="peek-char" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(peek-char </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(peek-char </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns the next character available from the textual input
+port, but without updating the port to point to the
+following character. If no more characters are available, an
+end-of-file object is returned.
+  <div class="p"><!----></div>
+  <br />
+Note: The value returned by a call to peek-char is the same as
+the value that would have been returned by a call to read-char
+with the same port. The only diㄦence is that the very next call
+to read-char or peek-char on that port will return the value
+returned by the preceding call to peek-char. In particular, a
+call to peek-char on an interactive port will hang waiting for
+input whenever a call to read-char would have hung.
+(read-line) procedure
+</div></p>
+<p>
+<div id="read-line" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(read-line </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns the next line of text available from the textual
+input port, updating the port to point to the following
+character. If an end of line is read, a string containing all
+of the text up to (but not including) the end of line is returned,
+and the port is updated to point just past the end
+of line. If an end of file is encountered before any end of
+line is read, but some characters have been read, a string
+containing those characters is returned. If an end of file is
+encountered before any characters are read, an end-of-file
+object is returned. For the purpose of this procedure, an
+end of line consists of either a linefeed character, a carriage
+58 Revised7 Scheme
+followed by a linefeed character. Implementations may
+also recognize other end of line characters or sequences.
+</div></p>
+<p>
+<div id="eof-object?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(eof-object? </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if obj is an end-of-file object, otherwise returns
+#f. No end-of-file object will
+ever be an object that can be read in using read.
+</div></p>
+<p>
+<div id="eof-object" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(eof-object </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns an end-of-file object, not necessarily unique.
+</div></p>
+<p>
+<div id="char-ready?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(char-ready? </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(char-ready? </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Returns #t if a character is ready on the textual input
+port and returns #f otherwise. If char-ready returns #t
+then the next read-char operation on the given port is
+guaranteed not to hang. If the port is at end of file then
+char-ready? returns #t.
+  <div class="p"><!----></div>
+  <br />
+Rationale: The char-ready? procedure exists to make it pos-
+sible for a program to accept characters from interactive ports
+without getting stuck waiting for input. Any input editors as-
+sociated with such ports must ensure that characters whose
+existence has been asserted by char-ready? cannot be removed
+from the input. If char-ready? were to return #f at end of
+file, a port at end of file would be indistinguishable from an
+interactive port that has no ready characters.
+</div></p>
+
+<!-- JAE TODO:
+<p>
+<div id="read-string" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(read-string </span>
+    <span class="code-var">k</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(read-string </span>
+    <span class="code-var">k port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Reads the next k characters, or as many as are available
+before the end of file, from the textual input port into a
+newly allocated string in left-to-right order and returns the
+string. If no characters are available before the end of file,
+an end-of-file object is returned.
+</div></p>
+<p>
+<div id="read-u8" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(read-u8 </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(read-u8 </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Returns the next byte available from the binary input port,
+updating the port to point to the following byte. If no more
+bytes are available, an end-of-file object is returned.
+</div></p>
+<p>
+<div id="peek-u8" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(peek-u8 </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(peek-u8 </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Returns the next byte available from the binary input port,
+but without updating the port to point to the following
+byte. If no more bytes are available, an end-of-file object
+is returned.
+</div></p>
+<p>
+<div id="u8-ready?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(u8-ready? </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(u8-ready? </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Returns #t if a byte is ready on the binary input port and
+returns #f otherwise. If u8-ready? returns #t then the
+next read-u8 operation on the given port is guaranteed
+not to hang. If the port is at end of file then u8-ready?
+returns #t.
+</div></p>
+<p>
+<div id="read-bytevector" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(read-bytevector </span>
+    <span class="code-var">k</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(read-bytevector </span>
+    <span class="code-var">k port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Reads the next k bytes, or as many as are available before
+the end of file, from the binary input port into a newly
+allocated bytevector in left-to-right order and returns the
+bytevector. If no bytes are available before the end of file,
+an end-of-file object is returned.
+</div></p>
+<p>
+<div id="read-bytevector!" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(read-bytevector! </span>
+    <span class="code-var">bytevector</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(read-bytevector! </span>
+    <span class="code-var">bytevector port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(read-bytevector! </span>
+    <span class="code-var">bytevector port start</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(read-bytevector! </span>
+    <span class="code-var">bytevector port start end</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Reads the next <i>end - start</i> bytes, or as many as are available
+before the end of file, from the binary input port
+into bytevector in left-to-right order beginning at the start
+position. If end is not supplied, reads until the end of
+bytevector has been reached. If start is not supplied, reads
+beginning at position 0. Returns the number of bytes read.
+If no bytes are available, an end-of-file object is returned.
+</div></p>
+-->
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

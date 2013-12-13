@@ -1,0 +1,762 @@
+---
+title: Standard Libraries
+nav_next: husk-libs.html
+nav_next_lbl: Husk Libraries
+nav_up: index.html
+nav_up_lbl: Summary
+nav_prev: node86.html
+nav_prev_lbl: System interface
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<P>
+This section lists the exports provided by the standard libraries.  The
+libraries are factored so as to separate features which might not be
+supported by all implementations, or which might be expensive to load.
+</P>
+<P>
+The <code>scheme</code> library prefix is used for all standard libraries, and
+is reserved for use by future standards.
+</P>
+<P>
+<H3>Base Library</H3>
+</P>
+<P>
+The <code>(scheme base)</code> library exports many of the procedures and
+syntax bindings that are traditionally associated with Scheme.
+The division between the base library and the other standard libraries is
+based on use, not on construction. In particular, some facilities that are
+typically implemented as primitives by a compiler or the run-time system
+rather than in terms of other standard procedures or syntax are
+not part of the base library, but are defined in separate libraries.
+By the same token, some exports of the base library are implementable
+in terms of other exports.  They are redundant in the strict sense of
+the word, but they capture common patterns of usage, and are therefore
+provided as convenient abbreviations.
+</P>
+<P>
+<code>
+* 
++
+- 
+...
+/ 
+&lt;
+&lt; 
+=
+=&gt; 
+&gt;
+&gt;
+abs 
+and
+append 
+apply
+assoc 
+assq
+assv 
+begin
+binary-port? 
+boolean=?
+boolean? 
+bytevector
+bytevector-append 
+bytevector-copy
+bytevector-copy! 
+bytevector-length
+bytevector-u8-ref
+bytevector-u8-set!
+bytevector?
+caar
+cadr
+call-with-current-continuation
+call-with-port
+call-with-values
+call/cc
+car
+case
+cdar
+cddr
+cdr
+ceiling
+char-&gt;integer
+char-ready?
+char&lt;
+char&lt;
+char=?
+char&gt;
+char&gt;
+char?
+close-input-port
+close-output-port
+close-port
+complex?
+cond
+cond-expand
+cons
+current-error-port
+current-input-port
+current-output-port
+define
+define-record-type
+define-syntax
+define-values
+denominator
+do
+dynamic-wind
+else
+eof-object
+eof-object?
+eq?
+equal?
+eqv?
+error
+error-object-irritants
+error-object-message
+error-object?
+even?
+exact
+exact-integer-sqrt
+exact-integer?
+exact?
+expt
+features
+file-error?
+floor
+floor-quotient
+floor-remainder
+floor/
+flush-output-port
+for-each
+gcd
+get-output-bytevector
+get-output-string
+guard
+if
+include
+include-ci
+inexact
+inexact?
+input-port-open?
+input-port?
+integer-&gt;char
+integer?
+lambda
+lcm
+length
+let
+let*
+let*-values
+let-syntax
+let-values
+letrec
+letrec*
+letrec-syntax
+list
+list-&gt;string
+list-&gt;vector
+list-copy
+list-ref
+list-set!
+list-tail
+list?
+make-bytevector
+make-list
+make-parameter
+make-string
+make-vector
+map
+max
+member
+memq
+memv
+min
+modulo
+negative?
+newline
+not
+null?
+number-&gt;string
+number?
+numerator
+odd?
+open-input-bytevector
+open-input-string
+open-output-bytevector
+open-output-string
+or
+output-port-open?
+output-port?
+pair?
+parameterize
+peek-char
+peek-u8
+port?
+positive?
+procedure?
+quasiquote
+quote
+quotient
+raise
+raise-continuable
+rational?
+rationalize
+read-bytevector
+read-bytevector!
+read-char
+read-error?
+read-line
+read-string
+read-u8
+real?
+remainder
+reverse
+round
+set!
+set-car!
+set-cdr!
+square
+string
+string-&gt;list
+string-&gt;number
+string-&gt;symbol
+string-&gt;utf8
+string-&gt;vector
+string-append
+string-copy
+string-copy!
+string-fill!
+string-for-each
+string-length
+string-map
+string-ref
+string-set!
+string&lt;
+string&lt;
+string=?
+string&gt;
+string&gt;
+string?
+substring
+symbol-&gt;string
+symbol=?
+symbol?
+syntax-error
+syntax-rules
+textual-port?
+truncate
+truncate-quotient
+truncate-remainder
+truncate/
+u8-ready?
+unless
+unquote
+unquote-splicing
+utf8-&gt;string
+values
+vector
+vector-&gt;list
+vector-&gt;string
+vector-append
+vector-copy
+vector-copy!
+vector-fill!
+vector-for-each
+vector-length
+vector-map
+vector-ref
+vector-set!
+vector?
+when
+with-exception-handler
+write-bytevector
+write-char
+write-string
+write-u8
+zero?
+</code>
+</P>
+<P>
+<H3>Case-Lambda Library</H3>
+</p>
+<P>
+The <code>(scheme case-lambda)</code> library exports the <code>case-lambda</code>
+syntax.
+</P>
+<P>
+<code>case-lambda</code>
+</P>
+<P>
+<H3>Char Library</H3>
+</P>
+<P>
+The <code>(scheme char)</code> library provides the procedures for dealing with
+characters that involve potentially large tables when supporting all of Unicode.
+</P>
+<P>
+<code>char-alphabetic? </code>
+<code>char-ci&lt;=?</code>
+<code>char-ci&lt;? </code>
+<code>char-ci=?</code>
+<code>char-ci&gt;=? </code>
+<code>char-ci&gt;?</code>
+<code>char-downcase</code>           
+<code>char-foldcase</code>
+<code>char-lower-case? </code>       
+<code>char-numeric?</code>
+<code>char-upcase</code>             
+<code>char-upper-case?</code>
+<code>char-whitespace? </code>       
+<code>digit-value</code>
+<code>string-ci&lt;=? </code>           
+<code>string-ci&lt;?</code>
+<code>string-ci=? </code>            
+<code>string-ci&gt;=?</code>
+<code>string-ci&gt;? </code>            
+<code>string-downcase</code>
+<code>string-foldcase</code>         
+<code>string-upcase</code>
+</P>
+<P>
+<H3>Complex Library</H3>
+</P>
+<P>
+The <code>(scheme complex)</code> library exports procedures which are
+typically only useful with non-real numbers.
+</P>
+<P>
+<code>angle</code>                   
+<code>imag-part</code>
+<code>magnitude</code>               
+<code>make-polar</code>
+<code>make-rectangular</code>        
+<code>real-part</code>
+</P>
+<P>
+<H3>CxR Library</H3>
+</P>
+<P>
+The <code>(scheme cxr)</code> library exports twenty-four procedures which
+are the compositions of from three to four <code>car</code> and <code>cdr</code>
+operations.  For example <code>caddar</code> could be defined by
+</P>
+<P>
+<div class="code-block">
+(define caddar  
+  (lambda (x) (car (cdr (cdr (car x))))))
+</div>
+</P>
+<P>
+The procedures <code>car</code> and <code>cdr</code> themselves and the four
+two-level compositions are included in the base library.  See
+section&nbsp;<A HREF="node73.html#listsection">6.4</A>.
+</P>
+<P>
+<code>caaaar</code>                  
+<code>caaadr</code>
+<code>caaar</code>                   
+<code>caadar</code>
+<code>caaddr</code>                  
+<code>caadr</code>
+<code>cadaar</code>                  
+<code>cadadr</code>
+<code>cadar</code>                   
+<code>caddar</code>
+<code>cadddr</code>                  
+<code>caddr</code>
+<code>cdaaar</code>                  
+<code>cdaadr</code>
+<code>cdaar</code>                   
+<code>cdadar</code>
+<code>cdaddr</code>                  
+<code>cdadr</code>
+<code>cddaar</code>                  
+<code>cddadr</code>
+<code>cddar</code>                   
+<code>cdddar</code>
+<code>cddddr</code>                  
+<code>cdddr</code>
+</p>
+<P>
+<H3>Eval Library</H3>
+</P>
+<P>
+The <code>(scheme eval)</code> library exports procedures for evaluating Scheme
+data as programs.
+</P>
+<P>
+<code>environment</code>             
+<code>eval</code>
+</P>
+<P>
+<H3>File Library</H3>
+</P>
+<P>
+The <code>(scheme file)</code> library provides procedures for accessing
+files.
+</P>
+<P>
+<code>call-with-input-file</code>    
+<code>call-with-output-file</code>
+<code>delete-file</code>             
+<code>file-exists?</code>
+<code>open-binary-input-file</code>  
+<code>open-binary-output-file</code>
+<code>open-input-file</code>         
+<code>open-output-file</code>
+<code>with-input-from-file</code>    
+<code>with-output-to-file</code>
+</P>
+<P>
+<H3>Inexact Library</H3>
+</P>
+<P>
+The <code>(scheme inexact)</code> library exports procedures which are
+typically only useful with inexact values.
+</P>
+<P>
+<code>acos</code>                    
+<code>asin</code>
+<code>atan</code>                    
+<code>cos</code>
+<code>exp</code>                     
+<code>finite?</code>
+<code>infinite? </code>              
+<code>log</code>
+<code>nan? </code>                   
+<code>sin</code>
+<code>sqrt</code>                    
+<code>tan</code>
+</P>
+<P>
+<H3>Lazy Library</H3>
+</P>
+<P>
+The <code>(scheme lazy)</code> library exports procedures and syntax keywords for lazy evaluation.
+</P>
+<P>
+<code>delay</code>                   
+<code>delay-force</code>
+<code>force</code>                   
+<code>make-promise</code>
+<code>promise?</code>
+</p>
+<P>
+<H3>Load Library</H3>
+</P>
+<P>
+The <code>(scheme load)</code> library exports procedures for loading
+Scheme expressions from files.
+</P>
+<P>
+<code>load</code>
+</P>
+<P>
+<H3>Process-Context Library</H3>
+</P>
+<P>
+The <code>(scheme process-context)</code> library exports procedures for
+accessing with the program's calling context.
+</P>
+<P>
+<code>command-line</code>            
+<code>emergency-exit</code>
+<code>exit</code>
+<code>get-environment-variable</code>
+<code>get-environment-variables</code>
+</P>
+<P>
+<H3>Read Library</H3>
+</P>
+<P>
+The <code>(scheme read)</code> library provides procedures for reading
+Scheme objects.
+</P>
+<P>
+<code>read</code>
+</P>
+<P>
+<h3>Repl Library</h3>
+</P>
+<P>
+The <code>(scheme repl)</code> library exports the <code>  interaction-environment</code> procedure.
+</P>
+<P>
+<code>interaction-environment</code>
+</P>
+<P>
+<H3>Time Library</H3>
+</P>
+<P>
+The <code>(scheme time)</code> library provides access to time-related values.
+</P>
+<P>
+<code>current-jiffy</code>           
+<code>current-second</code>
+<code>jiffies-per-second</code>
+</P>
+<P>
+<H3>Write Library</H3>
+</P>
+<P>
+The <code>(scheme write)</code> library provides procedures for writing
+Scheme objects.
+</P>
+<P>
+<code>display</code>                 
+<code>write</code>
+<code>write-shared</code>            
+<code>write-simple</code>
+</P>
+
+<!--
+<P>
+<H3>R5RS Library</H3>
+</P>
+<P>
+The <code>(scheme r5rs)</code> library provides the identifiers defined by
+ R5RS, except that
+<code>transcript-on</code> and <code>transcript-off</code> are not present.
+Note that
+the <code>exact</code> and <code>inexact</code> procedures appear under their R5RS names
+<code>inexact-&gt;exact</code> and <code>exact-&gt;inexact</code> respectively.
+However, if an implementation does not provide a particular library such as the
+complex library, the corresponding identifiers will not appear in this
+library either.
+</P>
+<P>
+<code>*</code>                       
+<code>+</code>
+<code>-</code>                       
+<code>/</code>
+<code>&lt;</code>                       
+<code>&lt;=</code>
+<code>=</code>                       
+<code>&gt;</code>
+<code>&gt;=</code>                      
+<code>abs</code>
+<code>acos</code>                    
+<code>and</code>
+<code>angle</code>                   
+<code>append</code>
+<code>apply</code>                   
+<code>asin</code>
+<code>assoc</code>                   
+<code>assq</code>
+<code>assv</code>                    
+<code>atan</code>
+<code>begin</code>                   
+<code>boolean?</code>
+<code>caaaar</code>                  
+<code>caaadr</code>
+<code>caaar</code>                   
+<code>caadar</code>
+<code>caaddr</code>                  
+<code>caadr</code>
+<code>caar</code>                    
+<code>cadaar</code>
+<code>cadadr</code>                  
+<code>cadar</code>
+<code>caddar</code>                  
+<code>cadddr</code>
+<code>caddr</code>                   
+<code>cadr</code>
+<code>call-with-current-continuation</code>
+<code>call-with-input-file</code>    
+<code>call-with-output-file</code>
+<code>call-with-values</code>        
+<code>car</code>
+<code>case</code>                    
+<code>cdaaar</code>
+<code>cdaadr</code>                  
+<code>cdaar</code>
+<code>cdadar</code>                  
+<code>cdaddr</code>
+<code>cdadr</code>                   
+<code>cdar</code>
+<code>cddaar</code>                  
+<code>cddadr</code>
+<code>cddar</code>                   
+<code>cdddar</code>
+<code>cddddr</code>                  
+<code>cdddr</code>
+<code>cddr</code>                    
+<code>cdr</code>
+<code>ceiling</code>                 
+<code>char-&gt;integer</code>
+<code>char-alphabetic? </code>       
+<code>char-ci&lt;=?</code>
+<code>char-ci&lt;? </code>              
+<code>char-ci=?</code>
+<code>char-ci&gt;=? </code>             
+<code>char-ci&gt;?</code>
+<code>char-downcase</code>           
+<code>char-lower-case?</code>
+<code>char-numeric? </code>          
+<code>char-ready?</code>
+<code>char-upcase</code>             
+<code>char-upper-case?</code>
+<code>char-whitespace? </code>       
+<code>char&lt;=?</code>
+<code>char&lt;? </code>                 
+<code>char=?</code>
+<code>char&gt;=? </code>                
+<code>char&gt;?</code>
+<code>char? </code>                  
+<code>close-input-port</code>
+<code>close-output-port</code>       
+<code>complex?</code>
+<code>cond</code>                    
+<code>cons</code>
+<code>cos</code>                     
+<code>current-input-port</code>
+<code>current-output-port</code>     
+<code>define</code>
+<code>define-syntax</code>           
+<code>delay</code>
+<code>denominator</code>             
+<code>display</code>
+<code>do</code>                      
+<code>dynamic-wind</code>
+<code>eof-object? </code>            
+<code>eq?</code>
+<code>equal? </code>                 
+<code>eqv?</code>
+<code>eval</code>                    
+<code>even?</code>
+<code>exact-&gt;inexact</code>          
+<code>exact?</code>
+<code>exp</code>                     
+<code>expt</code>
+<code>floor</code>                   
+<code>for-each</code>
+<code>force</code>                   
+<code>gcd</code>
+<code>if</code>                      
+<code>imag-part</code>
+<code>inexact-&gt;exact</code>          
+<code>inexact?</code>
+<code>input-port? </code>            
+<code>integer-&gt;char</code>
+<code>integer? </code>               
+<code>interaction-environment</code>
+<code>lambda</code>                  
+<code>lcm</code>
+<code>length</code>                  
+<code>let</code>
+<code>let*</code>                    
+<code>let-syntax</code>
+<code>letrec</code>                  
+<code>letrec-syntax</code>
+<code>list</code>                    
+<code>list-&gt;string</code>
+<code>list-&gt;vector</code>            
+<code>list-ref</code>
+<code>list-tail</code>               
+<code>list?</code>
+<code>load</code>                    
+<code>log</code>
+<code>magnitude</code>               
+<code>make-polar</code>
+<code>make-rectangular</code>        
+<code>make-string</code>
+<code>make-vector</code>             
+<code>map</code>
+<code>max</code>                     
+<code>member</code>
+<code>memq</code>                    
+<code>memv</code>
+<code>min</code>                     
+<code>modulo</code>
+<code>negative? </code>              
+<code>newline</code>
+<code>not</code>                     
+<code>null-environment</code>
+<code>null? </code>                  
+<code>number-&gt;string</code>
+<code>number? </code>                
+<code>numerator</code>
+<code>odd? </code>                   
+<code>open-input-file</code>
+<code>open-output-file</code>        
+<code>or</code>
+<code>output-port? </code>           
+<code>pair?</code>
+<code>peek-char</code>               
+<code>positive?</code>
+<code>procedure? </code>             
+<code>quasiquote</code>
+<code>quote</code>                   
+<code>quotient</code>
+<code>rational? </code>              
+<code>rationalize</code>
+<code>read</code>                    
+<code>read-char</code>
+<code>real-part</code>               
+<code>real?</code>
+<code>remainder</code>               
+<code>reverse</code>
+<code>round</code>
+<code>scheme-report-environment</code>
+<code>set!</code>                    
+<code>set-car!</code>
+<code>set-cdr!</code>                
+<code>sin</code>
+<code>sqrt</code>                    
+<code>string</code>
+<code>string-&gt;list</code>            
+<code>string-&gt;number</code>
+<code>string-&gt;symbol</code>          
+<code>string-append</code>
+<code>string-ci&lt;=? </code>           
+<code>string-ci&lt;?</code>
+<code>string-ci=? </code>            
+<code>string-ci&gt;=?</code>
+<code>string-ci&gt;? </code>            
+<code>string-copy</code>
+<code>string-fill!</code>            
+<code>string-length</code>
+<code>string-ref</code>              
+<code>string-set!</code>
+<code>string&lt;=? </code>              
+<code>string&lt;?</code>
+<code>string=? </code>               
+<code>string&gt;=?</code>
+<code>string&gt;? </code>               
+<code>string?</code>
+<code>substring</code>               
+<code>symbol-&gt;string</code>
+<code>symbol? </code>                
+<code>tan</code>
+<code>truncate</code>                
+<code>values</code>
+<code>vector</code>                  
+<code>vector-&gt;list</code>
+<code>vector-fill!</code>            
+<code>vector-length</code>
+<code>vector-ref</code>              
+<code>vector-set!</code>
+<code>vector? </code>                
+<code>with-input-from-file</code>
+<code>with-output-to-file</code>     
+<code>write</code>
+<code>write-char</code>              
+<code>zero?</code>
+</P>
+-->
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

@@ -1,0 +1,127 @@
+---
+title: Procedures
+nav_next: node32.html
+nav_next_lbl: Conditionals
+nav_up: node27.html
+nav_up_lbl: Primitive expression types
+nav_prev: node30.html
+nav_prev_lbl: Procedure calls
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<p>
+<div id="lambda" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(lambda </span>
+    <span class="code-var">{formals} {body}</span>
+    <span class="code">)</span>
+    <span class="obj-type">syntax</span>
+  </div>
+
+<p>
+<EM>Syntax: </EM>
+Formals is a formal arguments list as described below,
+and body is a sequence of zero or more definitions
+followed by one or more expressions.
+</P>
+<P>
+<EM>Semantics: </EM>
+A <code>lambda</code> expression evaluates to a procedure.  The environment in
+effect when the <code>lambda</code> expression was evaluated is remembered as part of the
+procedure.  When the procedure is later called with some actual
+arguments, the environment in which the <code>lambda</code> expression was evaluated will
+be extended by binding the variables in the formal argument list to
+fresh locations, and the corresponding actual argument values will be stored
+in those locations.
+(A <EM>fresh</EM> location is one that is distinct from every previously
+existing location.)
+Next, the expressions in the
+body of the lambda expression (which, if it contains definitions,
+represents a <code>letrec*</code> form -- see section&nbsp;<A HREF="node37.html#letrecstar">4.2.2</A>)
+will be evaluated sequentially in the extended environment.
+The results of the last expression in the body will be returned as
+the results of the procedure call.
+</P>
+<P>
+<div class="code-block">
+(lambda (x) (+ x x))        ==&gt; a procedure
+((lambda (x) (+ x x)) 4)    ==&gt; 8
+
+(define reverse-subtract
+  (lambda (x y) (- y x)))
+(reverse-subtract 7 10) i   ==&gt; 3
+
+(define add4
+  (let ((x 4))
+    (lambda (y) (+ x y))))
+(add4 6)                    ==&gt; 10
+</div>
+</p>
+<p>
+Formals have one of the following forms:
+<UL>
+<LI>
+<code>({variable1} ...)</code>:
+The procedure takes a fixed number of arguments; when the procedure is
+called, the arguments will be stored in fresh locations
+that are bound to the corresponding variables.
+</LI>
+<LI>
+<code>{variable}</code>:
+The procedure takes any number of arguments; when the procedure is
+called, the sequence of actual arguments is converted into a newly
+allocated list, and the list is stored in a fresh location
+that is bound to
+variable.
+</LI>
+<LI>
+<code>({variable<sub>1</sub>} ... {variable<sub>n</sub>} . {variable<sub>n+1</sub>})</code>:
+If a space-delimited period precedes the last variable, then
+the procedure takes <code>n</code>
+or more arguments, where
+ <code>n</code> is the
+number of formal arguments before the period (it is an error if there is not
+at least one).
+The value stored in the binding of the last variable will be a
+newly allocated
+list of the actual arguments left over after all the other actual
+arguments have been matched up against the other formal arguments.
+</LI>
+</UL>
+</p>
+<P>
+It is an error for a variable to appear more than once in
+formals.
+</p>
+<p>
+<div class="code-block">
+((lambda x x) 3 4 5 6)      ==&gt; (3 4 5 6)
+((lambda (x y . z) z)
+  3 4 5 6)                  ==&gt; (5 6)
+</div>
+</p>
+<p>
+Each procedure created as the result of evaluating a <code>lambda</code> expression is
+(conceptually) tagged
+with a storage location, in order to make <code>eqv?</code> and
+<code>eq?</code> work on procedures (see section&nbsp;<A HREF="node63.html#equivalencesection">6.1</A>).
+</p>
+</div>
+</p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

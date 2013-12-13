@@ -1,0 +1,276 @@
+---
+title: Equivalence predicates
+nav_next: node64.html
+nav_next_lbl: Numbers
+nav_up: node62.html
+nav_up_lbl: Standard procedures
+nav_prev: node62.html
+nav_prev_lbl: Standard procedures
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<P>
+A predicate is a procedure that always returns a boolean
+value (#t or #f). An equivalence predicate is the computational
+analogue of a mathematical equivalence relation;
+it is symmetric, reflexive, and transitive. Of the equivalence
+predicates described in this section, eq? is the finest
+or most discriminating, equal? is the coarsest, and eqv?
+is slightly less discriminating than eq?.
+</p>
+
+<p>
+<div id="eqv?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(eqv? </span>
+    <span class="code-var">obj1 obj2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The eqv? procedure defines a useful equivalence relation on
+objects. Briefly, it returns #t if obj1 and obj2 are normally
+regarded as the same object. This relation is left slightly
+open to interpretation, but the following partial specification
+of eqv? holds for all implementations of Scheme.
+The eqv? procedure returns #t if:
+<div class="p"> &nbsp; </div>
+<ul>
+<li>
+obj1 and obj2 are both #t or both #f.
+</li>
+<li>
+obj1 and obj2 are both symbols and are the same symbol
+according to the symbol=? procedure (section 6.5).
+</li>
+<li>
+obj1 and obj2 are both exact numbers and are numerically
+equal (in the sense of ==&gt;.
+</li>
+<li>
+obj1 and obj2 are both inexact numbers such that they
+are numerically equal (in the sense of ==&gt; and they yield
+the same results (in the sense of eqv?) when passed as
+arguments to any other procedure that can be defined
+as a finite composition of Scheme's standard arithmetic
+procedures, provided it does not result in a NaN
+value.
+</li>
+<li>
+obj1 and obj2 are both characters and are the same
+character according to the char=? procedure (section
+6.6).
+</li>
+<li>
+obj1 and obj2 are both the empty list.
+</li>
+<li>
+obj1 and obj2 are pairs, vectors, bytevectors, records,
+or strings that denote the same location in the store
+(section 3.4).
+</li>
+<li>
+obj1 and obj2 are procedures whose location tags are
+equal (section 4.1.4).
+</li>
+</ul>
+  <div class="p"><!----></div>
+The eqv? procedure returns #f if:
+<ul>
+<li>
+obj1 and obj2 are of different types (section 3.2).
+</li>
+<li>
+one of obj1 and obj2 is #t but the other is #f.
+</li>
+<li>
+
+obj1 and obj2 are symbols but are not the same symbol
+according to the symbol=? procedure (section 6.5).
+</li>
+<li>
+
+one of obj1 and obj2 is an exact number but the other
+is an inexact number.
+</li>
+<li>
+
+obj1 and obj2 are both exact numbers and are numerically
+unequal (in the sense of =).
+</li>
+<li>
+obj1 and obj2 are both inexact numbers such that either
+they are numerically unequal (in the sense of =),
+or they do not yield the same results (in the sense
+of eqv?) when passed as arguments to any other procedure
+that can be defined as a finite composition of
+Scheme's standard arithmetic procedures, provided it
+does not result in a NaN value. As an exception, the
+behavior of eqv? is unspecified when both obj1 and
+obj2 are NaN.
+</li>
+<li>
+obj1 and obj2 are characters for which the char=? procedure
+returns #f.
+</li>
+<li>
+ one of obj1 and obj2 is the empty list but the other is
+not.
+</li>
+<li>
+obj1 and obj2 are pairs, vectors, bytevectors, records,
+or strings that denote distinct locations.
+</li>
+<li>
+obj1 and obj2 are procedures that would behave differently
+(return different values or have different side effects) for some arguments.
+</li>
+</ul>
+  <div class="p"><!----></div>
+  <div class="code-block">
+(eqv? 'a 'a) ==&gt; #t
+(eqv? 'a 'b) ==&gt; #f
+(eqv? 2 2) ==&gt; #t
+(eqv? 2 2.0) ==&gt; #f
+(eqv? '() '()) ==&gt; #t
+(eqv? 100000000 100000000) ==&gt; #t
+(eqv? 0.0 +nan.0) ==&gt; #f
+(eqv? (cons 1 2) (cons 1 2))==&gt; #f
+(eqv? (lambda () 1)
+(lambda () 2)) ==&gt; #f
+(let ((p (lambda (x) x)))
+(eqv? p p)) ==&gt; #t
+(eqv? #f 'nil) ==&gt; #f
+</div>
+  <div class="p"><!----></div>
+  <br />
+The following examples illustrate cases in which the above
+rules do not fully specify the behavior of eqv?. All that
+can be said about such cases is that the value returned by
+eqv? must be a boolean.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(eqv? "" "") ==&gt; unspecified
+(eqv? '#() '#()) ==&gt; unspecified
+(eqv? (lambda (x) x)
+(lambda (x) x)) ==&gt; unspecified
+(eqv? (lambda (x) x)
+(lambda (y) y)) ==&gt; unspecified
+(eqv? 1.0e0 1.0f0) ==&gt; unspecified
+(eqv? +nan.0 +nan.0) ==&gt; unspecified
+</div>
+  <div class="p"><!----></div>
+  <br />
+Note that (eqv? 0.0 -0.0) will return #f if negative zero
+is distinguished, and #t if negative zero is not distinguished.
+</div></p>
+
+<p>
+<div id="eq?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(eq? </span>
+    <span class="code-var">obj1 obj2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The eq? procedure is similar to eqv? except that in some
+cases it is capable of discerning distinctions finer than those
+detectable by eqv?. It must always return #f when eqv?
+also would, but may return #f in some cases where eqv?
+would return #t.
+  <div class="p"><!----></div>
+  <br />
+On symbols, booleans, the empty list, pairs, and records,
+and also on non-empty strings, vectors, and bytevectors,
+eq? and eqv? are guaranteed to have the same behavior.
+On procedures, eq? must return true if the arguments' location
+tags are equal. On numbers and characters, eq?'s
+behavior is implementation-dependent, but it will always
+return either true or false. On empty strings, empty vectors,
+and empty bytevectors, eq? may also behave differently 
+from eqv?.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(eq? 'a 'a) ==&gt; #t
+(eq? '(a) '(a)) ==&gt; unspecified
+(eq? (list 'a) (list 'a)) ==&gt; #f
+(eq? "a" "a") ==&gt; unspecified
+(eq? "" "") ==&gt; unspecified
+(eq? '() '()) ==&gt; #t
+(eq? 2 2) ==&gt; unspecified
+(eq? #\A #\A)
+</div></div></p>
+
+<p>
+<div id="equal?" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(equal? </span>
+    <span class="code-var">obj1 obj2</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+The equal? procedure, when applied to pairs, vectors,
+strings and bytevectors, recursively compares them, returning
+#t when the unfoldings of its arguments into (possibly
+infinite) trees are equal (in the sense of
+equal?
+) as ordered
+trees, and
+#f
+otherwise. It returns the same as
+eqv?
+when
+applied to booleans, symbols, numbers, characters, ports,
+procedures, and the empty list. If two objects are
+eqv?
+,
+they must be
+equal?
+as well. In all other cases,
+equal?
+may return either
+#t
+or
+#f.
+  <div class="p"><!----></div>
+  <div class="code-block">
+(equal? 'a 'a)
+    ==&gt; #t
+(equal? '(a) '(a))
+    ==&gt; #t
+(equal? '(a (b) c)
+'(a (b) c))
+    ==&gt; #t
+(equal? "abc" "abc")
+    ==&gt; #t
+(equal? 2 2)
+    ==&gt; #t
+(equal? (make-vector 5 'a)
+(make-vector 5 'a))
+    ==&gt; #t
+</div>
+  <div class="p"><!----></div> 
+  <br />
+Note:
+A rule of thumb is that objects are generally equal? if
+they print the same.
+</div></p>
+
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

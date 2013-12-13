@@ -1,0 +1,273 @@
+---
+title: Output
+nav_next: node86.html
+nav_next_lbl: System interface
+nav_up: node82.html
+nav_up_lbl: Input and output
+nav_prev: node84.html
+nav_prev_lbl: Input
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+<p>
+If port is omitted from any output procedure, it defaults
+to the value returned by (current-output-port). It is an
+error to attempt an output operation on a closed port.
+</p>
+<p>
+<div id="write" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(write </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">write library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(write </span>
+    <span class="code-var">obj port</span>
+    <span class="code">)</span>
+    <span class="obj-type">write library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Writes a representation of obj to the given textual output
+port. Strings that appear in the written representation
+are enclosed in quotation marks, and within those strings
+backslash and quotation mark characters are escaped by
+backslashes. Symbols that contain non-ASCII characters
+are escaped with vertical lines. Character objects are written
+using the #\ notation.
+  <div class="p"><!----></div>
+  <br />
+The write procedure returns an unspecified value.
+</div></p>
+
+<!--
+<p>
+<div id="write-shared" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(write-shared </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">write library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(write-shared </span>
+    <span class="code-var">obj port</span>
+    <span class="code">)</span>
+    <span class="obj-type">write library procedure</span>
+  </div>
+  <div class="p"></div>
+The write-shared procedure is the same as write, except
+that shared structure must be represented using datum
+labels for all pairs and vectors that appear more than once
+</div></p>
+<p>
+<div id="write-simple" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(write-simple </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">write library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(write-simple </span>
+    <span class="code-var">obj port</span>
+    <span class="code">)</span>
+    <span class="obj-type">write library procedure</span>
+  </div>
+  <div class="p"></div>
+</div>
+The write-simple procedure is the same as write, except
+that shared structure is never represented using datum labels.
+This can cause write-simple not to terminate if obj
+contains circular structure.
+</div></p>
+-->
+
+<p>
+<div id="display" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(display </span>
+    <span class="code-var">obj</span>
+    <span class="code">)</span>
+    <span class="obj-type">write library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(display </span>
+    <span class="code-var">obj port</span>
+    <span class="code">)</span>
+    <span class="obj-type">write library procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Writes a representation of obj to the given textual output
+port. Strings that appear in the written representation
+are output as if by write-string instead of by write.
+Symbols are not escaped. Character objects appear in the
+representation as if written by write-char instead of by
+write.
+  <div class="p"><!----></div>
+  <br />
+The display representation of other objects is unspecified.
+However, display must not loop forever on self-referencing
+pairs, vectors, or records. Thus if the normal write representation
+is used, datum labels are needed to represent
+cycles as in write.
+  <div class="p"><!----></div>
+  <br />
+The display procedure returns an unspecified value.
+  <div class="p"><!----></div>
+  <br />
+Rationale: The write procedure is intended for producing
+machine-readable output and display for producing human-
+readable output.
+</div></p>
+<p>
+<div id="newline" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(newline </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(newline </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Writes an end of line to textual output port. Returns an unspecified value.
+</div></p>
+<p>
+<div id="write-char" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(write-char </span>
+    <span class="code-var">char</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(write-char </span>
+    <span class="code-var">char port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"><!----></div>
+Writes the character char (not an external representation
+of the character) to the given textual output port and returns
+an unspecified value.
+</div></p>
+
+<!-- JAE TODO:
+<p>
+<div id="write-string" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(write-string </span>
+    <span class="code-var">string</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(write-string </span>
+    <span class="code-var">string port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(write-string </span>
+    <span class="code-var">string port start</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(write-string </span>
+    <span class="code-var">string port start end</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Writes the characters of string from start to end in left-toright
+order to the textual output port.
+</div></p>
+<p>
+<div id="write-u8" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(write-u8 </span>
+    <span class="code-var">byte</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(write-u8 </span>
+    <span class="code-var">byte port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Writes the byte to the given binary output port and returns
+an unspecified value.
+</div></p>
+<p>
+<div id="write-bytevector" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(write-bytevector </span>
+    <span class="code-var">bytevector</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(write-bytevector </span>
+    <span class="code-var">bytevector port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(write-bytevector </span>
+    <span class="code-var">bytevector port start</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(write-bytevector </span>
+    <span class="code-var">bytevector port start end</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Writes the bytes of bytevector from start to end in left-toright
+order to the binary output port.
+</div></p>
+-->
+
+<p>
+<div id="flush-output-port" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(flush-output-port </span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(flush-output-port </span>
+    <span class="code-var">port</span>
+    <span class="code">)</span>
+    <span class="obj-type">procedure</span>
+  </div>
+  <div class="p"></div>
+Flushes any buffered output from the buffer of output-port to the underlying file or device and returns an unspecified
+value.
+</div></p>
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>

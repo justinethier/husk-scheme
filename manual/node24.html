@@ -1,0 +1,96 @@
+---
+title: Storage model
+nav_next: node25.html
+nav_next_lbl: Proper tail recursion
+nav_up: node20.html
+nav_up_lbl: Basic concepts
+nav_prev: node23.html
+nav_prev_lbl: External representations
+nav_contents: node3.html
+nav_contents_lbl: Contents
+nav_index: node106.html
+nav_index_lbl: Index
+---
+{% include head.html %}
+
+<BODY >
+
+{% include nav-top.html %}
+
+<H1>
+{{ page.title }}
+</H1>
+
+<P>
+Section to be updated.
+</P>
+
+<!--
+<label style="color: red">
+JAE TODO: this section is not good enough, and needs a major
+overhaul for husk
+
+
+<P>
+Variables and objects such as pairs, strings, vectors, and bytevectors implicitly
+denote locations or sequences of locations.  A string, for
+example, denotes as many locations as there are characters in the string. 
+A new value can be
+stored into one of these locations using the <code>string-set!</code> procedure, but
+the string continues to denote the same locations as before.
+</P>
+<P>
+An object fetched from a location, by a variable reference or by
+a procedure such as <code>car</code>, <code>vector-ref</code>, or <code>string-ref</code>, is
+equivalent in the sense of <code>eqv?</code>
+(section&nbsp;<A HREF="node63.html#equivalencesection">6.1</A>)
+to the object last stored in the location before the fetch.
+</P>
+<P>
+Every location is marked to show whether it is in use.
+No variable or object ever refers to a location that is not in use.
+</P>
+<P>
+Whenever this report speaks of storage being newly allocated for a variable
+or object, what is meant is that an appropriate number of locations are
+chosen from the set of locations that are not in use, and the chosen
+locations are marked to indicate that they are now in use before the variable
+or object is made to denote them.
+Notwithstanding this,
+it is understood that the empty list cannot be newly allocated, because
+it is a unique object.  It is also understood that empty strings, empty
+vectors, and empty bytevectors, which contain no locations, may or may
+not be newly allocated.
+</P>
+<P>
+Every object that denotes locations is 
+either mutable or
+immutable.  Literal constants, the strings
+returned by <code>symbol-&gt;string</code>,
+and possibly the environment returned by <code>scheme-report-environment</code>
+are immutable objects.  All objects
+created by the other procedures listed in this report are mutable.
+It is an
+error to attempt to store a new value into a location that is denoted by an
+immutable object.
+</P>
+<P>
+These locations are to be understood as conceptual, not physical.
+Hence, they do not necessarily correspond to memory addresses,
+and even if they do, the memory address might not be constant.
+</P>
+<P>
+In many systems it is desirable for constants (i.e. the values of
+literal expressions) to reside in read-only memory.
+Making it an error to alter constants permits this implementation strategy,
+while not requiring other systems to distinguish between
+mutable and immutable objects.
+</P>
+
+</label>
+-->
+
+{% include nav-bottom.html %}
+{% include footer.html %}
+</BODY>
+</HTML>
