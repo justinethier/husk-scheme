@@ -54,11 +54,13 @@ A library declaration is any of:
 </LI>
 <LI><code>(include {filename1} {filename2} ...)</code>
 </LI>
+<!-- JAE TODO: not supported at this time
 <LI><code>(include-library-declarations {filename1}
 {filename2} ...)</code>
 </LI>
 <LI><code>(cond-expand {ce-clause1} {ce-clause2} ...)</code>
 </LI>
+-->
 </UL>
 </p>
 <P>
@@ -96,6 +98,7 @@ expression types.
 This form of <code>begin</code> is analogous to, but not the same as, the
 two types of <code>begin</code> defined in section&nbsp;<A HREF="node38.html#sequencing">4.2.3</A>.
 </P>
+<!-- JAE TODO: not supported at this time
 <P>
 The <code>include-library-declarations</code> declaration is similar to
 <code>include</code> except that the contents of the file are spliced directly into the
@@ -108,6 +111,7 @@ The <code>cond-expand</code> declaration has the same syntax and semantics as
 the <code>cond-expand</code> expression type, except that it expands to
 spliced-in library declarations rather than expressions enclosed in <code>begin</code>.
 </P>
+-->
 <P>
 When a library is loaded, its expressions are executed
 in textual order.
