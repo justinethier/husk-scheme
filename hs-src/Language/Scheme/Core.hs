@@ -1082,6 +1082,9 @@ r5rsEnv' = do
   return env
 
 -- |Load the standard r7rs environment, including libraries
+--
+--  Note that the only difference between this and the r5rs equivalent is that
+--  slightly less Scheme code is loaded initially.
 r7rsEnv :: IO Env
 r7rsEnv = do
   env <- r7rsEnv'
@@ -1090,8 +1093,6 @@ r7rsEnv = do
 
   return env
 -- |Load the standard r7rs environment
---
--- TODO: This is just a stub, do not try using it yet!
 --
 r7rsEnv' :: IO Env
 r7rsEnv' = do
