@@ -11,11 +11,11 @@ nav_contents_lbl: Contents
 nav_index: node106.html
 nav_index_lbl: Index
 ---
-{% include head.html %}
+{% include manual/head.html %}
 
 <BODY >
 
-{% include nav-top.html %}
+{% include manual/nav-top.html %}
 
 <H1>
 {{ page.title }}
@@ -64,8 +64,8 @@ See the <a href="http://hackage.haskell.org/packages/archive/husk-scheme/3.5.2.1
 <b>Note</b> by default the FFI is disabled, which allows husk to avoid unnecessarily linking to the GHC API. This significantly reduces its compiled size out-of-the-box. To enable the FFI just pass the option <code>-fuseffi</code> to cabal when installing or upgrading Husk. 
 </p>
 
-{% include nav-bottom.html %}
-{% include footer.html %}
+{% include manual/nav-bottom.html %}
+{% include manual/footer.html %}
 </BODY>
 </HTML>
 
