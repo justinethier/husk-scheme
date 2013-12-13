@@ -164,7 +164,7 @@
     boolean=?
     ;bytevector-u8-set!
     ;call-with-port
-    ;close-port
+    close-port
     cond-expand
     ;current-error-port
     ;define
