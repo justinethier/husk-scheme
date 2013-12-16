@@ -32,42 +32,33 @@ Maintainer  : github.com/justinethier
   <div id="page">
 	<div id="content">
 	<h1 class="title">Documentation</h1>
+<!--
         <div>
-            <div><a href="#section-usage">Usage</a></div>
-            <div><a href="#section-features">Features</a></div>
-            <div><a href="#section-libs">Libraries and Extensions</a></div>
+            <div><a href="#section-manual">User Manual</a></div>
             <div><a href="#section-lang-ref">Scheme Language Reference</a></div>
+            < ! - -
             <div><a href="#section-macros">Macro Debugging</a></div>
             <div><a href="#section-api">Haskell API</a></div>
             <div><a href="#section-ffi">Foreign Function Interface</a></div>
+            - - >
         </div>
 
         <br />
         <br />
 
+-->
 		<div>
-<h2 id="section-usage" class="title">Usage</h2>
+<!--
+<h2 id="section-manual" class="title">User Manual</h2>
+-->
 <p>
-                The interactive interpreter (sometimes called a REPL) may be invoked by running it directly from the command line:
-
-                {% highlight console %}
-huski
-                {% endhighlight %}
-
-                Alternatively, you may run an individual Scheme program:
-
-                {% highlight console %}
-huski my-scheme-file.scm
-                {% endhighlight %}
-
-                A compiler is also provided to allow you to create native executables:
-
-                {% highlight console %}
-huskc my-scheme-program.scm
-./my-scheme-program
-                {% endhighlight %}
+The online <a href="http://justinethier.github.io/husk-scheme/manual/index.html">user manual</a> provides an overview of the Scheme language as implemented by Husk, instructions for using the Haskell API, a alphabetical index of Scheme functions, and more. 
+</p>
+<p>
+This is still a work in progress, so please <a href="https://github.com/justinethier/husk-scheme/issues">report</a> anything you happen to see that is missing or incorrect.
 </p>
 
+<!--
 <h2 id="section-features" class="title">Features</h2>
 <p>
 husk includes most features from the <a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/">R<sup>5</sup>RS standard</a>, including:
@@ -119,6 +110,7 @@ The following standard libraries are supported:
     <li><a href="http://srfi.schemers.org/srfi-69/srfi-69.html">SRFI 69</a>: Basic hash tables.</li>
 </ul>
 </p>
+-->
 
 <h2 id="section-lang-ref" class="title">Scheme Language Reference</h2>
 <p>
@@ -136,6 +128,7 @@ The goal of husk is to implement the full R<sup>5</sup>RS Scheme language, excep
 <p> gensym, others? </p>
 -->
 
+<!--
 <h2 id="section-macros" class="title">Macro Debugging</h2>
 <p>
 A custom special form <strong>expand</strong> can be used to see the result of a macro expansion, for debugging purposes.
@@ -209,6 +202,7 @@ See husk's <a href="http://hackage.haskell.org/packages/archive/husk-scheme/3.5.
 
 <b>Note</b> by default the FFI is disabled, which allows husk to avoid unnecessarily linking to the GHC API. This significantly reduces its compiled size out-of-the-box. To enable the FFI just pass the option <strong>-fuseffi</strong> to cabal.
 </p>
+-->
 		</div>
 	</div>
     {% include sidebar.html %}
