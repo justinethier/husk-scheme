@@ -4,14 +4,16 @@ Synopsis:            R5RS Scheme interpreter, compiler, and library.
 Description:         
   <<https://github.com/justinethier/husk-scheme/raw/master/docs/husk-scheme.png>>
   .
-  A dialect of R5RS Scheme written in Haskell. Advanced 
-  features are provided including:
+  Husk is a dialect of Scheme written in Haskell that implements a superset of 
+  the R5RS standard. Advanced features are provided including:
   .
   * First-class continuations of unlimited extent
   .
   * Hygienic macros based on syntax-rules
   .
   * Low-level explicit renaming macros 
+  .
+  * Library syntax from the R7RS standard
   .
   * A foreign function interface (FFI) to Haskell
   .
