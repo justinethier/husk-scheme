@@ -10,6 +10,8 @@
    ((define-values (var) expr)
    (define var expr))
  
+ ;; JAE TODO: issue, varn is not mached below,
+ ;;           the preceding match gobbles everything up!
    ((define-values (var0 var1 ... varn) expr)
    ;(begin
    ((lambda ()
