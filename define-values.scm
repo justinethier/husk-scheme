@@ -45,7 +45,7 @@
      (call-with-values (lambda () expr)
        list)))))
 
-(define-values (x y) (integer-sqrt 17))
+(define-values (x y) (exact-integer-sqrt 17))
 (write (list x y))
     ;==&gt; (4 1)
 

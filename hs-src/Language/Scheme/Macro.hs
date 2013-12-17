@@ -1232,8 +1232,7 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
                                                            isImproperInput 
                                   else return var -- no ellipsis, just return elements directly, so all can be appended
                      _ -> if ellipsisLevel > 0
-                             then -- List req'd for 0-or-n match
-                                  throwError $ Default "Unexpected error processing data in transformRule" 
+                             then return var -- Let this pass, in case var is not involved in o-to-n match
                              else return var
               else do
                   -- Rename each encountered symbol, but the trick is that we want to give
