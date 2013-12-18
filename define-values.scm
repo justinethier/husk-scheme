@@ -10,9 +10,13 @@
    ((define-values (var) expr)
    (define var expr))
  
+ ;;  JAE TODO: unfortunately defines are not routed back to the upper-level env
+ ;;  because we do not implement the splicing begin behavior in husk!
+
  ;; JAE TODO: issue, varn is not mached below,
  ;;           the preceding match gobbles everything up!
-   ((define-values (var0 var1 ... varn) expr)
+   ;((define-values (var0 var1 ... varn) expr)
+   ((define-values (var0 var1 ...) expr)
    ;(begin
    ((lambda ()
    (define var0
@@ -22,10 +26,11 @@
    (let ((v (cadr var0)))
    (set-cdr! var0 (cddr var0))
    v)) ...
-   (define varn
-   (let ((v (cadr var0)))
+   ;(define varn
+   ;(let ((v (cadr var0)))
    (set! var0 (car var0))
-   v)))))
+   ;v))
+   )))
  
  ;  ((define-values (var0 var1 ... . varn) expr)
  ;  ;(begin
