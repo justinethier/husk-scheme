@@ -11,6 +11,7 @@ Added (TODO: need to add tests):
                 ("open-binary-input-file", makePort openBinaryFile ReadMode),
                 ("open-binary-output-file", makePort openBinaryFile WriteMode),
                  "write-bytevector"
+                 "read-bytevector"
 
 - Allow character and string comparison predicates (such as `string=?` and `char=?`) to support more than two arguments.
 - Fixed `cond-expand` to support `and` / `or` clauses.

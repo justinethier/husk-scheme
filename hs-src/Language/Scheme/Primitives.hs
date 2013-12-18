@@ -126,6 +126,7 @@ module Language.Scheme.Primitives (
  , isCharReady
  , readProc 
  , readCharProc 
+ , readByteVector
  , writeProc 
  , writeCharProc
  , writeByteVector
@@ -356,6 +357,19 @@ readCharProc func [Port port] = do
         Right inpChr -> do
             return $ Char inpChr
 readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
+
+readByteVector :: [LispVal] -> IOThrowsError LispVal
+readByteVector [Number n, Port port] = do
+    input <- liftIO $ try' (liftIO $ BS.hGet port $ fromInteger n)
+    case input of
+        Left e -> if isEOFError e
+                     then return $ EOF
+                     else throwError $ Default "I/O error reading from port"
+        Right inBytes -> do
+            if BS.null inBytes
+               then return $ EOF
+               else return $ ByteVector inBytes
+readByteVector args = throwError $ BadSpecialForm "" $ List args
 
 -- |Write to the given port
 --
