@@ -128,6 +128,7 @@ module Language.Scheme.Primitives (
  , readCharProc 
  , writeProc 
  , writeCharProc
+ , writeByteVector
  , readContents
  , load
  , readAll
@@ -402,6 +403,18 @@ writeCharProc [obj@(Char _), Port port] = do
 writeCharProc other = if length other == 2
                      then throwError $ TypeMismatch "(character port)" $ List other
                      else throwError $ NumArgs (Just 2) other
+
+writeByteVector :: [LispVal] -> IOThrowsError LispVal
+writeByteVector [obj, Port port] = do
+    ByteVector bs <- recDerefPtrs obj -- Last opportunity to do this before writing
+    output <- liftIO $ try' (liftIO $ BS.hPut port bs)
+    case output of
+        Left _ -> throwError $ Default "I/O error writing to port"
+        Right _ -> return $ Nil ""
+writeByteVector other = 
+    if length other == 2
+       then throwError $ TypeMismatch "(bytevector port)" $ List other
+       else throwError $ NumArgs (Just 2) other
 
 -- |Determine if the given file exists
 --
