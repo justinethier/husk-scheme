@@ -2,7 +2,7 @@
 v3.15
 --------
 
-Added (TODO: need to add tests):
+Added (TODO: need to add tests, and make sure these are added back to webpage):
                 ("textual-port?", isTextPort),
                 ("binary-port?", isBinaryPort),
                 ("input-port-open?", isInputPortOpen),
