@@ -3,16 +3,16 @@ v3.15
 --------
 
 
-- Added I/O functions 
-    - `textual-port?`
+- Added the following I/O functions:
     - `binary-port?`
-    - `input-port-open?`
     - `close-port`
-    - `output-port-open?`
+    - `input-port-open?`
     - `open-binary-input-file`
     - `open-binary-output-file`
-    - `write-bytevector`
+    - `output-port-open?`
     - `read-bytevector`
+    - `textual-port?`
+    - `write-bytevector`
 - Allow character and string comparison predicates (such as `string=?` and `char=?`) to support more than two arguments.
 - Fixed `cond-expand` to support `and` / `or` clauses.
 - Improved library support so that examples do not require running in a special mode.
