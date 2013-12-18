@@ -2,17 +2,17 @@
 v3.15
 --------
 
-Added (TODO: need to add tests, and make sure these are added back to webpage):
-                ("textual-port?", isTextPort),
-                ("binary-port?", isBinaryPort),
-                ("input-port-open?", isInputPortOpen),
-                "close-port"
-                ("output-port-open?", isOutputPortOpen),
-                ("open-binary-input-file", makePort openBinaryFile ReadMode),
-                ("open-binary-output-file", makePort openBinaryFile WriteMode),
-                 "write-bytevector"
-                 "read-bytevector"
 
+- Added I/O functions 
+    - `textual-port?`
+    - `binary-port?`
+    - `input-port-open?`
+    - `close-port`
+    - `output-port-open?`
+    - `open-binary-input-file`
+    - `open-binary-output-file`
+    - `write-bytevector`
+    - `read-bytevector`
 - Allow character and string comparison predicates (such as `string=?` and `char=?`) to support more than two arguments.
 - Fixed `cond-expand` to support `and` / `or` clauses.
 - Improved library support so that examples do not require running in a special mode.
