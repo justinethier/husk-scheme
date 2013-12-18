@@ -267,14 +267,17 @@ next read-u8 operation on the given port is guaranteed
 not to hang. If the port is at end of file then u8-ready?
 returns #t.
 </div></p>
+-->
 <p>
 <div id="read-bytevector" class="obj-box">
+  <!--
   <div class="obj-header">
     <span class="code">(read-bytevector </span>
     <span class="code-var">k</span>
     <span class="code">)</span>
     <span class="obj-type">procedure</span>
   </div>
+  -->
   <div class="obj-header">
     <span class="code">(read-bytevector </span>
     <span class="code-var">k port</span>
@@ -288,6 +291,7 @@ allocated bytevector in left-to-right order and returns the
 bytevector. If no bytes are available before the end of file,
 an end-of-file object is returned.
 </div></p>
+<!--
 <p>
 <div id="read-bytevector!" class="obj-box">
   <div class="obj-header">
