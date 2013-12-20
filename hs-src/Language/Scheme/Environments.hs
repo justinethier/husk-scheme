@@ -43,6 +43,7 @@ ioPrimitives = [("open-input-file", makePort openFile ReadMode),
                 ("input-port?", isInputPort),
                 ("output-port?", isOutputPort),
                 ("char-ready?", isCharReady),
+                ("u8-ready?", isCharReady), -- Good enough?
 
                -- The following optional procedures are NOT implemented:
                --

@@ -369,7 +369,9 @@ readByteVector [Number n, Port port] = do
             if BS.null inBytes
                then return $ EOF
                else return $ ByteVector inBytes
-readByteVector args = throwError $ BadSpecialForm "" $ List args
+readByteVector args = if length args == 2
+                     then throwError $ TypeMismatch "(k port)" $ List args
+                     else throwError $ NumArgs (Just 2) args
 
 -- |Write to the given port
 --
