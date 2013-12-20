@@ -1,8 +1,15 @@
-
 v3.15
 --------
 
+- Improved library support so that examples no longer require running in a special mode.
+- Added missing functions to `(scheme base)`.
+- Added support for the `(scheme case-lambda)` and `(scheme r5rs)` libraries.
+- Added libraries for SRFI 1, 2, and 69 so that these features are available via `import`. For example: 
 
+        (import (srfi 1))
+
+- Added `exact-integer-sqrt` from R<sup>7</sup>RS, using the Chibi scheme reference implementation.
+- Added `let-values` and `let*-values` from R<sup>7</sup>RS.
 - Added the following I/O functions:
     - `binary-port?`
     - `close-port`
@@ -12,16 +19,10 @@ v3.15
     - `output-port-open?`
     - `read-bytevector`
     - `textual-port?`
+    - `u8-ready?`
     - `write-bytevector`
 - Allow character and string comparison predicates (such as `string=?` and `char=?`) to support more than two arguments.
 - Fixed `cond-expand` to support `and` / `or` clauses.
-- Improved library support so that examples do not require running in a special mode.
-- Added back support for the `(scheme r5rs)` library.
-- Added missing functions to `(scheme base)`.
-- Added `let-values` and `let*-values` from R<sup>7</sup>RS.
-- Added `exact-integer-sqrt` from the chibi scheme reference implementation.
-- Added support for the `(scheme case-lambda)` library.
-- Added libraries for SRFI 1, 2, and 69 so that these features are available via `import`.
 - Renamed `char-upper` and `char-lower` to `char-upcase` and `char-downcase` to match the Scheme specs.
 
 v3.14
