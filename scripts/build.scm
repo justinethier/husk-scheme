@@ -2,7 +2,7 @@
 ;
 ; husk automated build script
 ;
-(define *build-number* "3.15")
+(define *build-number* "3.15.1")
 
 (define-syntax script
   (syntax-rules ()
