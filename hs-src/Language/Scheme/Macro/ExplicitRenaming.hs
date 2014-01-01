@@ -28,23 +28,25 @@ import Language.Scheme.Types
 import Language.Scheme.Variables
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
+-- import Debug.Trace
 
 -- |Handle an explicit renaming macro
 explicitRenamingTransform :: 
        Env -- ^Environment where macro was used
     -> Env -- ^Temporary environment to store renamed variables
+    -> Env -- ^Environment containing any variables renamed by syntax-rules
     -> LispVal -- ^Form to transform
     -> LispVal -- ^Macro transformer
     -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Eval func
     -> IOThrowsError LispVal
-explicitRenamingTransform useEnv renameEnv lisp 
+explicitRenamingTransform useEnv renameEnv srRenameEnv lisp 
                           transformer@(Func _ _ _ defEnv) apply = do
   let continuation = makeNullContinuation useEnv
   result <- apply 
     continuation
     transformer
     [lisp, 
-     IOFunc $ exRename useEnv renameEnv defEnv, 
+     IOFunc $ exRename useEnv renameEnv srRenameEnv defEnv, 
      IOFunc $ exCompare useEnv renameEnv defEnv] 
   recDerefPtrs result
 
@@ -68,10 +70,15 @@ explicitRenamingTransform useEnv renameEnv lisp
 -- the sense of eqv?. It is an error if the renaming
 -- procedure is called after the transformation
 -- procedure has returned.
-exRename :: Env -> Env -> Env -> [LispVal] -> IOThrowsError LispVal
-exRename useEnv renameEnv defEnv [Atom a] = do
-  isDef <- liftIO $ isRecBound defEnv a
-  if isDef
+exRename :: Env -> Env -> Env -> Env -> [LispVal] -> IOThrowsError LispVal
+exRename useEnv renameEnv srRenameEnv defEnv [Atom a] = do
+  isSynRulesRenamed <- liftIO $ isRecBound srRenameEnv a
+
+  if isSynRulesRenamed -- already renamed by syntax-rules, so just return it
+   then getVar srRenameEnv a
+   else do
+    isDef <- liftIO $ isRecBound defEnv a
+    if isDef
      then do
 
        -- NOTE: useEnv/'r' is used to store renamed variables due
@@ -96,7 +103,7 @@ exRename useEnv renameEnv defEnv [Atom a] = do
             return $ Atom renamed
      else
        return $ Atom a
-exRename _ _ _ form = throwError $ Default $ "Unable to rename: " ++ show form
+exRename _ _ _ _ form = throwError $ Default $ "Unable to rename: " ++ show form
 
 -- |The explicit renaming "compare" function
 exCompare :: Env -> Env -> Env -> [LispVal] -> IOThrowsError LispVal

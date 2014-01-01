@@ -209,4 +209,9 @@
       3)
     x))
 
+; Issue #151 - Preserve hygiene across syntax-rules and ER macros
+(assert/equal
+    (let ((unquote 'foo)) `(,'bar))
+    '(,'bar))
+
 (unit-test-handler-results)

@@ -143,7 +143,7 @@ _macroEval env lisp@(List (Atom x : _)) apply = do
     -- Explicit Renaming
     Just (SyntaxExplicitRenaming transformer@(Func _ _ _ _)) -> do
       renameEnv <- liftIO $ nullEnv -- Local environment used just for this
-      expanded <- explicitRenamingTransform env renameEnv 
+      expanded <- explicitRenamingTransform env renameEnv renameEnv 
                                           lisp transformer apply
       _macroEval env expanded apply
 
@@ -912,7 +912,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
         erRenameEnv <- liftIO $ nullEnv -- Local environment used just for this
                                         -- Different than the syntax-rules rename env (??)
         expanded <- explicitRenamingTransform 
-                      useEnv erRenameEnv (List (Atom a : ts)) transformer apply
+                      useEnv erRenameEnv renameEnv (List (Atom a : ts)) transformer apply
         walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
           dim False False (List result) expanded apply
 
