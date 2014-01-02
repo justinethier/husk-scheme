@@ -7,7 +7,7 @@ This bug fix release contains the following fixes:
 
     (let ((unquote 'foo)) `(,'bar))
 
-Should evaluate to `((unquote (quote bar)))`.
+ Should evaluate to `((unquote (quote bar)))`.
 
 v3.15
 --------
