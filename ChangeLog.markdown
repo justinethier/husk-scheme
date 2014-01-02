@@ -1,9 +1,9 @@
 v3.15.1
 --------
 
-This bug fix release contains the following fixes:
+This is a small bug fix release:
 
-- Preserve macro hygiene when using code that contains explicit renaming macros contained within syntax-rules macros. The issue was that the syntax-rules system was not passing renamed variables across to the ER system, so an identifier could be renamed by syntax-rules but the ER macro would then have no knowledge of the rename and would be unable to use `rename` to make the identifier hygienic. For example, the code:
+- Preserve macro hygiene when using code that contains explicit renaming macros contained within syntax-rules macros. Previously, the syntax-rules system would not pass renamed variables across to the ER system. So an identifier could be renamed by syntax-rules but the ER macro would then have no knowledge of the rename and would be unable to use `rename` to make the identifier hygienic. For example, the code:
 
     (let ((unquote 'foo)) `(,'bar))
 
