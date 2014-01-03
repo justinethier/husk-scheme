@@ -529,14 +529,17 @@ num2String [x] = throwError $ TypeMismatch "number" x
 num2String badArgList = throwError $ NumArgs (Just 1) badArgList
 
 
+-- | Determine if the given value is not a number
 isNumNaN :: [LispVal] -> ThrowsError LispVal
 isNumNaN ([Float n]) = return    $ Bool $ isNaN n
 isNumNaN _ = return $ Bool False
 
+-- | Determine if number is infinite
 isNumInfinite :: [LispVal] -> ThrowsError LispVal
 isNumInfinite ([Float n]) = return    $ Bool $ isInfinite n
 isNumInfinite _ = return $ Bool False
 
+-- | Determine if number is not infinite
 isNumFinite :: [LispVal] -> ThrowsError LispVal
 isNumFinite ([Number _]) = return $ Bool True
 isNumFinite ([Float n]) = return $ Bool $ not $ isInfinite n
@@ -544,6 +547,7 @@ isNumFinite ([Complex _]) = return $ Bool True
 isNumFinite ([Rational _]) = return $ Bool True
 isNumFinite _ = return $ Bool False
 
+-- | Determine if number is exact
 isNumExact :: [LispVal] -> ThrowsError LispVal
 isNumExact ([Number _]) = return $ Bool True
 isNumExact ([Float _]) = return $ Bool False
@@ -551,6 +555,7 @@ isNumExact ([Complex _]) = return $ Bool False -- TODO: could be either
 isNumExact ([Rational _]) = return $ Bool True
 isNumExact _ = return $ Bool False
 
+-- | Determine if number is inexact
 isNumInexact :: [LispVal] -> ThrowsError LispVal
 isNumInexact n@([Number _])   = return $ Bool False
 isNumInexact n@([Float _])    = return $ Bool True
