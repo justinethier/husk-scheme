@@ -25,8 +25,7 @@ import Control.Monad.Error
 import qualified Data.Char
 import System.IO
 
-{- I/O primitives
-Primitive functions that execute within the IO monad -}
+-- |Primitive functions that execute within the IO monad
 ioPrimitives :: [(String, [LispVal] -> IOThrowsError LispVal)]
 ioPrimitives = [("open-input-file", makePort openFile ReadMode),
                 ("open-binary-input-file", makePort openBinaryFile ReadMode),
@@ -162,7 +161,7 @@ exportsFromEnv' [LispEnv env] = do
     return $ List result
 exportsFromEnv' err = return $ List []
 
-{- "Pure" primitive functions -}
+-- | Pure primitive functions
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]
 primitives = [("+", numAdd),
               ("-", numSub),
