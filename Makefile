@@ -26,7 +26,8 @@ GHCFLAGS=-f-useffi
 # also need to be enabled in ~/.cabal/config
 #
 #CONFIGFLAGS=--ghc-option='-rtsopts' --ghc-option='-auto-all'
-CONFIGFLAGS=
+CONFIGFLAGS=--ghc-option='-Wall'
+#CONFIGFLAGS=
 
 HUSKC = huskc
 HUSKI = huski
