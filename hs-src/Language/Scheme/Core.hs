@@ -53,7 +53,6 @@ import qualified Language.Scheme.FFI
 import Language.Scheme.Environments
 import Language.Scheme.Libraries
 import qualified Language.Scheme.Macro
-import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Primitives
 import Language.Scheme.Types
@@ -62,11 +61,9 @@ import Language.Scheme.Variables
 import Control.Monad.Error
 import Data.Array
 import qualified Data.ByteString as BS
-import qualified Data.Char
 import qualified Data.Map
 import Data.Word
 import qualified System.Exit
-import System.IO
 import qualified System.Info as SysInfo
 -- import Debug.Trace
 
@@ -118,6 +115,7 @@ getDataFileFullPath s = PHS.getDataFileName s
 --  libraries. If the file is not found in the current directory but exists
 --  as a husk library, return the full path to the file in the library.
 --  Otherwise just return the given filename.
+findFileOrLib :: [Char] -> ErrorT LispError IO String
 findFileOrLib filename = do
     fileAsLib <- liftIO $ getDataFileFullPath $ "lib/" ++ filename
     exists <- fileExists [String filename]
@@ -410,12 +408,14 @@ eval env cont args@(List (Atom "letrec-syntax" : List _bindings : _body)) = do
      e -> continueEval bodyEnv cont e
 
 -- A non-standard way to rebind a macro to another keyword
-eval env cont args@(List [Atom "define-syntax", 
-                          Atom newKeyword,
-                          Atom keyword]) = do
+eval env cont (List [Atom "define-syntax", 
+                     Atom newKeyword,
+                     Atom keyword]) = do
   bound <- getNamespacedVar' env macroNamespace keyword
   case bound of
-    Just m -> defineNamespacedVar env macroNamespace newKeyword m
+    Just m -> do
+        _ <- defineNamespacedVar env macroNamespace newKeyword m
+        continueEval env cont $ Nil ""
     Nothing -> throwError $ TypeMismatch "macro" $ Atom keyword
 
 eval env cont args@(List [Atom "define-syntax", Atom keyword,
@@ -582,6 +582,7 @@ eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
             value <- getVar env var
             derefValue <- derefPtr value
             meval e (makeCPSWArgs e c cpsSubStr $ [idx, chr]) derefValue
+        cpsStr _ _ _ _ = throwError $ InternalError "Unexpected case in cpsStr"
 
         cpsSubStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsSubStr e c str (Just [idx, chr]) =
@@ -835,6 +836,7 @@ substr (s, _, _) = throwError $ TypeMismatch "string" s
 
 -- |Replace a list element, by index. Taken from:
 --  http://stackoverflow.com/questions/10133361/haskell-replace-element-in-list
+replaceAtIndex :: forall a. Int -> a -> [a] -> [a]
 replaceAtIndex n item ls = a ++ (item:b) where (a, (_:b)) = splitAt n ls
 
 -- |A helper function for /(list-set!)/
@@ -1216,7 +1218,7 @@ evalfuncApply (cont@(Continuation _ _ _ _ _) : func : args) = do
     case aRev of
       List aLastElems -> do
         apply cont func $ (init args) ++ aLastElems
-      Pointer pVar pEnv -> do
+      Pointer _ _ -> do
         derefPtr aRev >>= applyArgs
       other -> throwError $ TypeMismatch "List" other
 evalfuncApply (_ : args) = throwError $ NumArgs (Just 2) args -- Skip over continuation argument
@@ -1226,15 +1228,17 @@ evalfuncApply _ = throwError $ NumArgs (Just 2) []
 evalfuncMakeEnv (cont@(Continuation env _ _ _ _) : _) = do
     e <- liftIO $ nullEnv
     continueEval env cont $ LispEnv e
+evalfuncMakeEnv _ = throwError $ NumArgs (Just 1) []
 
-evalfuncNullEnv [cont@(Continuation env _ _ _ _), Number version] = do
-    nullEnv <- liftIO $ primitiveBindings
-    continueEval env cont $ LispEnv nullEnv
+evalfuncNullEnv [cont@(Continuation env _ _ _ _), Number _] = do
+    nilEnv <- liftIO $ primitiveBindings
+    continueEval env cont $ LispEnv nilEnv
 evalfuncNullEnv (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
 evalfuncNullEnv _ = throwError $ NumArgs (Just 1) []
 
 evalfuncInteractionEnv (cont@(Continuation env _ _ _ _) : _) = do
     continueEval env cont $ LispEnv env
+evalfuncInteractionEnv _ = throwError $ InternalError ""
 
 evalfuncImport [
     cont@(Continuation env a b c d), 
@@ -1244,13 +1248,14 @@ evalfuncImport [
     _] = do
     LispEnv toEnv' <- 
         case toEnv of
-            LispEnv e -> return toEnv
+            LispEnv _ -> return toEnv
             Bool False -> do
                 -- A hack to load imports into the main env, which
                 -- in modules.scm is the parent env
                 case parentEnv env of
-                    Just env -> return $ LispEnv env
+                    Just env' -> return $ LispEnv env'
                     Nothing -> throwError $ InternalError "import into empty env"
+            _ -> throwError $ InternalError ""
     case imports of
         List [Bool False] -> do -- Export everything
             exportAll toEnv'
@@ -1264,6 +1269,7 @@ evalfuncImport [
         List i -> do
             result <- moduleImport toEnv' fromEnv i
             continueEval env cont result
+        _ -> throwError $ InternalError ""
  where 
    exportAll toEnv' = do
      newEnv <- liftIO $ importEnv toEnv' fromEnv
@@ -1273,22 +1279,24 @@ evalfuncImport [
         (LispEnv newEnv)
 
 -- This is just for debugging purposes:
-evalfuncImport args@(cont@(Continuation env _ _ _ _ ) : cs) = do
+evalfuncImport ((Continuation _ _ _ _ _ ) : cs) = do
     throwError $ TypeMismatch "import fields" $ List cs
+evalfuncImport _ = throwError $ InternalError ""
 
 -- |Load import into the main environment
+bootstrapImport :: [LispVal] -> ErrorT LispError IO LispVal
 bootstrapImport [cont@(Continuation env _ _ _ _)] = do
     LispEnv me <- getVar env "*meta-env*"
     ri <- getNamespacedVar me macroNamespace "repl-import"
     renv <- defineNamespacedVar env macroNamespace "import" ri
     continueEval env cont renv
-
+bootstrapImport _ = throwError $ InternalError ""
 
 evalfuncLoad (cont : p@(Pointer _ _) : lvs) = do
     lv <- derefPtr p
     evalfuncLoad (cont : lv : lvs)
 
-evalfuncLoad [cont@(Continuation _ a b c d), String filename, LispEnv env] = do
+evalfuncLoad [(Continuation _ a b c d), String filename, LispEnv env] = do
     evalfuncLoad [Continuation env a b c d, String filename]
 
 evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
