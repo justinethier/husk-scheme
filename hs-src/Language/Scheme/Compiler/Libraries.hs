@@ -39,10 +39,10 @@ importAll
     -> IOThrowsError [HaskAST]
     -- ^ Compiled code
 importAll env metaEnv [m] lopts 
-          copts@(CompileOptions thisFunc _ _ lastFunc) = do
+          copts@(CompileOptions _ _ _ _) = do
     _importAll env metaEnv m lopts copts
 importAll env metaEnv (m : ms) lopts
-          copts@(CompileOptions thisFunc _ _ lastFunc) = do
+          (CompileOptions thisFunc _ _ lastFunc) = do
     Atom nextFunc <- _gensym "importAll"
     c <- _importAll env metaEnv m lopts $ 
                     CompileOptions thisFunc False False (Just nextFunc)
@@ -54,6 +54,12 @@ importAll env metaEnv (m : ms) lopts
     return $ c ++ rest ++ stub
 importAll _ _ [] _ _ = return []
 
+_importAll :: Env
+           -> Env
+           -> LispVal
+           -> CompLibOpts
+           -> CompOpts
+           -> ErrorT LispError IO [HaskAST]
 _importAll env metaEnv m lopts copts = do
     -- Resolve import
     resolved <- LSC.evalLisp metaEnv $ 
@@ -66,8 +72,15 @@ _importAll env metaEnv m lopts copts = do
         err -> throwError $ TypeMismatch "module/import" err
 
 -- |Import a single module
+importModule :: Env
+             -> Env
+             -> LispVal
+             -> [LispVal]
+             -> CompLibOpts
+             -> CompOpts
+             -> ErrorT LispError IO [HaskAST]
 importModule env metaEnv moduleName imports lopts 
-             copts@(CompileOptions thisFunc _ _ lastFunc) = do
+             (CompileOptions thisFunc _ _ lastFunc) = do
     Atom symImport <- _gensym "importFnc"
 
     -- Load module
@@ -138,14 +151,14 @@ loadModule
     -> IOThrowsError [HaskAST]
     -- ^ Compiled code, or an empty list if the module was already compiled
     --   and loaded into memory
-loadModule metaEnv name lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
+loadModule metaEnv name lopts copts@(CompileOptions _ _ _ _) = do
     -- Get the module definition, or load it from file if necessary
-    mod' <- eval metaEnv $ List [Atom "find-module", List [Atom "quote", name]]
-    case mod' of
+    _mod' <- eval metaEnv $ List [Atom "find-module", List [Atom "quote", name]]
+    case _mod' of
         Bool False -> return [] -- Even possible to reach this line?
         _ -> do
-             mod <- recDerefPtrs mod'
-             modEnv <- LSC.evalLisp metaEnv $ List [Atom "module-env", mod]
+             _mod <- recDerefPtrs _mod'
+             modEnv <- LSC.evalLisp metaEnv $ List [Atom "module-env", _mod]
              case modEnv of
                 Bool False -> do
                 {-------------------------------------------
@@ -175,9 +188,9 @@ loadModule metaEnv name lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
                     -- Create new env for module, per eval-module
                     newEnv <- liftIO $ LSC.nullEnvWithImport
                     -- compile the module code, again per eval-module
-                    result <- compileModule newEnv metaEnv name mod lopts $
+                    result <- compileModule newEnv metaEnv name _mod lopts $
                         CompileOptions symStartLoadNewEnv False False (Just symEndLoadNewEnv)
-                    modWEnv <- eval metaEnv $ List (Atom "module-env-set!" : mod' : [LispEnv newEnv]) 
+                    modWEnv <- eval metaEnv $ List (Atom "module-env-set!" : _mod' : [LispEnv newEnv]) 
                     -- Above does not update *modules* correctly, so we del/add below
                     _ <- eval metaEnv $ List [Atom "delete-module!", List [Atom "quote", name]]
                     _ <- eval metaEnv $ List [Atom "add-module!", List [Atom "quote", name], modWEnv]
@@ -187,19 +200,26 @@ loadModule metaEnv name lopts copts@(CompileOptions thisFunc _ _ lastFunc) = do
                      [createAstFunc (CompileOptions symEndLoadNewEnv False False Nothing)
                                     [AstValue "  return $ Nil \"\""]] ++
                      result
-                _ -> return [] --mod
+                _ -> return [] --_mod
 
 -- |Compile the given module, using metadata loaded into memory.
 --  This code is based off of eval-module from the meta language.
-compileModule env metaEnv name mod lopts 
-              copts@(CompileOptions thisFunc _ _ lastFunc) = do
+compileModule :: Env
+              -> Env
+              -> LispVal
+              -> LispVal
+              -> CompLibOpts
+              -> CompOpts
+              -> ErrorT LispError IO [HaskAST]
+compileModule env metaEnv name _mod lopts 
+              (CompileOptions thisFunc _ _ lastFunc) = do
     -- TODO: set mod meta-data to avoid cyclic references
     -- see modules.scm for how this is done by the interpreter
     Atom afterImportsFnc <- _gensym "modAfterImport"
-    Atom afterDirFunc <- _gensym "modAfterDir"
+    --Atom afterDirFunc <- _gensym "modAfterDir"
 
     metaData <- LSC.evalLisp metaEnv $ 
-                  List [Atom "module-meta-data", List [Atom "quote", mod]]
+                  List [Atom "module-meta-data", List [Atom "quote", _mod]]
 
     moduleImports <- cmpSubMod env metaEnv metaData lopts $ 
         CompileOptions thisFunc False False (Just afterImportsFnc)
@@ -230,7 +250,7 @@ compileModule env metaEnv name mod lopts
 --
 -- TODO: ideally stubs would not be necessary,
 --       should refactor out at some point
---createFunctionStub :: String -> HaskAST
+createFunctionStub :: String -> Maybe String -> HaskAST
 createFunctionStub thisFunc nextFunc = do
     createAstFunc (CompileOptions thisFunc True False Nothing)
                   [createAstCont (CompileOptions "" True False nextFunc) 
@@ -238,6 +258,12 @@ createFunctionStub thisFunc nextFunc = do
 
 -- |Compile sub-modules. That is, modules that are imported by
 --  another module in the (define-library) definition
+cmpSubMod :: Env
+          -> Env
+          -> LispVal
+          -> CompLibOpts
+          -> CompOpts
+          -> ErrorT LispError IO [HaskAST]
 cmpSubMod env metaEnv (List ((List (Atom "import-immutable" : modules)) : ls)) 
     lopts copts = do
     -- Punt on this for now, although the meta-lang does the same thing
@@ -245,7 +271,7 @@ cmpSubMod env metaEnv (List ((List (Atom "import-immutable" : modules)) : ls))
               (List ((List (Atom "import" : modules)) : ls)) 
               lopts copts
 cmpSubMod env metaEnv (List ((List (Atom "import" : modules)) : ls)) lopts
-    copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    (CompileOptions thisFunc _ _ lastFunc) = do
     Atom nextFunc <- _gensym "cmpSubMod"
     code <- importAll env metaEnv modules lopts $ 
               CompileOptions thisFunc False False (Just nextFunc)
@@ -261,9 +287,16 @@ cmpSubMod _ _ _ _ (CompileOptions thisFunc _ _ lastFunc) =
     return [createFunctionStub thisFunc lastFunc]
 
 -- |Compile module directives (expressions) in a module definition
+cmpModExpr :: Env
+           -> Env
+           -> LispVal
+           -> LispVal
+           -> CompLibOpts
+           -> CompOpts
+           -> ErrorT LispError IO [HaskAST]
 cmpModExpr env metaEnv name (List ((List (Atom "include" : files)) : ls)) 
     lopts@(CompileLibraryOptions _ compileLisp)
-    copts@(CompileOptions thisFunc _ _ lastFunc) = do
+    (CompileOptions thisFunc _ _ lastFunc) = do
     dir <- LSC.evalLisp metaEnv $ List [Atom "module-name-prefix", 
                                         List [Atom "quote", name]]
 -- TODO: this pattern is common with the one below in "begin", 
@@ -282,6 +315,7 @@ cmpModExpr env metaEnv name (List ((List (Atom "include" : files)) : ls))
     let path = dir ++ filename
     path' <- LSC.findFileOrLib path
     compileLisp env path' entry exit
+  compileInc _ _ _ _ = throwError $ InternalError ""
 
 cmpModExpr env metaEnv name (List ((List (Atom "include-ci" : code)) : ls)) lopts copts = do
     -- NOTE: per r7rs, ci should insert a fold-case directive. But husk does
@@ -293,11 +327,11 @@ cmpModExpr env metaEnv name (List ((List (Atom "body" : code)) : ls)) lopts copt
        (List ((List (Atom "begin" : code)) : ls)) lopts copts
 
 cmpModExpr env metaEnv name
-       (List ((List (Atom "begin" : code)) : ls)) 
+       (List ((List (Atom "begin" : code')) : ls)) 
         lopts@(CompileLibraryOptions compileBlock _)
-        copts@(CompileOptions thisFunc _ _ lastFunc) = do
+        (CompileOptions thisFunc _ _ lastFunc) = do
     Atom nextFunc <- _gensym "cmpSubModNext"
-    code <- compileBlock thisFunc (Just nextFunc) env [] code
+    code <- compileBlock thisFunc (Just nextFunc) env [] code'
     rest <- cmpModExpr env metaEnv name (List ls) lopts $ 
                 CompileOptions nextFunc False False lastFunc
     stub <- case rest of 
@@ -306,16 +340,25 @@ cmpModExpr env metaEnv name
     return $ code ++ rest ++ stub
 cmpModExpr env metaEnv name (List (_ : ls)) lopts copts = 
     cmpModExpr env metaEnv name (List ls) lopts copts
-cmpModExpr _ _ _ _ _ copts@(CompileOptions thisFunc _ _ lastFunc) =
+cmpModExpr _ _ _ _ _ (CompileOptions thisFunc _ _ lastFunc) =
     return [createFunctionStub thisFunc lastFunc]
 
 -- |Include one or more files for compilation
 -- TODO: this pattern is used elsewhere (IE, importAll). could be generalized
-includeAll env dir [file] include lopts
-          copts@(CompileOptions thisFunc _ _ lastFunc) = do
+includeAll :: forall t t1 t2 t3.
+              t
+              -> t3
+              -> [t2]
+              -> (t3
+                  -> t2 -> String -> Maybe String -> ErrorT LispError IO [HaskAST])
+              -> t1
+              -> CompOpts
+              -> ErrorT LispError IO [HaskAST]
+includeAll _ dir [file] include _ --lopts
+          (CompileOptions thisFunc _ _ lastFunc) = do
     include dir file thisFunc lastFunc
 includeAll env dir (f : fs) include lopts
-           copts@(CompileOptions thisFunc _ _ lastFunc) = do
+           (CompileOptions thisFunc _ _ lastFunc) = do
     Atom nextFunc <- _gensym "includeAll"
     c <- include dir f thisFunc (Just nextFunc)
     rest <- includeAll env dir fs include lopts $
