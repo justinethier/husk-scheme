@@ -105,7 +105,6 @@ import Data.IORef
 import qualified Data.Map
 -- import Data.Maybe
 import Data.Ratio
-import Data.Word
 import System.IO
 import Text.ParserCombinators.Parsec hiding (spaces)
 
@@ -548,7 +547,7 @@ validateFuncParams ps Nothing = do
                          "Duplicate lambda parameter " ++ d
             _ -> return True
  where
-  filterArgs (Atom a) = True
+  filterArgs (Atom _) = True
   filterArgs _ = False
 
   dupe (a : b : rest)

@@ -176,6 +176,9 @@ numMod aparams = do
 
 -- |Compare a series of numbers using a given numeric comparison
 --  function and an array of lisp values
+numBoolBinopCompare :: (LispVal
+                    -> LispVal -> Either LispError LispVal)
+                    -> LispVal -> [LispVal] -> Either LispError LispVal
 numBoolBinopCompare cmp n1 (n2 : ns) = do
   List [n1', n2'] <- numCast [n1, n2]
   result <- cmp n1' n2'
@@ -557,10 +560,10 @@ isNumExact _ = return $ Bool False
 
 -- | Determine if number is inexact
 isNumInexact :: [LispVal] -> ThrowsError LispVal
-isNumInexact n@([Number _])   = return $ Bool False
-isNumInexact n@([Float _])    = return $ Bool True
-isNumInexact n@([Complex _])  = return $ Bool True
-isNumInexact n@([Rational _]) = return $ Bool False
+isNumInexact ([Number _])   = return $ Bool False
+isNumInexact ([Float _])    = return $ Bool True
+isNumInexact ([Complex _])  = return $ Bool True
+isNumInexact ([Rational _]) = return $ Bool False
 isNumInexact _ = return $ Bool False
 
 -- |Predicate to determine if given value is a number

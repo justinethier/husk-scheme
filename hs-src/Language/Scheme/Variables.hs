@@ -355,7 +355,7 @@ setNamespacedVar envRef
   -- variable name could refer to 2 different variables in
   -- different environments.
   case value of
-    Pointer p env -> do
+    Pointer p _ -> do
       if p == var 
           then return value
           else next
@@ -387,6 +387,9 @@ _setNamespacedVar envRef
 
 -- |Do the actual "set" operation, with NO pointer operations.
 --  Only call this if you know what you are doing!
+--_setNamespacedVarDirect :: forall (m :: * -> *).
+--                           (MonadIO m, MonadError LispError m) =>
+--                           Env -> Char -> String -> LispVal -> m LispVal
 _setNamespacedVarDirect envRef
                  namespace
                  var valueToStore = do 
@@ -420,11 +423,11 @@ updatePointers envRef namespace var = do
 
           -- The first pointer now becomes the old var,
           -- so its pointers list should become ps
-          movePointers pEnv namespace pVar ps
+          _ <- movePointers pEnv namespace pVar ps
 
           -- Each ps needs to be updated to point to pVar
           -- instead of var
-          pointToNewVar pEnv namespace pVar ps
+          _ <- pointToNewVar pEnv namespace pVar ps
 
           -- Set first pointer to existing value of var
           existingValue <- getNamespacedVar envRef namespace var
@@ -439,9 +442,9 @@ updatePointers envRef namespace var = do
   -- |Move the given pointers (ptr) to the list of
   --  pointers for variable (var)
   movePointers :: Env -> Char -> String -> [LispVal] -> IOThrowsError LispVal
-  movePointers envRef namespace var ptrs = do
-    env <- liftIO $ readIORef $ pointers envRef
-    case Data.Map.lookup (getVarName namespace var) env of
+  movePointers envRef' namespace' var' ptrs = do
+    env <- liftIO $ readIORef $ pointers envRef'
+    case Data.Map.lookup (getVarName namespace' var') env of
       Just ps' -> do
         -- Append ptrs to existing list of pointers to var
         ps <- liftIO $ readIORef ps'
@@ -450,15 +453,15 @@ updatePointers envRef namespace var = do
       Nothing -> do
         -- var does not have any pointers; create new list
         valueRef <- liftIO $ newIORef ptrs
-        liftIO $ writeIORef (pointers envRef) (Data.Map.insert (getVarName namespace var) valueRef env)
+        liftIO $ writeIORef (pointers envRef') (Data.Map.insert (getVarName namespace var') valueRef env)
         return $ Nil ""
 
   -- |Update each pointer's source to point to pVar
-  pointToNewVar pEnv namespace pVar (Pointer v e : ps) = do
-    _ <- _setNamespacedVarDirect e namespace v (Pointer pVar pEnv)
-    pointToNewVar pEnv namespace pVar ps
-  pointToNewVar pEnv namespace pVar [] = return $ Nil ""
-  pointToNewVar pEnv namespace pVar _ = throwError $ InternalError "pointToNewVar"
+  pointToNewVar pEnv namespace' pVar' (Pointer v e : ps) = do
+    _ <- _setNamespacedVarDirect e namespace' v (Pointer pVar' pEnv)
+    pointToNewVar pEnv namespace' pVar' ps
+  pointToNewVar _ _ _ [] = return $ Nil ""
+  pointToNewVar _ _ _ _ = throwError $ InternalError "pointToNewVar"
 
 -- |A wrapper for updateNamespaceObject that uses the variable namespace.
 updateObject :: Env -> String -> LispVal -> IOThrowsError LispVal

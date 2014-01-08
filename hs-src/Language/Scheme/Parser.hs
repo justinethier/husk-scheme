@@ -141,7 +141,7 @@ parseChar = do
     "return"    -> return $ Char '\n' 
     "tab"       -> return $ Char '\t'
     _ -> case (c : r) of
-        [c] -> return $ Char c
+        [ch] -> return $ Char ch
         ('x' : hexs) -> do
             rv <- parseHexScalar hexs
             return $ Char rv
@@ -330,7 +330,7 @@ parseByteVector = do
   return $ ByteVector $ BS.pack $ map conv ns
  where 
    conv (Number n) = fromInteger n :: Word8
-   conv n = 0 :: Word8
+   conv _ = 0 :: Word8
 
 -- |Parse a hash table. The table is either empty or is made up of
 --  an alist (associative list)

@@ -49,6 +49,8 @@ explicitRenamingTransform useEnv renameEnv srRenameEnv lisp
      IOFunc $ exRename useEnv renameEnv srRenameEnv defEnv, 
      IOFunc $ exCompare useEnv renameEnv defEnv] 
   recDerefPtrs result
+explicitRenamingTransform _ _ _ _ _ _ = 
+  throwError $ InternalError "explicitRenamingTransform"
 
 -- |The explicit renaming "rename" function
 --
