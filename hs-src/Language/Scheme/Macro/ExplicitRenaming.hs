@@ -73,7 +73,7 @@ explicitRenamingTransform _ _ _ _ _ _ =
 -- procedure is called after the transformation
 -- procedure has returned.
 exRename :: Env -> Env -> Env -> Env -> [LispVal] -> IOThrowsError LispVal
-exRename useEnv renameEnv srRenameEnv defEnv [Atom a] = do
+exRename useEnv _ srRenameEnv defEnv [Atom a] = do
   isSynRulesRenamed <- liftIO $ isRecBound srRenameEnv a
 
   if isSynRulesRenamed -- already renamed by syntax-rules, so just return it
@@ -108,8 +108,12 @@ exRename useEnv renameEnv srRenameEnv defEnv [Atom a] = do
 exRename _ _ _ _ form = throwError $ Default $ "Unable to rename: " ++ show form
 
 -- |The explicit renaming "compare" function
-exCompare :: Env -> Env -> Env -> [LispVal] -> IOThrowsError LispVal
-exCompare useEnv renameEnv defEnv values@[a, b] = do
+exCompare :: Env        -- ^ Environment of use
+          -> Env        -- ^ Environment with renames
+          -> Env        -- ^ Environment of definition
+          -> [LispVal]  -- ^ Values to compare
+          -> IOThrowsError LispVal
+exCompare _ _ _ [a, b] = do
   return $ Bool $ eqVal a b
 exCompare _ _ _ form = throwError $ 
    Default $ "Unable to compare: " ++ show form

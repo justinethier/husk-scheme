@@ -128,13 +128,17 @@ macroEval :: Env        -- ^Current environment for the AST
  -  begins with the keyword for the macro." 
  -
  -}
-macroEval env lisp@(List (Atom x : _)) apply = do
+macroEval env lisp@(List (Atom _ : _)) apply = do
   -- Keep track of diverted variables
   _ <- clearDivertedVars env
   _macroEval env lisp apply
 macroEval env lisp apply = _macroEval env lisp apply
 
 -- |Do the actual work for the 'macroEval' wrapper func
+_macroEval :: Env
+           -> LispVal
+           -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal)
+           -> ErrorT LispError IO LispVal
 _macroEval env lisp@(List (Atom x : _)) apply = do
   -- Note: If there is a procedure of the same name it will be shadowed by the macro.
   var <- getNamespacedVar' env macroNamespace x
@@ -166,6 +170,7 @@ _macroEval env lisp@(List (Atom x : _)) apply = do
       _macroEval env expanded apply
       -- Useful debug to see all exp's:
       -- macroEval env (trace ("exp = " ++ show expanded) expanded)
+    Just _ -> throwError $ InternalError "_macroEval"
     Nothing -> return lisp
 
 -- No macro to process, just return code as it is...
@@ -212,7 +217,7 @@ macroTransform _ _ _ _ _ _ _ _ input _ _ = throwError $ BadSpecialForm "Input do
 
 -- Determine if the next element in a list matches 0-to-n times due to an ellipsis
 macroElementMatchesMany :: LispVal -> String -> Bool
-macroElementMatchesMany args@(List (_ : ps)) ellipsisSym = do
+macroElementMatchesMany (List (_ : ps)) ellipsisSym = do
   if not (null ps)
      then (head ps) == (Atom ellipsisSym)
      else False
@@ -318,7 +323,7 @@ loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers pattern input
                                 Move past it, but keep the same input. -}
                                 then do
                                         case ps of
-                                          [Atom esym] -> return $ Bool True -- An otherwise empty list, so just let the caller know match is done
+                                          [Atom _] -> return $ Bool True -- An otherwise empty list, so just let the caller know match is done
                                           _ -> loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers (List $ tail ps) (List (i : is)) ellipsisLevel ellipsisIndex listFlags esym
                                 else return $ Bool False
               -- There was a match
@@ -449,7 +454,7 @@ checkLocal _ _ _ _ _ _ _ _ (Number pattern) (Number input) _ _ = return $ Bool $
 checkLocal _ _ _ _ _ _ _ _ (Float pattern) (Float input) _ _ = return $ Bool $ pattern == input
 checkLocal _ _ _ _ _ _ _ _ (String pattern) (String input) _ _ = return $ Bool $ pattern == input
 checkLocal _ _ _ _ _ _ _ _ (Char pattern) (Char input) _ _ = return $ Bool $ pattern == input
-checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (Atom pattern) input listFlags esym = do
+checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (Atom pattern) input listFlags _ = do
 
   -- TODO: 
   --
@@ -792,7 +797,7 @@ walkExpandedAtom _ useEnv _ renameEnv _ _ True _ (List _)
         renameEnvClosure <- liftIO $ copyEnv renameEnv
         _ <- defineNamespacedVar useEnv macroNamespace keyword $ Syntax (Just useEnv) (Just renameEnvClosure) True "..." identifiers rules
         return $ Nil "" -- Sentinal value
-walkExpandedAtom _ useEnv _ renameEnv _ _ True _ (List _)
+walkExpandedAtom _ useEnv _ _ _ _ True _ (List _)
     "define-syntax" 
     ([Atom keyword, 
        (List [Atom "er-macro-transformer",  
@@ -1009,7 +1014,7 @@ cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ (List result) (
   l <- cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim True (List []) d apply
   cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False (List $ result ++ [DottedList ls l]) (List ts) apply
 
-cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList (List result) (List (Atom a : ts)) apply = do
+cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ (List result) (List (Atom a : ts)) apply = do
   expanded <- recExpandAtom cleanupEnv $ Atom a
   cleanExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False (List $ result ++ [expanded]) (List ts) apply
 
@@ -1224,7 +1229,7 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
 -- TODO: I think the outerEnv should be accessed by the walker, and not within rewrite as is done below...
                      Nil input -> do v <- getVar outerEnv input
                                      return v
-                     List v -> do
+                     List _ -> do
                           if ellipsisLevel > 0
                                   then -- Take all elements, instead of one-at-a-time
                                        return $ appendNil (Matches.getData var ellipsisIndex) 
@@ -1301,7 +1306,7 @@ transformRule _ _ _ _ _ _ _ _ _ _ _ result@(List _) (List []) = do
 -- transform is an atom - if it is a list then there is no way this case can be reached.
 -- So... we do not need to worry about pattern variables here. No need to port that code
 -- from the above case.
-transformRule defEnv outerEnv divertEnv localEnv renameEnv _ dim identifiers esym _ _ _ (Atom transform) = do
+transformRule defEnv outerEnv divertEnv localEnv renameEnv _ dim identifiers _ _ _ _ (Atom transform) = do
   Bool isIdent <- findAtom (Atom transform) identifiers
   isPattVar <- liftIO $ isRecBound localEnv transform
   if isPattVar && not isIdent
