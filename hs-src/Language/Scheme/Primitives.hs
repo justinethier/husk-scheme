@@ -170,6 +170,7 @@ import System.IO.Error
 #if __GLASGOW_HASKELL__ < 702
 try' = try
 #else
+try' :: IO a -> IO (Either IOError a)
 try' = tryIOError
 #endif
 
@@ -250,6 +251,7 @@ isBinaryPort [Port port] = do
 isBinaryPort _ = return $ Bool False
 
 -- | Determine if a file handle is in text mode
+isTextPort' :: Handle -> IO Bool
 isTextPort' port = do
     textEncoding <- hGetEncoding port
     case textEncoding of
@@ -386,6 +388,8 @@ readByteVector args = if length args == 2
 {- writeProc :: --forall a (m :: * -> *).
              (MonadIO m, MonadError LispError m) =>
              (Handle -> LispVal -> IO a) -> [LispVal] -> m LispVal -}
+writeProc :: (Handle -> LispVal -> IO a)
+          -> [LispVal] -> ErrorT LispError IO LispVal
 writeProc func [obj] = do
     dobj <- recDerefPtrs obj -- Last opportunity to do this before writing
     writeProc func [dobj, Port stdout]
@@ -693,7 +697,7 @@ makeVector badArgList = throwError $ NumArgs (Just 1) badArgList
 --   Returns: Vector
 --
 buildVector :: [LispVal] -> ThrowsError LispVal
-buildVector lst@(o : os) = do
+buildVector lst@(_ : _) = do
   return $ Vector $ (listArray (0, length lst - 1)) lst
 buildVector badArgList = throwError $ NumArgs (Just 1) badArgList
 
@@ -790,7 +794,7 @@ byteVector bs = do
  return $ ByteVector $ BS.pack $ map conv bs
  where 
    conv (Number n) = fromInteger n :: Word8
-   conv n = 0 :: Word8
+   conv _ = 0 :: Word8
 
 byteVectorCopy :: [LispVal] -> IOThrowsError LispVal
 
@@ -835,13 +839,10 @@ byteVectorCopy badArgList = throwError $ NumArgs (Just 1) badArgList
 --
 byteVectorAppend :: [LispVal] -> IOThrowsError LispVal
 byteVectorAppend bs = do
-    let acc = BS.pack []
-        conv :: LispVal -> IOThrowsError BSU.ByteString
-        conv p@(Pointer _ _) = do
-          bs <- derefPtr p
-          conv bs
-        conv (ByteVector bs) = return bs
-        conv x = return BS.empty
+    let conv :: LispVal -> IOThrowsError BSU.ByteString
+        conv p@(Pointer _ _) = derefPtr p >>= conv
+        conv (ByteVector bvs) = return bvs
+        conv _ = return BS.empty
     bs' <- mapM conv bs
     return $ ByteVector $ BS.concat bs'
 -- TODO: error handling
@@ -1499,6 +1500,7 @@ string2Symbol args@(_ : _) = throwError $ NumArgs (Just 1) args
 charUpper :: [LispVal] -> ThrowsError LispVal
 charUpper [Char c] = return $ Char $ toUpper c
 charUpper [notChar] = throwError $ TypeMismatch "char" notChar
+charUpper args = throwError $ NumArgs (Just 1) args
 
 -- | Convert a character to lowercase
 --
@@ -1511,6 +1513,7 @@ charUpper [notChar] = throwError $ TypeMismatch "char" notChar
 charLower :: [LispVal] -> ThrowsError LispVal
 charLower [Char c] = return $ Char $ toLower c
 charLower [notChar] = throwError $ TypeMismatch "char" notChar
+charLower args = throwError $ NumArgs (Just 1) args
 
 charDigitValue :: [LispVal] -> ThrowsError LispVal
 charDigitValue [Char c] = do
@@ -1521,6 +1524,7 @@ charDigitValue [Char c] = do
        then return $ Number $ toInteger $ digitToInt c
        else return $ Bool False
 charDigitValue [notChar] = throwError $ TypeMismatch "char" notChar
+charDigitValue args = throwError $ NumArgs (Just 1) args
 
 -- | Convert from a charater to an integer
 --
@@ -1533,6 +1537,7 @@ charDigitValue [notChar] = throwError $ TypeMismatch "char" notChar
 char2Int :: [LispVal] -> ThrowsError LispVal
 char2Int [Char c] = return $ Number $ toInteger $ ord c 
 char2Int [notChar] = throwError $ TypeMismatch "char" notChar
+char2Int args = throwError $ NumArgs (Just 1) args
 
 -- | Convert from an integer to a character
 --
@@ -1545,10 +1550,11 @@ char2Int [notChar] = throwError $ TypeMismatch "char" notChar
 int2Char :: [LispVal] -> ThrowsError LispVal
 int2Char [Number n] = return $ Char $ chr $ fromInteger n 
 int2Char [notInt] = throwError $ TypeMismatch "integer" notInt
+int2Char args = throwError $ NumArgs (Just 1) args
 
 -- |Determine if given character satisfies the given predicate
 charPredicate :: (Char -> Bool) -> [LispVal] -> ThrowsError LispVal
-charPredicate pred ([Char c]) = return $ Bool $ pred c 
+charPredicate cpred ([Char c]) = return $ Bool $ cpred c 
 charPredicate _ _ = return $ Bool False
 
 -- | Determine if the given value is a character
@@ -1616,17 +1622,17 @@ boolBinop :: (LispVal -> ThrowsError a) -> (a -> a -> Bool) -> [LispVal] -> Thro
 boolBinop unpacker op args = if length args < 2
                              then throwError $ NumArgs (Just 2) args
                              else do
-                                 result <- cmp op (head args) (tail args)
+                                 result <- cmp (head args) (tail args)
                                  return $ Bool result
  where 
-    cmp op b1 (b2 : bs) = do
+    cmp b1 (b2 : bs) = do
       b1' <- unpacker b1
       b2' <- unpacker b2
       let result = op b1' b2'
       if result
-         then cmp op b2 bs
+         then cmp b2 bs
          else return False
-    cmp _ _ _ = return True
+    cmp _ _ = return True
        
 
 -- |Perform the given function against a single LispVal argument
@@ -1648,6 +1654,8 @@ strBoolBinop fnc args = do
   liftThrows $ boolBinop unpackStr fnc dargs
 
 -- |Perform boolBinop against two char arguments
+charBoolBinop :: (Char -> Char -> Bool)
+              -> [LispVal] -> ThrowsError LispVal
 charBoolBinop = boolBinop unpackChar
 
 -- |Perform boolBinop against two boolean arguments
