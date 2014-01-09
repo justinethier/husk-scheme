@@ -21,7 +21,7 @@ import System.Cmd (system)
 import System.Console.GetOpt
 import System.FilePath (dropExtension)
 import System.Environment
-import System.Exit (ExitCode (..), exitWith, exitFailure)
+import System.Exit (ExitCode (..), exitWith)
 import System.IO
 
 main :: IO ()
@@ -29,7 +29,7 @@ main = do
 
   -- Read command line args and process options
   args <- getArgs
-  let (actions, nonOpts, msgs) = getOpt Permute options args
+  let (actions, nonOpts, _) = getOpt Permute options args
   opts <- foldl (>>=) (return defaultOptions) actions
   let Options {optOutput = output, optLibs = lib, optDynamic = dynamic, optCustomOptions = extra, optSchemeRev = langrev} = opts
 
@@ -39,10 +39,10 @@ main = do
         let inFile = nonOpts !! 0
             outHaskell = (dropExtension inFile) ++ ".hs"
             outExec = case output of
-              Just inFile -> inFile
+              Just inFile' -> inFile'
               Nothing -> dropExtension inFile
             extraOpts = case extra of
-              Just args -> args
+              Just args' -> args'
               Nothing -> ""
 -- TODO: pass language revision
         process inFile outHaskell outExec lib dynamic extraOpts langrev
@@ -161,6 +161,7 @@ compileSchemeFile :: Env -> Maybe String -> String -> String -> String -> String
 compileSchemeFile env stdlib srfi55 filename outHaskell langrev = do
   let conv :: LispVal -> String
       conv (String s) = s
+      conv l = show l
       compileLibraries = case stdlib of
         Just _ -> True
         _ -> False
@@ -168,7 +169,7 @@ compileSchemeFile env stdlib srfi55 filename outHaskell langrev = do
   -- TODO: clean this up later
   --moduleFile <- liftIO $ getDataFileName "lib/modules.scm"
 
-  (String nextFunc, libsC, libSrfi55C, libModules) <- case (stdlib, langrev) of
+  (String nextFunc, libsC, libSrfi55C, _) <- case (stdlib, langrev) of
     (Just stdlib', "5") -> do
       -- TODO: it is only temporary to compile the standard library each time. It should be 
       --       precompiled and just added during the ghc compilation
@@ -190,7 +191,7 @@ compileSchemeFile env stdlib srfi55 filename outHaskell langrev = do
   outH <- liftIO $ openFile outHaskell WriteMode
   _ <- liftIO $ writeList outH headerComment
   _ <- liftIO $ writeList outH headerModule
-  _ <- liftIO $ writeList outH $ map (\mod -> "import " ++ mod ++ " ") $ headerImports ++ moreHeaderImports
+  _ <- liftIO $ writeList outH $ map (\modl -> "import " ++ modl ++ " ") $ headerImports ++ moreHeaderImports
   filepath <- liftIO $ getDataFileName ""
   _ <- liftIO $ writeList outH $ header filepath compileLibraries langrev
   _ <- liftIO $ case compileLibraries of
@@ -223,6 +224,7 @@ compileHaskellFile hsInFile objOutFile dynamic extraArgs = do
     ExitSuccess -> return ()
 
 -- |Helper function to write a list of abstract Haskell code to file
+writeList :: Handle -> [String] -> IO ()
 writeList outH (l : ls) = do
   hPutStrLn outH l
   writeList outH ls

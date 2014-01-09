@@ -951,6 +951,7 @@ compileDivertedVars
       comp (List [Atom renamed, Atom orig]) = do
         [AstValue $ "  v <- getVar env \"" ++ orig ++ "\"",
          AstValue $ "  _ <- defineVar env \"" ++ renamed ++ "\" v"]
+      comp _ = []
       cvars = map comp vars 
       f = (concat cvars) ++ 
           [AstValue $ "  " ++ formNext ++ " env cont (" ++ val ++ ") " ++ args]

@@ -12,7 +12,6 @@ allows execution of stand-alone files containing Scheme code.
 -}
 
 module Main where
-import Paths_husk_scheme
 import qualified Language.Scheme.Core as LSC -- Scheme Interpreter
 import Language.Scheme.Types                 -- Scheme data types
 import qualified Language.Scheme.Util as LSU (strip)
@@ -20,19 +19,18 @@ import qualified Language.Scheme.Variables as LSV -- Scheme variable operations
 import Control.Monad.Error
 import qualified Data.Char as DC
 import qualified Data.List as DL
-import System.Cmd (system)
 import System.Console.GetOpt
 import qualified System.Console.Haskeline as HL
 import qualified System.Console.Haskeline.Completion as HLC
 import System.Environment
-import System.Exit (ExitCode (..), exitWith, exitFailure)
+import System.Exit (ExitCode (..), exitWith)
 import System.IO
 
 main :: IO ()
 main = do 
   args <- getArgs
 
-  let (actions, nonOpts, msgs) = getOpt Permute options args
+  let (actions, nonOpts, _) = getOpt Permute options args
   opts <- foldl (>>=) (return defaultOptions) actions
   let Options {optSchemeRev = schemeRev} = opts
 
@@ -94,6 +92,7 @@ runOne :: String -> [String] -> IO ()
 runOne "7" args = runOneWenv LSC.r7rsEnv args
 runOne _ args = runOneWenv LSC.r5rsEnv args
 
+runOneWenv :: IO Env -> [String] -> IO ()
 runOneWenv initEnv args = do
   env <- initEnv >>= flip LSV.extendEnv
                           [((LSV.varNamespace, "args"),
@@ -124,9 +123,9 @@ runRepl _ = do
     runReplWenv env
 
 runReplWenv :: Env -> IO ()
-runReplWenv env = do
-    let settings = HL.Settings (completeScheme env) Nothing True
-    HL.runInputT settings (loop env)
+runReplWenv env' = do
+    let settings = HL.Settings (completeScheme env') Nothing True
+    HL.runInputT settings (loop env')
     where
         loop :: Env -> HL.InputT IO ()
         loop env = do
@@ -145,6 +144,8 @@ runReplWenv env = do
                            else loop env
 
 -- |Auto-complete using scheme symbols
+completeScheme :: Env -> (String, String) 
+               -> IO (String, [HLC.Completion])
 completeScheme env (lnL, lnR) = do
    complete $ reverse $ readAtom lnL
  where

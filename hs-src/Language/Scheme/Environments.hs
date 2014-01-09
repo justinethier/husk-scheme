@@ -19,7 +19,6 @@ import Language.Scheme.Libraries
 import Language.Scheme.Numerical
 import Language.Scheme.Primitives
 import Language.Scheme.Types
-import Language.Scheme.Util
 import Language.Scheme.Variables
 import Control.Monad.Error
 import qualified Data.Char
@@ -159,7 +158,7 @@ exportsFromEnv' :: [LispVal] -> IOThrowsError LispVal
 exportsFromEnv' [LispEnv env] = do
     result <- liftIO $ exportsFromEnv env
     return $ List result
-exportsFromEnv' err = return $ List []
+exportsFromEnv' _ = return $ List []
 
 -- | Pure primitive functions
 primitives :: [(String, [LispVal] -> ThrowsError LispVal)]

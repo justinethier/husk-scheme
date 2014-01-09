@@ -17,9 +17,7 @@ module Language.Scheme.Libraries
       findModuleFile
     , moduleImport
     ) where
-import qualified Paths_husk_scheme as PHS (getDataFileName)
 import Language.Scheme.Types
-import Language.Scheme.Util
 import Language.Scheme.Variables
 import Control.Monad.Error
 
@@ -70,7 +68,7 @@ moduleImport to from (Atom i : is) = do
 moduleImport to from (DottedList [Atom iRenamed] (Atom iOrig) : is) = do
   _ <- divertBinding to from iOrig iRenamed
   moduleImport to from is
-moduleImport to from [] = do
+moduleImport to _ [] = do
   return $ LispEnv to
 moduleImport _ _ err = do
   throwError $ Default $ "Unexpected argument to moduleImport: " ++ show err
