@@ -618,7 +618,8 @@ isInteger _ = return $ Bool False
 -- |A utility function to determine if given value is a floating point
 --  number representing an whole number (integer).
 isFloatAnInteger :: LispVal -> Bool
-isFloatAnInteger (Float n) = (floor n) == (ceiling n)
+isFloatAnInteger (Float n) = 
+    ((floor n) :: Integer) == ((ceiling n) :: Integer)
 isFloatAnInteger _ = False
 
 -- - end Numeric operations section ---
