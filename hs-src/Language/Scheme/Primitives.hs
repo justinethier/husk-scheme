@@ -1594,12 +1594,14 @@ isBoolean :: [LispVal] -> ThrowsError LispVal
 isBoolean ([Bool _]) = return $ Bool True
 isBoolean _ = return $ Bool False
 
+isBooleanEq :: Monad m => [LispVal] -> m LispVal
 isBooleanEq (Bool a : Bool b : bs)
     | a == b = isBooleanEq (Bool b : bs)
     | otherwise = return $ Bool False
 isBooleanEq [Bool _] = return $ Bool True
 isBooleanEq _ = return $ Bool False
 
+isSymbolEq :: Monad m => [LispVal] -> m LispVal
 isSymbolEq (Atom a : Atom b : bs)
     | a == b = isSymbolEq (Atom b : bs)
     | otherwise = return $ Bool False

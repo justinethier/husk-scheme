@@ -13,7 +13,7 @@ This module contains data types used by the compiler.
 module Language.Scheme.Compiler.Types 
     (
     -- * Data types
-      CompOpts (CompileOptions)
+      CompOpts (..)
     , CompLibOpts (..)
     , defaultCompileOptions
     , HaskAST (..)
@@ -77,6 +77,7 @@ data CompLibOpts = CompileLibraryOptions {
     }
 
 -- |Runtime reference to module data structure
+moduleRuntimeVar :: [Char]
 moduleRuntimeVar = " modules "
 
 -- |Create code for a function
@@ -165,6 +166,7 @@ ast2Str (ByteVector bv) = do
 ast2Str (List ls) = "List [" ++ joinL (map ast2Str ls) "," ++ "]"
 ast2Str (DottedList ls l) = 
   "DottedList [" ++ joinL (map ast2Str ls) "," ++ "] $ " ++ ast2Str l
+ast2Str l = show l -- Error?
 
 -- |Convert a list of abstract syntax trees to a list of strings
 asts2Str :: [LispVal] -> String

@@ -58,8 +58,8 @@ options = [
   Option ['r'] ["revision"] (ReqArg writeRxRSVersion "Scheme") "scheme RxRS version",
   Option ['h', '?'] ["help"] (NoArg showHelp) "show usage information"
   ]
-
-writeRxRSVersion arg opt = return opt { optSchemeRev = arg }
+ where
+  writeRxRSVersion arg opt = return opt { optSchemeRev = arg }
 
 showHelp :: Options -> IO Options
 showHelp _ = do

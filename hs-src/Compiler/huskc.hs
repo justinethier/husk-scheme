@@ -84,18 +84,14 @@ options = [
   Option [] ["debug"] (NoArg showDebug) "show debug information",
   Option [] ["nolibs"] (NoArg getNoLibs) "a DEBUG option to use interpreted libraries instead of compiling them"
   ]
-
-writeRxRSVersion arg opt = return opt { optSchemeRev = arg }
-
--- |Determine executable file to write. 
---  This version just takes a name from the command line option
-writeExec arg opt = return opt { optOutput = Just arg }
-
-getNoLibs opt = return opt { optLibs = False }
-
-getDynamic opt = return opt { optDynamic = True }
-
-getExtraArgs arg opt = return opt { optCustomOptions = Just arg }
+ where
+  writeRxRSVersion arg opt = return opt { optSchemeRev = arg }
+  -- |Determine executable file to write. 
+  --  This version just takes a name from the command line option
+  writeExec arg opt = return opt { optOutput = Just arg }
+  getNoLibs opt = return opt { optLibs = False }
+  getDynamic opt = return opt { optDynamic = True }
+  getExtraArgs arg opt = return opt { optCustomOptions = Just arg }
 
 -- TODO: would nice to have this as well as a 'real' usage printout, perhaps via --help
 
