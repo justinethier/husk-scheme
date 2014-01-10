@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE RankNTypes #-}
 {- |
 Module      : Language.Scheme.Parser
@@ -56,8 +57,11 @@ import Data.Word
 import Numeric
 import Text.ParserCombinators.Parsec hiding (spaces)
 import Text.Parsec.Language
---import Text.Parsec.Prim (ParsecT)
 import qualified Text.Parsec.Token as P
+#if __GLASGOW_HASKELL__ >= 702
+import Data.Functor.Identity (Identity)
+import Text.Parsec.Prim (ParsecT)
+#endif
 
 -- This was added by pull request #63 as part of a series of fixes
 -- to get husk to build on ghc 7.2.2
@@ -81,25 +85,39 @@ lispDef
   , P.caseSensitive  = True
   } 
 
---lexer :: P.GenTokenParser String () Identity
+#if __GLASGOW_HASKELL__ >= 702
+lexer :: P.GenTokenParser String () Data.Functor.Identity.Identity
+#endif
 lexer = P.makeTokenParser lispDef
 
---dot :: ParsecT String () Identity String
+#if __GLASGOW_HASKELL__ >= 702
+dot :: ParsecT String () Identity String
+#endif
 dot = P.dot lexer
 
---parens :: ParsecT String () Identity a -> ParsecT String () Identity a
+#if __GLASGOW_HASKELL__ >= 702
+parens :: ParsecT String () Identity a -> ParsecT String () Identity a
+#endif
 parens = P.parens lexer
 
+#if __GLASGOW_HASKELL__ >= 702
+brackets :: ParsecT String () Identity a -> ParsecT String () Identity a
+#endif
 brackets = P.brackets lexer
 
---identifier :: ParsecT String () Identity String
+#if __GLASGOW_HASKELL__ >= 702
+identifier :: ParsecT String () Identity String
+#endif
 identifier = P.identifier lexer
 
--- TODO: typedef. starting point was: whiteSpace :: CharParser ()
---whiteSpace :: ParsecT String () Identity ()
+#if __GLASGOW_HASKELL__ >= 702
+whiteSpace :: ParsecT String () Identity ()
+#endif
 whiteSpace = P.whiteSpace lexer
 
---lexeme :: ParsecT String () Identity a -> ParsecT String () Identity a
+#if __GLASGOW_HASKELL__ >= 702
+lexeme :: ParsecT String () Identity a -> ParsecT String () Identity a
+#endif
 lexeme = P.lexeme lexer
 
 -- |Match a special character
@@ -303,6 +321,7 @@ parseEscapedChar = do
     _ -> return c
 
 -- |Parse a hexidecimal scalar
+parseHexScalar :: Monad m => String -> m Char
 parseHexScalar num = do
     let ns = Numeric.readHex num
     case ns of
