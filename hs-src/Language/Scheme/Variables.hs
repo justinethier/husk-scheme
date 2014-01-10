@@ -387,9 +387,12 @@ _setNamespacedVar envRef
 
 -- |Do the actual "set" operation, with NO pointer operations.
 --  Only call this if you know what you are doing!
---_setNamespacedVarDirect :: forall (m :: * -> *).
---                           (MonadIO m, MonadError LispError m) =>
---                           Env -> Char -> String -> LispVal -> m LispVal
+_setNamespacedVarDirect
+    :: Env      -- ^ Environment 
+    -> Char     -- ^ Namespace
+    -> String   -- ^ Variable
+    -> LispVal  -- ^ Value
+    -> IOThrowsError LispVal   -- ^ Value
 _setNamespacedVarDirect envRef
                  namespace
                  var valueToStore = do 
