@@ -9,6 +9,8 @@ This is a small bug fix release:
 
  Should evaluate to `((unquote (quote bar)))`.
 
+- Fixed GHC compiler warnings when building with `-Wall`.
+
 v3.15
 --------
 
