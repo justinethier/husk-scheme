@@ -1046,7 +1046,7 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                   vars 
                   i
            pack [] strs vars _ = (strs, vars)
-       let (paramStrs, vars) = pack args [] [] 0
+       let (paramStrs, vars) = pack args [] [] (0::Int)
        _compileFuncLitArgs func vars $ "[" ++ joinL paramStrs "," ++ "]"
 
   _compileFuncLitArgs fnc vars args = do
