@@ -14,7 +14,7 @@ allows execution of stand-alone files containing Scheme code.
 module Main where
 import qualified Language.Scheme.Core as LSC -- Scheme Interpreter
 import Language.Scheme.Types                 -- Scheme data types
-import qualified Language.Scheme.Util as LSU (strip)
+import qualified Language.Scheme.Util as LSU (countAllLetters, strip)
 import qualified Language.Scheme.Variables as LSV -- Scheme variable operations
 import Control.Monad.Error
 import qualified Data.Char as DC
@@ -127,6 +127,7 @@ runReplWenv env' = do
     let settings = HL.Settings (completeScheme env') Nothing True
     HL.runInputT settings (loop env')
     where
+        -- Main REPL loop
         loop :: Env -> HL.InputT IO ()
         loop env = do
             minput <- HL.getInputLine "huski> "
@@ -137,11 +138,30 @@ runReplWenv env' = do
                     "quit" -> return ()
                     "" -> loop env -- ignore inputs of just whitespace
                     input -> do
-                        result <- liftIO (LSC.evalString env input)
+                        inputLines <- getMultiLine [input]
+                        let input' = unlines inputLines
+                        result <- liftIO (LSC.evalString env input')
                         if (length result) > 0
                            then do HL.outputStrLn result
                                    loop env
                            else loop env
+
+        -- Read another input line, if necessary
+        getMultiLine previous = do
+          if test previous
+            then do
+              mb_input <- HL.getInputLine ""
+              case mb_input of
+                Nothing -> return previous
+                Just input -> getMultiLine $ previous ++ [input]
+            else return previous
+
+        -- Check if we need another input line
+        -- This just does a bare minimum, and could be more robust
+        test ls = do
+          let cOpen  = LSU.countAllLetters '(' ls
+              cClose = LSU.countAllLetters ')' ls
+          cOpen > cClose
 
 -- |Auto-complete using scheme symbols
 completeScheme :: Env -> (String, String) 
