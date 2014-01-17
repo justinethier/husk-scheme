@@ -11,7 +11,9 @@ This module contains general-purpose utility functions
 -}
 
 module Language.Scheme.Util
-    ( escapeBackslashes
+    ( countAllLetters
+    , countLetters
+    , escapeBackslashes
     , strip
     ) where
 
@@ -28,3 +30,12 @@ escapeBackslashes s = foldr step [] s
 strip :: String -> String
 strip s = dropWhile ws $ reverse $ dropWhile ws $ reverse s
     where ws = (`elem` [' ', '\n', '\t', '\r'])
+
+-- |Count occurences of a letter in a list of strings
+countAllLetters :: Char -> [String] -> Int
+countAllLetters c strs = sum $ map (countLetters c) strs
+
+-- |Count occurences of a letter in a string
+countLetters :: Char -> String -> Int
+countLetters c str = length $ filter (== c) str
+
