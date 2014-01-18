@@ -9,6 +9,7 @@ This is a small bug fix release:
 
  Should evaluate to `((unquote (quote bar)))`.
 
+- Added support for multi-line input to `huski`.
 - Fixed GHC compiler warnings when building with `-Wall`.
 
 v3.15
