@@ -34,6 +34,6 @@
 (define (randint . args)
   (cond ((= (length args) 1) (randint 0 (car args)))
         ((= (length args) 2)
-          (inexact->exact
+          (exact
             (+ (car args) (floor (* (random) (- (cadr args) (car args)))))))
         (else (error 'randint "usage: (randint [lo] hi)"))))

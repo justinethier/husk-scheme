@@ -28,4 +28,8 @@
     (import (libs include))
     (assert/equal (raw) 'a-raw-included-file "include test #1"))
 
+; Not really a test case, just make sure it works
+(import (husk random))
+(randint 0 10)
+
 (unit-test-handler-results)

@@ -73,6 +73,8 @@
     eqv?
     error
     even?
+    inexact->exact ; Added for convenience, not standard anymore
+    exact->inexact ; Added for convenience, not standard anymore
     (rename inexact->exact exact)
     (rename exact->inexact inexact)
     expt
