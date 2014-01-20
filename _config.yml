@@ -14,4 +14,4 @@ pygments:    true
 markdown:    maruku
 permalink:   date
 
-husk_build_number:  3.15
+husk_build_number:  3.15.1
