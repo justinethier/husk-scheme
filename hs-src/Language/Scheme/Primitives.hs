@@ -238,12 +238,26 @@ flushOutputPort [] = liftIO $ hFlush stdout >> (return $ Bool True)
 flushOutputPort [Port port] = liftIO $ hFlush port >> (return $ Bool True)
 flushOutputPort _ = return $ Bool False
 
+-- | Determine if the given port is a text port.
+--
+--   Arguments
+--
+--   * Port
+--
+--   Returns: Bool
 isTextPort :: [LispVal] -> IOThrowsError LispVal
 isTextPort [Port port] = do
     val <- liftIO $ isTextPort' port
     return $ Bool val
 isTextPort _ = return $ Bool False
 
+-- | Determine if the given port is a binary port.
+--
+--   Arguments
+--
+--   * Port
+--
+--   Returns: Bool
 isBinaryPort :: [LispVal] -> IOThrowsError LispVal
 isBinaryPort [Port port] = do
     val <- liftIO $ isTextPort' port
@@ -258,7 +272,13 @@ isTextPort' port = do
         Nothing -> return False
         _ -> return True
 
-
+-- | Determine if the given port is open
+--
+--   Arguments
+--
+--   * Port
+--
+--   Returns: Bool
 isInputPortOpen :: [LispVal] -> IOThrowsError LispVal
 isInputPortOpen [Port port] = do
     r <- liftIO $ hIsReadable port
@@ -266,6 +286,13 @@ isInputPortOpen [Port port] = do
     return $ Bool $ r && o
 isInputPortOpen _ = return $ Bool False
 
+-- | Determine if the given port is open
+--
+--   Arguments
+--
+--   * Port
+--
+--   Returns: Bool
 isOutputPortOpen :: [LispVal] -> IOThrowsError LispVal
 isOutputPortOpen [Port port] = do
     w <- liftIO $ hIsWritable port
@@ -360,6 +387,14 @@ readCharProc func [Port port] = do
             return $ Char inpChr
 readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 
+-- | Read a byte vector from the given port
+--
+--   Arguments
+--
+--   * Number - Number of bytes to read
+--   * Port - Port to read from
+--
+--   Returns: ByteVector
 readByteVector :: [LispVal] -> IOThrowsError LispVal
 readByteVector [Number n, Port port] = do
     input <- liftIO $ try' (liftIO $ BS.hGet port $ fromInteger n)
@@ -424,6 +459,14 @@ writeCharProc other = if length other == 2
                      then throwError $ TypeMismatch "(character port)" $ List other
                      else throwError $ NumArgs (Just 2) other
 
+-- | Write a byte vector to the given port
+--
+--   Arguments
+--
+--   * ByteVector
+--   * Port
+--
+--   Returns: (unspecified)
 writeByteVector :: [LispVal] -> IOThrowsError LispVal
 writeByteVector [obj, Port port] = do
     ByteVector bs <- recDerefPtrs obj -- Last opportunity to do this before writing
@@ -600,6 +643,14 @@ cons [x, DottedList xs xlast] = return $ DottedList (x : xs) xlast
 cons [x1, x2] = return $ DottedList [x1] x2
 cons badArgList = throwError $ NumArgs (Just 2) badArgList
 
+-- | Create a new list
+--
+--   Arguments
+--
+--   * Number - Length of the list
+--   * LispVal - Object to fill the list with (optional)
+--
+--   Returns: List
 makeList :: [LispVal] -> ThrowsError LispVal
 makeList [(Number n)] = makeList [Number n, List []]
 makeList [(Number n), a] = do
@@ -608,6 +659,13 @@ makeList [(Number n), a] = do
 makeList [badType] = throwError $ TypeMismatch "integer" badType
 makeList badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Create a copy of a list
+--
+--   Arguments
+--
+--   * List
+--
+--   Returns: List
 listCopy :: [LispVal] -> IOThrowsError LispVal
 listCopy [p@(Pointer _ _)] = do
   l <- derefPtr p
@@ -616,6 +674,15 @@ listCopy [(List ls)] = return $ List ls
 listCopy [badType] = return badType
 listCopy badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- | Create a copy of a vector
+--
+--   Arguments
+--
+--   * Vector
+--   * Number - Start copying the vector from this element (optional)
+--   * Number - Stop copying the vector at this element (optional)
+--
+--   Returns: Vector
 vectorCopy :: [LispVal] -> IOThrowsError LispVal
 vectorCopy (p@(Pointer _ _) : args) = do
   v <- derefPtr p
@@ -1306,10 +1373,25 @@ listToString [badType] = throwError $ TypeMismatch "list" badType
 listToString [] = throwError $ NumArgs (Just 1) []
 listToString args@(_ : _) = throwError $ NumArgs (Just 1) args
 
+-- | Convert a string to a vector
+--
+--   Arguments
+--
+--   * String
+--
+--   Returns: Vector
 stringToVector :: [LispVal] -> IOThrowsError LispVal
 stringToVector args = do
     List l <- stringToList args
     return $ Vector $ listArray (0, length l - 1) l
+
+-- | Convert a vector to a string
+--
+--   Arguments
+--
+--   * Vector
+--
+--   Returns: String
 vectorToString :: [LispVal] -> IOThrowsError LispVal
 vectorToString [p@(Pointer _ _)] = derefPtr p >>= box >>= vectorToString
 --vectorToString [(List [])] = return $ String ""
@@ -1515,6 +1597,13 @@ charLower [Char c] = return $ Char $ toLower c
 charLower [notChar] = throwError $ TypeMismatch "char" notChar
 charLower args = throwError $ NumArgs (Just 1) args
 
+-- | Return integer value of a char digit
+--
+--   Arguments
+--
+--   * Char
+--
+--   Returns: Number, or False
 charDigitValue :: [LispVal] -> ThrowsError LispVal
 charDigitValue [Char c] = do
     -- This is not really good enough, since unicode chars
@@ -1594,6 +1683,13 @@ isBoolean :: [LispVal] -> ThrowsError LispVal
 isBoolean ([Bool _]) = return $ Bool True
 isBoolean _ = return $ Bool False
 
+-- | Determine if multiple boolean values are the same
+--
+--   Arguments
+--
+--   * A list of Bool values
+--
+--   Returns: True if the list contains booleans that are the same, False otherwise
 isBooleanEq :: Monad m => [LispVal] -> m LispVal
 isBooleanEq (Bool a : Bool b : bs)
     | a == b = isBooleanEq (Bool b : bs)
@@ -1601,6 +1697,13 @@ isBooleanEq (Bool a : Bool b : bs)
 isBooleanEq [Bool _] = return $ Bool True
 isBooleanEq _ = return $ Bool False
 
+-- | Determine if multiple symbols values are the same
+--
+--   Arguments
+--
+--   * A list of Atom values
+--
+--   Returns: True if all of the symbols are the same, False otherwise
 isSymbolEq :: Monad m => [LispVal] -> m LispVal
 isSymbolEq (Atom a : Atom b : bs)
     | a == b = isSymbolEq (Atom b : bs)
