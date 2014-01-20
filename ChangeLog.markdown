@@ -1,3 +1,8 @@
+v3.15.2
+--------
+
+- Fixed a bug where the `(husk random)` library `randint` function would throw a runtime error.
+
 v3.15.1
 --------
 
