@@ -370,7 +370,7 @@
 (define (newline . port)
   (if (null? port) 
       (display #\newline) 
-      (display #\newline port)))
+      (display #\newline (car port))))
 
 ; TODO: test these forms
 (define (call-with-input-file filename proc)
