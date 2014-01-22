@@ -155,6 +155,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.UTF8 as BSU
 import Data.Char hiding (isSymbol)
 import Data.Array
+import qualified Data.Knob as DK
 --import qualified Data.List as DL
 import qualified Data.Map
 import qualified Data.Time.Clock.POSIX
@@ -190,14 +191,19 @@ try' = tryIOError
 makePort
     :: (FilePath -> IOMode -> IO Handle)
     -> IOMode
+    -> Bool
     -> [LispVal]
     -> IOThrowsError LispVal
-makePort openFnc mode [String filename] = do
+makePort _ mode True [String filename] = do
+    k <- DK.newKnob (BS.pack [])
+    h <- liftIO $ DK.newFileHandle k filename mode
+    return $ Port h (Just k)
+makePort openFnc mode False [String filename] = do
     h <- liftIO $ openFnc filename mode
     return $ Port h Nothing
-makePort fnc mode [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= makePort fnc mode
-makePort _ _ [] = throwError $ NumArgs (Just 1) []
-makePort _ _ args@(_ : _) = throwError $ NumArgs (Just 1) args
+makePort fnc mode addKnob [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= makePort fnc mode addKnob
+makePort _ _ _ [] = throwError $ NumArgs (Just 1) []
+makePort _ _ _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 
 -- |Close the given port
 --
