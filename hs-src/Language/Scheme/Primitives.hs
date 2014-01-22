@@ -192,7 +192,9 @@ makePort
     -> IOMode
     -> [LispVal]
     -> IOThrowsError LispVal
-makePort openFnc mode [String filename] = liftM Port $ liftIO $ openFnc filename mode
+makePort openFnc mode [String filename] = do
+    h <- liftIO $ openFnc filename mode
+    return $ Port h Nothing
 makePort fnc mode [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= makePort fnc mode
 makePort _ _ [] = throwError $ NumArgs (Just 1) []
 makePort _ _ args@(_ : _) = throwError $ NumArgs (Just 1) args
@@ -206,7 +208,7 @@ makePort _ _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 --   Returns: Bool - True if the port was closed, false otherwise
 --
 closePort :: [LispVal] -> IOThrowsError LispVal
-closePort [Port port] = liftIO $ hClose port >> (return $ Bool True)
+closePort [Port port _] = liftIO $ hClose port >> (return $ Bool True)
 closePort _ = return $ Bool False
 
 
@@ -222,7 +224,7 @@ other I/O functions hooking into these instead of std* -}
 --   Returns: Port
 --
 currentInputPort :: [LispVal] -> IOThrowsError LispVal
-currentInputPort _ = return $ Port stdin
+currentInputPort _ = return $ Port stdin Nothing
 -- |Return the current input port
 --
 --   LispVal Arguments: (None)
@@ -230,12 +232,12 @@ currentInputPort _ = return $ Port stdin
 --   Returns: Port
 --
 currentOutputPort :: [LispVal] -> IOThrowsError LispVal
-currentOutputPort _ = return $ Port stdout
+currentOutputPort _ = return $ Port stdout Nothing
 
 -- | Flush the given output port
 flushOutputPort :: [LispVal] -> IOThrowsError LispVal
 flushOutputPort [] = liftIO $ hFlush stdout >> (return $ Bool True)
-flushOutputPort [Port port] = liftIO $ hFlush port >> (return $ Bool True)
+flushOutputPort [Port port _] = liftIO $ hFlush port >> (return $ Bool True)
 flushOutputPort _ = return $ Bool False
 
 -- | Determine if the given port is a text port.
@@ -246,7 +248,7 @@ flushOutputPort _ = return $ Bool False
 --
 --   Returns: Bool
 isTextPort :: [LispVal] -> IOThrowsError LispVal
-isTextPort [Port port] = do
+isTextPort [Port port _] = do
     val <- liftIO $ isTextPort' port
     return $ Bool val
 isTextPort _ = return $ Bool False
@@ -259,7 +261,7 @@ isTextPort _ = return $ Bool False
 --
 --   Returns: Bool
 isBinaryPort :: [LispVal] -> IOThrowsError LispVal
-isBinaryPort [Port port] = do
+isBinaryPort [Port port _] = do
     val <- liftIO $ isTextPort' port
     return $ Bool $ not val
 isBinaryPort _ = return $ Bool False
@@ -280,7 +282,7 @@ isTextPort' port = do
 --
 --   Returns: Bool
 isInputPortOpen :: [LispVal] -> IOThrowsError LispVal
-isInputPortOpen [Port port] = do
+isInputPortOpen [Port port _] = do
     r <- liftIO $ hIsReadable port
     o <- liftIO $ hIsOpen port
     return $ Bool $ r && o
@@ -294,7 +296,7 @@ isInputPortOpen _ = return $ Bool False
 --
 --   Returns: Bool
 isOutputPortOpen :: [LispVal] -> IOThrowsError LispVal
-isOutputPortOpen [Port port] = do
+isOutputPortOpen [Port port _] = do
     w <- liftIO $ hIsWritable port
     o <- liftIO $ hIsOpen port
     return $ Bool $ w && o
@@ -309,7 +311,7 @@ isOutputPortOpen _ = return $ Bool False
 --   Returns: Bool - True if an input port, false otherwise
 --
 isInputPort :: [LispVal] -> IOThrowsError LispVal
-isInputPort [Port port] = liftM Bool $ liftIO $ hIsReadable port
+isInputPort [Port port _] = liftM Bool $ liftIO $ hIsReadable port
 isInputPort _ = return $ Bool False
 
 -- |Determine if the given objects is an output port
@@ -321,7 +323,7 @@ isInputPort _ = return $ Bool False
 --   Returns: Bool - True if an output port, false otherwise
 --
 isOutputPort :: [LispVal] -> IOThrowsError LispVal
-isOutputPort [Port port] = liftM Bool $ liftIO $ hIsWritable port
+isOutputPort [Port port _] = liftM Bool $ liftIO $ hIsWritable port
 isOutputPort _ = return $ Bool False
 
 -- |Determine if a character is ready on the port
@@ -333,7 +335,7 @@ isOutputPort _ = return $ Bool False
 --   Returns: Bool
 --
 isCharReady :: [LispVal] -> IOThrowsError LispVal
-isCharReady [Port port] = do --liftM Bool $ liftIO $ hReady port
+isCharReady [Port port _] = do --liftM Bool $ liftIO $ hReady port
     result <- liftIO $ try' (liftIO $ hReady port)
     case result of
         Left e -> if isEOFError e
@@ -351,8 +353,8 @@ isCharReady _ = return $ Bool False
 --   Returns: LispVal
 --
 readProc :: Bool -> [LispVal] -> IOThrowsError LispVal
-readProc mode [] = readProc mode [Port stdin]
-readProc mode [Port port] = do
+readProc mode [] = readProc mode [Port stdin Nothing]
+readProc mode [Port port _] = do
     input <- liftIO $ try' (liftIO $ hGetLine port)
     case input of
         Left e -> if isEOFError e
@@ -374,8 +376,8 @@ readProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 --   Returns: Char
 --
 readCharProc :: (Handle -> IO Char) -> [LispVal] -> IOThrowsError LispVal
-readCharProc func [] = readCharProc func [Port stdin]
-readCharProc func [Port port] = do
+readCharProc func [] = readCharProc func [Port stdin Nothing]
+readCharProc func [Port port _] = do
     liftIO $ hSetBuffering port NoBuffering
     input <- liftIO $ try' (liftIO $ func port)
     liftIO $ hSetBuffering port LineBuffering
@@ -396,7 +398,7 @@ readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 --
 --   Returns: ByteVector
 readByteVector :: [LispVal] -> IOThrowsError LispVal
-readByteVector [Number n, Port port] = do
+readByteVector [Number n, Port port _] = do
     input <- liftIO $ try' (liftIO $ BS.hGet port $ fromInteger n)
     case input of
         Left e -> if isEOFError e
@@ -427,8 +429,8 @@ writeProc :: (Handle -> LispVal -> IO a)
           -> [LispVal] -> ErrorT LispError IO LispVal
 writeProc func [obj] = do
     dobj <- recDerefPtrs obj -- Last opportunity to do this before writing
-    writeProc func [dobj, Port stdout]
-writeProc func [obj, Port port] = do
+    writeProc func [dobj, Port stdout Nothing]
+writeProc func [obj, Port port _] = do
     dobj <- recDerefPtrs obj -- Last opportunity to do this before writing
     output <- liftIO $ try' (liftIO $ func port dobj)
     case output of
@@ -449,8 +451,8 @@ writeProc _ other = if length other == 2
 --   Returns: (None)
 --
 writeCharProc :: [LispVal] -> IOThrowsError LispVal
-writeCharProc [obj] = writeCharProc [obj, Port stdout]
-writeCharProc [obj@(Char _), Port port] = do
+writeCharProc [obj] = writeCharProc [obj, Port stdout Nothing]
+writeCharProc [obj@(Char _), Port port _] = do
     output <- liftIO $ try' (liftIO $ (hPutStr port $ show obj))
     case output of
         Left _ -> throwError $ Default "I/O error writing to port"
@@ -468,7 +470,7 @@ writeCharProc other = if length other == 2
 --
 --   Returns: (unspecified)
 writeByteVector :: [LispVal] -> IOThrowsError LispVal
-writeByteVector [obj, Port port] = do
+writeByteVector [obj, Port port _] = do
     ByteVector bs <- recDerefPtrs obj -- Last opportunity to do this before writing
     output <- liftIO $ try' (liftIO $ BS.hPut port bs)
     case output of
