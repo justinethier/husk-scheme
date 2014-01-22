@@ -4,7 +4,7 @@ v3.15.2
 Bug fixes:
 
 - Fixed a bug where the `(husk random)` library `randint` function would throw a runtime error.
-- Passing an output port as the second argument to `newline` no longer throws an error.
+- Fixed the `newline` function so it can accept a port as an optional second argument.
 
 v3.15.1
 --------
