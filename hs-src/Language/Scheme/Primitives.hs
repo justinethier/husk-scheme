@@ -113,10 +113,13 @@ module Language.Scheme.Primitives (
  
  -- ** Input / Output 
  , makePort 
+ , makePort' 
+ , openInputString
  , closePort
  , flushOutputPort
  , currentOutputPort 
  , currentInputPort 
+ , getOutputString
  , isTextPort
  , isBinaryPort
  , isOutputPort 
@@ -205,6 +208,15 @@ makePort fnc mode addKnob [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= makePor
 makePort _ _ _ [] = throwError $ NumArgs (Just 1) []
 makePort _ _ _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 
+
+-- JAE TODO: need to clean these up
+--  also, not here, but want to add scheme tests using string I/O
+makePort' fnc mode _ = makePort fnc mode True [String "temp.buf"]
+openInputString [String buf] = do
+    k <- DK.newKnob $ BSU.fromString buf
+    h <- liftIO $ DK.newFileHandle k "temp.buf" ReadMode
+    return $ Port h (Just k)
+
 -- |Close the given port
 --
 --   Arguments:
@@ -245,6 +257,12 @@ flushOutputPort :: [LispVal] -> IOThrowsError LispVal
 flushOutputPort [] = liftIO $ hFlush stdout >> (return $ Bool True)
 flushOutputPort [Port port _] = liftIO $ hFlush port >> (return $ Bool True)
 flushOutputPort _ = return $ Bool False
+
+getOutputString :: [LispVal] -> IOThrowsError LispVal
+getOutputString [Port port (Just knob)] = do
+    _ <- liftIO $ hFlush port
+    bytes <- DK.getContents knob
+    return $ String $ BSU.toString bytes 
 
 -- | Determine if the given port is a text port.
 --
