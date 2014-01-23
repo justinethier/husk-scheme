@@ -26,13 +26,16 @@ import System.IO
 
 -- |Primitive functions that execute within the IO monad
 ioPrimitives :: [(String, [LispVal] -> IOThrowsError LispVal)]
-ioPrimitives = [("open-input-file", makePort openFile ReadMode False),
-                ("open-binary-input-file", makePort openBinaryFile ReadMode False),
-                ("open-output-file", makePort openFile WriteMode False),
-                ("open-binary-output-file", makePort openBinaryFile WriteMode False),
-                ("open-output-string", makePort' openFile WriteMode),
+ioPrimitives = [("open-input-file", makePort openFile ReadMode ),
+                ("open-binary-input-file", makePort openBinaryFile ReadMode),
+                ("open-output-file", makePort openFile WriteMode),
+                ("open-binary-output-file", makePort openBinaryFile WriteMode),
+                ("open-output-string", openOutputString),
                 ("open-input-string", openInputString),
                 ("get-output-string", getOutputString),
+                ("open-output-bytevector", openOutputByteVector),
+                ("open-input-bytevector", openInputByteVector),
+                ("get-output-bytevector", getOutputByteVector),
                 ("close-port", closePort),
                 ("close-input-port", closePort),
                 ("close-output-port", closePort),

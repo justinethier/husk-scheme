@@ -113,13 +113,17 @@ module Language.Scheme.Primitives (
  
  -- ** Input / Output 
  , makePort 
- , makePort' 
+ , makeBufferPort
  , openInputString
+ , openOutputString
+ , getOutputString
+ , openInputByteVector
+ , openOutputByteVector
+ , getOutputByteVector
  , closePort
  , flushOutputPort
  , currentOutputPort 
  , currentInputPort 
- , getOutputString
  , isTextPort
  , isBinaryPort
  , isOutputPort 
@@ -194,28 +198,56 @@ try' = tryIOError
 makePort
     :: (FilePath -> IOMode -> IO Handle)
     -> IOMode
-    -> Bool
     -> [LispVal]
     -> IOThrowsError LispVal
-makePort _ mode True [String filename] = do
-    k <- DK.newKnob (BS.pack [])
-    h <- liftIO $ DK.newFileHandle k filename mode
-    return $ Port h (Just k)
-makePort openFnc mode False [String filename] = do
+makePort openFnc mode [String filename] = do
     h <- liftIO $ openFnc filename mode
     return $ Port h Nothing
-makePort fnc mode addKnob [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= makePort fnc mode addKnob
-makePort _ _ _ [] = throwError $ NumArgs (Just 1) []
-makePort _ _ _ args@(_ : _) = throwError $ NumArgs (Just 1) args
+makePort fnc mode [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= makePort fnc mode
+makePort _ _ [] = throwError $ NumArgs (Just 1) []
+makePort _ _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 
 
 -- JAE TODO: need to clean these up
---  also, not here, but want to add scheme tests using string I/O
-makePort' fnc mode _ = makePort fnc mode True [String "temp.buf"]
-openInputString [String buf] = do
-    k <- DK.newKnob $ BSU.fromString buf
-    h <- liftIO $ DK.newFileHandle k "temp.buf" ReadMode
+makeBufferPort buf = do
+    let mode = case buf of
+                 Nothing -> WriteMode
+                 _ -> ReadMode
+    bs <- case buf of
+        Just (String s)-> return $ BSU.fromString s
+        Just (ByteVector bv)-> return bv
+        Just err -> throwError $ TypeMismatch "string or bytevector" err
+        Nothing -> return $ BS.pack []
+    k <- DK.newKnob bs
+    h <- liftIO $ DK.newFileHandle k "temp.buf" mode
     return $ Port h (Just k)
+
+getBufferFromPort (Port h (Just k)) = do
+    _ <- liftIO $ hFlush h
+    DK.getContents k
+
+openInputString [buf@(String _)] = makeBufferPort (Just buf)
+openInputString args = if length args == 2
+    then throwError $ TypeMismatch "(string)" $ List args
+    else throwError $ NumArgs (Just 1) args
+openOutputString _ = makeBufferPort Nothing
+openInputByteVector [buf@(ByteVector _)] = makeBufferPort (Just buf)
+openInputByteVector args = if length args == 2
+    then throwError $ TypeMismatch "(bytevector)" $ List args
+    else throwError $ NumArgs (Just 1) args
+openOutputByteVector _ = makeBufferPort Nothing
+
+
+-- TODO: for error handling, port may be of the wrong type, etc
+getOutputString :: [LispVal] -> IOThrowsError LispVal
+getOutputString [p@(Port _ _)] = do
+    bytes <- getBufferFromPort p
+    return $ String $ BSU.toString bytes 
+getOutputByteVector :: [LispVal] -> IOThrowsError LispVal
+getOutputByteVector [p@(Port _ _)] = do
+    bytes <- getBufferFromPort p
+    return $ ByteVector bytes 
+-- end TODO
 
 -- |Close the given port
 --
@@ -257,12 +289,6 @@ flushOutputPort :: [LispVal] -> IOThrowsError LispVal
 flushOutputPort [] = liftIO $ hFlush stdout >> (return $ Bool True)
 flushOutputPort [Port port _] = liftIO $ hFlush port >> (return $ Bool True)
 flushOutputPort _ = return $ Bool False
-
-getOutputString :: [LispVal] -> IOThrowsError LispVal
-getOutputString [Port port (Just knob)] = do
-    _ <- liftIO $ hFlush port
-    bytes <- DK.getContents knob
-    return $ String $ BSU.toString bytes 
 
 -- | Determine if the given port is a text port.
 --
