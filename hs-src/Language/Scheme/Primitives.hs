@@ -134,6 +134,7 @@ module Language.Scheme.Primitives (
  , readProc 
  , readCharProc 
  , readByteVector
+ , readString
  , writeProc 
  , writeCharProc
  , writeByteVector
@@ -207,8 +208,8 @@ makePort fnc mode [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= makePort fnc mo
 makePort _ _ [] = throwError $ NumArgs (Just 1) []
 makePort _ _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 
-
--- JAE TODO: need to clean these up
+-- |Create an memory-backed port
+makeBufferPort :: Maybe LispVal -> IOThrowsError LispVal
 makeBufferPort buf = do
     let mode = case buf of
                  Nothing -> WriteMode
@@ -222,32 +223,52 @@ makeBufferPort buf = do
     h <- liftIO $ DK.newFileHandle k "temp.buf" mode
     return $ Port h (Just k)
 
+-- |Read byte buffer from a given port
+getBufferFromPort :: LispVal -> IOThrowsError BSU.ByteString
 getBufferFromPort (Port h (Just k)) = do
     _ <- liftIO $ hFlush h
     DK.getContents k
+getBufferFromPort args = do
+    throwError $ TypeMismatch "output-port" args
 
+-- |Create a new input string buffer
+openInputString :: [LispVal] -> IOThrowsError LispVal
 openInputString [buf@(String _)] = makeBufferPort (Just buf)
 openInputString args = if length args == 2
     then throwError $ TypeMismatch "(string)" $ List args
     else throwError $ NumArgs (Just 1) args
+
+-- |Create a new output string buffer
+openOutputString :: [LispVal] -> IOThrowsError LispVal
 openOutputString _ = makeBufferPort Nothing
+
+-- |Create a new input bytevector buffer
+openInputByteVector :: [LispVal] -> IOThrowsError LispVal
 openInputByteVector [buf@(ByteVector _)] = makeBufferPort (Just buf)
 openInputByteVector args = if length args == 2
     then throwError $ TypeMismatch "(bytevector)" $ List args
     else throwError $ NumArgs (Just 1) args
+
+-- |Create a new output bytevector buffer
+openOutputByteVector :: [LispVal] -> IOThrowsError LispVal
 openOutputByteVector _ = makeBufferPort Nothing
 
 
--- TODO: for error handling, port may be of the wrong type, etc
+-- |Get string written to string-output-port
 getOutputString :: [LispVal] -> IOThrowsError LispVal
 getOutputString [p@(Port _ _)] = do
     bytes <- getBufferFromPort p
     return $ String $ BSU.toString bytes 
+getOutputString args = do
+    throwError $ TypeMismatch "output-port" $ List args
+
+-- |Get bytevector written to bytevector-output-port
 getOutputByteVector :: [LispVal] -> IOThrowsError LispVal
 getOutputByteVector [p@(Port _ _)] = do
     bytes <- getBufferFromPort p
     return $ ByteVector bytes 
--- end TODO
+getOutputByteVector args = do
+    throwError $ TypeMismatch "output-port" $ List args
 
 -- |Close the given port
 --
@@ -448,7 +469,22 @@ readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 --
 --   Returns: ByteVector
 readByteVector :: [LispVal] -> IOThrowsError LispVal
-readByteVector [Number n, Port port _] = do
+readByteVector args = readBuffer args (\ inBytes -> ByteVector inBytes)
+
+-- | Read a string from the given port
+--
+--   Arguments
+--
+--   * Number - Number of bytes to read
+--   * Port - Port to read from
+--
+--   Returns: String
+readString :: [LispVal] -> IOThrowsError LispVal
+readString args = readBuffer args (\ inBytes -> String $ BSU.toString inBytes)
+
+-- |Helper function to read n bytes from a port into a buffer
+readBuffer :: [LispVal] -> (BSU.ByteString -> LispVal) -> IOThrowsError LispVal
+readBuffer [Number n, Port port _] rvfnc = do
     input <- liftIO $ try' (liftIO $ BS.hGet port $ fromInteger n)
     case input of
         Left e -> if isEOFError e
@@ -457,10 +493,10 @@ readByteVector [Number n, Port port _] = do
         Right inBytes -> do
             if BS.null inBytes
                then return $ EOF
-               else return $ ByteVector inBytes
-readByteVector args = if length args == 2
-                     then throwError $ TypeMismatch "(k port)" $ List args
-                     else throwError $ NumArgs (Just 2) args
+               else return $ rvfnc inBytes
+readBuffer args _ = if length args == 2
+                       then throwError $ TypeMismatch "(k port)" $ List args
+                       else throwError $ NumArgs (Just 2) args
 
 -- |Write to the given port
 --
