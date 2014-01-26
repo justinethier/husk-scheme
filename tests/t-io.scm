@@ -51,4 +51,7 @@
     'ABCD
     "bytevector buffered I/O")
 
+(define is (open-input-string "test string"))
+(assert/equal "t" (read-string 1 is))
+
 (unit-test-handler-results)
