@@ -1,3 +1,8 @@
+v3.16
+--------
+
+- Added `read-string`, `write-string`.
+
 v3.15.2
 --------
 
