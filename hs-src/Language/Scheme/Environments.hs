@@ -70,6 +70,7 @@ ioPrimitives = [("open-input-file", makePort openFile ReadMode ),
                 ("write", writeProc (\ port obj -> hPrint port obj)),
                 ("write-char", writeCharProc),
                 ("write-bytevector", writeByteVector),
+                ("write-string", writeString),
                 ("display", writeProc (\ port obj -> do
                   case obj of
                     String str -> hPutStr port str

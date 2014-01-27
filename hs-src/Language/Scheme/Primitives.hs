@@ -138,6 +138,7 @@ module Language.Scheme.Primitives (
  , writeProc 
  , writeCharProc
  , writeByteVector
+ , writeString
  , readContents
  , load
  , readAll
@@ -556,13 +557,36 @@ writeCharProc other = if length other == 2
 --
 --   Returns: (unspecified)
 writeByteVector :: [LispVal] -> IOThrowsError LispVal
-writeByteVector [obj, Port port _] = do
-    ByteVector bs <- recDerefPtrs obj -- Last opportunity to do this before writing
+writeByteVector args = writeBuffer args bv2b
+  where
+    bv2b obj = do
+        ByteVector bs <- recDerefPtrs obj -- Last opportunity to do this before writing
+        return bs
+
+-- | Write a string to the given port
+--
+--   Arguments
+--
+--   * String
+--   * Port
+--
+--   Returns: (unspecified)
+writeString :: [LispVal] -> IOThrowsError LispVal
+writeString args = writeBuffer args str2b
+  where
+    str2b obj = do
+        String str <- recDerefPtrs obj -- Last opportunity to do this before writing
+        return $ BSU.fromString str
+
+-- |Helper function to write buffer-based data to output port
+writeBuffer :: [LispVal] -> (LispVal -> IOThrowsError BSU.ByteString) -> IOThrowsError LispVal
+writeBuffer [obj, Port port _] getBS = do
+    bs <- getBS obj
     output <- liftIO $ try' (liftIO $ BS.hPut port bs)
     case output of
         Left _ -> throwError $ Default "I/O error writing to port"
         Right _ -> return $ Nil ""
-writeByteVector other = 
+writeBuffer other _ = 
     if length other == 2
        then throwError $ TypeMismatch "(bytevector port)" $ List other
        else throwError $ NumArgs (Just 2) other
