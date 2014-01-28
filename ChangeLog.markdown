@@ -1,7 +1,16 @@
 v3.16
 --------
 
-- Added `read-string`, `write-string`.
+- Added I/O functions: 
+
+    - `get-output-bytevector`
+    - `get-output-string`
+    - `open-input-bytevector`
+    - `open-input-string`
+    - `open-output-bytevector`
+    - `open-output-string`
+    - `read-string`
+    - `write-string`
 
 v3.15.2
 --------
