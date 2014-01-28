@@ -12,6 +12,12 @@ v3.16
     - `read-string`
     - `write-string`
 
+- Port data type extended:
+ 
+        Port Handle (Maybe Knob)
+
+  These changes are isolated in husk, but if your code uses any `Port` constructors, you would need to change them, EG: `Port _ Nothing`.
+
 v3.15.2
 --------
 
