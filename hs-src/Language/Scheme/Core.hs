@@ -69,7 +69,7 @@ import qualified System.Info as SysInfo
 
 -- |husk version number
 version :: String
-version = "3.15.2"
+version = "3.16"
 
 -- |A utility function to display the husk console banner
 showBanner :: IO ()
