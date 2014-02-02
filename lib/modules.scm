@@ -305,11 +305,7 @@
        (let lp ((ls (cdr expr)) (res '()))
          (cond
           ((null? ls)
-           ; JAE - Using expanded version of begin because there were
-           ;       problems with using the following line from chibi.
-           ;       This may highlight a problem in husk, but for the
-           ;       purposes of this file we are moving on...
-           ;
+           ; Issues with 2 versions of begin here, so just expand manually
            ;(cons (rename 'orig-begin) (reverse res)))
            (cons 
              (cons 

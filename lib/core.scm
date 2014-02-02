@@ -86,14 +86,9 @@
        (load file2) ...))))
 
 ;
-;
 ; NOTE: The below cond/case forms do NOT use begin to prevent
 ;       conflicts between the stdlib begin and the begin form
 ;       from the module metalanguage.
-;
-; TODO: this may indicate a problem with syntax-rules and
-;       referential transparency.
-;
 ;
 
 ; cond
