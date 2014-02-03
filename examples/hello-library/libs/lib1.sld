@@ -6,7 +6,8 @@
 ;;;
 (define-library (libs lib1)
     (export lib1-hello)
-    (import (scheme write)
+    (import (scheme base)
+            (scheme write)
             (libs lib2))
     (begin
         (define (internal-func)
