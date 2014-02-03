@@ -1,7 +1,10 @@
 v3.16
 --------
 
-- Added code to throw an error if a cyclic library dependency is found, and modified the library system to only evaluate each library once during import.
+- Improved import of libraries:
+
+    - An error is now thrown if a cyclic library dependency is found.
+    - Each library is only evaluated once during the import process.
 
 - Added I/O functions: 
 
