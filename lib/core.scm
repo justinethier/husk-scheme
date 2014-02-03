@@ -596,6 +596,19 @@
         (else 
            #f))))
 
+;; Simplified version of filter from SRFI 1
+(define (filter pred lis)
+  (let recur ((lis lis))		
+   (if (null? lis) 
+    lis
+	(let ((head (car lis))
+	      (tail (cdr lis)))
+	  (if (pred head)
+	      (let ((new-tail (recur tail)))
+		(if (eq? tail new-tail) lis
+		    (cons head new-tail)))
+	      (recur tail))))))
+
 ;; Macros from r7rs
 (define-syntax when
   (syntax-rules ()
