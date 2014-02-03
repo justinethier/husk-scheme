@@ -818,12 +818,13 @@ vectorCopy badArgList = throwError $ NumArgs (Just 1) badArgList
 --   fall back to the normal equality comparison
 eq :: [LispVal] -> IOThrowsError LispVal
 eq [(Pointer pA envA), (Pointer pB envB)] = do
-    if pA == pB 
-       then do
-         refA <- getNamespacedRef envA varNamespace pA
-         refB <- getNamespacedRef envB varNamespace pB
-         return $ Bool $ refA == refB
-       else return $ Bool False
+    return $ Bool $ (pA == pB) && ((bindings envA) == (bindings envB))
+--    if pA == pB 
+--       then do
+--         refA <- getNamespacedRef envA varNamespace pA
+--         refB <- getNamespacedRef envB varNamespace pB
+--         return $ Bool $ refA == refB
+--       else return $ Bool False
 eq args = recDerefToFnc eqv args
 
 -- | Recursively compare two LispVals for equality
