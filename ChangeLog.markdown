@@ -1,6 +1,8 @@
 v3.16
 --------
 
+- Added code to throw an error if a cyclic library dependency is found, and modified the library system to only evaluate each library once during import.
+
 - Added I/O functions: 
 
     - `get-output-bytevector`
