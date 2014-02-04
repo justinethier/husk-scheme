@@ -3,7 +3,7 @@ v3.16
 
 - Improved import of libraries:
 
-    - An error is now thrown if a cyclic library dependency is found.
+    - Husk now detects cyclic dependencies and throws an error instead of going into an infinite loop.
     - Each library is only evaluated once during the import process.
 
 - Added I/O functions: 
