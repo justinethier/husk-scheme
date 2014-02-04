@@ -6,7 +6,7 @@ v3.16
     - Husk now detects cyclic dependencies and throws an error instead of going into an infinite loop.
     - Each library is only evaluated once during the import process.
 
-- Added I/O functions: 
+- Added the following R<sup>7</sup>RS I/O functions: 
 
     - `get-output-bytevector`
     - `get-output-string`
@@ -17,7 +17,7 @@ v3.16
     - `read-string`
     - `write-string`
 
-- Port data type extended:
+- The `Port` data type has been extended to include an optional in-memory buffer:
  
         Port Handle (Maybe Knob)
 
