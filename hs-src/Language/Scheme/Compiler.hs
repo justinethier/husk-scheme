@@ -999,6 +999,7 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 --
 -- TODO: it is probably possible to mix creating conts and not when there are func and non-func args.
 --  
+--  _ <- case (trace ("calling compileApply: " ++ show (List (func : fparams))) func) of
   _ <- case func of
     List _ -> return $ Nil ""
     Atom _ -> return $ Nil "" 
@@ -1082,6 +1083,26 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
     return $ [c] ++ _comp ++ rest
 
   -- |Compile function and args as a chain of continuations
+-- TODO:
+--   compileAllArgs (Atom fncName) = do
+--     rest <- case fparams of
+--     --rest <- case (trace "fncName" fparams) of
+--               [] -> do
+--                   throwError $ Default $ " unreachable code in compileAllArgs for " ++ fncName
+-- --                fnc <- compileInlineVar env fncName "fnc"
+-- --                return [AstFunction 
+-- --                          coptsThis
+-- --                          " env cont (Nil _) (Just (a:as)) "
+-- --                          [fnc,
+-- --                           AstValue $ "  apply " ++ applyCont ++ " fnc (a:as) "],
+-- --                        AstFunction 
+-- --                          coptsThis
+-- --                          " env cont value (Just (a:as)) " 
+-- --                          [fnc,
+-- --                           AstValue $ "  apply " ++ applyCont ++ " fnc $ (a:as) ++ [value] "]]
+--               _ -> compileArgs coptsThis True (Just fncName) fparams -- True, passing fnc as value
+--     return $ rest
+--     --return $ [c, wrapper ] ++ _comp ++ rest
   compileAllArgs func' = do
     Atom stubFunc <- _gensym "applyStubF"
     Atom wrapperFunc <- _gensym "applyWrapper"
@@ -1108,7 +1129,7 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                           nextFunc 
                           " env cont value (Just (a:as)) " 
                           [AstValue $ "  apply " ++ applyCont ++ " a $ as ++ [value] "]]
-              _ -> compileArgs nextFunc False fparams -- False since no value passed in this time
+              _ -> compileArgs nextFunc False Nothing fparams -- False since no value passed in this time
     return $ [c, wrapper ] ++ _comp ++ rest
 
   applyCont :: String
@@ -1118,8 +1139,8 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
   -- |Compile each argument as its own continuation (lambda), and then
   --  call the function using "applyWrapper"
-  compileArgs :: String -> Bool -> [LispVal] -> IOThrowsError [HaskAST]
-  compileArgs thisFunc thisFuncUseValue args = do
+  compileArgs :: String -> Bool -> (Maybe String) -> [LispVal] -> IOThrowsError [HaskAST]
+  compileArgs thisFunc thisFuncUseValue maybeFnc args = do
     case args of
       (a:as) -> do
         let lastArg = null as
@@ -1128,7 +1149,15 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
             case lastArg of
                 True -> return $ Atom "applyWrapper" -- Use wrapper to call into 'apply'
                 _ -> _gensym "applyNextArg" -- Next func argument to execute...
-        _comp <- mcompile env a $ CompileOptions stubFunc False False Nothing
+        _comp <- mcompile env a $ CompileOptions stubFunc thisFuncUseValue False Nothing
+
+        -- inline function?
+        fnc <- case maybeFnc of
+                 Just fncName -> compileInlineVar env fncName "fnc"
+                 _ -> return $ AstValue ""
+        let hasInlineFnc = case maybeFnc of
+                             Just _ -> True
+                             Nothing -> False
 
         -- Flag below means that the expression's value matters, add it to args
         f <- if thisFuncUseValue
@@ -1138,16 +1167,22 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
              let nextCont' = case (lastArg, coptsNext) of
                                  (True, Just fnextExpr) -> "(makeCPS env cont " ++ fnextExpr ++ ")"
                                  _ -> "cont"
+             let argsCode = case (thisFuncUseValue, hasInlineFnc) of
+                              (True, True) -> " $ args ++ [fnc, value]) " 
+                              (True, False) -> " $ args ++ [value]) " 
+                              (False, True) -> " $ args ++ [fnc]) "
+                              (False, False) -> " args) "
+
              if thisFuncUseValue
                 then return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env " ++ nextCont' ++ " " ++
-                                         nextFunc ++ " $ args ++ [value]) " ++ stubFunc ++ ") $ Nil\"\""  
+                                         nextFunc ++ argsCode ++ stubFunc ++ ") $ Nil\"\""  
                 else return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env " ++ nextCont' ++ " " ++
-                                         nextFunc ++ " args) " ++ stubFunc ++ ") $ Nil\"\""  
+                                         nextFunc ++ argsCode ++ stubFunc ++ ") $ Nil\"\""  
 
         rest <- case lastArg of
                      True -> return [] -- Using apply wrapper, so no more code
-                     _ -> compileArgs nextFunc True as -- True indicates nextFunc needs to use value arg passed into it
-        return $ [ f, c] ++ _comp ++ rest
+                     _ -> compileArgs nextFunc True Nothing as -- True indicates nextFunc needs to use value arg passed into it
+        return $ [ f, fnc, c] ++ _comp ++ rest
 
       _ -> throwError $ TypeMismatch "nonempty list" $ List args
 
@@ -1180,3 +1215,11 @@ _collectLiterals [] nfs _ = Just $ reverse nfs
 collectLiterals, collectLiteralsAndVars :: [LispVal] -> (Maybe [LispVal])
 collectLiteralsAndVars args = _collectLiterals args [] True
 collectLiterals args = _collectLiterals args [] False
+
+-- Compile variable as a stand-alone line of code
+compileInlineVar :: Env -> String -> String -> IOThrowsError HaskAST
+compileInlineVar env a hsName = do
+ isDefined <- liftIO $ isRecBound env a
+ case isDefined of
+   True -> return $ AstValue $ "  " ++ hsName ++ " <- getRTVar env \"" ++ a ++ "\""
+   False -> throwError $ UnboundVar "Variable is not defined" a
