@@ -999,6 +999,10 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 --
 -- TODO: it is probably possible to mix creating conts and not when there are func and non-func args.
 --  
+  _ <- case func of
+    List _ -> return $ Nil ""
+    Atom _ -> return $ Nil "" 
+    _ -> throwError $ BadSpecialForm "Unable to evaluate form" $ List (func : fparams)
 
   primitive <- isPrim env func
   let literals = collectLiterals fparams 
