@@ -101,7 +101,7 @@ createAstCont
   -> String -- ^ Extra leading indentation (or blank string if none)
   -> HaskAST -- ^ Generated code
 createAstCont (CompileOptions _ _ _ (Just nextFunc)) var indentation = do
-  AstValue $ indentation ++ "  continueEval env (makeCPS env cont " ++ nextFunc ++ ") " ++ var
+  AstValue $ indentation ++ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " []) " ++ var
 createAstCont (CompileOptions _ _ _ Nothing) var indentation = do
   AstValue $ indentation ++ "  continueEval env cont " ++ var
 
@@ -221,7 +221,7 @@ header filepath useCompiledLibs langRev = do
           "7" -> []
           _ -> [ "exec55_3 env cont _ _ = do "
                , "  liftIO $ registerExtensions env getDataFileName' "
-               , "  continueEval env (makeCPS env cont exec) (Nil \"\")"]
+               , "  continueEval env (makeCPSWArgs env cont exec []) (Nil \"\")"]
   [ " "
     , "-- |Get variable at runtime "
     , "getRTVar env var = do " 

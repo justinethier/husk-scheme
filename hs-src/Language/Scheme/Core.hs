@@ -982,7 +982,7 @@ apply cont (HFunc aparams avarargs abody aclosure) args =
      else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
-        evalBody evBody env = evBody env cont (Nil "") Nothing 
+        evalBody evBody env = evBody env cont (Nil "") (Just [])
 {- TODO: may need to handle cases from Func, such as dynamic winders
         case cont of
             Continuation _ (Just (SchemeBody cBody)) (Just cCont) _ cDynWind -> if length cBody == 0

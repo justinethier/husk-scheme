@@ -306,7 +306,7 @@ compile env ast@(List [Atom "if", predic, conseq, alt]) copts = do
 
     -- Entry point; ensure if is not rebound
     f <- return [AstValue $ "  " ++ symPredicate ++
-                            " env (makeCPS env cont " ++ symCheckPredicate ++ ") " ++ 
+                            " env (makeCPSWArgs env cont " ++ symCheckPredicate ++ " []) " ++ 
                             " (Nil \"\") (Just []) "]
     -- Compile expression for if's args
     compPredicate <- compileExpr env predic symPredicate Nothing      -- Do not want to call into nextFunc in the middle of (if)
@@ -496,7 +496,7 @@ compile env ast@(List [Atom "string-set!", Atom var, i, character]) copts = do
     compChr <- compileExpr env character symChr $ Just symDefine
     compDefine <- return $ AstFunction symDefine " env cont chr _ " [
         AstValue $ "  " ++ symCompiledI ++ " env (makeCPSWArgs env cont " ++ 
-          symMakeDefine ++ " [chr]) (Nil \"\") Nothing " ]
+          symMakeDefine ++ " [chr]) (Nil \"\") (Just []) " ]
     compI <- compileExpr env i symCompiledI Nothing
     compMakeDefine <- return $ AstFunction symMakeDefine " env cont idx (Just [chr]) " [
        AstValue $ "  tmp <- getVar env \"" ++ var ++ "\"",
@@ -526,7 +526,7 @@ compile env ast@(List [Atom "set-car!", Atom var, argObj]) copts = do
    
     -- Code to all into next continuation from copts, if one exists
     let finalContinuation = case copts of
-          (CompileOptions _ _ _ (Just nextFunc)) -> "continueEval e (makeCPS e c " ++ nextFunc ++ ")\n"
+          (CompileOptions _ _ _ (Just nextFunc)) -> "continueEval e (makeCPSWArgs e c " ++ nextFunc ++ " [])\n"
           _ -> "continueEval e c\n"
    
     -- Entry point that allows set-car! to be redefined
@@ -536,7 +536,7 @@ compile env ast@(List [Atom "set-car!", Atom var, argObj]) copts = do
     compGetVar <- return $ AstFunction symGetVar " env cont idx _ " [
        AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
        AstValue $ "  derefValue <- recDerefPtrs result",
-       AstValue $ "  " ++ symObj ++ " env cont derefValue Nothing "]
+       AstValue $ "  " ++ symObj ++ " env cont derefValue (Just []) "]
    
     -- Compiled version of argObj
     compiledObj <- compileExpr env argObj symCompiledObj Nothing 
@@ -588,7 +588,7 @@ compile env ast@(List [Atom "set-cdr!", Atom var, argObj]) copts = do
    
     -- Code to all into next continuation from copts, if one exists
     let finalContinuation = case copts of
-          (CompileOptions _ _ _ (Just nextFunc)) -> "continueEval e (makeCPS e c " ++ nextFunc ++ ")\n"
+          (CompileOptions _ _ _ (Just nextFunc)) -> "continueEval e (makeCPSWArgs e c " ++ nextFunc ++ " [])\n"
           _ -> "continueEval e c\n"
    
     -- Entry point that allows set-car! to be redefined
@@ -598,7 +598,7 @@ compile env ast@(List [Atom "set-cdr!", Atom var, argObj]) copts = do
     compGetVar <- return $ AstFunction symGetVar " env cont idx _ " [
        AstValue $ "  result <- getVar env \"" ++ var ++ "\"",
        AstValue $ "  derefValue <- recDerefPtrs result",
-       AstValue $ "  " ++ symObj ++ " env cont derefValue Nothing "]
+       AstValue $ "  " ++ symObj ++ " env cont derefValue (Just []) "]
    
     -- Compiled version of argObj
     compiledObj <- compileExpr env argObj symCompiledObj Nothing 
@@ -660,7 +660,7 @@ compile env ast@(List [Atom "list-set!", Atom var, i, object]) copts = do
     -- Compile index, then use a wrapper to pass it as an arg while compiling obj
     compiledIdx <- compileExpr env i symCompiledIdx (Just symIdxWrapper) 
     compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
-       AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") Nothing " ]
+       AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") (Just []) " ]
     compiledObj <- compileExpr env object symCompiledObj Nothing
     -- Do actual update
     compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
@@ -693,7 +693,7 @@ compile env ast@(List [Atom "vector-set!", Atom var, i, object]) copts = do
     -- Compile index, then use a wrapper to pass it as an arg while compiling obj
     compiledIdx <- compileExpr env i symCompiledIdx (Just symIdxWrapper) 
     compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
-       AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") Nothing " ]
+       AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") (Just []) " ]
     compiledObj <- compileExpr env object symCompiledObj Nothing
     -- Do actual update
     compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
@@ -727,7 +727,7 @@ compile env ast@(List [Atom "bytevector-u8-set!", Atom var, i, object]) copts = 
     -- Compile index, then use a wrapper to pass it as an arg while compiling obj
     compiledIdx <- compileExpr env i symCompiledIdx (Just symIdxWrapper) 
     compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
-       AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") Nothing " ]
+       AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") (Just []) " ]
     compiledObj <- compileExpr env object symCompiledObj Nothing
     -- Do actual update
     compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
@@ -760,7 +760,7 @@ compile env ast@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) copts = 
     -- Compile index, then use a wrapper to pass it as an arg while compiling obj
     compiledIdx <- compileExpr env rkey symCompiledIdx (Just symIdxWrapper) 
     compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
-       AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") Nothing " ]
+       AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") (Just []) " ]
     compiledObj <- compileExpr env rvalue symCompiledObj Nothing
     -- Do actual update
     compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [rkey]) " [
@@ -947,7 +947,7 @@ compileDivertedVars
         _ -> "Nil \"\""
       args = case useArgs of
         True -> "(Just args)"
-        _ -> "Nothing"
+        _ -> "(Just [])"
       comp (List [Atom renamed, Atom orig]) = do
         [AstValue $ "  v <- getVar env \"" ++ orig ++ "\"",
          AstValue $ "  _ <- defineVar env \"" ++ renamed ++ "\" v"]
@@ -1060,8 +1060,8 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
     c <- return $ 
       AstFunction coptsThis " env cont _ _ " [
-        AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ 
-                   nextFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""]  
+        AstValue $ "  continueEval env (makeCPSWArgs env (makeCPSWArgs env cont " ++ 
+                   nextFunc ++ " []) " ++ stubFunc ++ " []) $ Nil\"\""]  
     _comp <- mcompile env fnc $ CompileOptions stubFunc False False Nothing
 
     -- Haskell variables must be used to retrieve each atom from the env
@@ -1078,31 +1078,31 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
              Just fnextExpr -> return $ [
                AstFunction nextFunc 
                 " env cont value _ " $ varLines ++ 
-                [AstValue $ "  apply (makeCPS env cont " ++ 
-                            fnextExpr ++ ") value " ++ args]]
+                [AstValue $ "  apply (makeCPSWArgs env cont " ++ 
+                            fnextExpr ++ " []) value " ++ args]]
     return $ [c] ++ _comp ++ rest
 
   -- |Compile function and args as a chain of continuations
 -- TODO:
---   compileAllArgs (Atom fncName) = do
---     rest <- case fparams of
---     --rest <- case (trace "fncName" fparams) of
---               [] -> do
---                   throwError $ Default $ " unreachable code in compileAllArgs for " ++ fncName
--- --                fnc <- compileInlineVar env fncName "fnc"
--- --                return [AstFunction 
--- --                          coptsThis
--- --                          " env cont (Nil _) (Just (a:as)) "
--- --                          [fnc,
--- --                           AstValue $ "  apply " ++ applyCont ++ " fnc (a:as) "],
--- --                        AstFunction 
--- --                          coptsThis
--- --                          " env cont value (Just (a:as)) " 
--- --                          [fnc,
--- --                           AstValue $ "  apply " ++ applyCont ++ " fnc $ (a:as) ++ [value] "]]
---               _ -> compileArgs coptsThis True (Just fncName) fparams -- True, passing fnc as value
---     return $ rest
---     --return $ [c, wrapper ] ++ _comp ++ rest
+  compileAllArgs (Atom fncName) = do
+    rest <- case fparams of
+    --rest <- case (trace "fncName" fparams) of
+              [] -> do
+                  throwError $ Default $ " unreachable code in compileAllArgs for " ++ fncName
+--                fnc <- compileInlineVar env fncName "fnc"
+--                return [AstFunction 
+--                          coptsThis
+--                          " env cont (Nil _) (Just (a:as)) "
+--                          [fnc,
+--                           AstValue $ "  apply " ++ applyCont ++ " fnc (a:as) "],
+--                        AstFunction 
+--                          coptsThis
+--                          " env cont value (Just (a:as)) " 
+--                          [fnc,
+--                           AstValue $ "  apply " ++ applyCont ++ " fnc $ (a:as) ++ [value] "]]
+              _ -> compileArgs coptsThis True (Just fncName) fparams -- True, passing fnc as value
+    return $ rest
+    --return $ [c, wrapper ] ++ _comp ++ rest
   compileAllArgs func' = do
     Atom stubFunc <- _gensym "applyStubF"
     Atom wrapperFunc <- _gensym "applyWrapper"
@@ -1110,8 +1110,8 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
     c <- return $ 
       AstFunction coptsThis " env cont _ _ " [
-        AstValue $ "  continueEval env (makeCPS env (makeCPS env cont " ++ 
-                   wrapperFunc ++ ") " ++ stubFunc ++ ") $ Nil\"\""]  
+        AstValue $ "  continueEval env (makeCPSWArgs env (makeCPSWArgs env cont " ++ 
+                   wrapperFunc ++ " []) " ++ stubFunc ++ " []) $ Nil\"\""]  
     -- Use wrapper to pass high-order function (func) as an argument to apply
     wrapper <- return $ 
       AstFunction wrapperFunc " env cont value _ " [
@@ -1135,7 +1135,7 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
   applyCont :: String
   applyCont = case coptsNext of
                 Nothing -> "cont"
-                Just fnextExpr -> "(makeCPS env cont " ++ fnextExpr ++ ")"
+                Just fnextExpr -> "(makeCPSWArgs env cont " ++ fnextExpr ++ " [])"
 
   -- |Compile each argument as its own continuation (lambda), and then
   --  call the function using "applyWrapper"
@@ -1153,11 +1153,8 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
         -- inline function?
         fnc <- case maybeFnc of
-                 Just fncName -> compileInlineVar env fncName "fnc"
+                 Just fncName -> compileInlineVar env fncName "value"
                  _ -> return $ AstValue ""
-        let hasInlineFnc = case maybeFnc of
-                             Just _ -> True
-                             Nothing -> False
 
         -- Flag below means that the expression's value matters, add it to args
         f <- if thisFuncUseValue
@@ -1165,19 +1162,17 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                 else return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do "
         c <- do
              let nextCont' = case (lastArg, coptsNext) of
-                                 (True, Just fnextExpr) -> "(makeCPS env cont " ++ fnextExpr ++ ")"
+                                 (True, Just fnextExpr) -> "(makeCPSWArgs env cont " ++ fnextExpr ++ " [])"
                                  _ -> "cont"
-             let argsCode = case (thisFuncUseValue, hasInlineFnc) of
-                              (True, True) -> " $ args ++ [fnc, value]) " 
-                              (True, False) -> " $ args ++ [value]) " 
-                              (False, True) -> " $ args ++ [fnc]) "
-                              (False, False) -> " args) "
+             let argsCode = case thisFuncUseValue of
+                              True -> " $ args ++ [value]) " 
+                              False -> " args) "
 
              if thisFuncUseValue
-                then return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env " ++ nextCont' ++ " " ++
-                                         nextFunc ++ argsCode ++ stubFunc ++ ") $ Nil\"\""  
-                else return $ AstValue $ "  continueEval env (makeCPS env (makeCPSWArgs env " ++ nextCont' ++ " " ++
-                                         nextFunc ++ argsCode ++ stubFunc ++ ") $ Nil\"\""  
+                then return $ AstValue $ "  continueEval env (makeCPSWArgs env (makeCPSWArgs env " ++ nextCont' ++ " " ++
+                                         nextFunc ++ argsCode ++ stubFunc ++ " []) (Nil \"\") "  
+                else return $ AstValue $ "  continueEval env (makeCPSWArgs env (makeCPSWArgs env " ++ nextCont' ++ " " ++
+                                         nextFunc ++ argsCode ++ stubFunc ++ " []) $ Nil\"\""  
 
         rest <- case lastArg of
                      True -> return [] -- Using apply wrapper, so no more code
