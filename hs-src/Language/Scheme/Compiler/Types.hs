@@ -124,9 +124,10 @@ data HaskAST = AstAssignM String HaskAST
 showValAST :: HaskAST -> String
 showValAST (AstAssignM var val) = "  " ++ var ++ " <- " ++ show val
 showValAST (AstFunction name args code) = do
+  let typeSig = "\n" ++ name ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal "
   let fheader = "\n" ++ name ++ args ++ " = do "
   let fbody = unwords . map (\x -> "\n" ++ x ) $ map showValAST code
-  fheader ++ fbody 
+  typeSig ++ fheader ++ fbody 
 showValAST (AstValue v) = v
 showValAST (AstContinuation nextFunc args) =
     "  continueEval env (makeCPSWArgs env cont " ++ 
@@ -255,6 +256,6 @@ header filepath useCompiledLibs langRev = do
     , " "
     , "hsInit env cont _ _ = do "
     , "  _ <- defineVar env \"" ++ moduleRuntimeVar ++ "\" $ HashTable $ Data.Map.fromList [] "
-    , "  run env cont (Nil \"\") []"
+    , "  run env cont (Nil \"\") (Just [])"
     , " "]
 

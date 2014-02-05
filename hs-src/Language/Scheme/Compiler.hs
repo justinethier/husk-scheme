@@ -307,7 +307,7 @@ compile env ast@(List [Atom "if", predic, conseq, alt]) copts = do
     -- Entry point; ensure if is not rebound
     f <- return [AstValue $ "  " ++ symPredicate ++
                             " env (makeCPS env cont " ++ symCheckPredicate ++ ") " ++ 
-                            " (Nil \"\") [] "]
+                            " (Nil \"\") (Just []) "]
     -- Compile expression for if's args
     compPredicate <- compileExpr env predic symPredicate Nothing      -- Do not want to call into nextFunc in the middle of (if)
     compConsequence <- compileExpr env conseq symConsequence nextFunc -- pick up at nextFunc after consequence
@@ -315,8 +315,8 @@ compile env ast@(List [Atom "if", predic, conseq, alt]) copts = do
     -- Special case because we need to check the predicate's value
     compCheckPredicate <- return $ AstFunction symCheckPredicate " env cont result _ " [
        AstValue $ "  case result of ",
-       AstValue $ "    Bool False -> " ++ symAlternate ++ " env cont (Nil \"\") [] ",
-       AstValue $ "    _ -> " ++ symConsequence ++ " env cont (Nil \"\") [] "]
+       AstValue $ "    Bool False -> " ++ symAlternate ++ " env cont (Nil \"\") (Just []) ",
+       AstValue $ "    _ -> " ++ symConsequence ++ " env cont (Nil \"\") (Just []) "]
     
     -- Join compiled code together
     return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ 
@@ -368,7 +368,7 @@ compile env ast@(List [Atom "define", Atom var, form]) copts@(CompileOptions _ _
    
     -- Entry point; ensure var is not rebound
     f <- return $ [
-          AstValue $ "  " ++ symDefine ++ " env cont (Nil \"\") []" ]
+          AstValue $ "  " ++ symDefine ++ " env cont (Nil \"\") (Just [])" ]
     compDefine <- compileExpr env form symDefine $ Just symMakeDefine
     compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
        AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result",
@@ -856,7 +856,7 @@ compile env args@(List [Atom "load", filename, envSpec]) copts = do
   f <- return $ [
     -- TODO: should do runtime error checking if something else
     --       besides a LispEnv is returned
-    AstValue $ "  LispEnv e <- " ++ symEnv ++ " env (makeNullContinuation env) (Nil \"\") [] ",
+    AstValue $ "  LispEnv e <- " ++ symEnv ++ " env (makeNullContinuation env) (Nil \"\") (Just []) ",
     AstValue $ "  result <- " ++ symLoad ++ " e (makeNullContinuation e) (Nil \"\") Nothing",
     createAstCont copts "result" ""]
   -- Join compiled code together
@@ -960,7 +960,7 @@ compileDivertedVars
 -- |Create the function entry point for a special form
 compileSpecialFormEntryPoint :: String -> String -> CompOpts -> IOThrowsError HaskAST
 compileSpecialFormEntryPoint formName formSym copts = do
- compileSpecialForm formName ("do " ++ formSym ++ " env cont (Nil \"\") []") copts
+ compileSpecialForm formName ("" ++ formSym ++ " env cont (Nil \"\") (Just [])") copts
 
 -- | Helper function for compiling a special form
 compileSpecialForm :: String -> String -> CompOpts -> IOThrowsError HaskAST

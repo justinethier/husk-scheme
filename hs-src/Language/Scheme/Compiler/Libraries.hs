@@ -177,7 +177,7 @@ loadModule metaEnv name lopts copts@(CompileOptions _ _ _ _) = do
                         AstValue $ "  _ <- defineVar newEnv \"" ++ moduleRuntimeVar ++ 
                                        "\" $ Pointer \"" ++ moduleRuntimeVar ++ "\" env",
                         AstValue $ "  _ <- " ++ symStartLoadNewEnv ++ 
-                                   " newEnv (makeNullContinuation newEnv) (LispEnv env) []",
+                                   " newEnv (makeNullContinuation newEnv) (LispEnv env) (Just [])",
                         -- Save loaded module into runtime memory in case
                         -- it gets included somewhere else later on
                         AstValue $ "  _ <- evalLisp env $ List [Atom \"hash-table-set!\", Atom \"" ++ 
