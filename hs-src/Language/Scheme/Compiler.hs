@@ -1143,7 +1143,8 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
   compileArgs thisFunc thisFuncUseValue maybeFnc args = do
     case args of
       (a:as) -> do
-        let lastArg = null as
+        let (asRest, asLiterals) = takeLiterals as
+        let lastArg = null as -- TODO: asRest
         Atom stubFunc <- _gensym "applyFirstArg" -- Call into compiled stub
         Atom nextFunc <- do
             case lastArg of
@@ -1164,9 +1165,10 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
              let nextCont' = case (lastArg, coptsNext) of
                                  (True, Just fnextExpr) -> "(makeCPSWArgs env cont " ++ fnextExpr ++ " [])"
                                  _ -> "cont"
+             let literalArgs = "[]" -- TODO: asts2Str asLiterals
              let argsCode = case thisFuncUseValue of
-                              True -> " $ args ++ [value]) " 
-                              False -> " args) "
+                              True -> " $ args ++ [value] ++ " ++ literalArgs ++ ") " 
+                              False -> " $ args ++ " ++ literalArgs ++ ") "
 
              if thisFuncUseValue
                 then return $ AstValue $ "  continueEval env (makeCPSWArgs env (makeCPSWArgs env " ++ nextCont' ++ " " ++
@@ -1176,7 +1178,7 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
         rest <- case lastArg of
                      True -> return [] -- Using apply wrapper, so no more code
-                     _ -> compileArgs nextFunc True Nothing as -- True indicates nextFunc needs to use value arg passed into it
+                     _ -> compileArgs nextFunc True Nothing as -- TODO: asRest -- True indicates nextFunc needs to use value arg passed into it
         return $ [ f, fnc, c] ++ _comp ++ rest
 
       _ -> throwError $ TypeMismatch "nonempty list" $ List args
@@ -1210,6 +1212,22 @@ _collectLiterals [] nfs _ = Just $ reverse nfs
 collectLiterals, collectLiteralsAndVars :: [LispVal] -> (Maybe [LispVal])
 collectLiteralsAndVars args = _collectLiterals args [] True
 collectLiterals args = _collectLiterals args [] False
+
+-- Take as many literals as possible from the given list, and
+-- return those literals and the rest of the list
+takeLiterals :: [LispVal] -> ([LispVal], [LispVal])
+takeLiterals ls' = do
+  loop ls' []
+ where
+  loop (l : ls) acc = do
+    if isLiteral l
+       then loop ls (l : acc)
+       else loop [] acc -- Done
+  loop [] acc = ([], Data.List.reverse acc)
+
+  isLiteral (List _) = False
+  isLiteral (Atom _) = False
+  isLiteral _ = True
 
 -- Compile variable as a stand-alone line of code
 compileInlineVar :: Env -> String -> String -> IOThrowsError HaskAST
