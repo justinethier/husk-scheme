@@ -1222,7 +1222,7 @@ takeLiterals ls' = do
   loop (l : ls) acc = do
     if isLiteral l
        then loop ls (l : acc)
-       else loop [] acc -- Done
+       else ((l:ls), acc)
   loop [] acc = ([], Data.List.reverse acc)
 
   isLiteral (List _) = False
