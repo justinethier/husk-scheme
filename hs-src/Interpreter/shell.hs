@@ -32,35 +32,39 @@ main = do
 
   let (actions, nonOpts, _) = getOpt Permute options args
   opts <- foldl (>>=) (return defaultOptions) actions
-  let Options {optSchemeRev = schemeRev} = opts
+  let Options {optInter = interact, optSchemeRev = schemeRev} = opts
 
-  if null nonOpts 
+  if null nonOpts
      then do 
        LSC.showBanner
        env <- liftIO $ getRuntimeEnv schemeRev
        runRepl env
      else do
-         runOne (getRuntimeEnv schemeRev) nonOpts
+         runOne (getRuntimeEnv schemeRev) nonOpts interact
 
 --
 -- Command line options section
 --
 
 data Options = Options {
+    optInter :: Bool,
     optSchemeRev :: String -- RxRS version
     }
 
 -- |Default values for the command line options
 defaultOptions :: Options
 defaultOptions = Options {
+    optInter = False,
     optSchemeRev = "5"
     }
 options :: [OptDescr (Options -> IO Options)]
 options = [
+  Option ['i'] ["interactive"] (NoArg getInter) "load file and run REPL",
   Option ['r'] ["revision"] (ReqArg writeRxRSVersion "Scheme") "scheme RxRS version",
   Option ['h', '?'] ["help"] (NoArg showHelp) "show usage information"
   ]
  where
+  getInter opt = return opt { optInter = True }
   writeRxRSVersion arg opt = return opt { optSchemeRev = arg }
 
 showHelp :: Options -> IO Options
@@ -94,15 +98,15 @@ getRuntimeEnv "7" = LSC.r7rsEnv
 getRuntimeEnv _ = LSC.r5rsEnv
 
 -- |Execute a single scheme file from the command line
-runOne :: IO Env -> [String] -> IO ()
-runOne initEnv args = do
+runOne :: IO Env -> [String] -> Bool -> IO ()
+runOne initEnv args interactive = do
   env <- initEnv >>= flip LSV.extendEnv
                           [((LSV.varNamespace, "args"),
                            List $ map String $ drop 1 args)]
 
   result <- (LSC.runIOThrows $ liftM show $ 
              LSC.evalLisp env (List [Atom "load", String (args !! 0)]))
-  case result of
+  _ <- case result of
     Just errMsg -> putStrLn errMsg
     _  -> do 
       -- Call into (main) if it exists...
@@ -114,6 +118,8 @@ runOne initEnv args = do
         case mainResult of
           Just errMsg -> putStrLn errMsg
           _  -> return ())
+  when interactive (do
+    runRepl env)
 
 -- |Start the REPL (interactive interpreter)
 runRepl :: Env -> IO ()
