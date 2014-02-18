@@ -23,6 +23,8 @@ v3.16
 
   These changes are isolated in husk, but if your code uses any `Port` constructors, you would need to change them, EG: `Port _ Nothing`.
 
+- Added an `-i` option to start the `huski` REPL after executing a file.
+
 v3.15.2
 --------
 
