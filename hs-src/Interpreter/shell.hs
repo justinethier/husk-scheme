@@ -37,8 +37,10 @@ main = do
   if null nonOpts 
      then do 
        LSC.showBanner
-       runRepl schemeRev
-     else runOne schemeRev nonOpts
+       env <- liftIO $ getRuntimeEnv schemeRev
+       runRepl env
+     else do
+         runOne (getRuntimeEnv schemeRev) nonOpts
 
 --
 -- Command line options section
@@ -73,10 +75,10 @@ showHelp _ = do
   putStrLn "  Options may be any of the following:"
   putStrLn ""
   putStrLn "  --help           Display this information"
-  putStrLn "  --revision rev   Specify the scheme revision to use:"
-  putStrLn ""
-  putStrLn "                     5 - r5rs (default)"
-  putStrLn "                     7 - r7rs small"
+--  putStrLn "  --revision rev   Specify the scheme revision to use:"
+--  putStrLn ""
+--  putStrLn "                     5 - r5rs (default)"
+--  putStrLn "                     7 - r7rs small"
   putStrLn ""
   exitWith ExitSuccess
 
@@ -87,13 +89,13 @@ showHelp _ = do
 flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
 
--- |Execute a single scheme file from the command line
-runOne :: String -> [String] -> IO ()
-runOne "7" args = runOneWenv LSC.r7rsEnv args
-runOne _ args = runOneWenv LSC.r5rsEnv args
+getRuntimeEnv :: String -> IO Env
+getRuntimeEnv "7" = LSC.r7rsEnv
+getRuntimeEnv _ = LSC.r5rsEnv
 
-runOneWenv :: IO Env -> [String] -> IO ()
-runOneWenv initEnv args = do
+-- |Execute a single scheme file from the command line
+runOne :: IO Env -> [String] -> IO ()
+runOne initEnv args = do
   env <- initEnv >>= flip LSV.extendEnv
                           [((LSV.varNamespace, "args"),
                            List $ map String $ drop 1 args)]
@@ -114,16 +116,8 @@ runOneWenv initEnv args = do
           _  -> return ())
 
 -- |Start the REPL (interactive interpreter)
-runRepl :: String -> IO ()
-runRepl "7" = do
-    env <- liftIO $ LSC.r7rsEnv
-    runReplWenv env
-runRepl _ = do
-    env <- liftIO $ LSC.r5rsEnv 
-    runReplWenv env
-
-runReplWenv :: Env -> IO ()
-runReplWenv env' = do
+runRepl :: Env -> IO ()
+runRepl env' = do
     let settings = HL.Settings (completeScheme env') Nothing True
     HL.runInputT settings (loop env')
     where
