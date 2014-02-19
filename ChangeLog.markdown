@@ -6,6 +6,14 @@ v3.16
     - Husk now detects cyclic dependencies and throws an error instead of going into an infinite loop.
     - Each library is only evaluated once during the import process.
 
+- The `Port` data type has been extended to include an optional in-memory buffer:
+ 
+        Port Handle (Maybe Knob)
+
+  These changes are isolated in husk, but if your code uses any `Port` constructors, you would need to change them, EG: `Port _ Nothing`.
+
+- Added an `-i` command line option to `huski`. This option will start the interactive REPL after file is executed, and has no effect if a file is not specified on the command line.
+
 - Added the following R<sup>7</sup>RS I/O functions: 
 
     - `get-output-bytevector`
@@ -16,14 +24,6 @@ v3.16
     - `open-output-string`
     - `read-string`
     - `write-string`
-
-- The `Port` data type has been extended to include an optional in-memory buffer:
- 
-        Port Handle (Maybe Knob)
-
-  These changes are isolated in husk, but if your code uses any `Port` constructors, you would need to change them, EG: `Port _ Nothing`.
-
-- Added an `-i` option to start the `huski` REPL after executing a file.
 
 v3.15.2
 --------
