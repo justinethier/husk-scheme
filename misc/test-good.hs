@@ -112,7 +112,7 @@ applyFirstArg490 env cont value _  = do
   (trace ("" ++ (show value) ++ " " ++ (show "[]")) continueEval) env cont val
 f479 env cont value (Just args) = do 
   value <- getRTVar env "assv"
-  (trace ("applyFirstArg490 " ++ (show value) ++ " " ++ (show args)) continueEval) env (makeCPSWArgs env (makeCPSWArgs env cont applyNextArg492 $ args ++ [value] ++ []) applyFirstArg491 []) (Nil "") 
+  (trace ("f479 " ++ (show value) ++ " " ++ (show args)) continueEval) env (makeCPSWArgs env (makeCPSWArgs env cont applyNextArg492 $ args ++ [value] ++ []) applyFirstArg491 []) (Nil "") 
 
 applyFirstArg491 :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal 
 applyFirstArg491 env cont value _  = do 
