@@ -19,6 +19,7 @@ import  qualified Data.Map
 import Data.Ratio  
 import Data.Word  
 import System.IO  
+import Debug.Trace
  
 -- |Get variable at runtime 
 getRTVar env var = do 
@@ -63,57 +64,57 @@ run :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
 run env cont _ _  = do 
   result <- makeNormalHFunc env (["obj","alist"]) defineFuncEntryPt480 
   _ <- defineVar env "assv" result  
-  continueEval env (makeCPSWArgs env cont f479 []) result
+  (trace ("run") continueEval) env (makeCPSWArgs env cont f479 []) result
 defineFuncEntryPt480 env cont value (Just args) = do 
   value <- getRTVar env "foldl"
-  continueEval env (makeCPSWArgs env (makeCPSWArgs env cont applyNextArg482 $ args ++ [value] ++ [Bool False]) applyFirstArg481 []) (Nil "") 
+  (trace ("defineFuncEntryPt480 " ++ (show value) ++ " " ++ (show args)) continueEval) env (makeCPSWArgs env (makeCPSWArgs env cont applyNextArg482 $ args ++ [value] ++ [Bool False]) applyFirstArg481 []) (Nil "") 
 applyFirstArg481 env cont value (Just args) = do 
   value <- getRTVar env "mem-helper"
-  continueEval env (makeCPSWArgs env (makeCPSWArgs env cont applyNextArg484 $ args ++ [value] ++ []) applyFirstArg483 []) (Nil "") 
+  (trace ("applyFirstArg481 " ++ (show value) ++ " " ++ (show args)) continueEval) env (makeCPSWArgs env (makeCPSWArgs env cont applyNextArg484 $ args ++ [value] ++ []) applyFirstArg483 []) (Nil "") 
 
 applyFirstArg483 :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal 
 applyFirstArg483 env cont _ _  = do 
-  continueEval env (makeCPSWArgs env (makeCPSWArgs env cont applyNextF486 []) applyStubF485 []) $ Nil""
+  (trace ("applyFirstArg483 ") continueEval) env (makeCPSWArgs env (makeCPSWArgs env cont applyNextF486 []) applyStubF485 []) $ Nil""
 
 applyStubF485 :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal 
 applyStubF485 env cont _ _  = do 
   val <- getRTVar env "curry"
-  continueEval env cont val
+  (trace ("applyStubF485 ") continueEval) env cont val
 
 applyNextF486 :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal 
 applyNextF486 env cont value _  = do 
   v0 <- getRTVar env "eqv?" 
   v1 <- getRTVar env "obj" 
-  apply cont value [v0,v1]
+  (trace ("apply" ++ (show value) ++ (show "[]")) apply) cont value [v0,v1]
 applyNextArg484 env cont value (Just args) = do 
 
-  continueEval env (makeCPSWArgs env (makeCPSWArgs env cont applyWrapper $ args ++ [value] ++ []) applyFirstArg487 []) (Nil "") 
+  (trace ("applyNextArg484 " ++ (show value) ++ " " ++ (show args)) continueEval) env (makeCPSWArgs env (makeCPSWArgs env cont applyWrapper $ args ++ [value] ++ []) applyFirstArg487 []) (Nil "") 
 
 applyFirstArg487 :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal 
 applyFirstArg487 env cont value _  = do 
   val <- getRTVar env "car"
-  continueEval env cont val
+  (trace ("applyFirstArg487 " ++ (show value) ++ " " ++ (show "[]")) continueEval) env cont val
 applyNextArg482 env cont value (Just args) = do 
 
-  continueEval env (makeCPSWArgs env (makeCPSWArgs env cont applyWrapper $ args ++ [value] ++ []) applyFirstArg488 []) (Nil "") 
+  (trace ("applyNextArg482 " ++ (show value) ++ " " ++ (show args)) continueEval) env (makeCPSWArgs env (makeCPSWArgs env cont applyWrapper $ args ++ [value] ++ []) applyFirstArg488 []) (Nil "") 
 
 applyFirstArg488 :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal 
 applyFirstArg488 env cont value _  = do 
   val <- getRTVar env "alist"
-  continueEval env cont val
+  (trace ("applyFirstArg488 " ++ (show value) ++ " " ++ (show "[]")) continueEval) env cont val
 f479 env cont value (Just args) = do 
   value <- getRTVar env "assv"
-  continueEval env (makeCPSWArgs env (makeCPSWArgs env cont applyNextArg490 $ args ++ [value] ++ []) applyFirstArg489 []) (Nil "") 
+  (trace ("f479 " ++ (show value) ++ " " ++ (show args)) continueEval) env (makeCPSWArgs env (makeCPSWArgs env cont applyNextArg490 $ args ++ [value] ++ []) applyFirstArg489 []) (Nil "") 
 
 applyFirstArg489 :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal 
 applyFirstArg489 env cont value _  = do 
   x1 <-  return $ Atom "b" 
-  continueEval env cont x1
+  (trace ("applyFirstArg489 " ++ (show value) ++ " " ++ (show "[]")) continueEval) env cont x1
 applyNextArg490 env cont value (Just args) = do 
 
-  continueEval env (makeCPSWArgs env (makeCPSWArgs env cont applyWrapper $ args ++ [value] ++ []) applyFirstArg491 []) (Nil "") 
+  (trace ("applyNextArg490 " ++ (show value) ++ " " ++ (show args)) continueEval) env (makeCPSWArgs env (makeCPSWArgs env cont applyWrapper $ args ++ [value] ++ []) applyFirstArg491 []) (Nil "") 
 
 applyFirstArg491 :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal 
 applyFirstArg491 env cont value _  = do 
   x1 <-  return $ List [List [Atom "a",Number (1)]] 
-  continueEval env cont x1
+  (trace ("applyFirstArg491 " ++ (show value) ++ " " ++ (show "[]")) continueEval) env cont x1
