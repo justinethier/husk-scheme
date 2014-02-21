@@ -282,7 +282,6 @@ These routines have no effect if the port has already been
 closed.
 </div></p>
 
-<!--
 <p>
 <div id="open-input-string" class="obj-box">
   <div class="obj-header">
@@ -323,6 +322,7 @@ Returns a string consisting of the characters that have been
 output to the port so far in the order they were output. If
 the result string is modified, the effect is unspecified.
   <div class="p"></div>
+  <!--
   <div class="code-block">
 (parameterize
 ((current-output-port
@@ -333,7 +333,7 @@ the result string is modified, the effect is unspecified.
 (newline)
 (get-output-string (current-output-port)))
 ==&gt; "piece by piece by piece.\n"
-</div>
+</div>-->
 </div></p>
 <p>
 <div id="open-input-bytevector" class="obj-box">
@@ -371,7 +371,6 @@ It is an error if port was not created with open-output-bytevector.
 Returns a bytevector consisting of the bytes that have been
 output to the port so far in the order they were output.
 </div></p>
--->
 
 {% include manual/nav-bottom.html %}
 {% include manual/footer.html %}
