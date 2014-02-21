@@ -1,7 +1,7 @@
 v3.16
 --------
 
-TODO before release: cross-ref I/O functions with manual (and update as needed), take compiler issue as far as possible, but may not make it into release
+TODO before release: take compiler issue as far as possible, but may not make it into release
 
 - Improved import of libraries:
 
