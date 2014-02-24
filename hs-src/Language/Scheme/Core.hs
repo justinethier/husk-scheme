@@ -1162,7 +1162,8 @@ current continuation, which is passed as the first LispVal argument. -}
 --
 evalfuncExitSuccess, evalfuncExitFail, evalfuncApply, evalfuncDynamicWind, 
   evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues,
-  evalfuncMakeEnv, evalfuncNullEnv, evalfuncInteractionEnv, evalfuncImport :: [LispVal] -> IOThrowsError LispVal
+  evalfuncMakeEnv, evalfuncNullEnv, evalfuncUseParentEnv,
+  evalfuncInteractionEnv, evalfuncImport :: [LispVal] -> IOThrowsError LispVal
 
 {-
  - A (somewhat) simplified implementation of dynamic-wind
@@ -1239,6 +1240,13 @@ evalfuncNullEnv _ = throwError $ NumArgs (Just 1) []
 evalfuncInteractionEnv (cont@(Continuation env _ _ _ _) : _) = do
     continueEval env cont $ LispEnv env
 evalfuncInteractionEnv _ = throwError $ InternalError ""
+
+evalfuncUseParentEnv ((Continuation env a b c d) : _) = do
+    let parEnv = case parentEnv env of
+                      Just env' -> env'
+                      Nothing -> env
+    continueEval parEnv (Continuation parEnv a b c d) $ LispEnv parEnv
+evalfuncUseParentEnv _ = throwError $ InternalError ""
 
 evalfuncImport [
     cont@(Continuation env a b c d), 
@@ -1377,6 +1385,8 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("%import", evalfuncImport)
                   , ("%bootstrap-import", bootstrapImport)
 #endif
+                  , ("%husk-switch-to-parent-environment", evalfuncUseParentEnv)
+
                   , ("exit-fail", evalfuncExitFail)
                   , ("exit-success", evalfuncExitSuccess)
                 ]

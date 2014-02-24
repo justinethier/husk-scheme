@@ -254,5 +254,6 @@
     ;write-bytevector
     ;write-string
     ;write-u8
+    %husk-switch-to-parent-environment
     )
     (import (scheme)))

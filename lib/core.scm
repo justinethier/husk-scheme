@@ -76,7 +76,9 @@
 (define-syntax begin
   (syntax-rules ()
     ((begin exp ...)
-      ((lambda () exp ...)))))
+      ((lambda () 
+        (%husk-switch-to-parent-environment)
+        exp ...)))))
 
 (define-syntax include
   (syntax-rules ()
