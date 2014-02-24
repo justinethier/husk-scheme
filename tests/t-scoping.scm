@@ -67,4 +67,9 @@
     (assert/equal b '())
     (assert/equal a b))
 
+; Issue #159 - Prove begin can splice definitions, per R7RS
+(begin
+  (define begin-splicing 'splicing))
+(assert/equal begin-splicing begin-splicing)
+
 (unit-test-handler-results)
