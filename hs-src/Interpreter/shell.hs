@@ -32,7 +32,7 @@ main = do
 
   let (actions, nonOpts, _) = getOpt Permute options args
   opts <- foldl (>>=) (return defaultOptions) actions
-  let Options {optInter = interact, optSchemeRev = schemeRev} = opts
+  let Options {optInter = interactive, optSchemeRev = schemeRev} = opts
 
   if null nonOpts
      then do 
@@ -40,7 +40,7 @@ main = do
        env <- liftIO $ getRuntimeEnv schemeRev
        runRepl env
      else do
-         runOne (getRuntimeEnv schemeRev) nonOpts interact
+         runOne (getRuntimeEnv schemeRev) nonOpts interactive
 
 --
 -- Command line options section
