@@ -101,7 +101,7 @@ createAstCont
   -> String -- ^ Extra leading indentation (or blank string if none)
   -> HaskAST -- ^ Generated code
 createAstCont (CompileOptions _ _ _ (Just nextFunc)) var indentation = do
-  AstValue $ indentation ++ "  continueEval env (makeCPS env cont " ++ nextFunc ++ ") " ++ var
+  AstValue $ indentation ++ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " []) " ++ var
 createAstCont (CompileOptions _ _ _ Nothing) var indentation = do
   AstValue $ indentation ++ "  continueEval env cont " ++ var
 
@@ -124,9 +124,10 @@ data HaskAST = AstAssignM String HaskAST
 showValAST :: HaskAST -> String
 showValAST (AstAssignM var val) = "  " ++ var ++ " <- " ++ show val
 showValAST (AstFunction name args code) = do
+  let typeSig = "\n" ++ name ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal "
   let fheader = "\n" ++ name ++ args ++ " = do "
   let fbody = unwords . map (\x -> "\n" ++ x ) $ map showValAST code
-  fheader ++ fbody 
+  typeSig ++ fheader ++ fbody 
 showValAST (AstValue v) = v
 showValAST (AstContinuation nextFunc args) =
     "  continueEval env (makeCPSWArgs env cont " ++ 
@@ -220,7 +221,7 @@ header filepath useCompiledLibs langRev = do
           "7" -> []
           _ -> [ "exec55_3 env cont _ _ = do "
                , "  liftIO $ registerExtensions env getDataFileName' "
-               , "  continueEval env (makeCPS env cont exec) (Nil \"\")"]
+               , "  continueEval env (makeCPSWArgs env cont exec []) (Nil \"\")"]
   [ " "
     , "-- |Get variable at runtime "
     , "getRTVar env var = do " 
@@ -255,6 +256,6 @@ header filepath useCompiledLibs langRev = do
     , " "
     , "hsInit env cont _ _ = do "
     , "  _ <- defineVar env \"" ++ moduleRuntimeVar ++ "\" $ HashTable $ Data.Map.fromList [] "
-    , "  run env cont (Nil \"\") []"
+    , "  run env cont (Nil \"\") (Just [])"
     , " "]
 

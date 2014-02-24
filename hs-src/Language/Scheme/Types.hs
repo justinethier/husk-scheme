@@ -100,6 +100,7 @@ import Data.Complex
 import Data.Array
 import qualified Data.ByteString as BS
 import Data.Dynamic
+import qualified Data.Knob as DK
 import qualified Data.List as DL
 import Data.IORef
 import qualified Data.Map
@@ -233,7 +234,7 @@ data LispVal = Atom String
  -- ^Pointer to an environment variable.
  | Opaque Dynamic
  -- ^Opaque Haskell value.
- | Port Handle
+ | Port Handle (Maybe DK.Knob)
  -- ^I/O port
  | Continuation {  contClosure :: Env                   -- Environment of the continuation
                  , currentCont :: (Maybe DeferredCode)  -- Code of current continuation
@@ -459,7 +460,7 @@ showVal (HFunc {hparams = args, hvararg = varargs, hbody = _, hclosure = _}) =
     (case varargs of
       Nothing -> ""
       Just arg -> " . " ++ arg) ++ ") ...)"
-showVal (Port _) = "<IO port>"
+showVal (Port _ _) = "<IO port>"
 showVal (IOFunc _) = "<IO primitive>"
 showVal (CustFunc _) = "<custom primitive>"
 showVal (EvalFunc _) = "<procedure>"

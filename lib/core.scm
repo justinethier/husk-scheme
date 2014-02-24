@@ -86,14 +86,9 @@
        (load file2) ...))))
 
 ;
-;
 ; NOTE: The below cond/case forms do NOT use begin to prevent
 ;       conflicts between the stdlib begin and the begin form
 ;       from the module metalanguage.
-;
-; TODO: this may indicate a problem with syntax-rules and
-;       referential transparency.
-;
 ;
 
 ; cond
@@ -600,6 +595,19 @@
            (every* (cdr l)))
         (else 
            #f))))
+
+;; Simplified version of filter from SRFI 1
+(define (filter pred lis)
+  (let recur ((lis lis))		
+   (if (null? lis) 
+    lis
+	(let ((head (car lis))
+	      (tail (cdr lis)))
+	  (if (pred head)
+	      (let ((new-tail (recur tail)))
+		(if (eq? tail new-tail) lis
+		    (cons head new-tail)))
+	      (recur tail))))))
 
 ;; Macros from r7rs
 (define-syntax when

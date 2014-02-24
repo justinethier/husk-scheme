@@ -113,6 +113,13 @@ module Language.Scheme.Primitives (
  
  -- ** Input / Output 
  , makePort 
+ , makeBufferPort
+ , openInputString
+ , openOutputString
+ , getOutputString
+ , openInputByteVector
+ , openOutputByteVector
+ , getOutputByteVector
  , closePort
  , flushOutputPort
  , currentOutputPort 
@@ -127,9 +134,11 @@ module Language.Scheme.Primitives (
  , readProc 
  , readCharProc 
  , readByteVector
+ , readString
  , writeProc 
  , writeCharProc
  , writeByteVector
+ , writeString
  , readContents
  , load
  , readAll
@@ -155,6 +164,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.UTF8 as BSU
 import Data.Char hiding (isSymbol)
 import Data.Array
+import qualified Data.Knob as DK
 --import qualified Data.List as DL
 import qualified Data.Map
 import qualified Data.Time.Clock.POSIX
@@ -192,10 +202,74 @@ makePort
     -> IOMode
     -> [LispVal]
     -> IOThrowsError LispVal
-makePort openFnc mode [String filename] = liftM Port $ liftIO $ openFnc filename mode
+makePort openFnc mode [String filename] = do
+    h <- liftIO $ openFnc filename mode
+    return $ Port h Nothing
 makePort fnc mode [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= makePort fnc mode
 makePort _ _ [] = throwError $ NumArgs (Just 1) []
 makePort _ _ args@(_ : _) = throwError $ NumArgs (Just 1) args
+
+-- |Create an memory-backed port
+makeBufferPort :: Maybe LispVal -> IOThrowsError LispVal
+makeBufferPort buf = do
+    let mode = case buf of
+                 Nothing -> WriteMode
+                 _ -> ReadMode
+    bs <- case buf of
+        Just (String s)-> return $ BSU.fromString s
+        Just (ByteVector bv)-> return bv
+        Just err -> throwError $ TypeMismatch "string or bytevector" err
+        Nothing -> return $ BS.pack []
+    k <- DK.newKnob bs
+    h <- liftIO $ DK.newFileHandle k "temp.buf" mode
+    return $ Port h (Just k)
+
+-- |Read byte buffer from a given port
+getBufferFromPort :: LispVal -> IOThrowsError BSU.ByteString
+getBufferFromPort (Port h (Just k)) = do
+    _ <- liftIO $ hFlush h
+    DK.getContents k
+getBufferFromPort args = do
+    throwError $ TypeMismatch "output-port" args
+
+-- |Create a new input string buffer
+openInputString :: [LispVal] -> IOThrowsError LispVal
+openInputString [buf@(String _)] = makeBufferPort (Just buf)
+openInputString args = if length args == 2
+    then throwError $ TypeMismatch "(string)" $ List args
+    else throwError $ NumArgs (Just 1) args
+
+-- |Create a new output string buffer
+openOutputString :: [LispVal] -> IOThrowsError LispVal
+openOutputString _ = makeBufferPort Nothing
+
+-- |Create a new input bytevector buffer
+openInputByteVector :: [LispVal] -> IOThrowsError LispVal
+openInputByteVector [buf@(ByteVector _)] = makeBufferPort (Just buf)
+openInputByteVector args = if length args == 2
+    then throwError $ TypeMismatch "(bytevector)" $ List args
+    else throwError $ NumArgs (Just 1) args
+
+-- |Create a new output bytevector buffer
+openOutputByteVector :: [LispVal] -> IOThrowsError LispVal
+openOutputByteVector _ = makeBufferPort Nothing
+
+
+-- |Get string written to string-output-port
+getOutputString :: [LispVal] -> IOThrowsError LispVal
+getOutputString [p@(Port _ _)] = do
+    bytes <- getBufferFromPort p
+    return $ String $ BSU.toString bytes 
+getOutputString args = do
+    throwError $ TypeMismatch "output-port" $ List args
+
+-- |Get bytevector written to bytevector-output-port
+getOutputByteVector :: [LispVal] -> IOThrowsError LispVal
+getOutputByteVector [p@(Port _ _)] = do
+    bytes <- getBufferFromPort p
+    return $ ByteVector bytes 
+getOutputByteVector args = do
+    throwError $ TypeMismatch "output-port" $ List args
 
 -- |Close the given port
 --
@@ -206,7 +280,7 @@ makePort _ _ args@(_ : _) = throwError $ NumArgs (Just 1) args
 --   Returns: Bool - True if the port was closed, false otherwise
 --
 closePort :: [LispVal] -> IOThrowsError LispVal
-closePort [Port port] = liftIO $ hClose port >> (return $ Bool True)
+closePort [Port port _] = liftIO $ hClose port >> (return $ Bool True)
 closePort _ = return $ Bool False
 
 
@@ -222,7 +296,7 @@ other I/O functions hooking into these instead of std* -}
 --   Returns: Port
 --
 currentInputPort :: [LispVal] -> IOThrowsError LispVal
-currentInputPort _ = return $ Port stdin
+currentInputPort _ = return $ Port stdin Nothing
 -- |Return the current input port
 --
 --   LispVal Arguments: (None)
@@ -230,12 +304,12 @@ currentInputPort _ = return $ Port stdin
 --   Returns: Port
 --
 currentOutputPort :: [LispVal] -> IOThrowsError LispVal
-currentOutputPort _ = return $ Port stdout
+currentOutputPort _ = return $ Port stdout Nothing
 
 -- | Flush the given output port
 flushOutputPort :: [LispVal] -> IOThrowsError LispVal
 flushOutputPort [] = liftIO $ hFlush stdout >> (return $ Bool True)
-flushOutputPort [Port port] = liftIO $ hFlush port >> (return $ Bool True)
+flushOutputPort [Port port _] = liftIO $ hFlush port >> (return $ Bool True)
 flushOutputPort _ = return $ Bool False
 
 -- | Determine if the given port is a text port.
@@ -246,7 +320,7 @@ flushOutputPort _ = return $ Bool False
 --
 --   Returns: Bool
 isTextPort :: [LispVal] -> IOThrowsError LispVal
-isTextPort [Port port] = do
+isTextPort [Port port _] = do
     val <- liftIO $ isTextPort' port
     return $ Bool val
 isTextPort _ = return $ Bool False
@@ -259,7 +333,7 @@ isTextPort _ = return $ Bool False
 --
 --   Returns: Bool
 isBinaryPort :: [LispVal] -> IOThrowsError LispVal
-isBinaryPort [Port port] = do
+isBinaryPort [Port port _] = do
     val <- liftIO $ isTextPort' port
     return $ Bool $ not val
 isBinaryPort _ = return $ Bool False
@@ -280,7 +354,7 @@ isTextPort' port = do
 --
 --   Returns: Bool
 isInputPortOpen :: [LispVal] -> IOThrowsError LispVal
-isInputPortOpen [Port port] = do
+isInputPortOpen [Port port _] = do
     r <- liftIO $ hIsReadable port
     o <- liftIO $ hIsOpen port
     return $ Bool $ r && o
@@ -294,7 +368,7 @@ isInputPortOpen _ = return $ Bool False
 --
 --   Returns: Bool
 isOutputPortOpen :: [LispVal] -> IOThrowsError LispVal
-isOutputPortOpen [Port port] = do
+isOutputPortOpen [Port port _] = do
     w <- liftIO $ hIsWritable port
     o <- liftIO $ hIsOpen port
     return $ Bool $ w && o
@@ -309,7 +383,7 @@ isOutputPortOpen _ = return $ Bool False
 --   Returns: Bool - True if an input port, false otherwise
 --
 isInputPort :: [LispVal] -> IOThrowsError LispVal
-isInputPort [Port port] = liftM Bool $ liftIO $ hIsReadable port
+isInputPort [Port port _] = liftM Bool $ liftIO $ hIsReadable port
 isInputPort _ = return $ Bool False
 
 -- |Determine if the given objects is an output port
@@ -321,7 +395,7 @@ isInputPort _ = return $ Bool False
 --   Returns: Bool - True if an output port, false otherwise
 --
 isOutputPort :: [LispVal] -> IOThrowsError LispVal
-isOutputPort [Port port] = liftM Bool $ liftIO $ hIsWritable port
+isOutputPort [Port port _] = liftM Bool $ liftIO $ hIsWritable port
 isOutputPort _ = return $ Bool False
 
 -- |Determine if a character is ready on the port
@@ -333,7 +407,7 @@ isOutputPort _ = return $ Bool False
 --   Returns: Bool
 --
 isCharReady :: [LispVal] -> IOThrowsError LispVal
-isCharReady [Port port] = do --liftM Bool $ liftIO $ hReady port
+isCharReady [Port port _] = do --liftM Bool $ liftIO $ hReady port
     result <- liftIO $ try' (liftIO $ hReady port)
     case result of
         Left e -> if isEOFError e
@@ -351,8 +425,8 @@ isCharReady _ = return $ Bool False
 --   Returns: LispVal
 --
 readProc :: Bool -> [LispVal] -> IOThrowsError LispVal
-readProc mode [] = readProc mode [Port stdin]
-readProc mode [Port port] = do
+readProc mode [] = readProc mode [Port stdin Nothing]
+readProc mode [Port port _] = do
     input <- liftIO $ try' (liftIO $ hGetLine port)
     case input of
         Left e -> if isEOFError e
@@ -374,8 +448,8 @@ readProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 --   Returns: Char
 --
 readCharProc :: (Handle -> IO Char) -> [LispVal] -> IOThrowsError LispVal
-readCharProc func [] = readCharProc func [Port stdin]
-readCharProc func [Port port] = do
+readCharProc func [] = readCharProc func [Port stdin Nothing]
+readCharProc func [Port port _] = do
     liftIO $ hSetBuffering port NoBuffering
     input <- liftIO $ try' (liftIO $ func port)
     liftIO $ hSetBuffering port LineBuffering
@@ -396,7 +470,22 @@ readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 --
 --   Returns: ByteVector
 readByteVector :: [LispVal] -> IOThrowsError LispVal
-readByteVector [Number n, Port port] = do
+readByteVector args = readBuffer args (\ inBytes -> ByteVector inBytes)
+
+-- | Read a string from the given port
+--
+--   Arguments
+--
+--   * Number - Number of bytes to read
+--   * Port - Port to read from
+--
+--   Returns: String
+readString :: [LispVal] -> IOThrowsError LispVal
+readString args = readBuffer args (\ inBytes -> String $ BSU.toString inBytes)
+
+-- |Helper function to read n bytes from a port into a buffer
+readBuffer :: [LispVal] -> (BSU.ByteString -> LispVal) -> IOThrowsError LispVal
+readBuffer [Number n, Port port _] rvfnc = do
     input <- liftIO $ try' (liftIO $ BS.hGet port $ fromInteger n)
     case input of
         Left e -> if isEOFError e
@@ -405,10 +494,10 @@ readByteVector [Number n, Port port] = do
         Right inBytes -> do
             if BS.null inBytes
                then return $ EOF
-               else return $ ByteVector inBytes
-readByteVector args = if length args == 2
-                     then throwError $ TypeMismatch "(k port)" $ List args
-                     else throwError $ NumArgs (Just 2) args
+               else return $ rvfnc inBytes
+readBuffer args _ = if length args == 2
+                       then throwError $ TypeMismatch "(k port)" $ List args
+                       else throwError $ NumArgs (Just 2) args
 
 -- |Write to the given port
 --
@@ -427,8 +516,8 @@ writeProc :: (Handle -> LispVal -> IO a)
           -> [LispVal] -> ErrorT LispError IO LispVal
 writeProc func [obj] = do
     dobj <- recDerefPtrs obj -- Last opportunity to do this before writing
-    writeProc func [dobj, Port stdout]
-writeProc func [obj, Port port] = do
+    writeProc func [dobj, Port stdout Nothing]
+writeProc func [obj, Port port _] = do
     dobj <- recDerefPtrs obj -- Last opportunity to do this before writing
     output <- liftIO $ try' (liftIO $ func port dobj)
     case output of
@@ -449,8 +538,8 @@ writeProc _ other = if length other == 2
 --   Returns: (None)
 --
 writeCharProc :: [LispVal] -> IOThrowsError LispVal
-writeCharProc [obj] = writeCharProc [obj, Port stdout]
-writeCharProc [obj@(Char _), Port port] = do
+writeCharProc [obj] = writeCharProc [obj, Port stdout Nothing]
+writeCharProc [obj@(Char _), Port port _] = do
     output <- liftIO $ try' (liftIO $ (hPutStr port $ show obj))
     case output of
         Left _ -> throwError $ Default "I/O error writing to port"
@@ -468,13 +557,36 @@ writeCharProc other = if length other == 2
 --
 --   Returns: (unspecified)
 writeByteVector :: [LispVal] -> IOThrowsError LispVal
-writeByteVector [obj, Port port] = do
-    ByteVector bs <- recDerefPtrs obj -- Last opportunity to do this before writing
+writeByteVector args = writeBuffer args bv2b
+  where
+    bv2b obj = do
+        ByteVector bs <- recDerefPtrs obj -- Last opportunity to do this before writing
+        return bs
+
+-- | Write a string to the given port
+--
+--   Arguments
+--
+--   * String
+--   * Port
+--
+--   Returns: (unspecified)
+writeString :: [LispVal] -> IOThrowsError LispVal
+writeString args = writeBuffer args str2b
+  where
+    str2b obj = do
+        String str <- recDerefPtrs obj -- Last opportunity to do this before writing
+        return $ BSU.fromString str
+
+-- |Helper function to write buffer-based data to output port
+writeBuffer :: [LispVal] -> (LispVal -> IOThrowsError BSU.ByteString) -> IOThrowsError LispVal
+writeBuffer [obj, Port port _] getBS = do
+    bs <- getBS obj
     output <- liftIO $ try' (liftIO $ BS.hPut port bs)
     case output of
         Left _ -> throwError $ Default "I/O error writing to port"
         Right _ -> return $ Nil ""
-writeByteVector other = 
+writeBuffer other _ = 
     if length other == 2
        then throwError $ TypeMismatch "(bytevector port)" $ List other
        else throwError $ NumArgs (Just 2) other
@@ -706,12 +818,13 @@ vectorCopy badArgList = throwError $ NumArgs (Just 1) badArgList
 --   fall back to the normal equality comparison
 eq :: [LispVal] -> IOThrowsError LispVal
 eq [(Pointer pA envA), (Pointer pB envB)] = do
-    if pA == pB 
-       then do
-         refA <- getNamespacedRef envA varNamespace pA
-         refB <- getNamespacedRef envB varNamespace pB
-         return $ Bool $ refA == refB
-       else return $ Bool False
+    return $ Bool $ (pA == pB) && ((bindings envA) == (bindings envB))
+--    if pA == pB 
+--       then do
+--         refA <- getNamespacedRef envA varNamespace pA
+--         refB <- getNamespacedRef envB varNamespace pB
+--         return $ Bool $ refA == refB
+--       else return $ Bool False
 eq args = recDerefToFnc eqv args
 
 -- | Recursively compare two LispVals for equality

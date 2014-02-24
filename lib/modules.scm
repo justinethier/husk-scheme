@@ -25,6 +25,7 @@
 (define (identifier->symbol s) s)
 
 (define *this-module* '())
+(define *loading* '())
 
 (define (make-module exports env meta) (vector exports env meta #f))
 (define (%module-exports mod) (vector-ref mod 0))
@@ -180,9 +181,13 @@
             (else (error "couldn't find include" f)))))
        files))
     ;; catch cyclic references
-    (module-meta-data-set!
-     mod
-     `((error "module attempted to reference itself while loading" ,name)))
+    (if (member name *loading*)
+        (error "module attempted to reference itself while loading" name)
+        ;(write `(cyclic reference ,name))
+        (set! *loading* (cons name *loading*)))
+;;    (module-meta-data-set!
+;;     mod
+;;     `((error "module attempted to reference itself while loading" ,name)))
     (for-each
      (lambda (x)
        (case (and (pair? x) (car x))
@@ -212,7 +217,8 @@
          ((error)
           (apply error (cdr x)))))
      meta)
-    (module-meta-data-set! mod meta)
+    (set! *loading* (filter (lambda (n) (equal? n name)) *loading*))
+;;    (module-meta-data-set! mod meta)
     ;(warn-undefs env #f) ; JAE - commented this out (TODO)
     env))
 
@@ -229,7 +235,14 @@
 (define (load-module name)
   (let ((mod (find-module name)))
     (if (and mod (not (module-env mod)))
-        (module-env-set! mod (eval-module name mod)))
+        ((lambda ()
+            (module-env-set! mod (eval-module name mod))
+;(write `(DEBUG ,name before set modules is ,*modules*))
+            (set! *modules* ;; Only eval each module once
+             (cons (cons name mod)
+              (filter (lambda (m) (not (equal? (car m) name))) *modules*)))
+;(write `(DEBUG ,name after set modules is ,*modules*))
+)))
     mod))
 
 ;TODO: see below:
@@ -305,11 +318,7 @@
        (let lp ((ls (cdr expr)) (res '()))
          (cond
           ((null? ls)
-           ; JAE - Using expanded version of begin because there were
-           ;       problems with using the following line from chibi.
-           ;       This may highlight a problem in husk, but for the
-           ;       purposes of this file we are moving on...
-           ;
+           ; Issues with 2 versions of begin here, so just expand manually
            ;(cons (rename 'orig-begin) (reverse res)))
            (cons 
              (cons 

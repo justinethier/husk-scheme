@@ -35,4 +35,23 @@
 (assert/equal (delete-file *filename*) #f)
 (assert/equal (file-exists? *filename*) #f)
 
+(define os (open-output-string))
+(display "piece" os)
+(display " by piece " os)
+(display "by piece." os)
+(newline os)
+(assert/equal
+    (get-output-string os)
+    "piece by piece by piece.\n"
+    "string buffered I/O")
+
+(define ib (open-input-bytevector #u8(65 66 67 68)))
+(assert/equal
+    (read ib)
+    'ABCD
+    "bytevector buffered I/O")
+
+(define is (open-input-string "test string"))
+(assert/equal "t" (read-string 1 is))
+
 (unit-test-handler-results)

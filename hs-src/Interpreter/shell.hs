@@ -32,33 +32,39 @@ main = do
 
   let (actions, nonOpts, _) = getOpt Permute options args
   opts <- foldl (>>=) (return defaultOptions) actions
-  let Options {optSchemeRev = schemeRev} = opts
+  let Options {optInter = interact, optSchemeRev = schemeRev} = opts
 
-  if null nonOpts 
+  if null nonOpts
      then do 
        LSC.showBanner
-       runRepl schemeRev
-     else runOne schemeRev nonOpts
+       env <- liftIO $ getRuntimeEnv schemeRev
+       runRepl env
+     else do
+         runOne (getRuntimeEnv schemeRev) nonOpts interact
 
 --
 -- Command line options section
 --
 
 data Options = Options {
+    optInter :: Bool,
     optSchemeRev :: String -- RxRS version
     }
 
 -- |Default values for the command line options
 defaultOptions :: Options
 defaultOptions = Options {
+    optInter = False,
     optSchemeRev = "5"
     }
 options :: [OptDescr (Options -> IO Options)]
 options = [
+  Option ['i'] ["interactive"] (NoArg getInter) "load file and run REPL",
   Option ['r'] ["revision"] (ReqArg writeRxRSVersion "Scheme") "scheme RxRS version",
   Option ['h', '?'] ["help"] (NoArg showHelp) "show usage information"
   ]
  where
+  getInter opt = return opt { optInter = True }
   writeRxRSVersion arg opt = return opt { optSchemeRev = arg }
 
 showHelp :: Options -> IO Options
@@ -72,11 +78,13 @@ showHelp _ = do
   putStrLn ""
   putStrLn "  Options may be any of the following:"
   putStrLn ""
-  putStrLn "  --help           Display this information"
-  putStrLn "  --revision rev   Specify the scheme revision to use:"
-  putStrLn ""
-  putStrLn "                     5 - r5rs (default)"
-  putStrLn "                     7 - r7rs small"
+  putStrLn "  -h, --help      Display this information"
+  putStrLn "  -i              Start interactive REPL after file is executed. This"
+  putStrLn "                  option has no effect if a file is not specified. "
+--  putStrLn "  --revision rev   Specify the scheme revision to use:"
+--  putStrLn ""
+--  putStrLn "                     5 - r5rs (default)"
+--  putStrLn "                     7 - r7rs small"
   putStrLn ""
   exitWith ExitSuccess
 
@@ -87,20 +95,20 @@ showHelp _ = do
 flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
 
--- |Execute a single scheme file from the command line
-runOne :: String -> [String] -> IO ()
-runOne "7" args = runOneWenv LSC.r7rsEnv args
-runOne _ args = runOneWenv LSC.r5rsEnv args
+getRuntimeEnv :: String -> IO Env
+getRuntimeEnv "7" = LSC.r7rsEnv
+getRuntimeEnv _ = LSC.r5rsEnv
 
-runOneWenv :: IO Env -> [String] -> IO ()
-runOneWenv initEnv args = do
+-- |Execute a single scheme file from the command line
+runOne :: IO Env -> [String] -> Bool -> IO ()
+runOne initEnv args interactive = do
   env <- initEnv >>= flip LSV.extendEnv
                           [((LSV.varNamespace, "args"),
                            List $ map String $ drop 1 args)]
 
   result <- (LSC.runIOThrows $ liftM show $ 
              LSC.evalLisp env (List [Atom "load", String (args !! 0)]))
-  case result of
+  _ <- case result of
     Just errMsg -> putStrLn errMsg
     _  -> do 
       -- Call into (main) if it exists...
@@ -112,18 +120,12 @@ runOneWenv initEnv args = do
         case mainResult of
           Just errMsg -> putStrLn errMsg
           _  -> return ())
+  when interactive (do
+    runRepl env)
 
 -- |Start the REPL (interactive interpreter)
-runRepl :: String -> IO ()
-runRepl "7" = do
-    env <- liftIO $ LSC.r7rsEnv
-    runReplWenv env
-runRepl _ = do
-    env <- liftIO $ LSC.r5rsEnv 
-    runReplWenv env
-
-runReplWenv :: Env -> IO ()
-runReplWenv env' = do
+runRepl :: Env -> IO ()
+runRepl env' = do
     let settings = HL.Settings (completeScheme env') Nothing True
     HL.runInputT settings (loop env')
     where
