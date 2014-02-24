@@ -1,8 +1,6 @@
 v3.16
 --------
 
-TODO before release: take compiler issue as far as possible, but may not make it into release
-
 - Improved import of libraries:
 
     - Husk now detects cyclic dependencies and throws an error instead of going into an infinite loop.
