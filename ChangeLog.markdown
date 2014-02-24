@@ -14,7 +14,7 @@ TODO before release: take compiler issue as far as possible, but may not make it
 
   These changes are isolated in husk, but if your code uses any `Port` constructors, you would need to change them, EG: `Port _ Nothing`.
 
-- Added an `-i` command line option to `huski`. This option will start the interactive REPL after file is executed, and has no effect if a file is not specified on the command line.
+- Added an `-i` command line option to `huski`. This option will start the interactive REPL after a file specified on the command line is executed, and has no effect if no file is specified.
 
 - Added the following R<sup>7</sup>RS I/O functions: 
 
