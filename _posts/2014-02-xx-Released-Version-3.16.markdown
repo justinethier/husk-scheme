@@ -10,12 +10,6 @@ excerpt: This release improves R<sup>7</sup>RS library support, adds support for
     - Husk now detects cyclic dependencies and throws an error instead of going into an infinite loop.
     - Each library is only evaluated once during the import process.
 
-- The `Port` data type has been extended to include an optional in-memory buffer:
- 
-        Port Handle (Maybe Knob)
-
-  These changes are isolated in husk, but if your code uses any `Port` constructors, you would need to change them, EG: `Port _ Nothing`.
-
 - `begin` now has the ability to evaluate contained expressions and definitions as if the enclosing `begin` were not present, per R<sup>7</sup>RS. For example:
 
         huski> x
@@ -24,8 +18,6 @@ excerpt: This release improves R<sup>7</sup>RS library support, adds support for
         28
         huski> x
         28
-
-- Added an `-i` command line option to `huski`. This option will start the interactive REPL after a file specified on the command line is executed, and has no effect if no file is specified.
 
 - Added the following R<sup>7</sup>RS I/O functions: 
 
@@ -37,3 +29,14 @@ excerpt: This release improves R<sup>7</sup>RS library support, adds support for
     - `open-output-string`
     - `read-string`
     - `write-string`
+
+- Added an `-i` command line option to `huski`. This option will start the interactive REPL after a file specified on the command line is executed, and has no effect if no file is specified.
+
+Haskell API:
+
+- The `Port` data type has been extended to include an optional in-memory buffer:
+ 
+        Port Handle (Maybe Knob)
+
+  These changes are isolated in husk, but if your code uses any `Port` constructors, you would need to change them, EG: `Port _ Nothing`.
+
