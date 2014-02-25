@@ -16,6 +16,15 @@ excerpt: This release improves R<sup>7</sup>RS library support, adds support for
 
   These changes are isolated in husk, but if your code uses any `Port` constructors, you would need to change them, EG: `Port _ Nothing`.
 
+- `begin` now has the ability to evaluate contained expressions and definitions as if the enclosing `begin` were not present, per R<sup>7</sup>RS. For example:
+
+        huski> x
+        Getting an unbound variable: x
+        huski> (begin (define x 28) x)
+        28
+        huski> x
+        28
+
 - Added an `-i` command line option to `huski`. This option will start the interactive REPL after a file specified on the command line is executed, and has no effect if no file is specified.
 
 - Added the following R<sup>7</sup>RS I/O functions: 
