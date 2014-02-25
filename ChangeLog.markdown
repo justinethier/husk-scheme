@@ -20,7 +20,6 @@ v3.16
         28
         huski> x
         28
-        huski>
 
 - Added an `-i` command line option to `huski`. This option will start the interactive REPL after a file specified on the command line is executed, and has no effect if no file is specified.
 
