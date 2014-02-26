@@ -138,7 +138,8 @@ showValAST (AstFunction name args code) = do
                (appendArg "value") ++ 
                (appendArg "args") ++ 
                ") getCPUTime)"
-  typeSig ++ fheader ++ {-fdebug ++ -} fbody 
+ -- typeSig ++ fheader ++ fdebug ++ fbody 
+  typeSig ++ fheader ++ fbody 
 showValAST (AstValue v) = v
 showValAST (AstContinuation nextFunc args) =
     "  continueEval env (makeCPSWArgs env cont " ++ 

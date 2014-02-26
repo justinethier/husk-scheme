@@ -1154,13 +1154,15 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
         -- inline function?
         fnc <- case maybeFnc of
-                 Just fncName -> compileInlineVar env fncName "value"
-                 _ -> return $ AstValue ""
+                 Just fncName -> do
+                    var <- compileInlineVar env fncName "value"
+                    return [var]
+                 _ -> return []
 
         -- Flag below means that the expression's value matters, add it to args
-        f <- if thisFuncUseValue
-                then return $ AstValue $ thisFunc ++ " env cont value (Just args) = do "
-                else return $ AstValue $ thisFunc ++ " env cont _ (Just args) = do "
+        let fargs = if thisFuncUseValue
+                       then " env cont value (Just args) "
+                       else " env cont _ (Just args) "
         c <- do
              let nextCont' = case (lastArg, coptsNext) of
                                  (True, Just fnextExpr) -> "(makeCPSWArgs env cont " ++ fnextExpr ++ " [])"
@@ -1179,7 +1181,7 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
         rest <- case lastArg of
                      True -> return [] -- Using apply wrapper, so no more code
                      _ -> compileArgs nextFunc True Nothing asRest -- True indicates nextFunc needs to use value arg passed into it
-        return $ [ f, fnc, c] ++ _comp ++ rest
+        return $ [AstFunction thisFunc fargs (fnc ++ [c])] ++ _comp ++ rest
 
       _ -> throwError $ TypeMismatch "nonempty list" $ List args
 
