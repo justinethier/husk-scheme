@@ -127,7 +127,18 @@ showValAST (AstFunction name args code) = do
   let typeSig = "\n" ++ name ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal "
   let fheader = "\n" ++ name ++ args ++ " = do "
   let fbody = unwords . map (\x -> "\n" ++ x ) $ map showValAST code
-  typeSig ++ fheader ++ fbody 
+  let appendArg arg = do
+        if Data.List.isInfixOf arg args
+           then " ++ \" \" ++ " ++ (show arg) ++ 
+                " ++ \" [\" ++ (show " ++ arg ++ ")" ++ 
+                " ++ \"] \""
+           else ""
+  let fdebug = "\n  _ <- liftIO $ (trace (\"" ++ 
+               name ++ "\"" ++ 
+               (appendArg "value") ++ 
+               (appendArg "args") ++ 
+               ") getCPUTime)"
+  typeSig ++ fheader ++ {-fdebug ++ -} fbody 
 showValAST (AstValue v) = v
 showValAST (AstContinuation nextFunc args) =
     "  continueEval env (makeCPSWArgs env cont " ++ 
@@ -223,6 +234,9 @@ header filepath useCompiledLibs langRev = do
                , "  liftIO $ registerExtensions env getDataFileName' "
                , "  continueEval env (makeCPSWArgs env cont exec []) (Nil \"\")"]
   [ " "
+    , "-- import System.CPUTime "
+    , "-- import Debug.Trace "
+    , " "
     , "-- |Get variable at runtime "
     , "getRTVar env var = do " 
     , "  v <- getVar env var " 
