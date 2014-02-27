@@ -51,7 +51,11 @@
    (reverse (cons ".sld" (cdr (module-name->strings name '()))))))
 
 (define (module-name-prefix name)
-  (string-concatenate (reverse (cdr (cdr (module-name->strings name '()))))))
+  (cond 
+    ((and (pair? name) (pair? (cdr name)))
+     (string-concatenate (reverse (cdr (cdr (module-name->strings name '()))))))
+    (else
+     "")))
 
 (define load-module-definition
   (let ((meta-env (current-environment)))
