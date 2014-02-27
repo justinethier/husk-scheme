@@ -33,6 +33,8 @@ main = do
   opts <- foldl (>>=) (return defaultOptions) actions
   let Options {optOutput = output, optLibs = lib, optDynamic = dynamic, optCustomOptions = extra, optSchemeRev = langrev} = opts
 
+  let debugOpt = False
+
   if null nonOpts
      then showUsage
      else do
@@ -45,7 +47,7 @@ main = do
               Just args' -> args'
               Nothing -> ""
 -- TODO: pass language revision
-        process inFile outHaskell outExec lib dynamic extraOpts langrev
+        process inFile outHaskell outExec lib dynamic extraOpts langrev debugOpt
 
 -- 
 -- For an explanation of the command line options code, see:
@@ -135,8 +137,8 @@ showVersion _ = do
   exitWith ExitSuccess
 
 -- |High level code to compile the given file
-process :: String -> String -> String -> Bool -> Bool -> String -> String -> IO ()
-process inFile outHaskell outExec libs dynamic extraArgs langrev = do
+process :: String -> String -> String -> Bool -> Bool -> String -> String -> Bool -> IO ()
+process inFile outHaskell outExec libs dynamic extraArgs langrev debugOpt = do
   env <- case langrev of
             "7" -> Language.Scheme.Core.r7rsEnv'
             _ -> Language.Scheme.Core.r5rsEnv'
@@ -147,14 +149,14 @@ process inFile outHaskell outExec libs dynamic extraArgs langrev = do
                      then Just stdlib
                      else Nothing
 
-  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env stdlibArg srfi55 inFile outHaskell langrev)
+  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env stdlibArg srfi55 inFile outHaskell langrev debugOpt)
   case result of
    Just errMsg -> putStrLn errMsg
    _ -> compileHaskellFile outHaskell outExec dynamic extraArgs
 
 -- |Compile a scheme file to haskell
-compileSchemeFile :: Env -> Maybe String -> String -> String -> String -> String -> IOThrowsError LispVal
-compileSchemeFile env stdlib srfi55 filename outHaskell langrev = do
+compileSchemeFile :: Env -> Maybe String -> String -> String -> String -> String -> Bool -> IOThrowsError LispVal
+compileSchemeFile env stdlib srfi55 filename outHaskell langrev debugOpt = do
   let conv :: LispVal -> String
       conv (String s) = s
       conv l = show l
@@ -189,7 +191,7 @@ compileSchemeFile env stdlib srfi55 filename outHaskell langrev = do
   _ <- liftIO $ writeList outH headerModule
   _ <- liftIO $ writeList outH $ map (\modl -> "import " ++ modl ++ " ") $ headerImports ++ moreHeaderImports
   filepath <- liftIO $ getDataFileName ""
-  _ <- liftIO $ writeList outH $ header filepath compileLibraries langrev
+  _ <- liftIO $ writeList outH $ header filepath compileLibraries langrev debugOpt
   _ <- liftIO $ case compileLibraries of
     True -> do
       _ <- writeList outH $ map show libsC
