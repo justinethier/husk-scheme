@@ -5,12 +5,9 @@ excerpt: This release improves R<sup>7</sup>RS library support, adds support for
 ---
 # {{ page.title }}
 
-- Improved import of libraries:
+Improved import of libraries. Husk now detects cyclic dependencies and throws an error instead of going into an infinite loop. Also, each library is only evaluated once during the import process.
 
-    - Husk now detects cyclic dependencies and throws an error instead of going into an infinite loop.
-    - Each library is only evaluated once during the import process.
-
-- `begin` now has the ability to evaluate contained expressions and definitions as if the enclosing `begin` were not present, per R<sup>7</sup>RS. For example:
+`begin` now has the ability to evaluate contained expressions and definitions as if the enclosing `begin` were not present, per R<sup>7</sup>RS. For example:
 
         huski> x
         Getting an unbound variable: x
@@ -19,24 +16,18 @@ excerpt: This release improves R<sup>7</sup>RS library support, adds support for
         huski> x
         28
 
-- Added the following R<sup>7</sup>RS I/O functions: 
+Added the following R<sup>7</sup>RS I/O functions: 
 
-    - `get-output-bytevector`
-    - `get-output-string`
-    - `open-input-bytevector`
-    - `open-input-string`
-    - `open-output-bytevector`
-    - `open-output-string`
-    - `read-string`
-    - `write-string`
+- `get-output-bytevector`
+- `get-output-string`
+- `open-input-bytevector`
+- `open-input-string`
+- `open-output-bytevector`
+- `open-output-string`
+- `read-string`
+- `write-string`
 
-- Added an `-i` command line option to `huski`. This option will start the interactive REPL after a file specified on the command line is executed, and has no effect if no file is specified.
+Added an `-i` command line option to `huski`. This option will start the interactive REPL after a file specified on the command line is executed, and has no effect if no file is specified.
 
-Haskell API:
-
-- The `Port` data type has been extended to include an optional in-memory buffer:
- 
-        Port Handle (Maybe Knob)
-
-  These changes are isolated in husk, but if your code uses any `Port` constructors, you would need to change them, EG: `Port _ Nothing`.
+The Haskell API's `Port` data type has been extended to include an optional in-memory buffer: `Port Handle (Maybe Knob)`. This change is isolated in husk, but if your code uses any `Port` constructors, you would need to change them, EG: `Port _ Nothing`.
 
