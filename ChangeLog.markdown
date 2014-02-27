@@ -1,3 +1,10 @@
+v3.16.1
+--------
+
+- Allow import of a library in the same directory as the program. For example:
+
+    (import (lib))
+
 v3.16
 --------
 

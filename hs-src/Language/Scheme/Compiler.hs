@@ -1143,7 +1143,7 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
   compileArgs thisFunc thisFuncUseValue maybeFnc args = do
     case args of
       (a:as) -> do
-        let (asRest, asLiterals) = (as, []) --TODO: takeLiterals a as
+        let (asRest, asLiterals) = takeLiterals a as
         let lastArg = null asRest
         Atom stubFunc <- _gensym "applyFirstArg" -- Call into compiled stub
         Atom nextFunc <- do
