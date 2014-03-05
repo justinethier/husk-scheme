@@ -54,7 +54,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+-- import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -455,15 +455,15 @@ checkLocal _ _ _ _ _ _ _ _ (Float pattern) (Float input) _ _ = return $ Bool $ p
 checkLocal _ _ _ _ _ _ _ _ (String pattern) (String input) _ _ = return $ Bool $ pattern == input
 checkLocal _ _ _ _ _ _ _ _ (Char pattern) (Char input) _ _ = return $ Bool $ pattern == input
 checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellipsisIndex (Atom pattern) input listFlags _ = do
-
-  -- TODO: 
+  -- This code mostly just loads up pattern variables, but it also needs to be
+  -- careful to take into account literal identifiers. From spec:
   --
-  -- The code below uses this rename boolean as a factor to determine whether a named
-  -- identifier has been redefined and thus should not match itself in the input. But the
-  -- thing is, the actual code is supposed to compare the value at macro definition
-  -- time with the value in the environment of use (outerEnv) to make this determination.
-  -- So what is below is close but not truly correct.
-  --
+  -- Identifiers that appear in <literals> are interpreted as literal identifiers 
+  -- to be matched against corresponding subforms of the input. A subform in the input 
+  -- matches a literal identifier if and only if it is an identifier and either both 
+  -- its occurrence in the macro expression and its occurrence in the macro definition 
+  -- have the same lexical binding, or the two identifiers are equal and both have no 
+  -- lexical binding.
   isRenamed <- liftIO $ isRecBound renameEnv (pattern)
   doesIdentMatch <- identifierMatches defEnv outerEnv pattern
 
@@ -485,19 +485,21 @@ checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellips
                         Atom inpt -> do
                             p' <- getOrigName renameEnv pattern
                             i' <- getOrigName renameEnv inpt
-                            if (trace ("checkPattern " ++ pattern ++ " [" ++ p' ++ "] " ++ inpt ++ " [" ++ i' ++ "]") (pattern == inpt))
-                               then if (doesIdentMatch) && (not isRenamed)
-                                       -- Var is not bound in outer code; proceed
-                                       then do
-                                         -- Set variable in the local environment
-                                         addPatternVar isDefined ellipsisLevel ellipsisIndex pattern $ Atom pattern
-                                       -- Var already bound in enclosing environment prior to evaluating macro.
-                                       -- So... do not match it here.
-                                       --
-                                       -- See section 4.3.2 of R5RS, in particular:
-                                       -- " If a literal identifier is inserted as a bound identifier then it is 
-                                       --   in effect renamed to prevent inadvertent captures of free identifiers "
-                                       else return $ Bool False
+                            pl <- isLexicallyDefined outerEnv renameEnv pattern
+                            il <- isLexicallyDefined outerEnv renameEnv inpt
+--                            if (trace ("checkPattern " ++ pattern ++ " [" ++ p' ++ "] " ++ inpt ++ " [" ++ i' ++ "]") (pattern == inpt))
+                            if ((pattern == inpt) && (doesIdentMatch) && (not isRenamed) ||
+                                (p' == i' && (not pl) && (not il)))
+                               -- Var is not bound in outer code; proceed
+                               then do
+                                 -- Set variable in the local environment
+                                 addPatternVar isDefined ellipsisLevel ellipsisIndex pattern $ Atom pattern
+                               -- Var already bound in enclosing environment prior to evaluating macro.
+                               -- So... do not match it here.
+                               --
+                               -- See section 4.3.2 of R5RS, in particular:
+                               -- " If a literal identifier is inserted as a bound identifier then it is 
+                               --   in effect renamed to prevent inadvertent captures of free identifiers "
                                else return $ Bool False
                         -- Pattern/Input cannot match because input is not an atom
                         _ -> return $ Bool False
@@ -508,18 +510,19 @@ checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellips
      --
      else do
          isIdent <- findAtom (Atom pattern) identifiers
-         --isLexicallyDefinedPatternVar <- liftIO $ isBound outerEnv pattern -- Var defined in scope outside macro
          case (isIdent) of
-            -- Fail the match if pattern is a literal identifier and input does not match
             Bool True -> do
                 case input of
                     Atom inpt -> do
                         p' <- getOrigName renameEnv pattern
                         i' <- getOrigName renameEnv inpt
-                        if (trace ("checkPattern " ++ pattern ++ " [" ++ p' ++ "] " ++ inpt ++ " [" ++ i' ++ "]") ((pattern == inpt && (doesIdentMatch)) && (not isRenamed)))
-                        -- Pattern/Input are atoms; both must match
---                        if (pattern == inpt && (doesIdentMatch)) && (not isRenamed) -- Regarding lex binding; see above, sec 4.3.2 from spec
---                        if (pattern == inpt && (not isLexicallyDefinedPatternVar)) && (not isRenamed) -- Regarding lex binding; see above, sec 4.3.2 from spec
+--                        doesIdentMatch' <- identifierMatches defEnv outerEnv p'
+                        pl <- isLexicallyDefined outerEnv renameEnv pattern
+                        il <- isLexicallyDefined outerEnv renameEnv inpt
+--                        if (trace ("checkPattern " ++ pattern ++ " [" ++ p' ++ "] " ++ inpt ++ " [" ++ i' ++ "] " ++ (show doesIdentMatch') ++ " " ++ (show doesIdentMatch ++ " " ++ (show pl) ++ " " ++ (show il))) 
+                        if (((pattern == inpt && (doesIdentMatch)) && (not isRenamed)) || 
+                            -- Equal and neither have a lexical binding, per spec
+                            (p' == i' && (not pl) && (not il)))
                            then do _ <- defineVar localEnv pattern input
                                    return $ Bool True
                            else return $ (Bool False)
@@ -1560,3 +1563,8 @@ getOrigName renameEnv a = do
     Just (Atom a') -> getOrigName renameEnv a'
     Nothing -> return a
 
+-- good enough?
+isLexicallyDefined outerEnv renameEnv a = do
+  o <- liftIO $ isBound outerEnv a
+  r <- liftIO $ isBound renameEnv a
+  return $ o || r
