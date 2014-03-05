@@ -54,7 +54,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
--- import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -483,7 +483,9 @@ checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellips
                 Bool True -> do
                     case input of
                         Atom inpt -> do
-                            if (pattern == inpt)  
+                            p' <- getOrigName renameEnv pattern
+                            i' <- getOrigName renameEnv inpt
+                            if (trace ("checkPattern " ++ pattern ++ " [" ++ p' ++ "] " ++ inpt ++ " [" ++ i' ++ "]") (pattern == inpt))
                                then if (doesIdentMatch) && (not isRenamed)
                                        -- Var is not bound in outer code; proceed
                                        then do
@@ -512,8 +514,11 @@ checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellips
             Bool True -> do
                 case input of
                     Atom inpt -> do
+                        p' <- getOrigName renameEnv pattern
+                        i' <- getOrigName renameEnv inpt
+                        if (trace ("checkPattern " ++ pattern ++ " [" ++ p' ++ "] " ++ inpt ++ " [" ++ i' ++ "]") ((pattern == inpt && (doesIdentMatch)) && (not isRenamed)))
                         -- Pattern/Input are atoms; both must match
-                        if (pattern == inpt && (doesIdentMatch)) && (not isRenamed) -- Regarding lex binding; see above, sec 4.3.2 from spec
+--                        if (pattern == inpt && (doesIdentMatch)) && (not isRenamed) -- Regarding lex binding; see above, sec 4.3.2 from spec
 --                        if (pattern == inpt && (not isLexicallyDefinedPatternVar)) && (not isRenamed) -- Regarding lex binding; see above, sec 4.3.2 from spec
                            then do _ <- defineVar localEnv pattern input
                                    return $ Bool True
@@ -1547,3 +1552,11 @@ loadMacros e be (Just re) dim
 
 loadMacros _ _ _ _ [] = return $ Nil ""
 loadMacros _ _ _ _ form = throwError $ BadSpecialForm "Unable to evaluate form" $ List form 
+
+-- TODO: 
+getOrigName renameEnv a = do
+  v <- getVar' renameEnv a
+  case v of 
+    Just (Atom a') -> getOrigName renameEnv a'
+    Nothing -> return a
+
