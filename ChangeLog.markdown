@@ -5,6 +5,9 @@ v3.16.1
 
     (import (lib))
 
+Bug Fixes:
+
+- Husk no longer throws an error during macro expansion when referencing another non-exported macro from a library.
 - Fixed a bug where a `syntax-rules` macro's literal identifier would not match the input when both identifiers are equal and both have no lexical binding.
 
 v3.16
