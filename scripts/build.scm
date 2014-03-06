@@ -18,8 +18,9 @@
     "echo \"husk scheme build system\""
     "echo \"Before continuing, make sure:\""
     "echo \"\""
-    "echo \"(1) Change log is updated\""
-    (string-append "echo \"(2) Build number has been updated in cabal file, we are using " *build-number* " \"")
+    (string-append "echo \"(1) Build number has been updated in cabal file, we are using " *build-number* " \"")    
+    "echo \"(2) Change log is updated\""
+;; TODO: can these next two be automated?
     "echo \"(3) Release notes have been added to gh-pages\""
     "echo \"(4) This is the master branch. All releases must be off of master!!\""
     "echo \"\""
@@ -29,11 +30,14 @@
     "make clean"
     "make"
     "make sdist"
+    
     "make test"
     "make testc"
     "echo \"Make sure no tests failed, and then press Enter to continue\" ; read temp"
 
     "make doc"
+    "echo \"Make sure docs built OK, and then press Enter to push them to gh-pages\" ; read temp"
+    
     "git checkout gh-pages"
         ;(if (file-exists? (string-append "API/" *build-number* "/index.html"))
         ;    "echo \"docs up-to-date\", skipping"
