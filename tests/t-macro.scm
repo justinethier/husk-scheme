@@ -504,5 +504,7 @@
 (assert/equal (foo A) "A or B or C")
 ; END 163
 
+(import (162))
+(assert/equal (foo) 'baz)
 
 (unit-test-handler-results)
