@@ -14,8 +14,17 @@
      (if (= (system cmd) 0)
          (script cmds ...)))))
 
+(display "  _   _           _      _   _           _ _     _                 _       _   ")(newline)
+(display " | | | |         | |    | | | |         (_) |   | |               (_)     | |  ")(newline)
+(display " | |_| |_   _ ___| | __ | | | |__  _   _ _| | __| |  ___  ___ _ __ _ _ __ | |_ ")(newline)
+(display " |  _  | | | / __| |/ / | | | '_ \\| | | | | |/ _` | / __|/ __| '__| | '_ \\| __|")(newline)
+(display " | | | | |_| \\__ \\   <  | | | |_) | |_| | | | (_| | \\__ \\ (__| |  | | |_) | |_ ")(newline)
+(display " \\_| |_/\\__,_|___/_|\\_\\ | | |_.__/ \\__,_|_|_|\\__,_| |___/\\___|_|  |_| .__/ \\__|")(newline)
+(display "                        | |                                         | |        ")(newline)
+(display "                        |_|                                         |_|        ")(newline)
+(newline)
+
 (script
-    "echo \"husk scheme build system\""
     "echo \"Before continuing, make sure:\""
     "echo \"\""
     (string-append "echo \"(1) Build number has been updated in cabal file, we are using " *build-number* " \"")    
