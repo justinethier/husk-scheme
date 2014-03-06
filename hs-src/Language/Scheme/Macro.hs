@@ -54,7 +54,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+-- import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -144,7 +144,6 @@ _macroEval env lisp@(List (Atom x : _)) apply = do
   var <- getNamespacedVar' env macroNamespace x
   -- DEBUG: var <- (trace ("expand: " ++ x) getNamespacedVar') env macroNamespace x
   case var of
-  --case (trace ("macroEval processing " ++ x ++ " [" ++ (show var) ++ "]") var) of
     -- Explicit Renaming
     Just (SyntaxExplicitRenaming transformer@(Func _ _ _ _)) -> do
       renameEnv <- liftIO $ nullEnv -- Local environment used just for this
@@ -175,7 +174,7 @@ _macroEval env lisp@(List (Atom x : _)) apply = do
     Nothing -> return lisp
 
 -- No macro to process, just return code as it is...
-_macroEval _ lisp@(_) _ = return (trace ("macroEval returning " ++ (show lisp)) lisp)
+_macroEval _ lisp@(_) _ = return lisp
 
 {-
  - Given input and syntax-rules, determine if any rule is a match and transform it.
@@ -206,8 +205,7 @@ macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers (rule@(
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
                                -- to hold pattern variables
   result <- matchRule defEnv env divertEnv dim identifiers localEnv renameEnv cleanupEnv rule input esym
-  case (trace ("matchRule " ++ (show input) ++ " " ++ (show result)) result) of
---  case (result) of
+  case (result) of
     -- No match, check the next rule
     Nil _ -> macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers rs input apply esym
     _ -> do
@@ -655,7 +653,8 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
 
  -- Determine if we should recursively rename an atom
  -- This code is a bit of a hack/mess at the moment
- if (trace ("walkExp " ++ a ++ " " ++ aa ++ " " ++ (show isDefinedAsMacro) ++ " " ++ (show isDefDefinedAsMacro) ++ " " ++ (show startOfList) ++ " " ++ (show inputIsQuoted) ++ " " ++ (show isQuoted) ++ " ") isDefinedAsMacro || isDefDefinedAsMacro) 
+ if isDefinedAsMacro || isDefDefinedAsMacro
+-- if (trace ("walkExp " ++ a ++ " " ++ aa ++ " " ++ (show isDefinedAsMacro) ++ " " ++ (show isDefDefinedAsMacro) ++ " " ++ (show startOfList) ++ " " ++ (show inputIsQuoted) ++ " " ++ (show isQuoted) ++ " ") isDefinedAsMacro || isDefDefinedAsMacro) 
 --     || isDiverted
 --     || (isMacroBound && not isLocalRename)
 --     || not startOfList
@@ -692,7 +691,7 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List r
 walkExpanded _ _ _ _ _ _ _ _ result@(List _) (List []) _ = return result
 
 -- Single atom, rename (if necessary) and return
-walkExpanded _ _ _ renameEnv _ _ _ _ _ (Atom a) _ = expandAtom renameEnv (trace ("WEA single atom " ++ a) (Atom a))
+walkExpanded _ _ _ renameEnv _ _ _ _ _ (Atom a) _ = expandAtom renameEnv (Atom a)
 
 -- If transforming into a scalar, just return the transform directly...
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
@@ -860,13 +859,22 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
     a
     ts 
     False True apply = do
-    synUse <- (trace ("WEA " ++ a) getNamespacedVar') useEnv macroNamespace a
-    synDef <- getNamespacedVar' defEnv macroNamespace a
+    synUse <- getNamespacedVar' useEnv macroNamespace a
+    case synUse of
+        Just syn -> process syn
+        _ -> do
+            synDef <- getNamespacedVar' defEnv macroNamespace a
+            case synDef of
+                Just syn -> process syn
+                _ -> throwError $ Default "Unexpected error processing a symbol in walkExpandedAtom"
 
-    case (synUse, synDef) of
-      ((Just syn), _) -> process syn
-      (_, (Just syn)) -> process syn
-      (_, _) -> throwError $ Default "Unexpected error processing a macro in walkExpandedAtom"
+--    synUse <- getNamespacedVar' useEnv macroNamespace a
+--    synDef <- getNamespacedVar' defEnv macroNamespace a
+--
+--    case (synUse, synDef) of
+--      ((Just syn), _) -> process syn
+--      (_, (Just syn)) -> process syn
+--      (_, _) -> throwError $ Default "Unexpected error processing a macro in walkExpandedAtom"
  where
    process syn = do
      case syn of
@@ -918,7 +926,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List resu
     ts
     True _ apply = do
     -- Cleanup all symbols in the quoted code
-    List cleaned <- (trace ("WEA quoted " ++ a) cleanExpanded) 
+    List cleaned <- cleanExpanded 
                       defEnv useEnv divertEnv renameEnv cleanupEnv 
                       dim True
                       (List []) (List ts)
@@ -927,7 +935,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List resu
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim _ _ (List result)
     a ts isQuoted _ apply = do
-    (trace ("WEA x " ++ a) walkExpanded) defEnv useEnv divertEnv renameEnv cleanupEnv 
+    walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
                  dim False isQuoted 
                 (List $ result ++ [Atom a]) (List ts)
                  apply
