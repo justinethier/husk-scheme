@@ -46,7 +46,7 @@ module Language.Scheme.Core
     -- * Internal use only
     , meval
     ) where
-import qualified Paths_husk_scheme as PHS (getDataFileName)
+import qualified Paths_husk_scheme as PHS (getDataFileName, version)
 #ifdef UseFfi
 import qualified Language.Scheme.FFI
 #endif
@@ -62,14 +62,15 @@ import Control.Monad.Error
 import Data.Array
 import qualified Data.ByteString as BS
 import qualified Data.Map
+import Data.Version as DV
 import Data.Word
 import qualified System.Exit
 import qualified System.Info as SysInfo
 -- import Debug.Trace
 
--- |husk version number
+-- |Husk version number
 version :: String
-version = "3.16.1"
+version = DV.showVersion PHS.version
 
 -- |A utility function to display the husk console banner
 showBanner :: IO ()
@@ -83,7 +84,7 @@ showBanner = do
   putStrLn "                                                                         "
   putStrLn " http://justinethier.github.io/husk-scheme                              "
   putStrLn " (c) 2010-2014 Justin Ethier                                             "
-  putStrLn $ " Version " ++ version ++ " "
+  putStrLn $ " Version " ++ (DV.showVersion PHS.version) ++ " "
   putStrLn "                                                                         "
 
 getHuskFeatures :: IO [LispVal]
@@ -91,7 +92,7 @@ getHuskFeatures = do
     -- TODO: windows posix
     return [ Atom "r7rs"
            , Atom "husk"
-           , Atom $ "husk-" ++ version 
+           , Atom $ "husk-" ++ (DV.showVersion PHS.version)
            , Atom $ SysInfo.arch
            , Atom $ SysInfo.os
            , Atom "full-unicode"
