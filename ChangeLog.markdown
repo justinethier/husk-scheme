@@ -5,6 +5,8 @@ v3.16.1
 
     (import (lib))
 
+- Fixed a bug where a `syntax-rules` macro's literal identifier would not match the input when both identifiers are equal and both have no lexical binding.
+
 v3.16
 --------
 
