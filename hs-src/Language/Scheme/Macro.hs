@@ -861,22 +861,15 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
     False True apply = do
     synUse <- getNamespacedVar' useEnv macroNamespace a
     case synUse of
-        Just syn -> process syn
+        Just syn -> expandSyntax syn
         _ -> do
             synDef <- getNamespacedVar' defEnv macroNamespace a
             case synDef of
-                Just syn -> process syn
-                _ -> throwError $ Default "Unexpected error processing a symbol in walkExpandedAtom"
-
---    synUse <- getNamespacedVar' useEnv macroNamespace a
---    synDef <- getNamespacedVar' defEnv macroNamespace a
---
---    case (synUse, synDef) of
---      ((Just syn), _) -> process syn
---      (_, (Just syn)) -> process syn
---      (_, _) -> throwError $ Default "Unexpected error processing a macro in walkExpandedAtom"
+                Just syn -> expandSyntax syn
+                _ -> throwError $ Default 
+                      "Unexpected error processing a symbol in walkExpandedAtom"
  where
-   process syn = do
+   expandSyntax syn = do
      case syn of
 --
 -- Note:
