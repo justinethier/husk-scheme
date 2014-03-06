@@ -1940,11 +1940,12 @@ system [String cmd] = do
         ExitFailure code -> return $ Number $ toInteger code
 system err = throwError $ TypeMismatch "string" $ List err
 
-systemRead :: [LispVal] -> IOThrowsError LispVal
-systemRead ((String cmd) : args) = do
-  let args' = map conv args
-  result <- liftIO $ readProcess cmd args' ""
-  return $ String result
- where
-   conv (String s) = s
-   conv _ = ""
+-- FUTURE (?):
+-- systemRead :: [LispVal] -> IOThrowsError LispVal
+-- systemRead ((String cmd) : args) = do
+--   let args' = map conv args
+--   result <- liftIO $ readProcess cmd args' ""
+--   return $ String result
+--  where
+--    conv (String s) = s
+--    conv _ = ""
