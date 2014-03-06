@@ -152,7 +152,7 @@ module Language.Scheme.Primitives (
  -- ** System
  , eofObject 
  , system
- , systemRead
+-- , systemRead
 
  ) where
 import Language.Scheme.Numerical
