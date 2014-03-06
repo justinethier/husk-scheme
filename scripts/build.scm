@@ -2,7 +2,10 @@
 ;
 ; husk automated build script
 ;
-(define *build-number* "3.16.1")
+(import (scripts lib version))
+
+;; Assumes we are building using the target version of husk
+(define *build-number* (get-husk-version))
 
 (define-syntax script
   (syntax-rules ()
@@ -16,7 +19,7 @@
     "echo \"Before continuing, make sure:\""
     "echo \"\""
     "echo \"(1) Change log is updated\""
-    "echo \"(2) Build number has been updated in this script, cabal file, and Core.hs\""
+    (string-append "echo \"(2) Build number has been updated in cabal file, we are using " *build-number* " \"")
     "echo \"(3) Release notes have been added to gh-pages\""
     "echo \"(4) This is the master branch. All releases must be off of master!!\""
     "echo \"\""
