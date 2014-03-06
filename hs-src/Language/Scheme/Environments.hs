@@ -152,6 +152,7 @@ ioPrimitives = [("open-input-file", makePort openFile ReadMode ),
                 ("read-all", readAll),
                 ("find-module-file", findModuleFile),
                 ("system", system),
+                ("system-read", systemRead),
                 ("gensym", gensym)]
 
 

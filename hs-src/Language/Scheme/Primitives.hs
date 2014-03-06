@@ -152,6 +152,7 @@ module Language.Scheme.Primitives (
  -- ** System
  , eofObject 
  , system
+ , systemRead
 
  ) where
 import Language.Scheme.Numerical
@@ -175,6 +176,7 @@ import System.Directory (doesFileExist, removeFile)
 import System.Exit (ExitCode(..))
 import System.IO
 import System.IO.Error
+import System.Process (readProcess)
 -- import Debug.Trace
 
 #if __GLASGOW_HASKELL__ < 702
@@ -1938,3 +1940,11 @@ system [String cmd] = do
         ExitFailure code -> return $ Number $ toInteger code
 system err = throwError $ TypeMismatch "string" $ List err
 
+systemRead :: [LispVal] -> IOThrowsError LispVal
+systemRead ((String cmd) : args) = do
+  let args' = map conv args
+  result <- liftIO $ readProcess cmd args' ""
+  return $ String result
+ where
+   conv (String s) = s
+   conv _ = ""
