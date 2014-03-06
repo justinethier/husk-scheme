@@ -1,4 +1,4 @@
-(define-library (scripts-lib version)
+(define-library (scripts lib version)
   (export
     get-husk-version)
   (import (scheme base)
