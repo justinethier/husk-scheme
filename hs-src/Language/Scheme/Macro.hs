@@ -636,52 +636,42 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List r
   walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False isQuoted (List $ result ++ [DottedList ls l]) (List ts) apply
 
 walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result) (List (Atom aa : ts)) apply = do
-  
  Atom a <- expandAtom renameEnv (Atom aa)
-
+ maybeMacro <- findBoundMacro defEnv useEnv a
  -- If a macro is quoted, keep track of it and do not invoke rules below for
  -- procedure abstraction or macro calls 
  let isQuoted = inputIsQuoted || (a == "quote")
 
- isDefinedAsMacro <- liftIO $ isNamespacedRecBound useEnv macroNamespace a
- isDefDefinedAsMacro <- liftIO $ isNamespacedRecBound defEnv macroNamespace a
-
- -- (currently) unused conditional variables for below test
- --isDiverted <- liftIO $ isRecBound divertEnv a
- --isMacroBound <- liftIO $ isRecBound renameEnv a
- --isLocalRename <- liftIO $ isNamespacedRecBound renameEnv 'r' {-"renamed"-} a
-
- -- Determine if we should recursively rename an atom
- -- This code is a bit of a hack/mess at the moment
- if isDefinedAsMacro || isDefDefinedAsMacro
--- if (trace ("walkExp " ++ a ++ " " ++ aa ++ " " ++ (show isDefinedAsMacro) ++ " " ++ (show isDefDefinedAsMacro) ++ " " ++ (show startOfList) ++ " " ++ (show inputIsQuoted) ++ " " ++ (show isQuoted) ++ " ") isDefinedAsMacro || isDefDefinedAsMacro) 
---     || isDiverted
---     || (isMacroBound && not isLocalRename)
---     || not startOfList
-     || a == aa -- Prevent an infinite loop
-     -- Preserve keywords encountered in the macro 
-     -- as each of these is really a special form, and renaming them
-     -- would not work because there is nothing to divert back...
-     || a == "if"
-     || a == "let-syntax" 
-     || a == "letrec-syntax" 
-     || a == "define-syntax" 
-     || a == "define"  
-     || a == "set!"
-     || a == "lambda"
-     || a == "quote"
-     || a == "expand"
-     || a == "string-set!"
-     || a == "set-car!"
-     || a == "set-cdr!"
-     || a == "vector-set!"
-     || a == "hash-table-set!"
-     || a == "hash-table-delete!"
-    then walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv 
-                          dim startOfList inputIsQuoted (List result) a ts isQuoted (isDefinedAsMacro || isDefDefinedAsMacro) apply
-    else walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
-                      dim startOfList inputIsQuoted (List result) (List (Atom a : ts)) apply
-
+ case maybeMacro of
+   Just _ -> walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv 
+                              dim startOfList inputIsQuoted (List result) 
+                              a ts isQuoted maybeMacro apply
+   _ -> do
+    -- Determine if we should recursively rename an atom
+    -- This code is a bit of a hack/mess at the moment
+    if  a == aa -- Prevent an infinite loop
+        -- Preserve keywords encountered in the macro 
+        -- as each of these is really a special form, and renaming them
+        -- would not work because there is nothing to divert back...
+        || a == "if"
+        || a == "let-syntax" 
+        || a == "letrec-syntax" 
+        || a == "define-syntax" 
+        || a == "define"  
+        || a == "set!"
+        || a == "lambda"
+        || a == "quote"
+        || a == "expand"
+        || a == "string-set!"
+        || a == "set-car!"
+        || a == "set-cdr!"
+        || a == "vector-set!"
+        || a == "hash-table-set!"
+        || a == "hash-table-delete!"
+       then walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv 
+                             dim startOfList inputIsQuoted (List result) a ts isQuoted maybeMacro apply
+       else walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
+                         dim startOfList inputIsQuoted (List result) (List (Atom a : ts)) apply
 
 -- Transform anything else as itself...
 walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List result) (List (t : ts)) apply = do
@@ -709,7 +699,7 @@ walkExpandedAtom :: Env
   -> String 
   -> [LispVal] 
   -> Bool -- is Quoted
-  -> Bool -- is defined as macro
+  -> Maybe LispVal -- is defined as macro
   -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal) -- ^Apply func
   -> IOThrowsError LispVal
 
@@ -858,19 +848,8 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result)
     a
     ts 
-    False True apply = do
-    synUse <- getNamespacedVar' useEnv macroNamespace a
-    case synUse of
-        Just syn -> expandSyntax syn
-        _ -> do
-            synDef <- getNamespacedVar' defEnv macroNamespace a
-            case synDef of
-                Just syn -> expandSyntax syn
-                _ -> throwError $ Default 
-                      "Unexpected error processing a symbol in walkExpandedAtom"
- where
-   expandSyntax syn = do
-     case syn of
+    False (Just syn) apply = do
+    case syn of
 --
 -- Note:
 --
@@ -1553,3 +1532,10 @@ isLexicallyDefined outerEnv renameEnv a = do
   o <- liftIO $ isBound outerEnv a
   r <- liftIO $ isBound renameEnv a
   return $ o || r
+
+findBoundMacro :: Env -> Env -> String -> IOThrowsError (Maybe LispVal)
+findBoundMacro defEnv useEnv a = do
+  synUse <- getNamespacedVar' useEnv macroNamespace a
+  case synUse of
+    Just syn -> return $ Just syn
+    _ -> getNamespacedVar' defEnv macroNamespace a
