@@ -176,7 +176,7 @@ import System.Directory (doesFileExist, removeFile)
 import System.Exit (ExitCode(..))
 import System.IO
 import System.IO.Error
-import System.Process (readProcess)
+--import System.Process (readProcess)
 -- import Debug.Trace
 
 #if __GLASGOW_HASKELL__ < 702
