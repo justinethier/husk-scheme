@@ -3,7 +3,7 @@ v3.16.1
 
 - Allow import of a library in the same directory as a program, for example:
 
-    (import (lib))
+        (import (lib))
 
 Bug Fixes:
 
