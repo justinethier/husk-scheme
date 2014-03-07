@@ -1,7 +1,7 @@
 v3.16.1
 --------
 
-- Allow import of a library in the same directory as the program. For example:
+- Allow import of a library in the same directory as a program, for example:
 
     (import (lib))
 
