@@ -4,6 +4,13 @@
 ;
 (import (scripts lib version))
 
+;; Force releases from master branch
+(if (> (system "if [ `git rev-parse --abbrev-ref HEAD` = \"master\" ]; then true; else false; fi") 0)
+    (begin
+      (display "All releases must be from master, exiting...")
+      (newline)
+      (exit-fail)))
+
 ;; Assumes we are building using the target version of husk
 (define *build-number* (get-husk-version))
 
@@ -29,9 +36,7 @@
     "echo \"\""
     (string-append "echo \"(1) Build number has been updated in cabal file, we are using " *build-number* " \"")    
     "echo \"(2) Change log is updated\""
-;; TODO: can these next two be automated?
     "echo \"(3) Release notes have been added to gh-pages\""
-    "echo \"(4) This is the master branch. All releases must be off of master!!\""
     "echo \"\""
     "echo \"Press Enter to continue\" ; read temp"
     
