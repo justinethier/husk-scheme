@@ -531,15 +531,14 @@ num2String [n@(Complex _)] = return $ String $ show n
 num2String [x] = throwError $ TypeMismatch "number" x
 num2String badArgList = throwError $ NumArgs (Just 1) badArgList
 
-
 -- | Determine if the given value is not a number
 isNumNaN :: [LispVal] -> ThrowsError LispVal
-isNumNaN ([Float n]) = return    $ Bool $ isNaN n
+isNumNaN ([Float n]) = return $ Bool $ isNaN n
 isNumNaN _ = return $ Bool False
 
 -- | Determine if number is infinite
 isNumInfinite :: [LispVal] -> ThrowsError LispVal
-isNumInfinite ([Float n]) = return    $ Bool $ isInfinite n
+isNumInfinite ([Float n]) = return $ Bool $ isInfinite n
 isNumInfinite _ = return $ Bool False
 
 -- | Determine if number is not infinite
