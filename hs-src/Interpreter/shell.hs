@@ -14,7 +14,7 @@ allows execution of stand-alone files containing Scheme code.
 module Main where
 import qualified Language.Scheme.Core as LSC -- Scheme Interpreter
 import Language.Scheme.Types                 -- Scheme data types
-import qualified Language.Scheme.Util as LSU (countAllLetters, strip)
+import qualified Language.Scheme.Util as LSU (countAllLetters, countLetters, strip)
 import qualified Language.Scheme.Variables as LSV -- Scheme variable operations
 import Control.Monad.Error
 import qualified Data.Char as DC
@@ -168,6 +168,13 @@ runRepl env' = do
 -- |Auto-complete using scheme symbols
 completeScheme :: Env -> (String, String) 
                -> IO (String, [HLC.Completion])
+-- Right after a ')' it seems more useful to autocomplete next closed parenthesis
+completeScheme _ (lnL@(')':_), _) = do
+  let cOpen  = LSU.countLetters '(' lnL
+      cClose = LSU.countLetters ')' lnL
+  if cOpen > cClose
+   then return (lnL, [HL.Completion ")" ")" False])
+   else return (lnL, [])
 completeScheme env (lnL, lnR) = do
    complete $ reverse $ readAtom lnL
  where
@@ -175,6 +182,7 @@ completeScheme env (lnL, lnR) = do
     -- Special case, inside a string it seems more
     -- useful to autocomplete filenames
     liftIO $ HLC.completeFilename (lnL, lnR)
+
 
   complete pre = do
    -- Get list of possible completions from ENV
