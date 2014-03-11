@@ -1216,22 +1216,23 @@ collectLiterals, collectLiteralsAndVars :: [LispVal] -> (Maybe [LispVal])
 collectLiteralsAndVars args = _collectLiterals args [] True
 collectLiterals args = _collectLiterals args [] False
 
--- Take as many literals as possible from the given list, and
--- return those literals and the rest of the list
-takeLiterals :: LispVal -> [LispVal] -> ([LispVal], [LispVal])
-takeLiterals (List _) ls = (ls, [])
-takeLiterals _ ls' = do
-  loop ls' []
- where
-  loop (l : ls) acc = do
-    if isLiteral l
-       then loop ls (l : acc)
-       else ((l:ls), Data.List.reverse acc)
-  loop [] acc = ([], Data.List.reverse acc)
-
-  isLiteral (List _) = False
-  isLiteral (Atom _) = False
-  isLiteral _ = True
+-- Experimental:
+-- -- Take as many literals as possible from the given list, and
+-- -- return those literals and the rest of the list
+-- takeLiterals :: LispVal -> [LispVal] -> ([LispVal], [LispVal])
+-- takeLiterals (List _) ls = (ls, [])
+-- takeLiterals _ ls' = do
+--   loop ls' []
+--  where
+--   loop (l : ls) acc = do
+--     if isLiteral l
+--        then loop ls (l : acc)
+--        else ((l:ls), Data.List.reverse acc)
+--   loop [] acc = ([], Data.List.reverse acc)
+-- 
+--   isLiteral (List _) = False
+--   isLiteral (Atom _) = False
+--   isLiteral _ = True
 
 -- Compile variable as a stand-alone line of code
 compileInlineVar :: Env -> String -> String -> IOThrowsError HaskAST

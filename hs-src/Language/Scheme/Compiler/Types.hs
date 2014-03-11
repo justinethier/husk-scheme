@@ -133,11 +133,11 @@ showValAST (AstFunction name args code) = do
                 " ++ \" [\" ++ (show " ++ arg ++ ")" ++ 
                 " ++ \"] \""
            else ""
-  let fdebug = "\n  _ <- liftIO $ (trace (\"" ++ 
-               name ++ "\"" ++ 
-               (appendArg "value") ++ 
-               (appendArg "args") ++ 
-               ") getCPUTime)"
+--  let fdebug = "\n  _ <- liftIO $ (trace (\"" ++ 
+--               name ++ "\"" ++ 
+--               (appendArg "value") ++ 
+--               (appendArg "args") ++ 
+--               ") getCPUTime)"
 --  typeSig ++ fheader ++ fdebug ++ fbody 
   typeSig ++ fheader ++ fbody 
 showValAST (AstValue v) = v
