@@ -1,0 +1,50 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Language.Scheme.Macro</title><link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" /><script src="haddock-util.js" type="text/javascript"></script><script type="text/javascript">//<![CDATA[
+window.onload = function () {pageLoad();setSynopsis("mini_Language-Scheme-Macro.html");};
+//]]>
+</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">husk-scheme-3.16.1: R5RS Scheme interpreter, compiler, and library.</p></div><div id="content"><div id="module-header"><table class="info"><tr><th>Portability</th><td>portable</td></tr><tr><th>Stability</th><td>experimental</td></tr><tr><th>Maintainer</th><td>github.com/justinethier</td></tr><tr><th>Safe Haskell</th><td>None</td></tr></table><p class="caption">Language.Scheme.Macro</p></div><div id="description"><p class="caption">Description</p><div class="doc"><p>This module contains code for hygienic macros.
+</p><p>Hygienic macros are implemented using the algorithm from the paper
+Macros That Work by William Clinger and Jonathan Rees. During 
+transformation, the following components are considered:
+</p><ul><li> Pattern (part of a rule that matches input)
+</li><li> Transform (what the macro expands into)
+</li><li> Literal Identifiers (from the macro definition)
+</li><li> Input (the actual code in the user's program)
+</li><li> Environments of macro definition and macro use
+</li></ul><p>At a high level, macro transformation is broken down into the following steps:
+</p><ol><li> Walk the input code looking for a macro definition or macro call.
+</li><li> If a macro call is found, search for a rule that matches the input.
+     During this process any pattern variables in the input are loaded 
+     into a temporary environment
+</li><li> If a rule matches, transcribe the rule's template by walking the 
+     template, inserting pattern variables and renaming free identifiers 
+     as needed.
+</li><li> Walk the expanded code, checking for each of the cases from Macros That Work. If a 
+     case is found (such as a macro call or procedure abstraction) then the appropriate 
+     handler will be called to deal with it.
+</li></ol></div></div><div id="synopsis"><p id="control.syn" class="caption expander" onclick="toggleSection('syn')">Synopsis</p><ul id="section.syn" class="hide" onclick="toggleSection('syn')"><li class="src short"><a href="#v:expand">expand</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; Bool -&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; (<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>) -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:macroEval">macroEval</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; (<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>) -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:loadMacros">loadMacros</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; Maybe <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; Bool -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:getDivertedVars">getDivertedVars</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>]</li></ul></div><div id="interface"><h1>Documentation</h1><div class="top"><p class="src"><a name="v:expand" class="def">expand</a></p><div class="subs arguments"><p class="caption">Arguments</p><table><tr><td class="src">:: <a href="Language-Scheme-Types.html#t:Env">Env</a></td><td class="doc"><p>Environment of the code being expanded
+</p></td></tr><tr><td class="src">-&gt; Bool</td><td class="doc"><p>True if the macro was defined within another macro
+</p></td></tr><tr><td class="src">-&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></td><td class="doc"><p>Code to expand
+</p></td></tr><tr><td class="src">-&gt; (<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>)</td><td class="doc"><p>Apply func
+</p></td></tr><tr><td class="src">-&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></td><td class="doc"><p>Expanded code
+</p></td></tr></table></div><div class="doc"><p>This function walks the given block of code using the macro expansion algorithm,
+  recursively expanding macro calls as they are encountered.
+</p></div></div><div class="top"><p class="src"><a name="v:macroEval" class="def">macroEval</a></p><div class="subs arguments"><p class="caption">Arguments</p><table><tr><td class="src">:: <a href="Language-Scheme-Types.html#t:Env">Env</a></td><td class="doc"><p>Current environment for the AST
+</p></td></tr><tr><td class="src">-&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></td><td class="doc"><p>AST to search
+</p></td></tr><tr><td class="src">-&gt; (<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>)</td><td class="doc"><p>Eval func
+</p></td></tr><tr><td class="src">-&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></td><td class="doc"><p>Transformed AST containing an
+ expanded macro if found
+</p></td></tr></table></div><div class="doc"><p>Examines the input AST to see if it is a macro call. 
+  If a macro call is found, the code is expanded.
+  Otherwise the input is returned unchanged.
+</p></div></div><div class="top"><p class="src"><a name="v:loadMacros" class="def">loadMacros</a></p><div class="subs arguments"><p class="caption">Arguments</p><table><tr><td class="src">:: <a href="Language-Scheme-Types.html#t:Env">Env</a></td><td class="doc"><p>Parent environment containing the let*-syntax expression
+</p></td></tr><tr><td class="src">-&gt; <a href="Language-Scheme-Types.html#t:Env">Env</a></td><td class="doc"><p>Environment of the let*-syntax body
+</p></td></tr><tr><td class="src">-&gt; Maybe <a href="Language-Scheme-Types.html#t:Env">Env</a></td><td class="doc"><p>Environment of renamed variables, if applicable
+</p></td></tr><tr><td class="src">-&gt; Bool</td><td class="doc"><p>True if the macro was defined inside another macro
+</p></td></tr><tr><td class="src">-&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>]</td><td class="doc"><p>List containing syntax-rule definitions
+</p></td></tr><tr><td class="src">-&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></td><td class="doc"><p>A dummy value, unless an error is thrown
+</p></td></tr></table></div><div class="doc"><p>Helper function to load macros from a let*-syntax expression
+</p></div></div><div class="top"><p class="src"><a name="v:getDivertedVars" class="def">getDivertedVars</a> :: <a href="Language-Scheme-Types.html#t:Env">Env</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>]</p><div class="doc"><p>Get a list of variables that the macro hygiene 
+  subsystem diverted back into the calling environment.
+</p><p>This is a specialized function that is only
+  mean to be used by the husk compiler.
+</p></div></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.13.2</p></div></body></html>
