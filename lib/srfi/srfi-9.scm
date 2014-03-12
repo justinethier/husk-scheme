@@ -1,4 +1,9 @@
-; Section 1 - Syntax definitions
+;;;; This file contains the implementation of SRFI-9 from:
+;;;; http://srfi.schemers.org/srfi-9/srfi-9.html
+
+;;;;
+;;;; Section 1 - Syntax definitions
+;;;;
 
 ; Definition of DEFINE-RECORD-TYPE
 
@@ -30,8 +35,67 @@
        (define accessor (record-accessor type 'field-tag))
        (define modifier (record-modifier type 'field-tag))))))
 
+;;;;
+;;;; Section 3 - Records
+;;;;
 
-; Section 2 - Record types
+; This implements a record abstraction that is identical to vectors,
+; except that they are not vectors (VECTOR? returns false when given a
+; record and RECORD? returns false when given a vector).  The following
+; procedures are provided:
+;   (record? <value>)                -> <boolean>
+;   (make-record <size>)             -> <record>
+;   (record-ref <record> <index>)    -> <value>
+;   (record-set! <record> <index> <value>) -> <unspecific>
+;
+; These can implemented in R5RS Scheme as vectors with a distinguishing
+; value at index zero, providing VECTOR? is redefined to be a procedure
+; that returns false if its argument contains the distinguishing record
+; value.  EVAL is also redefined to use the new value of VECTOR?.
+
+; Define the marker and redefine VECTOR? and EVAL.
+
+(define record-marker (list 'record-marker))
+
+(define real-vector? vector?)
+
+(define (vector? x)
+  (and (real-vector? x)
+       (or (= 0 (vector-length x))
+       (not (eq? (vector-ref x 0)
+        record-marker)))))
+
+; This won't work if ENV is the interaction environment and someone has
+; redefined LAMBDA there.
+
+(define eval
+  (let ((real-eval eval))
+    (lambda (exp env)
+      ((real-eval `(lambda (vector?) ,exp))
+       vector?))))
+
+; Definitions of the record procedures.
+
+(define (record? x)
+  (and (real-vector? x)
+       (< 0 (vector-length x))
+       (eq? (vector-ref x 0)
+            record-marker)))
+
+(define (make-record size)
+  (let ((new (make-vector (+ size 1))))
+    (vector-set! new 0 record-marker)
+    new))
+
+(define (record-ref record index)
+  (vector-ref record (+ index 1)))
+
+(define (record-set! record index value)
+  (vector-set! record (+ index 1) value))
+
+;;;;
+;;;; Record types section
+;;;;
 
 ; We define the following procedures:
 ; 
@@ -143,63 +207,3 @@
                     type))
           (record-set! thing index value)
           (error "modifier applied to bad value" type tag thing)))))
-
-
-;;; TODO: section 3 will require hooks into the rest of the system.
-;;        EG, for vector? and eval?, maybe other stuff too
-
-; Section 3 - Records
-
-; This implements a record abstraction that is identical to vectors,
-; except that they are not vectors (VECTOR? returns false when given a
-; record and RECORD? returns false when given a vector).  The following
-; procedures are provided:
-;   (record? <value>)                -> <boolean>
-;   (make-record <size>)             -> <record>
-;   (record-ref <record> <index>)    -> <value>
-;   (record-set! <record> <index> <value>) -> <unspecific>
-;
-; These can implemented in R5RS Scheme as vectors with a distinguishing
-; value at index zero, providing VECTOR? is redefined to be a procedure
-; that returns false if its argument contains the distinguishing record
-; value.  EVAL is also redefined to use the new value of VECTOR?.
-
-; Define the marker and redefine VECTOR? and EVAL.
-
-(define record-marker (list 'record-marker))
-
-(define real-vector? vector?)
-
-(define (vector? x)
-  (and (real-vector? x)
-       (or (= 0 (vector-length x))
-       (not (eq? (vector-ref x 0)
-        record-marker)))))
-
-; This won't work if ENV is the interaction environment and someone has
-; redefined LAMBDA there.
-
-(define eval
-  (let ((real-eval eval))
-    (lambda (exp env)
-      ((real-eval `(lambda (vector?) ,exp))
-       vector?))))
-
-; Definitions of the record procedures.
-
-(define (record? x)
-  (and (real-vector? x)
-       (< 0 (vector-length x))
-       (eq? (vector-ref x 0)
-            record-marker)))
-
-(define (make-record size)
-  (let ((new (make-vector (+ size 1))))
-    (vector-set! new 0 record-marker)
-    new))
-
-(define (record-ref record index)
-  (vector-ref record (+ index 1)))
-
-(define (record-set! record index value)
-  (vector-set! record (+ index 1) value))
