@@ -215,7 +215,7 @@ evalAndPrint env expr = evalString env expr >>= putStrLn
 evalLisp :: Env -> LispVal -> IOThrowsError LispVal
 evalLisp env lisp = do
   v <- meval env (makeNullContinuation env) lisp
-  recDerefPtrs v
+  safeRecDerefPtrs [] v
 
 -- |Evaluate a lisp data structure and return the LispVal or LispError
 --  result directly
