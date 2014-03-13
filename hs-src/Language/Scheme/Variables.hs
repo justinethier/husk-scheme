@@ -624,6 +624,40 @@ recDerefPtrs (Pointer p env) = do
     recDerefPtrs result 
 recDerefPtrs v = return v
 
+-- |Attempt to dereference pointers safely, without being caught in a cycle
+safeRecDerefPtrs :: [LispVal] -> LispVal -> IOThrowsError LispVal
+#ifdef UsePointers
+--safeRecDerefPtrs (List l) = do
+--    result <- mapM safeRecDerefPtrs l
+--    return $ List result
+--safeRecDerefPtrs (DottedList ls l) = do
+--    ds <- mapM safeRecDerefPtrs ls
+--    d <- safeRecDerefPtrs l
+--    return $ DottedList ds d
+safeRecDerefPtrs ps (Vector v) = do
+   let vs = elems v
+   ds <- mapM (safeRecDerefPtrs ps) vs
+   return $ Vector $ listArray (0, length vs - 1) ds
+--safeRecDerefPtrs (HashTable ht) = do
+--    ks <- mapM (safeRecDerefPtrs (Just a))$ map (\ (k, _) -> k) $ Data.Map.toList ht
+--    vs <- mapM (safeRecDerefPtrs (Just a))$ map (\ (_, v) -> v) $ Data.Map.toList ht
+--    return $ HashTable $ Data.Map.fromList $ zip ks vs
+#endif
+safeRecDerefPtrs ps ptr@(Pointer p env) = do
+    case containsPtr ps ptr of
+        True -> return ptr -- Avoid cycle
+        _ -> do
+            result <- getVar env p
+            safeRecDerefPtrs (ptr : ps) result 
+safeRecDerefPtrs _ v = return v
+
+containsPtr ((Pointer pa ea):ps) p@(Pointer pb eb) = do
+    let found = (pa == pb) && ((bindings ea) == (bindings eb))
+    if found
+       then True
+       else containsPtr ps p
+containsPtr [] _ = False
+
 -- |A helper to recursively dereference all pointers and
 --  pass results to a function
 recDerefToFnc :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] 
