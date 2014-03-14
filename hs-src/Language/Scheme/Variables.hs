@@ -603,27 +603,28 @@ derefPtr v = return v
 --  This could potentially be expensive on large data structures 
 --  since it must walk the entire object.
 recDerefPtrs :: LispVal -> IOThrowsError LispVal
-#ifdef UsePointers
-recDerefPtrs (List l) = do
-    result <- mapM recDerefPtrs l
-    return $ List result
-recDerefPtrs (DottedList ls l) = do
-    ds <- mapM recDerefPtrs ls
-    d <- recDerefPtrs l
-    return $ DottedList ds d
-recDerefPtrs (Vector v) = do
-    let vs = elems v
-    ds <- mapM recDerefPtrs vs
-    return $ Vector $ listArray (0, length vs - 1) ds
-recDerefPtrs (HashTable ht) = do
-    ks <- mapM recDerefPtrs $ map (\ (k, _) -> k) $ Data.Map.toList ht
-    vs <- mapM recDerefPtrs $ map (\ (_, v) -> v) $ Data.Map.toList ht
-    return $ HashTable $ Data.Map.fromList $ zip ks vs
-#endif
-recDerefPtrs (Pointer p env) = do
-    result <- getVar env p
-    recDerefPtrs result 
-recDerefPtrs v = return v
+-- #ifdef UsePointers
+-- recDerefPtrs (List l) = do
+--     result <- mapM recDerefPtrs l
+--     return $ List result
+-- recDerefPtrs (DottedList ls l) = do
+--     ds <- mapM recDerefPtrs ls
+--     d <- recDerefPtrs l
+--     return $ DottedList ds d
+-- recDerefPtrs (Vector v) = do
+--     let vs = elems v
+--     ds <- mapM recDerefPtrs vs
+--     return $ Vector $ listArray (0, length vs - 1) ds
+-- recDerefPtrs (HashTable ht) = do
+--     ks <- mapM recDerefPtrs $ map (\ (k, _) -> k) $ Data.Map.toList ht
+--     vs <- mapM recDerefPtrs $ map (\ (_, v) -> v) $ Data.Map.toList ht
+--     return $ HashTable $ Data.Map.fromList $ zip ks vs
+-- #endif
+-- recDerefPtrs (Pointer p env) = do
+--     result <- getVar env p
+--     recDerefPtrs result 
+--recDerefPtrs v = return v
+recDerefPtrs v = safeRecDerefPtrs [] v
 
 -- |Attempt to dereference pointers safely, without being caught in a cycle
 safeRecDerefPtrs :: [LispVal] -> LispVal -> IOThrowsError LispVal
