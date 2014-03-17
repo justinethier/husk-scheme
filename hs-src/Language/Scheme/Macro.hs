@@ -254,14 +254,14 @@ matchRule defEnv outerEnv divertEnv dim identifiers localEnv renameEnv cleanupEn
                                   (List $ ds ++ [d, Atom esym])
                                   (List is)
                                    0 []
-                                  (flagDottedLists [] (False, False) 0)
+                                  (flagDottedLists [] (False, False) $ 0 + (length $ filter (filterEsym esym) ds)) -- Mark any ellipsis we are passing over
                                   esym
        (List _ : _) -> do 
          loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers 
                                   (List $ ds ++ [d, Atom esym])
                                   (List is)
                                    0 []
-                                  (flagDottedLists [] (True, False) 0)
+                                  (flagDottedLists [] (True, False) $ 0 + (length $ filter (filterEsym esym) ds)) -- Mark any ellipsis we are passing over
                                   esym
        _ -> loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers (List ps) (List is) 0 [] [] esym
 
@@ -275,6 +275,7 @@ matchRule _ _ _ _ _ _ _ _ rule input _ = do
 in preparation for macro transformation. -}
 loadLocal :: Env -> Env -> Env -> Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> [(Bool, Bool)] -> String -> IOThrowsError LispVal
 loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers pattern input ellipsisLevel ellipsisIndex listFlags esym = do
+  --case (trace ("loadLocal [" ++ (show pattern) ++ "] [" ++ (show input) ++ "] flags = " ++ (show listFlags) ++ " ...lvl = " ++ (show ellipsisLevel) ++ " ...indx = " ++ (show ellipsisIndex)) (pattern, input)) of
   case (pattern, input) of
 
        ((DottedList ps p), (DottedList isRaw iRaw)) -> do
@@ -289,13 +290,13 @@ loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers pattern input
          result <- loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers (List ps) (List is) ellipsisLevel ellipsisIndex listFlags esym
          case result of
             Bool True -> --  By matching on an elipsis we force the code 
-                         --  to match pagainst all elements in i. 
+                         --  to match p against all elements in i. 
                          loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers 
                                   (List $ [p, Atom esym]) 
                                   (List i)
                                    ellipsisLevel -- Incremented in the list/list match below
                                    ellipsisIndex
-                                   (flagDottedLists listFlags (True, True) $ length ellipsisIndex)
+                                   (flagDottedLists listFlags (True, True) $ length ellipsisIndex) -- Do not think we need to flag ... that are passed over, since this is a direct comparison of both cdr's
                                    esym
             _ -> return $ Bool False
 
@@ -397,7 +398,7 @@ flagUnmatchedAtom :: Env -> Env -> Env -> LispVal -> String -> Bool -> IOThrowsE
 flagUnmatchedAtom defEnv outerEnv localEnv identifiers p improperListFlag = do
   isDefined <- liftIO $ isBound localEnv p
   isIdent <- findAtom (Atom p) identifiers
-  if isDefined 
+  if isDefined
      -- Var already defined, skip it...
      then continueFlagging
      else case isIdent of
@@ -554,12 +555,17 @@ checkLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers ellipsisLeve
                                   input
                                    ellipsisLevel -- Incremented in the list/list match below
                                    ellipsisIndex
-                                   (flagDottedLists flags (True, False) $ length ellipsisIndex) 
+                                   (flagDottedLists flags (True, False) $ (length ellipsisIndex) + (length $ filter (filterEsym esym) ps)) -- Mark any ellipsis in the list that we are passing over
                                    esym
 checkLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers ellipsisLevel ellipsisIndex pattern@(List _) input@(List _) flags esym =
   loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers pattern input ellipsisLevel ellipsisIndex flags esym
 
 checkLocal _ _ _ _ _ _ _ _ _ _ _ _ = return $ Bool False
+
+-- |Helper for filter, remove all lispvals that are not the ellipsis marker
+filterEsym :: String -> LispVal -> Bool
+filterEsym esym (Atom a) = esym == a
+filterEsym _ _ = False
 
 -- |Determine if an identifier in a pattern matches an identifier of the same
 --  name in the input.
