@@ -55,8 +55,8 @@
 
 ; Define the marker and redefine VECTOR? and EVAL.
 
-(define record-marker (list 'record-marker))
-
+;;(define record-marker (list 'record-marker))
+;;
 ;;(define real-vector? vector?)
 ;;
 ;;(define (vector? x)
@@ -84,7 +84,7 @@
 
 (define (make-record size)
   (let ((new (make-vector (+ size 1))))
-    (vector-set! new 0 record-marker)
+    (vector-set! new 0 (string->symbol "  record-marker  "))
     new))
 
 (define (record-ref record index)
