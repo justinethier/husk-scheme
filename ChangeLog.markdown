@@ -1,3 +1,8 @@
+v3.17
+--------
+
+- Fixed a macro bug where the last element of an improper list in the pattern may not be matched correctly if there is an ellipsis earlier in the list.
+
 v3.16.1
 --------
 
