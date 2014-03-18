@@ -507,4 +507,13 @@
 (import (162))
 (assert/equal (foo) 'baz)
 
+; Issue #166
+(define-syntax foo
+  (syntax-rules ()
+    ((_ (p ... . r))
+     'r)))
+
+(assert/equal (foo (1 2 3 4)) '())
+; End 166
+
 (unit-test-handler-results)
