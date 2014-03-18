@@ -93,6 +93,7 @@ module Language.Scheme.Primitives (
  , isProcedure 
  , isList 
  , isVector 
+ , isRecord
  , isByteVector
  , isNull 
  , isEOFObject 
@@ -1577,18 +1578,39 @@ isProcedure ([EvalFunc _]) = return $ Bool True
 isProcedure ([CustFunc _]) = return $ Bool True
 isProcedure _ = return $ Bool False
 
--- | Determine if given object is a bytevector
+-- | Determine if given object is a vector
 --
 --   Arguments:
 --
 --   * Value to check
 --
---   Returns: Bool - True if bytevector, False otherwise
+--   Returns: Bool - True if vector, False otherwise
 --
 isVector :: LispVal -> IOThrowsError LispVal
 isVector p@(Pointer _ _) = derefPtr p >>= isVector
-isVector (Vector _) = return $ Bool True
+isVector (Vector vs) = do
+    case elems vs of
+        -- Special exception for record types
+        ((List [Atom "record-marker"]) : _) -> return $ Bool False
+        _ -> return $ Bool True
 isVector _ = return $ Bool False
+
+-- | Determine if given object is a record
+--
+--   Arguments:
+--
+--   * Value to check
+--
+--   Returns: Bool - True if record, False otherwise
+--
+isRecord :: LispVal -> IOThrowsError LispVal
+isRecord p@(Pointer _ _) = derefPtr p >>= isRecord
+isRecord (Vector vs) = do
+    case elems vs of
+        -- Special exception for record types
+        ((List [Atom "record-marker"]) : _) -> return $ Bool True
+        _ -> return $ Bool False
+isRecord _ = return $ Bool False
 
 -- | Determine if given object is a bytevector
 --

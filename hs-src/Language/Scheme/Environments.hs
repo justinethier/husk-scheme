@@ -99,6 +99,7 @@ ioPrimitives = [("open-input-file", makePort openFile ReadMode ),
               ("pair?", isDottedList),
               ("list?", unaryOp' isList),
               ("vector?", unaryOp' isVector),
+              ("record?", unaryOp' isRecord),
               ("null?", isNull),
               ("string?", isString),
 
