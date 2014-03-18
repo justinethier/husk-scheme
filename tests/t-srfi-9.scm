@@ -1,7 +1,9 @@
 ; TODO: integrate into test suite
 ; tests from srfi-9:
 
-(load "lib/srfi/srfi-9.scm")
+; This may show some issues with referential transparency... need to sort it out
+(import (scheme base))
+
 (define-record-type :pare
   (kons x y)
   pare?

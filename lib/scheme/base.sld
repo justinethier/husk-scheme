@@ -170,7 +170,8 @@
     cond-expand
     ;current-error-port
     ;define
-    ;define-record-type
+    define-record-type
+    record?
     ;define-syntax
     ;define-values
     ;else
@@ -256,4 +257,5 @@
     ;write-u8
     %husk-switch-to-parent-environment
     )
+    (include "../srfi/srfi-9.scm")
     (import (scheme)))
