@@ -178,7 +178,7 @@ import System.Exit (ExitCode(..))
 import System.IO
 import System.IO.Error
 --import System.Process (readProcess)
--- import Debug.Trace
+--import Debug.Trace
 
 #if __GLASGOW_HASKELL__ < 702
 try' = try
@@ -1591,7 +1591,7 @@ isVector p@(Pointer _ _) = derefPtr p >>= isVector
 isVector (Vector vs) = do
     case elems vs of
         -- Special exception for record types
-        ((List [Atom "record-marker"]) : _) -> return $ Bool False
+        ((Atom "  record-marker  ") : _) -> return $ Bool False
         _ -> return $ Bool True
 isVector _ = return $ Bool False
 
@@ -1606,9 +1606,9 @@ isVector _ = return $ Bool False
 isRecord :: LispVal -> IOThrowsError LispVal
 isRecord p@(Pointer _ _) = derefPtr p >>= isRecord
 isRecord (Vector vs) = do
-    case elems vs of
+    case (elems vs) of
         -- Special exception for record types
-        ((List [Atom "record-marker"]) : _) -> return $ Bool True
+        ((Atom "  record-marker  ") : _) -> return $ Bool True
         _ -> return $ Bool False
 isRecord _ = return $ Bool False
 
