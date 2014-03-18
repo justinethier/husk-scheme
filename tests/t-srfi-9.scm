@@ -2,7 +2,7 @@
 ; tests from srfi-9:
 
 ; This may show some issues with referential transparency... need to sort it out
-(import (scheme base))
+;(import (scheme base))
 
 (define-record-type :pare
   (kons x y)

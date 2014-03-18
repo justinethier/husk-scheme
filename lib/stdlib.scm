@@ -10,4 +10,4 @@
 (load "cxr.scm")
 (load "core.scm")
 (load "lazy.scm")
-(load "lib/srfi/srfi-9.scm")
+(load "srfi/srfi-9.scm")
