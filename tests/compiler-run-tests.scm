@@ -36,6 +36,7 @@
 ;; SRFI tests
 ;(let () (load "t-srfi-1.scm")) ; There is a *lot* of code here, may be difficult to test or have long compiles
 (let () (load "t-srfi-2.scm"))
+;(let () (load "t-srfi-9.scm"))
 ; r7rs libraries
 (let () (load "t-libs.scm"))
 ;; Summarize test results
