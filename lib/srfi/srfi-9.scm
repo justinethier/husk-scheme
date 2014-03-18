@@ -57,30 +57,30 @@
 
 (define record-marker (list 'record-marker))
 
-(define real-vector? vector?)
-
-(define (vector? x)
-  (and (real-vector? x)
-       (or (= 0 (vector-length x))
-       (not (eq? (vector-ref x 0)
-        record-marker)))))
-
-; This won't work if ENV is the interaction environment and someone has
-; redefined LAMBDA there.
-
-(define eval
-  (let ((real-eval eval))
-    (lambda (exp env)
-      ((real-eval `(lambda (vector?) ,exp))
-       vector?))))
-
-; Definitions of the record procedures.
-
-(define (record? x)
-  (and (real-vector? x)
-       (< 0 (vector-length x))
-       (eq? (vector-ref x 0)
-            record-marker)))
+;;(define real-vector? vector?)
+;;
+;;(define (vector? x)
+;;  (and (real-vector? x)
+;;       (or (= 0 (vector-length x))
+;;       (not (eq? (vector-ref x 0)
+;;        record-marker)))))
+;;
+;;; This won't work if ENV is the interaction environment and someone has
+;;; redefined LAMBDA there.
+;;
+;;(define eval
+;;  (let ((real-eval eval))
+;;    (lambda (exp env)
+;;      ((real-eval `(lambda (vector?) ,exp))
+;;       vector?))))
+;;
+;;; Definitions of the record procedures.
+;;
+;;(define (record? x)
+;;  (and (real-vector? x)
+;;       (< 0 (vector-length x))
+;;       (eq? (vector-ref x 0)
+;;            record-marker)))
 
 (define (make-record size)
   (let ((new (make-vector (+ size 1))))
