@@ -895,6 +895,12 @@ compile env (List [Atom "load-ffi",
         moduleName ++ "." ++ externalFuncName,
     createAstCont copts "result" ""]]
 
+-- TODO: experimental change
+--compile env args@(List [Atom "%husk-switch-to-parent-environment"]) copts = do
+--    let parEnv = case parentEnv env of
+--                      Just env' -> env'
+--                      Nothing -> env
+--    mfunc parEnv args compileApply copts 
 compile env args@(List (_ : _)) copts = mfunc env args compileApply copts 
 compile _ badForm _ = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
