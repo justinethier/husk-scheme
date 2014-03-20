@@ -142,6 +142,14 @@ defineTopLevelVars env ((List (Atom "define" : List (Atom var : _) : _)) : ls) =
 defineTopLevelVars env ((List (Atom "define" : DottedList (Atom var : _) _ : _)) : ls) = do
     _ <- defineTopLevelVar env var
     defineTopLevelVars env ls
+-- TODO: this is broken because it needs to be executed after macro expansion (!)
+-- Special case for "begin". Not general-purpose, at least not yet
+defineTopLevelVars env (List [List (Atom "lambda" : List _ : 
+                                List [Atom "%husk-switch-to-parent-environment"] : 
+                                cls)] :
+                       ls) = do
+    _ <- defineTopLevelVars env cls
+    defineTopLevelVars env ls
 defineTopLevelVars env (_ : ls) = defineTopLevelVars env ls
 defineTopLevelVars _ _ = return nullLisp 
 
