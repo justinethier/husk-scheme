@@ -516,4 +516,19 @@
 (assert/equal (foo (1 2 3 4)) '())
 ; End 166
 
+; Test cases from SRFI 46
+(assert/equal
+  (let-syntax
+    ((f (syntax-rules ()
+          ((f ?e)
+           (let-syntax
+               ((g (syntax-rules ::: ()
+                     ((g (??x ?e) (??y :::))
+                      '((??x) ?e (??y) :::)))))
+             (g (1 2) (3 4)))))))
+    (f :::))
+ '((1) 2 (3) (4))) ; if hygienic rules of ellipsis identifiers are
+                   ; correctly implemented, not ((1) (2) (3) (4))
+; END SRFI 46
+
 (unit-test-handler-results)
