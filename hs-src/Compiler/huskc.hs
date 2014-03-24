@@ -191,7 +191,7 @@ compileSchemeFile env stdlib srfi55 filename outHaskell langrev debugOpt = do
   _ <- liftIO $ writeList outH headerModule
   _ <- liftIO $ writeList outH $ map (\modl -> "import " ++ modl ++ " ") $ headerImports ++ moreHeaderImports
   filepath <- liftIO $ getDataFileName ""
-  _ <- liftIO $ writeList outH $ header filepath compileLibraries langrev debugOpt
+  _ <- liftIO $ writeList outH $ header filepath compileLibraries langrev
   _ <- liftIO $ case compileLibraries of
     True -> do
       _ <- writeList outH $ map show libsC

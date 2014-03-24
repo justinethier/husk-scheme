@@ -56,6 +56,10 @@ Source-Repository head
     Type:            git
     Location:        git://github.com/justinethier/husk-scheme.git
 
+flag usedebug
+    description: Include debug trace statements in compiled code.
+    default: False
+
 flag useffi
     description: Haskell Foreign Function Interface (FFI). Allows husk to import and call into Haskell code directly from Scheme code. Turn off FFI to decrease build times and minimize executable sizes
     default: False
@@ -90,6 +94,9 @@ Library
                    Language.Scheme.Util
   Other-Modules:   Paths_husk_scheme
 
+  if flag(usedebug)
+    cpp-options: -DUseDebug
+
   if flag(useffi)
     Build-Depends: ghc, ghc-paths
     Exposed-Modules:  Language.Scheme.FFI
@@ -112,6 +119,8 @@ Executable         huski
 
 Executable huskc
   Build-Depends: husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc-paths, process, filepath
+  if flag(usedebug)
+    cpp-options: -DUseDebug
   if flag(useffi)
     Build-Depends: ghc, ghc-paths
     cpp-options: -DUseFfi
