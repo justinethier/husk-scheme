@@ -95,6 +95,17 @@ _compileBlock :: String -> Maybe String -> Env -> [HaskAST] -> [LispVal]
 _compileBlock symThisFunc symLastFunc env result [c] = do
   compiled <- mcompile env c $ CompileOptions symThisFunc False False symLastFunc 
   return $ result ++ compiled
+-- A special case to splice in definitions from a (begin)
+_compileBlock symThisFunc symLastFunc env result 
+    (c@(List [Atom "%husk-switch-to-parent-environment"]) : cs)  = do
+  let parEnv = case parentEnv env of
+                      Just env' -> env'
+                      Nothing -> env
+  _ <- defineTopLevelVars parEnv cs
+  Atom symNextFunc <- _gensym "f"
+  compiled <- mcompile env c $ 
+                       CompileOptions symThisFunc False False (Just symNextFunc)
+  _compileBlock symNextFunc symLastFunc parEnv (result ++ compiled) cs
 _compileBlock symThisFunc symLastFunc env result (c:cs) = do
   Atom symNextFunc <- _gensym "f"
   compiled <- mcompile env c $ 
@@ -141,14 +152,6 @@ defineTopLevelVars env ((List (Atom "define" : List (Atom var : _) : _)) : ls) =
     defineTopLevelVars env ls
 defineTopLevelVars env ((List (Atom "define" : DottedList (Atom var : _) _ : _)) : ls) = do
     _ <- defineTopLevelVar env var
-    defineTopLevelVars env ls
--- TODO: this is broken because it needs to be executed after macro expansion (!)
--- Special case for "begin". Not general-purpose, at least not yet
-defineTopLevelVars env (List [List (Atom "lambda" : List _ : 
-                                List [Atom "%husk-switch-to-parent-environment"] : 
-                                cls)] :
-                       ls) = do
-    _ <- defineTopLevelVars env cls
     defineTopLevelVars env ls
 defineTopLevelVars env (_ : ls) = defineTopLevelVars env ls
 defineTopLevelVars _ _ = return nullLisp 
@@ -903,12 +906,6 @@ compile env (List [Atom "load-ffi",
         moduleName ++ "." ++ externalFuncName,
     createAstCont copts "result" ""]]
 
--- TODO: experimental change
---compile env args@(List [Atom "%husk-switch-to-parent-environment"]) copts = do
---    let parEnv = case parentEnv env of
---                      Just env' -> env'
---                      Nothing -> env
---    mfunc parEnv args compileApply copts 
 compile env args@(List (_ : _)) copts = mfunc env args compileApply copts 
 compile _ badForm _ = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
