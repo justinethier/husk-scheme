@@ -80,13 +80,13 @@ definitions:
 </P>
 <P>
 <UL>
-<LI>name is bound to a representation of the record type itself.
+<LI><code>name</code> is bound to a representation of the record type itself.
 This may be a run-time object or a purely syntactic representation.
 The representation is not utilized in this report, but it serves as a
 means to identify the record type for use by further language extensions.
 
 </LI>
-<LI>{constructor name} is bound to a procedure that takes as
+<LI><code>{constructor name}</code> is bound to a procedure that takes as
   many arguments as there are field names in the
   <code>({constructor name} ...)</code> subexpression and returns a
   new record of type name.  Fields whose names are listed with
@@ -96,18 +96,18 @@ means to identify the record type for use by further language extensions.
   constructor but not as a field name.
 
 </LI>
-<LI>pred is bound to a predicate that returns <code>#t</code> when given a
-  value returned by the procedure bound to {constructor name} and <code>#f</code> for
+<LI><code>pred</code> is bound to a predicate that returns <code>#t</code> when given a
+  value returned by the procedure bound to <code>{constructor name}</code> and <code>#f</code> for
   everything else.
 
 </LI>
-<LI>Each {accessor name} is bound to a procedure that takes a record of
+<LI>Each <code>{accessor name}</code> is bound to a procedure that takes a record of
   type name and returns the current value of the corresponding
   field.  It is an error to pass an accessor a value which is not a
   record of the appropriate type.
 
 </LI>
-<LI>Each {modifier name} is bound to a procedure that takes a record of
+<LI>Each <code>{modifier name}</code> is bound to a procedure that takes a record of
   type name and a value which becomes the new value of the
   corresponding field; an unspecified value is returned.  It is an
   error to pass a modifier a first argument which is not a record of
