@@ -786,46 +786,47 @@
              (else (expand (cdr ls))))))))
 ;; END
 
-;; TODO: stubs from R7RS:
-;;(define (make-parameter init . o)
-;;  (let* ((converter
-;;           (if (pair? o) (car o) (lambda (x) x)))
-;;         (value (converter init)))
-;;    (lambda args
-;;      (cond
-;;        ((null? args)
-;;         value)
-;;        ((eq? (car args) <param-set!>)
-;;         (set! value (cadr args)))
-;;        ((eq? (car args) <param-convert>)
-;;         converter)
-;;       (else
-;;         (error "bad parameter syntax"))))))
-;;
-;;(define-syntax parameterize
-;;  (syntax-rules ()
-;;    ((parameterize ("step")
-;;                   ((param value p old new) ...)
-;;                   ()
-;;                   body)
-;;     (let ((p param) ...)
-;;       (let ((old (p)) ...
-;;             (new ((p <param-convert>) value)) ...)
-;;        (dynamic-wind
-;;          (lambda () (p <param-set!> new) ...)
-;;          (lambda () . body)
-;;          (lambda () (p <param-set!> old) ...)))))
-;;    ((parameterize ("step")
-;;                   args
-;;                   ((param value) . rest)
-;;                   body)
-;;     (parameterize ("step")
-;;                   ((param value p old new) . args)
-;;                   rest
-;;                   body))
-;;    ((parameterize ((param value) ...) . body)
-;;     (parameterize ("step")
-;;                   ()
-;;                   ((param value) ...)
-;;                   body))))
+;; SRFI 39:
+(define (make-parameter init . o)
+  (let* ((converter
+           (if (pair? o) (car o) (lambda (x) x))))
+    (lambda args
+      (cond
+        ((null? args)
+         (converter init))
+        ((eq? (car args) '<param-set!>)
+         (set! init (cadr args)))
+        ((eq? (car args) '<param-convert>)
+         converter)
+       (else
+         (error "bad parameter syntax"))))))
+
+(define-syntax parameterize
+  (syntax-rules ()
+    ((parameterize ("step")
+                   ((param value p old new) ...)
+                   ()
+                   body ...)
+     (let ((p param) ...)
+       (let ((old (p)) ...
+             (new ((p '<param-convert>) value)) ...)
+        (dynamic-wind
+          (lambda () (p '<param-set!> new) ...)
+          ;(lambda () . body) ; bug in husk, should surround with ()
+          (lambda () body ...) ; bug in husk, should surround with ()
+          (lambda () (p '<param-set!> old) ...)))))
+    ((parameterize ("step")
+                   args
+                   ((param value) . rest)
+                   body ...)
+     (parameterize ("step")
+                   ((param value p old new) . args)
+                   rest
+                   body ...))
+    ((parameterize ((param value) ...) body ...)
+     (parameterize ("step")
+                   ()
+                   ((param value) ...)
+                   body ...))))
+;; END SRFI 39
 
