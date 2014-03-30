@@ -8,6 +8,7 @@ Bug Fixes:
 - Fixed a macro bug where the last element of a pattern's improper list may not be matched correctly if there is an ellipsis earlier in the list.
 - Prevent infinite recursion when evaluating a pointer that contains a pointer to itself.
 - Fixed the compiler to add full support for splicing of `begin` definitions.
+- Updated `dynamic-wind` to return the value from the `during` thunk instead of the `after` thunk.
 
 v3.16.1
 --------
