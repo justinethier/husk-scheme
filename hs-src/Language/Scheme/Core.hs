@@ -1195,7 +1195,10 @@ evalfuncDynamicWind [cont@(Continuation env _ _ _ _), beforeFunc, thunkFunc, aft
                                              (Just ([DynamicWinders beforeFunc afterFunc]))) -- FUTURE: append if existing winders
                                thunkFunc []
    cpsThunk _ _ _ _ = throwError $ Default "Unexpected error in cpsThunk during (dynamic-wind)"
-   cpsAfter _ c _ _ = apply c afterFunc [] -- FUTURE: remove dynamicWinder from above from the list before calling after
+   cpsAfter _ c value _ = do
+    let cpsRetVals :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+        cpsRetVals e c _ _ = continueEval e c value
+    apply (makeCPS env c cpsRetVals) afterFunc [] -- FUTURE: remove dynamicWinder from above from the list before calling after
 evalfuncDynamicWind (_ : args) = throwError $ NumArgs (Just 3) args -- Skip over continuation argument
 evalfuncDynamicWind _ = throwError $ NumArgs (Just 3) []
 
