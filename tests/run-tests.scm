@@ -38,6 +38,7 @@
 (let () (load "t-srfi-1.scm"))
 (let () (load "t-srfi-2.scm"))
 (let () (load "t-srfi-9.scm"))
+(let () (load "t-srfi-39.scm"))
 ; r7rs libraries
 (let () (load "t-libs.scm"))
 ; Summarize test results
