@@ -2,6 +2,9 @@ v3.17
 --------
 
 - Added support for `define-record-type` from R<sup>7</sup>RS. This syntax allows creation of new disjoint types supporting access to multiple fields. See [record-type definitions](http://justinethier.github.io/husk-scheme/manual/node57.html) in the user manual for more details.
+- Added support for Parameter Objects (SRFI 39)
+
+  TODO: update user manual to include this, and explain more about them here!
 
 Bug Fixes:
 
