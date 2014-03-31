@@ -203,13 +203,13 @@
     list-copy
     ;list-set!
     make-list
-    ;make-parameter
+    make-parameter
     ;open-input-bytevector
     ;open-input-string
     ;open-output-bytevector
     ;open-output-string
     output-port-open?
-    ;parameterize
+    parameterize
     ;peek-u8
     ;port?
     ;quote
