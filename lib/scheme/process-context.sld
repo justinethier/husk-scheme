@@ -9,14 +9,21 @@
 
 (define-library (scheme process-context)
     (export 
-         system
-         exit-success
-         exit-fail
+         test
+         emergency-exit
+         get-environment-variables
 ; TODO:
 ;        command-line
-;        emergency-exit
 ;        exit
 ;        get-environment-variable
-;        get-environment-variables
-        )
-    (import (scheme)))
+         exit-fail
+         exit-success
+         system)
+    (import (scheme))
+    (begin
+        (define test #t)
+        (define (emergency-exit . obj)
+            (if (or (null? obj)
+                    (car obj))
+                (exit-success)
+                (exit-fail)))))

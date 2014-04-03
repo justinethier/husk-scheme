@@ -145,14 +145,15 @@ module Language.Scheme.Primitives (
  , readAll
  , fileExists
  , deleteFile
+ , eofObject 
  -- ** Symbol generation
  , gensym
  , _gensym
  -- ** Time
  , currentTimestamp
  -- ** System
- , eofObject 
  , system
+ , getEnvVars
 -- , systemRead
 
  ) where
@@ -174,6 +175,7 @@ import Data.Unique
 import Data.Word
 import qualified System.Cmd
 import System.Directory (doesFileExist, removeFile)
+import qualified System.Environment as SE
 import System.Exit (ExitCode(..))
 import System.IO
 import System.IO.Error
@@ -1961,6 +1963,17 @@ system [String cmd] = do
         ExitSuccess -> return $ Number 0
         ExitFailure code -> return $ Number $ toInteger code
 system err = throwError $ TypeMismatch "string" $ List err
+
+-- | Retrieve all environment variables
+--
+--   Arguments: (none)
+--
+--   Returns: List - list of key/value alists
+--
+getEnvVars :: [LispVal] -> IOThrowsError LispVal
+getEnvVars _ = do
+    vars <- liftIO $ SE.getEnvironment
+    return $ List $ map (\ (k, v) -> DottedList [String k] (String v)) vars
 
 -- FUTURE (?):
 -- systemRead :: [LispVal] -> IOThrowsError LispVal
