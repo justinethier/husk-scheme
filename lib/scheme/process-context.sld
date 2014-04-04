@@ -9,7 +9,6 @@
 
 (define-library (scheme process-context)
     (export 
-         test
          emergency-exit
          get-environment-variables
 ; TODO:
@@ -21,7 +20,6 @@
          system)
     (import (scheme))
     (begin
-        (define test #t)
         (define (emergency-exit . obj)
             (if (or (null? obj)
                     (car obj))
