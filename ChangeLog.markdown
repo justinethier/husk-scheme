@@ -3,6 +3,12 @@ v3.17
 
 - Added support for `define-record-type` from R<sup>7</sup>RS and SRFI 9. This syntax allows creation of new disjoint types supporting access to multiple fields. See [record-type definitions](http://justinethier.github.io/husk-scheme/manual/node57.html) in the user manual for more details.
 - Added support for parameter objects from R<sup>7</sup>RS and SRFI 39. See [dynamic bindings](http://justinethier.github.io/husk-scheme/manual/node41.html) in the user manual for more information.
+- Added a `(scheme process-context)` library containing the following functions:
+        - emergency-exit
+        - exit-fail
+        - exit-success
+        - get-environment-variables
+        - system
 
 Bug Fixes:
 
