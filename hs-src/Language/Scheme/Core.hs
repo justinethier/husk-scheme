@@ -1073,8 +1073,6 @@ r5rsEnv' = do
   timeEnv <- liftIO $ r7rsTimeEnv
   _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "time", Atom "posix"]], List [Atom "make-module", Bool False, LispEnv timeEnv, List [Atom "quote", List []]]]
 
-  processContextEnv <- liftIO $ r7rsProcessContextEnv
-  _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "process-context"]], List [Atom "make-module", Bool False, LispEnv processContextEnv, List [Atom "quote", List []]]]
   _ <- evalLisp' metaEnv $ List [
     Atom "define", 
     Atom "library-exists?",
@@ -1130,8 +1128,6 @@ r7rsEnv' = do
   timeEnv <- liftIO $ r7rsTimeEnv
   _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "time", Atom "posix"]], List [Atom "make-module", Bool False, LispEnv timeEnv, List [Atom "quote", List []]]]
 
-  processContextEnv <- liftIO $ r7rsProcessContextEnv
-  _ <- evalLisp' metaEnv $ List [Atom "add-module!", List [Atom "quote", List [Atom "scheme", Atom "process-context"]], List [Atom "make-module", Bool False, LispEnv processContextEnv, List [Atom "quote", List []]]]
   _ <- evalLisp' metaEnv $ List [
     Atom "define", 
     Atom "library-exists?",
@@ -1147,14 +1143,6 @@ r7rsTimeEnv = do
     nullEnv >>= 
      (flip extendEnv 
            [ ((varNamespace, "current-second"), IOFunc currentTimestamp)])
-
-r7rsProcessContextEnv :: IO Env
-r7rsProcessContextEnv = do
-    nullEnv >>= 
-     (flip extendEnv 
-           [ 
-           -- TODO: need a lot more here, this is just a stub
-           ((varNamespace, "exit"), IOFunc evalfuncExitFail)])
 
 -- Functions that extend the core evaluator, but that can be defined separately.
 --
