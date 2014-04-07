@@ -10,16 +10,21 @@
 (define-library (scheme process-context)
     (export 
          emergency-exit
+         get-environment-variable
          get-environment-variables
 ; TODO:
 ;        command-line
 ;        exit
-;        get-environment-variable
          exit-fail
          exit-success
          system)
     (import (scheme))
     (begin
+        (define (get-environment-variable var)
+          (let ((var+val (assoc var (get-environment-variables))))
+            (if var+val
+                (cdr var+val)
+                #f)))
         (define (emergency-exit . obj)
             (if (or (null? obj)
                     (car obj))
