@@ -12,9 +12,6 @@
          emergency-exit
          get-environment-variable
          get-environment-variables
-; TODO:
-;        command-line
-;        exit
          exit-fail
          exit-success
          system)
