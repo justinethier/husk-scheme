@@ -69,7 +69,7 @@ flag uselibraries
     default: True
 
 flag useptrs
-    description: Turn off pointers to increase performance at the expense of severely restricting the functionality of mutable variables. Setting this flag to false will revert back to the behavior from previous versions of husk.
+    description: Turn off pointers to increase performance at the expense of severely restricting the functionality of mutable variables. Setting this flag to false will revert back to the behavior from older versions of husk.
     default: True
 
 Library
