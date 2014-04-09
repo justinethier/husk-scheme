@@ -126,7 +126,7 @@ compileScalar val copts = do
 compileLambdaList :: [LispVal] -> IOThrowsError String
 compileLambdaList l = do
   serialized <- mapM serialize l 
-  return $ "[" ++ concat (Data.List.intersperse "," serialized) ++ "]"
+  return $ "[" ++ Data.List.intercalate "," serialized ++ "]"
  where serialize (Atom a) = return $ (show a)
        serialize a = throwError $ Default $ 
                          "invalid parameter to lambda list: " ++ show a
@@ -410,7 +410,7 @@ compile env ast@(List (Atom "define" : List (Atom var : fparams) : fbody))
           AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result ",
           createAstCont copts "result" ""
           ]
-    return $ [createAstFunc copts f] ++ compiledBody)
+    return $ (createAstFunc copts f) : compiledBody)
 
 compile env 
         ast@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) 
@@ -435,7 +435,7 @@ compile env
                        compiledParams ++ ") " ++ symCallfunc,
       AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result ",
       createAstCont copts "result" "" ]
-    return $ [createAstFunc copts f] ++ compiledBody)
+    return $ (createAstFunc copts f) : compiledBody)
 
 compile env ast@(List (Atom "lambda" : List fparams : fbody)) 
         copts@(CompileOptions _ _ _ _) = do
@@ -456,7 +456,7 @@ compile env ast@(List (Atom "lambda" : List fparams : fbody))
                      ") " ++ symCallfunc,
           createAstCont copts "result" ""
           ]
-    return $ [createAstFunc copts f] ++ compiledBody)
+    return $ (createAstFunc copts f) : compiledBody)
 
 compile env ast@(List (Atom "lambda" : DottedList fparams varargs : fbody)) 
         copts@(CompileOptions _ _ _ _) = do
@@ -476,7 +476,7 @@ compile env ast@(List (Atom "lambda" : DottedList fparams varargs : fbody))
       AstValue $ "  result <- makeHVarargs (" ++ ast2Str varargs ++ ") env (" ++ 
          compiledParams ++ ") " ++ symCallfunc,
       createAstCont copts "result" "" ]
-    return $ [createAstFunc copts f] ++ compiledBody)
+    return $ (createAstFunc copts f) : compiledBody)
 
 compile env ast@(List (Atom "lambda" : varargs@(Atom _) : fbody)) 
         copts@(CompileOptions _ _ _ _) = do
@@ -494,7 +494,7 @@ compile env ast@(List (Atom "lambda" : varargs@(Atom _) : fbody))
           AstValue $ "  result <- makeHVarargs (" ++ ast2Str varargs ++ ") env [] " ++ symCallfunc,
           createAstCont copts "result" ""
           ]
-    return $ [createAstFunc copts f] ++ compiledBody)
+    return $ (createAstFunc copts f) : compiledBody)
 
 compile env ast@(List [Atom "string-set!", Atom var, i, character]) copts = do
   compileSpecialFormBody env ast copts (\ _ -> do
@@ -894,7 +894,7 @@ compile env (List [Atom "load-ffi",
 
   -- Only append module again if it is not already in the list
   List l <- getNamespacedVar env 't' {-"internal"-} "imports"
-  _ <- if notElem (String moduleName) l
+  _ <- if String moduleName `notElem` l
           then setNamespacedVar env 't' {-"internal"-} "imports" $ 
                                 List $ l ++ [String moduleName]
           else return $ String ""
@@ -945,7 +945,7 @@ divertVars env expanded copts@(CompileOptions _ uvar uargs nfnc) func = do
       Atom symNext <- _gensym "afterDivert"
       diverted <- compileDivertedVars symNext env vars copts
       rest <- func env expanded $ CompileOptions symNext uvar uargs nfnc
-      return $ [diverted] ++ rest
+      return $ diverted : rest
 
 -- |Take a list of variables diverted into env at compile time, and
 --  divert them into the env at runtime
@@ -1051,7 +1051,7 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
        -- Keep track of any variables since we need to do a
        -- 'getRtVar' lookup for each of them prior to apply
        let pack (Atom p : ps) strs vars i = do
-             let varName = "v" ++ show i
+             let varName = 'v' : show i
              pack ps 
                   (strs ++ [varName]) 
                   (vars ++ [(p, varName)]) 

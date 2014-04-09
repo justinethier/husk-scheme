@@ -146,21 +146,20 @@ numDiv [Rational n] = return $ Rational $ 1 / n
 numDiv [Complex n] = return $ Complex $ 1 / n
 numDiv aparams = do
   foldl1M (\ a b -> doDiv =<< (numCast [a, b])) aparams
-  where doDiv (List [(Number a), (Number b)]) = if b == 0
-                                                   then throwError $ DivideByZero
-                                                   else if (mod a b) == 0
-                                                           then return $ Number $ div a b
-                                                           -- Convert to a rational if the result is not an integer
-                                                           else return $ Rational $ (fromInteger a) / (fromInteger b)
-        doDiv (List [(Float a), (Float b)]) = if b == 0.0
-                                                   then throwError $ DivideByZero
-                                                   else return $ Float $ a / b
-        doDiv (List [(Rational a), (Rational b)]) = if b == 0
-                                                       then throwError $ DivideByZero
-                                                       else return $ Rational $ a / b
-        doDiv (List [(Complex a), (Complex b)]) = if b == 0
-                                                       then throwError $ DivideByZero
-                                                       else return $ Complex $ a / b
+  where doDiv (List [(Number a), (Number b)])
+            | b == 0 = throwError $ DivideByZero
+            | (mod a b) == 0 = return $ Number $ div a b
+            | otherwise = -- Not an integer
+                return $ Rational $ (fromInteger a) / (fromInteger b)
+        doDiv (List [(Float a), (Float b)]) 
+            | b == 0.0 = throwError $ DivideByZero
+            | otherwise = return $ Float $ a / b
+        doDiv (List [(Rational a), (Rational b)])
+            | b == 0 = throwError $ DivideByZero
+            | otherwise = return $ Rational $ a / b
+        doDiv (List [(Complex a), (Complex b)])
+            | b == 0 = throwError $ DivideByZero
+            | otherwise = return $ Complex $ a / b
         doDiv _ = throwError $ Default "Unexpected error in /"
 
 -- |Take the modulus of the given numbers

@@ -172,8 +172,8 @@ parseOctalNumber = do
   sign <- many (oneOf "-")
   num <- many1 (oneOf "01234567")
   case (length sign) of
-     0 -> return $ Number $ fst $ Numeric.readOct num !! 0
-     1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ Numeric.readOct num !! 0
+     0 -> return $ Number $ fst $ head (Numeric.readOct num)
+     1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ head (Numeric.readOct num)
      _ -> pzero
 
 -- |Parse an integer in binary notation, base 2
@@ -183,8 +183,8 @@ parseBinaryNumber = do
   sign <- many (oneOf "-")
   num <- many1 (oneOf "01")
   case (length sign) of
-     0 -> return $ Number $ fst $ Numeric.readInt 2 (`elem` "01") DC.digitToInt num !! 0
-     1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ Numeric.readInt 2 (`elem` "01") DC.digitToInt num !! 0
+     0 -> return $ Number $ fst $ head (Numeric.readInt 2 (`elem` "01") DC.digitToInt num)
+     1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ head (Numeric.readInt 2 (`elem` "01") DC.digitToInt num)
      _ -> pzero
 
 -- |Parse an integer in hexadecimal notation, base 16
@@ -194,8 +194,8 @@ parseHexNumber = do
   sign <- many (oneOf "-")
   num <- many1 (digit <|> oneOf "abcdefABCDEF")
   case (length sign) of
-     0 -> return $ Number $ fst $ Numeric.readHex num !! 0
-     1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ Numeric.readHex num !! 0
+     0 -> return $ Number $ fst $ head (Numeric.readHex num)
+     1 -> return $ Number $ fromInteger $ (*) (-1) $ fst $ head (Numeric.readHex num)
      _ -> pzero
 
 -- |Parser for Integer, base 10
@@ -237,11 +237,11 @@ parseRealNumber = do
                then num ++ "." ++ frac
                else "0." ++ frac
   f <- case (length sign) of
-     0 -> return $ Float $ fst $ Numeric.readFloat dec !! 0
+     0 -> return $ Float $ fst $ head (Numeric.readFloat dec)
           -- Bit of a hack, but need to support the + sign as well as the minus.
      1 -> if sign == "-" 
-             then return $ Float $ (*) (-1.0) $ fst $ Numeric.readFloat dec !! 0
-             else return $ Float $ fst $ Numeric.readFloat dec !! 0
+             then return $ Float $ (*) (-1.0) $ fst $ head (Numeric.readFloat dec)
+             else return $ Float $ fst $ head (Numeric.readFloat dec)
      _ -> pzero
   parseNumberExponent f
 
@@ -324,7 +324,7 @@ parseHexScalar num = do
     let ns = Numeric.readHex num
     case ns of
         [] -> fail $ "Unable to parse hex value " ++ show num
-        _ -> return $ DC.chr $ fst $ ns !! 0
+        _ -> return $ DC.chr $ fst $ head ns
 
 -- |Parse a string
 parseString :: Parser LispVal

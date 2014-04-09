@@ -79,7 +79,7 @@ data CompLibOpts = CompileLibraryOptions {
     }
 
 -- |Runtime reference to module data structure
-moduleRuntimeVar :: [Char]
+moduleRuntimeVar :: String
 moduleRuntimeVar = " modules "
 
 -- |Create code for a function
@@ -128,7 +128,7 @@ showValAST (AstAssignM var val) = "  " ++ var ++ " <- " ++ show val
 showValAST (AstFunction name args code) = do
   let typeSig = "\n" ++ name ++ " :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal "
   let fheader = "\n" ++ name ++ args ++ " = do "
-  let fbody = unwords . map (\x -> "\n" ++ x ) $ map showValAST code
+  let fbody = unwords . map (\x -> '\n' : x ) $ map showValAST code
 #ifdef UseDebug
   let appendArg arg = do
         if Data.List.isInfixOf arg args
@@ -157,7 +157,7 @@ joinL
   :: forall a. [[a]] -- ^ Original list-of-lists
   -> [a] -- ^ Separator 
   -> [a] -- ^ Joined list
-joinL ls sep = concat $ Data.List.intersperse sep ls
+joinL ls sep = Data.List.intercalate sep ls
 
 -- |Convert abstract syntax tree to a string
 ast2Str :: LispVal -> String 

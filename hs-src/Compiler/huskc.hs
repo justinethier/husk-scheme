@@ -38,7 +38,7 @@ main = do
   if null nonOpts
      then showUsage
      else do
-        let inFile = nonOpts !! 0
+        let inFile = head nonOpts
             outHaskell = (dropExtension inFile) ++ ".hs"
             outExec = case output of
               Just inFile' -> inFile'

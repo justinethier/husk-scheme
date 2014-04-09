@@ -1281,7 +1281,7 @@ buildString [(Char c)] = return $ String [c]
 buildString (Char c : rest) = do
   cs <- buildString rest
   case cs of
-    String s -> return $ String $ [c] ++ s
+    String s -> return $ String $ c:s
     badType -> throwError $ TypeMismatch "character" badType
 buildString [badType] = throwError $ TypeMismatch "character" badType
 buildString badArgList = throwError $ NumArgs (Just 1) badArgList
@@ -1390,7 +1390,7 @@ stringCIEquals args = do
           ciCmp s1 s2 (idx + 1))
 
 -- |Helper function
-stringCIBoolBinop :: ([Char] -> [Char] -> Bool) -> [LispVal] -> IOThrowsError LispVal
+stringCIBoolBinop :: (String -> String -> Bool) -> [LispVal] -> IOThrowsError LispVal
 stringCIBoolBinop op args = do 
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
   case dargs of

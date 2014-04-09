@@ -107,7 +107,7 @@ runOne initEnv args interactive = do
                            List $ map String $ drop 1 args)]
 
   result <- (LSC.runIOThrows $ liftM show $ 
-             LSC.evalLisp env (List [Atom "load", String (args !! 0)]))
+             LSC.evalLisp env (List [Atom "load", String (head args)]))
   _ <- case result of
     Just errMsg -> putStrLn errMsg
     _  -> do 

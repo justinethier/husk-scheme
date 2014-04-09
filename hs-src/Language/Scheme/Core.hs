@@ -117,7 +117,7 @@ getDataFileFullPath = PHS.getDataFileName
 --  libraries. If the file is not found in the current directory but exists
 --  as a husk library, return the full path to the file in the library.
 --  Otherwise just return the given filename.
-findFileOrLib :: [Char] -> ErrorT LispError IO String
+findFileOrLib :: String -> ErrorT LispError IO String
 findFileOrLib filename = do
     fileAsLib <- liftIO $ getDataFileFullPath $ "lib/" ++ filename
     exists <- fileExists [String filename]
