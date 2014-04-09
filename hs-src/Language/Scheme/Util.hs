@@ -19,7 +19,7 @@ module Language.Scheme.Util
 
 -- |A utility function to escape backslashes in the given string
 escapeBackslashes :: String -> String
-escapeBackslashes s = foldr step [] s
+escapeBackslashes = foldr step []
   where step x xs  | x == '\\'  = '\\' : '\\' : xs
                    | otherwise =  x : xs 
 

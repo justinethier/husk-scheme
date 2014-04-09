@@ -911,7 +911,7 @@ compile _ badForm _ = throwError $ BadSpecialForm "Unrecognized special form" ba
 
 -- |Expand macros and compile the resulting code
 mcompile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
-mcompile env lisp copts = mfunc env lisp compile copts
+mcompile env lisp = mfunc env lisp compile
 
 -- |Expand macros and then pass control to the given function 
 mfunc :: Env

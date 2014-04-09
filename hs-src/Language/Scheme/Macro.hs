@@ -945,11 +945,11 @@ _expandAtom _ _ a = return a
 
 -- |Recursively expand an atom that may have been renamed multiple times
 recExpandAtom :: Env -> LispVal -> IOThrowsError LispVal
-recExpandAtom renameEnv a = _expandAtom True renameEnv a
+recExpandAtom = _expandAtom True
 
 -- |Expand an atom
 expandAtom :: Env -> LispVal -> IOThrowsError LispVal
-expandAtom renameEnv a = _expandAtom False renameEnv a
+expandAtom = _expandAtom False
 
 -- |Clean up any remaining renamed variables in the expanded code
 --  Only needed in special circumstances to deal with quoting.

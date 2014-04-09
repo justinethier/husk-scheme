@@ -229,14 +229,14 @@ findNamespacedEnv envRef namespace var = do
 isBound :: Env      -- ^ Environment
         -> String   -- ^ Variable
         -> IO Bool  -- ^ True if the variable is bound
-isBound envRef var = isNamespacedBound envRef varNamespace var
+isBound envRef = isNamespacedBound envRef varNamespace
 
 -- |Determine if a variable is bound in the default namespace, 
 --  in this environment or one of its parents.
 isRecBound :: Env      -- ^ Environment
            -> String   -- ^ Variable
            -> IO Bool  -- ^ True if the variable is bound
-isRecBound envRef var = isNamespacedRecBound envRef varNamespace var
+isRecBound envRef = isNamespacedRecBound envRef varNamespace
 
 -- |Determine if a variable is bound in a given namespace
 isNamespacedBound 
@@ -264,14 +264,14 @@ isNamespacedRecBound envRef namespace var = do
 getVar :: Env       -- ^ Environment
        -> String    -- ^ Variable
        -> IOThrowsError LispVal -- ^ Contents of the variable
-getVar envRef var = getNamespacedVar envRef varNamespace var
+getVar envRef = getNamespacedVar envRef varNamespace
 
 -- |Retrieve the value of a variable defined in the default namespace,
 --  or Nothing if it is not defined
 getVar' :: Env       -- ^ Environment
         -> String    -- ^ Variable
         -> IOThrowsError (Maybe LispVal) -- ^ Contents of the variable
-getVar' envRef var = getNamespacedVar' envRef varNamespace var
+getVar' envRef = getNamespacedVar' envRef varNamespace
 
 -- |Retrieve an ioRef defined in a given namespace
 getNamespacedRef :: Env     -- ^ Environment
@@ -281,8 +281,7 @@ getNamespacedRef :: Env     -- ^ Environment
 getNamespacedRef envRef
                  namespace
                  var = do
-  let fnc io = return io
-  v <- getNamespacedObj' envRef namespace var fnc
+  v <- getNamespacedObj' envRef namespace var return
   case v of
     Just a -> return a
     Nothing -> (throwError $ UnboundVar "Getting an unbound variable" var)
@@ -309,8 +308,7 @@ getNamespacedVar' :: Env     -- ^ Environment
 getNamespacedVar' envRef
                  namespace
                  var = do 
-    getNamespacedObj' envRef namespace var fnc
-  where fnc io = readIORef io
+    getNamespacedObj' envRef namespace var readIORef
 
 getNamespacedObj' :: Env     -- ^ Environment
                  -> Char    -- ^ Namespace
@@ -336,7 +334,7 @@ setVar
     -> String   -- ^ Variable
     -> LispVal  -- ^ Value
     -> IOThrowsError LispVal -- ^ Value
-setVar envRef var value = setNamespacedVar envRef varNamespace var value
+setVar envRef = setNamespacedVar envRef varNamespace
 
 -- |Set a variable in a given namespace
 setNamespacedVar 
@@ -469,8 +467,8 @@ updatePointers envRef namespace var = do
 
 -- |A wrapper for updateNamespaceObject that uses the variable namespace.
 updateObject :: Env -> String -> LispVal -> IOThrowsError LispVal
-updateObject env var value = 
-  updateNamespacedObject env varNamespace var value
+updateObject env = 
+  updateNamespacedObject env varNamespace
 
 -- |This function updates the object that "var" refers to. If "var" is
 --  a pointer, that means this function will update that pointer (or the last
@@ -497,7 +495,7 @@ defineVar
     -> String   -- ^ Variable
     -> LispVal  -- ^ Value
     -> IOThrowsError LispVal -- ^ Value
-defineVar envRef var value = defineNamespacedVar envRef varNamespace var value
+defineVar envRef = defineNamespacedVar envRef varNamespace 
 
 -- |Bind a variable in the given namespace
 defineNamespacedVar
@@ -603,7 +601,7 @@ derefPtr v = return v
 --  This could potentially be expensive on large data structures 
 --  since it must walk the entire object.
 recDerefPtrs :: LispVal -> IOThrowsError LispVal
-recDerefPtrs v = safeRecDerefPtrs [] v
+recDerefPtrs = safeRecDerefPtrs []
 
 -- |Attempt to dereference pointers safely, without being caught in a cycle
 safeRecDerefPtrs :: [LispVal] -> LispVal -> IOThrowsError LispVal

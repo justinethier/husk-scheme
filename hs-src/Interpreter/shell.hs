@@ -23,7 +23,7 @@ import System.Console.GetOpt
 import qualified System.Console.Haskeline as HL
 import qualified System.Console.Haskeline.Completion as HLC
 import System.Environment
-import System.Exit (ExitCode (..), exitWith)
+import System.Exit (exitSuccess)
 import System.IO
 
 main :: IO ()
@@ -86,7 +86,7 @@ showHelp _ = do
 --  putStrLn "                     5 - r5rs (default)"
 --  putStrLn "                     7 - r7rs small"
   putStrLn ""
-  exitWith ExitSuccess
+  exitSuccess
 
 --
 -- REPL Section

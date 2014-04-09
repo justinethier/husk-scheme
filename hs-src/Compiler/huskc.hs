@@ -21,7 +21,7 @@ import System.Cmd (system)
 import System.Console.GetOpt
 import System.FilePath (dropExtension)
 import System.Environment
-import System.Exit (ExitCode (..), exitWith)
+import System.Exit (ExitCode (..), exitSuccess, exitWith)
 import System.IO
 
 main :: IO ()
@@ -120,7 +120,7 @@ showHelp _ = do
   putStrLn "                            (Requires libraries built via --enable-shared)"
   putStrLn "  -x, --extra args          Pass extra arguments directly to ghc"
   putStrLn ""
-  exitWith ExitSuccess
+  exitSuccess
 
 -- |Print debug information
 showDebug :: Options -> IO Options
@@ -128,13 +128,13 @@ showDebug _ = do
   stdlib <- getDataFileName "lib/stdlib.scm"
   putStrLn $ "stdlib: " ++ stdlib
   putStrLn ""
-  exitWith ExitSuccess
+  exitSuccess
 
 -- |Print version information
 showVersion :: Options -> IO Options
 showVersion _ = do
   Language.Scheme.Core.showBanner
-  exitWith ExitSuccess
+  exitSuccess
 
 -- |High level code to compile the given file
 process :: String -> String -> String -> Bool -> Bool -> String -> String -> Bool -> IO ()

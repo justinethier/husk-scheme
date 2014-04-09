@@ -103,7 +103,7 @@ getHuskFeatures = do
 
 -- |Get the full path to a data file installed for husk
 getDataFileFullPath :: String -> IO String
-getDataFileFullPath s = PHS.getDataFileName s
+getDataFileFullPath = PHS.getDataFileName
 
 -- Future use:
 -- getDataFileFullPath' :: [LispVal] -> IOThrowsError LispVal
@@ -1302,12 +1302,11 @@ evalfuncLoad [(Continuation _ a b c d), String filename, LispEnv env] = do
 
 evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
     filename' <- findFileOrLib filename
-    results <- load filename' >>= mapM (evaluate env (makeNullContinuation env))
+    results <- load filename' >>= mapM (meval env (makeNullContinuation env))
     if not (null results)
        then do result <- return . last $ results
                continueEval env cont result
        else return $ Nil "" -- Empty, unspecified value
-  where evaluate env2 cont2 val2 = meval env2 cont2 val2
 
 evalfuncLoad (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
 evalfuncLoad _ = throwError $ NumArgs (Just 1) []
