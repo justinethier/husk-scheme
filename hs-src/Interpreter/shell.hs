@@ -198,7 +198,7 @@ completeScheme env (lnL, lnR) = do
    return (unusedLnL, comps)
 
   -- Not loaded into an env, so we need to list them here
-  specialForms = map (\ s -> Atom s) [ 
+  specialForms = map Atom [ 
        "define"  
      , "define-syntax" 
      , "expand"
