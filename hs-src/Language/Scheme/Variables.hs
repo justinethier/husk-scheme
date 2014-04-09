@@ -635,9 +635,7 @@ safeRecDerefPtrs _ v = return v
 containsPtr :: [LispVal] -> LispVal -> Bool
 containsPtr ((Pointer pa ea):ps) p@(Pointer pb eb) = do
     let found = (pa == pb) && ((bindings ea) == (bindings eb))
-    if found
-       then True
-       else containsPtr ps p
+    found || containsPtr ps p
 containsPtr _ _ = False
 
 -- |A helper to recursively dereference all pointers and

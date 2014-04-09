@@ -1385,11 +1385,9 @@ stringCIEquals args = do
     [badType] -> throwError $ TypeMismatch "string string" badType
     badArgList -> throwError $ NumArgs (Just 2) badArgList
  where ciCmp s1 s2 idx = 
-         if idx == (length s1)
-            then True
-            else if (toLower $ s1 !! idx) == (toLower $ s2 !! idx)
-                    then ciCmp s1 s2 (idx + 1)
-                    else False
+         (idx == (length s1)) ||
+         (((toLower $ s1 !! idx) == (toLower $ s2 !! idx)) && 
+          ciCmp s1 s2 (idx + 1))
 
 -- |Helper function
 stringCIBoolBinop :: ([Char] -> [Char] -> Bool) -> [LispVal] -> IOThrowsError LispVal
@@ -1400,7 +1398,7 @@ stringCIBoolBinop op args = do
       liftThrows $ boolBinop unpackStr op [(String $ strToLower s1), (String $ strToLower s2)]
     [badType] -> throwError $ TypeMismatch "string string" badType
     badArgList -> throwError $ NumArgs (Just 2) badArgList
-  where strToLower str = map (toLower) str
+  where strToLower = map toLower
 
 -- |Helper function
 charCIBoolBinop :: (Char -> Char -> Bool) -> [LispVal] -> ThrowsError LispVal

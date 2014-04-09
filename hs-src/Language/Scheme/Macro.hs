@@ -218,9 +218,7 @@ macroTransform _ _ _ _ _ _ _ _ input _ _ = throwError $ BadSpecialForm "Input do
 -- Determine if the next element in a list matches 0-to-n times due to an ellipsis
 macroElementMatchesMany :: LispVal -> String -> Bool
 macroElementMatchesMany (List (_ : ps)) ellipsisSym = do
-  if not (null ps)
-     then (head ps) == (Atom ellipsisSym)
-     else False
+  not (null ps) && ((head ps) == (Atom ellipsisSym))
 macroElementMatchesMany _ _ = False
 
 {- Given input, determine if that input matches any rules
