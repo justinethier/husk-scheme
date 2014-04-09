@@ -475,7 +475,7 @@ readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 --
 --   Returns: ByteVector
 readByteVector :: [LispVal] -> IOThrowsError LispVal
-readByteVector args = readBuffer args (\ inBytes -> ByteVector inBytes)
+readByteVector args = readBuffer args ByteVector
 
 -- | Read a string from the given port
 --
@@ -1234,7 +1234,7 @@ hashTbl2List badArgList = throwError $ NumArgs (Just 1) badArgList
 --
 hashTblKeys :: [LispVal] -> ThrowsError LispVal
 hashTblKeys [(HashTable ht)] = do
-  return $ List $ map (\ (k, _) -> k) $ Data.Map.toList ht
+  return $ List $ map fst $ Data.Map.toList ht
 hashTblKeys [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblKeys badArgList = throwError $ NumArgs (Just 1) badArgList
 
@@ -1248,7 +1248,7 @@ hashTblKeys badArgList = throwError $ NumArgs (Just 1) badArgList
 --
 hashTblValues :: [LispVal] -> ThrowsError LispVal
 hashTblValues [(HashTable ht)] = do
-  return $ List $ map (\ (_, v) -> v) $ Data.Map.toList ht
+  return $ List $ map snd $ Data.Map.toList ht
 hashTblValues [badType] = throwError $ TypeMismatch "hash-table" badType
 hashTblValues badArgList = throwError $ NumArgs (Just 1) badArgList
 

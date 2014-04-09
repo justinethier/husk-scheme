@@ -894,7 +894,7 @@ compile env (List [Atom "load-ffi",
 
   -- Only append module again if it is not already in the list
   List l <- getNamespacedVar env 't' {-"internal"-} "imports"
-  _ <- if not ((String moduleName) `elem` l)
+  _ <- if notElem (String moduleName) l
           then setNamespacedVar env 't' {-"internal"-} "imports" $ 
                                 List $ l ++ [String moduleName]
           else return $ String ""

@@ -62,6 +62,7 @@ import Control.Monad.Error
 import Data.Array
 import qualified Data.ByteString as BS
 import qualified Data.Map
+import Data.Maybe (isNothing)
 import Data.Version as DV
 import Data.Word
 import qualified System.Exit
@@ -945,7 +946,7 @@ apply cont (PrimitiveFunc func) args = do
     Continuation cEnv _ _ _ _ -> continueEval cEnv cont result
     _ -> return result
 apply cont (Func aparams avarargs abody aclosure) args =
-  if num aparams /= num args && avarargs == Nothing
+  if num aparams /= num args && isNothing avarargs
      then throwError $ NumArgs (Just (num aparams)) args
      else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
@@ -963,7 +964,7 @@ apply cont (Func aparams avarargs abody aclosure) args =
         -- See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
         --
         evalBody evBody env = case cont of
-            Continuation _ (Just (SchemeBody cBody)) (Just cCont) _ cDynWind -> if length cBody == 0
+            Continuation _ (Just (SchemeBody cBody)) (Just cCont) _ cDynWind -> if null cBody
                 then continueWCont env (evBody) cCont cDynWind
 -- else continueWCont env (evBody) cont (trace ("cDynWind = " ++ show cDynWind) cDynWind) -- Might be a problem, not fully optimizing
                 else continueWCont env (evBody) cont cDynWind -- Might be a problem, not fully optimizing
@@ -978,7 +979,7 @@ apply cont (Func aparams avarargs abody aclosure) args =
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
           Nothing -> return env
 apply cont (HFunc aparams avarargs abody aclosure) args =
-  if num aparams /= num args && avarargs == Nothing
+  if num aparams /= num args && isNothing avarargs
      then throwError $ NumArgs (Just (num aparams)) args
      else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args

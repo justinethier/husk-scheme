@@ -216,8 +216,7 @@ parseDecimalNumber = do
 parseDecimalNumberMaybeExponent :: Parser LispVal
 parseDecimalNumberMaybeExponent = do
   num <- parseDecimalNumber
-  result <- parseNumberExponent num
-  return result
+  parseNumberExponent num
 
 -- |Parse an integer in any base
 parseNumber :: Parser LispVal
@@ -244,8 +243,7 @@ parseRealNumber = do
              then return $ Float $ (*) (-1.0) $ fst $ Numeric.readFloat dec !! 0
              else return $ Float $ fst $ Numeric.readFloat dec !! 0
      _ -> pzero
-  result <- parseNumberExponent f
-  return result
+  parseNumberExponent f
 
 -- | Parse the exponent section of a floating point number
 --   in scientific notation. Eg "e10" from "1.0e10"
@@ -481,9 +479,7 @@ parseExpr =
 mainParser :: Parser LispVal
 mainParser = do
     _ <- whiteSpace
-    x <- parseExpr
--- FUTURE? (seemed to break test cases, but is supposed to be best practice?)    eof
-    return x
+    parseExpr
 
 -- |Use a parser to parse the given text, throwing an error
 --  if there is a problem parsing the text.

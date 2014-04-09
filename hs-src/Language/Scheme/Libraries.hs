@@ -26,31 +26,9 @@ findModuleFile
     :: [LispVal]
     -> IOThrowsError LispVal
 findModuleFile [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= findModuleFile
-findModuleFile [String file] 
--- This is no longer required since load has been enhanced to
--- attempt to load a file from 'lib' if it does not exist
---    -- Built-in modules
---    | --file == "scheme/r5rs/base.sld" ||
---      --file == "scheme/r5rs/char.sld" ||
---      --file == "scheme/r5rs/complex.sld" ||
---      --file == "scheme/r5rs/cxr.sld" ||
---      --file == "scheme/r5rs/eval.sld" ||
---      --file == "scheme/r5rs/file.sld" ||
---      --file == "scheme/r5rs/inexact.sld" ||
---      --file == "scheme/r5rs/lazy.sld" ||
---      --file == "scheme/r5rs/load.sld" ||
---      --file == "scheme/r5rs/read.sld" ||
---      --file == "scheme/r5rs/write.sld" ||
---      --file == "scheme/base.sld" ||
---      file == "husk/pretty-print.sld" ||
----- TODO: scheme case-lambda (r7rs)
----- TODO: scheme process-context (r7rs)
----- TODO: scheme repl (r7rs)
---      file == "scheme/time.sld" ||
---      file == "scheme/write.sld" = do
---        path <- liftIO $ PHS.getDataFileName $ "lib/" ++ file
---        return $ String path
-    | otherwise = return $ String file
+findModuleFile [String file] = do
+    --- Good enough now that load searches 'lib' if file not found
+    return $ String file
 findModuleFile _ = return $ Bool False
 
 -- |Import definitions from one environment into another
@@ -82,9 +60,8 @@ divertBinding
     -> IOThrowsError LispVal
 divertBinding to from nameOrig nameNew = do
   isMacroBound <- liftIO $ isNamespacedRecBound from macroNamespace nameOrig
-  namespace <- liftIO $ case isMacroBound of
-                          True -> return macroNamespace
-                          _ -> return varNamespace
+  namespace <- liftIO $ if isMacroBound then return macroNamespace
+                                        else return varNamespace
   m <- getNamespacedVar from namespace nameOrig
   defineNamespacedVar to namespace nameNew m
 

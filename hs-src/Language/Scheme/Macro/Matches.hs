@@ -97,8 +97,8 @@ setData _ _ val = val -- Should never be reached; just return val
 -- |Compare actual input with expected
 _cmp :: LispVal -> LispVal -> IO ()
 _cmp input expected = do
-  putStrLn $ show input
-  putStrLn $ show $ assert (eqVal expected input) input
+  print input
+  print (assert (eqVal expected input) input)
 
 -- |Run this function to test the above code
 _test :: IO ()

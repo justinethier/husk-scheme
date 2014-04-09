@@ -330,7 +330,7 @@ makeCPSWArgs :: Env
         -- ^ Arguments to the function
         -> LispVal
         -- ^ The Haskell function packaged as a LispVal
-makeCPSWArgs env cont@(Continuation _ _ _ _ dynWind) cps args = 
+makeCPSWArgs env cont@(Continuation {dynamicWind=dynWind}) cps args = 
     Continuation 
         env 
         (Just (HaskellBody cps (Just args))) 
@@ -391,7 +391,7 @@ eqv [x@(Func _ _ xBody _), y@(Func _ _ yBody _)] = do
   if (show x) /= (show y)
      then return $ Bool False
      else eqvList eqv [List xBody, List yBody] 
-eqv [x@(HFunc _ _ _ _), y@(HFunc _ _ _ _)] = do
+eqv [x@(HFunc{}), y@(HFunc{})] = do
   if (show x) /= (show y)
      then return $ Bool False
      else return $ Bool True
@@ -441,14 +441,14 @@ showVal (Rational contents) = (show (numerator contents)) ++ "/" ++ (show (denom
 showVal (Float contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
-showVal (Vector contents) = "#(" ++ (unwordsList $ Data.Array.elems contents) ++ ")"
+showVal (Vector contents) = "#(" ++ unwordsList (Data.Array.elems contents) ++ ")"
 showVal (ByteVector contents) = "#u8(" ++ unwords (map show (BS.unpack contents)) ++ ")"
 showVal (HashTable _) = "<hash-table>"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showVal t ++ ")"
 showVal (PrimitiveFunc _) = "<primitive>"
-showVal (Continuation _ _ _ _ _) = "<continuation>"
-showVal (Syntax _ _ _ _ _ _) = "<syntax>"
+showVal (Continuation {}) = "<continuation>"
+showVal (Syntax {}) = "<syntax>"
 showVal (SyntaxExplicitRenaming _) = "<er-macro-transformer syntax>"
 showVal (Func {params = args, vararg = varargs, body = _, closure = _}) =
   "(lambda (" ++ unwords args ++
@@ -540,7 +540,7 @@ validateFuncParams ps Nothing = do
   let syms = filter filterArgs ps
   if (length syms) /= (length ps)
      then throwError $ Default $ 
-             "Invalid lambda parameter(s): " ++ (show $ List ps)
+             "Invalid lambda parameter(s): " ++ show (List ps)
      else do
          let strs = DL.sort $ map (\ (Atom a) -> a) ps
          case dupe strs of

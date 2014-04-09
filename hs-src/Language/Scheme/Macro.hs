@@ -655,25 +655,26 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputI
    _ -> do
     -- Determine if we should recursively rename an atom
     -- This code is a bit of a hack/mess at the moment
-    if  a == aa -- Prevent an infinite loop
-        -- Preserve keywords encountered in the macro 
-        -- as each of these is really a special form, and renaming them
-        -- would not work because there is nothing to divert back...
-        || a == "if"
-        || a == "let-syntax" 
-        || a == "letrec-syntax" 
-        || a == "define-syntax" 
-        || a == "define"  
-        || a == "set!"
-        || a == "lambda"
-        || a == "quote"
-        || a == "expand"
-        || a == "string-set!"
-        || a == "set-car!"
-        || a == "set-cdr!"
-        || a == "vector-set!"
-        || a == "hash-table-set!"
-        || a == "hash-table-delete!"
+    if  (a `elem` 
+           [ aa -- Prevent an infinite loop
+           -- Preserve keywords encountered in the macro 
+           -- as each of these is really a special form, and renaming them
+           -- would not work because there is nothing to divert back...
+           , "if"
+           , "let-syntax" 
+           , "letrec-syntax" 
+           , "define-syntax" 
+           , "define"  
+           , "set!"
+           , "lambda"
+           , "quote"
+           , "expand"
+           , "string-set!"
+           , "set-car!"
+           , "set-cdr!"
+           , "vector-set!"
+           , "hash-table-set!"
+           , "hash-table-delete!"])
        then walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv 
                              dim startOfList inputIsQuoted (List result) a ts isQuoted maybeMacro apply
        else walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
@@ -1203,8 +1204,7 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
                             Bool True -> return $ Nil "var (pair) not defined in pattern"
                             _ -> return $ Nil "var not defined in pattern"
 -- TODO: I think the outerEnv should be accessed by the walker, and not within rewrite as is done below...
-                     Nil input -> do v <- getVar outerEnv input
-                                     return v
+                     Nil input -> getVar outerEnv input
                      List _ -> do
                           if ellipsisLevel > 0
                                   then -- Take all elements, instead of one-at-a-time

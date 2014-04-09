@@ -156,7 +156,7 @@ process inFile outHaskell outExec libs dynamic extraArgs langrev debugOpt = do
 
 -- |Compile a scheme file to haskell
 compileSchemeFile :: Env -> Maybe String -> String -> String -> String -> String -> Bool -> IOThrowsError LispVal
-compileSchemeFile env stdlib srfi55 filename outHaskell langrev debugOpt = do
+compileSchemeFile env stdlib srfi55 filename outHaskell langrev _ = do
   let conv :: LispVal -> String
       conv (String s) = s
       conv l = show l
