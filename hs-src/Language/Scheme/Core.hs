@@ -676,19 +676,7 @@ eval env cont args@(List [Atom "list-set!", Atom var, i, object]) = do
  bound <- liftIO $ isRecBound env "list-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else meval env (makeCPS env cont cpsObj) i
- where
-        cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsObj e c idx _ = meval e (makeCPSWArgs e c cpsList $ [idx]) object
-
-        cpsList :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsList e c obj (Just [idx]) = (meval e (makeCPSWArgs e c cpsUpdateList $ [idx, obj]) =<< getVar e var)
-        cpsList _ _ _ _ = throwError $ InternalError "Invalid argument to cpsList"
-
-        cpsUpdateList :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUpdateList e c list (Just [idx, obj]) =
-            updateList list idx obj >>= updateObject e var >>= continueEval e c
-        cpsUpdateList _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateList"
+  else meval env (makeCPS env cont $ createObjSetCPS var object updateList) i
 
 eval env cont args@(List [Atom "list-set!" , nonvar , _ , _]) = do 
  bound <- liftIO $ isRecBound env "list-set!"
@@ -705,20 +693,7 @@ eval env cont args@(List [Atom "vector-set!", Atom var, i, object]) = do
  bound <- liftIO $ isRecBound env "vector-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else meval env (makeCPS env cont cpsObj) i
- where
-        cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsObj e c idx _ = meval e (makeCPSWArgs e c cpsVec $ [idx]) object
-
-        cpsVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsVec e c obj (Just [idx]) = (meval e (makeCPSWArgs e c cpsUpdateVec $ [idx, obj]) =<< getVar e var)
-        cpsVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsVec"
-
-        cpsUpdateVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUpdateVec e c vec (Just [idx, obj]) =
-            updateVector vec idx obj >>= updateObject e var >>= continueEval e c
-        cpsUpdateVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateVec"
-
+  else meval env (makeCPS env cont $ createObjSetCPS var object updateVector) i
 eval env cont args@(List [Atom "vector-set!" , nonvar , _ , _]) = do 
  bound <- liftIO $ isRecBound env "vector-set!"
  if bound
@@ -734,19 +709,7 @@ eval env cont args@(List [Atom "bytevector-u8-set!", Atom var, i, object]) = do
  bound <- liftIO $ isRecBound env "bytevector-u8-set!"
  if bound
   then prepareApply env cont args -- if is bound to a variable in this scope; call into it
-  else meval env (makeCPS env cont cpsObj) i
- where
-        cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsObj e c idx _ = meval e (makeCPSWArgs e c cpsVec $ [idx]) object
-
-        cpsVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsVec e c obj (Just [idx]) = (meval e (makeCPSWArgs e c cpsUpdateVec $ [idx, obj]) =<< getVar e var)
-        cpsVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsVec"
-
-        cpsUpdateVec :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsUpdateVec e c vec (Just [idx, obj]) =
-            updateByteVector vec idx obj >>= updateObject e var >>= continueEval e c
-        cpsUpdateVec _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateVec"
+  else meval env (makeCPS env cont $ createObjSetCPS var object updateByteVector) i
 
 eval env cont args@(List [Atom "bytevector-u8-set!" , nonvar , _ , _]) = do 
  bound <- liftIO $ isRecBound env "bytevector-u8-set!"
@@ -871,6 +834,33 @@ updateByteVector ptr@(Pointer _ _) i obj = do
   vec <- derefPtr ptr
   updateByteVector vec i obj
 updateByteVector v _ _ = throwError $ TypeMismatch "bytevector" v
+
+-- |Helper function to perform CPS for vector-set! and similar forms
+createObjSetCPS :: String
+                   -> LispVal
+                   -> (LispVal -> LispVal -> LispVal -> ErrorT LispError IO LispVal)
+                   -> Env
+                   -> LispVal
+                   -> LispVal
+                   -> Maybe [LispVal]
+                   -> IOThrowsError LispVal
+createObjSetCPS var object updateFnc = cpsIndex
+  where
+    -- Update data structure at given index, with given object
+    cpsUpdateStruct :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+    cpsUpdateStruct e c struct (Just [idx, obj]) =
+        updateFnc struct idx obj >>= updateObject e var >>= continueEval e c
+    cpsUpdateStruct _ _ _ _ = throwError $ InternalError "Invalid argument to cpsUpdateStruct"
+
+    -- Receive index/object, retrieve variable containing data structure
+    cpsGetVar :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+    cpsGetVar e c obj (Just [idx]) = (meval e (makeCPSWArgs e c cpsUpdateStruct $ [idx, obj]) =<< getVar e var)
+    cpsGetVar _ _ _ _ = throwError $ InternalError "Invalid argument to cpsGetVar"
+
+    -- Receive and pass index
+    cpsIndex :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+    cpsIndex e c idx _ = meval e (makeCPSWArgs e c cpsGetVar $ [idx]) object
+
 
 {- Prepare for apply by evaluating each function argument,
    and then execute the function via 'apply' -}
