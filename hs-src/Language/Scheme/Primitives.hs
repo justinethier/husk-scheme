@@ -1165,7 +1165,7 @@ isHashTbl _ = return $ Bool False
 --   Returns: Bool - True if found, False otherwise
 --
 hashTblExists :: [LispVal] -> ThrowsError LispVal
-hashTblExists [(HashTable ht), key@(_)] = do
+hashTblExists [(HashTable ht), key] = do
   case Data.Map.lookup key ht of
     Just _ -> return $ Bool True
     Nothing -> return $ Bool False
@@ -1184,11 +1184,11 @@ hashTblExists args@(_ : _) = throwError $ NumArgs (Just 2) args
 --   Returns: Object containing the key's value
 --
 hashTblRef :: [LispVal] -> ThrowsError LispVal
-hashTblRef [(HashTable ht), key@(_)] = do
+hashTblRef [(HashTable ht), key] = do
   case Data.Map.lookup key ht of
     Just val -> return val
     Nothing -> throwError $ BadSpecialForm "Hash table does not contain key" key
-hashTblRef [(HashTable ht), key@(_), Func _ _ _ _] = do
+hashTblRef [(HashTable ht), key, Func _ _ _ _] = do
   case Data.Map.lookup key ht of
     Just val -> return $ val
     Nothing -> throwError $ NotImplemented "thunk"
@@ -1469,7 +1469,7 @@ stringToNumber badArgList = throwError $ NumArgs (Just 1) badArgList
 --
 stringToList :: [LispVal] -> IOThrowsError LispVal
 stringToList [p@(Pointer _ _)] = derefPtr p >>= box >>= stringToList
-stringToList [(String s)] = return $ List $ map (Char) s
+stringToList [(String s)] = return $ List $ map Char s
 stringToList [badType] = throwError $ TypeMismatch "string" badType
 stringToList badArgList = throwError $ NumArgs (Just 1) badArgList
 

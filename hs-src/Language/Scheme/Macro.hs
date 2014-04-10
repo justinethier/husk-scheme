@@ -174,7 +174,7 @@ _macroEval env lisp@(List (Atom x : _)) apply = do
     Nothing -> return lisp
 
 -- No macro to process, just return code as it is...
-_macroEval _ lisp@(_) _ = return lisp
+_macroEval _ lisp _ = return lisp
 
 {-
  - Given input and syntax-rules, determine if any rule is a match and transform it.
@@ -205,12 +205,12 @@ macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers (rule@(
   localEnv <- liftIO $ nullEnv -- Local environment used just for this invocation
                                -- to hold pattern variables
   result <- matchRule defEnv env divertEnv dim identifiers localEnv renameEnv cleanupEnv rule input esym
-  case (result) of
+  case result of
     -- No match, check the next rule
     Nil _ -> macroTransform defEnv env divertEnv renameEnv cleanupEnv dim identifiers rs input apply esym
     _ -> do
         -- Walk the resulting code, performing the Clinger algorithm's 4 components
-        walkExpanded defEnv env divertEnv renameEnv cleanupEnv dim True False (List []) (result) apply
+        walkExpanded defEnv env divertEnv renameEnv cleanupEnv dim True False (List []) result apply
 
 -- Ran out of rules to match...
 macroTransform _ _ _ _ _ _ _ _ input _ _ = throwError $ BadSpecialForm "Input does not match a macro pattern" input
@@ -314,8 +314,8 @@ loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers pattern input
                       else ellipsisIndex
 
          -- At this point we know if the input is part of an ellipsis, so set the level accordingly 
-         status <- checkLocal defEnv outerEnv divertEnv (localEnv) renameEnv identifiers level idx p i listFlags esym
-         case (status) of
+         status <- checkLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers level idx p i listFlags esym
+         case status of
               -- No match
               Bool False -> if nextHasEllipsis
                                 {- No match, must be finished with ...
@@ -426,7 +426,7 @@ flagDottedLists :: [(Bool, Bool)] -> (Bool, Bool) -> Int -> [(Bool, Bool)]
 flagDottedLists listFlags status lengthOfEllipsisIndex
  | length listFlags == lengthOfEllipsisIndex = listFlags ++ [status]
    -- Pad the original list with False flags, and append our status flags at the end
- | otherwise = listFlags ++ (replicate ((lengthOfEllipsisIndex) - (length listFlags)) (False, False)) ++ [status]
+ | otherwise = listFlags ++ (replicate (lengthOfEllipsisIndex - (length listFlags)) (False, False)) ++ [status]
 
 -- Get pair of list flags that are at depth of ellipIndex, or False if flags do not exist (means improper not flagged)
 getListFlags :: [Int] -> [(Bool, Bool)] -> (Bool, Bool)
@@ -463,13 +463,13 @@ checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellips
   -- its occurrence in the macro expression and its occurrence in the macro definition 
   -- have the same lexical binding, or the two identifiers are equal and both have no 
   -- lexical binding.
-  isRenamed <- liftIO $ isRecBound renameEnv (pattern)
+  isRenamed <- liftIO $ isRecBound renameEnv pattern
   doesIdentMatch <- identifierMatches defEnv outerEnv pattern
   match <- haveMatch isRenamed doesIdentMatch
 
   if match == 0 
      then return $ Bool False
-     else if (ellipsisLevel) > 0
+     else if ellipsisLevel > 0
              -- Var is part of a 0-to-many match, store up in a list...
              then do isDefined <- liftIO $ isBound localEnv pattern
                      if match == 1 -- Literal identifier
@@ -492,7 +492,7 @@ checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellips
                         i' <- getOrigName renameEnv inpt
                         pl <- isLexicallyDefined outerEnv renameEnv pattern
                         il <- isLexicallyDefined outerEnv renameEnv inpt
-                        if (((pattern == inpt && (doesIdentMatch)) && (not isRenamed)) || 
+                        if (((pattern == inpt && doesIdentMatch) && (not isRenamed)) || 
                             -- Equal and neither have a lexical binding, per spec
                             (p' == i' && (not pl) && (not il)))
                            then return 1
@@ -513,7 +513,7 @@ checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellips
       addPatternVar isDefined ellipLevel ellipIndex pat val
         | isDefined = do v <- getVar localEnv pat
 --                         case (trace ("addPV pat = " ++ show pat ++ " v = " ++ show v) v) of
-                         case (v) of
+                         case v of
                             Nil _ -> do
                               -- What's going on here is that the pattern var was found
                               -- before but not set as a pattern variable because it
@@ -844,7 +844,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _
 --    env <- liftIO $ extendEnv (trace ("found procedure abstraction, vars = " ++ show vars ++ "body = " ++ show fbody) renameEnv) []
     env <- liftIO $ extendEnv renameEnv []
     renamedVars <- markBoundIdentifiers env cleanupEnv vars []
-    walkExpanded defEnv useEnv divertEnv env cleanupEnv dim True False (List [Atom "lambda", (renamedVars)]) (List fbody) apply
+    walkExpanded defEnv useEnv divertEnv env cleanupEnv dim True False (List [Atom "lambda", renamedVars]) (List fbody) apply
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result) a@"lambda" ts False _ apply = do
     -- lambda is malformed, just transform as normal atom...
@@ -1178,17 +1178,17 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
 
                       Nil "" -> -- No matches, keep going
                                 continueTransform defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym ellipsisLevel ellipsisIndex result $ tail ts
-                      v@(_) -> transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym ellipsisLevel ellipsisIndex (List $ result ++ [v]) (List $ tail ts)
+                      v -> transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym ellipsisLevel ellipsisIndex (List $ result ++ [v]) (List $ tail ts)
              else -- Matched 0 times, skip it
                   transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym ellipsisLevel ellipsisIndex (List result) (List $ tail ts)
 
     noEllipsis isDefined = do
       isImproperPattern <- loadNamespacedBool 'p' -- "improper pattern"
       isImproperInput <- loadNamespacedBool 'i' -- "improper input"
-      t <- if (isDefined)
+      t <- if isDefined
               then do
                    var <- getVar localEnv a
-                   case (var) of
+                   case var of
                      Nil "" -> do 
                         -- Fix for issue #42: A 0 match case for var (input ran out in pattern), flag to calling code
                         --
@@ -1210,9 +1210,7 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
                                                            isImproperPattern 
                                                            isImproperInput 
                                   else return var -- no ellipsis, just return elements directly, so all can be appended
-                     _ -> if ellipsisLevel > 0
-                             then return var -- Let this pass, in case var is not involved in o-to-n match
-                             else return var
+                     _ -> return var
               else do
                   -- Rename each encountered symbol, but the trick is that we want to give
                   -- the same symbol the same new name if it is found more than once, so...
@@ -1228,7 +1226,7 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
                        _ <- defineNamespacedVar renameEnv 'r' {-"renamed"-} a $ Atom renamed
                        -- Keep track of vars that are renamed; maintain reverse mapping
                        _ <- defineVar cleanupEnv renamed $ Atom a -- Global record for final cleanup of macro
-                       _ <- defineVar (renameEnv) renamed $ Atom a -- Keep for Clinger
+                       _ <- defineVar renameEnv renamed $ Atom a -- Keep for Clinger
 --                       return $ Atom (trace ("macro call renamed " ++ a ++ " to " ++ renamed) renamed)
                        return $ Atom renamed
       case t of

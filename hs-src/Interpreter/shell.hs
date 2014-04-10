@@ -221,6 +221,6 @@ completeScheme env (lnL, lnR) = do
     | c == '"' = ['"'] -- Save to indicate file completion to caller
     | c == '(' = []
     | c == '[' = []
-    | DC.isSpace(c) = []
+    | DC.isSpace c = []
     | otherwise = (c : readAtom cs)
   readAtom [] = []

@@ -305,7 +305,7 @@ continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) extraAr
             Continuation nEnv ncCont nnCont _ nDynWind ->
               -- Pass extra args along if last expression of a function, to support (call-with-values)
               continueEval nEnv (Continuation nEnv ncCont nnCont extraArgs nDynWind) val
-            _ -> return (val)
+            _ -> return val
         [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) Nothing dynWind) lv
         (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) Nothing dynWind) lv
 
@@ -478,7 +478,7 @@ eval env cont args@(List [Atom "if", predic, conseq, alt]) = do
   else meval env (makeCPS env cont cps) predic
  where cps :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cps e c result _ =
-            case (result) of
+            case result of
               Bool False -> meval e c alt
               _ -> meval e c conseq
 
@@ -880,7 +880,7 @@ prepareApply env cont (List (function : functionArgs)) = do
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsPrepArgs e c func (Just args) =
 -- case (trace ("prep eval of args: " ++ show args) args) of
-          case (args) of
+          case args of
             [] -> apply c func [] -- No args, immediately apply the function
             [a] -> meval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List []]) a
             (a : as) -> meval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List as]) a
@@ -911,7 +911,7 @@ apply _ cont@(Continuation env ccont ncont _ ndynwind) args = do
 -- case (trace ("calling into continuation. dynWind = " ++ show ndynwind) ndynwind) of
   case ndynwind of
     -- Call into dynWind.before if it exists...
-    Just ([DynamicWinders beforeFunc _]) -> apply (makeCPS env cont cpsApply) beforeFunc []
+    Just [DynamicWinders beforeFunc _] -> apply (makeCPS env cont cpsApply) beforeFunc []
     _ -> doApply env cont
  where
    cpsApply :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -965,11 +965,11 @@ apply cont (Func aparams avarargs abody aclosure) args =
         --
         evalBody evBody env = case cont of
             Continuation _ (Just (SchemeBody cBody)) (Just cCont) _ cDynWind -> if null cBody
-                then continueWCont env (evBody) cCont cDynWind
+                then continueWCont env evBody cCont cDynWind
 -- else continueWCont env (evBody) cont (trace ("cDynWind = " ++ show cDynWind) cDynWind) -- Might be a problem, not fully optimizing
-                else continueWCont env (evBody) cont cDynWind -- Might be a problem, not fully optimizing
-            Continuation _ _ _ _ cDynWind -> continueWCont env (evBody) cont cDynWind
-            _ -> continueWCont env (evBody) cont Nothing
+                else continueWCont env evBody cont cDynWind -- Might be a problem, not fully optimizing
+            Continuation _ _ _ _ cDynWind -> continueWCont env evBody cont cDynWind
+            _ -> continueWCont env evBody cont Nothing
 
         -- Shortcut for calling continueEval
         continueWCont cwcEnv cwcBody cwcCont cwcDynWind =
@@ -1181,7 +1181,7 @@ evalfuncDynamicWind [cont@(Continuation env _ _ _ _), beforeFunc, thunkFunc, aft
                                             (Just (Continuation ce cc cnc ca
                                                                 Nothing))
                                              Nothing
-                                             (Just ([DynamicWinders beforeFunc afterFunc]))) -- FUTURE: append if existing winders
+                                             (Just [DynamicWinders beforeFunc afterFunc])) -- FUTURE: append if existing winders
                                thunkFunc []
    cpsThunk _ _ _ _ = throwError $ Default "Unexpected error in cpsThunk during (dynamic-wind)"
    cpsAfter _ c value _ = do

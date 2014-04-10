@@ -89,8 +89,8 @@ setData (List lData) (i:is) val = do
                    then List $ (fst content) ++ [val] ++ [c] -- Base case - Requested pos must be one less than c
                    else List $ (fst content) ++ [setData c is val]
       (c:cs) -> if length is < 1
-                   then List $ (fst content) ++ [val] ++ [c] ++ (cs) -- Base case - Requested pos must be one less than c
-                   else List $ (fst content) ++ [setData c is val] ++ (cs) 
+                   then List $ (fst content) ++ [val] ++ [c] ++ cs -- Base case - Requested pos must be one less than c
+                   else List $ (fst content) ++ [setData c is val] ++ cs 
 
 setData _ _ val = val -- Should never be reached; just return val
 

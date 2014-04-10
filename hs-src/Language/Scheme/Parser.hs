@@ -203,7 +203,7 @@ parseDecimalNumber :: Parser LispVal
 parseDecimalNumber = do
   _ <- try (many (string "#d"))
   sign <- many (oneOf "-")
-  num <- many1 (digit)
+  num <- many1 digit
   if (length sign) > 1
      then pzero
      else return $ (Number . read) $ sign ++ num
@@ -230,9 +230,9 @@ parseNumber = parseDecimalNumberMaybeExponent <|>
 parseRealNumber :: Parser LispVal
 parseRealNumber = do
   sign <- many (oneOf "-+")
-  num <- many (digit)
+  num <- many digit
   _ <- char '.'
-  frac <- many1 (digit)
+  frac <- many1 digit
   let dec = if length num > 0
                then num ++ "." ++ frac
                else "0." ++ frac
@@ -253,7 +253,7 @@ parseNumberExponent n = do
   case (length expnt) of
     0 -> return n
     1 -> do
-      num <- try (parseDecimalNumber)
+      num <- try parseDecimalNumber
       case num of
         Number nexp -> buildResult n nexp
         _ -> pzero
@@ -271,7 +271,7 @@ parseRationalNumber = do
     Number n -> do
       _ <- char '/'
       sign <- many (oneOf "-")
-      num <- many1 (digit)
+      num <- many1 digit
       if (length sign) > 1
          then pzero
          else do
@@ -284,14 +284,14 @@ parseRationalNumber = do
 -- |Parse a complex number
 parseComplexNumber :: Parser LispVal
 parseComplexNumber = do
-  lispreal <- (try (parseRealNumber) <|> try (parseRationalNumber) <|> parseDecimalNumber)
+  lispreal <- (try parseRealNumber <|> try parseRationalNumber <|> parseDecimalNumber)
   let real = case lispreal of
                   Number n -> fromInteger n
                   Rational r -> fromRational r
                   Float f -> f
                   _ -> 0
   _ <- char '+'
-  lispimag <- (try (parseRealNumber) <|> try (parseRationalNumber) <|> parseDecimalNumber)
+  lispimag <- (try parseRealNumber <|> try parseRationalNumber <|> parseDecimalNumber)
   let imag = case lispimag of
                   Number n -> fromInteger n
                   Rational r -> fromRational r
@@ -330,7 +330,7 @@ parseHexScalar num = do
 parseString :: Parser LispVal
 parseString = do
   _ <- char '"'
-  x <- many (parseEscapedChar <|> noneOf ("\""))
+  x <- many (parseEscapedChar <|> noneOf "\"")
   _ <- char '"'
   return $ String x
 
@@ -463,7 +463,7 @@ parseExpr =
 --         x <- parseHashTable
 --         _ <- lexeme $ char ')'
 --         return x
-  <|> try (parseAtom)
+  <|> try parseAtom
   <|> lexeme parseString
   <|> lexeme parseBool
   <|> parseQuoted
