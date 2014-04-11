@@ -88,12 +88,8 @@ createAstFunc
   -> [HaskAST] -- ^ Body of the function
   -> HaskAST -- ^ Complete function code
 createAstFunc (CompileOptions thisFunc useVal useArgs _) funcBody = do
-  let val = case useVal of
-              True -> "value"
-              _ -> "_"
-      args = case useArgs of
-               True -> "(Just args)"
-               _ -> "_"
+  let val = if useVal then "value" else "_"
+      args = if useArgs then "(Just args)" else "_"
   AstFunction thisFunc (" env cont " ++ val ++ " " ++ args ++ " ") funcBody
 
 -- |Create code for a continutation

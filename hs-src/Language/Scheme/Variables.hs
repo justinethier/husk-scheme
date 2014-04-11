@@ -623,9 +623,9 @@ safeRecDerefPtrs ps (HashTable ht) = do
     return $ HashTable $ Data.Map.fromList $ zip ks vs
 #endif
 safeRecDerefPtrs ps ptr@(Pointer p env) = do
-    case containsPtr ps ptr of
-        True -> return ptr -- Avoid cycle
-        _ -> do
+    if containsPtr ps ptr
+       then return ptr -- Avoid cycle
+       else do
             result <- getVar env p
             safeRecDerefPtrs (ptr : ps) result 
 safeRecDerefPtrs _ v = return v

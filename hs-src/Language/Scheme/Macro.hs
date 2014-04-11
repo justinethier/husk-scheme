@@ -937,9 +937,8 @@ _expandAtom isRec renameEnv (Atom a) = do
   isDefined <- getVar' renameEnv a
   case isDefined of
     Just expanded -> do
-       case isRec of
-         True  -> _expandAtom isRec renameEnv expanded
-         False -> return expanded
+       if isRec then _expandAtom isRec renameEnv expanded
+                else return expanded
     Nothing -> return $ Atom a 
 _expandAtom _ _ a = return a
 
