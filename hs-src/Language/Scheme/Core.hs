@@ -354,18 +354,18 @@ eval env cont val@(LispEnv _) = continueEval env cont val
 eval env cont val@(Pointer _ _) = continueEval env cont val
 eval env cont (Atom a) = do
   v <- getVar env a
-  val <- return $ case v of
+  let val = case v of
 -- TODO: this flag may go away on this branch; it may
 --       not be practical with Pointer used everywhere now
 #ifdef UsePointers
-    List _ -> Pointer a env
-    DottedList _ _ -> Pointer a env
-    String _ -> Pointer a env
-    Vector _ -> Pointer a env
-    ByteVector _ -> Pointer a env
-    HashTable _ -> Pointer a env
+              List _ -> Pointer a env
+              DottedList _ _ -> Pointer a env
+              String _ -> Pointer a env
+              Vector _ -> Pointer a env
+              ByteVector _ -> Pointer a env
+              HashTable _ -> Pointer a env
 #endif
-    _ -> v
+              _ -> v
   continueEval env cont val
 
 -- Quote an expression by simply passing along the value
