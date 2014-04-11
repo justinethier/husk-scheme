@@ -145,7 +145,7 @@ _macroEval env lisp@(List (Atom x : _)) apply = do
   -- DEBUG: var <- (trace ("expand: " ++ x) getNamespacedVar') env macroNamespace x
   case var of
     -- Explicit Renaming
-    Just (SyntaxExplicitRenaming transformer@(Func _ _ _ _)) -> do
+    Just (SyntaxExplicitRenaming transformer@(Func {})) -> do
       renameEnv <- liftIO $ nullEnv -- Local environment used just for this
       expanded <- explicitRenamingTransform env renameEnv renameEnv 
                                           lisp transformer apply

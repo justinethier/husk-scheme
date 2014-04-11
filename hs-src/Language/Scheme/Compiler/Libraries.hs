@@ -39,7 +39,7 @@ importAll
     -> IOThrowsError [HaskAST]
     -- ^ Compiled code
 importAll env metaEnv [m] lopts 
-          copts@(CompileOptions _ _ _ _) = do
+          copts@(CompileOptions {}) = do
     _importAll env metaEnv m lopts copts
 importAll env metaEnv (m : ms) lopts
           (CompileOptions thisFunc _ _ lastFunc) = do
@@ -151,7 +151,7 @@ loadModule
     -> IOThrowsError [HaskAST]
     -- ^ Compiled code, or an empty list if the module was already compiled
     --   and loaded into memory
-loadModule metaEnv name lopts copts@(CompileOptions _ _ _ _) = do
+loadModule metaEnv name lopts copts@(CompileOptions {}) = do
     -- Get the module definition, or load it from file if necessary
     _mod' <- eval metaEnv $ List [Atom "find-module", List [Atom "quote", name]]
     case _mod' of

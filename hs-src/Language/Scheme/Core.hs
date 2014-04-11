@@ -1191,7 +1191,7 @@ evalfuncCallWValues (_ : args) = throwError $ NumArgs (Just 2) args -- Skip over
 evalfuncCallWValues _ = throwError $ NumArgs (Just 2) []
 
 --evalfuncApply [cont@(Continuation _ _ _ _ _), func, List args] = apply cont func args
-evalfuncApply (cont@(Continuation _ _ _ _ _) : func : args) = do
+evalfuncApply (cont@(Continuation {}) : func : args) = do
   let aRev = reverse args
 
   if null args
@@ -1268,7 +1268,7 @@ evalfuncImport [
         (LispEnv newEnv)
 
 -- This is just for debugging purposes:
-evalfuncImport ((Continuation _ _ _ _ _ ) : cs) = do
+evalfuncImport ((Continuation {} ) : cs) = do
     throwError $ TypeMismatch "import fields" $ List cs
 evalfuncImport _ = throwError $ InternalError ""
 
@@ -1309,15 +1309,15 @@ evalfuncLoad _ = throwError $ NumArgs (Just 1) []
 evalfuncEval [cont@(Continuation env _ _ _ _), val] = do
     v <- derefPtr val -- Must deref ptrs for macro subsystem
     meval env cont v
-evalfuncEval [cont@(Continuation _ _ _ _ _), val, LispEnv env] = do
+evalfuncEval [cont@(Continuation {}), val, LispEnv env] = do
     v <- derefPtr val -- Must deref ptrs for macro subsystem
     meval env cont v
 evalfuncEval (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
 evalfuncEval _ = throwError $ NumArgs (Just 1) []
 
-evalfuncCallCC [cont@(Continuation _ _ _ _ _), func] = do
+evalfuncCallCC [cont@(Continuation {}), func] = do
    case func of
-     Continuation _ _ _ _ _ -> apply cont func [cont] 
+     Continuation {} -> apply cont func [cont] 
      PrimitiveFunc f -> do
          result <- liftThrows $ f [cont]
          case cont of

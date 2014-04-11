@@ -1188,7 +1188,7 @@ hashTblRef [(HashTable ht), key] = do
   case Data.Map.lookup key ht of
     Just val -> return val
     Nothing -> throwError $ BadSpecialForm "Hash table does not contain key" key
-hashTblRef [(HashTable ht), key, Func _ _ _ _] = do
+hashTblRef [(HashTable ht), key, Func {}] = do
   case Data.Map.lookup key ht of
     Just val -> return $ val
     Nothing -> throwError $ NotImplemented "thunk"
@@ -1569,10 +1569,10 @@ isDottedList _ = return $ Bool False
 --   Returns: Bool - True if procedure, False otherwise
 --
 isProcedure :: [LispVal] -> ThrowsError LispVal
-isProcedure ([Continuation _ _ _ _ _]) = return $ Bool True
+isProcedure ([Continuation {}]) = return $ Bool True
 isProcedure ([PrimitiveFunc _]) = return $ Bool True
-isProcedure ([Func _ _ _ _]) = return $ Bool True
-isProcedure ([HFunc _ _ _ _]) = return $ Bool True
+isProcedure ([Func {}]) = return $ Bool True
+isProcedure ([HFunc {}]) = return $ Bool True
 isProcedure ([IOFunc _]) = return $ Bool True
 isProcedure ([EvalFunc _]) = return $ Bool True
 isProcedure ([CustFunc _]) = return $ Bool True

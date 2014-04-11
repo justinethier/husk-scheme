@@ -166,7 +166,7 @@ compile :: Env -> LispVal -> CompOpts -> IOThrowsError [HaskAST]
 -- Experimenting with r7rs library support
 compile env 
         (List (Atom "import" : mods)) 
-        copts@(CompileOptions _ _ _ _) = do
+        copts@(CompileOptions {}) = do
     LispEnv meta <- getVar env "*meta-env*"
     LSCL.importAll env 
                    meta 
@@ -332,7 +332,7 @@ compile env ast@(List [Atom "if", predic, conseq, alt]) copts = do
     return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ 
               compConsequence ++ compAlternate)
 
-compile env ast@(List [Atom "set!", Atom var, form]) copts@(CompileOptions _ _ _ _) = do
+compile env ast@(List [Atom "set!", Atom var, form]) copts@(CompileOptions {}) = do
   compileSpecialFormBody env ast copts (\ _ -> do
     Atom symDefine <- _gensym "setFunc"
     Atom symMakeDefine <- _gensym "setFuncMakeSet"
@@ -358,7 +358,7 @@ compile env ast@(List (Atom "set!" : args)) copts = do
             (show args) ++ "\"]") copts -- Cheesy to use a string, but fine for now...
     return [f])
 
-compile env ast@(List [Atom "define", Atom var, form]) copts@(CompileOptions _ _ _ _) = do
+compile env ast@(List [Atom "define", Atom var, form]) copts@(CompileOptions {}) = do
   compileSpecialFormBody env ast copts (\ _ -> do
     Atom symDefine <- _gensym "defineFuncDefine"
     Atom symMakeDefine <- _gensym "defineFuncMakeDef"
@@ -386,7 +386,7 @@ compile env ast@(List [Atom "define", Atom var, form]) copts@(CompileOptions _ _
     return $ [createAstFunc copts f] ++ compDefine ++ [compMakeDefine])
 
 compile env ast@(List (Atom "define" : List (Atom var : fparams) : fbody)) 
-        copts@(CompileOptions _ _ _ _) = do
+        copts@(CompileOptions {}) = do
   _ <- validateFuncParams fparams Nothing
   compileSpecialFormBody env ast copts (\ _ -> do
     bodyEnv <- liftIO $ extendEnv env []
@@ -413,7 +413,7 @@ compile env ast@(List (Atom "define" : List (Atom var : fparams) : fbody))
 
 compile env 
         ast@(List (Atom "define" : DottedList (Atom var : fparams) varargs : fbody)) 
-        copts@(CompileOptions _ _ _ _) = do
+        copts@(CompileOptions {}) = do
   _ <- validateFuncParams (fparams ++ [varargs]) Nothing
   compileSpecialFormBody env ast copts (\ _ -> do
     bodyEnv <- liftIO $ extendEnv env []
@@ -437,7 +437,7 @@ compile env
     return $ (createAstFunc copts f) : compiledBody)
 
 compile env ast@(List (Atom "lambda" : List fparams : fbody)) 
-        copts@(CompileOptions _ _ _ _) = do
+        copts@(CompileOptions {}) = do
   _ <- validateFuncParams fparams Nothing
   compileSpecialFormBody env ast copts (\ _ -> do
     Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
@@ -458,7 +458,7 @@ compile env ast@(List (Atom "lambda" : List fparams : fbody))
     return $ (createAstFunc copts f) : compiledBody)
 
 compile env ast@(List (Atom "lambda" : DottedList fparams varargs : fbody)) 
-        copts@(CompileOptions _ _ _ _) = do
+        copts@(CompileOptions {}) = do
   _ <- validateFuncParams (fparams ++ [varargs]) Nothing
   compileSpecialFormBody env ast copts (\ _ -> do
     Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
@@ -478,7 +478,7 @@ compile env ast@(List (Atom "lambda" : DottedList fparams varargs : fbody))
     return $ (createAstFunc copts f) : compiledBody)
 
 compile env ast@(List (Atom "lambda" : varargs@(Atom _) : fbody)) 
-        copts@(CompileOptions _ _ _ _) = do
+        copts@(CompileOptions {}) = do
   compileSpecialFormBody env ast copts (\ _ -> do
     Atom symCallfunc <- _gensym "lambdaFuncEntryPt"
    
