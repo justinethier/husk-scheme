@@ -62,7 +62,7 @@ import Control.Monad.Error
 import Data.Array
 import qualified Data.ByteString as BS
 import qualified Data.Map
-import Data.Maybe (isNothing)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Version as DV
 import Data.Word
 import qualified System.Exit
@@ -1225,9 +1225,7 @@ evalfuncInteractionEnv (cont@(Continuation env _ _ _ _) : _) = do
 evalfuncInteractionEnv _ = throwError $ InternalError ""
 
 evalfuncUseParentEnv ((Continuation env a b c d) : _) = do
-    let parEnv = case parentEnv env of
-                      Just env' -> env'
-                      Nothing -> env
+    let parEnv = fromMaybe env (parentEnv env)
     continueEval parEnv (Continuation parEnv a b c d) $ LispEnv parEnv
 evalfuncUseParentEnv _ = throwError $ InternalError ""
 

@@ -19,6 +19,7 @@ import qualified Language.Scheme.Variables as LSV -- Scheme variable operations
 import Control.Monad.Error
 import qualified Data.Char as DC
 import qualified Data.List as DL
+import Data.Maybe (fromMaybe)
 import System.Console.GetOpt
 import qualified System.Console.Haskeline as HL
 import qualified System.Console.Haskeline.Completion as HLC
@@ -192,9 +193,7 @@ completeScheme env (lnL, lnR) = do
    let comps = map (\ (Atom a) -> HL.Completion a a False) allDefs'
 
    -- Get unused portion of the left-hand string
-   let unusedLnL = case DL.stripPrefix (reverse pre) lnL of
-                     Just s -> s
-                     Nothing -> lnL
+   let unusedLnL = fromMaybe lnL (DL.stripPrefix (reverse pre) lnL)
    return (unusedLnL, comps)
 
   -- Not loaded into an env, so we need to list them here

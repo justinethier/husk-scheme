@@ -486,7 +486,7 @@ readByteVector args = readBuffer args ByteVector
 --
 --   Returns: String
 readString :: [LispVal] -> IOThrowsError LispVal
-readString args = readBuffer args (\ inBytes -> String $ BSU.toString inBytes)
+readString args = readBuffer args (String . BSU.toString)
 
 -- |Helper function to read n bytes from a port into a buffer
 readBuffer :: [LispVal] -> (BSU.ByteString -> LispVal) -> IOThrowsError LispVal

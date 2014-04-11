@@ -17,6 +17,7 @@ import qualified Language.Scheme.Core
 import Language.Scheme.Types     -- Scheme data types
 import Language.Scheme.Variables -- Scheme variable operations
 import Control.Monad.Error
+import Data.Maybe (fromMaybe)
 import System.Cmd (system)
 import System.Console.GetOpt
 import System.FilePath (dropExtension)
@@ -40,13 +41,8 @@ main = do
      else do
         let inFile = head nonOpts
             outHaskell = (dropExtension inFile) ++ ".hs"
-            outExec = case output of
-              Just inFile' -> inFile'
-              Nothing -> dropExtension inFile
-            extraOpts = case extra of
-              Just args' -> args'
-              Nothing -> ""
--- TODO: pass language revision
+            outExec = fromMaybe (dropExtension inFile) output
+            extraOpts = fromMaybe "" extra 
         process inFile outHaskell outExec lib dynamic extraOpts langrev debugOpt
 
 -- 

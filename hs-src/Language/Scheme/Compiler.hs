@@ -60,6 +60,7 @@ import Language.Scheme.Variables
 import Control.Monad.Error
 import Data.Complex
 import qualified Data.List
+import Data.Maybe (fromMaybe)
 import Data.Ratio
 -- import Debug.Trace
 
@@ -98,9 +99,7 @@ _compileBlock symThisFunc symLastFunc env result [c] = do
 -- A special case to splice in definitions from a (begin)
 _compileBlock symThisFunc symLastFunc env result 
     (c@(List [Atom "%husk-switch-to-parent-environment"]) : cs)  = do
-  let parEnv = case parentEnv env of
-                      Just env' -> env'
-                      Nothing -> env
+  let parEnv = fromMaybe env (parentEnv env)
   _ <- defineTopLevelVars parEnv cs
   Atom symNextFunc <- _gensym "f"
   compiled <- mcompile env c $ 
