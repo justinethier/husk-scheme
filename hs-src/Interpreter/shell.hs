@@ -114,7 +114,7 @@ runOne initEnv args interactive = do
     _  -> do 
       -- Call into (main) if it exists...
       alreadyDefined <- liftIO $ LSV.isBound env "main"
-      let argv = List $ map String $ args
+      let argv = List $ map String args
       when alreadyDefined (do 
         mainResult <- (LSC.runIOThrows $ liftM show $ 
                        LSC.evalLisp env (List [Atom "main", List [Atom "quote", argv]]))

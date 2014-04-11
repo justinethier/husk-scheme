@@ -94,8 +94,8 @@ getHuskFeatures = do
     return [ Atom "r7rs"
            , Atom "husk"
            , Atom $ "husk-" ++ (DV.showVersion PHS.version)
-           , Atom $ SysInfo.arch
-           , Atom $ SysInfo.os
+           , Atom SysInfo.arch
+           , Atom SysInfo.os
            , Atom "full-unicode"
            , Atom "complex"
            , Atom "ratios"
@@ -187,7 +187,7 @@ runIOThrows action = do
         Left err -> do
             disp <- showLispError err
             return $ Just disp
-        Right _ -> return $ Nothing
+        Right _ -> return Nothing
 
 {- |Evaluate a string containing Scheme code
 
@@ -206,7 +206,7 @@ evalString env "(* 3 9)"
 -}
 evalString :: Env -> String -> IO String
 evalString env expr = do
-  runIOThrowsREPL $ liftM show $ (liftThrows $ readExpr expr) >>= evalLisp env
+  runIOThrowsREPL $ liftM show $ liftThrows (readExpr expr) >>= evalLisp env
 
 -- |Evaluate a string and print results to console
 evalAndPrint :: Env -> String -> IO ()
@@ -577,13 +577,13 @@ eval env cont args@(List [Atom "string-set!", Atom var, i, character]) = do
  where
         cpsChar :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsChar e c chr _ = do
-            meval e (makeCPSWArgs e c cpsStr $ [chr]) i
+            meval e (makeCPSWArgs e c cpsStr [chr]) i
 
         cpsStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsStr e c idx (Just [chr]) = do
             value <- getVar env var
             derefValue <- derefPtr value
-            meval e (makeCPSWArgs e c cpsSubStr $ [idx, chr]) derefValue
+            meval e (makeCPSWArgs e c cpsSubStr [idx, chr]) derefValue
         cpsStr _ _ _ _ = throwError $ InternalError "Unexpected case in cpsStr"
 
         cpsSubStr :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -615,8 +615,8 @@ eval env cont args@(List [Atom "set-car!", Atom var, argObj]) = do
           o <- derefPtr obj
           cpsObj e c o x
         cpsObj _ _ obj@(List []) _ = throwError $ TypeMismatch "pair" obj
-        cpsObj e c obj@(List (_ : _)) _ = meval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
-        cpsObj e c obj@(DottedList _ _) _ =  meval e (makeCPSWArgs e c cpsSet $ [obj]) argObj
+        cpsObj e c obj@(List (_ : _)) _ = meval e (makeCPSWArgs e c cpsSet [obj]) argObj
+        cpsObj e c obj@(DottedList _ _) _ =  meval e (makeCPSWArgs e c cpsSet [obj]) argObj
         cpsObj _ _ obj _ = throwError $ TypeMismatch "pair" obj
 
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -645,19 +645,18 @@ eval env cont args@(List [Atom "set-cdr!", Atom var, argObj]) = do
  where
         cpsObj :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsObj _ _ pair@(List []) _ = throwError $ TypeMismatch "pair" pair
-        cpsObj e c pair@(List (_ : _)) _ = meval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
-        cpsObj e c pair@(DottedList _ _) _ = meval e (makeCPSWArgs e c cpsSet $ [pair]) argObj
+        cpsObj e c pair@(List (_ : _)) _ = meval e (makeCPSWArgs e c cpsSet [pair]) argObj
+        cpsObj e c pair@(DottedList _ _) _ = meval e (makeCPSWArgs e c cpsSet [pair]) argObj
         cpsObj _ _ pair _ = throwError $ TypeMismatch "pair" pair
 
+        updateCdr e c obj l = do
+            l' <- recDerefPtrs l
+            obj' <- recDerefPtrs obj
+            (cons [l', obj']) >>= updateObject e var >>= continueEval e c
+
         cpsSet :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsSet e c obj (Just [List (l : _)]) = do
-            l' <- recDerefPtrs l
-            obj' <- recDerefPtrs obj
-            (cons [l', obj']) >>= updateObject e var >>= continueEval e c
-        cpsSet e c obj (Just [DottedList (l : _) _]) = do
-            l' <- recDerefPtrs l
-            obj' <- recDerefPtrs obj
-            (cons [l', obj']) >>= updateObject e var >>= continueEval e c
+        cpsSet e c obj (Just [List (l : _)]) = updateCdr e c obj l
+        cpsSet e c obj (Just [DottedList (l : _) _]) = updateCdr e c obj l
         cpsSet _ _ _ _ = throwError $ InternalError "Unexpected argument to cpsSet"
 eval env cont args@(List [Atom "set-cdr!" , nonvar , _ ]) = do
  bound <- liftIO $ isRecBound env "set-cdr!"
@@ -729,13 +728,13 @@ eval env cont args@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) = do
   else meval env (makeCPS env cont cpsValue) rkey
  where
         cpsValue :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-        cpsValue e c key _ = meval e (makeCPSWArgs e c cpsH $ [key]) rvalue
+        cpsValue e c key _ = meval e (makeCPSWArgs e c cpsH [key]) rvalue
 
         cpsH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
         cpsH e c value (Just [key]) = do
           v <- getVar e var
           derefVar <- derefPtr v
-          meval e (makeCPSWArgs e c cpsEvalH $ [key, value]) derefVar
+          meval e (makeCPSWArgs e c cpsEvalH [key, value]) derefVar
         cpsH _ _ _ _ = throwError $ InternalError "Invalid argument to cpsH"
 
         cpsEvalH :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -828,7 +827,7 @@ updateByteVector (ByteVector vec) (Number idx) obj =
         Number byte -> do
 -- TODO: error checking
            let (h, t) = BS.splitAt (fromInteger idx) vec
-           return $ ByteVector $ BS.concat [h, BS.pack $ [fromInteger byte :: Word8], BS.tail t]
+           return $ ByteVector $ BS.concat [h, BS.pack [fromInteger byte :: Word8], BS.tail t]
         badType -> throwError $ TypeMismatch "byte" badType
 updateByteVector ptr@(Pointer _ _) i obj = do
   vec <- derefPtr ptr
@@ -854,26 +853,26 @@ createObjSetCPS var object updateFnc = cpsIndex
 
     -- Receive index/object, retrieve variable containing data structure
     cpsGetVar :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-    cpsGetVar e c obj (Just [idx]) = (meval e (makeCPSWArgs e c cpsUpdateStruct $ [idx, obj]) =<< getVar e var)
+    cpsGetVar e c obj (Just [idx]) = (meval e (makeCPSWArgs e c cpsUpdateStruct [idx, obj]) =<< getVar e var)
     cpsGetVar _ _ _ _ = throwError $ InternalError "Invalid argument to cpsGetVar"
 
     -- Receive and pass index
     cpsIndex :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-    cpsIndex e c idx _ = meval e (makeCPSWArgs e c cpsGetVar $ [idx]) object
+    cpsIndex e c idx _ = meval e (makeCPSWArgs e c cpsGetVar [idx]) object
 
 
 {- Prepare for apply by evaluating each function argument,
    and then execute the function via 'apply' -}
 prepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 prepareApply env cont (List (function : functionArgs)) = do
-  eval env (makeCPSWArgs env cont cpsPrepArgs $ functionArgs) function
+  eval env (makeCPSWArgs env cont cpsPrepArgs functionArgs) function
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsPrepArgs e c func (Just args) =
 -- case (trace ("prep eval of args: " ++ show args) args) of
           case args of
             [] -> apply c func [] -- No args, immediately apply the function
-            [a] -> meval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List []]) a
-            (a : as) -> meval env (makeCPSWArgs e c cpsEvalArgs $ [func, List [], List as]) a
+            [a] -> meval env (makeCPSWArgs e c cpsEvalArgs [func, List [], List []]) a
+            (a : as) -> meval env (makeCPSWArgs e c cpsEvalArgs [func, List [], List as]) a
        cpsPrepArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (1)"
         {- Store value of previous argument, evaluate the next arg until all are done
         parg - Previous argument that has now been evaluated
@@ -885,8 +884,8 @@ prepareApply env cont (List (function : functionArgs)) = do
        cpsEvalArgs e c evaledArg (Just [func, List argsEvaled, List argsRemaining]) =
           case argsRemaining of
             [] -> apply c func (argsEvaled ++ [evaledArg])
-            [a] -> meval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List []]) a
-            (a : as) -> meval e (makeCPSWArgs e c cpsEvalArgs $ [func, List (argsEvaled ++ [evaledArg]), List as]) a
+            [a] -> meval e (makeCPSWArgs e c cpsEvalArgs [func, List (argsEvaled ++ [evaledArg]), List []]) a
+            (a : as) -> meval e (makeCPSWArgs e c cpsEvalArgs [func, List (argsEvaled ++ [evaledArg]), List as]) a
 
        cpsEvalArgs _ _ _ (Just _) = throwError $ Default "Unexpected error in function application (1)"
        cpsEvalArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (2)"
@@ -938,7 +937,7 @@ apply cont (PrimitiveFunc func) args = do
 apply cont (Func aparams avarargs abody aclosure) args =
   if num aparams /= num args && isNothing avarargs
      then throwError $ NumArgs (Just (num aparams)) args
-     else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
+     else liftIO (extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
         --
@@ -966,12 +965,12 @@ apply cont (Func aparams avarargs abody aclosure) args =
             continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) Nothing cwcDynWind) $ Nil ""
 
         bindVarArgs arg env = case arg of
-          Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List $ remainingArgs)]
+          Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List remainingArgs)]
           Nothing -> return env
 apply cont (HFunc aparams avarargs abody aclosure) args =
   if num aparams /= num args && isNothing avarargs
      then throwError $ NumArgs (Just (num aparams)) args
-     else (liftIO $ extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
+     else liftIO (extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
         num = toInteger . length
         evalBody evBody env = evBody env cont (Nil "") (Just [])
@@ -1004,7 +1003,7 @@ apply _ func args = do
 --  probably be more useful.
 primitiveBindings :: IO Env
 primitiveBindings = nullEnv >>= 
-    (flip extendEnv $ map (domakeFunc IOFunc) ioPrimitives
+    flip extendEnv  ( map (domakeFunc IOFunc) ioPrimitives
                    ++ map (domakeFunc EvalFunc) evalFunctions
                    ++ map (domakeFunc PrimitiveFunc) primitives)
   where domakeFunc constructor (var, func) = 
@@ -1043,7 +1042,7 @@ r5rsEnv' = do
   
   -- Load standard library
   features <- getHuskFeatures
-  _ <- evalString env $ "(define *features* '" ++ (show $ List features) ++ ")"
+  _ <- evalString env $ "(define *features* '" ++ show (List features) ++ ")"
   _ <- evalString env $ "(load \"" ++ (escapeBackslashes stdlib) ++ "\")" 
 
   -- Load (require-extension), which can be used to load other SRFI's
@@ -1097,7 +1096,7 @@ r7rsEnv' = do
   -- Load necessary libraries
   -- Unfortunately this adds them in the top-level environment (!!)
   features <- getHuskFeatures
-  _ <- evalString env $ "(define *features* '" ++ (show $ List features) ++ ")"
+  _ <- evalString env $ "(define *features* '" ++ show (List features) ++ ")"
   cxr <- PHS.getDataFileName "lib/cxr.scm"
   _ <- evalString env {-baseEnv-} $ "(load \"" ++ (escapeBackslashes cxr) ++ "\")" 
   core <- PHS.getDataFileName "lib/core.scm"
@@ -1210,12 +1209,12 @@ evalfuncApply _ = throwError $ NumArgs (Just 2) []
 
 
 evalfuncMakeEnv (cont@(Continuation env _ _ _ _) : _) = do
-    e <- liftIO $ nullEnv
+    e <- liftIO nullEnv
     continueEval env cont $ LispEnv e
 evalfuncMakeEnv _ = throwError $ NumArgs (Just 1) []
 
 evalfuncNullEnv [cont@(Continuation env _ _ _ _), Number _] = do
-    nilEnv <- liftIO $ primitiveBindings
+    nilEnv <- liftIO primitiveBindings
     continueEval env cont $ LispEnv nilEnv
 evalfuncNullEnv (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
 evalfuncNullEnv _ = throwError $ NumArgs (Just 1) []
@@ -1325,12 +1324,12 @@ evalfuncCallCC [cont@(Continuation {}), func] = do
              _ -> return result
      Func _ (Just _) _ _ -> apply cont func [cont] -- Variable # of args (pair). Just call into cont
      Func aparams _ _ _ ->
-       if (toInteger $ length aparams) == 1
+       if toInteger (length aparams) == 1
          then apply cont func [cont]
          else throwError $ NumArgs (Just (toInteger $ length aparams)) [cont]
      HFunc _ (Just _) _ _ -> apply cont func [cont] -- Variable # of args (pair). Just call into cont  
      HFunc aparams _ _ _ ->
-       if (toInteger $ length aparams) == 1
+       if toInteger (length aparams) == 1
          then apply cont func [cont]
          else throwError $ NumArgs (Just (toInteger $ length aparams)) [cont]
      other -> throwError $ TypeMismatch "procedure" other
@@ -1338,10 +1337,10 @@ evalfuncCallCC (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over cont
 evalfuncCallCC _ = throwError $ NumArgs (Just 1) []
 
 evalfuncExitFail _ = do
-  _ <- liftIO $ System.Exit.exitFailure
+  _ <- liftIO System.Exit.exitFailure
   return $ Nil ""
 evalfuncExitSuccess _ = do
-  _ <- liftIO $ System.Exit.exitSuccess
+  _ <- liftIO System.Exit.exitSuccess
   return $ Nil ""
 
 {- Primitive functions that extend the core evaluator -}

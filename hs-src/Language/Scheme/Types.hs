@@ -372,11 +372,11 @@ eqv [(String arg1), (String arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Char arg1), (Char arg2)] = return $ Bool $ arg1 == arg2
 eqv [(Atom arg1), (Atom arg2)] = return $ Bool $ arg1 == arg2
 eqv [(DottedList xs x), (DottedList ys y)] = eqv [List $ xs ++ [x], List $ ys ++ [y]]
-eqv [(Vector arg1), (Vector arg2)] = eqv [List $ (elems arg1), List $ (elems arg2)]
+eqv [(Vector arg1), (Vector arg2)] = eqv [List (elems arg1), List (elems arg2)]
 eqv [(ByteVector a), (ByteVector b)] = return $ Bool $ a == b
 eqv [(HashTable arg1), (HashTable arg2)] =
-  eqv [List $ (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg1),
-       List $ (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg2)]
+  eqv [List (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg1),
+       List (map (\ (x, y) -> List [x, y]) $ Data.Map.toAscList arg2)]
 --
 -- This comparison function may be too simplistic. Basically we check to see if
 -- functions have the same calling interface. If they do, then we compare the 
@@ -407,8 +407,9 @@ eqv badArgList = throwError $ NumArgs (Just 2) badArgList
 
 -- |Compare two lists of haskell values, using the given comparison function
 eqvList :: ([LispVal] -> ThrowsError LispVal) -> [LispVal] -> ThrowsError LispVal
-eqvList eqvFunc [(List arg1), (List arg2)] = return $ Bool $ (length arg1 == length arg2) &&
-                                                    (all eqvPair $ zip arg1 arg2)
+eqvList eqvFunc [(List arg1), (List arg2)] = 
+    return $ Bool $ (length arg1 == length arg2) &&
+                    all eqvPair (zip arg1 arg2)
     where eqvPair (x1, x2) = case eqvFunc [x1, x2] of
                                Left _ -> False
                                Right (Bool val) -> val
@@ -436,7 +437,7 @@ showVal (String contents) = "\"" ++ contents ++ "\""
 showVal (Char chr) = [chr]
 showVal (Atom name) = name
 showVal (Number contents) = show contents
-showVal (Complex contents) = (show $ realPart contents) ++ "+" ++ (show $ imagPart contents) ++ "i"
+showVal (Complex contents) = show (realPart contents) ++ "+" ++ (show $ imagPart contents) ++ "i"
 showVal (Rational contents) = (show (numerator contents)) ++ "/" ++ (show (denominator contents))
 showVal (Float contents) = show contents
 showVal (Bool True) = "#t"

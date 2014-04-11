@@ -245,7 +245,7 @@ isNamespacedBound
     -> String   -- ^ Variable
     -> IO Bool  -- ^ True if the variable is bound
 isNamespacedBound envRef namespace var = 
-    (readIORef $ bindings envRef) >>= return . Data.Map.member (getVarName namespace var)
+    readIORef (bindings envRef) >>= return . Data.Map.member (getVarName namespace var)
 
 -- |Determine if a variable is bound in a given namespace
 --  or a parent of the given environment.
