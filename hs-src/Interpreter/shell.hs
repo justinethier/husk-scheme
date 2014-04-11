@@ -143,7 +143,7 @@ runRepl env' = do
                         inputLines <- getMultiLine [input]
                         let input' = unlines inputLines
                         result <- liftIO (LSC.evalString env input')
-                        if (length result) > 0
+                        if not (null result)
                            then do HL.outputStrLn result
                                    loop env
                            else loop env

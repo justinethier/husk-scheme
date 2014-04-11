@@ -233,7 +233,7 @@ parseRealNumber = do
   num <- many digit
   _ <- char '.'
   frac <- many1 digit
-  let dec = if length num > 0
+  let dec = if not (null num)
                then num ++ "." ++ frac
                else "0." ++ frac
   f <- case (length sign) of

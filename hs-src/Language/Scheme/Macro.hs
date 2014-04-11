@@ -431,7 +431,7 @@ flagDottedLists listFlags status lengthOfEllipsisIndex
 -- Get pair of list flags that are at depth of ellipIndex, or False if flags do not exist (means improper not flagged)
 getListFlags :: [Int] -> [(Bool, Bool)] -> (Bool, Bool)
 getListFlags elIndices flags 
-  | length elIndices > 0 && length flags >= length elIndices = flags !! ((length elIndices) - 1)
+  | not (null elIndices) && length flags >= length elIndices = flags !! ((length elIndices) - 1)
   | otherwise = (False, False)
 
 -- ^ Check pattern against input to determine if there is a match
@@ -1395,7 +1395,7 @@ continueTransform defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim id
                           ellipsisIndex 
                          (List result) 
                          (List $ remaining)
-       else if length result > 0 
+       else if not (null result)
                then return $ List result
                else if ellipsisLevel > 0 
                        then return $ Nil ""  -- Nothing remains, no match

@@ -46,7 +46,7 @@ getData (List lData) (i:is) = do
      then Nil "" -- Error: there are not enough elements in the list
      else do
        let lst = drop i lData
-       if length lst > 0
+       if not (null lst)
           then getData (head lst) is
           else Nil "" -- Error: not enough elements in list
 getData val [] = val -- Base case: we have found the requested element
@@ -62,9 +62,10 @@ setData :: LispVal -- ^ The nested list to modify
 setData (List lData) (i:is) val = do
   -- Fill "holes" as long as they are not at the leaves.
   --
-  -- This is because, when a match occurs it happens 0 or more times.
-  -- Therefore it is not possible (at the leaves) for a match to occur where that match is not
-  -- placed at the end of the list. For example, if the pattern is:
+  -- This is because,  when a match occurs it happens 0 or more  times.
+  -- Therefore it is not  possible (at the leaves) for a match to occur 
+  -- where that match is not placed at the end of the list. For example
+  -- if the pattern is:
   --
   -- a ...
   --
@@ -72,9 +73,10 @@ setData (List lData) (i:is) val = do
   --
   -- 1 2 3
   --
-  -- Then we always store the first match in position 0, second in 1, etc. There are no holes
-  -- in this case because there is never a reason to skip any of these positions.
-  if length is > 0 && length lData < i + 1 
+  -- Then we always store the first match in position 0, second in 1, etc. 
+  -- There  are no  holes  in this  case  because there is never a  reason 
+  -- to skip any of these positions.
+  if not (null is) && length lData < i + 1 
      then set $ fill lData $ i + 1
      else set lData
 
