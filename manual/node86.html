@@ -158,6 +158,42 @@ in the same manner as <code>exit</code>.
 </p>
 
 <P>
+<div id="exit-success" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(exit-success)</span>
+    <span class="code-var"></span>
+    <span class="obj-type">process-context library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(exit-success)</span>
+    <span class="obj-type">process-context library procedure</span>
+  </div>
+Terminates the program without running any
+outstanding dynamic-wind <I>after</I> procedures
+and communicates a successful exit value to the operating system
+in the same manner as <code>exit</code>.
+</div>
+</p>
+
+<P>
+<div id="exit-fail" class="obj-box">
+  <div class="obj-header">
+    <span class="code">(exit-fail)</span>
+    <span class="code-var"></span>
+    <span class="obj-type">process-context library procedure</span>
+  </div>
+  <div class="obj-header">
+    <span class="code">(exit-fail)</span>
+    <span class="obj-type">process-context library procedure</span>
+  </div>
+Terminates the program without running any
+outstanding dynamic-wind <I>after</I> procedures
+and communicates a failure exit value to the operating system
+in the same manner as <code>exit</code>.
+</div>
+</p>
+
+<P>
 <div id="get-environment-variable" class="obj-box">
   <div class="obj-header">
     <span class="code">(get-environment-variable </span>
