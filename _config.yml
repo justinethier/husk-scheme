@@ -11,7 +11,7 @@ plugins:     ./_plugins
 future:      true
 lsi:         false
 pygments:    true
-markdown:    maruku
+markdown:    kramdown
 permalink:   date
 
 husk_build_number:  3.16.1
