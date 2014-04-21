@@ -5,8 +5,8 @@ v3.17
 - Added support for parameter objects from R<sup>7</sup>RS and SRFI 39. See [dynamic bindings](http://justinethier.github.io/husk-scheme/manual/node41.html) in the user manual for more information.
 - Added a `(scheme process-context)` library containing the following functions:
      - [`emergency-exit`](http://justinethier.github.io/husk-scheme/manual/node86.html#emergency-exit)
-     - `exit-fail`
-     - `exit-success`
+     - [`exit-fail`](http://justinethier.github.io/husk-scheme/manual/node86.html#exit-fail)
+     - [`exit-success`](http://justinethier.github.io/husk-scheme/manual/node86.html#exit-success)
      - [`get-environment-variable`](http://justinethier.github.io/husk-scheme/manual/node86.html#get-environment-variable)
      - [`get-environment-variables`](http://justinethier.github.io/husk-scheme/manual/node86.html#get-environment-variables)
      - [`system`](http://justinethier.github.io/husk-scheme/manual/node86.html#system)
