@@ -384,6 +384,11 @@
     (close-output-port opened-file)
     result))
 
+(define (call-with-port port proc)
+  (let ((result (proc port)))
+    (close-port port)
+    result))
+
 ;; SRFI 23 - Error reporting mechanism
 ;; based on code from: http://srfi.schemers.org/srfi-23/srfi-23.html
 (define (error reason . args)
