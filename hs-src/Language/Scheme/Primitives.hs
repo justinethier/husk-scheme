@@ -262,17 +262,22 @@ openOutputByteVector _ = makeBufferPort Nothing
 
 -- |Get string written to string-output-port
 getOutputString :: [LispVal] -> IOThrowsError LispVal
-getOutputString [p@(Port _ _)] = do
-    bytes <- getBufferFromPort p
-    return $ String $ BSU.toString bytes 
+getOutputString [p@(Port port _)] = do
+    o <- liftIO $ hIsOpen port
+    if o then do 
+            bytes <- getBufferFromPort p
+            return $ String $ BSU.toString bytes 
+         else return $ String ""
 getOutputString args = do
     throwError $ TypeMismatch "output-port" $ List args
 
 -- |Get bytevector written to bytevector-output-port
 getOutputByteVector :: [LispVal] -> IOThrowsError LispVal
-getOutputByteVector [p@(Port _ _)] = do
-    bytes <- getBufferFromPort p
-    return $ ByteVector bytes 
+getOutputByteVector [p@(Port port _)] = do
+    o <- liftIO $ hIsOpen port
+    if o then do bytes <- getBufferFromPort p
+                 return $ ByteVector bytes 
+         else return $ ByteVector $ BS.pack []
 getOutputByteVector args = do
     throwError $ TypeMismatch "output-port" $ List args
 

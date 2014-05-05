@@ -3,6 +3,10 @@ v3.17.1
 
 - Added `call-with-port`
 
+Bug Fixes:
+
+- Added error checking to `get-output-string` and `get-output-bytevector` so neither function crashes if the port has already been closed.
+
 v3.17
 --------
 
