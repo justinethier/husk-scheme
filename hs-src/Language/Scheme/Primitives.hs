@@ -365,17 +365,19 @@ isTextPort' port = do
 --   Returns: Bool
 isInputPortOpen :: [LispVal] -> IOThrowsError LispVal
 isInputPortOpen [p@(Port _ _)] = do
-  withOpenPort p (\port -> do
+  withOpenPort p $ \port -> do
     r <- liftIO $ hIsReadable port
     o <- liftIO $ hIsOpen port
-    return $ Bool $ r && o)
+    return $ Bool $ r && o
 isInputPortOpen _ = return $ Bool False
 
 -- | Helper function to ensure a port is open, to prevent Haskell errors
+withOpenPort :: LispVal -> (Handle -> IOThrowsError LispVal) -> IOThrowsError LispVal
 withOpenPort (Port port _) proc = do
     o <- liftIO $ hIsOpen port
     if o then proc port
          else return $ Bool False
+withOpenPort _ _ = return $ Bool False
 
 -- | Determine if the given port is open
 --
@@ -385,7 +387,8 @@ withOpenPort (Port port _) proc = do
 --
 --   Returns: Bool
 isOutputPortOpen :: [LispVal] -> IOThrowsError LispVal
-isOutputPortOpen [Port port _] = do
+isOutputPortOpen [p@(Port _ _)] = do
+  withOpenPort p $ \port -> do
     w <- liftIO $ hIsWritable port
     o <- liftIO $ hIsOpen port
     return $ Bool $ w && o
@@ -400,7 +403,8 @@ isOutputPortOpen _ = return $ Bool False
 --   Returns: Bool - True if an input port, false otherwise
 --
 isInputPort :: [LispVal] -> IOThrowsError LispVal
-isInputPort [Port port _] = liftM Bool $ liftIO $ hIsReadable port
+isInputPort [p@(Port _ _)] = 
+  withOpenPort p $ \port -> liftM Bool $ liftIO $ hIsReadable port
 isInputPort _ = return $ Bool False
 
 -- |Determine if the given objects is an output port
@@ -412,7 +416,8 @@ isInputPort _ = return $ Bool False
 --   Returns: Bool - True if an output port, false otherwise
 --
 isOutputPort :: [LispVal] -> IOThrowsError LispVal
-isOutputPort [Port port _] = liftM Bool $ liftIO $ hIsWritable port
+isOutputPort [p@(Port _ _)] = 
+    withOpenPort p $ \port -> liftM Bool $ liftIO $ hIsWritable port
 isOutputPort _ = return $ Bool False
 
 -- |Determine if a character is ready on the port
