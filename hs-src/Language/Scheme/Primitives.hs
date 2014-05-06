@@ -364,11 +364,18 @@ isTextPort' port = do
 --
 --   Returns: Bool
 isInputPortOpen :: [LispVal] -> IOThrowsError LispVal
-isInputPortOpen [Port port _] = do
+isInputPortOpen [p@(Port _ _)] = do
+  withOpenPort p (\port -> do
     r <- liftIO $ hIsReadable port
     o <- liftIO $ hIsOpen port
-    return $ Bool $ r && o
+    return $ Bool $ r && o)
 isInputPortOpen _ = return $ Bool False
+
+-- | Helper function to ensure a port is open, to prevent Haskell errors
+withOpenPort (Port port _) proc = do
+    o <- liftIO $ hIsOpen port
+    if o then proc port
+         else return $ Bool False
 
 -- | Determine if the given port is open
 --
