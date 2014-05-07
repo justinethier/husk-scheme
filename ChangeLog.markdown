@@ -1,11 +1,11 @@
 v3.17.1
 --------
 
-- Added `call-with-port`
+- Added `call-with-port` from R<sup>7</sup>RS.
 
 Bug Fixes:
 
-- Added error checking to `get-output-string` and `get-output-bytevector` so neither function crashes if the port has already been closed.
+- Added error checking to many I/O functions to prevent crashes when using a port that has already been closed.
 
 v3.17
 --------
