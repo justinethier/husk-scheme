@@ -319,7 +319,8 @@ currentOutputPort _ = return $ Port stdout Nothing
 -- | Flush the given output port
 flushOutputPort :: [LispVal] -> IOThrowsError LispVal
 flushOutputPort [] = liftIO $ hFlush stdout >> (return $ Bool True)
-flushOutputPort [Port port _] = liftIO $ hFlush port >> (return $ Bool True)
+flushOutputPort [p@(Port _ _)] = 
+    withOpenPort p $ \port -> liftIO $ hFlush port >> (return $ Bool True)
 flushOutputPort _ = return $ Bool False
 
 -- | Determine if the given port is a text port.
@@ -471,7 +472,8 @@ readProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 --
 readCharProc :: (Handle -> IO Char) -> [LispVal] -> IOThrowsError LispVal
 readCharProc func [] = readCharProc func [Port stdin Nothing]
-readCharProc func [Port port _] = do
+readCharProc func [p@(Port _ _)] = do
+  withOpenPort p $ \port -> do
     liftIO $ hSetBuffering port NoBuffering
     input <- liftIO $ try' (liftIO $ func port)
     liftIO $ hSetBuffering port LineBuffering
