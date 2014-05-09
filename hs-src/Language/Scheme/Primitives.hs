@@ -1567,12 +1567,9 @@ stringCopy (p@(Pointer _ _) : args) = do
     stringCopy (s : args)
 stringCopy [String s] = return $ String s
 stringCopy [String s, Number start] = do
-    return $ String $ 
-        drop (fromInteger start) s
+    return $ String $ trimStart start s
 stringCopy [String s, Number start, Number end] = do
-    return $ String $ 
-        take (fromInteger $ end - start) $
-            drop (fromInteger start) s
+    return $ String $ trimStartEnd start end s
 stringCopy [badType] = throwError $ TypeMismatch "string" badType
 stringCopy badArgList = throwError $ NumArgs (Just 2) badArgList
 
