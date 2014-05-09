@@ -1489,8 +1489,16 @@ stringToNumber badArgList = throwError $ NumArgs (Just 1) badArgList
 stringToList :: [LispVal] -> IOThrowsError LispVal
 stringToList [p@(Pointer _ _)] = derefPtr p >>= box >>= stringToList
 stringToList [(String s)] = return $ List $ map Char s
+stringToList [String s, Number start] = 
+    return $ List $ map Char $ trimStart start s
+stringToList [String s, Number start, Number end] = 
+    return $ List $ map Char $ trimStartEnd start end s
 stringToList [badType] = throwError $ TypeMismatch "string" badType
 stringToList badArgList = throwError $ NumArgs (Just 1) badArgList
+
+trimStart start = drop (fromInteger start)
+trimStartEnd start end ls = 
+  take (fromInteger $ end - start) $ drop (fromInteger start) ls
 
 -- | Convert the given list of characters to a string
 --
@@ -1528,7 +1536,9 @@ stringToVector args = do
 --
 --   Returns: String
 vectorToString :: [LispVal] -> IOThrowsError LispVal
-vectorToString [p@(Pointer _ _)] = derefPtr p >>= box >>= vectorToString
+vectorToString (p@(Pointer _ _) : ps) = do
+    p' <- derefPtr p 
+    vectorToString (p' : ps)
 --vectorToString [(List [])] = return $ String ""
 --vectorToString [(List l)] = liftThrows $ buildString l
 vectorToString [(Vector v)] = do
@@ -1536,6 +1546,8 @@ vectorToString [(Vector v)] = do
     case l of
         [] -> return $ String ""
         _ -> liftThrows $ buildString l
+-- TODO: vectorToString [Vector v, Number start] = do
+-- TODO:     listToString [List $ trimStart start (elems v)]
 vectorToString [badType] = throwError $ TypeMismatch "vector" badType
 vectorToString [] = throwError $ NumArgs (Just 1) []
 vectorToString args@(_ : _) = throwError $ NumArgs (Just 1) args
