@@ -549,13 +549,6 @@
         (list->vector 
             (apply append 
                    ls))))
-(define (vector->string v)
-    (list->string 
-        (vector->list v)))
-
-(define (string->vector s)
-    (list->vector
-        (string->list s)))
 ;;
 ;; String functions from r7rs
 (define (string-map fnc . sargs)

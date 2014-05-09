@@ -1540,19 +1540,18 @@ stringToVector args = do
 vectorToString (p@(Pointer _ _) : ps) = do
     p' <- derefPtr p
     vectorToString (p' : ps)
---vectorToString [(List [])] = return $ String ""
---vectorToString [(List l)] = liftThrows $ buildString l
 vectorToString [(Vector v)] = do
     let l = elems v
     case l of
         [] -> return $ String ""
         _ -> liftThrows $ buildString l
--- TODO: vectorToString [Vector v, Number start] = do
--- TODO:     listToString [List $ trimStart start (elems v)]
+vectorToString [Vector v, Number start] = do
+    listToString [List $ trimStart start (elems v)]
+vectorToString [Vector v, Number start, Number end] = do
+    listToString [List $ trimStartEnd start end (elems v)]
 vectorToString [badType] = throwError $ TypeMismatch "vector" badType
 vectorToString [] = throwError $ NumArgs (Just 1) []
 vectorToString args@(_ : _) = throwError $ NumArgs (Just 1) args
-
 
 -- | Create a copy of the given string
 --
