@@ -571,10 +571,17 @@
                    (sym (lambda (rstr)
                             (string->symbol
                                  (string-append base "-" rstr)))))
-            `(define (,(sym "copy!") to at from)
-                (do ((i 0 (+ i 1)))
-                    ((= i (,(sym "length") from)) to)
-                     (,(sym "set!") to (+ at i) (,(sym "ref") from i))))))))
+            `(define (,(sym "copy!") to at from . opts)
+               (let ((start (if (null? opts)
+                                0
+                                (car opts)))
+                     (end (- (,(sym "length") from)
+                             (if (= (length opts) 2)
+                                 (+ 1 (car (cdr opts)))
+                                 0))))
+                (do ((i start (+ i 1)))
+                    ((= i end) to)
+                     (,(sym "set!") to (+ at (- i start)) (,(sym "ref") from i)))))))))
 (def-copy-in-place string)
 (def-copy-in-place vector)
 ;; END
