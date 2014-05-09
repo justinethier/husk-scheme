@@ -1487,7 +1487,9 @@ stringToNumber badArgList = throwError $ NumArgs (Just 1) badArgList
 --   Returns: List - list of characters
 --
 stringToList :: [LispVal] -> IOThrowsError LispVal
-stringToList [p@(Pointer _ _)] = derefPtr p >>= box >>= stringToList
+stringToList (p@(Pointer _ _) : ps) = do
+    p' <- derefPtr p 
+    stringToList (p' : ps)
 stringToList [(String s)] = return $ List $ map Char s
 stringToList [String s, Number start] = 
     return $ List $ map Char $ trimStart start s
@@ -1535,9 +1537,8 @@ stringToVector args = do
 --   * Vector
 --
 --   Returns: String
-vectorToString :: [LispVal] -> IOThrowsError LispVal
 vectorToString (p@(Pointer _ _) : ps) = do
-    p' <- derefPtr p 
+    p' <- derefPtr p
     vectorToString (p' : ps)
 --vectorToString [(List [])] = return $ String ""
 --vectorToString [(List l)] = liftThrows $ buildString l
@@ -1551,6 +1552,7 @@ vectorToString [(Vector v)] = do
 vectorToString [badType] = throwError $ TypeMismatch "vector" badType
 vectorToString [] = throwError $ NumArgs (Just 1) []
 vectorToString args@(_ : _) = throwError $ NumArgs (Just 1) args
+
 
 -- | Create a copy of the given string
 --
