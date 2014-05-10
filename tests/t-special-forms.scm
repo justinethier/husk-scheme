@@ -22,6 +22,16 @@
 (assert/equal (list->string '(#\s #\k #\i #\m)) "skim")
 (assert/equal (list->string '()) "")
 
+(assert/equal (vector->string #(#\a #\b #\c) 2 3) "c")
+(assert/equal (string->vector "abc" 2 3) #(#\c))
+
+(define a "12345")
+(define b "abcde")
+(string-copy! b 1 a 0 2)
+(assert/equal b "a12de")
+;TODO: (string-copy! a 1 b 2 4)
+;(assert/equal b "a34de")
+
 (assert/equal
     (let ((ls (list 'one 'two 'five!)))
         (list-set! ls 2 'three)
