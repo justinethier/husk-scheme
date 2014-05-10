@@ -42,6 +42,17 @@ Documentation
 -------------
 The online [user manual](http://justinethier.github.io/husk-scheme/manual/index.html) provides an overview of the Scheme language as implemented by Husk, instructions for using the Haskell API, an alphabetical index of Scheme functions, and more.
 
+Directory Structure
+
+ - **`docs`** - Documentation has largely been moved from here to the `gh-pages` branch.
+ - **`examples`** - Example programs, mostly written in Scheme.
+ - **`extensions`** - Haskell-based extensions to Husk.
+ - **`hs-src`** - All of the Haskell source code for Husk.
+ - **`lib`** - Scheme libraries, which make up a large portion of Husk.
+ - **`scripts`** - Contains the build scripts for Husk and a basic Emacs script.
+ - **`tests`** - Contains all of the functional tests for Husk. These can be run automatically by using `make test` from main Husk directory.
+
+
 License
 -------
 Copyright (C) 2010 [Justin Ethier](http://github.com/justinethier)
