@@ -6,6 +6,7 @@ v3.17.1
 Bug Fixes:
 
 - Added error checking to many I/O functions to prevent crashes when using a port that has already been closed.
+- Added optional start/end arguments to `string->vector`, `vector->string`, `vector-copy!`, and `string-copy!`.
 
 v3.17
 --------
