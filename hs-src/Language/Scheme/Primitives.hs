@@ -1357,9 +1357,9 @@ stringRef [p@(Pointer _ _), k@(Number _)] = do
     s <- derefPtr p 
     stringRef [s, k]
 stringRef [(String s), (Number k)] = do
-    let len = toInteger $ length s
+    let len = toInteger $ (length s) - 1
     if k > len || k < 0
-       then throwError $ Default "Invalid index"
+       then throwError $ Default $ "Invalid index " ++ (show k)
        else return $ Char $ s !! fromInteger k
 stringRef [badType] = throwError $ TypeMismatch "string number" badType
 stringRef badArgList = throwError $ NumArgs (Just 2) badArgList
