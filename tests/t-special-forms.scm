@@ -29,8 +29,8 @@
 (define b "abcde")
 (string-copy! b 1 a 0 2)
 (assert/equal b "a12de")
-;TODO: (string-copy! a 1 b 2 4)
-;(assert/equal b "a34de")
+(string-copy! a 1 b 2 4)
+(assert/equal a "12de5")
 
 (assert/equal
     (let ((ls (list 'one 'two 'five!)))

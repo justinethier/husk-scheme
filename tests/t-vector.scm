@@ -99,7 +99,6 @@
 (assert/equal 
     (string-copy! b 0 a) ; 0 2)
     "12345")
-; TODO: (string-copy! b 1 a 0 2)
 
 (define a #(1 8 2 8)) ; a may be immutable
 (define b (vector-copy a))
