@@ -327,6 +327,20 @@ html>body #menu a {
 	font-size: 77%;
 }
 
+.library-contents {
+	margin: 10px;
+	padding: 2px;
+	border: 1px solid #E0E0E0;
+	background-color: #FCFCF9;
+	font-family: monospace;
+	width: 95%;
+	overflow: auto;
+}
+.library-item {
+    float: left;
+    margin-right: 8px;
+}
+
 /*
 pre {
 	border: 1px solid #000000;

@@ -10,6 +10,345 @@ nav_contents: node3.html
 nav_contents_lbl: Contents
 nav_index: node106.html
 nav_index_lbl: Index
+links_scheme_base:
+ - "&gt;                          ": "node70.html#=                             "
+ - "&gt;=                         ": "node70.html#=                             "
+ - "&lt;                          ": "node70.html#=                             "
+ - "&lt;=                         ": "node70.html#=                             "
+ - "'                             ": "node29.html#quote                         "
+ - "*                             ": "node70.html#+                             "
+ - "+                             ": "node70.html#+                             "
+ - "-                             ": "node70.html#-                             "
+ - "/                             ": "node70.html#-                             "
+ - "=                             ": "node70.html#=                             "
+ - "@                             ": "node43.html#quasiquote                    "
+ - "`                             ": "node43.html#quasiquote                    "
+ - "abs                           ": "node70.html#abs                           "
+ - "and                           ": "node36.html#and                           "
+ - "append                        ": "node73.html#append                        "
+ - "apply                         ": "node79.html#apply                         "
+ - "assoc                         ": "node73.html#assq                          "
+ - "assq                          ": "node73.html#assq                          "
+ - "assv                          ": "node73.html#assq                          "
+ - "begin                         ": "node38.html#begin                         "
+ - "binary-port?                  ": "node83.html#input-port?                   "
+ - "boolean=?                     ": "node72.html#boolean=?                     "
+ - "boolean?                      ": "node72.html#boolean?                      "
+ - "bytevector                    ": "node78.html#bytevector                    "
+ - "bytevector-append             ": "node78.html#bytevector-append             "
+ - "bytevector-copy               ": "node78.html#bytevector-copy               "
+ - "bytevector-copy!              ": "node78.html#bytevector-copy!              "
+ - "bytevector-length             ": "node78.html#bytevector-length             "
+ - "bytevector-u8-ref             ": "node78.html#bytevector-u8-ref             "
+ - "bytevector-u8-set!            ": "node78.html#bytevector-u8-set!            "
+ - "bytevector?                   ": "node78.html#bytevector?                   "
+ - "caar                          ": "node73.html#caar                          "
+ - "cadr                          ": "node73.html#caar                          "
+ - "call-with-current-continuation": "node79.html#call-with-current-continuation"
+ - "call-with-values              ": "node79.html#call-with-values              "
+ - "call/cc                       ": "node79.html#call-with-current-continuation"
+ - "car                           ": "node73.html#car                           "
+ - "case                          ": "node36.html#case                          "
+ - "cdar                          ": "node73.html#caar                          "
+ - "cddr                          ": "node73.html#caar                          "
+ - "cdr                           ": "node73.html#cdr                           "
+ - "ceiling                       ": "node70.html#floor                         "
+ - "char&gt;=?                    ": "node75.html#char=?                        "
+ - "char&gt;?                     ": "node75.html#char=?                        "
+ - "char&lt;=?                    ": "node75.html#char=?                        "
+ - "char&lt;?                     ": "node75.html#char=?                        "
+ - "char-&gt;integer              ": "node75.html#char->integer                 "
+ - "char-ready?                   ": "node84.html#char-ready?                   "
+ - "char?                         ": "node75.html#char?                         "
+ - "close-input-port              ": "node83.html#close-port                    "
+ - "close-output-port             ": "node83.html#close-port                    "
+ - "close-port                    ": "node83.html#close-port                    "
+ - "complex?                      ": "node70.html#number?                       "
+ - "cond                          ": "node36.html#cond                          "
+ - "cond-expand                   ": "node36.html#cond-expand                   "
+ - "cons                          ": "node73.html#cons                          "
+ - "current-error-port            ": "node83.html#current-input-port            "
+ - "current-input-port            ": "node83.html#current-input-port            "
+ - "current-output-port           ": "node83.html#current-input-port            "
+ - "define-record-type            ": "node57.html#define-record-type            "
+ - "define-values                 ": "node55.html#define-values                 "
+ - "denominator                   ": "node70.html#numerator                     "
+ - "do                            ": "node39.html#do                            "
+ - "dynamic-wind                  ": "node79.html#dynamic-wind                  "
+ - "eof-object                    ": "node84.html#eof-object                    "
+ - "eof-object?                   ": "node84.html#eof-object?                   "
+ - "eq?                           ": "node63.html#eq?                           "
+ - "equal?                        ": "node63.html#equal?                        "
+ - "eqv?                          ": "node63.html#eqv?                          "
+ - "even?                         ": "node70.html#zero?                         "
+ - "exact                         ": "node70.html#inexact                       "
+ - "exact-integer-sqrt            ": "node70.html#exact-integer-sqrt            "
+ - "exact-integer?                ": "node70.html#exact-integer?                "
+ - "exact?                        ": "node70.html#exact?                        "
+ - "expt                          ": "node70.html#expt                          "
+ - "features                      ": "node86.html#features                      "
+ - "floor                         ": "node70.html#floor                         "
+ - "floor-quotient                ": "node70.html#floor/                        "
+ - "floor-remainder               ": "node70.html#floor/                        "
+ - "floor/                        ": "node70.html#floor/                        "
+ - "flush-output-port             ": "node85.html#flush-output-port             "
+ - "for-each                      ": "node79.html#for-each                      "
+ - "gcd                           ": "node70.html#gcd                           "
+ - "get-output-bytevector         ": "node83.html#get-output-bytevector         "
+ - "get-output-string             ": "node83.html#get-output-string             "
+ - "guard                         ": "node42.html#guard                         "
+ - "if                            ": "node32.html#if                            "
+ - "include                       ": "node34.html#include                       "
+ - "inexact                       ": "node70.html#inexact                       "
+ - "inexact?                      ": "node70.html#exact?                        "
+ - "input-port-open?              ": "node83.html#input-port-open?              "
+ - "input-port?                   ": "node83.html#input-port?                   "
+ - "integer-&gt;char              ": "node75.html#char->integer                 "
+ - "integer?                      ": "node70.html#number?                       "
+ - "lambda                        ": "node31.html#lambda                        "
+ - "lcm                           ": "node70.html#gcd                           "
+ - "length                        ": "node73.html#length                        "
+ - "let                           ": "node37.html#let                           "
+ - "let*                          ": "node37.html#let*                          "
+ - "let*-values                   ": "node37.html#let*-values                   "
+ - "let-syntax                    ": "node46.html#let-syntax                    "
+ - "let-values                    ": "node37.html#let-values                    "
+ - "letrec                        ": "node37.html#letrec                        "
+ - "letrec*                       ": "node37.html#letrec*                       "
+ - "letrec-syntax                 ": "node46.html#letrec-syntax                 "
+ - "list                          ": "node73.html#list                          "
+ - "list-&gt;string               ": "node76.html#string->list                  "
+ - "list-&gt;vector               ": "node77.html#vector->list                  "
+ - "list-copy                     ": "node73.html#list-copy                     "
+ - "list-ref                      ": "node73.html#list-ref                      "
+ - "list-set!                     ": "node73.html#list-set!                     "
+ - "list-tail                     ": "node73.html#list-tail                     "
+ - "list?                         ": "node73.html#list?                         "
+ - "make-bytevector               ": "node78.html#make-bytevector               "
+ - "make-list                     ": "node73.html#make-list                     "
+ - "make-parameter                ": "node41.html#make-parameter                "
+ - "make-string                   ": "node76.html#make-string                   "
+ - "make-vector                   ": "node77.html#make-vector                   "
+ - "map                           ": "node79.html#map                           "
+ - "max                           ": "node70.html#max                           "
+ - "member                        ": "node73.html#memq                          "
+ - "memq                          ": "node73.html#memq                          "
+ - "memv                          ": "node73.html#memq                          "
+ - "min                           ": "node70.html#max                           "
+ - "modulo                        ": "node70.html#quotient                      "
+ - "named-let                     ": "node39.html#named-let                     "
+ - "negative?                     ": "node70.html#zero?                         "
+ - "newline                       ": "node85.html#newline                       "
+ - "not                           ": "node72.html#not                           "
+ - "null?                         ": "node73.html#null?                         "
+ - "number-&gt;string             ": "node71.html#number->string                "
+ - "number?                       ": "node70.html#number?                       "
+ - "numerator                     ": "node70.html#numerator                     "
+ - "odd?                          ": "node70.html#zero?                         "
+ - "open-input-bytevector         ": "node83.html#open-input-bytevector         "
+ - "open-input-string             ": "node83.html#open-input-string             "
+ - "open-output-bytevector        ": "node83.html#open-output-bytevector        "
+ - "open-output-string            ": "node83.html#open-output-string            "
+ - "or                            ": "node36.html#or                            "
+ - "output-port-open?             ": "node83.html#input-port-open?              "
+ - "output-port?                  ": "node83.html#input-port?                   "
+ - "pair?                         ": "node73.html#pair?                         "
+ - "parameterize                  ": "node41.html#parameterize                  "
+ - "peek-char                     ": "node84.html#peek-char                     "
+ - "peek-u8                       ": "node84.html#peek-u8                       "
+ - "port?                         ": "node83.html#input-port?                   "
+ - "positive?                     ": "node70.html#zero?                         "
+ - "procedure?                    ": "node79.html#procedure?                    "
+ - "quasiquote                    ": "node43.html#quasiquote                    "
+ - "quote                         ": "node29.html#quote                         "
+ - "quotient                      ": "node70.html#quotient                      "
+ - "rational?                     ": "node70.html#number?                       "
+ - "rationalize                   ": "node70.html#rationalize                   "
+ - "read-bytevector               ": "node84.html#read-bytevector               "
+ - "read-bytevector!              ": "node84.html#read-bytevector!              "
+ - "read-char                     ": "node84.html#read-char                     "
+ - "read-line                     ": "node84.html#read-line                     "
+ - "read-string                   ": "node84.html#read-string                   "
+ - "read-u8                       ": "node84.html#read-u8                       "
+ - "real?                         ": "node70.html#number?                       "
+ - "remainder                     ": "node70.html#quotient                      "
+ - "reverse                       ": "node73.html#reverse                       "
+ - "round                         ": "node70.html#floor                         "
+ - "set!                          ": "node33.html#set!                          "
+ - "set-car!                      ": "node73.html#set-car!                      "
+ - "set-cdr!                      ": "node73.html#set-cdr!                      "
+ - "square                        ": "node70.html#square                        "
+ - "string                        ": "node76.html#string                        "
+ - "string&gt;=?                  ": "node76.html#string<?                      "
+ - "string&gt;?                   ": "node76.html#string<?                      "
+ - "string&lt;=?                  ": "node76.html#string<?                      "
+ - "string&lt;?                   ": "node76.html#string<?                      "
+ - "string-&gt;list               ": "node76.html#string->list                  "
+ - "string-&gt;number             ": "node71.html#string->number                "
+ - "string-&gt;symbol             ": "node74.html#string->symbol                "
+ - "string-&gt;utf8               ": "node78.html#utf8->string                  "
+ - "string-&gt;vector             ": "node77.html#vector->string                "
+ - "string-append                 ": "node76.html#string-append                 "
+ - "string-copy                   ": "node76.html#string-copy                   "
+ - "string-copy!                  ": "node76.html#string-copy!                  "
+ - "string-fill!                  ": "node76.html#string-fill!                  "
+ - "string-for-each               ": "node79.html#string-for-each               "
+ - "string-length                 ": "node76.html#string-length                 "
+ - "string-map                    ": "node79.html#string-map                    "
+ - "string-ref                    ": "node76.html#string-ref                    "
+ - "string-set!                   ": "node76.html#string-set!                   "
+ - "string=?                      ": "node76.html#string=?                      "
+ - "string?                       ": "node76.html#string?                       "
+ - "substring                     ": "node76.html#substring                     "
+ - "symbol-&gt;string             ": "node74.html#symbol->string                "
+ - "symbol=?                      ": "node74.html#symbol=?                      "
+ - "symbol?                       ": "node74.html#symbol?                       "
+ - "syntax-error                  ": "node48.html#syntax-error                  "
+ - "textual-port?                 ": "node83.html#input-port?                   "
+ - "truncate                      ": "node70.html#floor                         "
+ - "truncate-quotient             ": "node70.html#floor/                        "
+ - "truncate-remainder            ": "node70.html#floor/                        "
+ - "truncate/                     ": "node70.html#floor/                        "
+ - "u8-ready?                     ": "node84.html#u8-ready?                     "
+ - "unless                        ": "node36.html#unless                        "
+ - "unquote                       ": "node43.html#quasiquote                    "
+ - "unquote-splicing              ": "node43.html#quasiquote                    "
+ - "utf8-&gt;string               ": "node78.html#utf8->string                  "
+ - "values                        ": "node79.html#values                        "
+ - "vector                        ": "node77.html#vector                        "
+ - "vector-&gt;list               ": "node77.html#vector->list                  "
+ - "vector-&gt;string             ": "node77.html#vector->string                "
+ - "vector-append                 ": "node77.html#vector-append                 "
+ - "vector-copy                   ": "node77.html#vector-copy                   "
+ - "vector-copy!                  ": "node77.html#vector-copy                   "
+ - "vector-fill!                  ": "node77.html#vector-fill!                  "
+ - "vector-for-each               ": "node79.html#vector-for-each               "
+ - "vector-length                 ": "node77.html#vector-length                 "
+ - "vector-map                    ": "node79.html#vector-map                    "
+ - "vector-ref                    ": "node77.html#vector-ref                    "
+ - "vector-set!                   ": "node77.html#vector-set!                   "
+ - "vector?                       ": "node77.html#vector?                       "
+ - "when                          ": "node36.html#when                          "
+ - "write-bytevector              ": "node85.html#write-bytevector              "
+ - "write-char                    ": "node85.html#write-char                    "
+ - "write-string                  ": "node85.html#write-string                  "
+ - "write-u8                      ": "node85.html#write-u8                      "
+ - "zero?                         ": "node70.html#zero?                         "
+links_scheme_case_lambda:
+ - "case-lambda                   ": "node44.html#case-lambda                   "
+links_scheme_char:
+ - "char-alphabetic?              ": "node75.html#char-alphabetic?              "
+ - "char-ci&gt;=?                 ": "node75.html#char-ci?                      "
+ - "char-ci&gt;?                  ": "node75.html#char-ci?                      "
+ - "char-ci&lt;=?                 ": "node75.html#char-ci?                      "
+ - "char-ci&lt;?                  ": "node75.html#char-ci?                      "
+ - "char-ci=?                     ": "node75.html#char-ci?                      "
+ - "char-downcase                 ": "node75.html#char-upcase                   "
+ - "char-foldcase                 ": "node75.html#char-upcase                   "
+ - "char-lower-case?              ": "node75.html#char-alphabetic?              "
+ - "char-numeric?                 ": "node75.html#char-alphabetic?              "
+ - "char-upcase                   ": "node75.html#char-upcase                   "
+ - "char-upper-case?              ": "node75.html#char-alphabetic?              "
+ - "char-whitespace?              ": "node75.html#char-alphabetic?              "
+ - "char=?                        ": "node75.html#char=?                        "
+ - "digit-value                   ": "node75.html#digit-value                   "
+ - "string-ci&gt;=?               ": "node76.html#string<?                      "
+ - "string-ci&gt;?                ": "node76.html#string<?                      "
+ - "string-ci&lt;=?               ": "node76.html#string<?                      "
+ - "string-ci&lt;?                ": "node76.html#string<?                      "
+ - "string-ci=?                   ": "node76.html#string-ci=?                   "
+links_scheme_complex:
+ - "angle                         ": "node70.html#make-rectangular              "
+ - "imag-part                     ": "node70.html#make-rectangular              "
+ - "magnitude                     ": "node70.html#make-rectangular              "
+ - "make-polar                    ": "node70.html#make-rectangular              "
+ - "make-rectangular              ": "node70.html#make-rectangular              "
+ - "real-part                     ": "node70.html#make-rectangular              "
+links_scheme_cxr:
+ - "caaaar                        ": "node73.html#caaar                         "
+ - "caaadr                        ": "node73.html#caaar                         "
+ - "caaar                         ": "node73.html#caaar                         "
+ - "caadar                        ": "node73.html#caaar                         "
+ - "caaddr                        ": "node73.html#caaar                         "
+ - "caadr                         ": "node73.html#caaar                         "
+ - "cadaar                        ": "node73.html#caaar                         "
+ - "cadadr                        ": "node73.html#caaar                         "
+ - "cadar                         ": "node73.html#caaar                         "
+ - "caddar                        ": "node73.html#caaar                         "
+ - "cadddr                        ": "node73.html#caaar                         "
+ - "caddr                         ": "node73.html#caaar                         "
+ - "cdaaar                        ": "node73.html#caaar                         "
+ - "cdaadr                        ": "node73.html#caaar                         "
+ - "cdaar                         ": "node73.html#caaar                         "
+ - "cdadar                        ": "node73.html#caaar                         "
+ - "cdaddr                        ": "node73.html#caaar                         "
+ - "cdadr                         ": "node73.html#caaar                         "
+ - "cddaar                        ": "node73.html#caaar                         "
+ - "cddadr                        ": "node73.html#caaar                         "
+ - "cddar                         ": "node73.html#caaar                         "
+ - "cdddar                        ": "node73.html#caaar                         "
+ - "cddddr                        ": "node73.html#caaar                         "
+ - "cdddr                         ": "node73.html#caaar                         "
+links_scheme_eval:
+ - "environment                   ": "node81.html#environment                   "
+ - "eval                          ": "node81.html#eval                          "
+links_scheme_file:
+ - "call-with-input-file          ": "node83.html#call-with-input-file          "
+ - "call-with-output-file         ": "node83.html#call-with-input-file          "
+ - "delete-file                   ": "node86.html#delete-file                   "
+ - "file-exists?                  ": "node86.html#file-exists?                  "
+ - "open-binary-input-file        ": "node83.html#open-input-file               "
+ - "open-binary-output-file       ": "node83.html#open-output-file              "
+ - "open-input-file               ": "node83.html#open-input-file               "
+ - "open-output-file              ": "node83.html#open-output-file              "
+ - "with-input-from-file          ": "node83.html#with-input-from-file          "
+ - "with-output-from-file         ": "node83.html#with-input-from-file          "
+links_scheme_inexact:
+ - "acos                          ": "node70.html#exp                           "
+ - "asin                          ": "node70.html#exp                           "
+ - "atan                          ": "node70.html#exp                           "
+ - "cos                           ": "node70.html#exp                           "
+ - "exp                           ": "node70.html#exp                           "
+ - "finite?                       ": "node70.html#finite?                       "
+ - "infinite?                     ": "node70.html#infinite?                     "
+ - "log                           ": "node70.html#exp                           "
+ - "nan?                          ": "node70.html#nan?                          "
+ - "sin                           ": "node70.html#exp                           "
+ - "sqrt                          ": "node70.html#sqrt                          "
+ - "tan                           ": "node70.html#exp                           "
+links_scheme_lazy:
+ - "delay                         ": "node40.html#delay                         "
+ - "delay-force                   ": "node40.html#delay-force                   "
+ - "force                         ": "node40.html#force                         "
+ - "make-promise                  ": "node40.html#make-promise                  "
+ - "promise?                      ": "node40.html#promise?                      "
+links_scheme_load:
+ - "load                          ": "node86.html#load                          "
+links_scheme_process_context:
+ - "command-line                  ": "node86.html#command-line                  "
+ - "emergency-exit                ": "node86.html#emergency-exit                "
+ - "exit                          ": "node86.html#exit                          "
+ - "exit-fail                     ": "node86.html#exit-fail                     "
+ - "exit-success                  ": "node86.html#exit-success                  "
+ - "get-environment-variable      ": "node86.html#get-environment-variable      "
+ - "get-environment-variables     ": "node86.html#get-environment-variables     "
+ - "system                        ": "node86.html#system                        "
+links_scheme_read:
+ - "read                          ": "node84.html#read                          "
+links_scheme_repl:
+ - "interaction-environment       ": "node81.html#interaction-environment       "
+links_scheme_time:
+ - "current-jiffy                 ": "node86.html#current-jiffy                 "
+ - "current-second                ": "node86.html#current-second                "
+ - "jiffies-per-second            ": "node86.html#jiffies-per-second            "
+links_scheme_write:
+ - "display                       ": "node85.html#display                       "
+ - "write                         ": "node85.html#write                         "
+# - "write-shared                  ": "node85.html#write-shared                  "
+# - "write-simple                  ": "node85.html#write-simple                  "
+links_todo:
+# - "null-environment              ": "node81.html#null-environment              "
+# - "scheme-report-environment     ": "node81.html#scheme-report-environment     "
 ---
 {% include manual/head.html %}
 
@@ -46,247 +385,13 @@ in terms of other exports.  They are redundant in the strict sense of
 the word, but they capture common patterns of usage, and are therefore
 provided as convenient abbreviations.
 </P>
-<P>
-<code>
-* 
-+
-- 
-...
-/ 
-&lt;
-&lt; 
-=
-=&gt; 
-&gt;
-&gt;
-abs 
-and
-append 
-apply
-assoc 
-assq
-assv 
-begin
-binary-port? 
-boolean=?
-boolean? 
-bytevector
-bytevector-append 
-bytevector-copy
-bytevector-copy! 
-bytevector-length
-bytevector-u8-ref
-bytevector-u8-set!
-bytevector?
-caar
-cadr
-call-with-current-continuation
-call-with-port
-call-with-values
-call/cc
-car
-case
-cdar
-cddr
-cdr
-ceiling
-char-&gt;integer
-char-ready?
-char&lt;
-char&lt;
-char=?
-char&gt;
-char&gt;
-char?
-close-input-port
-close-output-port
-close-port
-complex?
-cond
-cond-expand
-cons
-current-error-port
-current-input-port
-current-output-port
-define
-define-record-type
-define-syntax
-define-values
-denominator
-do
-dynamic-wind
-else
-eof-object
-eof-object?
-eq?
-equal?
-eqv?
-error
-error-object-irritants
-error-object-message
-error-object?
-even?
-exact
-exact-integer-sqrt
-exact-integer?
-exact?
-expt
-features
-file-error?
-floor
-floor-quotient
-floor-remainder
-floor/
-flush-output-port
-for-each
-gcd
-get-output-bytevector
-get-output-string
-guard
-if
-include
-include-ci
-inexact
-inexact?
-input-port-open?
-input-port?
-integer-&gt;char
-integer?
-lambda
-lcm
-length
-let
-let*
-let*-values
-let-syntax
-let-values
-letrec
-letrec*
-letrec-syntax
-list
-list-&gt;string
-list-&gt;vector
-list-copy
-list-ref
-list-set!
-list-tail
-list?
-make-bytevector
-make-list
-make-parameter
-make-string
-make-vector
-map
-max
-member
-memq
-memv
-min
-modulo
-negative?
-newline
-not
-null?
-number-&gt;string
-number?
-numerator
-odd?
-open-input-bytevector
-open-input-string
-open-output-bytevector
-open-output-string
-or
-output-port-open?
-output-port?
-pair?
-parameterize
-peek-char
-peek-u8
-port?
-positive?
-procedure?
-quasiquote
-quote
-quotient
-raise
-raise-continuable
-rational?
-rationalize
-read-bytevector
-read-bytevector!
-read-char
-read-error?
-read-line
-read-string
-read-u8
-real?
-remainder
-reverse
-round
-set!
-set-car!
-set-cdr!
-square
-string
-string-&gt;list
-string-&gt;number
-string-&gt;symbol
-string-&gt;utf8
-string-&gt;vector
-string-append
-string-copy
-string-copy!
-string-fill!
-string-for-each
-string-length
-string-map
-string-ref
-string-set!
-string&lt;
-string&lt;
-string=?
-string&gt;
-string&gt;
-string?
-substring
-symbol-&gt;string
-symbol=?
-symbol?
-syntax-error
-syntax-rules
-textual-port?
-truncate
-truncate-quotient
-truncate-remainder
-truncate/
-u8-ready?
-unless
-unquote
-unquote-splicing
-utf8-&gt;string
-values
-vector
-vector-&gt;list
-vector-&gt;string
-vector-append
-vector-copy
-vector-copy!
-vector-fill!
-vector-for-each
-vector-length
-vector-map
-vector-ref
-vector-set!
-vector?
-when
-with-exception-handler
-write-bytevector
-write-char
-write-string
-write-u8
-zero?
-</code>
-</P>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_base %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <H3>Case-Lambda Library</H3>
 </p>
@@ -294,9 +399,13 @@ zero?
 The <code>(scheme case-lambda)</code> library exports the <code>case-lambda</code>
 syntax.
 </P>
-<P>
-<code>case-lambda</code>
-</P>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_case_lambda %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <H3>Char Library</H3>
 </P>
@@ -304,30 +413,13 @@ syntax.
 The <code>(scheme char)</code> library provides the procedures for dealing with
 characters that involve potentially large tables when supporting all of Unicode.
 </P>
-<P>
-<code>char-alphabetic? </code>
-<code>char-ci&lt;=?</code>
-<code>char-ci&lt;? </code>
-<code>char-ci=?</code>
-<code>char-ci&gt;=? </code>
-<code>char-ci&gt;?</code>
-<code>char-downcase</code>           
-<code>char-foldcase</code>
-<code>char-lower-case? </code>       
-<code>char-numeric?</code>
-<code>char-upcase</code>             
-<code>char-upper-case?</code>
-<code>char-whitespace? </code>       
-<code>digit-value</code>
-<code>string-ci&lt;=? </code>           
-<code>string-ci&lt;?</code>
-<code>string-ci=? </code>            
-<code>string-ci&gt;=?</code>
-<code>string-ci&gt;? </code>            
-<code>string-downcase</code>
-<code>string-foldcase</code>         
-<code>string-upcase</code>
-</P>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_char %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <H3>Complex Library</H3>
 </P>
@@ -335,14 +427,13 @@ characters that involve potentially large tables when supporting all of Unicode.
 The <code>(scheme complex)</code> library exports procedures which are
 typically only useful with non-real numbers.
 </P>
-<P>
-<code>angle</code>                   
-<code>imag-part</code>
-<code>magnitude</code>               
-<code>make-polar</code>
-<code>make-rectangular</code>        
-<code>real-part</code>
-</P>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_complex %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <H3>CxR Library</H3>
 </P>
@@ -362,32 +453,13 @@ The procedures <code>car</code> and <code>cdr</code> themselves and the four
 two-level compositions are included in the base library.  See
 section&nbsp;<A HREF="node73.html#listsection">6.4</A>.
 </P>
-<P>
-<code>caaaar</code>                  
-<code>caaadr</code>
-<code>caaar</code>                   
-<code>caadar</code>
-<code>caaddr</code>                  
-<code>caadr</code>
-<code>cadaar</code>                  
-<code>cadadr</code>
-<code>cadar</code>                   
-<code>caddar</code>
-<code>cadddr</code>                  
-<code>caddr</code>
-<code>cdaaar</code>                  
-<code>cdaadr</code>
-<code>cdaar</code>                   
-<code>cdadar</code>
-<code>cdaddr</code>                  
-<code>cdadr</code>
-<code>cddaar</code>                  
-<code>cddadr</code>
-<code>cddar</code>                   
-<code>cdddar</code>
-<code>cddddr</code>                  
-<code>cdddr</code>
-</p>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_cxr %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <H3>Eval Library</H3>
 </P>
@@ -395,10 +467,13 @@ section&nbsp;<A HREF="node73.html#listsection">6.4</A>.
 The <code>(scheme eval)</code> library exports procedures for evaluating Scheme
 data as programs.
 </P>
-<P>
-<code>environment</code>             
-<code>eval</code>
-</P>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_eval %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <H3>File Library</H3>
 </P>
@@ -406,18 +481,13 @@ data as programs.
 The <code>(scheme file)</code> library provides procedures for accessing
 files.
 </P>
-<P>
-<code>call-with-input-file</code>    
-<code>call-with-output-file</code>
-<code>delete-file</code>             
-<code>file-exists?</code>
-<code>open-binary-input-file</code>  
-<code>open-binary-output-file</code>
-<code>open-input-file</code>         
-<code>open-output-file</code>
-<code>with-input-from-file</code>    
-<code>with-output-to-file</code>
-</P>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_file %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <H3>Inexact Library</H3>
 </P>
@@ -425,33 +495,26 @@ files.
 The <code>(scheme inexact)</code> library exports procedures which are
 typically only useful with inexact values.
 </P>
-<P>
-<code>acos</code>                    
-<code>asin</code>
-<code>atan</code>                    
-<code>cos</code>
-<code>exp</code>                     
-<code>finite?</code>
-<code>infinite? </code>              
-<code>log</code>
-<code>nan? </code>                   
-<code>sin</code>
-<code>sqrt</code>                    
-<code>tan</code>
-</P>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_inexact %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <H3>Lazy Library</H3>
 </P>
 <P>
 The <code>(scheme lazy)</code> library exports procedures and syntax keywords for lazy evaluation.
 </P>
-<P>
-<code>delay</code>                   
-<code>delay-force</code>
-<code>force</code>                   
-<code>make-promise</code>
-<code>promise?</code>
-</p>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_lazy %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <H3>Load Library</H3>
 </P>
@@ -459,9 +522,13 @@ The <code>(scheme lazy)</code> library exports procedures and syntax keywords fo
 The <code>(scheme load)</code> library exports procedures for loading
 Scheme expressions from files.
 </P>
-<P>
-<code>load</code>
-</P>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_load %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <H3>Process-Context Library</H3>
 </P>
@@ -469,13 +536,13 @@ Scheme expressions from files.
 The <code>(scheme process-context)</code> library exports procedures for
 accessing with the program's calling context.
 </P>
-<P>
-<code>command-line</code>            
-<code>emergency-exit</code>
-<code>exit</code>
-<code>get-environment-variable</code>
-<code>get-environment-variables</code>
-</P>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_process_context %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <H3>Read Library</H3>
 </P>
@@ -483,29 +550,39 @@ accessing with the program's calling context.
 The <code>(scheme read)</code> library provides procedures for reading
 Scheme objects.
 </P>
-<P>
-<code>read</code>
-</P>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_read %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <h3>Repl Library</h3>
 </P>
 <P>
 The <code>(scheme repl)</code> library exports the <code>  interaction-environment</code> procedure.
 </P>
-<P>
-<code>interaction-environment</code>
-</P>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_repl %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <H3>Time Library</H3>
 </P>
 <P>
 The <code>(scheme time)</code> library provides access to time-related values.
 </P>
-<P>
-<code>current-jiffy</code>           
-<code>current-second</code>
-<code>jiffies-per-second</code>
-</P>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_time %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 <P>
 <H3>Write Library</H3>
 </P>
@@ -513,12 +590,13 @@ The <code>(scheme time)</code> library provides access to time-related values.
 The <code>(scheme write)</code> library provides procedures for writing
 Scheme objects.
 </P>
-<P>
-<code>display</code>                 
-<code>write</code>
-<code>write-shared</code>            
-<code>write-simple</code>
-</P>
+<div class="library-contents">
+  {% for link_hash in page.links_scheme_write %}
+    {% for link in link_hash %}
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+    {% endfor %}
+  {% endfor %}
+</div>
 
 <!--
 <P>

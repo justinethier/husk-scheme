@@ -10,6 +10,11 @@ nav_contents: node3.html
 nav_contents_lbl: Contents
 nav_index: node106.html
 nav_index_lbl: Index
+links_husk_pretty_print:
+ - "pretty-print": "husk-libs.html"
+links_husk_random:
+ - "randint": "husk-libs.html"
+ - "random": "husk-libs.html"
 ---
 {% include manual/head.html %}
 
@@ -35,9 +40,13 @@ The <code>husk</code> library prefix is used for all of these libraries.
     The <code>(husk pretty-print)</code> library provides a pretty printer for Scheme s-expressions. It is based on code from <a href="http://www.mathematik.uni-muenchen.de/~logik/download/minlog/src/pp-sexp.scm">this link</a> as well as <code>genwrite.scm</code> by Marc Feeley.
 </P>
 <P>
-    <code>
-    pretty-print
-    </code>
+    <div class="library-contents">
+      {% for link_hash in page.links_husk_pretty_print %}
+        {% for link in link_hash %}
+          <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+        {% endfor %}
+      {% endfor %}
+    </div>
 </P>
 
 <P>
@@ -47,10 +56,13 @@ The <code>husk</code> library prefix is used for all of these libraries.
     The <code>(husk random)</code> library provides a random number generation capability that is good enough for simple simulations, but not suitable for cryptographic applications. The library is based on code from <a href="http://programmingpraxis.com">http://programmingpraxis.com</a>.
 </P>
 <P>
-    <code>
-    randint
-    random
-    </code>
+    <div class="library-contents">
+      {% for link_hash in page.links_husk_random %}
+        {% for link in link_hash %}
+          <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+        {% endfor %}
+      {% endfor %}
+    </div>
 </P>
 
 {% include manual/nav-bottom.html %}
