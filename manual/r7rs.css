@@ -34,7 +34,7 @@ TD.eqno			{ }	/* equation-number cells */
 /* document-specific styles come next */
 .navigation		{  
     background-color: #FCFCF9;  
-    font-size: 75%;
+    /*font-size: 75%;*/
 }
 DIV.center		{   }
 DIV.centerline		{   }
