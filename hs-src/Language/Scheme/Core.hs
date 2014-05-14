@@ -1298,7 +1298,7 @@ evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
 evalfuncLoad (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
 evalfuncLoad _ = throwError $ NumArgs (Just 1) []
 
--- |Evaluate an expression. Assumes any macro transform is performed prior
+-- |Evaluate an expression.
 evalfuncEval [cont@(Continuation env _ _ _ _), val] = do -- Current env
     v <- derefPtr val -- Must deref ptrs for macro subsystem
     meval env cont v
