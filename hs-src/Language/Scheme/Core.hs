@@ -1298,17 +1298,11 @@ evalfuncLoad [cont@(Continuation env _ _ _ _), String filename] = do
 evalfuncLoad (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
 evalfuncLoad _ = throwError $ NumArgs (Just 1) []
 
--- Evaluate an expression in the current environment
---
--- Assumption is any macro transform is already performed
--- prior to this step.
---
--- FUTURE: consider allowing env to be specified, per R5RS
---
-evalfuncEval [cont@(Continuation env _ _ _ _), val] = do
+-- |Evaluate an expression. Assumes any macro transform is performed prior
+evalfuncEval [cont@(Continuation env _ _ _ _), val] = do -- Current env
     v <- derefPtr val -- Must deref ptrs for macro subsystem
     meval env cont v
-evalfuncEval [cont@(Continuation {}), val, LispEnv env] = do
+evalfuncEval [cont@(Continuation {}), val, LispEnv env] = do -- Env parameter
     v <- derefPtr val -- Must deref ptrs for macro subsystem
     meval env cont v
 evalfuncEval (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
