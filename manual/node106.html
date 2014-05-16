@@ -10,7 +10,7 @@ nav_contents: node3.html
 nav_contents_lbl: Contents
 nav_index: node106.html
 nav_index_lbl: Index
-links:
+links_other:
  - "&gt;                          ": "node70.html#=                             "
  - "&gt;=                         ": "node70.html#=                             "
  - "&lt;                          ": "node70.html#=                             "
@@ -23,6 +23,7 @@ links:
  - "=                             ": "node70.html#=                             "
  - "@                             ": "node43.html#quasiquote                    "
  - "`                             ": "node43.html#quasiquote                    "
+links:
  - "abs                           ": "node70.html#abs                           "
  - "acos                          ": "node70.html#exp                           "
  - "and                           ": "node36.html#and                           "
@@ -349,12 +350,27 @@ links:
 </H1>
 
 <div class="library-contents">
-  {% for link_hash in page.links %}
+  {% for link_hash in page.links_other %}
     {% for link in link_hash %}
       <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
     {% endfor %}
   {% endfor %}
 </div>
+
+  {% assign test = "abcdefghijklmnopqrstuvwxyz" | split: '' %}
+  {% for l in test %}
+<div>
+</div>
+<div class="library-contents">
+  <h3>{{ l | upcase }}</h3>
+  {% for link_hash in page.links %}
+    {% for link in link_hash %}
+      {% capture fchar %}{{ link[0] | split: '' | first }}{% endcapture %}
+      {% if fchar == l %}<div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>{% endif %}
+    {% endfor %}
+  {% endfor %}
+</div>
+  {% endfor %}
 
 {% include manual/nav-bottom.html %}
 {% include manual/footer.html %}
