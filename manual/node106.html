@@ -149,7 +149,6 @@ links:
  - "exp                           ": "node70.html#exp                           "
  - "expand                        ": "macro-debugging.html#expand               "
  - "expt                          ": "node70.html#expt                          "
-links2:
  - "features                      ": "node86.html#features                      "
  - "file-exists?                  ": "node86.html#file-exists?                  "
  - "finite?                       ": "node70.html#finite?                       "
@@ -262,7 +261,6 @@ links2:
  - "remainder                     ": "node70.html#quotient                      "
  - "reverse                       ": "node73.html#reverse                       "
  - "round                         ": "node70.html#floor                         "
-links3:
 # - "scheme-report-environment     ": "node81.html#scheme-report-environment     "
  - "set!                          ": "node33.html#set!                          "
  - "set-car!                      ": "node73.html#set-car!                      "
@@ -350,35 +348,13 @@ links3:
 {{ page.title }}
 </H1>
 
-<p>
-<table>
-<tr>
-  <td style="vertical-align: top;">
+<div class="library-contents">
   {% for link_hash in page.links %}
     {% for link in link_hash %}
-      <div class="item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
+      <div class="library-item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
     {% endfor %}
   {% endfor %}
-  </td>
-  <td> &nbsp; &nbsp; &nbsp; &nbsp; </td>
-  <td style="vertical-align: top;">
-  {% for link_hash in page.links2 %}
-    {% for link in link_hash %}
-      <div class="item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
-    {% endfor %}
-  {% endfor %}
-  </td>
-  <td> &nbsp; &nbsp; &nbsp; &nbsp; </td>
-  <td style="vertical-align: top;">
-  {% for link_hash in page.links3 %}
-    {% for link in link_hash %}
-      <div class="item"><a href="{{ link[1] }}">{{ link[0] }}</a></div>
-    {% endfor %}
-  {% endfor %}
-  </td>
-</tr>
-</table>
-</p>
+</div>
 
 {% include manual/nav-bottom.html %}
 {% include manual/footer.html %}
