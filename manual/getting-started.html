@@ -1,7 +1,7 @@
 ---
 title: Getting Started
-nav_next: command-line-tools.html
-nav_next_lbl: Command Line Tools
+nav_next: node6.html
+nav_next_lbl: Overview of Scheme
 nav_up: index.html
 nav_up_lbl: Summary
 nav_prev: node5.html
@@ -26,7 +26,7 @@ The <a href="http://www.haskell.org/ghc/">Glasgow Haskell Compiler (GHC)</a> is 
 </p>
 
 <p>
-The recommended installation method is to use <a href="http://www.haskell.org/cabal/">Cabal</a>:
+Once GHC is installed, the recommended method to install Husk is to use <a href="http://www.haskell.org/cabal/">Cabal</a>:
 
 <div class="code-block">
 cabal update
@@ -38,6 +38,83 @@ cabal install husk-scheme
 <p>
 Before running husk you may also need to add the cabal executable directory to your path. On Linux this is <code>~/.cabal/bin</code>.
 </p>
+
+
+<H2>
+Command Line Tools
+</H2>
+
+<p>
+The interactive interpreter (sometimes called a REPL) may be invoked by running it directly from the command line:
+
+<div class="code-block">
+huski
+
+</div>
+</p>
+
+<p>
+Alternatively, you may run an individual Scheme program:
+
+<div class="code-block">
+huski my-scheme-file.scm
+
+</div>
+</P>
+
+<p>
+A compiler is also provided to allow you to create native executables:
+
+<div class="code-block">
+huskc my-scheme-program.scm
+./my-scheme-program
+
+</div>
+</p>
+
+<H2>
+Libraries and Extensions
+</H2>
+
+<p>
+Husk supports most of the 
+<a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/">R<sup>5</sup>RS</a>
+and 
+<a href="http://trac.sacrideo.us/wg/wiki">R<sup>7</sup>RS</a>
+standard libraries, as described in this manual.
+</p>
+
+<p>
+The following <a href="http://srfi.schemers.org/">SRFI</a> libraries are supported:
+<ul>
+    <li>
+        <a href="http://srfi.schemers.org/srfi-1/srfi-1.html">SRFI 1</a>: List Library - A comprehensive set of list-processing procedures. 
+        This library is not included by default, it must be loaded using 
+        <strong>(import (srfi 1))</strong>.
+    </li>
+    <li>
+        <a href="http://srfi.schemers.org/srfi-2/srfi-2.html">SRFI 2</a>: <strong>and-let*</strong> - An <code>and</code> with local bindings, a guarded <code>let*</code> special form.
+        This library is not included by default, it must be loaded using 
+        <strong>(import (srfi 2))</strong>.
+    </li>
+    <li><a href="http://srfi.schemers.org/srfi-8/srfi-8.html">SRFI 8</a>: <strong>receive</strong> - Binding to multiple values.</li>
+    <li><a href="http://srfi.schemers.org/srfi-9/srfi-9.html">SRFI 9</a>: Defining record types.</li>
+    <li><a href="http://srfi.schemers.org/srfi-22/srfi-22.html">SRFI 22</a>: Running Scheme Scripts on Unix. See the example programs <strong>cat.scm</strong> and <strong>sum.scm</strong> in the source tree for demonstrations of how to write a husk script.</li>
+    <li><a href="http://srfi.schemers.org/srfi-23/srfi-23.html">SRFI 23</a>: Error reporting mechanism.</li>
+    <li><a href="http://srfi.schemers.org/srfi-39/srfi-39.html">SRFI 39</a>: Parameter objects.</li>
+    <li><a href="http://srfi.schemers.org/srfi-55/srfi-55.html">SRFI 55</a>: <strong>require-extension</strong> - An extremely simple facility for making an extension or library available to a Scheme toplevel environment.</li>
+    <li><a href="http://srfi.schemers.org/srfi-69/srfi-69.html">SRFI 69</a>: Basic hash tables.</li>
+</ul>
+</p>
+
+<p>
+Finally, Husk also includes a set of custom libraries:
+<ul>
+<li><strong>(husk pretty-print)</strong> formats Lisp code so that it may be printed in a clean and readable form.</li>
+<li><strong>(husk random)</strong> provides basic support for random number generation.</li>
+</ul>
+</p>
+
 
 {% include manual/nav-bottom.html %}
 {% include manual/footer.html %}
