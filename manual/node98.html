@@ -22,15 +22,14 @@ nav_index_lbl: Index
 </H1>
 
 <P>
-An implementation may provide any or all of the feature identifiers
-listed below for use by <code>cond-expand</code> and <code>features</code>,
-but must not provide a feature identifier if it does not
-provide the corresponding feature.  
+Husk provides the r7rs feature identifiers
+listed below for use by <code>cond-expand</code> and <code>features</code>.
 </P
 <P>
 <UL>
 <li><b>r7rs</b>
 All R7RS Scheme implementations have this feature.</li>
+<!--
 <li><b>exact-closed</b>
 All algebraic operations except / produce exact values
 given exact inputs.</li>
@@ -39,14 +38,17 @@ Exact complex numbers are provided.</li>
 <li><b>ieee-float</b>
 Inexact numbers are IEEE 754 binary floating point
 values.</li>
+-->
 <li><b>full-unicode</b>
 All Unicode characters present in Unicode version 6.0
 are supported as Scheme characters.</li>
 <li><b>ratios</b>
 / with exact arguments produces an exact result when
 the divisor is nonzero.</li>
+<!--
 <li><b>posix</b>
 This implementation is running on a POSIX system.</li>
+-->
 <li><b>windows</b>
 This implementation is running on Windows.</li>
 <li><b>unix, darwin, gnu-linux, bsd, freebsd, solaris, ...</b>
@@ -54,14 +56,16 @@ Operating system
 ags (perhaps more than one).</li>
 <li><b>i386, x86-64, ppc, sparc, jvm, clr, llvm, ...</b>
 CPU architecture flags.</li>
+<!--
 <li><b>ilp32, lp64, ilp64, ...</b>
 C memory model flags.</li>
 <li><b>big-endian, little-endian</b>
 Byte order flags.</li>
-<li><b>(name)</b>
+-->
+<li><b>husk</b>
 The name of this implementation.</li>
-<li><b>(name-version)</b>
-The name and version of this implementation.</li>
+<li><b>(husk-version)</b>
+The installed version of husk.</li>
 </ul>
 </p>
 
