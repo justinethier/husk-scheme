@@ -99,9 +99,9 @@ createAstCont
   -> String -- ^ Extra leading indentation (or blank string if none)
   -> HaskAST -- ^ Generated code
 createAstCont (CompileOptions _ _ _ (Just nextFunc)) var indentation = do
-  AstValue $ indentation ++ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " []) " ++ var
+  AstValue $ indentation ++ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " []) " ++ var ++ " Nothing"
 createAstCont (CompileOptions _ _ _ Nothing) var indentation = do
-  AstValue $ indentation ++ "  continueEval env cont " ++ var
+  AstValue $ indentation ++ "  continueEval env cont " ++ var ++ " Nothing"
 
 
 --  FUTURE: is this even necessary? Would just a string be good enough?
@@ -144,7 +144,7 @@ showValAST (AstFunction name args code) = do
 showValAST (AstValue v) = v
 showValAST (AstContinuation nextFunc args) =
     "  continueEval env (makeCPSWArgs env cont " ++ 
-       nextFunc ++ " " ++ args ++ ") $ Nil \"\""
+       nextFunc ++ " " ++ args ++ ") (Nil \"\") Nothing "
 
 instance Show HaskAST where show = showValAST
 
@@ -239,7 +239,7 @@ header filepath useCompiledLibs langRev = do
           "7" -> []
           _ -> [ "exec55_3 env cont _ _ = do "
                , "  liftIO $ registerExtensions env getDataFileName' "
-               , "  continueEval env (makeCPSWArgs env cont exec []) (Nil \"\")"]
+               , "  continueEval env (makeCPSWArgs env cont exec []) (Nil \"\") Nothing"]
   [ " "
     , " "
     , "-- |Get variable at runtime "
@@ -253,6 +253,9 @@ header filepath useCompiledLibs langRev = do
     , "    ByteVector _ -> Pointer var env "
     , "    HashTable _ -> Pointer var env "
     , "    _ -> v "
+    , " "
+-- TODO:  this is just a temporary function until calls to continueEval can be purged from the compiler
+    , "continueEval' env cont value = continueEval env cont value Nothing "
     , " "
     , "applyWrapper env cont (Nil _) (Just (a:as))  = do "
     , "  apply cont a as "

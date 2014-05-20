@@ -536,8 +536,8 @@ compile env ast@(List [Atom "set-car!", Atom var, argObj]) copts = do
    
     -- Code to all into next continuation from copts, if one exists
     let finalContinuation = case copts of
-          (CompileOptions _ _ _ (Just nextFunc)) -> "continueEval e (makeCPSWArgs e c " ++ nextFunc ++ " [])\n"
-          _ -> "continueEval e c\n"
+          (CompileOptions _ _ _ (Just nextFunc)) -> "continueEval' e (makeCPSWArgs e c " ++ nextFunc ++ " [])\n"
+          _ -> "continueEval' e c\n"
    
     -- Entry point that allows set-car! to be redefined
     entryPt <- compileSpecialFormEntryPoint "set-car!" symGetVar copts
@@ -598,8 +598,8 @@ compile env ast@(List [Atom "set-cdr!", Atom var, argObj]) copts = do
    
     -- Code to all into next continuation from copts, if one exists
     let finalContinuation = case copts of
-          (CompileOptions _ _ _ (Just nextFunc)) -> "continueEval e (makeCPSWArgs e c " ++ nextFunc ++ " [])\n"
-          _ -> "continueEval e c\n"
+          (CompileOptions _ _ _ (Just nextFunc)) -> "continueEval' e (makeCPSWArgs e c " ++ nextFunc ++ " [])\n"
+          _ -> "continueEval' e c\n"
    
     -- Entry point that allows set-car! to be redefined
     entryPt <- compileSpecialFormEntryPoint "set-car!" symGetVar copts
@@ -1070,7 +1070,7 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
     c <- return $ 
       AstFunction coptsThis " env cont _ _ " [
-        AstValue $ "  continueEval env (makeCPSWArgs env (makeCPSWArgs env cont " ++ 
+        AstValue $ "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env cont " ++ 
                    nextFunc ++ " []) " ++ stubFunc ++ " []) $ Nil\"\""]  
     _comp <- mcompile env fnc $ CompileOptions stubFunc False False Nothing
 
@@ -1120,12 +1120,12 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
     c <- return $ 
       AstFunction coptsThis " env cont _ _ " [
-        AstValue $ "  continueEval env (makeCPSWArgs env (makeCPSWArgs env cont " ++ 
+        AstValue $ "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env cont " ++ 
                    wrapperFunc ++ " []) " ++ stubFunc ++ " []) $ Nil\"\""]  
     -- Use wrapper to pass high-order function (func) as an argument to apply
     wrapper <- return $ 
       AstFunction wrapperFunc " env cont value _ " [
-          AstValue $ "  continueEval env (makeCPSWArgs env cont " ++ 
+          AstValue $ "  continueEval' env (makeCPSWArgs env cont " ++ 
                      nextFunc ++ " [value]) $ Nil \"\""]
     _comp <- mcompile env func' $ CompileOptions stubFunc False False Nothing
 
@@ -1184,9 +1184,9 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                               False -> " $ args ++ " ++ literalArgs ++ ") "
 
              if thisFuncUseValue
-                then return $ AstValue $ "  continueEval env (makeCPSWArgs env (makeCPSWArgs env " ++ nextCont' ++ " " ++
+                then return $ AstValue $ "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env " ++ nextCont' ++ " " ++
                                          nextFunc ++ argsCode ++ stubFunc ++ " []) (Nil \"\") "  
-                else return $ AstValue $ "  continueEval env (makeCPSWArgs env (makeCPSWArgs env " ++ nextCont' ++ " " ++
+                else return $ AstValue $ "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env " ++ nextCont' ++ " " ++
                                          nextFunc ++ argsCode ++ stubFunc ++ " []) $ Nil\"\""  
 
         rest <- case lastArg of
