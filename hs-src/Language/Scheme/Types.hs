@@ -61,7 +61,6 @@ module Language.Scheme.Types
              , contClosure
              , currentCont
              , nextCont
-             , extraReturnArgs
              , dynamicWind
         , Syntax
              , synClosure
@@ -239,8 +238,7 @@ data LispVal = Atom String
  | Continuation {  contClosure :: Env                   -- Environment of the continuation
                  , currentCont :: (Maybe DeferredCode)  -- Code of current continuation
                  , nextCont :: (Maybe LispVal)          -- Code to resume after body of cont
-                 , extraReturnArgs :: (Maybe [LispVal]) -- Extra return arguments, to support (values) and (call-with-values)
-                        , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind)
+                 , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind)
                 }
  -- ^Continuation
  | Syntax { synClosure :: Maybe Env       -- ^ Code env in effect at definition time, if applicable
@@ -305,7 +303,7 @@ instance Show DynamicWinders where show = showDWVal
 
 -- |Make an "empty" continuation that does not contain any code
 makeNullContinuation :: Env -> LispVal
-makeNullContinuation env = Continuation env Nothing Nothing Nothing Nothing
+makeNullContinuation env = Continuation env Nothing Nothing Nothing
 
 -- |Make a continuation that takes a higher-order function (written in Haskell)
 makeCPS :: Env 
@@ -316,8 +314,8 @@ makeCPS :: Env
         -- ^ Haskell function
         -> LispVal
         -- ^ The Haskell function packaged as a LispVal
-makeCPS env cont@(Continuation _ _ _ _ dynWind) cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing dynWind
-makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing Nothing -- This overload just here for completeness; it should never be used
+makeCPS env cont@(Continuation _ _ _ dynWind) cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) dynWind
+makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing -- This overload just here for completeness; it should never be used
 
 -- |Make a continuation that stores a higher-order function and arguments to that function
 makeCPSWArgs :: Env
@@ -334,13 +332,13 @@ makeCPSWArgs env cont@(Continuation {dynamicWind=dynWind}) cps args =
     Continuation 
         env 
         (Just (HaskellBody cps (Just args))) 
-        (Just cont) Nothing dynWind
+        (Just cont) dynWind
 makeCPSWArgs env cont cps args = 
     -- This overload just here for completeness; it should never be used
     Continuation 
         env 
         (Just (HaskellBody cps (Just args))) 
-        (Just cont) Nothing Nothing
+        (Just cont) Nothing
 
 instance Ord LispVal where
   compare (Bool a) (Bool b) = compare a b
