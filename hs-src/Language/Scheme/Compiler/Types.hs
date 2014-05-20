@@ -99,7 +99,7 @@ createAstCont
   -> String -- ^ Extra leading indentation (or blank string if none)
   -> HaskAST -- ^ Generated code
 createAstCont (CompileOptions _ _ _ (Just nextFunc)) var indentation = do
-  AstValue $ indentation ++ "  continueEval env (makeCPSWArgs env cont " ++ nextFunc ++ " []) " ++ var ++ " Nothing"
+  AstValue $ indentation ++ "  " ++ nextFunc ++ " env cont " ++ var ++ " (Just [])"
 createAstCont (CompileOptions _ _ _ Nothing) var indentation = do
   AstValue $ indentation ++ "  continueEval env cont " ++ var ++ " Nothing"
 
