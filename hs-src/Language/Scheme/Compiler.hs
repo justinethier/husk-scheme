@@ -82,7 +82,12 @@ compileLisp
     -> IOThrowsError [HaskAST]
 compileLisp env filename entryPoint exitPoint = do
     filename' <- LSC.findFileOrLib filename 
-    load filename' >>= compileBlock entryPoint exitPoint env []
+    ast <- load filename' >>= compileBlock entryPoint exitPoint env []
+    case ast of
+        [] -> compileScalar 
+                " return $ Number 0" $ 
+                CompileOptions entryPoint False False exitPoint
+        _ -> return ast
 
 -- |Compile a list (block) of Scheme code
 compileBlock :: String -> Maybe String -> Env -> [HaskAST] -> [LispVal] 
@@ -121,7 +126,7 @@ _compileBlock _ _ _ result [] = return result
 _compileBlockDo fnc result c =
   case c of
     -- Discard a value by itself
--- TODO:    [AstValue _] -> fnc result
+    [AstValue _] -> fnc result
     _ -> fnc $ result ++ c
 
 -- TODO: could everything just be regular function calls except when a continuation is 'added to the stack' via a makeCPS(makeCPSWArgs ...) ?? I think this could be made more efficient
