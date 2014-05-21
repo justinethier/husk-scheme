@@ -1070,8 +1070,8 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
     c <- return $ 
       AstFunction coptsThis " env cont _ _ " [
-        AstValue $ "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env cont " ++ 
-                   nextFunc ++ " []) " ++ stubFunc ++ " []) $ Nil\"\""]  
+        AstValue $ "  " ++ stubFunc ++ " env (makeCPSWArgs env cont " ++ 
+                   nextFunc ++ " []) (Nil \"\") (Just [])"]  
     _comp <- mcompile env fnc $ CompileOptions stubFunc False False Nothing
 
     -- Haskell variables must be used to retrieve each atom from the env
@@ -1120,13 +1120,13 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
     c <- return $ 
       AstFunction coptsThis " env cont _ _ " [
-        AstValue $ "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env cont " ++ 
-                   wrapperFunc ++ " []) " ++ stubFunc ++ " []) $ Nil\"\""]  
+        AstValue $ "  " ++ stubFunc ++ " env (makeCPSWArgs env cont " ++ 
+                   wrapperFunc ++ " []) (Nil \"\") (Just [])"]  
     -- Use wrapper to pass high-order function (func) as an argument to apply
     wrapper <- return $ 
       AstFunction wrapperFunc " env cont value _ " [
-          AstValue $ "  continueEval' env (makeCPSWArgs env cont " ++ 
-                     nextFunc ++ " [value]) $ Nil \"\""]
+          AstValue $ "  " ++ nextFunc ++ " env cont " ++ 
+                     " (Nil \"\") (Just [value]) "]
     _comp <- mcompile env func' $ CompileOptions stubFunc False False Nothing
 
     rest <- case fparams of
