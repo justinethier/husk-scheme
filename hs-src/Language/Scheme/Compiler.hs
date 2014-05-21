@@ -95,7 +95,7 @@ _compileBlock :: String -> Maybe String -> Env -> [HaskAST] -> [LispVal]
               -> IOThrowsError [HaskAST]
 _compileBlock symThisFunc symLastFunc env result [c] = do
   compiled <- mcompile env c $ CompileOptions symThisFunc False False symLastFunc 
-  return $ result ++ compiled
+  _compileBlockDo return result compiled
 -- A special case to splice in definitions from a (begin)
 _compileBlock symThisFunc symLastFunc env result 
     (c@(List [Atom "%husk-switch-to-parent-environment"]) : cs)  = do
@@ -104,13 +104,25 @@ _compileBlock symThisFunc symLastFunc env result
   Atom symNextFunc <- _gensym "f"
   compiled <- mcompile env c $ 
                        CompileOptions symThisFunc False False (Just symNextFunc)
-  _compileBlock symNextFunc symLastFunc parEnv (result ++ compiled) cs
+  _compileBlockDo 
+    (\ result' -> _compileBlock symNextFunc symLastFunc parEnv result' cs)
+    result
+    compiled
 _compileBlock symThisFunc symLastFunc env result (c:cs) = do
   Atom symNextFunc <- _gensym "f"
   compiled <- mcompile env c $ 
                        CompileOptions symThisFunc False False (Just symNextFunc)
-  _compileBlock symNextFunc symLastFunc env (result ++ compiled) cs
+  _compileBlockDo
+    (\ result' -> _compileBlock symNextFunc symLastFunc env result' cs)
+    result
+    compiled
 _compileBlock _ _ _ result [] = return result
+
+_compileBlockDo fnc result c =
+  case c of
+    -- Discard a value by itself
+-- TODO:    [AstValue _] -> fnc result
+    _ -> fnc $ result ++ c
 
 -- TODO: could everything just be regular function calls except when a continuation is 'added to the stack' via a makeCPS(makeCPSWArgs ...) ?? I think this could be made more efficient
 
@@ -173,28 +185,28 @@ compile env
                    mods 
                   (CompileLibraryOptions compileBlock compileLisp) 
                    copts
-compile _ (Nil n) copts = compileScalar ("  return $ Nil " ++ (show n)) copts
-compile _ (String s) copts = compileScalar ("  return $ String " ++ (show s)) copts
-compile _ (Char c) copts = compileScalar ("  return $ Char " ++ (show c)) copts
-compile _ (Complex c) copts = compileScalar ("  return $ Complex $ (" ++ (show $ realPart c) ++ ") :+ (" ++ (show $ imagPart c) ++ ")") copts
-compile _ (Float f) copts = compileScalar ("  return $ Float (" ++ (show f) ++ ")") copts
-compile _ (Rational r) copts = compileScalar ("  return $ Rational $ (" ++ (show $ numerator r) ++ ") % (" ++ (show $ denominator r) ++ ")") copts 
-compile _ (Number n) copts = compileScalar ("  return $ Number (" ++ (show n) ++ ")") copts
-compile _ (Bool b) copts = compileScalar ("  return $ Bool " ++ (show b)) copts
-compile _ v@(Vector _) copts = compileScalar (" return $ " ++ ast2Str v) copts
-compile _ v@(ByteVector _) copts = compileScalar (" return $ " ++ ast2Str v) copts
-compile _ ht@(HashTable _) copts = compileScalar (" return $ " ++ ast2Str ht) copts
-compile env (Atom a) copts = do
+compile _ (Nil n) _              = return [AstValue $ "Nil " ++ (show n)]
+compile _ v@(String _) _         = return [AstValue $ ast2Str v]
+compile _ v@(Char _) _           = return [AstValue $ ast2Str v]
+compile _ v@(Complex _) _        = return [AstValue $ ast2Str v]
+compile _ v@(Float _) _          = return [AstValue $ ast2Str v]
+compile _ v@(Rational _) _       = return [AstValue $ ast2Str v]
+compile _ v@(Number _) _         = return [AstValue $ ast2Str v]
+compile _ v@(Bool _) _           = return [AstValue $ ast2Str v]
+compile _ v@(Vector _) _         = return [AstValue $ ast2Str v]
+compile _ v@(ByteVector _) _     = return [AstValue $ ast2Str v]
+compile _ ht@(HashTable _) _     = return [AstValue $ ast2Str ht]
+compile env (Atom a) _ = do
  isDefined <- liftIO $ isRecBound env a
  case isDefined of
    True -> do
-     return [createAstFunc copts [
-               AstValue $ "  val <- getRTVar env \"" ++ a ++ "\""], 
-               createAstCont copts "val" ""]
+-- TODO: this is not good enough, will probably have to 
+--       return as a new type (AstGetVariable?)
+     return [AstValue $ "getRTVar env \"" ++ a ++ "\""] 
    False -> throwError $ UnboundVar "Variable is not defined" a
 
 compile _ (List [Atom "quote", val]) copts = 
-  compileScalar (" return $ " ++ ast2Str val) copts
+  return [AstValue $ ast2Str val]
 
 compile env ast@(List [Atom "expand",  _body]) copts = do
   compileSpecialFormBody env ast copts (\ _ -> do
