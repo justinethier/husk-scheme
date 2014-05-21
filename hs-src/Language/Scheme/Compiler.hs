@@ -1092,12 +1092,6 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
     Atom stubFunc <- _gensym "applyStubF"
     Atom nextFunc <- _gensym "applyNextF"
 
-    c <- return $ 
-      AstFunction coptsThis " env cont _ _ " [
-        AstValue $ "  " ++ stubFunc ++ " env (makeCPSWArgs env cont " ++ 
-                   nextFunc ++ " []) (Nil \"\") (Just [])"]  
-    _comp <- mcompile env fnc $ CompileOptions stubFunc False False Nothing
-
     -- Haskell variables must be used to retrieve each atom from the env
     let varLines = 
           map (\ (rt, cp) -> 
@@ -1114,7 +1108,21 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                 " env cont value _ " $ varLines ++ 
                 [AstValue $ "  apply (makeCPSWArgs env cont " ++ 
                             fnextExpr ++ " []) value " ++ args]]
-    return $ [c] ++ _comp ++ rest
+
+    _comp <- mcompile env fnc $ CompileOptions stubFunc False False Nothing
+    case _comp of
+        [(AstValue val)] -> do
+          return $ [createAstFunc 
+                    (CompileOptions coptsThis False False Nothing) [
+                     AstValue $ "  result <- " ++ val,
+                     createAstCont copts "result" ""]] ++ rest
+        _ -> do
+          c <- return $ 
+            AstFunction coptsThis " env cont _ _ " [
+              AstValue $ "  " ++ stubFunc ++ " env (makeCPSWArgs env cont " ++ 
+                         nextFunc ++ " []) (Nil \"\") (Just [])"]  
+      
+          return $ [c] ++ _comp ++ rest
 
   -- |Compile function and args as a chain of continuations
 -- TODO:
