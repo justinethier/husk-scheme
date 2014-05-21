@@ -394,13 +394,20 @@ compile env ast@(List [Atom "define", Atom var, form]) copts@(CompileOptions {})
 
    
     -- Entry point; ensure var is not rebound
-    f <- return $ [
-          AstValue $ "  " ++ symDefine ++ " env cont (Nil \"\") (Just [])" ]
     compDefine <- compileExpr env form symDefine $ Just symMakeDefine
-    compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
-       AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result",
-       createAstCont copts "result" ""]
-    return $ [createAstFunc copts f] ++ compDefine ++ [compMakeDefine])
+
+    case compDefine of
+      [(AstValue val)] -> do
+        return [createAstFunc copts [
+            AstValue $ "  result <- defineVar env \"" ++ var ++ "\" $ " ++ val,
+            createAstCont copts "result" ""]]
+      _ -> do
+        f <- return $ [
+              AstValue $ "  " ++ symDefine ++ " env cont (Nil \"\") (Just [])" ]
+        compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
+           AstValue $ "  _ <- defineVar env \"" ++ var ++ "\" result",
+           createAstCont copts "result" ""]
+        return $ [createAstFunc copts f] ++ compDefine ++ [compMakeDefine])
 
 compile env ast@(List (Atom "define" : List (Atom var : fparams) : fbody)) 
         copts@(CompileOptions {}) = do
