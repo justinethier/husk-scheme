@@ -211,7 +211,7 @@ compile env (Atom a) _ = do
    False -> throwError $ UnboundVar "Variable is not defined" a
 
 compile _ (List [Atom "quote", val]) copts = 
-  return [AstValue $ ast2Str val]
+  compileScalar (" return $ " ++ ast2Str val) copts
 
 compile env ast@(List [Atom "expand",  _body]) copts = do
   compileSpecialFormBody env ast copts (\ _ -> do
