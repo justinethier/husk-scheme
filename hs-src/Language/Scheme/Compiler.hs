@@ -1114,8 +1114,8 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
         [(AstValue val)] -> do
           return $ [createAstFunc 
                     (CompileOptions coptsThis False False Nothing) [
-                     AstValue $ "  result <- " ++ val,
-                     createAstCont copts "result" ""]] ++ rest
+                     AstValue $ "  var <- " ++ val,
+                     AstValue $ "  " ++ nextFunc ++ " env cont var Nothing"]] ++ rest
         _ -> do
           c <- return $ 
             AstFunction coptsThis " env cont _ _ " [
