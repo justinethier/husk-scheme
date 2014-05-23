@@ -357,12 +357,18 @@ compile env ast@(List [Atom "set!", Atom var, form]) copts@(CompileOptions {}) =
     -- Store var in huskc's env for macro processing
     _ <- setVar env var form
 
-    entryPt <- compileSpecialFormEntryPoint "set!" symDefine copts
     compDefine <- compileExpr env form symDefine $ Just symMakeDefine
-    compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
-       AstValue $ "  _ <- setVar env \"" ++ var ++ "\" result",
-       createAstCont copts "result" ""]
-    return $ [entryPt] ++ compDefine ++ [compMakeDefine])
+    case compDefine of
+      [(AstValue val)] -> do
+        return [createAstFunc copts [
+            AstValue $ "  result <- setVar env \"" ++ var ++ "\" $ " ++ val,
+            createAstCont copts "result" ""]]
+      _ -> do
+        entryPt <- compileSpecialFormEntryPoint "set!" symDefine copts
+        compMakeDefine <- return $ AstFunction symMakeDefine " env cont result _ " [
+           AstValue $ "  _ <- setVar env \"" ++ var ++ "\" result",
+           createAstCont copts "result" ""]
+        return $ [entryPt] ++ compDefine ++ [compMakeDefine])
 
 compile env ast@(List [Atom "set!", nonvar, _]) copts = do 
   compileSpecialFormBody env ast copts (\ _ -> do
