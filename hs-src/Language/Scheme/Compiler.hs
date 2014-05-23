@@ -126,6 +126,10 @@ _compileBlock _ _ _ result [] = return result
 _compileBlockDo fnc result c =
   case c of
     -- Discard a value by itself
+TODO: not good enough, if a value is discarded, the continuation chain is broken (IE, there is a function call
+to a function that does not exist, because it was never created). need to account for that somehow, perhaps by
+re-using the previously generated "next func" on the next line. also need to account for a discarded value at 
+the end of the program, by having a dummy continuation if such a case is detected there...
     [AstValue _] -> fnc result
     _ -> fnc $ result ++ c
 
