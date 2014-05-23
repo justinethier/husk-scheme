@@ -62,7 +62,7 @@ import Data.Complex
 import qualified Data.List
 import Data.Maybe (fromMaybe)
 import Data.Ratio
--- import Debug.Trace
+import Debug.Trace
 
 -- |Perform one-time initialization of the compiler's environment
 initializeCompiler :: Env -> IOThrowsError [HaskAST]
@@ -1155,7 +1155,8 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
       AstFunction wrapperFunc " env cont value _ " [
           AstValue $ "  " ++ nextFunc ++ " env cont " ++ 
                      " (Nil \"\") (Just [value]) "]
-    rest <- case fparams of
+    rest <- case (trace ("func' = " ++ (show func') ++ ", fparams = " ++ (show fparams)) fparams) of
+    --rest <- case fparams of
               [] -> do
                 return [AstFunction 
                           nextFunc 
@@ -1227,17 +1228,10 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                                     True -> " $ args ++ [value] ++ " ++ literalArgs ++ ") " 
                                     False -> " $ args ++ " ++ literalArgs ++ ") "
 
-                   return $ createAstFunc
-                               (CompileOptions coptsThis False False Nothing) [
-                               AstValue $ "  var <- " ++ val,
-                               AstValue $ "  " ++ nextFunc ++ " env cont var (Just " ++ argsCode ++ ")"]
---                   if thisFuncUseValue
---                      then return $ AstValue $ "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env " ++ nextCont' ++ " " ++
---                                               nextFunc ++ argsCode ++ stubFunc ++ " []) (Nil \"\") "  
---                      else return $ AstValue $ "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env " ++ nextCont' ++ " " ++
---                                               nextFunc ++ argsCode ++ stubFunc ++ " []) $ Nil\"\""  
+                   return [AstValue $ "  var <- " ++ val,
+                           AstValue $ "  " ++ nextFunc ++ " env cont var (Just " ++ argsCode]
 
-              return $ [AstFunction thisFunc fargs (fnc ++ [c])] ++ rest
+              return $ [AstFunction thisFunc fargs (fnc ++ c)] ++ rest
             _ -> do
               c <- do
                    let nextCont' = case (lastArg, coptsNext) of
