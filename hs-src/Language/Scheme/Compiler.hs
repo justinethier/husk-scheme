@@ -99,9 +99,13 @@ compileBlock symThisFunc symLastFunc env result lisps = do
 _compileBlock :: String -> Maybe String -> Env -> [HaskAST] -> [LispVal]
               -> IOThrowsError [HaskAST]
 _compileBlock symThisFunc symLastFunc env result [c] = do
-  compiled <- mcompile env c $ CompileOptions symThisFunc False False symLastFunc 
-TODO: if compiled isSingleValue, then need to create a stub here so there is a function to be called into
-  _compileBlockDo return result compiled
+  let copts = CompileOptions symThisFunc False False symLastFunc 
+  compiled <- mcompile env c copts
+  case compiled of
+    [(AstValue val)] -> do
+      comp <- compileScalar val copts
+      _compileBlockDo return result comp
+    _ -> _compileBlockDo return result compiled
 -- A special case to splice in definitions from a (begin)
 _compileBlock symThisFunc symLastFunc env result 
     (c@(List [Atom "%husk-switch-to-parent-environment"]) : cs) = do
