@@ -96,21 +96,28 @@ compileBlock symThisFunc symLastFunc env result lisps = do
   _ <- defineTopLevelVars env lisps
   _compileBlock symThisFunc symLastFunc env result lisps
 
-_compileBlock :: String -> Maybe String -> Env -> [HaskAST] -> [LispVal] 
+_compileBlock :: String -> Maybe String -> Env -> [HaskAST] -> [LispVal]
               -> IOThrowsError [HaskAST]
 _compileBlock symThisFunc symLastFunc env result [c] = do
   compiled <- mcompile env c $ CompileOptions symThisFunc False False symLastFunc 
+TODO: if compiled isSingleValue, then need to create a stub here so there is a function to be called into
   _compileBlockDo return result compiled
 -- A special case to splice in definitions from a (begin)
 _compileBlock symThisFunc symLastFunc env result 
-    (c@(List [Atom "%husk-switch-to-parent-environment"]) : cs)  = do
+    (c@(List [Atom "%husk-switch-to-parent-environment"]) : cs) = do
   let parEnv = fromMaybe env (parentEnv env)
   _ <- defineTopLevelVars parEnv cs
   Atom symNextFunc <- _gensym "f"
   compiled <- mcompile env c $ 
                        CompileOptions symThisFunc False False (Just symNextFunc)
   _compileBlockDo 
-    (\ result' -> _compileBlock symNextFunc symLastFunc parEnv result' cs)
+    (\ result' ->
+         _compileBlock 
+           (if isSingleValue compiled
+              then symThisFunc 
+              else symNextFunc)
+            symLastFunc 
+            parEnv result' cs)
     result
     compiled
 _compileBlock symThisFunc symLastFunc env result (c:cs) = do
@@ -118,18 +125,27 @@ _compileBlock symThisFunc symLastFunc env result (c:cs) = do
   compiled <- mcompile env c $ 
                        CompileOptions symThisFunc False False (Just symNextFunc)
   _compileBlockDo
-    (\ result' -> _compileBlock symNextFunc symLastFunc env result' cs)
+    (\ result' -> 
+        _compileBlock 
+           (if isSingleValue compiled
+              then symThisFunc 
+              else symNextFunc)
+           symLastFunc 
+           env result' cs)
     result
     compiled
 _compileBlock _ _ _ result [] = return result
 
+isSingleValue [(AstValue _)] = True
+isSingleValue _ = False
+
 _compileBlockDo fnc result c =
   case c of
     -- Discard a value by itself
-TODO: not good enough, if a value is discarded, the continuation chain is broken (IE, there is a function call
-to a function that does not exist, because it was never created). need to account for that somehow, perhaps by
-re-using the previously generated "next func" on the next line. also need to account for a discarded value at 
-the end of the program, by having a dummy continuation if such a case is detected there...
+-- TODO: not good enough, if a value is discarded, the continuation chain is broken (IE, there is a function call
+-- to a function that does not exist, because it was never created). need to account for that somehow, perhaps by
+-- re-using the previously generated "next func" on the next line. also need to account for a discarded value at 
+-- the end of the program, by having a dummy continuation if such a case is detected there...
     [AstValue _] -> fnc result
     _ -> fnc $ result ++ c
 
