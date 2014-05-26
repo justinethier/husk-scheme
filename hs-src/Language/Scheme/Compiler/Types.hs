@@ -114,6 +114,7 @@ data HaskAST = AstAssignM String HaskAST
                  astfCode :: [HaskAST]
                 } 
  | AstValue String
+ | AstRef String
  | AstContinuation {astcNext :: String,
                     astcArgs :: String
                    }
@@ -142,6 +143,7 @@ showValAST (AstFunction name args code) = do
   typeSig ++ fheader ++ fbody 
 #endif
 showValAST (AstValue v) = v
+showValAST (AstRef v) = v
 showValAST (AstContinuation nextFunc args) =
     "  continueEval env (makeCPSWArgs env cont " ++ 
        nextFunc ++ " " ++ args ++ ") (Nil \"\") Nothing "
