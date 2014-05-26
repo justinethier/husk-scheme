@@ -1036,7 +1036,8 @@ divertVars env expanded copts@(CompileOptions _ uvar uargs nfnc) func = do
     _ -> do 
       Atom symNext <- _gensym "afterDivert"
       diverted <- compileDivertedVars symNext env vars copts
-      rest <- func env expanded $ CompileOptions symNext uvar uargs nfnc
+      rest <- wrapObject symNext nfnc =<<
+        func env expanded (CompileOptions symNext uvar uargs nfnc)
       return $ diverted : rest
 
 -- |Take a list of variables diverted into env at compile time, and
