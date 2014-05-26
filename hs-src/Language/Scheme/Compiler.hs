@@ -146,11 +146,8 @@ _compileBlock _ _ _ result [] = return result
 _compileBlockDo fnc result c =
   case c of
     -- Discard a value by itself
--- TODO: not good enough, if a value is discarded, the continuation chain is broken (IE, there is a function call
--- to a function that does not exist, because it was never created). need to account for that somehow, perhaps by
--- re-using the previously generated "next func" on the next line. also need to account for a discarded value at 
--- the end of the program, by having a dummy continuation if such a case is detected there...
     [AstValue _] -> fnc result
+    [AstRef _] -> fnc result
     _ -> fnc $ result ++ c
 
 -- TODO: could everything just be regular function calls except when a continuation is 'added to the stack' via a makeCPS(makeCPSWArgs ...) ?? I think this could be made more efficient
@@ -415,7 +412,7 @@ compile env ast@(List [Atom "set!", Atom var, form]) copts@(CompileOptions {}) =
             createAstCont copts "result" ""]]
       [(AstRef val)] -> do
         return [createAstFunc copts [
-            AstValue $ "  result <- setVar env \"" ++ var ++ "\" << " ++ val,
+            AstValue $ "  result <- setVar env \"" ++ var ++ "\" =<< " ++ val,
             createAstCont copts "result" ""]]
       _ -> do
         entryPt <- compileSpecialFormEntryPoint "set!" symDefine copts
@@ -463,7 +460,7 @@ compile env ast@(List [Atom "define", Atom var, form]) copts@(CompileOptions {})
             createAstCont copts "result" ""]]
       [(AstRef val)] -> do
         return [createAstFunc copts [
-            AstValue $ "  result <- defineVar env \"" ++ var ++ "\" << " ++ val,
+            AstValue $ "  result <- defineVar env \"" ++ var ++ "\" =<< " ++ val,
             createAstCont copts "result" ""]]
       _ -> do
         f <- return $ [
