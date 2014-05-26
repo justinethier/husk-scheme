@@ -102,8 +102,11 @@ _compileBlock symThisFunc symLastFunc env result [c] = do
   let copts = CompileOptions symThisFunc False False symLastFunc 
   compiled <- mcompile env c copts
   case compiled of
-    [(AstValue val)] -> do
-      comp <- compileScalar val copts
+    [val@(AstValue _)] -> do
+      comp <- compileScalar' val copts
+      _compileBlockDo return result comp
+    [val@(AstRef _)] -> do
+      comp <- compileScalar' val copts
       _compileBlockDo return result comp
     _ -> _compileBlockDo return result compiled
 -- A special case to splice in definitions from a (begin)
@@ -140,9 +143,6 @@ _compileBlock symThisFunc symLastFunc env result (c:cs) = do
     compiled
 _compileBlock _ _ _ result [] = return result
 
-isSingleValue [(AstValue _)] = True
-isSingleValue _ = False
-
 _compileBlockDo fnc result c =
   case c of
     -- Discard a value by itself
@@ -159,6 +159,16 @@ _compileBlockDo fnc result c =
 compileScalar :: String -> CompOpts -> IOThrowsError [HaskAST]
 compileScalar val copts = do 
   f <- return $ AstAssignM "x1" $ AstValue val 
+  c <- return $ createAstCont copts "x1" ""
+  return [createAstFunc copts [f, c]]
+
+compileScalar' :: HaskAST -> CompOpts -> IOThrowsError [HaskAST]
+compileScalar' val copts = do 
+  let fCode = case val of
+          AstValue v -> AstValue $ "  let x1 = " ++ v 
+          AstRef r -> AstValue $ "  x1 <- " ++ r
+  -- TODO: _
+  f <- return $ fCode
   c <- return $ createAstCont copts "x1" ""
   return [createAstFunc copts [f, c]]
 
@@ -231,7 +241,7 @@ compile env (Atom a) _ = do
    True -> do
 -- TODO: this is not good enough, will probably have to 
 --       return as a new type (AstGetVariable?)
-     return [AstValue $ "getRTVar env \"" ++ a ++ "\""] 
+     return [AstRef $ "getRTVar env \"" ++ a ++ "\""] 
    False -> throwError $ UnboundVar "Variable is not defined" a
 
 compile _ (List [Atom "quote", val]) copts = 
@@ -360,10 +370,20 @@ compile env ast@(List [Atom "if", predic, conseq, alt]) copts = do
                             " env (makeCPSWArgs env cont " ++ symCheckPredicate ++ " []) " ++ 
                             " (Nil \"\") (Just []) "]
     -- Compile expression for if's args
-    compPredicate <- compileExpr env predic symPredicate Nothing      -- Do not want to call into nextFunc in the middle of (if)
-    compConsequence <- compileExpr env conseq symConsequence nextFunc -- pick up at nextFunc after consequence
-    compAlternate <- compileExpr env alt symAlternate nextFunc        -- or...pick up at nextFunc after alternate
+    compPredicate <- wrap symPredicate Nothing =<<
+      compileExpr 
+        env predic symPredicate 
+        Nothing -- Do not want to call into nextFunc in the middle of (if)
+    compConsequence <- wrap symConsequence nextFunc =<<
+      compileExpr 
+        env conseq symConsequence 
+        nextFunc -- pick up at nextFunc after consequence
+    compAlternate <- wrap symAlternate nextFunc =<<
+      compileExpr 
+        env alt symAlternate 
+        nextFunc -- or... pick up at nextFunc after alternate
     -- Special case because we need to check the predicate's value
+-- FUTURE: could call a runtime function to do this, and save some code ??
     compCheckPredicate <- return $ AstFunction symCheckPredicate " env cont result _ " [
        AstValue $ "  case result of ",
        AstValue $ "    Bool False -> " ++ symAlternate ++ " env cont (Nil \"\") (Just []) ",
@@ -372,6 +392,12 @@ compile env ast@(List [Atom "if", predic, conseq, alt]) copts = do
     -- Join compiled code together
     return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ 
               compConsequence ++ compAlternate)
+ where 
+  wrap thisF nextF es = do
+   case es of
+    [val@(AstValue _)] -> compileScalar' val $ CompileOptions thisF False False nextF
+    [val@(AstRef _)] -> compileScalar' val $ CompileOptions thisF False False nextF
+    _ -> return es
 
 compile env ast@(List [Atom "set!", Atom var, form]) copts@(CompileOptions {}) = do
   compileSpecialFormBody env ast copts (\ _ -> do
@@ -386,6 +412,10 @@ compile env ast@(List [Atom "set!", Atom var, form]) copts@(CompileOptions {}) =
       [(AstValue val)] -> do
         return [createAstFunc copts [
             AstValue $ "  result <- setVar env \"" ++ var ++ "\" $ " ++ val,
+            createAstCont copts "result" ""]]
+      [(AstRef val)] -> do
+        return [createAstFunc copts [
+            AstValue $ "  result <- setVar env \"" ++ var ++ "\" << " ++ val,
             createAstCont copts "result" ""]]
       _ -> do
         entryPt <- compileSpecialFormEntryPoint "set!" symDefine copts
@@ -430,6 +460,10 @@ compile env ast@(List [Atom "define", Atom var, form]) copts@(CompileOptions {})
       [(AstValue val)] -> do
         return [createAstFunc copts [
             AstValue $ "  result <- defineVar env \"" ++ var ++ "\" $ " ++ val,
+            createAstCont copts "result" ""]]
+      [(AstRef val)] -> do
+        return [createAstFunc copts [
+            AstValue $ "  result <- defineVar env \"" ++ var ++ "\" << " ++ val,
             createAstCont copts "result" ""]]
       _ -> do
         f <- return $ [
@@ -1144,6 +1178,11 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
         [(AstValue val)] -> do
           return $ [createAstFunc 
                     (CompileOptions coptsThis False False Nothing) [
+                     AstValue $ "  let var = " ++ val,
+                     AstValue $ "  " ++ nextFunc ++ " env cont var Nothing"]] ++ rest
+        [(AstRef val)] -> do
+          return $ [createAstFunc 
+                    (CompileOptions coptsThis False False Nothing) [
                      AstValue $ "  var <- " ++ val,
                      AstValue $ "  " ++ nextFunc ++ " env cont var Nothing"]] ++ rest
         _ -> do
@@ -1203,6 +1242,11 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
         [(AstValue val)] -> do
           return $ [createAstFunc 
                     (CompileOptions coptsThis False False Nothing) [
+                     AstValue $ "  let var = " ++ val,
+                     AstValue $ "  " ++ wrapperFunc ++ " env cont var Nothing"]] ++ rest
+        [(AstRef val)] -> do
+          return $ [createAstFunc 
+                    (CompileOptions coptsThis False False Nothing) [
                      AstValue $ "  var <- " ++ val,
                      AstValue $ "  " ++ wrapperFunc ++ " env cont var Nothing"]] ++ rest
         _ -> do
@@ -1250,9 +1294,16 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
         case _comp of
             [(AstValue val)] -> do
               c <- do
-                   let nextCont' = case (lastArg, coptsNext) of
-                                       (True, Just fnextExpr) -> "(makeCPSWArgs env cont " ++ fnextExpr ++ " [])"
-                                       _ -> "cont"
+                   let literalArgs = asts2Str asLiterals
+                   let argsCode = case thisFuncUseValue of
+                                    True -> " $ args ++ [value] ++ " ++ literalArgs ++ ") " 
+                                    False -> " $ args ++ " ++ literalArgs ++ ") "
+
+                   return [AstValue $ "  let var = " ++ val,
+                           AstValue $ "  " ++ nextFunc ++ " env cont var (Just " ++ argsCode]
+              return $ [AstFunction thisFunc fargs (fnc ++ c)] ++ rest
+            [(AstRef val)] -> do
+              c <- do
                    let literalArgs = asts2Str asLiterals
                    let argsCode = case thisFuncUseValue of
                                     True -> " $ args ++ [value] ++ " ++ literalArgs ++ ") " 
@@ -1260,7 +1311,6 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
 
                    return [AstValue $ "  var <- " ++ val,
                            AstValue $ "  " ++ nextFunc ++ " env cont var (Just " ++ argsCode]
-
               return $ [AstFunction thisFunc fargs (fnc ++ c)] ++ rest
             _ -> do
               c <- do
@@ -1337,3 +1387,10 @@ compileInlineVar env a hsName = do
  case isDefined of
    True -> return $ AstValue $ "  " ++ hsName ++ " <- getRTVar env \"" ++ a ++ "\""
    False -> throwError $ UnboundVar "Variable is not defined" a
+
+-- Helper function to determine if a value/ref was received
+isSingleValue :: [HaskAST] -> Bool
+isSingleValue [(AstValue _)] = True
+isSingleValue [(AstRef _)] = True
+isSingleValue _ = False
+
