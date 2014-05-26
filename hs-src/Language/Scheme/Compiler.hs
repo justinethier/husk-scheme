@@ -367,15 +367,15 @@ compile env ast@(List [Atom "if", predic, conseq, alt]) copts = do
                             " env (makeCPSWArgs env cont " ++ symCheckPredicate ++ " []) " ++ 
                             " (Nil \"\") (Just []) "]
     -- Compile expression for if's args
-    compPredicate <- wrap symPredicate Nothing =<<
+    compPredicate <- wrapObject symPredicate Nothing =<<
       compileExpr 
         env predic symPredicate 
         Nothing -- Do not want to call into nextFunc in the middle of (if)
-    compConsequence <- wrap symConsequence nextFunc =<<
+    compConsequence <- wrapObject symConsequence nextFunc =<<
       compileExpr 
         env conseq symConsequence 
         nextFunc -- pick up at nextFunc after consequence
-    compAlternate <- wrap symAlternate nextFunc =<<
+    compAlternate <- wrapObject symAlternate nextFunc =<<
       compileExpr 
         env alt symAlternate 
         nextFunc -- or... pick up at nextFunc after alternate
@@ -389,12 +389,6 @@ compile env ast@(List [Atom "if", predic, conseq, alt]) copts = do
     -- Join compiled code together
     return $ [createAstFunc copts f] ++ compPredicate ++ [compCheckPredicate] ++ 
               compConsequence ++ compAlternate)
- where 
-  wrap thisF nextF es = do
-   case es of
-    [val@(AstValue _)] -> compileScalar' val $ CompileOptions thisF False False nextF
-    [val@(AstRef _)] -> compileScalar' val $ CompileOptions thisF False False nextF
-    _ -> return es
 
 compile env ast@(List [Atom "set!", Atom var, form]) copts@(CompileOptions {}) = do
   compileSpecialFormBody env ast copts (\ _ -> do
@@ -588,11 +582,13 @@ compile env ast@(List [Atom "string-set!", Atom var, i, character]) copts = do
     Atom symCompiledI <- _gensym "stringI"
    
     entryPt <- compileSpecialFormEntryPoint "string-set!" symChr copts
-    compChr <- compileExpr env character symChr $ Just symDefine
+    compChr <- wrapObject symChr (Just symDefine) =<<
+        compileExpr env character symChr (Just symDefine)
     compDefine <- return $ AstFunction symDefine " env cont chr _ " [
         AstValue $ "  " ++ symCompiledI ++ " env (makeCPSWArgs env cont " ++ 
           symMakeDefine ++ " [chr]) (Nil \"\") (Just []) " ]
-    compI <- compileExpr env i symCompiledI Nothing
+    compI <- wrapObject symCompiledI Nothing =<<
+        compileExpr env i symCompiledI Nothing
     compMakeDefine <- return $ AstFunction symMakeDefine " env cont idx (Just [chr]) " [
        AstValue $ "  tmp <- getVar env \"" ++ var ++ "\"",
        AstValue $ "  derefValue <- recDerefPtrs tmp",
@@ -634,7 +630,8 @@ compile env ast@(List [Atom "set-car!", Atom var, argObj]) copts = do
        AstValue $ "  " ++ symObj ++ " env cont derefValue (Just []) "]
    
     -- Compiled version of argObj
-    compiledObj <- compileExpr env argObj symCompiledObj Nothing 
+    compiledObj <- wrapObject symCompiledObj Nothing =<<
+        compileExpr env argObj symCompiledObj Nothing 
    
     -- Function to check looked-up var and call into appropriate handlers; 
     -- based on code from Core
@@ -696,7 +693,8 @@ compile env ast@(List [Atom "set-cdr!", Atom var, argObj]) copts = do
        AstValue $ "  " ++ symObj ++ " env cont derefValue (Just []) "]
    
     -- Compiled version of argObj
-    compiledObj <- compileExpr env argObj symCompiledObj Nothing 
+    compiledObj <- wrapObject symCompiledObj Nothing =<<
+        compileExpr env argObj symCompiledObj Nothing 
    
     -- Function to check looked-up var and call into appropriate handlers; based on code from Core
     --
@@ -753,10 +751,12 @@ compile env ast@(List [Atom "list-set!", Atom var, i, object]) copts = do
     -- Entry point that allows this form to be redefined
     entryPt <- compileSpecialFormEntryPoint "list-set!" symCompiledIdx copts
     -- Compile index, then use a wrapper to pass it as an arg while compiling obj
-    compiledIdx <- compileExpr env i symCompiledIdx (Just symIdxWrapper) 
+    compiledIdx <- wrapObject symCompiledIdx (Just symIdxWrapper) =<<
+        compileExpr env i symCompiledIdx (Just symIdxWrapper) 
     compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
        AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") (Just []) " ]
-    compiledObj <- compileExpr env object symCompiledObj Nothing
+    compiledObj <- wrapObject symCompiledObj Nothing =<<
+        compileExpr env object symCompiledObj Nothing
     -- Do actual update
     compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
        AstValue $ "  vec <- getVar env \"" ++ var ++ "\"",
@@ -786,10 +786,12 @@ compile env ast@(List [Atom "vector-set!", Atom var, i, object]) copts = do
     -- Entry point that allows this form to be redefined
     entryPt <- compileSpecialFormEntryPoint "vector-set!" symCompiledIdx copts
     -- Compile index, then use a wrapper to pass it as an arg while compiling obj
-    compiledIdx <- compileExpr env i symCompiledIdx (Just symIdxWrapper) 
+    compiledIdx <- wrapObject symCompiledIdx (Just symIdxWrapper) =<<
+        compileExpr env i symCompiledIdx (Just symIdxWrapper) 
     compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
        AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") (Just []) " ]
-    compiledObj <- compileExpr env object symCompiledObj Nothing
+    compiledObj <- wrapObject symCompiledObj Nothing =<<
+        compileExpr env object symCompiledObj Nothing
     -- Do actual update
     compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
        AstValue $ "  vec <- getVar env \"" ++ var ++ "\"",
@@ -820,10 +822,12 @@ compile env ast@(List [Atom "bytevector-u8-set!", Atom var, i, object]) copts = 
     -- Entry point that allows this form to be redefined
     entryPt <- compileSpecialFormEntryPoint "bytevector-u8-set!" symCompiledIdx copts
     -- Compile index, then use a wrapper to pass it as an arg while compiling obj
-    compiledIdx <- compileExpr env i symCompiledIdx (Just symIdxWrapper) 
+    compiledIdx <- wrapObject symCompiledIdx (Just symIdxWrapper) =<<
+        compileExpr env i symCompiledIdx (Just symIdxWrapper) 
     compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
        AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") (Just []) " ]
-    compiledObj <- compileExpr env object symCompiledObj Nothing
+    compiledObj <- wrapObject symCompiledObj Nothing =<<
+        compileExpr env object symCompiledObj Nothing
     -- Do actual update
     compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [idx]) " [
        AstValue $ "  vec <- getVar env \"" ++ var ++ "\"",
@@ -853,10 +857,12 @@ compile env ast@(List [Atom "hash-table-set!", Atom var, rkey, rvalue]) copts = 
     -- Entry point that allows this form to be redefined
     entryPt <- compileSpecialFormEntryPoint "hash-table-set!" symCompiledIdx copts
     -- Compile index, then use a wrapper to pass it as an arg while compiling obj
-    compiledIdx <- compileExpr env rkey symCompiledIdx (Just symIdxWrapper) 
+    compiledIdx <- wrapObject symCompiledIdx (Just symIdxWrapper) =<<
+       compileExpr env rkey symCompiledIdx (Just symIdxWrapper) 
     compiledIdxWrapper <- return $ AstFunction symIdxWrapper " env cont idx _ " [
        AstValue $ "  " ++ symCompiledObj ++ " env (makeCPSWArgs env cont " ++ symUpdateVec ++ " [idx]) (Nil \"\") (Just []) " ]
-    compiledObj <- compileExpr env rvalue symCompiledObj Nothing
+    compiledObj <- wrapObject symCompiledObj Nothing =<<
+       compileExpr env rvalue symCompiledObj Nothing
     -- Do actual update
     compiledUpdate <- return $ AstFunction symUpdateVec " env cont obj (Just [rkey]) " [
        -- TODO: this should be more robust, than just assuming ht is a HashTable
@@ -886,7 +892,8 @@ compile env ast@(List [Atom "hash-table-delete!", Atom var, rkey]) copts = do
     -- Entry point that allows this form to be redefined
     entryPt <- compileSpecialFormEntryPoint "hash-table-delete!" symCompiledIdx copts
     -- Compile index, then use a wrapper to pass it as an arg while compiling obj
-    compiledIdx <- compileExpr env rkey symCompiledIdx (Just symDoDelete) 
+    compiledIdx <- wrapObject symCompiledIdx (Just symDoDelete) =<<
+       compileExpr env rkey symCompiledIdx (Just symDoDelete) 
     -- Do actual update
     compiledUpdate <- return $ AstFunction symDoDelete " env cont rkey _ " [
        -- TODO: this should be more robust, than just assuming ht is a HashTable
@@ -931,8 +938,9 @@ compile env args@(List [Atom "load", filename, envSpec]) copts = do
  compileFile filename' = do
   Atom symEnv <- _gensym "loadEnv"
   Atom symLoad <- _gensym "load"
-  compEnv <- compileExpr env envSpec symEnv
-                         Nothing -- Return env to our custom func
+  compEnv <- wrapObject symEnv Nothing =<<
+    compileExpr env envSpec symEnv
+                            Nothing -- Return env to our custom func
 
   -- WORKAROUND #1
   -- Special case to support require-extension
@@ -1390,4 +1398,10 @@ isSingleValue :: [HaskAST] -> Bool
 isSingleValue [(AstValue _)] = True
 isSingleValue [(AstRef _)] = True
 isSingleValue _ = False
+
+wrapObject thisF nextF es = do
+ case es of
+  [val@(AstValue _)] -> compileScalar' val $ CompileOptions thisF False False nextF
+  [val@(AstRef _)] -> compileScalar' val $ CompileOptions thisF False False nextF
+  _ -> return es
 
