@@ -6,4 +6,6 @@ x
 ;(write x)
 (write
     ((lambda (x) x) 'from-lambda))
+(write
+    ((lambda (x) x) 1))
 x
