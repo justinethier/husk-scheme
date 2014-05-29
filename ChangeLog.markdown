@@ -1,9 +1,12 @@
 v3.17.1
 --------
 
-- Improved passing of extra arguments within the interpreter (TODO: a bit vague? may want to check changes here)
 - Reduced size of compiled code by ??? % (TODO: get more information here, also can more improvements be made?)
 - Added `call-with-port` from R<sup>7</sup>RS.
+
+Refactoring:
+
+- Improved passing of extra arguments within the interpreter by removing the `extraReturnArgs` parameter from `Continuation` and adding it as an extra parameter to the `continueEval` function. That way a new `Continuation` object does not need to be created each time the function is called.
 
 Bug Fixes:
 
