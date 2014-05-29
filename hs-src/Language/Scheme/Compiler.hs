@@ -1296,38 +1296,28 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
         rest <- case lastArg of
                      True -> return [] -- Using apply wrapper, so no more code
                      _ -> compileArgs nextFunc True Nothing asRest -- True indicates nextFunc needs to use value arg passed into it
+        let nextCont' = case (lastArg, coptsNext) of
+                            (True, Just fnextExpr) -> "(makeCPSWArgs env cont " ++ fnextExpr ++ " [])"
+                            _ -> "cont"
+        let literalArgs = asts2Str asLiterals
+        let argsCode = case thisFuncUseValue of
+                         True -> " $ args ++ [value] ++ " ++ literalArgs ++ ") " 
+                         False -> " $ args ++ " ++ literalArgs ++ ") "
+
         _comp <- mcompile env a $ CompileOptions stubFunc thisFuncUseValue False Nothing
         case _comp of
             [(AstValue val)] -> do
               c <- do
-                   let literalArgs = asts2Str asLiterals
-                   let argsCode = case thisFuncUseValue of
-                                    True -> " $ args ++ [value] ++ " ++ literalArgs ++ ") " 
-                                    False -> " $ args ++ " ++ literalArgs ++ ") "
-
                    return [AstValue $ "  let var = " ++ val,
-                           AstValue $ "  " ++ nextFunc ++ " env cont var (Just " ++ argsCode]
+                           AstValue $ "  " ++ nextFunc ++ " env " ++ nextCont' ++ " var (Just " ++ argsCode]
               return $ [AstFunction thisFunc fargs (fnc ++ c)] ++ rest
             [(AstRef val)] -> do
               c <- do
-                   let literalArgs = asts2Str asLiterals
-                   let argsCode = case thisFuncUseValue of
-                                    True -> " $ args ++ [value] ++ " ++ literalArgs ++ ") " 
-                                    False -> " $ args ++ " ++ literalArgs ++ ") "
-
                    return [AstValue $ "  var <- " ++ val,
-                           AstValue $ "  " ++ nextFunc ++ " env cont var (Just " ++ argsCode]
+                           AstValue $ "  " ++ nextFunc ++ " env " ++ nextCont' ++ " var (Just " ++ argsCode]
               return $ [AstFunction thisFunc fargs (fnc ++ c)] ++ rest
             _ -> do
               c <- do
-                   let nextCont' = case (lastArg, coptsNext) of
-                                       (True, Just fnextExpr) -> "(makeCPSWArgs env cont " ++ fnextExpr ++ " [])"
-                                       _ -> "cont"
-                   let literalArgs = asts2Str asLiterals
-                   let argsCode = case thisFuncUseValue of
-                                    True -> " $ args ++ [value] ++ " ++ literalArgs ++ ") " 
-                                    False -> " $ args ++ " ++ literalArgs ++ ") "
-
                    if thisFuncUseValue
                       then return $ AstValue $ "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env " ++ nextCont' ++ " " ++
                                                nextFunc ++ argsCode ++ stubFunc ++ " []) (Nil \"\") "  
