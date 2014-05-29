@@ -314,7 +314,6 @@ continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) dynWind
               -- Pass extra args along if last expression of a function, to support (call-with-values)
               continueEval nEnv cCont val extraArgs 
             _ -> return val
-        [lv] -> eval cEnv (Continuation cEnv (Just (SchemeBody [])) (Just cCont) dynWind) lv
         (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) dynWind) lv
 
 -- No current continuation, but a next cont is available; call into it
