@@ -58,11 +58,8 @@ import Language.Scheme.Primitives
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
-import Data.Complex
 import qualified Data.List
 import Data.Maybe (fromMaybe)
-import Data.Ratio
-import Debug.Trace
 
 -- |Perform one-time initialization of the compiler's environment
 initializeCompiler :: Env -> IOThrowsError [HaskAST]
@@ -143,6 +140,8 @@ _compileBlock symThisFunc symLastFunc env result (c:cs) = do
     compiled
 _compileBlock _ _ _ result [] = return result
 
+_compileBlockDo :: ([HaskAST] -> IOThrowsError [HaskAST]) -> 
+                   [HaskAST] -> [HaskAST] -> IOThrowsError [HaskAST]
 _compileBlockDo fnc result c =
   case c of
     -- Discard a value by itself
@@ -164,6 +163,7 @@ compileScalar' val copts = do
   let fCode = case val of
           AstValue v -> AstValue $ "  let x1 = " ++ v 
           AstRef r -> AstValue $ "  x1 <- " ++ r
+          _ -> AstValue $ "Unexpected compiler error in compileScalar' "
   -- TODO: _
   f <- return $ fCode
   c <- return $ createAstCont copts "x1" ""
@@ -1230,8 +1230,8 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
       AstFunction wrapperFunc " env cont value _ " [
           AstValue $ "  " ++ nextFunc ++ " env cont " ++ 
                      " (Nil \"\") (Just [value]) "]
-    rest <- case (trace ("func' = " ++ (show func') ++ ", fparams = " ++ (show fparams)) fparams) of
-    --rest <- case fparams of
+    --rest <- case (trace ("func' = " ++ (show func') ++ ", fparams = " ++ (show fparams)) fparams) of
+    rest <- case fparams of
               [] -> do
                 return [AstFunction 
                           nextFunc 
@@ -1317,13 +1317,10 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                            AstValue $ "  " ++ nextFunc ++ " env " ++ nextCont' ++ " var (Just " ++ argsCode]
               return $ [AstFunction thisFunc fargs (fnc ++ c)] ++ rest
             _ -> do
-              c <- do
-                   if thisFuncUseValue
-                      then return $ AstValue $ "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env " ++ nextCont' ++ " " ++
-                                               nextFunc ++ argsCode ++ stubFunc ++ " []) (Nil \"\") "  
-                      else return $ AstValue $ "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env " ++ nextCont' ++ " " ++
-                                               nextFunc ++ argsCode ++ stubFunc ++ " []) $ Nil\"\""  
-
+              let c = AstValue $ 
+                        "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env " ++ 
+                        nextCont' ++ " " ++ nextFunc ++ argsCode ++ stubFunc ++ 
+                        " []) $ Nil\"\""  
               return $ [AstFunction thisFunc fargs (fnc ++ [c])] ++ _comp ++ rest
 
       _ -> throwError $ TypeMismatch "nonempty list" $ List args
@@ -1390,6 +1387,8 @@ isSingleValue [(AstValue _)] = True
 isSingleValue [(AstRef _)] = True
 isSingleValue _ = False
 
+wrapObject :: String
+              -> Maybe String -> [HaskAST] -> IOThrowsError [HaskAST]
 wrapObject thisF nextF es = do
  case es of
   [val@(AstValue _)] -> compileScalar' val $ CompileOptions thisF False False nextF
