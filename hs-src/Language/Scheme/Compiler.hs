@@ -1317,10 +1317,13 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                            AstValue $ "  " ++ nextFunc ++ " env " ++ nextCont' ++ " var (Just " ++ argsCode]
               return $ [AstFunction thisFunc fargs (fnc ++ c)] ++ rest
             _ -> do
-              let c = AstValue $ 
-                        "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env " ++ 
-                        nextCont' ++ " " ++ nextFunc ++ argsCode ++ stubFunc ++ 
-                        " []) $ Nil\"\""  
+              let c = AstValue $
+                        "  continueEval' env (makeCPSWArgs env (makeCPSWArgs env " ++
+                        nextCont' ++ " " ++ nextFunc ++ argsCode ++ stubFunc ++
+                        " []) $ Nil\"\""
+-- TODO: not good enough, generated functions assume args come from continuation and not parameter
+--              let c = AstValue $ "  " ++ stubFunc ++ " env (makeCPS env " ++ nextCont' ++ " " ++ nextFunc ++ " ) " ++
+--                                 " (Nil \"\") (Just " ++ argsCode
               return $ [AstFunction thisFunc fargs (fnc ++ [c])] ++ _comp ++ rest
 
       _ -> throwError $ TypeMismatch "nonempty list" $ List args
