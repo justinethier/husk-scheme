@@ -6,7 +6,7 @@ v3.17.1
 Refactoring:
 
 - Improved passing of extra arguments within the interpreter by removing the `extraReturnArgs` parameter from `Continuation` and adding it as an extra parameter to the `continueEval` function. That way a new `Continuation` object does not need to be created each time the function is called.
-- Reduced size of compiled code by approximately `10%`.
+- Reduced size of compiled code by approximately 10%.
 
 Bug Fixes:
 
