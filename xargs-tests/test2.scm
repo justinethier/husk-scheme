@@ -1,6 +1,0 @@
-
-(define x 1)
-(define (test-func a b c)
-  (list a x b c))
-
-(eval '(write (test-func 1 2 3)))
