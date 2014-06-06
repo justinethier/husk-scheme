@@ -44,7 +44,7 @@ The online [user manual](http://justinethier.github.io/husk-scheme/manual/index.
 
 **Directory Structure**
 
- - **`docs`** - Documentation has been moved from here to the [`gh-pages` branch](http://justinethier.github.io/husk-scheme/).
+ - **`docs`** - Documentation has been moved from here to the [`gh-pages`](http://justinethier.github.io/husk-scheme/) branch.
  - [**`examples`**](https://github.com/justinethier/husk-scheme/tree/master/examples) - Example programs, mostly written in Scheme.
  - [**`extensions`**](https://github.com/justinethier/husk-scheme/tree/master/extensions) - Haskell-based extensions to Husk.
  - [**`hs-src`**](https://github.com/justinethier/husk-scheme/tree/master/hs-src) - Haskell source code for Husk.
