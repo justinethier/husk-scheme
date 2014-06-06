@@ -45,12 +45,12 @@ The online [user manual](http://justinethier.github.io/husk-scheme/manual/index.
 **Directory Structure**
 
  - **`docs`** - Documentation has been moved from here to the [`gh-pages` branch](http://justinethier.github.io/husk-scheme/).
- - **`examples`** - Example programs, mostly written in Scheme.
- - **`extensions`** - Haskell-based extensions to Husk.
- - **`hs-src`** - Haskell source code for Husk.
- - **`lib`** - Library portions of Husk written in Scheme.
- - **`scripts`** - Build scripts for Husk and a basic Emacs integration script.
- - **`tests`** - Functional tests for Husk. These can be run automatically by using `make test` from the main Husk directory.
+ - [**`examples`**](https://github.com/justinethier/husk-scheme/tree/master/examples) - Example programs, mostly written in Scheme.
+ - [**`extensions`**](https://github.com/justinethier/husk-scheme/tree/master/extensions) - Haskell-based extensions to Husk.
+ - [**`hs-src`**](https://github.com/justinethier/husk-scheme/tree/master/hs-src) - Haskell source code for Husk.
+ - [**`lib`**](https://github.com/justinethier/husk-scheme/tree/master/lib) - Library portions of Husk written in Scheme.
+ - [**`scripts`**](https://github.com/justinethier/husk-scheme/tree/master/scripts) - Build scripts for Husk and a basic Emacs integration script.
+ - [**`tests`**](https://github.com/justinethier/husk-scheme/tree/master/tests) - Functional tests for Husk. These can be run automatically by using `make test` from the main Husk directory.
 
 
 License
