@@ -1502,7 +1502,12 @@ stringToList [String s, Number start, Number end] =
 stringToList [badType] = throwError $ TypeMismatch "string" badType
 stringToList badArgList = throwError $ NumArgs (Just 1) badArgList
 
+-- |Utility function to trim from the start of a list
+trimStart :: Integer -> [a] -> [a]
 trimStart start = drop (fromInteger start)
+
+-- |Utility function to trim from start/end of a list
+trimStartEnd :: Integer -> Integer -> [a] -> [a]
 trimStartEnd start end ls = 
   take (fromInteger $ end - start) $ drop (fromInteger start) ls
 
@@ -1541,6 +1546,7 @@ stringToVector args = do
 --   * Vector
 --
 --   Returns: String
+vectorToString :: [LispVal] -> IOThrowsError LispVal
 vectorToString (p@(Pointer _ _) : ps) = do
     p' <- derefPtr p
     vectorToString (p' : ps)
