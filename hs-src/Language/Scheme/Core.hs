@@ -1161,9 +1161,9 @@ r7rsTimeEnv = do
 {- These functions have access to the current environment via the
 current continuation, which is passed as the first LispVal argument. -}
 --
-evalfuncExitSuccess, evalfuncExitFail, evalfuncApply, evalfuncDynamicWind, 
+evalfuncExitSuccess, evalfuncExitFail, evalfuncApply, evalfuncDynamicWind,
   evalfuncEval, evalfuncLoad, evalfuncCallCC, evalfuncCallWValues,
-  evalfuncMakeEnv, evalfuncNullEnv, evalfuncUseParentEnv,
+  evalfuncMakeEnv, evalfuncNullEnv, evalfuncUseParentEnv, evalfuncExit,
   evalfuncInteractionEnv, evalfuncImport :: [LispVal] -> IOThrowsError LispVal
 
 {-
@@ -1200,6 +1200,24 @@ evalfuncDynamicWind [cont@(Continuation env _ _ _), beforeFunc, thunkFunc, after
     apply (makeCPS env c cpsRetVals) afterFunc [] -- FUTURE: remove dynamicWinder from above from the list before calling after
 evalfuncDynamicWind (_ : args) = throwError $ NumArgs (Just 3) args -- Skip over continuation argument
 evalfuncDynamicWind _ = throwError $ NumArgs (Just 3) []
+
+
+evalfuncExit args@[cont] = do
+  chain cont
+  evalfuncExitSuccess args
+ where
+  chain c@(Continuation _ _ cn _) = do
+    case cn of
+      (Just c'@(Continuation {})) -> do
+        after c
+        chain c'
+      _ -> after c
+  after (Continuation e _ _ (Just dynamicWinders)) = do
+   mapM (\ (DynamicWinders _ afterFunc) -> 
+          apply (makeNullContinuation e) afterFunc []) 
+       dynamicWinders
+  after _ = return $ []
+-- TODO: arg, error handling
 
 evalfuncCallWValues [cont@(Continuation env _ _ _), producer, consumer] = do
   apply (makeCPS env cont cpsEval) producer [] -- Call into prod to get values
@@ -1365,6 +1383,7 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("call-with-current-continuation", evalfuncCallCC)
                   , ("call-with-values", evalfuncCallWValues)
                   , ("dynamic-wind", evalfuncDynamicWind)
+-- TODO:                  , ("exit", evalfuncExit)
                   , ("eval", evalfuncEval)
                   , ("load", evalfuncLoad)
                   , ("null-environment", evalfuncNullEnv)
