@@ -1201,23 +1201,25 @@ evalfuncDynamicWind [cont@(Continuation env _ _ _), beforeFunc, thunkFunc, after
 evalfuncDynamicWind (_ : args) = throwError $ NumArgs (Just 3) args -- Skip over continuation argument
 evalfuncDynamicWind _ = throwError $ NumArgs (Just 3) []
 
-
-evalfuncExit args@[cont] = do
-  chain cont
-  evalfuncExitSuccess args
+evalfuncExit args@(cont : rest) = do
+  _ <- unchain cont
+  case rest of
+    [Bool False] -> evalfuncExitFail args
+    _ -> evalfuncExitSuccess args
  where
-  chain c@(Continuation _ _ cn _) = do
+  unchain c@(Continuation _ _ cn _) = do
     case cn of
       (Just c'@(Continuation {})) -> do
-        after c
-        chain c'
-      _ -> after c
-  after (Continuation e _ _ (Just dynamicWinders)) = do
-   mapM (\ (DynamicWinders _ afterFunc) -> 
-          apply (makeNullContinuation e) afterFunc []) 
-       dynamicWinders
-  after _ = return $ []
--- TODO: arg, error handling
+        _ <- execAfters c
+        unchain c'
+      _ -> execAfters c
+  unchain _ = return []
+  execAfters (Continuation e _ _ (Just dynamicWinders)) = do
+    mapM (\ (DynamicWinders _ afterFunc) -> 
+            apply (makeNullContinuation e) afterFunc []) 
+         dynamicWinders
+  execAfters _ = return []
+evalfuncExit args = throwError $ InternalError $ "Invalid arguments to exit: " ++ show args
 
 evalfuncCallWValues [cont@(Continuation env _ _ _), producer, consumer] = do
   apply (makeCPS env cont cpsEval) producer [] -- Call into prod to get values
