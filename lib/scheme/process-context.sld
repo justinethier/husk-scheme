@@ -9,11 +9,12 @@
 
 (define-library (scheme process-context)
     (export 
+         exit
+         exit-fail
+         exit-success
          emergency-exit
          get-environment-variable
          get-environment-variables
-         exit-fail
-         exit-success
          system)
     (import (scheme))
     (begin
