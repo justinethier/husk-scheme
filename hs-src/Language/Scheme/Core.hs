@@ -1201,6 +1201,7 @@ evalfuncDynamicWind [cont@(Continuation env _ _ _), beforeFunc, thunkFunc, after
 evalfuncDynamicWind (_ : args) = throwError $ NumArgs (Just 3) args -- Skip over continuation argument
 evalfuncDynamicWind _ = throwError $ NumArgs (Just 3) []
 
+-- |Evaluate all outstanding dynamic wind 'after' procedures, and exit program
 evalfuncExit args@(cont : rest) = do
   _ <- unchain cont
   case rest of
