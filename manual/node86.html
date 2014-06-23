@@ -106,7 +106,7 @@ strings.  The first string corresponds to the command name, and is
 implementation-dependent.  It is an error to mutate any of these strings.
 </div>
 </p>
-
+-->
 <P>
 <div id="exit" class="obj-box">
   <div class="obj-header">
@@ -122,14 +122,10 @@ implementation-dependent.  It is an error to mutate any of these strings.
   </div>
 Runs all outstanding dynamic-wind <I>after</I> procedures, terminates the
 running program, and communicates an exit value to the operating system.
-If no argument is supplied, or if <I>obj</I> is <code>#t</code>, the <code>exit</code> procedure should communicate to the operating system that the
-program exited normally.  If <I>obj</I> is <code>#f</code>, the <code>exit</code>
-procedure should communicate to the operating system that the program
-exited abnormally.  Otherwise, <code>exit</code> should translate <I>obj</I> into
-an appropriate exit value for the operating system, if possible.
+If no argument is supplied, or if <I>obj</I> is <code>#t</code>, the <code>exit</code> procedure communicates to the operating system that the program exited normally.  If <I>obj</I> is <code>#f</code>, the <code>exit</code>
+procedure communicates to the operating system that the program exited abnormally.
 <P>
-The <code>exit</code> procedure
-must not signal an exception or return to its continuation.
+The <code>exit</code> procedure must not signal an exception or return to its continuation.
 </P>
 <P>
 <EM>Note:</EM> Because of the requirement to run handlers, this procedure is not just the
@@ -137,7 +133,7 @@ operating system's exit procedure.
 </p>
 </div>
 </p>
--->
+
 <P>
 <div id="emergency-exit" class="obj-box">
   <div class="obj-header">
