@@ -1,3 +1,8 @@
+v3.18
+--------
+
+- Added `exit` from R<sup>7</sup>RS.
+
 v3.17.1
 --------
 
