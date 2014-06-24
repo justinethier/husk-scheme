@@ -70,7 +70,7 @@
           (foo (syntax-rules (r ...)
                  ((_ r) (bar))
                  ...
-                 ((_ x) (begin (%duplicate-check r ...))))))
+                 ((_ x) (%duplicate-check r ...)))))
                  ;JAE - broken in husk (non-standard?): ((_ x) (syntax-rules () ((_) (%duplicate-check r ...)))))))
        (foo p)))))
 
