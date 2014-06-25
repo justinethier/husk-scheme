@@ -1,6 +1,6 @@
 (define-library (pattern-match-lambda)
-;TODO: should work in husk  (export pattern-match-lambda)
-  (export-all) ; pattern-match-lambda)
+  (export pattern-match-lambda)
+  ;(export-all) ; pattern-match-lambda)
   (import (scheme base))
 (begin
 
