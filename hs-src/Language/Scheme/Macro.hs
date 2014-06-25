@@ -893,7 +893,10 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
 --        _ <- liftIO $ importEnv newEnv _defEnv -- But prefer this macro
 --
 --        macroTransform newEnv useEnv divertEnv renameEnv cleanupEnv 
-        macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv 
+--        macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv 
+
+-- Use defEnv from original macro, so any definitions are in scope for expansion
+        macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv 
                        definedInMacro (List identifiers) rules 
                        (List (Atom a : ts)) apply ellipsis
       Syntax Nothing _ definedInMacro ellipsis identifiers rules -> do 
