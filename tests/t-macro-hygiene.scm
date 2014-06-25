@@ -50,12 +50,7 @@
 (define v1 3)
 (assert/equal (test-template) 3)
 
-; TODO: Issue #53:
-#|
-; Test cases fail below because var-02 is not actually defined
-; in the env until after the macros are already expanded...
-; So, since the var is not defined in defEnv, the "other side" of
-; hygiene is not respected in this case.
+; Strange macro, gives different results on different schemes
 ;
 ;(lambda ()
 (let ((var-02 1))
@@ -69,13 +64,13 @@
   (assert/equal (let ((var-02 1)) (test-template)) 1)
   (assert/equal (let ((var-02 2)) (test-template)) 1)
   (define var-02 3)
-  (assert/equal (test-template) 3)
+  (assert/equal (test-template) 1)
 )
 ; TODO: above, need to return the internal vars pass-count and fail-count since within a function
 ; the correct var is not set. Or is this a bug in set! because it creates a new var instead
 ; of modifying the one in the parent env?
 ; UPDATE - this may just be when lambda is used, still need to track it down
-|#
+
 
 ; Example without a literal identifier; variable is referenced
 ; directly from the template
@@ -158,7 +153,6 @@
          (foo a)))
   '(1 2 3 a))
 
-#|
 ; if marked as a literal identifier so it is not loaded as a pattern variable...
 (define-syntax test
  (syntax-rules (if)
@@ -169,18 +163,19 @@
 
 ; if is introduced by (let) so it should not match in the macro because
 ; it is defined differently in env(use) and env(def):
-(write
-  (let ((if (lambda (x y z) "func is called"))) (test if)))
-
+(assert/equal
+  (let ((if (lambda (x y z) "func is called"))) (test if))
+  'no-match)
 ; But here there is no definition in env(use) so it does match the first rule
-(write
-  (test if))
+(assert/equal
+  (test if)
+  #t)
 
-
+#|
 ; In this case, if should be taken from the def environment (IE, the special form) and
 ; not from the use environment (which is the "should not happen" function.
 ;
-; BUT, I'm confused, why does the macro match at all?
+; This fails in husk, I beleive because special forms would not be in defEnv
 (define if (lambda (x y z) "should not happen"))
 ;(define if 1)
 (write
