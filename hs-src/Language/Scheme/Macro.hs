@@ -879,7 +879,23 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
          List lexpanded <- cleanExpanded defEnv useEnv divertEnv renameEnv renameEnv True False (List []) (List ts) apply
          macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : lexpanded)) apply ellipsis
       Syntax (Just _defEnv) _ definedInMacro ellipsis identifiers rules -> do 
-        macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts)) apply ellipsis
+
+        -- Experimenting with this workaround for 162. The problem is that it
+        -- substantially increases the time to run the test suite (only a couple
+        -- seconds but 50% longer). So for various reasons this is not a
+        -- preferred change. May want to look into ramifications of just using defEnv.
+        --
+        -- Hack to use defEnv from original macro, to preserve definitions in
+        -- that scope, instead of just using _defEnv. Not sure yet if this the
+        -- correct solution or if there a hygiene problem this hides.
+--        newEnv <- liftIO $ nullEnv
+--        _ <- liftIO $ importEnv newEnv defEnv -- Start with outer macro's def
+--        _ <- liftIO $ importEnv newEnv _defEnv -- But prefer this macro
+--
+--        macroTransform newEnv useEnv divertEnv renameEnv cleanupEnv 
+        macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv 
+                       definedInMacro (List identifiers) rules 
+                       (List (Atom a : ts)) apply ellipsis
       Syntax Nothing _ definedInMacro ellipsis identifiers rules -> do 
         -- A child renameEnv is not created because for a macro call there is no way an
         -- renamed identifier inserted by the macro could override one in the outer env.
