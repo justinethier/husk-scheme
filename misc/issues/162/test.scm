@@ -16,7 +16,7 @@
    ((0) 1)
    ((n) (* n (fact (- n 1))))))
 
-;(exam (fact 5) 120)
+(exam (fact 5) 120)
 
  (define example
    (pattern-match-lambda ()
@@ -27,10 +27,10 @@
  
 ;(write (expand (example 1 2 3)))
 
- (exam (example 1 2 3) '(case1 1 2 3))
- (exam (example 4 '(5 6)) '(case2 4 5 6))
- (exam (example '(7 8) 9) '(case3 7 8 9))
- (exam (example 10 11 12 13) 'case3)
+(exam (example 1 2 3) '(case1 1 2 3))
+(exam (example 4 '(5 6)) '(case2 4 5 6))
+(exam (example '(7 8) 9) '(case3 7 8 9))
+(exam (example 10 11 12 13) 'case3)
  
 (define example2
   (pattern-match-lambda (foo bar baz)
@@ -48,13 +48,13 @@
 
 ; TODO:
 ;; Underbar is placeholder
-;;(define example3
-;;  (pattern-match-lambda ()
-;;    ((_) 'arity1)
-;;    ((_ _) 'arity2)
-;;    ((_ _ _) 'arity3)))
-;;
-;;(exam (example3 1 1 1) 'arity3)
+(define example3
+  (pattern-match-lambda ()
+    ((_) 'arity1)
+    ((_ _) 'arity2)
+    ((_ _ _) 'arity3)))
+
+(exam (example3 1 1 1) 'arity3)
 
 ;; If underbar was specified as literal, underbar will match literal.
 (define example4
