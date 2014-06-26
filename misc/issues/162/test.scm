@@ -1,3 +1,5 @@
+
+;; TODO: add this and the pattern library to the husk unit-test suite
 (import (scheme base)
         (scheme write)
         (pattern-match-lambda))
