@@ -58,14 +58,22 @@
 
 (define-syntax duplicate-check
   (syntax-rules ()
+    ; Comment out this clause and husk works!
     ((_ (pvar ...) (literals ...) (p . r))
-     (if-identifier p
-       (if-literal p (literals ...)
-         (duplicate-check (pvar ...) (literals ...) r)
-         (if-placeholder p
-           (duplicate-check (pvar ...) (literals ...) r)
-           (duplicate-check (pvar ... p) (literals ...) r)))
-       (duplicate-check (pvar ...) (literals ...) r)))
+     (_if-identifier p
+       (_if-literal p (literals ...)
+         (_duplicate-check (pvar ...) (literals ...) r)
+         (_if-placeholder p
+           (_duplicate-check (pvar ...) (literals ...) r)
+           (_duplicate-check (pvar ... p) (literals ...) r)))
+       (_duplicate-check (pvar ...) (literals ...) r)))
+;     (if-identifier p
+;       (if-literal p (literals ...)
+;         (duplicate-check (pvar ...) (literals ...) r)
+;         (if-placeholder p
+;           (duplicate-check (pvar ...) (literals ...) r)
+;           (duplicate-check (pvar ... p) (literals ...) r)))
+;       (duplicate-check (pvar ...) (literals ...) r)))
     ((_ (pvar ...) (literals ...) ())
      (%duplicate-check pvar ...))
     ((_ (pvar ...) (literals ...) p)
@@ -76,7 +84,19 @@
            (duplicate-check (pvar ...) (literals ...) ())
            (duplicate-check (pvar ... p) (literals ...) ())))
        (duplicate-check (pvar ...) (literals ...) ())))))
+; TEST code:
+;    ((_ (pvar ...) (literals ...) ())
+;     (_%duplicate-check pvar ...))
+;    ((_ (pvar ...) (literals ...) p)
+;     (_if-identifier p
+;       (_if-literal p (literals ...)
+;         (_duplicate-check (pvar ...) (literals ...) ())
+;         (_if-placeholder p
+;           (_duplicate-check (pvar ...) (literals ...) ())
+;           (_duplicate-check (pvar ... p) (literals ...) ())))
+;       (_duplicate-check (pvar ...) (literals ...) ())))))
+
 ; Broken only in husk
 ((lambda () ((lambda () ((lambda () ((lambda () (duplicate-check (_) () (_))))))))))
 ; Broken in chibi and husk
-((lambda () ((lambda () ((lambda () ((lambda () (duplicate-check (_ _) () ())))))))))
+;((lambda () ((lambda () ((lambda () ((lambda () (duplicate-check (_ _) () ())))))))))
