@@ -1,6 +1,6 @@
 (import (scheme base)
         (scheme write)
-        ;(husk pretty-print)
+        (husk pretty-print)
         (pattern-match-lambda))
 
 ;(define-syntax exam
@@ -77,34 +77,77 @@
 ;      ((_ _) 'arity2)
 ;      ((_ _ _) 'arity3)))))))
 
-((lambda lst
-  ((lambda (alt-thunk17781784)
-     ((lambda ()
-        ;(%husk-switch-to-parent-environment)
-        ((lambda ()
-           ((lambda ()
-              ((lambda () ((lambda () ((lambda () #f))))))))))
-        ((lambda (temp18201827)
-           (if (pair? temp18201827)
-             ((lambda ()
-                ((lambda ()
-                   ((lambda ()
-                      ((lambda ()
-                         ((lambda (_184218611871)
-                            (if (null? (cdr temp18201827))
-                              'arity1
-                              (alt-thunk17781784)))
-                          (car temp18201827))))))))))
-             (alt-thunk17781784)))
-         lst))))
-   (lambda ()
-     (if-match
-       ()
-       (_ _)
-       lst
-       'arity2
-       (%pattern-match-lambda () lst ((_ _ _) 'arity3)))))))
+;(write (pretty-print (expand
+;((lambda lst
+;  ((lambda (alt-thunk17781784)
+;     ((lambda ()
+;        ;(%husk-switch-to-parent-environment)
+;        ((lambda ()
+;           ((lambda ()
+;              ((lambda () ((lambda () ((lambda () #f))))))))))
+;        ((lambda (temp18201827)
+;           (if (pair? temp18201827)
+;             ((lambda ()
+;                ((lambda ()
+;                   ((lambda ()
+;                      ((lambda ()
+;                         ((lambda (_184218611871)
+;                            (if (null? (cdr temp18201827))
+;                              'arity1
+;                              (alt-thunk17781784)))
+;                          (car temp18201827))))))))))
+;             (alt-thunk17781784)))
+;         lst))))
+;   (lambda ()
+;     (if-match
+;       ()
+;       (_ _)
+;       lst
+;       'arity2
+;       (%pattern-match-lambda () lst ((_ _ _) 'arity3)))))))
+;)))
 
+;((lambda lst
+;   ((lambda (alt-thunk177817841777)
+;      ((lambda ()
+;         ((lambda ()
+;            ((lambda ()
+;               ((lambda () ((lambda () ((lambda () #f))))))))))
+;         ((lambda (temp182018271778)
+;            (if (pair? temp182018271778)
+;              ((lambda ()
+;                 ((lambda ()
+;                    ((lambda ()
+;                       ((lambda ()
+;                          ((lambda (_1842186118711779)
+;                             (if (null? (cdr temp182018271778))
+;                               'arity1
+;                               (alt-thunk177817841777)))
+;                           (car temp182018271778))))))))))
+;              (alt-thunk177817841777)))
+;          lst))))
+;    (lambda ()
+;      ((lambda (alt-thunk17811787)
+;         ((lambda ()
+;            ;(%husk-switch-to-parent-environment)
+;            (_duplicate-check () () (_ _))
+;            (_%if-match
+;              ()
+;              (_ _)
+;              lst
+;              'arity2
+;              alt-thunk17811787))))
+;       (lambda ()
+;         (_if-match
+;           ()
+;           (_ _ _)
+;           lst
+;           'arity3
+;           (_%pattern-match-lambda () lst))))))))
+
+;((lambda () ((lambda () ((lambda () ((lambda () (duplicate-check (_) () (_))))))))))
+
+((lambda () ((lambda () ((lambda () ((lambda () (duplicate-check (_ _) () ())))))))))
 
 ;(exam (example3 1 1 1) 'arity3)
 ;
