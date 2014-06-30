@@ -1,6 +1,6 @@
 (define-library (libs pattern-match-lambda)
-  ;(export pattern-match-lambda)
-  (export-all) ; pattern-match-lambda)
+  (export pattern-match-lambda)
+  ;TODO: should not need this, but seems to break unit tests without it: (export-all) ; pattern-match-lambda)
   (import (scheme base))
 (begin
 
