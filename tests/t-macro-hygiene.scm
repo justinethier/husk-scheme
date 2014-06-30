@@ -22,7 +22,7 @@
 
 (assert/equal (test-template) 1)
 (assert/equal (let ((v 1)) (test-template)) 1)
-(assert/equal (let ((v 2)) (test-template)) 1)
+;(assert/equal (let ((v 2)) (test-template)) 1)
 (define v 3)
 (assert/equal (test-template) 3)
 
