@@ -492,7 +492,7 @@ checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellips
                         i' <- getOrigName renameEnv inpt
                         pl <- isLexicallyDefined outerEnv renameEnv pattern
                         il <- isLexicallyDefined outerEnv renameEnv inpt
-                        if (((pattern == inpt && doesIdentMatch) && (not isRenamed)) || 
+                        if (((p' == i' && doesIdentMatch) && (not isRenamed)) || 
                             -- Equal and neither have a lexical binding, per spec
                             (p' == i' && (not pl) && (not il)))
                            then return 1
