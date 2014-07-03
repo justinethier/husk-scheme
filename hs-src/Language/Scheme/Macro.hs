@@ -54,7 +54,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
--- import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -163,7 +163,7 @@ _macroEval env lisp@(List (Atom x : _)) apply = do
 
       -- Transform the input and then call macroEval again, 
       -- since a macro may be contained within...
-      expanded <- macroTransform defEnv env env renameEnv cleanupEnv 
+      expanded <- macroTransform [defEnv] env env renameEnv cleanupEnv 
                                  definedInMacro 
                                 (List identifiers) rules lisp apply
                                 ellipsis
@@ -189,7 +189,7 @@ _macroEval _ lisp _ = return lisp
  -  input - Code from the scheme application 
  -}
 macroTransform :: 
-     Env 
+     [Env]
   -> Env 
   -> Env 
   -> Env 
@@ -223,7 +223,7 @@ macroElementMatchesMany _ _ = False
 
 {- Given input, determine if that input matches any rules
 @return Transformed code, or Nil if no rules match -}
-matchRule :: Env -> Env -> Env -> Bool -> LispVal -> Env -> Env -> Env -> LispVal -> LispVal -> String -> IOThrowsError LispVal
+matchRule :: [Env] -> Env -> Env -> Bool -> LispVal -> Env -> Env -> Env -> LispVal -> LispVal -> String -> IOThrowsError LispVal
 matchRule defEnv outerEnv divertEnv dim identifiers localEnv renameEnv cleanupEnv (List [pattern, template]) (List inputVar) esym = do
    let is = tail inputVar
    let p = case pattern of
@@ -271,7 +271,7 @@ matchRule _ _ _ _ _ _ _ _ rule input _ = do
 
 {- loadLocal - Determine if pattern matches input, loading input into pattern variables as we go,
 in preparation for macro transformation. -}
-loadLocal :: Env -> Env -> Env -> Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> [(Bool, Bool)] -> String -> IOThrowsError LispVal
+loadLocal :: [Env] -> Env -> Env -> Env -> Env -> LispVal -> LispVal -> LispVal -> Int -> [Int] -> [(Bool, Bool)] -> String -> IOThrowsError LispVal
 loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers pattern input ellipsisLevel ellipsisIndex listFlags esym = do
   --case (trace ("loadLocal [" ++ (show pattern) ++ "] [" ++ (show input) ++ "] flags = " ++ (show listFlags) ++ " ...lvl = " ++ (show ellipsisLevel) ++ " ...indx = " ++ (show ellipsisIndex)) (pattern, input)) of
   case (pattern, input) of
@@ -366,7 +366,7 @@ loadLocal defEnv outerEnv divertEnv localEnv renameEnv identifiers pattern input
 -- This information is necessary for use during transformation, where the output may
 -- change depending upon the form of the input.
 --
-flagUnmatchedVars :: Env -> Env -> Env -> LispVal -> LispVal -> Bool -> String -> IOThrowsError LispVal 
+flagUnmatchedVars :: [Env] -> Env -> Env -> LispVal -> LispVal -> Bool -> String -> IOThrowsError LispVal 
 
 flagUnmatchedVars defEnv outerEnv localEnv identifiers (DottedList ps p) partOfImproperPattern esym = do
   flagUnmatchedVars defEnv outerEnv localEnv identifiers (List $ ps ++ [p]) partOfImproperPattern esym
@@ -392,7 +392,7 @@ flagUnmatchedVars _ _ _ _ _ _ _ = return $ Bool True
 --  Note that an atom may not be flagged in certain cases, for example if
 --  the var is lexically defined in the outer environment. This logic
 --  matches that in the pattern matching code.
-flagUnmatchedAtom :: Env -> Env -> Env -> LispVal -> String -> Bool -> IOThrowsError LispVal 
+flagUnmatchedAtom :: [Env] -> Env -> Env -> LispVal -> String -> Bool -> IOThrowsError LispVal 
 flagUnmatchedAtom defEnv outerEnv localEnv identifiers p improperListFlag = do
   isDefined <- liftIO $ isBound localEnv p
   isIdent <- findAtom (Atom p) identifiers
@@ -401,7 +401,7 @@ flagUnmatchedAtom defEnv outerEnv localEnv identifiers p improperListFlag = do
      then continueFlagging
      else case isIdent of
              Bool True -> do
-                           matches <- identifierMatches defEnv outerEnv p
+                           matches <- identifierMatches (head defEnv) outerEnv p
                            if not matches 
                              then return $ Bool True
                              else do _ <- flagUnmatchedVar localEnv p improperListFlag
@@ -435,7 +435,7 @@ getListFlags elIndices flags
   | otherwise = (False, False)
 
 -- ^ Check pattern against input to determine if there is a match
-checkLocal :: Env            -- ^ Environment where the macro was defined
+checkLocal :: [Env]          -- ^ Environment where the macro was defined
            -> Env            -- ^ Outer environment where this macro was called
            -> Env            -- ^ Outer env that the macro may divert values back to
            -> Env            -- ^ Local environment used to store temporary variables for macro processing
@@ -464,7 +464,7 @@ checkLocal defEnv outerEnv _ localEnv renameEnv identifiers ellipsisLevel ellips
   -- have the same lexical binding, or the two identifiers are equal and both have no 
   -- lexical binding.
   isRenamed <- liftIO $ isRecBound renameEnv pattern
-  doesIdentMatch <- identifierMatches defEnv outerEnv pattern
+  doesIdentMatch <- identifierMatches (head defEnv) outerEnv pattern
   match <- haveMatch isRenamed doesIdentMatch
 
   if match == 0 
@@ -611,10 +611,10 @@ expand env dim code apply = do
 
   -- Keep track of diverted variables
   _ <- clearDivertedVars env
-  walkExpanded env env env renameEnv cleanupEnv dim True False (List []) code apply
+  walkExpanded [env] env env renameEnv cleanupEnv dim True False (List []) code apply
 
 -- |Walk expanded code per Clinger's algorithm from Macros That Work
-walkExpanded :: Env 
+walkExpanded :: [Env]
   -> Env 
   -> Env 
   -> Env 
@@ -641,7 +641,7 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List r
 
 walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result) (List (Atom aa : ts)) apply = do
  Atom a <- expandAtom renameEnv (Atom aa)
- maybeMacro <- findBoundMacro defEnv useEnv a
+ maybeMacro <- findBoundMacro (head defEnv) useEnv a -- TODO: search the defEnv list!!
  -- If a macro is quoted, keep track of it and do not invoke rules below for
  -- procedure abstraction or macro calls 
  let isQuoted = inputIsQuoted || (a == "quote")
@@ -692,7 +692,7 @@ walkExpanded _ _ _ renameEnv _ _ _ _ _ (Atom a) _ = expandAtom renameEnv (Atom a
 -- Not sure if this is strictly desirable, but does not break any tests so we'll go with it for now.
 walkExpanded _ _ _ _ _ _ _ _ _ transform _ = return transform
 
-walkExpandedAtom :: Env 
+walkExpandedAtom :: [Env]
   -> Env 
   -> Env 
   -> Env 
@@ -850,7 +850,7 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
     -- lambda is malformed, just transform as normal atom...
     walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim False False (List $ result ++ [Atom a]) (List ts) apply
 
-walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List result)
+walkExpandedAtom defEnvs useEnv divertEnv renameEnv cleanupEnv dim True _ (List result)
     a
     ts 
     False (Just syn) apply = do
@@ -876,8 +876,8 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
          -- I am still concerned that this may highlight a flaw in the husk
          -- implementation, and that this solution may not be complete.
          --
-         List lexpanded <- cleanExpanded defEnv useEnv divertEnv renameEnv renameEnv True False (List []) (List ts) apply
-         macroTransform defEnv useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : lexpanded)) apply ellipsis
+         List lexpanded <- cleanExpanded defEnvs useEnv divertEnv renameEnv renameEnv True False (List []) (List ts) apply
+         macroTransform defEnvs useEnv divertEnv renameClosure cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : lexpanded)) apply ellipsis
       Syntax (Just _defEnv) _ definedInMacro ellipsis identifiers rules -> do 
 
         -- Experimenting with this workaround for 162. The problem is that it
@@ -896,7 +896,11 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
 --        macroTransform _defEnv useEnv divertEnv renameEnv cleanupEnv 
 
 -- Use defEnv from original macro, so any definitions are in scope for expansion
-        macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv 
+        let defEnvs' = if (elem _defEnv defEnvs)
+                          then defEnvs
+                          else defEnvs ++ [_defEnv]
+        macroTransform (trace ("len defEnvs = " ++ (show $ length defEnvs')) defEnvs') -- TODO: only branch if not equal
+                       useEnv divertEnv renameEnv cleanupEnv 
                        definedInMacro (List identifiers) rules 
                        (List (Atom a : ts)) apply ellipsis
       Syntax Nothing _ definedInMacro ellipsis identifiers rules -> do 
@@ -906,13 +910,13 @@ walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List r
         -- This is because the macro renames non-matched identifiers and stores mappings
         -- from the {rename ==> original}. Each new name is unique by definition, so
         -- no conflicts are possible.
-        macroTransform defEnv useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts)) apply ellipsis
+        macroTransform defEnvs useEnv divertEnv renameEnv cleanupEnv definedInMacro (List identifiers) rules (List (Atom a : ts)) apply ellipsis
       SyntaxExplicitRenaming transformer -> do
         erRenameEnv <- liftIO $ nullEnv -- Local environment used just for this
                                         -- Different than the syntax-rules rename env (??)
         expanded <- explicitRenamingTransform 
                       useEnv erRenameEnv renameEnv (List (Atom a : ts)) transformer apply
-        walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv 
+        walkExpanded defEnvs useEnv divertEnv renameEnv cleanupEnv 
           dim False False (List result) expanded apply
 
       _ -> throwError $ Default "Unexpected error processing a macro in walkExpandedAtom"
@@ -982,7 +986,7 @@ expandAtom = _expandAtom False
 --  'master' env that transcends those env's and maps all gensyms back to their original symbols
 --
 cleanExpanded :: 
-     Env 
+     [Env]
   -> Env 
   -> Env 
   -> Env 
@@ -1032,7 +1036,7 @@ cleanExpanded _ _ _ _ _ _ _ _ transform _ = return transform
  - collecting an env of variables that are renamed
  - diverting bindings back into the Env of use (outer env)
 -}
-transformRule :: Env        -- ^ Environment the macro was defined in
+transformRule :: [Env]      -- ^ Environment the macro was defined in
               -> Env        -- ^ Outer, enclosing environment
               -> Env        -- ^ Outer environment that the macro may divert values back to
               -> Env        -- ^ Environment local to the macro containing pattern variables
@@ -1308,9 +1312,9 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv _ dim identifiers _ _
 transformRule _ _ _ _ _ _ _ _ _ _ _ _ transform = return transform
 
 -- |A helper function for transforming an atom that has been marked as as literal identifier
-transformLiteralIdentifier :: Env -> Env -> Env -> Env -> Bool -> String -> IOThrowsError LispVal
+transformLiteralIdentifier :: [Env] -> Env -> Env -> Env -> Bool -> String -> IOThrowsError LispVal
 transformLiteralIdentifier defEnv outerEnv divertEnv renameEnv definedInMacro transform = do
-  isInDef <- liftIO $ isRecBound defEnv transform
+  isInDef <- liftIO $ isRecBound (head defEnv) transform
   isRenamed <- liftIO $ isRecBound renameEnv transform
   if (isInDef && not definedInMacro) || (isInDef && definedInMacro && not isRenamed)
      then do
@@ -1318,7 +1322,7 @@ transformLiteralIdentifier defEnv outerEnv divertEnv renameEnv definedInMacro tr
              so divert that value back into the environment of use. The value
              is diverted back with a different name so as not to be shadowed by
              a variable of the same name in env of use.           -}
-         value <- getVar defEnv transform
+         value <- getVar (head defEnv) transform
          Atom renamed <- _gensym transform
          _ <- defineVar divertEnv renamed value 
 
@@ -1352,7 +1356,7 @@ transformLiteralIdentifier defEnv outerEnv divertEnv renameEnv definedInMacro tr
          -}
 
 -- | A helper function for transforming an improper list
-transformDottedList :: Env -> Env -> Env -> Env -> Env -> Env -> Bool -> LispVal -> String -> Int -> [Int] -> LispVal -> LispVal -> IOThrowsError LispVal
+transformDottedList :: [Env] -> Env -> Env -> Env -> Env -> Env -> Bool -> LispVal -> String -> Int -> [Int] -> LispVal -> LispVal -> IOThrowsError LispVal
 transformDottedList defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym ellipsisLevel ellipsisIndex (List result) (List (DottedList ds d : ts)) = do
           lsto <- transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym ellipsisLevel ellipsisIndex (List []) (List ds)
           case lsto of
@@ -1401,7 +1405,7 @@ transformDottedList defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim 
 transformDottedList _ _ _ _ _ _ _ _ _ _ _ _ _ = throwError $ Default "Unexpected error in transformDottedList"
 
 -- |Continue transforming after a preceding match has ended 
-continueTransform :: Env -> Env -> Env -> Env -> Env -> Env -> Bool -> LispVal -> String -> Int -> [Int] -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
+continueTransform :: [Env] -> Env -> Env -> Env -> Env -> Env -> Bool -> LispVal -> String -> Int -> [Int] -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
 continueTransform defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identifiers esym ellipsisLevel ellipsisIndex result remaining = do
     if not (null remaining)
        then transformRule defEnv outerEnv divertEnv 
