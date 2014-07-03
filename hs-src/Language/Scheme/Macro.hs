@@ -54,7 +54,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Error
 import Data.Array
-import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
+-- import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
  Implementation notes:
@@ -641,7 +641,7 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List r
 
 walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result) (List (Atom aa : ts)) apply = do
  Atom a <- expandAtom renameEnv (Atom aa)
- maybeMacro <- findBoundMacro (head defEnv) useEnv a -- TODO: search the defEnv list!!
+ maybeMacro <- findBoundMacro defEnv useEnv a -- TODO: search the defEnv list!!
  -- If a macro is quoted, keep track of it and do not invoke rules below for
  -- procedure abstraction or macro calls 
  let isQuoted = inputIsQuoted || (a == "quote")
@@ -899,8 +899,7 @@ walkExpandedAtom defEnvs useEnv divertEnv renameEnv cleanupEnv dim True _ (List 
         let defEnvs' = if (elem _defEnv defEnvs)
                           then defEnvs
                           else defEnvs ++ [_defEnv]
-        macroTransform (trace ("len defEnvs = " ++ (show $ length defEnvs')) defEnvs') -- TODO: only branch if not equal
-                       useEnv divertEnv renameEnv cleanupEnv 
+        macroTransform defEnvs' useEnv divertEnv renameEnv cleanupEnv 
                        definedInMacro (List identifiers) rules 
                        (List (Atom a : ts)) apply ellipsis
       Syntax Nothing _ definedInMacro ellipsis identifiers rules -> do 
@@ -1557,9 +1556,18 @@ isLexicallyDefined outerEnv renameEnv a = do
   r <- liftIO $ isBound renameEnv a
   return $ o || r
 
-findBoundMacro :: Env -> Env -> String -> IOThrowsError (Maybe LispVal)
+findBoundMacro :: [Env] -> Env -> String -> IOThrowsError (Maybe LispVal)
 findBoundMacro defEnv useEnv a = do
   synUse <- getNamespacedVar' useEnv macroNamespace a
   case synUse of
     Just syn -> return $ Just syn
-    _ -> getNamespacedVar' defEnv macroNamespace a
+    _ -> check defEnv
+ where
+  check (e : es) = do
+    r <- getNamespacedVar' e macroNamespace a
+    case r of
+      Just _ -> return r
+      _ -> check es
+  check [] = return Nothing
+
+
