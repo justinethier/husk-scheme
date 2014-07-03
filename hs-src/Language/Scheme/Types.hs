@@ -117,6 +117,10 @@ data Env = Environment {
         pointers :: (IORef (Data.Map.Map String (IORef [LispVal])))
     }
 
+instance Eq Env where
+    (Environment _ xb xpts) == (Environment _ yb ypts) = 
+      (xb == yb) && (xpts == ypts)
+
 -- |An empty environment
 nullEnv :: IO Env
 nullEnv = do 
