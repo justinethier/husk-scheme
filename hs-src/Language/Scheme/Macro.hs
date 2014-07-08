@@ -601,14 +601,6 @@ expand ::
 expand env dim code apply = do
   renameEnv <- liftIO $ nullEnv
   cleanupEnv <- liftIO $ nullEnv
-
--- TODO: not sure if it is a problem to use env for both def and use, however I cannot think
--- of anything else to use below.
---
--- However, I believe this does highlight problems later on where defEnv is taken from the
--- function parameter instead of the Syntax object
---
-
   -- Keep track of diverted variables
   _ <- clearDivertedVars env
   walkExpanded [env] env env renameEnv cleanupEnv dim True False (List []) code apply
@@ -641,7 +633,7 @@ walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim _ isQuoted (List r
 
 walkExpanded defEnv useEnv divertEnv renameEnv cleanupEnv dim startOfList inputIsQuoted (List result) (List (Atom aa : ts)) apply = do
  Atom a <- expandAtom renameEnv (Atom aa)
- maybeMacro <- findBoundMacro defEnv useEnv a -- TODO: search the defEnv list!!
+ maybeMacro <- findBoundMacro defEnv useEnv a
  -- If a macro is quoted, keep track of it and do not invoke rules below for
  -- procedure abstraction or macro calls 
  let isQuoted = inputIsQuoted || (a == "quote")
@@ -787,14 +779,13 @@ walkExpandedAtom _ _ _ _ _ _ True _ _ "define-syntax" ts False _ _ = do
 
 
 {-
- - Notes regarding define and set
- -
-TODO: need to call a new function to scan for define (and set! ??) forms. 
-if found, need to add an entry to renameEnv (?) so as to get the transLiteral
-code to work. otherwise there is no way for that code to know that a (define)
-called within a macro is inserting a new binding.
-do not actually need to do anything to the (define) form, just mark somehow
-that it is inserting a binding for the var
+ Notes regarding define and set:
+
+ if define or set is found, need to add an entry to renameEnv (?) so as to get 
+ the transLiteral code to work. otherwise there is no way for that code to know 
+ that a (define) called within a macro is inserting a new binding.
+ do not actually need to do anything to the (define) form, just mark somehow
+ that it is inserting a binding for the var
 -}
 
 walkExpandedAtom defEnv useEnv divertEnv renameEnv cleanupEnv dim True _ (List _)
