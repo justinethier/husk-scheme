@@ -1,7 +1,9 @@
 v3.18
 --------
 
-- Fixed bugs with `syntax-rules` where a literal identifier may not be matched in a sub-macro if macro hygiene renames the input, and where the environment of macro definition may be overwritten during expansion of a `syntax-rules` macro contained in another macro. This could cause macros defined in a library - but not exported from the library - to incorrectly fail to expand because they are not in scope.
+- Fixed bugs with `syntax-rules` where:
+    - A literal identifier may not have been matched in a sub-macro if macro hygiene renamed the input.
+    - The environment of macro definition may be overwritten during expansion of a `syntax-rules` macro contained in another macro. This could cause macros defined in a library - but not exported from the library - to incorrectly fail to expand because they are not in scope.
 - Added `exit` from R<sup>7</sup>RS.
 
 v3.17.1
