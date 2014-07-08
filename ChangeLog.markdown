@@ -5,6 +5,7 @@ v3.18
     - A literal identifier may not have been matched in a sub-macro if macro hygiene renamed the input.
     - The environment of macro definition may be overwritten during expansion of a `syntax-rules` macro contained in another macro. This could cause macros defined in a library - but not exported from the library - to incorrectly fail to expand because they are not in scope.
 - Added `exit` from R<sup>7</sup>RS.
+- Added support for [SRFI 28 - Basic Format Strings](http://srfi.schemers.org/srfi-28/srfi-28.html).
 
 v3.17.1
 --------
