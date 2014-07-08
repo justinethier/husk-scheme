@@ -188,8 +188,8 @@
     ;floor-remainder
     ;floor/
     flush-output-port
-    ;get-output-bytevector
-    ;get-output-string
+    get-output-bytevector
+    get-output-string
     ;guard
     ;if
     inexact?
@@ -204,10 +204,10 @@
     ;list-set!
     make-list
     make-parameter
-    ;open-input-bytevector
-    ;open-input-string
-    ;open-output-bytevector
-    ;open-output-string
+    open-input-bytevector
+    open-input-string
+    open-output-bytevector
+    open-output-string
     output-port-open?
     parameterize
     ;peek-u8
@@ -215,11 +215,11 @@
     ;quote
     ;raise
     ;raise-continuable
-    ;read-bytevector
+    read-bytevector
     ;read-bytevector!
     ;read-error?
     read-line
-    ;read-string
+    read-string
     ;read-u8
     ;set!
     ;set-car!
@@ -252,8 +252,8 @@
     ;vector-set!
     when
     ;with-exception-handler
-    ;write-bytevector
-    ;write-string
+    write-bytevector
+    write-string
     ;write-u8
     %husk-switch-to-parent-environment
     )
