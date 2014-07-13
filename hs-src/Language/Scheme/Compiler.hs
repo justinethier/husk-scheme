@@ -249,13 +249,18 @@ compile env ast@(List [Atom "expand",  _body]) copts = do
     val <- Language.Scheme.Macro.expand env False _body LSC.apply
     compileScalar (" return $ " ++ ast2Str val) copts)
 
-compile env ast@(List (Atom "let-syntax" : List _bindings : _body)) copts = do
+compile env ast@(List (Atom "let-syntax" : List _bindings : _body)) 
+        copts@(CompileOptions thisFnc a b nextFnc) = do
   compileSpecialFormBody env ast copts (\ _ -> do
     bodyEnv <- liftIO $ extendEnv env []
     _ <- Language.Scheme.Macro.loadMacros env bodyEnv Nothing False _bindings
     -- Expand whole body as a single continuous macro, to ensure hygiene
     expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) LSC.apply
-    divertVars bodyEnv expanded copts compexp)
+
+    Atom loadMacroSym <- _gensym "loadMacroStub"
+    stub <- compileScalar (" Language.Scheme.Macro.loadMacros env env Nothing False " ++ (asts2Str _bindings)) (CompileOptions thisFnc False False (Just loadMacroSym))
+    rest <- divertVars bodyEnv expanded (CompileOptions loadMacroSym a b nextFnc) compexp
+    return $ stub ++ rest)
  where 
      -- Pick up execution here after expansion
      compexp bodyEnv' expanded' copts' = do
@@ -263,13 +268,18 @@ compile env ast@(List (Atom "let-syntax" : List _bindings : _body)) copts = do
          List e -> compile bodyEnv' (List $ Atom "begin" : e) copts'
          e -> compile bodyEnv' e copts'
 
-compile env ast@(List (Atom "letrec-syntax" : List _bindings : _body)) copts = do
+compile env ast@(List (Atom "letrec-syntax" : List _bindings : _body))
+        copts@(CompileOptions thisFnc a b nextFnc) = do
   compileSpecialFormBody env ast copts (\ _ -> do
     bodyEnv <- liftIO $ extendEnv env []
     _ <- Language.Scheme.Macro.loadMacros bodyEnv bodyEnv Nothing False _bindings
     -- Expand whole body as a single continuous macro, to ensure hygiene
     expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) LSC.apply
-    divertVars bodyEnv expanded copts compexp)
+
+    Atom loadMacroSym <- _gensym "loadMacroStub"
+    stub <- compileScalar (" Language.Scheme.Macro.loadMacros env env Nothing False " ++ (asts2Str _bindings)) (CompileOptions thisFnc False False (Just loadMacroSym))
+    rest <- divertVars bodyEnv expanded (CompileOptions loadMacroSym a b nextFnc) compexp
+    return $ stub ++ rest)
   where 
      -- Pick up execution here after expansion
      compexp bodyEnv' expanded' copts' = do

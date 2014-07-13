@@ -210,6 +210,7 @@ headerImports :: [String]
 headerImports = [
    "Language.Scheme.Core "
  , "Language.Scheme.Numerical "
+ , "Language.Scheme.Macro "
  , "Language.Scheme.Primitives "
  , "Language.Scheme.Types     -- Scheme data types "
  , "Language.Scheme.Variables -- Scheme variable operations "
