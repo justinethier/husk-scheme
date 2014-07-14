@@ -10,9 +10,9 @@ More information is available on the [husk website](http://justinethier.github.c
 
 Installation
 ------------
-The [Glasgow Haskell Compiler](http://www.haskell.org/ghc/) (GHC) is required to build, install, and run Husk. All recent versions of GHC are supported, including 7.0, 7.2, 7.4, and 7.6. The easiest way to get GHC is via the [Haskell Platform](http://hackage.haskell.org/platform/).
+A recent version of the [Glasgow Haskell Compiler](http://www.haskell.org/ghc/) (GHC) is required to build, install, and run Husk. The easiest way to get GHC is to install the [Haskell Platform](http://hackage.haskell.org/platform/).
 
-Husk may be installed using [cabal](http://www.haskell.org/cabal/):
+After installing the Haskell Platform, Husk may be installed using [cabal](http://www.haskell.org/cabal/):
 
     cabal update
     cabal install husk-scheme
