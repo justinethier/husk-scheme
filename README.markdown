@@ -10,31 +10,32 @@ More information is available on the [husk website](http://justinethier.github.c
 
 Installation
 ------------
-A recent version of the [Glasgow Haskell Compiler](http://www.haskell.org/ghc/) (GHC) is required to build, install, and run Husk. The easiest way to get GHC is to install the [Haskell Platform](http://hackage.haskell.org/platform/).
 
-After installing the Haskell Platform, Husk may be installed using [cabal](http://www.haskell.org/cabal/):
+1. <b>Install the [Haskell Platform](http://hackage.haskell.org/platform/)</b>, if you don't already have a copy.
 
-    cabal update
-    cabal install husk-scheme
+2. <b>Install Husk</b> using [cabal](http://www.haskell.org/cabal/):
 
-Before running Husk you may also need to add the cabal executable directory to your path. On Linux this is `~/.cabal/bin`. Now you are ready to start up the interpreter:
+        cabal update
+        cabal install husk-scheme
 
-    justin@my-pc$ huski
-      _               _        __                 _                          
-     | |             | |       \\\               | |                         
-     | |__  _   _ ___| | __     \\\      ___  ___| |__   ___ _ __ ___   ___  
-     | '_ \| | | / __| |/ /    //\\\    / __|/ __| '_ \ / _ \ '_ ` _ \ / _ \ 
-     | | | | |_| \__ \   <    /// \\\   \__ \ (__| | | |  __/ | | | | |  __/ 
-     |_| |_|\__,_|___/_|\_\  ///   \\\  |___/\___|_| |_|\___|_| |_| |_|\___| 
+3. <b>Adjust your PATH</b>: Before running Husk you may also need to add the cabal executable directory to your path. On Linux this is `~/.cabal/bin`. Now you are ready to start up the interpreter:
+
+        justin@my-pc$ huski
+          _               _        __                 _                          
+         | |             | |       \\\               | |                         
+         | |__  _   _ ___| | __     \\\      ___  ___| |__   ___ _ __ ___   ___  
+         | '_ \| | | / __| |/ /    //\\\    / __|/ __| '_ \ / _ \ '_ ` _ \ / _ \ 
+         | | | | |_| \__ \   <    /// \\\   \__ \ (__| | | |  __/ | | | | |  __/ 
+         |_| |_|\__,_|___/_|\_\  ///   \\\  |___/\___|_| |_|\___|_| |_| |_|\___| 
                                                                              
-     http://justinethier.github.com/husk-scheme                              
-     (c) 2010-2012 Justin Ethier                                             
-     Version 3.6.2 
+         http://justinethier.github.com/husk-scheme                              
+         (c) 2010-2014 Justin Ethier                                             
+         Version 3.18 
                                                                              
-    huski> (define (hello) 'world)
-    (lambda () ...)
-    huski> (hello)
-    world
+        huski> (define (hello) 'world)
+        (lambda () ...)
+        huski> (hello)
+        world
 
 Husk has been tested on Windows, Linux, and FreeBSD.
 
