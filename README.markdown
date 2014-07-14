@@ -42,6 +42,7 @@ Documentation
 -------------
 The online [user manual](http://justinethier.github.io/husk-scheme/manual/index.html) provides an overview of the Scheme language as implemented by Husk, including:
 
+ - A [getting started](http://justinethier.github.io/husk-scheme/manual/getting-started.html) guide.
  - [Instructions](http://justinethier.github.io/husk-scheme/manual/haskell-interface.html) for using the [Haskell API](http://hackage.haskell.org/package/husk-scheme) 
  - An alphabetical listing of the [Scheme API](http://justinethier.github.io/husk-scheme/manual/node106.html).
 
