@@ -40,7 +40,7 @@ Husk has been tested on Windows, Linux, and FreeBSD.
 
 Documentation
 -------------
-The online [user manual](http://justinethier.github.io/husk-scheme/manual/index.html) provides an overview of the Scheme language as implemented by Husk, instructions for using the Haskell API, an alphabetical index of Scheme functions, and more.
+The online [user manual](http://justinethier.github.io/husk-scheme/manual/index.html) provides an overview of the Scheme language as implemented by Husk, including instructions for using the Haskell API and an [alphabetical index of the Scheme API](http://justinethier.github.io/husk-scheme/manual/node106.html).
 
 **Directory Structure**
 
