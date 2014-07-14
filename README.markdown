@@ -11,7 +11,7 @@ More information is available on the [husk website](http://justinethier.github.c
 Installation
 ------------
 
-1. <b>Install the [Haskell Platform](http://hackage.haskell.org/platform/)</b>, if you don't already have a copy.
+1. <b>Install prerequisites</b>: You will need the [Haskell Platform](http://hackage.haskell.org/platform/), if you don't already have a recent copy installed.
 
 2. <b>Install Husk</b> using [cabal](http://www.haskell.org/cabal/):
 
