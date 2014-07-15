@@ -11,14 +11,16 @@ More information is available on the [husk website](http://justinethier.github.c
 Installation
 ------------
 
-1. <b>Install prerequisites</b>: You will need the [Haskell Platform](http://hackage.haskell.org/platform/), if you don't already have a recent copy installed.
+1. <b>Prerequisites</b>: You will need the [Haskell Platform](http://hackage.haskell.org/platform/) if you don't already have a recent copy installed.
 
 2. <b>Install Husk</b> using [cabal](http://www.haskell.org/cabal/):
 
         cabal update
         cabal install husk-scheme
 
-3. <b>Adjust your PATH</b>: Before running Husk you may also need to add the cabal executable directory to your path. On Linux this is `~/.cabal/bin`. Now you are ready to start up the interpreter:
+3. <b>Adjust your PATH</b>: Before running Husk you may also need to add the cabal executable directory to your path. On Linux this is `~/.cabal/bin`. 
+
+4. Now you are ready to start up the interpreter:
 
         justin@my-pc$ huski
           _               _        __                 _                          
