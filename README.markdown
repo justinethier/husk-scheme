@@ -10,37 +10,42 @@ More information is available on the [husk website](http://justinethier.github.c
 
 Installation
 ------------
-The [Glasgow Haskell Compiler](http://www.haskell.org/ghc/) (GHC) is required to build, install, and run Husk. All recent versions of GHC are supported, including 7.0, 7.2, 7.4, and 7.6. The easiest way to get GHC is via the [Haskell Platform](http://hackage.haskell.org/platform/).
 
-Husk may be installed using [cabal](http://www.haskell.org/cabal/):
+1. <b>Install prerequisites</b>: You will need the [Haskell Platform](http://hackage.haskell.org/platform/), if you don't already have a recent copy installed.
 
-    cabal update
-    cabal install husk-scheme
+2. <b>Install Husk</b> using [cabal](http://www.haskell.org/cabal/):
 
-Before running Husk you may also need to add the cabal executable directory to your path. On Linux this is `~/.cabal/bin`. Now you are ready to start up the interpreter:
+        cabal update
+        cabal install husk-scheme
 
-    justin@my-pc$ huski
-      _               _        __                 _                          
-     | |             | |       \\\               | |                         
-     | |__  _   _ ___| | __     \\\      ___  ___| |__   ___ _ __ ___   ___  
-     | '_ \| | | / __| |/ /    //\\\    / __|/ __| '_ \ / _ \ '_ ` _ \ / _ \ 
-     | | | | |_| \__ \   <    /// \\\   \__ \ (__| | | |  __/ | | | | |  __/ 
-     |_| |_|\__,_|___/_|\_\  ///   \\\  |___/\___|_| |_|\___|_| |_| |_|\___| 
+3. <b>Adjust your PATH</b>: Before running Husk you may also need to add the cabal executable directory to your path. On Linux this is `~/.cabal/bin`. Now you are ready to start up the interpreter:
+
+        justin@my-pc$ huski
+          _               _        __                 _                          
+         | |             | |       \\\               | |                         
+         | |__  _   _ ___| | __     \\\      ___  ___| |__   ___ _ __ ___   ___  
+         | '_ \| | | / __| |/ /    //\\\    / __|/ __| '_ \ / _ \ '_ ` _ \ / _ \ 
+         | | | | |_| \__ \   <    /// \\\   \__ \ (__| | | |  __/ | | | | |  __/ 
+         |_| |_|\__,_|___/_|\_\  ///   \\\  |___/\___|_| |_|\___|_| |_| |_|\___| 
                                                                              
-     http://justinethier.github.com/husk-scheme                              
-     (c) 2010-2012 Justin Ethier                                             
-     Version 3.6.2 
+         http://justinethier.github.com/husk-scheme                              
+         (c) 2010-2014 Justin Ethier                                             
+         Version 3.18 
                                                                              
-    huski> (define (hello) 'world)
-    (lambda () ...)
-    huski> (hello)
-    world
+        huski> (define (hello) 'world)
+        (lambda () ...)
+        huski> (hello)
+        world
 
 Husk has been tested on Windows, Linux, and FreeBSD.
 
 Documentation
 -------------
-The online [user manual](http://justinethier.github.io/husk-scheme/manual/index.html) provides an overview of the Scheme language as implemented by Husk, instructions for using the Haskell API, an alphabetical index of Scheme functions, and more.
+The online [user manual](http://justinethier.github.io/husk-scheme/manual/index.html) provides an overview of the Scheme language as implemented by Husk, including:
+
+ - A [getting started](http://justinethier.github.io/husk-scheme/manual/getting-started.html) guide.
+ - [Instructions](http://justinethier.github.io/husk-scheme/manual/haskell-interface.html) for using the [Haskell API](http://hackage.haskell.org/package/husk-scheme) 
+ - An alphabetical listing of the [Scheme API](http://justinethier.github.io/husk-scheme/manual/node106.html).
 
 **Directory Structure**
 
