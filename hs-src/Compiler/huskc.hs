@@ -91,7 +91,7 @@ options = [
   getDynamic opt = return opt { optDynamic = True }
   getExtraArgs arg opt = return opt { optCustomOptions = Just arg }
 
--- TODO: would nice to have this as well as a 'real' usage printout, perhaps via --help
+-- TODO: would nice to have this as well as a /real/ usage printout, perhaps via --help
 
 -- |Print a usage message
 showUsage :: IO ()

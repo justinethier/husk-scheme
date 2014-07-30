@@ -1278,7 +1278,7 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
                 Just fnextExpr -> "(makeCPSWArgs env cont " ++ fnextExpr ++ " [])"
 
   -- |Compile each argument as its own continuation (lambda), and then
-  --  call the function using "applyWrapper"
+  --  call the function using @applyWrapper@
   compileArgs :: String -> Bool -> (Maybe String) -> [LispVal] -> IOThrowsError [HaskAST]
   compileArgs thisFunc thisFuncUseValue maybeFnc args = do
     case args of
@@ -1289,7 +1289,7 @@ compileApply env (List (func : fparams)) copts@(CompileOptions coptsThis _ _ cop
         Atom stubFunc <- _gensym "applyFirstArg" -- Call into compiled stub
         Atom nextFunc <- do
             case lastArg of
-                True -> return $ Atom "applyWrapper" -- Use wrapper to call into 'apply'
+                True -> return $ Atom "applyWrapper" -- Use wrapper to call into /apply/
                 _ -> _gensym "applyNextArg" -- Next func argument to execute...
 
         -- inline function?

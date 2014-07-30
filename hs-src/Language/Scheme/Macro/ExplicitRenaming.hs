@@ -52,7 +52,7 @@ explicitRenamingTransform useEnv renameEnv srRenameEnv lisp
 explicitRenamingTransform _ _ _ _ _ _ = 
   throwError $ InternalError "explicitRenamingTransform"
 
--- |The explicit renaming "rename" function
+-- |The explicit renaming /rename/ function
 --
 -- From clinger's paper "Hygienic Macros Through Explicit Renaming":
 --
@@ -107,7 +107,7 @@ exRename useEnv _ srRenameEnv defEnv [Atom a] = do
        return $ Atom a
 exRename _ _ _ _ form = throwError $ Default $ "Unable to rename: " ++ show form
 
--- |The explicit renaming "compare" function
+-- |The explicit renaming /compare/ function
 exCompare :: Env        -- ^ Environment of use
           -> Env        -- ^ Environment with renames
           -> Env        -- ^ Environment of definition

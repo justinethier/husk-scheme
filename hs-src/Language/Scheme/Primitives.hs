@@ -743,7 +743,7 @@ car [DottedList (x : _) _] = return x
 car [badArg] = throwError $ TypeMismatch "pair" badArg
 car badArgList = throwError $ NumArgs (Just 1) badArgList
 
--- | Return the "tail" of a list, with the first element removed
+-- | Return the /tail/ of a list, with the first element removed
 --
 --   Arguments:
 --
@@ -759,7 +759,7 @@ cdr [DottedList (_ : xs) x] = return $ DottedList xs x
 cdr [badArg] = throwError $ TypeMismatch "pair" badArg
 cdr badArgList = throwError $ NumArgs (Just 1) badArgList
 
--- | The LISP "cons" operation - create a list from two values
+-- | The LISP @cons@ operation - create a list from two values
 --
 --   Arguments:
 --
@@ -1594,7 +1594,7 @@ stringCopy badArgList = throwError $ NumArgs (Just 2) badArgList
 isDottedList :: [LispVal] -> IOThrowsError LispVal
 isDottedList ([p@(Pointer _ _)]) = derefPtr p >>= box >>= isDottedList
 isDottedList ([DottedList _ _]) = return $ Bool True
--- Must include lists as well since they are made up of 'chains' of pairs
+-- Must include lists as well since they are made up of /chains/ of pairs
 isDottedList ([List []]) = return $ Bool False
 isDottedList ([List _]) = return $ Bool True
 isDottedList _ = return $ Bool False

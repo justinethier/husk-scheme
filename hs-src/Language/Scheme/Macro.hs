@@ -973,7 +973,7 @@ expandAtom = _expandAtom False
 --  need to be another environment with the reverse mappings.
 --
 --  ALSO, due to parent Env logic going on, these bindings need to be in some sort of
---  'master' env that transcends those env's and maps all gensyms back to their original symbols
+--  /master/ env that transcends those env's and maps all gensyms back to their original symbols
 --
 cleanExpanded :: 
      [Env]
@@ -1254,13 +1254,13 @@ transformRule defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim identi
          Nil _ -> return t
          List l -> do
             -- What's going on here is that if the pattern was a dotted list but the transform is not, we
-            -- need to "lift" the input up out of a list.
+            -- need to /lift/ the input up out of a list.
             if (eqVal isImproperPattern $ Bool True) && (eqVal isImproperInput $ Bool True)
               then continueTransformWith $ result ++ (buildImproperList l)
               else continueTransformWith $ result ++ [t]
          _ -> continueTransformWith $ result ++ [t]
 
-    -- Transformed code should be an improper list, but may need to "promote" it to a proper list
+    -- Transformed code should be an improper list, but may need to /promote/ it to a proper list
     buildImproperList lst 
       | length lst > 1 = [DottedList (init lst) (last lst)]
       | otherwise      = lst
@@ -1327,7 +1327,7 @@ transformLiteralIdentifier defEnv outerEnv divertEnv renameEnv definedInMacro tr
          return $ Atom transform
          {-
            TODO:         
-           above "else" is not entirely correct, a special form would not be defined but still
+           above @else@ is not entirely correct, a special form would not be defined but still
            has a meaning and could be shadowed in useEnv. need some way of being able to
            divert a special form back into useEnv...
          
@@ -1376,7 +1376,7 @@ transformDottedList defEnv outerEnv divertEnv localEnv renameEnv cleanupEnv dim 
             _ -> throwError $ BadSpecialForm "Macro transform error processing pair" $ DottedList ds d
  where 
    -- Transform code as either a proper or improper list depending upon the data
-   -- These are rather crude methods of 'cons'-ing everything together... are all cases accounted for?
+   -- These are rather crude methods of /cons/-ing everything together... are all cases accounted for?
    buildTransformedCode results ps p = do 
      case p of
         [List []] -> List $ results ++ [List ps]         -- Proper list has null list at the end

@@ -194,10 +194,10 @@ data LispVal = Atom String
  -- Map is technically the wrong structure to use for a hash table since it is based on a binary tree and hence operations tend to be O(log n) instead of O(1). However, according to <http://www.opensubscriber.com/message/haskell-cafe@haskell.org/10779624.html> Map has good performance characteristics compared to the alternatives. So it stays for the moment...
  --
  | Number Integer -- ^Integer number
- {- FUTURE: rename this to "Integer" (or "WholeNumber" or something else more meaningful)
+ {- FUTURE: rename this to @Integer@ (or @WholeNumber@ or something else more meaningful)
  Integer -}
  | Float Double -- ^Double-precision floating point number
- {- FUTURE: rename this "Real" instead of "Float"...
+ {- FUTURE: rename this @Real@ instead of @Float@...
  Floating point -}
  | Complex (Complex Double)
  -- ^Complex number
@@ -268,7 +268,7 @@ data LispVal = Atom String
  | Nil String
  -- ^Internal use only; do not use this type directly.
 
--- | Scheme "null" value
+-- | Scheme /null/ value
 nullLisp :: LispVal
 nullLisp = List []
 
@@ -305,7 +305,7 @@ showDWVal (DynamicWinders b a) = "(" ++ (show b) ++ " . " ++ (show a) ++ ")"
 
 instance Show DynamicWinders where show = showDWVal
 
--- |Make an "empty" continuation that does not contain any code
+-- |Make an /empty/ continuation that does not contain any code
 makeNullContinuation :: Env -> LispVal
 makeNullContinuation env = Continuation env Nothing Nothing Nothing
 

@@ -343,7 +343,7 @@ NOTE:  This function does not include macro support and should not be called dir
 --
 -- This can make the code harder to follow, however some coding conventions have been established to make the
 -- code easier to follow. Whenever a single function has been broken into multiple ones for the purpose of CPS,
--- those additional functions are defined locally using 'where', and each has been given a 'cps' prefix.
+-- those additional functions are defined locally using @where@, and each has been given a /cps/ prefix.
 --
 eval :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 eval env cont val@(Nil _) = continueEval env cont val Nothing
@@ -1125,7 +1125,7 @@ r7rsEnv' = do
   _ <- evalString env {-baseEnv-} $ "(load \"" ++ (escapeBackslashes core) ++ "\")" 
 
 -- TODO: probably will have to load some scheme libraries for modules.scm to work
---  maybe the 'base' libraries from (scheme base) would be good enough?
+--  maybe the /base/ libraries from (scheme base) would be good enough?
 
 #ifdef UseLibraries
   -- Load module meta-language 
@@ -1201,7 +1201,7 @@ evalfuncDynamicWind [cont@(Continuation env _ _ _), beforeFunc, thunkFunc, after
 evalfuncDynamicWind (_ : args) = throwError $ NumArgs (Just 3) args -- Skip over continuation argument
 evalfuncDynamicWind _ = throwError $ NumArgs (Just 3) []
 
--- |Evaluate all outstanding dynamic wind 'after' procedures, and exit program
+-- |Evaluate all outstanding dynamic wind /after/ procedures, and exit program
 evalfuncExit args@(cont : rest) = do
   _ <- unchain cont
   case rest of

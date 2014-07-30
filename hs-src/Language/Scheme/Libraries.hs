@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : portable
 
 This module contains code to handle R7RS libraries.
-NOTE: Libraries are usually referred to as "modules" in the husk source code.
+NOTE: Libraries are usually referred to as /modules/ in the husk source code.
 
 -}
 
@@ -27,7 +27,7 @@ findModuleFile
     -> IOThrowsError LispVal
 findModuleFile [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= findModuleFile
 findModuleFile [String file] = do
-    --- Good enough now that load searches 'lib' if file not found
+    -- Good enough now that load searches @lib@ if file not found
     return $ String file
 findModuleFile _ = return $ Bool False
 
@@ -55,8 +55,8 @@ moduleImport _ _ err = do
 divertBinding
     :: Env  -- ^ Environment to import into
     -> Env  -- ^ Environment to import from
-    -> String -- ^ Name of the binding in 'from'
-    -> String -- ^ Name to use for the binding in 'to'
+    -> String -- ^ Name of the binding in @from@
+    -> String -- ^ Name to use for the binding in @to@
     -> IOThrowsError LispVal
 divertBinding to from nameOrig nameNew = do
   isMacroBound <- liftIO $ isNamespacedRecBound from macroNamespace nameOrig

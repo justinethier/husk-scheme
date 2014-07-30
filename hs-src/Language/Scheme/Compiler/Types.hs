@@ -54,10 +54,10 @@ data CompOpts = CompileOptions {
     --  to call into it.
 
     coptsThisFuncUseValue :: Bool,
-    -- ^Whether to include the 'value' parameter in the current function
+    -- ^Whether to include the /value/ parameter in the current function
     
     coptsThisFuncUseArgs :: Bool,
-    -- ^Whether to include the 'args' parameter in the current function
+    -- ^Whether to include the /args/ parameter in the current function
     
     coptsNextFunc :: Maybe String
     -- ^The name to use for the next function after the current
