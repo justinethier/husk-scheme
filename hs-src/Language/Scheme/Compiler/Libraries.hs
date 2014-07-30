@@ -97,8 +97,8 @@ importModule env metaEnv moduleName imports lopts
                           Bool False]
     
     importFunc <- return $ [
-        -- fromEnv is a LispEnv passed in as the 'value' parameter.
-        -- But the source of 'value' is different depending on the 
+        -- fromEnv is a LispEnv passed in as the /value/ parameter.
+        -- But the source of /value/ is different depending on the
         -- context, so we call into this function to figure it out
         codeToGetFromEnv moduleName code,
         AstValue $ "  _ <- evalLisp env $ List [Atom \"%import\", LispEnv env, value, List [Atom \"quote\", " ++ 
@@ -114,8 +114,8 @@ importModule env metaEnv moduleName imports lopts
                              importFunc] ++ code ++ stub
  where 
   --
-  -- The import's "from" env can come from many places; this function
-  -- figures that out and creates a new 'value' if necessary to send
+  -- The import's from env can come from many places; this function
+  -- figures that out and creates a new /value/ if necessary to send
   -- the proper value to %import in the above code
   --
   codeToGetFromEnv (List [Atom "scheme", Atom "r5rs"]) _ = do
@@ -299,7 +299,7 @@ cmpModExpr env metaEnv name (List ((List (Atom "include" : files)) : ls))
     (CompileOptions thisFunc _ _ lastFunc) = do
     dir <- LSC.evalLisp metaEnv $ List [Atom "module-name-prefix", 
                                         List [Atom "quote", name]]
--- TODO: this pattern is common with the one below in "begin", 
+-- TODO: this pattern is common with the one below in @begin@,
 --       should consolidate (or at least consider doing so)
     Atom nextFunc <- _gensym "includeNext"
     code <- includeAll env dir files compileInc lopts $ 

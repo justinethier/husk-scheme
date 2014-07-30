@@ -7,7 +7,7 @@ Maintainer  : github.com/justinethier
 Stability   : experimental
 Portability : portable
 
-This file implements a REPL "shell" to host the interpreter, and also
+This file implements a REPL /shell/ to host the interpreter, and also
 allows execution of stand-alone files containing Scheme code.
 -}
 

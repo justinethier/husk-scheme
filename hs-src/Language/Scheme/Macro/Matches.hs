@@ -23,9 +23,9 @@ _create level
     | level == 1    = List []
     | otherwise = List [_create $ level - 1]
 
--- |Fill any empty "holes" in a list from the beginning to the given length
+-- |Fill any empty /holes/ in a list from the beginning to the given length
 --
--- The problem here is how to handle case when a requested insertion leaves "holes".
+-- The problem here is how to handle case when a requested insertion leaves /holes/.
 --
 -- For example, in a 2-level nested list: ((1)) we have data as pos 0 but have none at pos 1.
 -- If the code then tries to add an element 2 at pos 2 we should end up with:
@@ -40,7 +40,7 @@ fill l len
 -- |Get an element at given location in the nested list
 getData :: LispVal -- ^ The nested list to read from
         -> [Int]   -- ^ Location to read an element from, all numbers are 0-based
-        -> LispVal -- ^ Value read, or 'Nil' if none
+        -> LispVal -- ^ Value read, or @Nil@ if none
 getData (List lData) (i:is) = do
   if length lData < i
      then Nil "" -- Error: there are not enough elements in the list
@@ -60,7 +60,7 @@ setData :: LispVal -- ^ The nested list to modify
         -> LispVal -- ^ Value to insert 
         -> LispVal -- ^ Resulant list
 setData (List lData) (i:is) val = do
-  -- Fill "holes" as long as they are not at the leaves.
+  -- Fill /holes/ as long as they are not at the leaves.
   --
   -- This is because,  when a match occurs it happens 0 or more  times.
   -- Therefore it is not  possible (at the leaves) for a match to occur 
@@ -139,7 +139,7 @@ _test = do
                (List [List[List [], List[Atom "test"]]])
 
   -- Illustrates an important point, that if we are adding into 
-  -- a 'hole', we need to create a list there first
+  -- a /hole/, we need to create a list there first
   let cc = setData b [1, 0] $ Atom "test2"
   _cmp cc (List [List [Atom "test"], List [Atom "test2"]])
 

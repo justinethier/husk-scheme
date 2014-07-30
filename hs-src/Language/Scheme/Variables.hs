@@ -384,7 +384,7 @@ _setNamespacedVar envRef
   valueToStore <- getValueToStore namespace var envRef value
   _setNamespacedVarDirect envRef namespace var valueToStore
 
--- |Do the actual "set" operation, with NO pointer operations.
+-- |Do the actual /set/ operation, with NO pointer operations.
 --  Only call this if you know what you are doing!
 _setNamespacedVarDirect
     :: Env      -- ^ Environment 
@@ -470,9 +470,9 @@ updateObject :: Env -> String -> LispVal -> IOThrowsError LispVal
 updateObject env = 
   updateNamespacedObject env varNamespace
 
--- |This function updates the object that "var" refers to. If "var" is
+-- |This function updates the object that the variable refers to. If it is
 --  a pointer, that means this function will update that pointer (or the last
---  pointer in the chain) to point to the given "value" object. If "var"
+--  pointer in the chain) to point to the given /value/ object. If the variable
 --  is not a pointer, the result is the same as a setVar (but without updating
 --  any pointer references, see below).
 --
@@ -480,7 +480,11 @@ updateObject env =
 --  update any associated pointers. So it should probably only be
 --  used internally by husk, unless you really know what you are
 --  doing!
-updateNamespacedObject :: Env -> Char -> String -> LispVal -> IOThrowsError LispVal
+updateNamespacedObject :: Env                   -- ^ Environment
+                       -> Char                  -- ^ Namespace
+                       -> String                -- ^ Variable
+                       -> LispVal               -- ^ Value
+                       -> IOThrowsError LispVal -- ^ Value
 updateNamespacedObject env namespace var value = do
   varContents <- getNamespacedVar env namespace var
   obj <- findPointerTo varContents
@@ -519,7 +523,7 @@ defineNamespacedVar envRef
 
 
       -- If we are assigning to a pointer, we need a reverse lookup to 
-      -- note that the pointer "value" points to "var"
+      -- note that the pointer @value@ points to @var@
       -- 
       -- So run through this logic to figure out what exactly to store,
       -- both for bindings and for rev-lookup pointers
@@ -645,7 +649,7 @@ recDerefToFnc fnc lvs = do
     liftThrows $ fnc result
 
 -- |A predicate to determine if the given lisp value 
---  is an "object" that can be pointed to.
+--  is an /object/ that can be pointed to.
 isObject :: LispVal -> Bool
 isObject (List _) = True
 isObject (DottedList _ _) = True
