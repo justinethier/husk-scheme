@@ -100,6 +100,7 @@ module Language.Scheme.Primitives (
  , isSymbol 
 
  -- ** Utility functions
+ , Unpacker ()
  , unpackEquals 
  , boolBinop 
  , unaryOp 
