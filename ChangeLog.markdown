@@ -13,6 +13,8 @@ Bug Fixes:
     - The environment of macro definition may be overwritten during expansion of a `syntax-rules` macro contained in another macro. This could cause macros defined in a library - but not exported from the library - to incorrectly fail to expand because they are not in scope.
 - In compiled code, make `let-syntax` and `letrec-syntax` forms available to `eval` at runtime.
 - Added several missing I/O functions to the export list of the `(scheme base)` library.
+- bholst added `Unpacker` to the exports from `Language.Scheme.Primitives`, as it is required by `unpackEquals`.
+- bholst fixed many comments in the Haddock documentation.
 
 v3.17.1
 --------
