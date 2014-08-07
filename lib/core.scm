@@ -223,7 +223,8 @@
      (foldr (lambda (x y) (cons (f x) y)) '() lis1)))
 
 (define (for-each f lis1 . lists)
-  (if (pair? lists)
+  (if (not (null? lis1))
+    (if (pair? lists)
       (let recur ((lists (cons lis1 lists)))
         (receive (cars cdrs) (%cars+cdrs lists)
           (if (pair? cars)
@@ -234,7 +235,7 @@
       (if (eq? 1 (length lis1))
         (f (car lis1))
         (begin (f (car lis1))
-               (for-each f (cdr lis1))))))
+               (for-each f (cdr lis1)))))))
 
 (define (list-tail lst k) 
         (if (zero? k)
