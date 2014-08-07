@@ -5,7 +5,7 @@ excerpt: Bug fixes in many areas including syntax-rules macros, for-each, and th
 ---
 # {{ page.title }}
 
-- Added `exit` from R<sup>7</sup>RS.
+- Added [`exit`](http://justinethier.github.io/husk-scheme/manual/node86.html#exit) from R<sup>7</sup>RS.
 - Added support for [SRFI 28 - Basic Format Strings](http://srfi.schemers.org/srfi-28/srfi-28.html).
 
 Bug Fixes:
