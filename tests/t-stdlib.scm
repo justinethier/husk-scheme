@@ -261,6 +261,8 @@
     v)
  #(0 1 4 9 16))
 
+;; No test case, but make sure for-each can accept empty list
+(for-each list (list))
 
 (assert/equal (zero? 0) #t)
 (assert/equal (length '(0 1 2 3)) 4)
