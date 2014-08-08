@@ -71,7 +71,6 @@ module Language.Scheme.Primitives (
  , stringCopy 
  , symbol2String 
  , string2Symbol
- --data Unpacker = forall a . Eq a => AnyUnpacker (LispVal -> ThrowsError a)
 
  -- ** Character
  , charCIBoolBinop 
@@ -1888,7 +1887,7 @@ isSymbolEq (Atom a : Atom b : bs)
 isSymbolEq [Atom _] = return $ Bool True
 isSymbolEq _ = return $ Bool False
 
--- Utility functions
+-- |Utility type for unpackEquals
 data Unpacker = forall a . Eq a => AnyUnpacker (LispVal -> ThrowsError a)
 
 -- |Determine if two lispval's are equal
