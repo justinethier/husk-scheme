@@ -1,7 +1,7 @@
 --- 
 layout: post
 title: Released Version 3.18
-excerpt: Bug fixes in many areas including syntax-rules macros, for-each, and the Haskell API.
+excerpt: This release contains bug fixes to many components including syntax-rules macros, for-each, and the Haskell API.
 ---
 # {{ page.title }}
 
