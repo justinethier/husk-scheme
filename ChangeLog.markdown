@@ -1,3 +1,10 @@
+v3.18.1
+--------
+
+Big Fixes:
+
+- Return the empty string from `string-append` if no arguments are received, instead of throwing an error.
+
 v3.18
 --------
 

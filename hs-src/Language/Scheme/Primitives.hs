@@ -1447,6 +1447,7 @@ stringAppend (String st : sts) = do
   case rest of
     String s -> return $ String $ st ++ s
     other -> throwError $ TypeMismatch "string" other
+stringAppend [] = return $ String ""
 stringAppend [badType] = throwError $ TypeMismatch "string" badType
 stringAppend badArgList = throwError $ NumArgs (Just 1) badArgList
 
