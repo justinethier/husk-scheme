@@ -1,6 +1,10 @@
 v3.18.1
 --------
 
+New Features:
+
+- Allow `read-all` to read from `stdin` when no arguments are received.
+
 Big Fixes:
 
 - Return the empty string from `string-append` if no arguments are received, instead of throwing an error.

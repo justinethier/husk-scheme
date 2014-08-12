@@ -697,7 +697,10 @@ load filename = do
 readAll :: [LispVal] -> IOThrowsError LispVal
 readAll [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= readAll
 readAll [String filename] = liftM List $ load filename
-readAll [] = throwError $ NumArgs (Just 1) []
+readAll [] = do -- read from stdin
+    input <- liftIO $ getContents
+    lisp <- (liftThrows . readExprList) input
+    return $ List lisp
 readAll args@(_ : _) = throwError $ NumArgs (Just 1) args
 
 -- |Version of gensym that can be conveniently called from Haskell.
