@@ -242,7 +242,7 @@ getBufferFromPort args = do
 openInputString :: [LispVal] -> IOThrowsError LispVal
 openInputString [p@(Pointer {})] = recDerefPtrs p >>= box >>= openInputString
 openInputString [buf@(String _)] = makeBufferPort (Just buf)
-openInputString args = if length args == 2
+openInputString args = if length args == 1
     then throwError $ TypeMismatch "(string)" $ List args
     else throwError $ NumArgs (Just 1) args
 
@@ -254,7 +254,7 @@ openOutputString _ = makeBufferPort Nothing
 openInputByteVector :: [LispVal] -> IOThrowsError LispVal
 openInputByteVector [p@(Pointer {})] = recDerefPtrs p >>= box >>= openInputByteVector
 openInputByteVector [buf@(ByteVector _)] = makeBufferPort (Just buf)
-openInputByteVector args = if length args == 2
+openInputByteVector args = if length args == 1
     then throwError $ TypeMismatch "(bytevector)" $ List args
     else throwError $ NumArgs (Just 1) args
 
