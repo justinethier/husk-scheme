@@ -54,4 +54,10 @@
 (define is (open-input-string "test string"))
 (assert/equal "t" (read-string 1 is))
 
+(define t "test")
+(assert/equal (read (open-input-string t)) 'test)
+
+(define (y z) (open-input-string z))
+(assert/equal (read (y "test 2")) 'test)
+
 (unit-test-handler-results)
