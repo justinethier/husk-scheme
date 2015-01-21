@@ -8,6 +8,7 @@ New Features:
 Big Fixes:
 
 - Return the empty string from `string-append` if no arguments are received, instead of throwing an error.
+- Fixed bugs in `open-input-string` and `open-byte-vector` that prevented a variable being passed as the "input" argument. Thanks to Dan Cecile for the bug report!
 
 v3.18
 --------

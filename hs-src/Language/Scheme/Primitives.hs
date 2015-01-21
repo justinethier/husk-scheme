@@ -221,6 +221,7 @@ makeBufferPort buf = do
                  Nothing -> WriteMode
                  _ -> ReadMode
     bs <- case buf of
+--        Just (p@(Pointer {})] = recDerefPtrs p >>= box >>= openInputString
         Just (String s)-> return $ BSU.fromString s
         Just (ByteVector bv)-> return bv
         Just err -> throwError $ TypeMismatch "string or bytevector" err
@@ -239,6 +240,7 @@ getBufferFromPort args = do
 
 -- |Create a new input string buffer
 openInputString :: [LispVal] -> IOThrowsError LispVal
+openInputString [p@(Pointer {})] = recDerefPtrs p >>= box >>= openInputString
 openInputString [buf@(String _)] = makeBufferPort (Just buf)
 openInputString args = if length args == 2
     then throwError $ TypeMismatch "(string)" $ List args
@@ -250,6 +252,7 @@ openOutputString _ = makeBufferPort Nothing
 
 -- |Create a new input bytevector buffer
 openInputByteVector :: [LispVal] -> IOThrowsError LispVal
+openInputByteVector [p@(Pointer {})] = recDerefPtrs p >>= box >>= openInputByteVector
 openInputByteVector [buf@(ByteVector _)] = makeBufferPort (Just buf)
 openInputByteVector args = if length args == 2
     then throwError $ TypeMismatch "(bytevector)" $ List args
@@ -262,6 +265,7 @@ openOutputByteVector _ = makeBufferPort Nothing
 
 -- |Get string written to string-output-port
 getOutputString :: [LispVal] -> IOThrowsError LispVal
+getOutputString [p@(Pointer {})] = recDerefPtrs p >>= box >>= getOutputString
 getOutputString [p@(Port port _)] = do
     o <- liftIO $ hIsOpen port
     if o then do 
@@ -273,6 +277,7 @@ getOutputString args = do
 
 -- |Get bytevector written to bytevector-output-port
 getOutputByteVector :: [LispVal] -> IOThrowsError LispVal
+getOutputByteVector [p@(Pointer {})] = recDerefPtrs p >>= box >>= getOutputByteVector
 getOutputByteVector [p@(Port port _)] = do
     o <- liftIO $ hIsOpen port
     if o then do bytes <- getBufferFromPort p
@@ -290,6 +295,7 @@ getOutputByteVector args = do
 --   Returns: Bool - True if the port was closed, false otherwise
 --
 closePort :: [LispVal] -> IOThrowsError LispVal
+closePort [p@(Pointer {})] = recDerefPtrs p >>= box >>= closePort
 closePort [Port port _] = liftIO $ hClose port >> (return $ Bool True)
 closePort _ = return $ Bool False
 
@@ -319,6 +325,7 @@ currentOutputPort _ = return $ Port stdout Nothing
 -- | Flush the given output port
 flushOutputPort :: [LispVal] -> IOThrowsError LispVal
 flushOutputPort [] = liftIO $ hFlush stdout >> (return $ Bool True)
+flushOutputPort [p@(Pointer {})] = recDerefPtrs p >>= box >>= flushOutputPort
 flushOutputPort [p@(Port _ _)] = 
     withOpenPort p $ \port -> liftIO $ hFlush port >> (return $ Bool True)
 flushOutputPort _ = return $ Bool False
@@ -331,6 +338,7 @@ flushOutputPort _ = return $ Bool False
 --
 --   Returns: Bool
 isTextPort :: [LispVal] -> IOThrowsError LispVal
+isTextPort [p@(Pointer {})] = recDerefPtrs p >>= box >>= isTextPort
 isTextPort [Port port _] = do
     val <- liftIO $ isTextPort' port
     return $ Bool val
@@ -344,6 +352,7 @@ isTextPort _ = return $ Bool False
 --
 --   Returns: Bool
 isBinaryPort :: [LispVal] -> IOThrowsError LispVal
+isBinaryPort [p@(Pointer {})] = recDerefPtrs p >>= box >>= isBinaryPort
 isBinaryPort [Port port _] = do
     val <- liftIO $ isTextPort' port
     return $ Bool $ not val
@@ -365,6 +374,7 @@ isTextPort' port = do
 --
 --   Returns: Bool
 isInputPortOpen :: [LispVal] -> IOThrowsError LispVal
+isInputPortOpen [p@(Pointer {})] = recDerefPtrs p >>= box >>= isInputPortOpen
 isInputPortOpen [p@(Port _ _)] = do
   withOpenPort p $ \port -> do
     r <- liftIO $ hIsReadable port
@@ -374,6 +384,9 @@ isInputPortOpen _ = return $ Bool False
 
 -- | Helper function to ensure a port is open, to prevent Haskell errors
 withOpenPort :: LispVal -> (Handle -> IOThrowsError LispVal) -> IOThrowsError LispVal
+withOpenPort p@(Pointer {}) proc = do
+    obj <- recDerefPtrs p 
+    withOpenPort obj proc
 withOpenPort (Port port _) proc = do
     o <- liftIO $ hIsOpen port
     if o then proc port
@@ -388,6 +401,7 @@ withOpenPort _ _ = return $ Bool False
 --
 --   Returns: Bool
 isOutputPortOpen :: [LispVal] -> IOThrowsError LispVal
+isOutputPortOpen [p@(Pointer {})] = recDerefPtrs p >>= box >>= isOutputPortOpen
 isOutputPortOpen [p@(Port _ _)] = do
   withOpenPort p $ \port -> do
     w <- liftIO $ hIsWritable port
@@ -404,6 +418,7 @@ isOutputPortOpen _ = return $ Bool False
 --   Returns: Bool - True if an input port, false otherwise
 --
 isInputPort :: [LispVal] -> IOThrowsError LispVal
+isInputPort [p@(Pointer {})] = recDerefPtrs p >>= box >>= isInputPort
 isInputPort [p@(Port _ _)] = 
   withOpenPort p $ \port -> liftM Bool $ liftIO $ hIsReadable port
 isInputPort _ = return $ Bool False
@@ -417,6 +432,7 @@ isInputPort _ = return $ Bool False
 --   Returns: Bool - True if an output port, false otherwise
 --
 isOutputPort :: [LispVal] -> IOThrowsError LispVal
+isOutputPort [p@(Pointer {})] = recDerefPtrs p >>= box >>= isOutputPort
 isOutputPort [p@(Port _ _)] = 
     withOpenPort p $ \port -> liftM Bool $ liftIO $ hIsWritable port
 isOutputPort _ = return $ Bool False
@@ -430,6 +446,7 @@ isOutputPort _ = return $ Bool False
 --   Returns: Bool
 --
 isCharReady :: [LispVal] -> IOThrowsError LispVal
+isCharReady [p@(Pointer {})] = recDerefPtrs p >>= box >>= isCharReady
 isCharReady [Port port _] = do --liftM Bool $ liftIO $ hReady port
     result <- liftIO $ try' (liftIO $ hReady port)
     case result of
@@ -449,6 +466,7 @@ isCharReady _ = return $ Bool False
 --
 readProc :: Bool -> [LispVal] -> IOThrowsError LispVal
 readProc mode [] = readProc mode [Port stdin Nothing]
+readProc mode [p@(Pointer {})] = recDerefPtrs p >>= box >>= readProc mode
 readProc mode [Port port _] = do
     input <- liftIO $ try' (liftIO $ hGetLine port)
     case input of
@@ -471,6 +489,7 @@ readProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
 --   Returns: Char
 --
 readCharProc :: (Handle -> IO Char) -> [LispVal] -> IOThrowsError LispVal
+readCharProc func [p@(Pointer {})] = recDerefPtrs p >>= box >>= readCharProc func
 readCharProc func [] = readCharProc func [Port stdin Nothing]
 readCharProc func [p@(Port _ _)] = do
   withOpenPort p $ \port -> do
