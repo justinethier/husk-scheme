@@ -144,9 +144,13 @@ data LispError = NumArgs (Maybe Integer) [LispVal] -- ^Invalid number of functio
 -- |Create a textual description for a 'LispError'
 showError :: LispError -> String
 showError (NumArgs (Just expected) found) = "Expected " ++ show expected
-                                  ++ " args; found values " ++ unwordsList found
-showError (NumArgs Nothing found) = "Incorrect number of args; " ++
-                                    " found values " ++ unwordsList found
+                                  ++ " args but found " 
+                                  ++ (show $ length found)
+                                  ++ " values: " ++ unwordsList found
+showError (NumArgs Nothing found) = "Incorrect number of args, "
+                                    ++ " found "
+                                    ++ (show $ length found)
+                                    ++ " values: " ++ unwordsList found
 showError (TypeMismatch expected found) = "Invalid type: expected " ++ expected
                                   ++ ", found " ++ show found
 showError (Parser parseErr) = "Parse error at " ++ ": " ++ show parseErr
