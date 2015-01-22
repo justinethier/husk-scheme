@@ -504,7 +504,9 @@ readCharProc func [p@(Port _ _)] = do
                      else throwError $ Default "I/O error reading from port"
         Right inpChr -> do
             return $ Char inpChr
-readCharProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
+readCharProc _ args = if length args == 1
+                         then throwError $ TypeMismatch "port" $ List args
+                         else throwError $ NumArgs (Just 1) args
 
 -- | Read a byte vector from the given port
 --
