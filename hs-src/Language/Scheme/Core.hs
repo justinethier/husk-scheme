@@ -157,6 +157,11 @@ registerSRFI env getDataFileName num = do
 -- |This is the recommended function to use to display a lisp error, instead
 --  of just using show directly.
 showLispError :: LispError -> IO String
+showLispError (NumArgs n lvs) = do
+  lvs' <- runErrorT $ mapM recDerefPtrs lvs
+  case lvs' of
+    Left _ -> return $ show $ NumArgs n lvs
+    Right vals -> return $ show $ NumArgs n vals
 showLispError (TypeMismatch str p@(Pointer _ e)) = do
   lv' <- evalLisp' e p 
   case lv' of
