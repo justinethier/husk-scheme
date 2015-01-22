@@ -4,7 +4,7 @@ v3.18.1
 New Features:
 
 - Allow `read-all` to read from `stdin` when no arguments are received.
-- Print the number of received arguments when displaying an "incorrect number of arguments" error message.
+- Print the number of received arguments when displaying an "incorrect number of arguments" error message. Also unbox any objects before displaying the error message.
 
 Big Fixes:
 
