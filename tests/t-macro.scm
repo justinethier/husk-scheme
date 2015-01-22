@@ -602,4 +602,14 @@
     (assert/equal (example5 "1") "1")
     (assert/equal (example5 1) 'not-string))
 
+;; Issue #200
+(assert/equal
+  (or
+    ((lambda ()
+      (define x 'y)
+      (cond
+        (#t
+          x)))))
+ 'y)
+
 (unit-test-handler-results)
