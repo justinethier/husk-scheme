@@ -1537,7 +1537,10 @@ getOrigName :: Env -> String -> IOThrowsError String
 getOrigName renameEnv a = do
   v <- getVar' renameEnv a
   case v of 
-    Just (Atom a') -> getOrigName renameEnv a'
+    Just (Atom a') ->
+      if a == a'
+        then return a'
+        else getOrigName renameEnv a'
     _ -> return a
 
 -- |Determine if the given identifier is lexically defined
