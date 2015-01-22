@@ -478,7 +478,9 @@ readProc mode [Port port _] = do
                 case mode of
                     True -> readExpr inpStr
                     _ -> return $ String inpStr
-readProc _ args@(_ : _) = throwError $ BadSpecialForm "" $ List args
+readProc _ args = if length args == 1
+                     then throwError $ TypeMismatch "port" $ List args
+                     else throwError $ NumArgs (Just 1) args
 
 -- |Read character from port
 --
