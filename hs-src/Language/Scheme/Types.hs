@@ -140,6 +140,7 @@ data LispError = NumArgs (Maybe Integer) [LispVal] -- ^Invalid number of functio
   | InternalError String {- ^An internal error within husk; in theory user (Scheme) code
                          should never allow one of these errors to be triggered. -}
   | Default String -- ^Default error
+  | ErrorWithStack LispError [String] 
 
 -- |Create a textual description for a 'LispError'
 showError :: LispError -> String
@@ -161,6 +162,7 @@ showError (DivideByZero) = "Division by zero"
 showError (NotImplemented message) = "Not implemented: " ++ message
 showError (InternalError message) = "An internal error occurred: " ++ message
 showError (Default message) = "Error: " ++ message
+showError (ErrorWithStack err stack) = (show err) ++ "\n" ++ (show stack)
 
 instance Show LispError where show = showError
 instance Error LispError where
