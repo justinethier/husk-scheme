@@ -890,6 +890,8 @@ createObjSetCPS var object updateFnc = cpsIndex
    and then execute the function via 'apply' -}
 prepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 prepareApply env cont (List (function : functionArgs)) = do
+-- call stack TODO: save this call in cont's stack, as proof of concept
+-- TODO: only keep last n entries
   eval env (makeCPSWArgs env cont cpsPrepArgs functionArgs) function
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsPrepArgs e c func args' = do
