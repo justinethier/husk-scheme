@@ -290,7 +290,7 @@ continueEval _
                 cEnv 
                 (Just (HaskellBody func funcArgs))
                 (Just nCont@(Continuation {}))
-                _)
+                _ _)
              val 
              xargs = do
     let args = case funcArgs of
@@ -310,7 +310,7 @@ continueEval _
  - NOTE: We use 'eval' below instead of 'meval' because macros are already expanded when
  -       a function is loaded the first time, so there is no need to test for this again here.
  -}
-continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) dynWind) val extraArgs = do
+continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) dynWind callStack) val extraArgs = do
 --    case (trace ("cBody = " ++ show cBody) cBody) of
     case cBody of
         [] -> do
@@ -319,13 +319,13 @@ continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) dynWind
               -- Pass extra args along if last expression of a function, to support (call-with-values)
               continueEval nEnv cCont val extraArgs 
             _ -> return val
-        (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) dynWind) lv
+        (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) dynWind callStack) lv
 
 -- No current continuation, but a next cont is available; call into it
-continueEval _ (Continuation cEnv Nothing (Just cCont) _) val xargs = continueEval cEnv cCont val xargs
+continueEval _ (Continuation cEnv Nothing (Just cCont) _ _) val xargs = continueEval cEnv cCont val xargs
 
 -- There is no continuation code, just return value
-continueEval _ (Continuation _ Nothing Nothing _) val _ = return val
+continueEval _ (Continuation _ Nothing Nothing _ _) val _ = return val
 continueEval _ _ _ _ = throwError $ Default "Internal error in continueEval"
 
 {- |Core eval function
