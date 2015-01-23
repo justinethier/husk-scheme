@@ -918,6 +918,10 @@ prepareApply env cont (List (function : functionArgs)) = do
        cpsEvalArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (2)"
 prepareApply _ _ _ = throwError $ Default "Unexpected error in prepareApply"
 
+-- Testing
+myErrorHandler :: LispError -> IOThrowsError LispVal
+myErrorHandler e = throwError $ ErrorWithStack e ["TODO"]
+
 -- |Call into a Scheme function
 apply :: LispVal  -- ^ Current continuation
       -> LispVal  -- ^ Function or continuation to execute
@@ -943,6 +947,7 @@ apply cont (IOFunc func) args = do
   case cont of
     Continuation cEnv _ _ _ -> continueEval cEnv cont result Nothing
     _ -> return result
+  `catchError` myErrorHandler
 apply cont (CustFunc func) args = do
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
   result <- func dargs
