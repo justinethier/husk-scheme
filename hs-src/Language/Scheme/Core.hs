@@ -403,7 +403,7 @@ eval env cont args@(List (Atom "let-syntax" : List _bindings : _body)) = do
    -- Expand whole body as a single continuous macro, to ensure hygiene
    expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) apply
    case expanded of
-     List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing) (Nil "") Nothing 
+     List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing []) (Nil "") Nothing 
      e -> continueEval bodyEnv cont e Nothing
 
 eval env cont args@(List (Atom "letrec-syntax" : List _bindings : _body)) = do
@@ -420,7 +420,7 @@ eval env cont args@(List (Atom "letrec-syntax" : List _bindings : _body)) = do
    -- Expand whole body as a single continuous macro, to ensure hygiene
    expanded <- Language.Scheme.Macro.expand bodyEnv False (List _body) apply
    case expanded of
-     List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing) (Nil "") Nothing
+     List e -> continueEval bodyEnv (Continuation bodyEnv (Just $ SchemeBody e) (Just cont) Nothing []) (Nil "") Nothing
      e -> continueEval bodyEnv cont e Nothing
 
 -- A non-standard way to rebind a macro to another keyword
@@ -929,7 +929,7 @@ apply :: LispVal  -- ^ Current continuation
       -> LispVal  -- ^ Function or continuation to execute
       -> [LispVal] -- ^ Arguments
       -> IOThrowsError LispVal -- ^ Final value of computation
-apply _ cont@(Continuation env _ _ ndynwind) args = do
+apply _ cont@(Continuation env _ _ ndynwind callStack) args = do
 -- case (trace ("calling into continuation. dynWind = " ++ show ndynwind) ndynwind) of
   case ndynwind of
     -- Call into dynWind.before if it exists...
@@ -947,14 +947,14 @@ apply _ cont@(Continuation env _ _ ndynwind) args = do
 apply cont (IOFunc func) args = do
   result <- func args
   case cont of
-    Continuation cEnv _ _ _ -> continueEval cEnv cont result Nothing
+    Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
     _ -> return result
   `catchError` myErrorHandler
 apply cont (CustFunc func) args = do
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
   result <- func dargs
   case cont of
-    Continuation cEnv _ _ _ -> continueEval cEnv cont result Nothing
+    Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
     _ -> return result
 apply cont (EvalFunc func) args = do
     -- An EvalFunc extends the evaluator so it needs access to the current 
@@ -966,7 +966,7 @@ apply cont (PrimitiveFunc func) args = do
   -- handles ptrs just fine
   result <- liftThrows $ func args
   case cont of
-    Continuation cEnv _ _ _ -> continueEval cEnv cont result Nothing
+    Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
     _ -> return result
 apply cont (Func aparams avarargs abody aclosure) args =
   if num aparams /= num args && isNothing avarargs
@@ -987,16 +987,16 @@ apply cont (Func aparams avarargs abody aclosure) args =
         -- See: http://icem-www.folkwang-hochschule.de/~finnendahl/cm_kurse/doc/schintro/schintro_142.html#SEC294
         --
         evalBody evBody env = case cont of
-            Continuation _ (Just (SchemeBody cBody)) (Just cCont) cDynWind -> if null cBody
-                then continueWCont env evBody cCont cDynWind
+            Continuation _ (Just (SchemeBody cBody)) (Just cCont) cDynWind cStack -> if null cBody
+                then continueWCont env evBody cCont cDynWind cStack
 -- else continueWCont env (evBody) cont (trace ("cDynWind = " ++ show cDynWind) cDynWind) -- Might be a problem, not fully optimizing
-                else continueWCont env evBody cont cDynWind -- Might be a problem, not fully optimizing
-            Continuation _ _ _ cDynWind -> continueWCont env evBody cont cDynWind
-            _ -> continueWCont env evBody cont Nothing
+                else continueWCont env evBody cont cDynWind cStack -- Might be a problem, not fully optimizing
+            Continuation _ _ _ cDynWind cStack -> continueWCont env evBody cont cDynWind cStack
+            _ -> continueWCont env evBody cont Nothing []
 
         -- Shortcut for calling continueEval
-        continueWCont cwcEnv cwcBody cwcCont cwcDynWind =
-            continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) cwcDynWind) (Nil "") Nothing 
+        continueWCont cwcEnv cwcBody cwcCont cwcDynWind cStack =
+            continueEval cwcEnv (Continuation cwcEnv (Just (SchemeBody cwcBody)) (Just cwcCont) cwcDynWind cStack) (Nil "") Nothing
 
         bindVarArgs arg env = case arg of
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List remainingArgs)]
@@ -1196,15 +1196,16 @@ evalfuncExitSuccess, evalfuncExitFail, evalfuncApply, evalfuncDynamicWind,
  -   is 100% correct since a stack is not directly used to hold the winders. I think there must still be edge
  -   cases that are not handled properly...
  -}
-evalfuncDynamicWind [cont@(Continuation env _ _ _), beforeFunc, thunkFunc, afterFunc] = do
+evalfuncDynamicWind [cont@(Continuation {contClosure = env}), beforeFunc, thunkFunc, afterFunc] = do
   apply (makeCPS env cont cpsThunk) beforeFunc []
  where
    cpsThunk, cpsAfter :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-   cpsThunk e (Continuation ce cc cnc _ {- FUTURE: cwindrz -} ) _ _ = apply (Continuation e (Just (HaskellBody cpsAfter Nothing))
-                                            (Just (Continuation ce cc cnc
-                                                                Nothing))
-                                             (Just [DynamicWinders beforeFunc afterFunc])) -- FUTURE: append if existing winders
-                               thunkFunc []
+   cpsThunk e (Continuation ce cc cnc _ cs) _ _ = 
+     apply (Continuation e (Just (HaskellBody cpsAfter Nothing))
+                           (Just (Continuation ce cc cnc Nothing cs))
+                           (Just [DynamicWinders beforeFunc afterFunc]) 
+                           []) -- FUTURE: append if existing winders
+           thunkFunc []
    cpsThunk _ _ _ _ = throwError $ Default "Unexpected error in cpsThunk during (dynamic-wind)"
    cpsAfter _ c value _ = do
     let cpsRetVals :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
@@ -1220,25 +1221,25 @@ evalfuncExit args@(cont : rest) = do
     [Bool False] -> evalfuncExitFail args
     _ -> evalfuncExitSuccess args
  where
-  unchain c@(Continuation _ _ cn _) = do
+  unchain c@(Continuation {nextCont = cn}) = do
     case cn of
       (Just c'@(Continuation {})) -> do
         _ <- execAfters c
         unchain c'
       _ -> execAfters c
   unchain _ = return []
-  execAfters (Continuation e _ _ (Just dynamicWinders)) = do
+  execAfters (Continuation e _ _ (Just dynamicWinders) _) = do
     mapM (\ (DynamicWinders _ afterFunc) -> 
             apply (makeNullContinuation e) afterFunc []) 
          dynamicWinders
   execAfters _ = return []
 evalfuncExit args = throwError $ InternalError $ "Invalid arguments to exit: " ++ show args
 
-evalfuncCallWValues [cont@(Continuation env _ _ _), producer, consumer] = do
+evalfuncCallWValues [cont@(Continuation {contClosure = env}), producer, consumer] = do
   apply (makeCPS env cont cpsEval) producer [] -- Call into prod to get values
  where
    cpsEval :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
-   cpsEval _ c@(Continuation _ _ _ _) value (Just xargs) = apply c consumer (value : xargs)
+   cpsEval _ c@(Continuation {}) value (Just xargs) = apply c consumer (value : xargs)
    cpsEval _ c value _ = apply c consumer [value]
 evalfuncCallWValues (_ : args) = throwError $ NumArgs (Just 2) args -- Skip over continuation argument
 evalfuncCallWValues _ = throwError $ NumArgs (Just 2) []
@@ -1262,28 +1263,28 @@ evalfuncApply (_ : args) = throwError $ NumArgs (Just 2) args -- Skip over conti
 evalfuncApply _ = throwError $ NumArgs (Just 2) []
 
 
-evalfuncMakeEnv (cont@(Continuation env _ _ _) : _) = do
+evalfuncMakeEnv (cont@(Continuation {contClosure = env}) : _) = do
     e <- liftIO nullEnv
     continueEval env cont (LispEnv e) Nothing
 evalfuncMakeEnv _ = throwError $ NumArgs (Just 1) []
 
-evalfuncNullEnv [cont@(Continuation env _ _ _), Number _] = do
+evalfuncNullEnv [cont@(Continuation {contClosure = env}), Number _] = do
     nilEnv <- liftIO primitiveBindings
     continueEval env cont (LispEnv nilEnv) Nothing
 evalfuncNullEnv (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over continuation argument
 evalfuncNullEnv _ = throwError $ NumArgs (Just 1) []
 
-evalfuncInteractionEnv (cont@(Continuation env _ _ _) : _) = do
+evalfuncInteractionEnv (cont@(Continuation {contClosure = env}) : _) = do
     continueEval env cont (LispEnv env) Nothing
 evalfuncInteractionEnv _ = throwError $ InternalError ""
 
-evalfuncUseParentEnv ((Continuation env a b c) : _) = do
+evalfuncUseParentEnv ((Continuation env a b c d) : _) = do
     let parEnv = fromMaybe env (parentEnv env)
-    continueEval parEnv (Continuation parEnv a b c) (LispEnv parEnv) Nothing
+    continueEval parEnv (Continuation parEnv a b c d) (LispEnv parEnv) Nothing
 evalfuncUseParentEnv _ = throwError $ InternalError ""
 
 evalfuncImport [
-    cont@(Continuation env a b c), 
+    cont@(Continuation env a b c d), 
     toEnv,
     LispEnv fromEnv, 
     imports,
@@ -1317,7 +1318,7 @@ evalfuncImport [
      newEnv <- liftIO $ importEnv toEnv' fromEnv
      continueEval
          env 
-        (Continuation env a b c) 
+        (Continuation env a b c d) 
         (LispEnv newEnv)
         Nothing
 
@@ -1328,7 +1329,7 @@ evalfuncImport _ = throwError $ InternalError ""
 
 -- |Load import into the main environment
 bootstrapImport :: [LispVal] -> ErrorT LispError IO LispVal
-bootstrapImport [cont@(Continuation env _ _ _)] = do
+bootstrapImport [cont@(Continuation {contClosure = env})] = do
     LispEnv me <- getVar env "*meta-env*"
     ri <- getNamespacedVar me macroNamespace "repl-import"
     renv <- defineNamespacedVar env macroNamespace "import" ri
@@ -1339,10 +1340,10 @@ evalfuncLoad (cont : p@(Pointer _ _) : lvs) = do
     lv <- derefPtr p
     evalfuncLoad (cont : lv : lvs)
 
-evalfuncLoad [(Continuation _ a b c), String filename, LispEnv env] = do
-    evalfuncLoad [Continuation env a b c, String filename]
+evalfuncLoad [(Continuation _ a b c d), String filename, LispEnv env] = do
+    evalfuncLoad [Continuation env a b c d, String filename]
 
-evalfuncLoad [cont@(Continuation env _ _ _), String filename] = do
+evalfuncLoad [cont@(Continuation {contClosure = env}), String filename] = do
     filename' <- findFileOrLib filename
     results <- load filename' >>= mapM (meval env (makeNullContinuation env))
     if not (null results)
@@ -1354,7 +1355,7 @@ evalfuncLoad (_ : args) = throwError $ NumArgs (Just 1) args -- Skip over contin
 evalfuncLoad _ = throwError $ NumArgs (Just 1) []
 
 -- |Evaluate an expression.
-evalfuncEval [cont@(Continuation env _ _ _), val] = do -- Current env
+evalfuncEval [cont@(Continuation {contClosure = env}), val] = do -- Current env
     v <- derefPtr val -- Must deref ptrs for macro subsystem
     meval env cont v
 evalfuncEval [cont@(Continuation {}), val, LispEnv env] = do -- Env parameter
@@ -1369,7 +1370,7 @@ evalfuncCallCC [cont@(Continuation {}), func] = do
      PrimitiveFunc f -> do
          result <- liftThrows $ f [cont]
          case cont of
-             Continuation cEnv _ _ _ -> continueEval cEnv cont result Nothing
+             Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
              _ -> return result
      Func _ (Just _) _ _ -> apply cont func [cont] -- Variable # of args (pair). Just call into cont
      Func aparams _ _ _ ->
