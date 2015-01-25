@@ -67,7 +67,7 @@ import Data.Version as DV
 import Data.Word
 import qualified System.Exit
 import qualified System.Info as SysInfo
--- import Debug.Trace
+import Debug.Trace
 
 -- |Husk version number
 version :: String
@@ -889,17 +889,21 @@ createObjSetCPS var object updateFnc = cpsIndex
 {- Prepare for apply by evaluating each function argument,
    and then execute the function via 'apply' -}
 prepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-prepareApply env cont (List (function : functionArgs)) = do
+prepareApply env cont@(Continuation clo cc nc dw cstk) fnc@(List (function : functionArgs)) = do
 -- call stack TODO: save this call in cont's stack, as proof of concept
 -- TODO: only keep last n entries
-  eval env (makeCPSWArgs env cont cpsPrepArgs functionArgs) function
+  eval env 
+       (makeCPSWArgs env (Continuation clo cc nc dw $ (show fnc) : cstk) 
+                     cpsPrepArgs functionArgs) 
+       function
  where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsPrepArgs e c func args' = do
 -- case (trace ("prep eval of args: " ++ show args) args) of
           let args = case args' of
                           Just as -> as
                           Nothing -> []
-          case args of
+          case (trace ("stack: " ++ (show fnc) ++ " " ++ (show cstk)) args) of
+          --case args of
             [] -> apply c func [] -- No args, immediately apply the function
             [a] -> meval env (makeCPSWArgs e c cpsEvalArgs [func, List [], List []]) a
             (a : as) -> meval env (makeCPSWArgs e c cpsEvalArgs [func, List [], List as]) a
@@ -921,8 +925,9 @@ prepareApply env cont (List (function : functionArgs)) = do
 prepareApply _ _ _ = throwError $ Default "Unexpected error in prepareApply"
 
 -- Testing
-myErrorHandler :: LispError -> IOThrowsError LispVal
-myErrorHandler e = throwError $ ErrorWithStack e ["TODO"]
+myErrorHandler :: LispVal -> LispError -> IOThrowsError LispVal
+myErrorHandler (Continuation {cCallStack=cstk}) e = do
+    throwError $ ErrorWithStack e cstk
 
 -- |Call into a Scheme function
 apply :: LispVal  -- ^ Current continuation
@@ -949,7 +954,7 @@ apply cont (IOFunc func) args = do
   case cont of
     Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
     _ -> return result
-  `catchError` myErrorHandler
+  `catchError` myErrorHandler cont
 apply cont (CustFunc func) args = do
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
   result <- func dargs
