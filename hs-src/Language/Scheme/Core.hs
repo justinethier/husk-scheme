@@ -892,6 +892,7 @@ prepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 prepareApply env cont@(Continuation clo cc nc dw cstk) fnc@(List (function : functionArgs)) = do
 -- call stack TODO: save this call in cont's stack, as proof of concept
 -- TODO: only keep last n entries
+-- TODO: how to keep call stack from growing from tail calls? simple for basic recursion, but what about two mutually recursive functions?
   eval env 
        (makeCPSWArgs env (Continuation clo cc nc dw $ (show fnc) : cstk) 
                      cpsPrepArgs functionArgs) 
