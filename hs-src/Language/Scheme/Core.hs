@@ -67,7 +67,7 @@ import Data.Version as DV
 import Data.Word
 import qualified System.Exit
 import qualified System.Info as SysInfo
-import Debug.Trace
+-- import Debug.Trace
 
 -- |Husk version number
 version :: String
@@ -172,11 +172,12 @@ showLispError (BadSpecialForm str p@(Pointer _ e)) = do
   case lv' of
     Left _ -> showLispError $ BadSpecialForm str $ Atom $ show p
     Right val -> showLispError $ BadSpecialForm str val
--- TODO: showLispError (ErrorWithStack err stack) = do
--- TODO:   stack' <- runErrorT $ mapM recDerefPtrs stack
--- TODO:   case stack' of
--- TODO:     Left _ -> 
--- TODO:     Right val -> 
+showLispError (ErrorWithStack err stack) = do
+  err' <- showLispError err
+  stack' <- runErrorT $ mapM recDerefPtrs stack
+  case stack' of
+    Left _ -> return $ err' ++ "\nCall History:\n" ++ (unlines $ map show stack)
+    Right vals -> return $ err' ++ "\nCall History:\n" ++ (unlines $ map show vals)
 showLispError err = return $ show err
 
 -- |Execute an IO action and return result or an error message.
