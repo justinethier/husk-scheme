@@ -163,7 +163,8 @@ showError (DivideByZero) = "Division by zero"
 showError (NotImplemented message) = "Not implemented: " ++ message
 showError (InternalError message) = "An internal error occurred: " ++ message
 showError (Default message) = "Error: " ++ message
-showError (ErrorWithStack err stack) = (show err) ++ "\n" ++ (show stack)
+showError (ErrorWithStack err stack) = do
+    (show err) ++ "\nCall History:\n" ++ (unlines $ map show stack)
 
 instance Show LispError where show = showError
 instance Error LispError where
