@@ -62,7 +62,7 @@ module Language.Scheme.Types
              , currentCont
              , nextCont
              , dynamicWind
-             , cCallStack
+             , contCallHist
         , Syntax
              , synClosure
              , synRenameClosure
@@ -141,7 +141,7 @@ data LispError = NumArgs (Maybe Integer) [LispVal] -- ^Invalid number of functio
   | InternalError String {- ^An internal error within husk; in theory user (Scheme) code
                          should never allow one of these errors to be triggered. -}
   | Default String -- ^Default error
-  | ErrorWithStack LispError [LispVal] 
+  | ErrorWithCallHist LispError [LispVal] 
 
 -- |Create a textual description for a 'LispError'
 showError :: LispError -> String
@@ -163,7 +163,7 @@ showError (DivideByZero) = "Division by zero"
 showError (NotImplemented message) = "Not implemented: " ++ message
 showError (InternalError message) = "An internal error occurred: " ++ message
 showError (Default message) = "Error: " ++ message
-showError (ErrorWithStack err stack) = do
+showError (ErrorWithCallHist err stack) = do
     (show err) ++ "\nCall History:\n" ++ (unlines $ map show stack)
 
 instance Show LispError where show = showError
@@ -251,7 +251,7 @@ data LispVal = Atom String
                  , currentCont :: (Maybe DeferredCode)  -- Code of current continuation
                  , nextCont :: (Maybe LispVal)          -- Code to resume after body of cont
                  , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind)
-                 , cCallStack :: [LispVal] -- Active call stack
+                 , contCallHist :: [LispVal] -- Active call history
                 }
  -- ^Continuation
  | Syntax { synClosure :: Maybe Env       -- ^ Code env in effect at definition time, if applicable

@@ -172,11 +172,11 @@ showLispError (BadSpecialForm str p@(Pointer _ e)) = do
   case lv' of
     Left _ -> showLispError $ BadSpecialForm str $ Atom $ show p
     Right val -> showLispError $ BadSpecialForm str val
-showLispError (ErrorWithStack err stack) = do
+showLispError (ErrorWithCallHist err hist) = do
   err' <- showLispError err
-  stack' <- runErrorT $ mapM recDerefPtrs stack
-  case stack' of
-    Left _ -> return $ err' ++ "\nCall History:\n" ++ (unlines $ map show stack)
+  hist' <- runErrorT $ mapM recDerefPtrs hist
+  case hist' of
+    Left _ -> return $ err' ++ "\nCall History:\n" ++ (unlines $ map show hist)
     Right vals -> return $ err' ++ "\nCall History:\n" ++ (unlines $ map show vals)
 showLispError err = return $ show err
 
@@ -316,7 +316,7 @@ continueEval _
  - NOTE: We use 'eval' below instead of 'meval' because macros are already expanded when
  -       a function is loaded the first time, so there is no need to test for this again here.
  -}
-continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) dynWind callStack) val extraArgs = do
+continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) dynWind callHist) val extraArgs = do
 --    case (trace ("cBody = " ++ show cBody) cBody) of
     case cBody of
         [] -> do
@@ -325,7 +325,7 @@ continueEval _ (Continuation cEnv (Just (SchemeBody cBody)) (Just cCont) dynWind
               -- Pass extra args along if last expression of a function, to support (call-with-values)
               continueEval nEnv cCont val extraArgs 
             _ -> return val
-        (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) dynWind callStack) lv
+        (lv : lvs) -> eval cEnv (Continuation cEnv (Just (SchemeBody lvs)) (Just cCont) dynWind callHist) lv
 
 -- No current continuation, but a next cont is available; call into it
 continueEval _ (Continuation cEnv Nothing (Just cCont) _ _) val xargs = continueEval cEnv cCont val xargs
@@ -891,22 +891,15 @@ createObjSetCPS var object updateFnc = cpsIndex
     cpsIndex :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
     cpsIndex e c idx _ = meval e (makeCPSWArgs e c cpsGetVar [idx]) object
 
-
 {- Prepare for apply by evaluating each function argument,
    and then execute the function via 'apply' -}
 prepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 prepareApply env cont@(Continuation clo cc nc dw cstk) fnc@(List (function : functionArgs)) = do
--- call stack TODO: save this call in cont's stack, as proof of concept
--- TODO: only keep last n entries
--- TODO: how to keep call stack from growing from tail calls? simple for basic recursion, but what about two mutually recursive functions?
   eval env 
-       (makeCPSWArgs env (Continuation clo cc nc dw $ addToStack fnc) 
+       (makeCPSWArgs env (Continuation clo cc nc dw $ addToCallHistory fnc cstk) 
                      cpsPrepArgs functionArgs) 
        function
- where addToStack f
-         | null cstk = [f]
-         | f == head cstk = cstk
-         | otherwise = f : take 10 cstk
+ where
        cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsPrepArgs e c func args' = do
 -- case (trace ("prep eval of args: " ++ show args) args) of
@@ -935,11 +928,6 @@ prepareApply env cont@(Continuation clo cc nc dw cstk) fnc@(List (function : fun
        cpsEvalArgs _ _ _ Nothing = throwError $ Default "Unexpected error in function application (2)"
 prepareApply _ _ _ = throwError $ Default "Unexpected error in prepareApply"
 
--- Testing
-myErrorHandler :: LispVal -> LispError -> IOThrowsError LispVal
-myErrorHandler (Continuation {cCallStack=cstk}) e = do
-    throwError $ ErrorWithStack e cstk
-
 -- |Call into a Scheme function
 apply :: LispVal  -- ^ Current continuation
       -> LispVal  -- ^ Function or continuation to execute
@@ -965,7 +953,7 @@ apply cont (IOFunc func) args = do
   case cont of
     Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
     _ -> return result
-  `catchError` myErrorHandler cont
+  `catchError` throwErrorWithCallHistory cont
 apply cont (CustFunc func) args = do
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
   result <- func dargs
@@ -1436,3 +1424,18 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("exit-fail", evalfuncExitFail)
                   , ("exit-success", evalfuncExitSuccess)
                 ]
+
+-- |Rethrow given error with call history, if available
+throwErrorWithCallHistory :: LispVal -> LispError -> IOThrowsError LispVal
+throwErrorWithCallHistory (Continuation {contCallHist=cstk}) e = do
+    throwError $ ErrorWithCallHist e cstk
+throwErrorWithCallHistory _ e = throwError e
+
+-- call stack TODO: save this call in cont's stack, as proof of concept
+-- TODO: only keep last n entries
+-- TODO: how to keep call stack from growing from tail calls? simple for basic recursion, but what about two mutually recursive functions?
+addToCallHistory :: LispVal -> [LispVal] -> [LispVal]
+addToCallHistory f history 
+  | null history = [f]
+  | f == head history = history
+  | otherwise = f : take 10 history
