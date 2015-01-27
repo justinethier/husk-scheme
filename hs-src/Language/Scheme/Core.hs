@@ -62,7 +62,7 @@ import Control.Monad.Error
 import Data.Array
 import qualified Data.ByteString as BS
 import qualified Data.Map
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Version as DV
 import Data.Word
 import qualified System.Exit
@@ -976,7 +976,8 @@ apply cont (PrimitiveFunc func) args = do
     _ -> return result
 --  `catchError` throwErrorWithCallHistory cont
 apply cont (Func aparams avarargs abody aclosure) args =
-  if num aparams /= num args && isNothing avarargs
+  if (num aparams /= num args && isNothing avarargs) ||
+     (num aparams > num args && isJust avarargs)
      then throwError $ NumArgs (Just (num aparams)) args
      else liftIO (extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
@@ -1009,7 +1010,8 @@ apply cont (Func aparams avarargs abody aclosure) args =
           Just argName -> liftIO $ extendEnv env [((varNamespace, argName), List remainingArgs)]
           Nothing -> return env
 apply cont (HFunc aparams avarargs abody aclosure) args =
-  if num aparams /= num args && isNothing avarargs
+  if (num aparams /= num args && isNothing avarargs) ||
+     (num aparams > num args && isJust avarargs)
      then throwError $ NumArgs (Just (num aparams)) args
      else liftIO (extendEnv aclosure $ zip (map ((,) varNamespace) aparams) args) >>= bindVarArgs avarargs >>= (evalBody abody)
   where remainingArgs = drop (length aparams) args
