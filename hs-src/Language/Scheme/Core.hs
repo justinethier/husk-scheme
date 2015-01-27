@@ -172,6 +172,11 @@ showLispError (BadSpecialForm str p@(Pointer _ e)) = do
   case lv' of
     Left _ -> showLispError $ BadSpecialForm str $ Atom $ show p
     Right val -> showLispError $ BadSpecialForm str val
+-- TODO: showLispError (ErrorWithStack err stack) = do
+-- TODO:   stack' <- runErrorT $ mapM recDerefPtrs stack
+-- TODO:   case stack' of
+-- TODO:     Left _ -> 
+-- TODO:     Right val -> 
 showLispError err = return $ show err
 
 -- |Execute an IO action and return result or an error message.
@@ -894,17 +899,21 @@ prepareApply env cont@(Continuation clo cc nc dw cstk) fnc@(List (function : fun
 -- TODO: only keep last n entries
 -- TODO: how to keep call stack from growing from tail calls? simple for basic recursion, but what about two mutually recursive functions?
   eval env 
-       (makeCPSWArgs env (Continuation clo cc nc dw $ (show fnc) : cstk) 
+       (makeCPSWArgs env (Continuation clo cc nc dw $ addToStack fnc) 
                      cpsPrepArgs functionArgs) 
        function
- where cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
+ where addToStack f
+         | null cstk = [f]
+         | f == head cstk = cstk
+         | otherwise = f : take 10 cstk
+       cpsPrepArgs :: Env -> LispVal -> LispVal -> Maybe [LispVal] -> IOThrowsError LispVal
        cpsPrepArgs e c func args' = do
 -- case (trace ("prep eval of args: " ++ show args) args) of
           let args = case args' of
                           Just as -> as
                           Nothing -> []
-          case (trace ("stack: " ++ (show fnc) ++ " " ++ (show cstk)) args) of
-          --case args of
+          --case (trace ("stack: " ++ (show fnc) ++ " " ++ (show cstk)) args) of
+          case args of
             [] -> apply c func [] -- No args, immediately apply the function
             [a] -> meval env (makeCPSWArgs e c cpsEvalArgs [func, List [], List []]) a
             (a : as) -> meval env (makeCPSWArgs e c cpsEvalArgs [func, List [], List as]) a

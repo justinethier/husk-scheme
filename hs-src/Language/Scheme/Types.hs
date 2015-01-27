@@ -141,7 +141,7 @@ data LispError = NumArgs (Maybe Integer) [LispVal] -- ^Invalid number of functio
   | InternalError String {- ^An internal error within husk; in theory user (Scheme) code
                          should never allow one of these errors to be triggered. -}
   | Default String -- ^Default error
-  | ErrorWithStack LispError [String] 
+  | ErrorWithStack LispError [LispVal] 
 
 -- |Create a textual description for a 'LispError'
 showError :: LispError -> String
@@ -250,7 +250,7 @@ data LispVal = Atom String
                  , currentCont :: (Maybe DeferredCode)  -- Code of current continuation
                  , nextCont :: (Maybe LispVal)          -- Code to resume after body of cont
                  , dynamicWind :: (Maybe [DynamicWinders]) -- Functions injected by (dynamic-wind)
-                 , cCallStack :: [String] -- Active call stack
+                 , cCallStack :: [LispVal] -- Active call stack
                 }
  -- ^Continuation
  | Syntax { synClosure :: Maybe Env       -- ^ Code env in effect at definition time, if applicable
