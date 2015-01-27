@@ -894,7 +894,7 @@ createObjSetCPS var object updateFnc = cpsIndex
 {- Prepare for apply by evaluating each function argument,
    and then execute the function via 'apply' -}
 prepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
-prepareApply env cont@(Continuation clo cc nc dw cstk) fnc@(List (function : functionArgs)) = do
+prepareApply env (Continuation clo cc nc dw cstk) fnc@(List (function : functionArgs)) = do
   eval env 
        (makeCPSWArgs env (Continuation clo cc nc dw $ addToCallHistory fnc cstk) 
                      cpsPrepArgs functionArgs) 
@@ -933,7 +933,7 @@ apply :: LispVal  -- ^ Current continuation
       -> LispVal  -- ^ Function or continuation to execute
       -> [LispVal] -- ^ Arguments
       -> IOThrowsError LispVal -- ^ Final value of computation
-apply _ cont@(Continuation env _ _ ndynwind callStack) args = do
+apply _ cont@(Continuation env _ _ ndynwind _) args = do
 -- case (trace ("calling into continuation. dynWind = " ++ show ndynwind) ndynwind) of
   case ndynwind of
     -- Call into dynWind.before if it exists...
@@ -953,6 +953,7 @@ apply cont (IOFunc func) args = do
   case cont of
     Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
     _ -> return result
+  -- TODO: really want to catch the error after 'func' but before 'continueEval'. don't want to repeatedly nest an error if continueEval is called several times prior to an error being thrown!
   `catchError` throwErrorWithCallHistory cont
 apply cont (CustFunc func) args = do
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
@@ -960,6 +961,7 @@ apply cont (CustFunc func) args = do
   case cont of
     Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
     _ -> return result
+--  `catchError` throwErrorWithCallHistory cont
 apply cont (EvalFunc func) args = do
     -- An EvalFunc extends the evaluator so it needs access to the current 
     -- continuation, so pass it as the first argument.
@@ -972,6 +974,7 @@ apply cont (PrimitiveFunc func) args = do
   case cont of
     Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
     _ -> return result
+--  `catchError` throwErrorWithCallHistory cont
 apply cont (Func aparams avarargs abody aclosure) args =
   if num aparams /= num args && isNothing avarargs
      then throwError $ NumArgs (Just (num aparams)) args
