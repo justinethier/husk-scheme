@@ -957,15 +957,15 @@ apply cont (IOFunc f) args = do
   exec func = do
     func args
     `catchError` throwErrorWithCallHistory cont
-apply cont (CustFunc func) args = do
+apply cont (CustFunc f) args = do
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
-  result <- exec func dargs
+  result <- exec f dargs
   case cont of
     Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
     _ -> return result
  where
-  exec func args = do
-    func args
+  exec func fargs = do
+    func fargs
     `catchError` throwErrorWithCallHistory cont
 apply cont (EvalFunc func) args = do
     -- An EvalFunc extends the evaluator so it needs access to the current 
@@ -980,8 +980,8 @@ apply cont (PrimitiveFunc func) args = do
     Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
     _ -> return result
  where
-  exec args = do
-    liftThrows $ func args
+  exec fargs = do
+    liftThrows $ func fargs
     `catchError` throwErrorWithCallHistory cont
 apply cont (Func aparams avarargs abody aclosure) args =
   if (num aparams /= num args && isNothing avarargs) ||
