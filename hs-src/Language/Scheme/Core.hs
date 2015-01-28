@@ -43,6 +43,9 @@ module Language.Scheme.Core
     , updateList
     , updateVector
     , updateByteVector
+    -- * Error handling
+    , addToCallHistory
+    , throwErrorWithCallHistory
     -- * Internal use only
     , meval
     ) where
@@ -1438,17 +1441,15 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("exit-success", evalfuncExitSuccess)
                 ]
 
--- |Rethrow given error with call history, if available
+-- | Rethrow given error with call history, if available
 throwErrorWithCallHistory :: LispVal -> LispError -> IOThrowsError LispVal
 throwErrorWithCallHistory (Continuation {contCallHist=cstk}) e = do
     throwError $ ErrorWithCallHist e cstk
 throwErrorWithCallHistory _ e = throwError e
 
--- call stack TODO: save this call in cont's stack, as proof of concept
--- TODO: only keep last n entries
--- TODO: how to keep call stack from growing from tail calls? simple for basic recursion, but what about two mutually recursive functions?
+-- | Add a function to the call history
 addToCallHistory :: LispVal -> [LispVal] -> [LispVal]
 addToCallHistory f history 
   | null history = [f]
-  | f == head history = history
-  | otherwise = f : take 10 history
+  | f == head history = history -- Ignore recursive calls
+  | otherwise = f : take 10 history -- Bounded buffer; but can this be improved?
