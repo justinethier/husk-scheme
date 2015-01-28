@@ -173,12 +173,12 @@ import qualified Data.Map
 import qualified Data.Time.Clock.POSIX
 import Data.Unique
 import Data.Word
-import qualified System.Cmd
 import System.Directory (doesFileExist, removeFile)
 import qualified System.Environment as SE
 import System.Exit (ExitCode(..))
 import System.IO
 import System.IO.Error
+import qualified System.Process
 --import System.Process (readProcess)
 --import Debug.Trace
 
@@ -2022,7 +2022,7 @@ currentTimestamp _ = do
 --
 system :: [LispVal] -> IOThrowsError LispVal
 system [String cmd] = do
-    result <- liftIO $ System.Cmd.system cmd
+    result <- liftIO $ System.Process.system cmd
     case result of
         ExitSuccess -> return $ Number 0
         ExitFailure code -> return $ Number $ toInteger code

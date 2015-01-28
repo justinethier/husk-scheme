@@ -18,12 +18,12 @@ import Language.Scheme.Types     -- Scheme data types
 import Language.Scheme.Variables -- Scheme variable operations
 import Control.Monad.Error
 import Data.Maybe (fromMaybe)
-import System.Cmd (system)
 import System.Console.GetOpt
 import System.FilePath (dropExtension)
 import System.Environment
 import System.Exit (ExitCode (..), exitSuccess, exitWith)
 import System.IO
+import System.Process (system)
 
 main :: IO ()
 main = do 
