@@ -3,7 +3,15 @@ v3.19
 
 New Features:
 
-- Added limited support for displaying call history when an error is thrown. This should be a big help for debugging.
+- Added limited support for displaying call history when an error is thrown:
+
+        huski> ((lambda () (vector-length "v")))
+        Invalid type: expected vector, found "v"
+        Call History:
+         (vector-length "v")
+          ((lambda () (vector-length "v")))
+
+  Sorry this took so long, as it should be a tremendous help for debugging!
 - Allow `read-all` to read from `stdin` when no arguments are received.
 - Print the number of received arguments when displaying an "incorrect number of arguments" error message. Also unbox any objects before displaying the error message.
 
