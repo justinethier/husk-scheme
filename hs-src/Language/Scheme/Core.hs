@@ -176,8 +176,8 @@ showLispError (ErrorWithCallHist err hist) = do
   err' <- showLispError err
   hist' <- runErrorT $ mapM recDerefPtrs hist
   case hist' of
-    Left _ -> return $ err' ++ "\nCall History:\n" ++ (unlines $ map show hist)
-    Right vals -> return $ err' ++ "\nCall History:\n" ++ (unlines $ map show vals)
+    Left _ -> return $ showCallHistory err' hist
+    Right vals -> return $ showCallHistory err' vals
 showLispError err = return $ show err
 
 -- |Execute an IO action and return result or an error message.

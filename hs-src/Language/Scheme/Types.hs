@@ -23,6 +23,7 @@ module Language.Scheme.Types
     , ThrowsError 
     , IOThrowsError 
     , liftThrows 
+    , showCallHistory
     -- * Types and related functions
     , LispVal (
           Atom
@@ -163,13 +164,17 @@ showError (DivideByZero) = "Division by zero"
 showError (NotImplemented message) = "Not implemented: " ++ message
 showError (InternalError message) = "An internal error occurred: " ++ message
 showError (Default message) = "Error: " ++ message
-showError (ErrorWithCallHist err stack) = do
-    (show err) ++ "\nCall History:\n" ++ (unlines $ map show stack)
+showError (ErrorWithCallHist err stack) = showCallHistory (show err) stack
 
 instance Show LispError where show = showError
 instance Error LispError where
   noMsg = Default "An error has occurred"
   strMsg = Default
+
+-- |Display call history for an error
+showCallHistory :: String -> [LispVal] -> String
+showCallHistory err hist = do
+  err ++ "\nCall History:\n" ++ (unlines $ map (\s -> ' ' : show s) hist)
 
 -- |Container used by operations that could throw an error
 type ThrowsError = Either LispError
