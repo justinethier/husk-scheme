@@ -332,7 +332,7 @@ makeCPS :: Env
         -- ^ Haskell function
         -> LispVal
         -- ^ The Haskell function packaged as a LispVal
-makeCPS env cont@(Continuation {}) cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) (dynamicWind cont) []
+makeCPS env cont@(Continuation {contCallHist=hist}) cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) (dynamicWind cont) hist
 makeCPS env cont cps = Continuation env (Just (HaskellBody cps Nothing)) (Just cont) Nothing [] -- This overload just here for completeness; it should never be used
 
 -- |Make a continuation that stores a higher-order function and arguments to that function
@@ -346,11 +346,11 @@ makeCPSWArgs :: Env
         -- ^ Arguments to the function
         -> LispVal
         -- ^ The Haskell function packaged as a LispVal
-makeCPSWArgs env cont@(Continuation {dynamicWind=dynWind}) cps args = 
+makeCPSWArgs env cont@(Continuation {dynamicWind=dynWind,contCallHist=hist}) cps args = 
     Continuation 
         env 
         (Just (HaskellBody cps (Just args))) 
-        (Just cont) dynWind []
+        (Just cont) dynWind hist
 makeCPSWArgs env cont cps args = 
     -- This overload just here for completeness; it should never be used
     Continuation 
