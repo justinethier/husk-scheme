@@ -1,8 +1,9 @@
-v3.18.1
+v3.19
 --------
 
 New Features:
 
+- Added limited support for displaying call history when an error is thrown. This should be a big help for debugging.
 - Allow `read-all` to read from `stdin` when no arguments are received.
 - Print the number of received arguments when displaying an "incorrect number of arguments" error message. Also unbox any objects before displaying the error message.
 
