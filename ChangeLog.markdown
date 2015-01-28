@@ -13,6 +13,7 @@ Big Fixes:
 - Fixed a bug that could cause an infinite loop during macro expansion. Thanks to Dan Cecile for this report as well.
 - Return the empty string from `string-append` if no arguments are received, instead of throwing an error.
 - Throw an error when a function that takes a variable number of arguments is called without the minimum number of required arguments. For example `(map list)` should throw an error because at least 2 arguments are required.
+- Use `System.Process` instead of deprecated `System.Cmd`.
 
 v3.18
 --------
