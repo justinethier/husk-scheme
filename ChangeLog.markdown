@@ -9,7 +9,7 @@ New Features:
         Invalid type: expected vector, found "v"
         Call History:
          (vector-length "v")
-          ((lambda () (vector-length "v")))
+         ((lambda () (vector-length "v")))
 
   Sorry this took so long, as it should be a tremendous help for debugging!
 - Allow `read-all` to read from `stdin` when no arguments are received.
