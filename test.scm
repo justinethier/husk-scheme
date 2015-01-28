@@ -6,9 +6,11 @@
 ;; - Improve call history formatting, maybe use a common function between Core/Types?
 ;; - Compare speed of this branch against master, can anything be sped up?
 ;; - What else before merging back?
-(define a '(1 2 3))
-(define (loop i)
-  (if (= i 10)
-    (read-char a)
-    (loop (+ i 1))))
-(loop 0)
+((lambda ()
+    (list? (list))
+    (define a '(1 2 3))
+    (define (loop i)
+      (if (= i 10)
+        (read-char a)
+        (loop (+ i 1))))
+    (loop 0)))

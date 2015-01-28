@@ -948,20 +948,25 @@ apply _ cont@(Continuation env _ _ ndynwind _) args = do
         1 -> continueEval e c (head args) Nothing
         _ ->  -- Pass along additional arguments, so they are available to (call-with-values)
              continueEval e cont (head args) (Just $ tail args)
-apply cont (IOFunc func) args = do
-  result <- func args
+apply cont (IOFunc f) args = do
+  result <- exec f
   case cont of
     Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
     _ -> return result
-  -- TODO: really want to catch the error after 'func' but before 'continueEval'. don't want to repeatedly nest an error if continueEval is called several times prior to an error being thrown!
-  `catchError` throwErrorWithCallHistory cont
+ where
+  exec func = do
+    func args
+    `catchError` throwErrorWithCallHistory cont
 apply cont (CustFunc func) args = do
   List dargs <- recDerefPtrs $ List args -- Deref any pointers
-  result <- func dargs
+  result <- exec func dargs
   case cont of
     Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
     _ -> return result
---  `catchError` throwErrorWithCallHistory cont
+ where
+  exec func args = do
+    func args
+    `catchError` throwErrorWithCallHistory cont
 apply cont (EvalFunc func) args = do
     -- An EvalFunc extends the evaluator so it needs access to the current 
     -- continuation, so pass it as the first argument.
@@ -970,11 +975,14 @@ apply cont (PrimitiveFunc func) args = do
   -- OK not to deref ptrs here because primitives only operate on
   -- non-objects, and the error handler execs in the I/O monad and
   -- handles ptrs just fine
-  result <- liftThrows $ func args
+  result <- exec args
   case cont of
     Continuation {contClosure = cEnv} -> continueEval cEnv cont result Nothing
     _ -> return result
---  `catchError` throwErrorWithCallHistory cont
+ where
+  exec args = do
+    liftThrows $ func args
+    `catchError` throwErrorWithCallHistory cont
 apply cont (Func aparams avarargs abody aclosure) args =
   if (num aparams /= num args && isNothing avarargs) ||
      (num aparams > num args && isJust avarargs)
