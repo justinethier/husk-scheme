@@ -174,7 +174,8 @@ instance Error LispError where
 -- |Display call history for an error
 showCallHistory :: String -> [LispVal] -> String
 showCallHistory err hist = do
-  err ++ "\nCall History:\n" ++ (unlines $ map (\s -> ' ' : show s) hist)
+  err ++ "\nCall History:\n" ++ 
+    (unlines $ map (\s -> ' ' : show s) $ reverse hist)
 
 -- |Container used by operations that could throw an error
 type ThrowsError = Either LispError

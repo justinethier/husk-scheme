@@ -899,7 +899,7 @@ createObjSetCPS var object updateFnc = cpsIndex
 prepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
 prepareApply env (Continuation clo cc nc dw cstk) fnc@(List (function : functionArgs)) = do
   eval env 
-       (makeCPSWArgs env (Continuation clo cc nc dw $ addToCallHistory fnc cstk) 
+       (makeCPSWArgs env (Continuation clo cc nc dw $! addToCallHistory fnc cstk) 
                      cpsPrepArgs functionArgs) 
        function
  where
@@ -1451,5 +1451,4 @@ throwErrorWithCallHistory _ e = throwError e
 addToCallHistory :: LispVal -> [LispVal] -> [LispVal]
 addToCallHistory f history 
   | null history = [f]
-  | f == head history = history -- Ignore recursive calls
-  | otherwise = f : take 10 history -- Bounded buffer; but can this be improved?
+  | otherwise = (lastN' 10 history) ++ [f]
