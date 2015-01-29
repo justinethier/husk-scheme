@@ -14,8 +14,11 @@ module Language.Scheme.Util
     ( countAllLetters
     , countLetters
     , escapeBackslashes
+    , lastN'
     , strip
     ) where
+
+import qualified Data.List as DL
 
 -- |A utility function to escape backslashes in the given string
 escapeBackslashes :: String -> String
@@ -38,4 +41,9 @@ countAllLetters c strs = sum $ map (countLetters c) strs
 -- |Count occurences of a letter in a string
 countLetters :: Char -> String -> Int
 countLetters c str = length $ filter (== c) str
+
+-- | Take last n elements of a list, from:
+--   http://stackoverflow.com/q/17252851/101258
+lastN' :: Int -> [a] -> [a]
+lastN' n xs = DL.foldl' (const .drop 1) xs (drop n xs)
 
