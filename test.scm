@@ -1,8 +1,6 @@
 ;; Temporary test file, delete before merging back to master!!
 ;; TODO list:
 ;;
-;; - Compare speed of this branch against master, can anything be sped up?
-;;   maybe try running the profiler some more too, esp for computationally-intensive code
 ;; - Compiler does not produce any call history
 ((lambda ()
     (list? (list))
