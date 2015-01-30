@@ -1451,4 +1451,4 @@ throwErrorWithCallHistory _ e = throwError e
 addToCallHistory :: LispVal -> [LispVal] -> [LispVal]
 addToCallHistory f history 
   | null history = [f]
-  | otherwise = (lastN' 10 history) ++ [f]
+  | otherwise = (lastN' 9 history) ++ [f]
