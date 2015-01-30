@@ -135,7 +135,6 @@ data LispError = NumArgs (Maybe Integer) [LispVal] -- ^Invalid number of functio
   | TypeMismatch String LispVal -- ^Type error
   | Parser ParseError -- ^Parsing error
   | BadSpecialForm String LispVal -- ^Invalid special (built-in) form
---  | NotFunction String String
   | UnboundVar String String -- ^ A referenced variable has not been declared
   | DivideByZero -- ^Divide by Zero error
   | NotImplemented String -- ^ Feature is not implemented
@@ -158,7 +157,6 @@ showError (TypeMismatch expected found) = "Invalid type: expected " ++ expected
                                   ++ ", found " ++ show found
 showError (Parser parseErr) = "Parse error at " ++ ": " ++ show parseErr
 showError (BadSpecialForm message form) = message ++ ": " ++ show form
--- showError (NotFunction message func) = message ++ ": " ++ show func
 showError (UnboundVar message varname) = message ++ ": " ++ varname
 showError (DivideByZero) = "Division by zero"
 showError (NotImplemented message) = "Not implemented: " ++ message
@@ -173,9 +171,13 @@ instance Error LispError where
 
 -- |Display call history for an error
 showCallHistory :: String -> [LispVal] -> String
-showCallHistory err hist = do
-  err ++ "\nCall History:\n" ++ 
-    (unlines $ map (\s -> ' ' : show s) $ reverse hist)
+showCallHistory message hist = do
+  let nums :: [Int]
+      nums = [0..]
+      ns = take (length hist) nums
+  message ++ "\n\nCall History:\n" ++ 
+    (unlines $ map (\(n, s) -> ('#' : show n) ++ ": " ++ show s) 
+                   (zip ns $ reverse hist))
 
 -- |Container used by operations that could throw an error
 type ThrowsError = Either LispError
