@@ -7,9 +7,10 @@ New Features:
 
         huski> ((lambda () (vector-length "v")))
         Invalid type: expected vector, found "v"
+
         Call History:
-         (vector-length "v")
-         ((lambda () (vector-length "v")))
+        #0: (vector-length "v")
+        #1: ((lambda () (vector-length "v")))
 
   Sorry this took so long, as it should be a tremendous help for debugging!
 - Print the number of received arguments when displaying an "incorrect number of arguments" error message. Also unbox any objects before displaying the error message.
