@@ -141,7 +141,7 @@ data LispError = NumArgs (Maybe Integer) [LispVal] -- ^Invalid number of functio
   | InternalError String {- ^An internal error within husk; in theory user (Scheme) code
                          should never allow one of these errors to be triggered. -}
   | Default String -- ^Default error
-  | ErrorWithCallHist LispError [LispVal] 
+  | ErrorWithCallHist LispError [LispVal] -- ^Wraps an error to also include the current call history
 
 -- |Create a textual description for a 'LispError'
 showError :: LispError -> String

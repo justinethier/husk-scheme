@@ -29,7 +29,7 @@ escapeBackslashes = foldr step []
 -- | Remove leading/trailing white space from a string; based on corresponding 
 --   Python function. Code taken from: 
 --
---   http://gimbo.org.uk/blog/2007/04/20/splitting-a-string-in-haskell/
+--   <http://gimbo.org.uk/blog/2007/04/20/splitting-a-string-in-haskell/>
 strip :: String -> String
 strip s = dropWhile ws $ reverse $ dropWhile ws $ reverse s
     where ws = (`elem` [' ', '\n', '\t', '\r'])
@@ -43,7 +43,7 @@ countLetters :: Char -> String -> Int
 countLetters c str = length $ filter (== c) str
 
 -- | Take last n elements of a list, from:
---   http://stackoverflow.com/q/17252851/101258
+--   <http://stackoverflow.com/q/17252851/101258>
 lastN' :: Int -> [a] -> [a]
 lastN' n xs = DL.foldl' (const .drop 1) xs (drop n xs)
 
