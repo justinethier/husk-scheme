@@ -1,3 +1,10 @@
+v3.19.1
+--------
+
+Bug Fixes:
+
+- Applied a fix from Rohan Drape to allow `Compiler` and `Numerical` modules to build in GHC 7.10.1.
+
 v3.19
 --------
 
@@ -16,7 +23,7 @@ New Features:
 - Print the number of received arguments when displaying an "incorrect number of arguments" error message. Also unbox any objects before displaying the error message.
 - Allow `read-all` to read from `stdin` when no arguments are received.
 
-Big Fixes:
+Bug Fixes:
 
 - Fixed bugs in `open-input-string` and `open-byte-vector` that prevented a variable being passed as the "input" argument. Thanks to Dan Cecile for the bug report!
 - Fixed a bug that could cause an infinite loop during macro expansion. Thanks to Dan Cecile for this report as well.

@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {- |
 Module      : Language.Scheme.Compiler
 Copyright   : Justin Ethier
