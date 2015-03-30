@@ -18,7 +18,7 @@ excerpt: Call history is now provided when an error is thrown, to assist debuggi
 - Print the number of received arguments when displaying an "incorrect number of arguments" error message. Also unbox any objects before displaying the error message.
 - Allow `read-all` to read from `stdin` when no arguments are received.
 
-Big Fixes:
+Bug Fixes:
 
 - Fixed bugs in `open-input-string` and `open-byte-vector` that prevented a variable being passed as the "input" argument. Thanks to Dan Cecile for the bug report!
 - Fixed a bug that could cause an infinite loop during macro expansion. Thanks to Dan Cecile for this report as well.
