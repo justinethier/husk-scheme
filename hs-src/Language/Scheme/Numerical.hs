@@ -470,12 +470,18 @@ numMagnitude badArgList = throwError $ NumArgs (Just 1) badArgList
 -- |Retrieve real part of a complex number
 numRealPart :: [LispVal] -> ThrowsError LispVal
 numRealPart [(Complex c)] = return $ Float $ realPart c
+numRealPart [n@(Float _)] = return n
+numRealPart [n@(Rational _)] = return n
+numRealPart [n@(Number _)] = return n
 numRealPart [x] = throwError $ TypeMismatch "complex number" x
 numRealPart badArgList = throwError $ NumArgs (Just 1) badArgList
 
 -- |Retrieve imaginary part of a complex number
 numImagPart :: [LispVal] -> ThrowsError LispVal
 numImagPart [(Complex c)] = return $ Float $ imagPart c
+numImagPart [(Float _)] = return $ Number 0
+numImagPart [(Rational _)] = return $ Number 0
+numImagPart [(Number _)] = return $ Number 0
 numImagPart [x] = throwError $ TypeMismatch "complex number" x
 numImagPart badArgList = throwError $ NumArgs (Just 1) badArgList
 
