@@ -1,3 +1,10 @@
+v3.19.2
+--------
+
+Bug Fixes:
+
+- Fixed `rational?` to properly handle floating-point numbers.
+
 v3.19.1
 --------
 

@@ -15,7 +15,7 @@
 (assert/equal (real? -2.5+0.1i) #f)
 ;(assert/equal (real? -2.5+0.0i) #f)
 ;Issue #14: (assert/equal (real? #e1e103) #t)
-; TODO: (assert/equal (rational? 3.5) #t)
+(assert/equal (rational? 3.5) #t)
 (assert/equal (rational? 6/10) #t)
 (assert/equal (rational? 6/3) #t)
 (assert/equal (integer? 3+0i) #t)

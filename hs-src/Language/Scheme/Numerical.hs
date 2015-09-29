@@ -613,8 +613,7 @@ isReal _ = return $ Bool False
 isRational :: [LispVal] -> ThrowsError LispVal
 isRational ([Number _]) = return $ Bool True
 isRational ([Rational _]) = return $ Bool True
-isRational ([n@(Float _)]) = return $ Bool $ isFloatAnInteger n
-                             -- FUTURE: not quite good enough, could be represented exactly and not an integer
+isRational ([Float n]) = return $ Bool $ not $ isInfinite n 
 isRational _ = return $ Bool False
 
 -- |Predicate to determine if given number is an integer.
