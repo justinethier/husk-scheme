@@ -479,7 +479,12 @@ numRealPart badArgList = throwError $ NumArgs (Just 1) badArgList
 
 -- |Retrieve imaginary part of a complex number
 numImagPart :: [LispVal] -> ThrowsError LispVal
-numImagPart [(Complex c)] = return $ Float $ imagPart c
+numImagPart [(Complex c)] = do
+  let n = imagPart c
+      f = Float n
+  if isFloatAnInteger f
+     then return $ Number $ floor n
+     else return f
 numImagPart [(Float _)] = return $ Number 0
 numImagPart [(Rational _)] = return $ Number 0
 numImagPart [(Number _)] = return $ Number 0
@@ -594,7 +599,13 @@ isReal :: [LispVal] -> ThrowsError LispVal
 isReal ([Number _]) = return $ Bool True
 isReal ([Rational _]) = return $ Bool True
 isReal ([Float _]) = return $ Bool True
-isReal ([Complex c]) = return $ Bool $ (imagPart c) == 0
+isReal ([Complex c]) = do
+  imagPt <- numImagPart [(Complex c)]
+  isExact <- isNumExact [imagPt]
+  isZero <- numBoolBinopEq [imagPt, (Number 0)]
+  case (isExact, isZero) of
+    (Bool True, Bool True) -> return $ Bool True
+    _ -> return $ Bool False
 isReal _ = return $ Bool False
 
 -- |Predicate to determine if given number is a rational.
