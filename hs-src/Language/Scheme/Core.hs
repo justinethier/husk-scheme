@@ -1479,8 +1479,6 @@ hashTblRef [cont, (HashTable ht), key, thunk] = do
   case Data.Map.lookup key ht of
     Just val -> return $ val
     Nothing -> apply cont thunk []
-{- FUTURE: a thunk can optionally be specified, this drives definition of /default
-Nothing -> apply thunk [] -}
 hashTblRef (cont : p@(Pointer _ _) : args) = do
   ht <- derefPtr p
   hashTblRef (cont : ht : args)
