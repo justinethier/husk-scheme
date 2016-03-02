@@ -132,7 +132,6 @@ ioPrimitives = [("open-input-file", makePort openFile ReadMode ),
 
               ("hash-table?",       wrapHashTbl isHashTbl),
               ("hash-table-exists?",wrapHashTbl hashTblExists),
-              ("hash-table-ref",    wrapHashTbl hashTblRef),
               ("hash-table-size",   wrapHashTbl hashTblSize),
               ("hash-table->alist", wrapHashTbl hashTbl2List),
               ("hash-table-keys",   wrapHashTbl hashTblKeys),

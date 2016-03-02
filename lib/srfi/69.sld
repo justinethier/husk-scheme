@@ -6,7 +6,7 @@
         ;hash-table-equivalence-function 
         ;hash-table-hash-function
         hash-table-ref 
-        ;hash-table-ref/default 
+        hash-table-ref/default 
         ;hash-table-set! 
         ;TODO: should implement this: hash-table-delete! 
         hash-table-exists? 

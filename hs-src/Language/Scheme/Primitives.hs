@@ -44,7 +44,6 @@ module Language.Scheme.Primitives (
  , byteVectorStr2Utf
  -- ** Hash Table
  , hashTblExists 
- , hashTblRef
  , hashTblSize 
  , hashTbl2List
  , hashTblKeys
@@ -1216,31 +1215,6 @@ hashTblExists [(HashTable ht), key] = do
     Nothing -> return $ Bool False
 hashTblExists [] = throwError $ NumArgs (Just 2) []
 hashTblExists args@(_ : _) = throwError $ NumArgs (Just 2) args
-
--- | Retrieve the value from the hashtable for the given key.
---   An error is thrown if the key is not found.
---
---   Arguments:
---
---   * HashTable to copy
---
---   * Object that is the key to query the table for
---
---   Returns: Object containing the key's value
---
-hashTblRef :: [LispVal] -> ThrowsError LispVal
-hashTblRef [(HashTable ht), key] = do
-  case Data.Map.lookup key ht of
-    Just val -> return val
-    Nothing -> throwError $ BadSpecialForm "Hash table does not contain key" key
-hashTblRef [(HashTable ht), key, Func {}] = do
-  case Data.Map.lookup key ht of
-    Just val -> return $ val
-    Nothing -> throwError $ NotImplemented "thunk"
-{- FUTURE: a thunk can optionally be specified, this drives definition of /default
-Nothing -> apply thunk [] -}
-hashTblRef [badType] = throwError $ TypeMismatch "hash-table" badType
-hashTblRef badArgList = throwError $ NumArgs (Just 2) badArgList
 
 -- | Return the number of key/value associations in the hashtable
 --

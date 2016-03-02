@@ -404,6 +404,9 @@
     (exit-fail))
 
 ;; Hashtable derived forms
+(define (hash-table-ref/default ht key default)
+  (hash-table-ref ht key (lambda () default)))
+
 (define hash-table-walk
   (lambda (ht proc)
     (map 

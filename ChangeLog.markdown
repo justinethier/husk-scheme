@@ -1,6 +1,11 @@
 v3.19.2
 --------
 
+New Features:
+
+- Allow a `default` thunk to be passed to `hash-table-ref`.
+- Added `hash-table-ref/default`.
+
 Bug Fixes:
 
 - Fixed `rational?` to properly handle floating-point numbers.

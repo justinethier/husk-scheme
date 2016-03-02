@@ -56,6 +56,9 @@
 (hash-table-merge! ht test-ht2)
 (assert/equal (hash-table-ref ht "test") "testing")
 
+;; Test default values
+(assert/equal (hash-table-ref/default (make-hash-table) 2 #f) #f)
+
 (define ht (make-hash-table))
 (hash-table-set! ht 1 1)
 (hash-table-set! ht 2 2)

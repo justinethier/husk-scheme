@@ -43,6 +43,7 @@ module Language.Scheme.Core
     , updateList
     , updateVector
     , updateByteVector
+    , hashTblRef
     -- * Error handling
     , addToCallHistory
     , throwErrorWithCallHistory
@@ -1075,7 +1076,7 @@ nullEnvWithImport :: IO Env
 nullEnvWithImport = nullEnv >>= 
   (flip extendEnv [
     ((varNamespace, "%import"), EvalFunc evalfuncImport),
-    ((varNamespace, "hash-table-ref"), IOFunc $ wrapHashTbl hashTblRef)])
+    ((varNamespace, "hash-table-ref"), EvalFunc hashTblRef)])
 
 -- |Load the standard r5rs environment, including libraries
 r5rsEnv :: IO Env
@@ -1426,6 +1427,7 @@ evalFunctions =  [  ("apply", evalfuncApply)
                   , ("current-environment", evalfuncInteractionEnv)
                   , ("interaction-environment", evalfuncInteractionEnv)
                   , ("make-environment", evalfuncMakeEnv)
+                  , ("hash-table-ref", hashTblRef)
 
                -- Non-standard extensions
 #ifdef UseFfi
@@ -1452,3 +1454,36 @@ addToCallHistory :: LispVal -> [LispVal] -> [LispVal]
 addToCallHistory f history 
   | null history = [f]
   | otherwise = (lastN' 9 history) ++ [f]
+
+-- | Retrieve the value from the hashtable for the given key.
+--   An error is thrown if the key is not found.
+--
+--   Note this had to be made an EvalFunc because a thunk
+--   can be passed as an optional argument to be executed 
+--   if the key is not found.
+--
+--   Arguments:
+--
+--   * Current continuation
+--   * HashTable to copy
+--   * Object that is the key to query the table for
+--
+--   Returns: Object containing the key's value
+--
+hashTblRef :: [LispVal] -> IOThrowsError LispVal
+hashTblRef [_, (HashTable ht), key] = do
+  case Data.Map.lookup key ht of
+    Just val -> return val
+    Nothing -> throwError $ BadSpecialForm "Hash table does not contain key" key
+hashTblRef [cont, (HashTable ht), key, thunk] = do
+  case Data.Map.lookup key ht of
+    Just val -> return $ val
+    Nothing -> apply cont thunk []
+{- FUTURE: a thunk can optionally be specified, this drives definition of /default
+Nothing -> apply thunk [] -}
+hashTblRef (cont : p@(Pointer _ _) : args) = do
+  ht <- derefPtr p
+  hashTblRef (cont : ht : args)
+hashTblRef [_, badType] = throwError $ TypeMismatch "hash-table" badType
+hashTblRef badArgList = throwError $ NumArgs (Just 2) (tail badArgList)
+
