@@ -9,6 +9,7 @@ New Features:
 Bug Fixes:
 
 - Fixed `rational?` to properly handle floating-point numbers.
+- Migrated `string-fill!` from a macro to a function. This makes it easier to redefine, for example per SRFI 13.
 
 v3.19.1
 --------

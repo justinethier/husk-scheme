@@ -331,11 +331,17 @@
 ; End delayed evaluation section
 
 ; String Section
-(define-syntax string-fill!
-  (syntax-rules ()
-    ((_ _str _chr)
-     (set! _str
-           (make-string (string-length _str) _chr)))))
+(define (string-fill! str fill . opts)
+  (letrec* ((len (string-length str))
+            (start (if (> (length opts) 0) (car opts) 0))
+            (end (if (> (length opts) 1) (cadr opts) len))
+            (loop (lambda (i)
+                    (cond
+                     ((= i end) str)
+                     (else
+                       (string-set! str i fill)
+                       (loop (+ i 1)))))))
+    (loop start)))
 
 (define (string-concatenate l) 
     (apply string-append l)) 
