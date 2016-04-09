@@ -1,0 +1,457 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Language.Scheme.Primitives</title><link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" /><script src="haddock-util.js" type="text/javascript"></script><script type="text/javascript">//<![CDATA[
+window.onload = function () {pageLoad();setSynopsis("mini_Language-Scheme-Primitives.html");};
+//]]>
+</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">husk-scheme-3.19.2: R5RS Scheme interpreter, compiler, and library.</p></div><div id="content"><div id="module-header"><table class="info"><tr><th>Portability</th><td>portable</td></tr><tr><th>Stability</th><td>experimental</td></tr><tr><th>Maintainer</th><td>github.com/justinethier</td></tr><tr><th>Safe Haskell</th><td>None</td></tr></table><p class="caption">Language.Scheme.Primitives</p></div><div id="table-of-contents"><p class="caption">Contents</p><ul><li><a href="#g:1">Pure functions
+</a><ul><li><a href="#g:2">List
+</a></li><li><a href="#g:3">Vector
+</a></li><li><a href="#g:4">Bytevectors
+</a></li><li><a href="#g:5">Hash Table
+</a></li><li><a href="#g:6">String
+</a></li><li><a href="#g:7">Character
+</a></li><li><a href="#g:8">Predicate
+</a></li><li><a href="#g:9">Utility functions
+</a></li></ul></li><li><a href="#g:10">Impure functions
+</a><ul><li><a href="#g:11">Input / Output 
+</a></li><li><a href="#g:12">Symbol generation
+</a></li><li><a href="#g:13">Time
+</a></li><li><a href="#g:14">System
+</a></li></ul></li></ul></div><div id="description"><p class="caption">Description</p><div class="doc"><p>This module contains primitive functions written in Haskell.
+Most of these map directly to an equivalent Scheme function.
+</p></div></div><div id="synopsis"><p id="control.syn" class="caption expander" onclick="toggleSection('syn')">Synopsis</p><ul id="section.syn" class="hide" onclick="toggleSection('syn')"><li class="src short"><a href="#v:car">car</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:cdr">cdr</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:cons">cons</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:eq">eq</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:equal">equal</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:makeList">makeList</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:listCopy">listCopy</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:buildVector">buildVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:vectorLength">vectorLength</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:vectorRef">vectorRef</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:vectorCopy">vectorCopy</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:vectorToList">vectorToList</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:listToVector">listToVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:makeVector">makeVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:makeByteVector">makeByteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:byteVector">byteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:byteVectorLength">byteVectorLength</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:byteVectorRef">byteVectorRef</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:byteVectorCopy">byteVectorCopy</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:byteVectorAppend">byteVectorAppend</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:byteVectorUtf2Str">byteVectorUtf2Str</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:byteVectorStr2Utf">byteVectorStr2Utf</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:hashTblExists">hashTblExists</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:hashTblSize">hashTblSize</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:hashTbl2List">hashTbl2List</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:hashTblKeys">hashTblKeys</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:hashTblValues">hashTblValues</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:hashTblCopy">hashTblCopy</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:hashTblMake">hashTblMake</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:wrapHashTbl">wrapHashTbl</a> :: ([<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:wrapLeadObj">wrapLeadObj</a> :: ([<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:buildString">buildString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:makeString">makeString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:doMakeString">doMakeString</a> :: <span class="keyword">forall</span> a. (Num a, Eq a) =&gt; a -&gt; Char -&gt; String -&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:stringLength">stringLength</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:stringRef">stringRef</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:substring">substring</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:stringCIEquals">stringCIEquals</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:stringCIBoolBinop">stringCIBoolBinop</a> :: (String -&gt; String -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:stringAppend">stringAppend</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:stringToNumber">stringToNumber</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:stringToList">stringToList</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:listToString">listToString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:stringToVector">stringToVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:vectorToString">vectorToString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:stringCopy">stringCopy</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:symbol2String">symbol2String</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:string2Symbol">string2Symbol</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:charCIBoolBinop">charCIBoolBinop</a> :: (Char -&gt; Char -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:charPredicate">charPredicate</a> :: (Char -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:charUpper">charUpper</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:charLower">charLower</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:charDigitValue">charDigitValue</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:char2Int">char2Int</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:int2Char">int2Char</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isHashTbl">isHashTbl</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isChar">isChar</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isString">isString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isBoolean">isBoolean</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isBooleanEq">isBooleanEq</a> :: Monad m =&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; m <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isSymbolEq">isSymbolEq</a> :: Monad m =&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; m <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isDottedList">isDottedList</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isProcedure">isProcedure</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isList">isList</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isVector">isVector</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isRecord">isRecord</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isByteVector">isByteVector</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isNull">isNull</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isEOFObject">isEOFObject</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isSymbol">isSymbol</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><span class="keyword">data</span>  <a href="#t:Unpacker">Unpacker</a> </li><li class="src short"><a href="#v:unpackEquals">unpackEquals</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Primitives.html#t:Unpacker">Unpacker</a> -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> Bool</li><li class="src short"><a href="#v:boolBinop">boolBinop</a> ::  (<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> a) -&gt; (a -&gt; a -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:unaryOp">unaryOp</a> :: (<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:unaryOp-39-">unaryOp'</a> :: (<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:strBoolBinop">strBoolBinop</a> :: (String -&gt; String -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:charBoolBinop">charBoolBinop</a> :: (Char -&gt; Char -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:boolBoolBinop">boolBoolBinop</a> :: (Bool -&gt; Bool -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:unpackStr">unpackStr</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> String</li><li class="src short"><a href="#v:unpackBool">unpackBool</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> Bool</li><li class="src short"><a href="#v:makePort">makePort</a> :: (FilePath -&gt; IOMode -&gt; IO Handle) -&gt; IOMode -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:makeBufferPort">makeBufferPort</a> :: Maybe <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:openInputString">openInputString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:openOutputString">openOutputString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:getOutputString">getOutputString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:openInputByteVector">openInputByteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:openOutputByteVector">openOutputByteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:getOutputByteVector">getOutputByteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:closePort">closePort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:flushOutputPort">flushOutputPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:currentOutputPort">currentOutputPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:currentInputPort">currentInputPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isTextPort">isTextPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isBinaryPort">isBinaryPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isOutputPort">isOutputPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isInputPort">isInputPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isInputPortOpen">isInputPortOpen</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isOutputPortOpen">isOutputPortOpen</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:isCharReady">isCharReady</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:readProc">readProc</a> :: Bool -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:readCharProc">readCharProc</a> :: (Handle -&gt; IO Char) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:readByteVector">readByteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:readString">readString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:writeProc">writeProc</a> ::  (Handle -&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; IO a) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; ErrorT <a href="Language-Scheme-Types.html#t:LispError">LispError</a> IO <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:writeCharProc">writeCharProc</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:writeByteVector">writeByteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:writeString">writeString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:readContents">readContents</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:load">load</a> :: String -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>]</li><li class="src short"><a href="#v:readAll">readAll</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:fileExists">fileExists</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:deleteFile">deleteFile</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:eofObject">eofObject</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:gensym">gensym</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:_gensym">_gensym</a> :: String -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:currentTimestamp">currentTimestamp</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:system">system</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li><li class="src short"><a href="#v:getEnvVars">getEnvVars</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></li></ul></div><div id="interface"><h1 id="g:1">Pure functions
+</h1><h2 id="g:2">List
+</h2><div class="top"><p class="src"><a name="v:car" class="def">car</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Retrieve the first item from a list
+</p><p>Arguments:
+</p><ul><li> List (or DottedList)
+</li></ul><p>Returns: LispVal - First item in the list
+</p></div></div><div class="top"><p class="src"><a name="v:cdr" class="def">cdr</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Return the <em>tail</em> of a list, with the first element removed
+</p><p>Arguments:
+</p><ul><li> List (or DottedList)
+</li></ul><p>Returns: List (or DottedList)
+</p></div></div><div class="top"><p class="src"><a name="v:cons" class="def">cons</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>The LISP <code>cons</code> operation - create a list from two values
+</p><p>Arguments:
+</p><ul><li> LispVal
+</li><li> LispVal
+</li></ul><p>Returns: List (or DottedList) containing new value(s)
+</p></div></div><div class="top"><p class="src"><a name="v:eq" class="def">eq</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Use pointer equality to compare two objects if possible, otherwise
+   fall back to the normal equality comparison
+</p></div></div><div class="top"><p class="src"><a name="v:equal" class="def">equal</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Recursively compare two LispVals for equality
+</p><p>Arguments:
+</p><ul><li> LispVal
+</li><li> LispVal
+</li></ul><p>Returns: Bool - True if equal, false otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:makeList" class="def">makeList</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a new list
+</p><p>Arguments
+</p><ul><li> Number - Length of the list
+   * LispVal - Object to fill the list with (optional)
+</li></ul><p>Returns: List
+</p></div></div><div class="top"><p class="src"><a name="v:listCopy" class="def">listCopy</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a copy of a list
+</p><p>Arguments
+</p><ul><li> List
+</li></ul><p>Returns: List
+</p></div></div><h2 id="g:3">Vector
+</h2><div class="top"><p class="src"><a name="v:buildVector" class="def">buildVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a vector from the given lisp values
+</p><p>Arguments:
+</p><ul><li> LispVal (s)
+</li></ul><p>Returns: Vector
+</p></div></div><div class="top"><p class="src"><a name="v:vectorLength" class="def">vectorLength</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine the length of the given vector
+</p><p>Arguments:
+</p><ul><li> Vector
+</li></ul><p>Returns: Number
+</p></div></div><div class="top"><p class="src"><a name="v:vectorRef" class="def">vectorRef</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Retrieve the object at the given position of a vector
+</p><p>Arguments:
+</p><ul><li> Vector
+</li><li> Number - Index of the vector to retrieve
+</li></ul><p>Returns: Object at the given index
+</p></div></div><div class="top"><p class="src"><a name="v:vectorCopy" class="def">vectorCopy</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a copy of a vector
+</p><p>Arguments
+</p><ul><li> Vector
+   * Number - Start copying the vector from this element (optional)
+   * Number - Stop copying the vector at this element (optional)
+</li></ul><p>Returns: Vector
+</p></div></div><div class="top"><p class="src"><a name="v:vectorToList" class="def">vectorToList</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert the given vector to a list
+</p><p>Arguments:
+</p><ul><li> Vector
+</li></ul><p>Returns: List
+</p></div></div><div class="top"><p class="src"><a name="v:listToVector" class="def">listToVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert the given list to a vector
+</p><p>Arguments:
+</p><ul><li> List to convert
+</li></ul><p>Returns: Vector
+</p></div></div><div class="top"><p class="src"><a name="v:makeVector" class="def">makeVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a new vector
+</p><p>Arguments:
+</p><ul><li> Number - Length of the vector
+</li><li> LispVal - Value to fill the vector with
+</li></ul><p>Returns: Vector
+</p></div></div><h2 id="g:4">Bytevectors
+</h2><div class="top"><p class="src"><a name="v:makeByteVector" class="def">makeByteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a new bytevector
+</p><p>Arguments:
+</p><ul><li> Number - Length of the new bytevector
+</li><li> Number (optional) - Byte value to fill the bytevector with
+</li></ul><p>Returns: ByteVector - A new bytevector
+</p></div></div><div class="top"><p class="src"><a name="v:byteVector" class="def">byteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create new bytevector containing the given data
+</p><p>Arguments:
+</p><ul><li> Objects - Objects to convert to bytes for the bytevector
+</li></ul><p>Returns: ByteVector - A new bytevector
+</p></div></div><div class="top"><p class="src"><a name="v:byteVectorLength" class="def">byteVectorLength</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Find the length of a bytevector
+</p><p>Arguments:
+</p><ul><li> ByteVector
+</li></ul><p>Returns: Number - Length of the given bytevector
+</p></div></div><div class="top"><p class="src"><a name="v:byteVectorRef" class="def">byteVectorRef</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Return object at the given index of a bytevector
+</p><p>Arguments:
+</p><ul><li> ByteVector
+</li><li> Number - Index of the bytevector to query
+</li></ul><p>Returns: Object at the index
+</p></div></div><div class="top"><p class="src"><a name="v:byteVectorCopy" class="def">byteVectorCopy</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a copy of the given bytevector
+</p><p>Arguments:
+</p><ul><li> ByteVector - Bytevector to copy
+</li><li> Number (optional) - Start of the region to copy
+</li><li> Number (optional) - End of the region to copy
+</li></ul><p>Returns: ByteVector - A new bytevector containing the copied region
+</p></div></div><div class="top"><p class="src"><a name="v:byteVectorAppend" class="def">byteVectorAppend</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Append many bytevectors into a new bytevector
+</p><p>Arguments:
+</p><ul><li> ByteVector (one or more) - Bytevectors to concatenate
+</li></ul><p>Returns: ByteVector - A new bytevector containing the values
+</p></div></div><div class="top"><p class="src"><a name="v:byteVectorUtf2Str" class="def">byteVectorUtf2Str</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert a bytevector to a string
+</p><p>Arguments:
+</p><ul><li> ByteVector
+</li></ul><p>Returns: String
+</p></div></div><div class="top"><p class="src"><a name="v:byteVectorStr2Utf" class="def">byteVectorStr2Utf</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert a string to a bytevector
+</p><p>Arguments:
+</p><ul><li> String
+</li></ul><p>Returns: ByteVector
+</p></div></div><h2 id="g:5">Hash Table
+</h2><div class="top"><p class="src"><a name="v:hashTblExists" class="def">hashTblExists</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if the given key is found in the hashtable
+</p><p>Arguments:
+</p><ul><li> HashTable to search
+</li><li> Key to search for
+</li></ul><p>Returns: Bool - True if found, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:hashTblSize" class="def">hashTblSize</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Return the number of key/value associations in the hashtable
+</p><p>Arguments:
+</p><ul><li> HashTable
+</li></ul><p>Returns: Number - number of associations
+</p></div></div><div class="top"><p class="src"><a name="v:hashTbl2List" class="def">hashTbl2List</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a list containing all key/value pairs in the hashtable
+</p><p>Arguments:
+</p><ul><li> HashTable
+</li></ul><p>Returns: List of (key, value) pairs
+</p></div></div><div class="top"><p class="src"><a name="v:hashTblKeys" class="def">hashTblKeys</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a list containing all keys in the hashtable
+</p><p>Arguments:
+</p><ul><li> HashTable
+</li></ul><p>Returns: List containing the keys
+</p></div></div><div class="top"><p class="src"><a name="v:hashTblValues" class="def">hashTblValues</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a list containing all values in the hashtable
+</p><p>Arguments:
+</p><ul><li> HashTable
+</li></ul><p>Returns: List containing the values
+</p></div></div><div class="top"><p class="src"><a name="v:hashTblCopy" class="def">hashTblCopy</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a new copy of a hashtable
+</p><p>Arguments:
+</p><ul><li> HashTable to copy
+</li></ul><p>Returns: HashTable
+</p></div></div><div class="top"><p class="src"><a name="v:hashTblMake" class="def">hashTblMake</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a new hashtable
+</p><p>Arguments: (None)
+</p><p>Returns: HashTable
+</p></div></div><div class="top"><p class="src"><a name="v:wrapHashTbl" class="def">wrapHashTbl</a> :: ([<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>A helper function to allow a pure function to work with pointers, by
+   dereferencing the leading object in the argument list if it is
+   a pointer. This is a special hash-table specific function that will
+   also dereference a hash table key if it is included.
+</p></div></div><div class="top"><p class="src"><a name="v:wrapLeadObj" class="def">wrapLeadObj</a> :: ([<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>A helper function to allow a pure function to work with pointers, by
+   dereferencing the leading object in the argument list if it is
+   a pointer.
+</p></div></div><h2 id="g:6">String
+</h2><div class="top"><p class="src"><a name="v:buildString" class="def">buildString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert a list of characters to a string
+</p><p>Arguments:
+</p><ul><li> Character (one or more) - Character(s) to add to the string
+</li></ul><p>Returns: String - new string built from given chars
+</p></div></div><div class="top"><p class="src"><a name="v:makeString" class="def">makeString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Make a new string
+</p><p>Arguments:
+</p><ul><li> Number - number of characters in the string
+</li><li> Char (optional) - Character to fill in each position of string.
+                       Defaults to space
+</li></ul><p>Returns: String - new string
+</p></div></div><div class="top"><p class="src"><a name="v:doMakeString" class="def">doMakeString</a> :: <span class="keyword">forall</span> a. (Num a, Eq a) =&gt; a -&gt; Char -&gt; String -&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Helper function
+</p></div></div><div class="top"><p class="src"><a name="v:stringLength" class="def">stringLength</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine the length of the given string
+</p><p>Arguments:
+</p><ul><li> String - String to examine
+</li></ul><p>Returns: Number - Length of the given string
+</p></div></div><div class="top"><p class="src"><a name="v:stringRef" class="def">stringRef</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Get character at the given position of a string
+</p><p>Arguments:
+</p><ul><li> String - String to examine
+</li><li> Number - Get the character at this position
+</li></ul><p>Returns: Char
+</p></div></div><div class="top"><p class="src"><a name="v:substring" class="def">substring</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Get a part of the given string
+</p><p>Arguments:
+</p><ul><li> String - Original string
+</li><li> Number - Starting position of the substring
+</li><li> Number - Ending position of the substring
+</li></ul><p>Returns: String - substring of the original string
+</p></div></div><div class="top"><p class="src"><a name="v:stringCIEquals" class="def">stringCIEquals</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Perform a case insensitive comparison of the given strings
+</p><p>Arguments:
+</p><ul><li> String - String to compare
+</li><li> String - String to compare
+</li></ul><p>Returns: Bool - True if strings are equal, false otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:stringCIBoolBinop" class="def">stringCIBoolBinop</a> :: (String -&gt; String -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Helper function
+</p></div></div><div class="top"><p class="src"><a name="v:stringAppend" class="def">stringAppend</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Append all given strings together into a single string
+</p><p>Arguments:
+</p><ul><li> String (one or more) - String(s) to concatenate
+</li></ul><p>Returns: String - all given strings appended together as a single string
+</p></div></div><div class="top"><p class="src"><a name="v:stringToNumber" class="def">stringToNumber</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert given string to a number
+</p><p>Arguments:
+</p><ul><li> String - String to convert
+</li><li> Number (optional) - Number base to convert from, defaults to base 10 (decimal)
+</li></ul><p>Returns: Numeric type, actual type will depend upon given string
+</p></div></div><div class="top"><p class="src"><a name="v:stringToList" class="def">stringToList</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert the given string to a list of chars
+</p><p>Arguments:
+</p><ul><li> String - string to deconstruct
+</li></ul><p>Returns: List - list of characters
+</p></div></div><div class="top"><p class="src"><a name="v:listToString" class="def">listToString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert the given list of characters to a string
+</p><p>Arguments:
+</p><ul><li> List - list of chars to convert
+</li></ul><p>Returns: String - Resulting string
+</p></div></div><div class="top"><p class="src"><a name="v:stringToVector" class="def">stringToVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert a string to a vector
+</p><p>Arguments
+</p><ul><li> String
+</li></ul><p>Returns: Vector
+</p></div></div><div class="top"><p class="src"><a name="v:vectorToString" class="def">vectorToString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert a vector to a string
+</p><p>Arguments
+</p><ul><li> Vector
+</li></ul><p>Returns: String
+</p></div></div><div class="top"><p class="src"><a name="v:stringCopy" class="def">stringCopy</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a copy of the given string
+</p><p>Arguments:
+</p><ul><li> String - String to copy
+</li></ul><p>Returns: String - New copy of the given string
+</p></div></div><div class="top"><p class="src"><a name="v:symbol2String" class="def">symbol2String</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert the given symbol to a string
+</p><p>Arguments:
+</p><ul><li> Atom - Symbol to convert
+</li></ul><p>Returns: String
+</p></div></div><div class="top"><p class="src"><a name="v:string2Symbol" class="def">string2Symbol</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert a string to a symbol
+</p><p>Arguments:
+</p><ul><li> String (or pointer) - String to convert
+</li></ul><p>Returns: Atom
+</p></div></div><h2 id="g:7">Character
+</h2><div class="top"><p class="src"><a name="v:charCIBoolBinop" class="def">charCIBoolBinop</a> :: (Char -&gt; Char -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Helper function
+</p></div></div><div class="top"><p class="src"><a name="v:charPredicate" class="def">charPredicate</a> :: (Char -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if given character satisfies the given predicate
+</p></div></div><div class="top"><p class="src"><a name="v:charUpper" class="def">charUpper</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert a character to uppercase
+</p><p>Arguments:
+</p><ul><li> Char
+</li></ul><p>Returns: Char - Character in uppercase
+</p></div></div><div class="top"><p class="src"><a name="v:charLower" class="def">charLower</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert a character to lowercase
+</p><p>Arguments:
+</p><ul><li> Char
+</li></ul><p>Returns: Char - Character in lowercase
+</p></div></div><div class="top"><p class="src"><a name="v:charDigitValue" class="def">charDigitValue</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Return integer value of a char digit
+</p><p>Arguments
+</p><ul><li> Char
+</li></ul><p>Returns: Number, or False
+</p></div></div><div class="top"><p class="src"><a name="v:char2Int" class="def">char2Int</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert from a charater to an integer
+</p><p>Arguments:
+</p><ul><li> Char
+</li></ul><p>Returns: Number
+</p></div></div><div class="top"><p class="src"><a name="v:int2Char" class="def">int2Char</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Convert from an integer to a character
+</p><p>Arguments:
+</p><ul><li> Number
+</li></ul><p>Returns: Char
+</p></div></div><h2 id="g:8">Predicate
+</h2><div class="top"><p class="src"><a name="v:isHashTbl" class="def">isHashTbl</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if a given object is a hashtable
+</p><p>Arguments:
+</p><ul><li> Object to inspect
+</li></ul><p>Returns: Bool - True if arg was a hashtable, false otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isChar" class="def">isChar</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if the given value is a character
+</p><p>Arguments:
+</p><ul><li> LispVal to check
+</li></ul><p>Returns: Bool - True if the argument is a character, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isString" class="def">isString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if the given value is a string
+</p><p>Arguments:
+</p><ul><li> LispVal to check
+</li></ul><p>Returns: Bool - True if the argument is a string, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isBoolean" class="def">isBoolean</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if the given value is a boolean
+</p><p>Arguments:
+</p><ul><li> LispVal to check
+</li></ul><p>Returns: Bool - True if the argument is a boolean, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isBooleanEq" class="def">isBooleanEq</a> :: Monad m =&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; m <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if multiple boolean values are the same
+</p><p>Arguments
+</p><ul><li> A list of Bool values
+</li></ul><p>Returns: True if the list contains booleans that are the same, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isSymbolEq" class="def">isSymbolEq</a> :: Monad m =&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; m <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if multiple symbols values are the same
+</p><p>Arguments
+</p><ul><li> A list of Atom values
+</li></ul><p>Returns: True if all of the symbols are the same, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isDottedList" class="def">isDottedList</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if given object is an improper list
+</p><p>Arguments:
+</p><ul><li> Value to check
+</li></ul><p>Returns: Bool - True if improper list, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isProcedure" class="def">isProcedure</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if given object is a procedure
+</p><p>Arguments:
+</p><ul><li> Value to check
+</li></ul><p>Returns: Bool - True if procedure, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isList" class="def">isList</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if given object is a list
+</p><p>Arguments:
+</p><ul><li> Value to check
+</li></ul><p>Returns: Bool - True if list, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isVector" class="def">isVector</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if given object is a vector
+</p><p>Arguments:
+</p><ul><li> Value to check
+</li></ul><p>Returns: Bool - True if vector, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isRecord" class="def">isRecord</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if given object is a record
+</p><p>Arguments:
+</p><ul><li> Value to check
+</li></ul><p>Returns: Bool - True if record, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isByteVector" class="def">isByteVector</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if given object is a bytevector
+</p><p>Arguments:
+</p><ul><li> Value to check
+</li></ul><p>Returns: Bool - True if bytevector, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isNull" class="def">isNull</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if given object is the null list
+</p><p>Arguments:
+</p><ul><li> Value to check
+</li></ul><p>Returns: Bool - True if null list, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isEOFObject" class="def">isEOFObject</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if given object is the EOF marker
+</p><p>Arguments:
+</p><ul><li> Value to check
+</li></ul><p>Returns: Bool - True if EOF, False otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isSymbol" class="def">isSymbol</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if given object is a symbol
+</p><p>Arguments:
+</p><ul><li> Value to check
+</li></ul><p>Returns: Bool - True if a symbol, False otherwise
+</p></div></div><h2 id="g:9">Utility functions
+</h2><div class="top"><p class="src"><span class="keyword">data</span>  <a name="t:Unpacker" class="def">Unpacker</a>  </p><div class="doc"><p>Utility type for unpackEquals
+</p></div></div><div class="top"><p class="src"><a name="v:unpackEquals" class="def">unpackEquals</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Primitives.html#t:Unpacker">Unpacker</a> -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> Bool</p><div class="doc"><p>Determine if two lispval's are equal
+</p></div></div><div class="top"><p class="src"><a name="v:boolBinop" class="def">boolBinop</a> ::  (<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> a) -&gt; (a -&gt; a -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Helper function to perform a binary logic operation on two LispVal arguments.
+</p></div></div><div class="top"><p class="src"><a name="v:unaryOp" class="def">unaryOp</a> :: (<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Perform the given function against a single LispVal argument
+</p></div></div><div class="top"><p class="src"><a name="v:unaryOp-39-" class="def">unaryOp'</a> :: (<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Same as unaryOp but in the IO monad
+</p></div></div><div class="top"><p class="src"><a name="v:strBoolBinop" class="def">strBoolBinop</a> :: (String -&gt; String -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Perform boolBinop against two string arguments
+</p></div></div><div class="top"><p class="src"><a name="v:charBoolBinop" class="def">charBoolBinop</a> :: (Char -&gt; Char -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Perform boolBinop against two char arguments
+</p></div></div><div class="top"><p class="src"><a name="v:boolBoolBinop" class="def">boolBoolBinop</a> :: (Bool -&gt; Bool -&gt; Bool) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Perform boolBinop against two boolean arguments
+</p></div></div><div class="top"><p class="src"><a name="v:unpackStr" class="def">unpackStr</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> String</p><div class="doc"><p>Unpack a LispVal String
+</p><p>Arguments:
+</p><ul><li> String - String to unpack
+</li></ul></div></div><div class="top"><p class="src"><a name="v:unpackBool" class="def">unpackBool</a> :: <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> Bool</p><div class="doc"><p>Unpack a LispVal boolean
+</p><p>Arguments:
+</p><ul><li> Bool - Boolean to unpack
+</li></ul></div></div><h1 id="g:10">Impure functions
+</h1><div class="doc"><p>All of these functions must be executed within the IO monad.
+</p></div><h2 id="g:11">Input / Output 
+</h2><div class="top"><p class="src"><a name="v:makePort" class="def">makePort</a> :: (FilePath -&gt; IOMode -&gt; IO Handle) -&gt; IOMode -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Open the given file
+</p><p>LispVal Arguments:
+</p><ul><li> String - filename
+</li></ul><p>Returns: Port
+</p></div></div><div class="top"><p class="src"><a name="v:makeBufferPort" class="def">makeBufferPort</a> :: Maybe <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create an memory-backed port
+</p></div></div><div class="top"><p class="src"><a name="v:openInputString" class="def">openInputString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a new input string buffer
+</p></div></div><div class="top"><p class="src"><a name="v:openOutputString" class="def">openOutputString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a new output string buffer
+</p></div></div><div class="top"><p class="src"><a name="v:getOutputString" class="def">getOutputString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Get string written to string-output-port
+</p></div></div><div class="top"><p class="src"><a name="v:openInputByteVector" class="def">openInputByteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a new input bytevector buffer
+</p></div></div><div class="top"><p class="src"><a name="v:openOutputByteVector" class="def">openOutputByteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Create a new output bytevector buffer
+</p></div></div><div class="top"><p class="src"><a name="v:getOutputByteVector" class="def">getOutputByteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Get bytevector written to bytevector-output-port
+</p></div></div><div class="top"><p class="src"><a name="v:closePort" class="def">closePort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Close the given port
+</p><p>Arguments:
+</p><ul><li> Port
+</li></ul><p>Returns: Bool - True if the port was closed, false otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:flushOutputPort" class="def">flushOutputPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Flush the given output port
+</p></div></div><div class="top"><p class="src"><a name="v:currentOutputPort" class="def">currentOutputPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Return the current input port
+</p><p>LispVal Arguments: (None)
+</p><p>Returns: Port
+</p></div></div><div class="top"><p class="src"><a name="v:currentInputPort" class="def">currentInputPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Return the current input port
+</p><p>LispVal Arguments: (None)
+</p><p>Returns: Port
+</p></div></div><div class="top"><p class="src"><a name="v:isTextPort" class="def">isTextPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if the given port is a text port.
+</p><p>Arguments
+</p><ul><li> Port
+</li></ul><p>Returns: Bool
+</p></div></div><div class="top"><p class="src"><a name="v:isBinaryPort" class="def">isBinaryPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if the given port is a binary port.
+</p><p>Arguments
+</p><ul><li> Port
+</li></ul><p>Returns: Bool
+</p></div></div><div class="top"><p class="src"><a name="v:isOutputPort" class="def">isOutputPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if the given objects is an output port
+</p><p>LispVal Arguments:
+</p><ul><li> Port
+</li></ul><p>Returns: Bool - True if an output port, false otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isInputPort" class="def">isInputPort</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if the given objects is an input port
+</p><p>LispVal Arguments:
+</p><ul><li> Port
+</li></ul><p>Returns: Bool - True if an input port, false otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:isInputPortOpen" class="def">isInputPortOpen</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if the given port is open
+</p><p>Arguments
+</p><ul><li> Port
+</li></ul><p>Returns: Bool
+</p></div></div><div class="top"><p class="src"><a name="v:isOutputPortOpen" class="def">isOutputPortOpen</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if the given port is open
+</p><p>Arguments
+</p><ul><li> Port
+</li></ul><p>Returns: Bool
+</p></div></div><div class="top"><p class="src"><a name="v:isCharReady" class="def">isCharReady</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if a character is ready on the port
+</p><p>LispVal Arguments:
+</p><ul><li> Port
+</li></ul><p>Returns: Bool
+</p></div></div><div class="top"><p class="src"><a name="v:readProc" class="def">readProc</a> :: Bool -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Read from the given port
+</p><p>LispVal Arguments:
+</p><ul><li> Port
+</li></ul><p>Returns: LispVal
+</p></div></div><div class="top"><p class="src"><a name="v:readCharProc" class="def">readCharProc</a> :: (Handle -&gt; IO Char) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Read character from port
+</p><p>LispVal Arguments:
+</p><ul><li> Port
+</li></ul><p>Returns: Char
+</p></div></div><div class="top"><p class="src"><a name="v:readByteVector" class="def">readByteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Read a byte vector from the given port
+</p><p>Arguments
+</p><ul><li> Number - Number of bytes to read
+   * Port - Port to read from
+</li></ul><p>Returns: ByteVector
+</p></div></div><div class="top"><p class="src"><a name="v:readString" class="def">readString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Read a string from the given port
+</p><p>Arguments
+</p><ul><li> Number - Number of bytes to read
+   * Port - Port to read from
+</li></ul><p>Returns: String
+</p></div></div><div class="top"><p class="src"><a name="v:writeProc" class="def">writeProc</a> ::  (Handle -&gt; <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a> -&gt; IO a) -&gt; [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; ErrorT <a href="Language-Scheme-Types.html#t:LispError">LispError</a> IO <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Write to the given port
+</p><p>LispVal Arguments:
+</p><ul><li> LispVal
+</li><li> Port (optional)
+</li></ul><p>Returns: (None)
+</p></div></div><div class="top"><p class="src"><a name="v:writeCharProc" class="def">writeCharProc</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Write character to the given port
+</p><p>Arguments:
+</p><ul><li> Char - Value to write
+</li><li> Port (optional) - Port to write to, defaults to standard output
+</li></ul><p>Returns: (None)
+</p></div></div><div class="top"><p class="src"><a name="v:writeByteVector" class="def">writeByteVector</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Write a byte vector to the given port
+</p><p>Arguments
+</p><ul><li> ByteVector
+   * Port
+</li></ul><p>Returns: (unspecified)
+</p></div></div><div class="top"><p class="src"><a name="v:writeString" class="def">writeString</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Write a string to the given port
+</p><p>Arguments
+</p><ul><li> String
+   * Port
+</li></ul><p>Returns: (unspecified)
+</p></div></div><div class="top"><p class="src"><a name="v:readContents" class="def">readContents</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Read the given file and return the raw string content 
+</p><p>Arguments:
+</p><ul><li> String - Filename to read
+</li></ul><p>Returns: String - Actual text read from the file
+</p></div></div><div class="top"><p class="src"><a name="v:load" class="def">load</a> :: String -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>]</p><div class="doc"><p>Parse the given file and return a list of scheme expressions
+</p><p>Arguments:
+</p><ul><li> String - Filename to read
+</li></ul><p>Returns: [LispVal] - Raw contents of the file parsed as scheme code
+</p></div></div><div class="top"><p class="src"><a name="v:readAll" class="def">readAll</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Read the contents of the given scheme source file into a list
+</p><p>Arguments:
+</p><ul><li> String - Filename to read
+</li></ul><p>Returns: List - Raw contents of the file parsed as scheme code
+</p></div></div><div class="top"><p class="src"><a name="v:fileExists" class="def">fileExists</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Determine if the given file exists
+</p><p>Arguments:
+</p><ul><li> String - Filename to check
+</li></ul><p>Returns: Bool - True if file exists, false otherwise
+</p></div></div><div class="top"><p class="src"><a name="v:deleteFile" class="def">deleteFile</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Delete the given file
+</p><p>Arguments:
+</p><ul><li> String - Filename to delete
+</li></ul><p>Returns: Bool - True if file was deleted, false if an error occurred
+</p></div></div><div class="top"><p class="src"><a name="v:eofObject" class="def">eofObject</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:ThrowsError">ThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Return the EOF object
+</p></div></div><h2 id="g:12">Symbol generation
+</h2><div class="top"><p class="src"><a name="v:gensym" class="def">gensym</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Generate a (reasonably) unique symbol, given an optional prefix.
+  This function is provided even though it is not part of R5RS.
+</p><p>Arguments:
+</p><ul><li> String - Prefix of the unique symbol
+</li></ul><p>Returns: Atom
+</p></div></div><div class="top"><p class="src"><a name="v:_gensym" class="def">_gensym</a> :: String -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Version of gensym that can be conveniently called from Haskell.
+</p></div></div><h2 id="g:13">Time
+</h2><div class="top"><p class="src"><a name="v:currentTimestamp" class="def">currentTimestamp</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Return the current time, in seconds
+</p><p>Arguments: (None)
+</p><p>Returns: Current UNIX timestamp in seconds
+</p></div></div><h2 id="g:14">System
+</h2><div class="top"><p class="src"><a name="v:system" class="def">system</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Execute a system command on the underlying OS.
+</p><p>Arguments:
+</p><ul><li> String - Command to execute
+</li></ul><p>Returns: Integer - program return status
+</p></div></div><div class="top"><p class="src"><a name="v:getEnvVars" class="def">getEnvVars</a> :: [<a href="Language-Scheme-Types.html#t:LispVal">LispVal</a>] -&gt; <a href="Language-Scheme-Types.html#t:IOThrowsError">IOThrowsError</a> <a href="Language-Scheme-Types.html#t:LispVal">LispVal</a></p><div class="doc"><p>Retrieve all environment variables
+</p><p>Arguments: (none)
+</p><p>Returns: List - list of key/value alists
+</p></div></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.13.2</p></div></body></html>
