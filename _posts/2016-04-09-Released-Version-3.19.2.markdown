@@ -1,7 +1,7 @@
 --- 
 layout: post
 title: Released Version 3.19.2
-excerpt: Various bug fixes and hash table enhancements
+excerpt: Various bug fixes and hash table enhancements.
 ---
 # {{ page.title }}
 
