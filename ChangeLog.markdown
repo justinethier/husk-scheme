@@ -1,3 +1,10 @@
+v3.19.3
+--------
+
+Big Fixes:
+
+- Fixed compilation errors in `FFI.hs`.
+
 v3.19.2
 --------
 

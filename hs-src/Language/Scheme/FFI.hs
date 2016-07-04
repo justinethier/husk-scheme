@@ -38,7 +38,7 @@ evalfuncLoadFFI :: [LispVal] -> IOThrowsError LispVal
  - TODO: pass a list of functions to import. Need to make sure this is done in an efficient way
  - (IE, result as a list that can be processed) 
  -}
-evalfuncLoadFFI [(Continuation env _ _ _), String targetSrcFile,
+evalfuncLoadFFI [(Continuation env _ _ _ _), String targetSrcFile,
                                                   String moduleName,
                                                   String externalFuncName,
                                                   String internalFuncName] = do
@@ -83,7 +83,7 @@ FUTURE: should be able to load multiple functions in one shot (?). -}
   defineVar env internalFuncName (IOFunc result) -- >>= continueEval env cont
 
 -- Overload that loads code from a compiled module
-evalfuncLoadFFI [(Continuation env _ _ _), String moduleName, String externalFuncName, String internalFuncName] = do
+evalfuncLoadFFI [(Continuation env _ _ _ _), String moduleName, String externalFuncName, String internalFuncName] = do
   result <- liftIO $ defaultRunGhc $ do
     dynflags <- GHC.getSessionDynFlags
     _ <- GHC.setSessionDynFlags dynflags
