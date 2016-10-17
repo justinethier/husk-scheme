@@ -1,7 +1,14 @@
+v3.19.4
+--------
+
+Bug fixes:
+
+- Import `(scheme)` in SRFI 1, to prevent problems with missing the `receive` macro in compiled programs.
+
 v3.19.3
 --------
 
-Big Fixes:
+Bug Fixes:
 
 - Fixed compilation errors in `FFI.hs`.
 
