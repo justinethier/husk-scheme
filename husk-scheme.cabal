@@ -116,6 +116,7 @@ Executable         huski
   Extensions:      ExistentialQuantification
   Main-is:         shell.hs
   Hs-Source-Dirs:  hs-src/Interpreter
+  Other-Modules:   Paths_husk_scheme
 
 Executable huskc
   Build-Depends: husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc-paths, process, filepath
@@ -129,3 +130,4 @@ Executable huskc
   Extensions:      ExistentialQuantification
   Main-is: huskc.hs
   Hs-Source-Dirs: hs-src/Compiler
+  Other-Modules:   Paths_husk_scheme

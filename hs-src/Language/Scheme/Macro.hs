@@ -52,7 +52,7 @@ import Language.Scheme.Variables
 import Language.Scheme.Macro.ExplicitRenaming
 import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
-import Control.Monad.Error
+import Control.Monad.Except
 import Data.Array
 -- import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
@@ -138,7 +138,7 @@ macroEval env lisp apply = _macroEval env lisp apply
 _macroEval :: Env
            -> LispVal
            -> (LispVal -> LispVal -> [LispVal] -> IOThrowsError LispVal)
-           -> ErrorT LispError IO LispVal
+           -> ExceptT LispError IO LispVal
 _macroEval env lisp@(List (Atom x : _)) apply = do
   -- Note: If there is a procedure of the same name it will be shadowed by the macro.
   var <- getNamespacedVar' env macroNamespace x

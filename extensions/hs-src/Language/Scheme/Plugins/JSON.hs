@@ -12,7 +12,7 @@ be called directly from husk using the FFI.
 
 module Language.Scheme.Plugins.JSON where 
 
-import Control.Monad.Error
+import Control.Monad.Except
 import Data.Array
 import Data.Ratio
 import Text.JSON

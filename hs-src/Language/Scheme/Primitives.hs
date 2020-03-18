@@ -161,7 +161,7 @@ import Language.Scheme.Parser
 import Language.Scheme.Types
 import Language.Scheme.Variables
 --import qualified Control.Exception
-import Control.Monad.Error
+import Control.Monad.Except
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.UTF8 as BSU
 import Data.Char hiding (isSymbol)
@@ -559,7 +559,7 @@ readBuffer args _ = if length args == 2
              (MonadIO m, MonadError LispError m) =>
              (Handle -> LispVal -> IO a) -> [LispVal] -> m LispVal -}
 writeProc :: (Handle -> LispVal -> IO a)
-          -> [LispVal] -> ErrorT LispError IO LispVal
+          -> [LispVal] -> ExceptT LispError IO LispVal
 writeProc func [obj] = do
     dobj <- recDerefPtrs obj -- Last opportunity to do this before writing
     writeProc func [dobj, Port stdout Nothing]

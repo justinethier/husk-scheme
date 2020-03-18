@@ -27,7 +27,7 @@ module Language.Scheme.Macro.ExplicitRenaming
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import Language.Scheme.Primitives (_gensym)
-import Control.Monad.Error
+import Control.Monad.Except
 -- import Debug.Trace
 
 -- |Handle an explicit renaming macro

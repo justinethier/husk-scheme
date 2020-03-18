@@ -54,7 +54,7 @@ module Language.Scheme.Variables
     , recDerefToFnc
     ) where
 import Language.Scheme.Types
-import Control.Monad.Error
+import Control.Monad.Except
 import Data.Array
 import Data.IORef
 import qualified Data.Map

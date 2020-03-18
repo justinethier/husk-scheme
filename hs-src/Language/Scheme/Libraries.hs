@@ -19,7 +19,7 @@ module Language.Scheme.Libraries
     ) where
 import Language.Scheme.Types
 import Language.Scheme.Variables
-import Control.Monad.Error
+import Control.Monad.Except
 
 -- |Get the full path to a module file
 findModuleFile 

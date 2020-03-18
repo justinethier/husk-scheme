@@ -62,7 +62,7 @@ import Language.Scheme.Primitives
 import Language.Scheme.Types
 import Language.Scheme.Util
 import Language.Scheme.Variables
-import Control.Monad.Error
+import Control.Monad.Except
 import Data.Array
 import qualified Data.ByteString as BS
 import qualified Data.Map
@@ -121,7 +121,7 @@ getDataFileFullPath = PHS.getDataFileName
 --  libraries. If the file is not found in the current directory but exists
 --  as a husk library, return the full path to the file in the library.
 --  Otherwise just return the given filename.
-findFileOrLib :: String -> ErrorT LispError IO String
+findFileOrLib :: String -> ExceptT LispError IO String
 findFileOrLib filename = do
     fileAsLib <- liftIO $ getDataFileFullPath $ "lib/" ++ filename
     exists <- fileExists [String filename]
@@ -162,7 +162,7 @@ registerSRFI env getDataFileName num = do
 --  of just using show directly.
 showLispError :: LispError -> IO String
 showLispError (NumArgs n lvs) = do
-  lvs' <- runErrorT $ mapM recDerefPtrs lvs
+  lvs' <- runExceptT $ mapM recDerefPtrs lvs
   case lvs' of
     Left _ -> return $ show $ NumArgs n lvs
     Right vals -> return $ show $ NumArgs n vals
@@ -178,7 +178,7 @@ showLispError (BadSpecialForm str p@(Pointer _ e)) = do
     Right val -> showLispError $ BadSpecialForm str val
 showLispError (ErrorWithCallHist err hist) = do
   err' <- showLispError err
-  hist' <- runErrorT $ mapM recDerefPtrs hist
+  hist' <- runExceptT $ mapM recDerefPtrs hist
   case hist' of
     Left _ -> return $ showCallHistory err' hist
     Right vals -> return $ showCallHistory err' vals
@@ -189,7 +189,7 @@ showLispError err = return $ show err
 --  needed regardless of type.
 runIOThrowsREPL :: IOThrowsError String -> IO String
 runIOThrowsREPL action = do
-    runState <- runErrorT action
+    runState <- runExceptT action
     case runState of
         Left err -> showLispError err
         Right val -> return val
@@ -197,7 +197,7 @@ runIOThrowsREPL action = do
 -- |Execute an IO action and return error or Nothing if no error was thrown.
 runIOThrows :: IOThrowsError String -> IO (Maybe String)
 runIOThrows action = do
-    runState <- runErrorT action
+    runState <- runExceptT action
     case runState of
         Left err -> do
             disp <- showLispError err
@@ -243,7 +243,7 @@ evalLisp env lisp = do
 --    Right val -> putStrLn $ show val
 -- @
 evalLisp' :: Env -> LispVal -> IO (ThrowsError LispVal)
-evalLisp' env lisp = runErrorT (evalLisp env lisp)
+evalLisp' env lisp = runExceptT (evalLisp env lisp)
 
 -- |A wrapper for macroEval and eval
 meval, mprepareApply :: Env -> LispVal -> LispVal -> IOThrowsError LispVal
@@ -871,7 +871,7 @@ updateByteVector v _ _ = throwError $ TypeMismatch "bytevector" v
 -- |Helper function to perform CPS for vector-set! and similar forms
 createObjSetCPS :: String
                    -> LispVal
-                   -> (LispVal -> LispVal -> LispVal -> ErrorT LispError IO LispVal)
+                   -> (LispVal -> LispVal -> LispVal -> ExceptT LispError IO LispVal)
                    -> Env
                    -> LispVal
                    -> LispVal
@@ -1349,7 +1349,7 @@ evalfuncImport ((Continuation {} ) : cs) = do
 evalfuncImport _ = throwError $ InternalError ""
 
 -- |Load import into the main environment
-bootstrapImport :: [LispVal] -> ErrorT LispError IO LispVal
+bootstrapImport :: [LispVal] -> ExceptT LispError IO LispVal
 bootstrapImport [cont@(Continuation {contClosure = env})] = do
     LispEnv me <- getVar env "*meta-env*"
     ri <- getNamespacedVar me macroNamespace "repl-import"

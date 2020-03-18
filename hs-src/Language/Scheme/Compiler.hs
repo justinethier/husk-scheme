@@ -58,7 +58,7 @@ import qualified Language.Scheme.Macro
 import Language.Scheme.Primitives
 import Language.Scheme.Types
 import Language.Scheme.Variables
-import Control.Monad.Error
+import Control.Monad.Except
 import qualified Data.List
 import Data.Maybe (fromMaybe)
 
@@ -1089,8 +1089,8 @@ compileSpecialForm _ formCode copts = do
 compileSpecialFormBody :: Env
                        -> LispVal
                        -> CompOpts
-                       -> (Maybe String -> ErrorT LispError IO [HaskAST])
-                       -> ErrorT LispError IO [HaskAST]
+                       -> (Maybe String -> ExceptT LispError IO [HaskAST])
+                       -> ExceptT LispError IO [HaskAST]
 compileSpecialFormBody env 
                        ast@(List (Atom fnc : _)) 
                        copts@(CompileOptions _ _ _ nextFunc) 

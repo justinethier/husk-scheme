@@ -20,7 +20,7 @@ import Language.Scheme.Numerical
 import Language.Scheme.Primitives
 import Language.Scheme.Types
 import Language.Scheme.Variables
-import Control.Monad.Error
+import Control.Monad.Except
 import qualified Data.Char
 import System.IO
 
