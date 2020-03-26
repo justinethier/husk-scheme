@@ -180,7 +180,7 @@ numBoolBinopCompare :: (LispVal
                     -> LispVal -> Either LispError LispVal)
                     -> LispVal -> [LispVal] -> Either LispError LispVal
 numBoolBinopCompare cmp n1 (n2 : ns) = do
-  List [n1', n2'] <- numCast [n1, n2]
+  (n1', n2') <- numCast' (n1, n2)
   result <- cmp n1' n2'
   case result of
     Bool True -> numBoolBinopCompare cmp n2' ns
@@ -244,30 +244,36 @@ numBoolBinopLte (n : ns) = numBoolBinopCompare cmp n ns
     cmp _ _ = throwError $ Default "Unexpected error in <="
 
 -- |Accept two numbers and cast one of them to the appropriate type, if necessary
-numCast :: [LispVal] -> ThrowsError LispVal
-numCast [a@(Number _), b@(Number _)] = return $ List [a, b]
-numCast [a@(Float _), b@(Float _)] = return $ List [a, b]
-numCast [a@(Rational _), b@(Rational _)] = return $ List [a, b]
-numCast [a@(Complex _), b@(Complex _)] = return $ List [a, b]
-numCast [(Number a), b@(Float _)] = return $ List [Float $ fromInteger a, b]
-numCast [(Number a), b@(Rational _)] = return $ List [Rational $ fromInteger a, b]
-numCast [(Number a), b@(Complex _)] = return $ List [Complex $ fromInteger a, b]
-numCast [a@(Float _), (Number b)] = return $ List [a, Float $ fromInteger b]
-numCast [a@(Float _), (Rational b)] = return $ List [a, Float $ fromRational b]
-numCast [(Float a), b@(Complex _)] = return $ List [Complex $ a :+ 0, b]
-numCast [a@(Rational _), (Number b)] = return $ List [a, Rational $ fromInteger b]
-numCast [(Rational a), b@(Float _)] = return $ List [Float $ fromRational a, b]
-numCast [(Rational a), b@(Complex _)] = return $ List [Complex $ (fromInteger $ numerator a) / (fromInteger $ denominator a), b]
-numCast [a@(Complex _), (Number b)] = return $ List [a, Complex $ fromInteger b]
-numCast [a@(Complex _), (Float b)] = return $ List [a, Complex $ b :+ 0]
-numCast [a@(Complex _), (Rational b)] = return $ List [a, Complex $ (fromInteger $ numerator b) / (fromInteger $ denominator b)]
-numCast [a, b] = case a of
+numCast' :: (LispVal, LispVal) -> ThrowsError (LispVal, LispVal)
+numCast' (a@(Number _), b@(Number _)) = return $ (a, b)
+numCast' (a@(Float _), b@(Float _)) = return $ (a, b)
+numCast' (a@(Rational _), b@(Rational _)) = return $ (a, b)
+numCast' (a@(Complex _), b@(Complex _)) = return $ (a, b)
+numCast' ((Number a), b@(Float _)) = return $ (Float $ fromInteger a, b)
+numCast' ((Number a), b@(Rational _)) = return $ (Rational $ fromInteger a, b)
+numCast' ((Number a), b@(Complex _)) = return $ (Complex $ fromInteger a, b)
+numCast' (a@(Float _), (Number b)) = return $ (a, Float $ fromInteger b)
+numCast' (a@(Float _), (Rational b)) = return $ (a, Float $ fromRational b)
+numCast' ((Float a), b@(Complex _)) = return $ (Complex $ a :+ 0, b)
+numCast' (a@(Rational _), (Number b)) = return $ (a, Rational $ fromInteger b)
+numCast' ((Rational a), b@(Float _)) = return $ (Float $ fromRational a, b)
+numCast' ((Rational a), b@(Complex _)) = return $ (Complex $ (fromInteger $ numerator a) / (fromInteger $ denominator a), b)
+numCast' (a@(Complex _), (Number b)) = return $ (a, Complex $ fromInteger b)
+numCast' (a@(Complex _), (Float b)) = return $ (a, Complex $ b :+ 0)
+numCast' (a@(Complex _), (Rational b)) = return $ (a, Complex $ (fromInteger $ numerator b) / (fromInteger $ denominator b))
+numCast' (a, b) = case a of
                Number _ -> doThrowError b
                Float _ -> doThrowError b
                Rational _ -> doThrowError b
                Complex _ -> doThrowError b
                _ -> doThrowError a
   where doThrowError num = throwError $ TypeMismatch "number" num
+
+-- |Accept two numbers and cast one of them to the appropriate type, if necessary
+numCast :: [LispVal] -> ThrowsError LispVal
+numCast [a, b] = do
+  (a', b') <- numCast' (a, b)
+  pure $ List [a', b']
 numCast _ = throwError $ Default "Unexpected error in numCast"
 
 -- |Convert the given number to a rational
