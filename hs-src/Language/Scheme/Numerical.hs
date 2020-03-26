@@ -71,7 +71,7 @@ module Language.Scheme.Numerical (
 ) where
 import Language.Scheme.Types
 
-import Control.Monad.Error
+import Control.Monad.Except
 import Data.Char hiding (isNumber)
 import Data.Complex
 import Data.Fixed

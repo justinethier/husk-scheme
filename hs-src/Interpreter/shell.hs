@@ -16,7 +16,7 @@ import qualified Language.Scheme.Core as LSC -- Scheme Interpreter
 import Language.Scheme.Types                 -- Scheme data types
 import qualified Language.Scheme.Util as LSU (countAllLetters, countLetters, strip)
 import qualified Language.Scheme.Variables as LSV -- Scheme variable operations
-import Control.Monad.Error
+import Control.Monad.Except
 import qualified Data.Char as DC
 import qualified Data.List as DL
 import Data.Maybe (fromMaybe)

@@ -20,7 +20,7 @@ module Language.Scheme.Plugins.CPUTime (get, precision) where
 
 import Language.Scheme.Types
 import System.CPUTime
-import Control.Monad.Error
+import Control.Monad.Except
 
 -- |Wrapper for CPUTime.getCPUTime
 get :: [LispVal] -> IOThrowsError LispVal

@@ -96,7 +96,7 @@ module Language.Scheme.Types
     , validateFuncParams
     )
  where
-import Control.Monad.Error
+import Control.Monad.Except
 import Data.Complex
 import Data.Array
 import qualified Data.ByteString as BS
@@ -165,9 +165,6 @@ showError (Default message) = "Error: " ++ message
 showError (ErrorWithCallHist err stack) = showCallHistory (show err) stack
 
 instance Show LispError where show = showError
-instance Error LispError where
-  noMsg = Default "An error has occurred"
-  strMsg = Default
 
 -- |Display call history for an error
 showCallHistory :: String -> [LispVal] -> String
@@ -183,7 +180,7 @@ showCallHistory message hist = do
 type ThrowsError = Either LispError
 
 -- |Container used to provide error handling in the IO monad
-type IOThrowsError = ErrorT LispError IO
+type IOThrowsError = ExceptT LispError IO
 
 -- |Lift a ThrowsError into the IO monad
 liftThrows :: ThrowsError a -> IOThrowsError a

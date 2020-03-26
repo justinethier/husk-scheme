@@ -46,7 +46,7 @@ module Language.Scheme.Parser
     , parseUnquoteSpliced 
     ) where
 import Language.Scheme.Types
-import Control.Monad.Error
+import Control.Monad.Except
 import Data.Array
 import qualified Data.ByteString as BS
 import qualified Data.Char as DC
