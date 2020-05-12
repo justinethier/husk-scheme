@@ -68,3 +68,22 @@ jobs:
       run: |
         cabal v2-update
         cabal v2-build all --write-ghc-environment-files=always
+
+    - name: Haddock
+      run: |
+        cabal v2-haddock all
+
+    - name: Test Interpreter
+      working-directory: tests
+      run: |
+        cabal v2-run exe:huski -- r5rs_pitfall.scm
+
+    - name: Test Compiler
+      working-directory: tests
+      run: |
+        cabal v2-run exe:huskc -- compiler-run-tests.scm
+        ./compiler-run-tests
+
+    - name: Dist
+      run: |
+        cabal v2-sdist
