@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        ghc: ['7.10.3', '8.0.2', '8.2.2', '8.4.4', '8.6.5', '8.8.3', '8.10.1']
+        ghc: ['8.0.2', '8.2.2', '8.4.4', '8.6.5', '8.8.3', '8.10.1']
         cabal: ['3.2.0.0']
         os: [ubuntu-latest, macOS-latest, windows-latest]
         exclude:
@@ -31,8 +31,6 @@ jobs:
             ghc: 8.2.2
           - os: macOS-latest
             ghc: 8.0.2
-          - os: macOS-latest
-            ghc: 7.10.3
           - os: windows-latest
             ghc: 8.8.3
           - os: windows-latest
@@ -43,8 +41,6 @@ jobs:
             ghc: 8.2.2
           - os: windows-latest
             ghc: 8.0.2
-          - os: windows-latest
-            ghc: 7.10.3
     name: Haskell GHC ${{ matrix.ghc }} on ${{ matrix.os }}
 
     steps:
