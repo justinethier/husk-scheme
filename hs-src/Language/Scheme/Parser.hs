@@ -319,7 +319,7 @@ parseEscapedChar = do
     _ -> return c
 
 -- |Parse a hexidecimal scalar
-parseHexScalar :: Monad m => String -> m Char
+parseHexScalar :: String -> GenParser Char st Char
 parseHexScalar num = do
     let ns = Numeric.readHex num
     case ns of
