@@ -3,6 +3,13 @@ v3.19.4
 
 Bug fixes:
 
+- Incorporated fixes to allow husk to build with newer versions of GHC 8.
+
+v3.19.4
+--------
+
+Bug fixes:
+
 - Import `(scheme)` in SRFI 1, to prevent problems with missing the `receive` macro in compiled programs.
 
 v3.19.3

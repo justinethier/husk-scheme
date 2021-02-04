@@ -88,7 +88,7 @@ showBanner = do
   putStrLn " |_| |_|\\__,_|___/_|\\_\\  ///   \\\\\\  |___/\\___|_| |_|\\___|_| |_| |_|\\___| "
   putStrLn "                                                                         "
   putStrLn " http://justinethier.github.io/husk-scheme                              "
-  putStrLn " (c) 2010-2016 Justin Ethier                                             "
+  putStrLn " (c) 2010-2021 Justin Ethier                                             "
   putStrLn $ " Version " ++ (DV.showVersion PHS.version) ++ " "
   putStrLn "                                                                         "
 
