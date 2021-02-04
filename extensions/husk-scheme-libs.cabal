@@ -19,6 +19,7 @@ Source-Repository head
     Location:        git://github.com/justinethier/husk-scheme.git
 
 Library
+  Default-Language: Haskell2010
   Build-Depends:   base >= 2.0 && < 5, array, containers, json, husk-scheme, mtl, transformers
   Hs-Source-Dirs:  hs-src
   Exposed-Modules: Language.Scheme.Plugins.JSON

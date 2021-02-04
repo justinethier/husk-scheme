@@ -73,8 +73,9 @@ flag useptrs
     default: True
 
 Library
+  Default-Language: Haskell2010
   Build-Depends:   base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, bytestring, utf8-string, time, process, knob
-  Extensions:      ExistentialQuantification
+  Default-Extensions:      ExistentialQuantification
   Hs-Source-Dirs:  hs-src
   Exposed-Modules: Language.Scheme.Core
                    Language.Scheme.Environments
@@ -109,16 +110,18 @@ Library
     cpp-options: -DUsePointers
 
 Executable         huski
+  Default-Language: Haskell2010
   Build-Depends:   husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, process
   if flag(useffi)
     Build-Depends: ghc, ghc-paths
     cpp-options: -DUseFfi
-  Extensions:      ExistentialQuantification
+  Default-Extensions:      ExistentialQuantification
   Main-is:         shell.hs
   Hs-Source-Dirs:  hs-src/Interpreter
   Other-Modules:   Paths_husk_scheme
 
 Executable huskc
+  Default-Language: Haskell2010
   Build-Depends: husk-scheme, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, ghc-paths, process, filepath
   if flag(usedebug)
     cpp-options: -DUseDebug
@@ -127,7 +130,7 @@ Executable huskc
     cpp-options: -DUseFfi
   if flag(useptrs)
     cpp-options: -DUsePointers
-  Extensions:      ExistentialQuantification
+  Default-Extensions:      ExistentialQuantification
   Main-is: huskc.hs
   Hs-Source-Dirs: hs-src/Compiler
   Other-Modules:   Paths_husk_scheme
