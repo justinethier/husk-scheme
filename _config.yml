@@ -1,17 +1,15 @@
 safe:        false
-auto:        false
-server:      false
-server_port: 4000
+#auto:        false
 baseurl:    /
 
 source:      .
 destination: ./_site
-plugins:     ./_plugins
+plugins_dir:     ./_plugins
 
 future:      true
 lsi:         false
-pygments:    true
+highlighter: pygments
 markdown:    kramdown
 permalink:   date
 
-husk_build_number:  3.19.3
+husk_build_number:  3.19.4
