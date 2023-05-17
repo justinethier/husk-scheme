@@ -18,6 +18,10 @@ Installation
         cabal update
         cabal install husk-scheme
 
+If you are new to Haskell or just want to run Husk you may also need to run
+
+        cabal install --lib husk-scheme
+
 3. <b>Adjust your PATH</b>: Before running Husk you may also need to add the cabal executable directory to your path. On Linux this is `~/.cabal/bin`. 
 
 4. Now you are ready to start up the interpreter:
