@@ -18,7 +18,7 @@ Installation
         cabal update
         cabal install husk-scheme
 
-If you are new to Haskell or just want to run Husk you may also need to run:
+    If you are new to Haskell or just want to run Husk you may also need to run:
 
         cabal install --lib husk-scheme
 
