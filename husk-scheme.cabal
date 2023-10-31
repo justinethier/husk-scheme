@@ -39,7 +39,7 @@ License:             MIT
 License-file:        LICENSE
 Author:              Justin Ethier
 Maintainer:          Justin Ethier <github.com/justinethier>
-Homepage:            http://justinethier.github.com/husk-scheme
+Homepage:            http://justinethier.github.io/husk-scheme
 Bug-Reports:         http://github.com/justinethier/husk-scheme/issues
 Cabal-Version:       >= 1.10
 Build-Type:          Simple
