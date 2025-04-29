@@ -108,7 +108,7 @@ runOne initEnv args interactive = do
                           [((LSV.varNamespace, "args"),
                            List $ map String $ drop 1 args)]
 
-  result <- (LSC.runIOThrows $ liftM show $ 
+  result <- (LSC.runIOThrows $ fmap show $ 
              LSC.evalLisp env (List [Atom "load", String (head args)]))
   _ <- case result of
     Just errMsg -> putStrLn errMsg
@@ -117,7 +117,7 @@ runOne initEnv args interactive = do
       alreadyDefined <- liftIO $ LSV.isBound env "main"
       let argv = List $ map String args
       when alreadyDefined (do 
-        mainResult <- (LSC.runIOThrows $ liftM show $ 
+        mainResult <- (LSC.runIOThrows $ fmap show $ 
                        LSC.evalLisp env (List [Atom "main", List [Atom "quote", argv]]))
         case mainResult of
           Just errMsg -> putStrLn errMsg

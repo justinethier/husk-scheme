@@ -50,7 +50,7 @@ exec55_3 env cont _ _ = do
 main :: IO () 
 main = do 
   env <- r5rsEnv 
-  result <- (runIOThrows $ liftM show $ hsInit env (makeNullContinuation env) (Nil "") Nothing) 
+  result <- (runIOThrows $ fmap show $ hsInit env (makeNullContinuation env) (Nil "") Nothing) 
   case result of 
     Just errMsg -> putStrLn errMsg 
     _ -> return () 

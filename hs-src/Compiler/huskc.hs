@@ -146,7 +146,7 @@ process inFile outHaskell outExec libs dynamic extraArgs langrev debugOpt = do
                      then Just stdlib
                      else Nothing
 
-  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env stdlibArg srfi55 inFile outHaskell langrev debugOpt)
+  result <- (Language.Scheme.Core.runIOThrows $ fmap show $ compileSchemeFile env stdlibArg srfi55 inFile outHaskell langrev debugOpt)
   case result of
    Just errMsg -> putStrLn errMsg
    _ -> compileHaskellFile outHaskell outExec dynamic extraArgs

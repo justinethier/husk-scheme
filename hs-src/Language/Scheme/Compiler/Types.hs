@@ -275,7 +275,7 @@ header filepath useCompiledLibs langRev = do
     , "main :: IO () "
     , "main = do "
     , "  env <- " ++ env ++ " "
-    , "  result <- (runIOThrows $ liftM show $ hsInit env (makeNullContinuation env) (Nil \"\") Nothing) "
+    , "  result <- (runIOThrows $ fmap show $ hsInit env (makeNullContinuation env) (Nil \"\") Nothing) "
     , "  case result of "
     , "    Just errMsg -> putStrLn errMsg "
     , "    _ -> return () "
