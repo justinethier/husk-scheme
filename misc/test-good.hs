@@ -6,6 +6,7 @@
 --  Version 3.16
 --
 module Main where 
+import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Core  
 import Language.Scheme.Numerical  
 import Language.Scheme.Primitives  

@@ -50,6 +50,7 @@ module Language.Scheme.Compiler
     , mfunc
     )
 where 
+import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Compiler.Libraries as LSCL
 import Language.Scheme.Compiler.Types
 import qualified Language.Scheme.Core as LSC 

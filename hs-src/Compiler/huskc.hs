@@ -10,6 +10,7 @@ A front-end for the husk compiler
 -}
 
 module Main where
+import Control.Monad.IO.Class (liftIO)
 import Paths_husk_scheme
 import Language.Scheme.Compiler
 import Language.Scheme.Compiler.Types

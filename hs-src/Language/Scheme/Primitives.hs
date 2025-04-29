@@ -156,6 +156,7 @@ module Language.Scheme.Primitives (
 -- , systemRead
 
  ) where
+import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Types

@@ -53,6 +53,7 @@ module Language.Scheme.Variables
     , safeRecDerefPtrs
     , recDerefToFnc
     ) where
+import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Types
 import Control.Monad.Except
 import Data.Array

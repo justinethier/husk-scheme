@@ -50,6 +50,7 @@ module Language.Scheme.Core
     -- * Internal use only
     , meval
     ) where
+import Control.Monad.IO.Class (liftIO)
 import qualified Paths_husk_scheme as PHS (getDataFileName, version)
 #ifdef UseFfi
 import qualified Language.Scheme.FFI

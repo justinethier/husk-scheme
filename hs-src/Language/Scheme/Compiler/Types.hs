@@ -34,6 +34,7 @@ module Language.Scheme.Compiler.Types
     , headerImports
     )
 where 
+import Control.Monad.IO.Class (liftIO)
 import qualified Language.Scheme.Core as LSC (version) 
 import Language.Scheme.Types
 import qualified Language.Scheme.Util (escapeBackslashes)

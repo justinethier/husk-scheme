@@ -17,6 +17,7 @@ module Language.Scheme.Libraries
       findModuleFile
     , moduleImport
     ) where
+import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Except

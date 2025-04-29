@@ -12,6 +12,7 @@ allows execution of stand-alone files containing Scheme code.
 -}
 
 module Main where
+import Control.Monad.IO.Class (liftIO)
 import qualified Language.Scheme.Core as LSC -- Scheme Interpreter
 import Language.Scheme.Types                 -- Scheme data types
 import qualified Language.Scheme.Util as LSU (countAllLetters, countLetters, strip)

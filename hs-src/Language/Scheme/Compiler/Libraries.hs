@@ -16,6 +16,7 @@ module Language.Scheme.Compiler.Libraries
       importAll
     )
 where 
+import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Compiler.Types
 import qualified Language.Scheme.Core as LSC 
     (evalLisp, findFileOrLib, meval, nullEnvWithImport)

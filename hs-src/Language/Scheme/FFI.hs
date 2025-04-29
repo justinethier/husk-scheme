@@ -13,6 +13,7 @@ This module contains the foreign function interface.
 -}
 module Language.Scheme.FFI (evalfuncLoadFFI) where
 
+import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import Control.Monad.Error
