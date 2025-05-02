@@ -215,7 +215,7 @@ headerImports = [
  , "Language.Scheme.Primitives "
  , "Language.Scheme.Types     -- Scheme data types "
  , "Language.Scheme.Variables -- Scheme variable operations "
- , "Control.Monad.Error "
+ , "Control.Monad.Except "
  , "Control.Monad.IO.Class "
  , "Data.Array "
  , " qualified Data.ByteString as BS "
