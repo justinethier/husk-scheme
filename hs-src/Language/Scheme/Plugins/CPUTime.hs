@@ -18,6 +18,7 @@ call into this module from Scheme code.
 
 module Language.Scheme.Plugins.CPUTime (get, precision) where
 
+import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Types
 import System.CPUTime
 import Control.Monad.Except

@@ -12,6 +12,8 @@ allows execution of stand-alone files containing Scheme code.
 -}
 
 module Main where
+import Control.Monad (when)
+import Control.Monad.IO.Class (liftIO)
 import qualified Language.Scheme.Core as LSC -- Scheme Interpreter
 import Language.Scheme.Types                 -- Scheme data types
 import qualified Language.Scheme.Util as LSU (countAllLetters, countLetters, strip)
@@ -107,7 +109,7 @@ runOne initEnv args interactive = do
                           [((LSV.varNamespace, "args"),
                            List $ map String $ drop 1 args)]
 
-  result <- (LSC.runIOThrows $ liftM show $ 
+  result <- (LSC.runIOThrows $ fmap show $ 
              LSC.evalLisp env (List [Atom "load", String (head args)]))
   _ <- case result of
     Just errMsg -> putStrLn errMsg
@@ -116,7 +118,7 @@ runOne initEnv args interactive = do
       alreadyDefined <- liftIO $ LSV.isBound env "main"
       let argv = List $ map String args
       when alreadyDefined (do 
-        mainResult <- (LSC.runIOThrows $ liftM show $ 
+        mainResult <- (LSC.runIOThrows $ fmap show $ 
                        LSC.evalLisp env (List [Atom "main", List [Atom "quote", argv]]))
         case mainResult of
           Just errMsg -> putStrLn errMsg

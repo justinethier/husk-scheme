@@ -371,7 +371,7 @@ parseHashTable = do
 
 -- |Parse a list
 parseList :: Parser LispVal
-parseList = liftM List $ sepBy parseExpr whiteSpace
+parseList = fmap List $ sepBy parseExpr whiteSpace
 -- TODO: wanted to use endBy (or a variant) above, but it causes an error such that dotted lists are not parsed
 
 -- |Parse a dotted list (scheme pair)

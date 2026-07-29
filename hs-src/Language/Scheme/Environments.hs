@@ -15,6 +15,7 @@ module Language.Scheme.Environments
       primitives
     , ioPrimitives
     ) where
+import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Libraries
 import Language.Scheme.Numerical
 import Language.Scheme.Primitives

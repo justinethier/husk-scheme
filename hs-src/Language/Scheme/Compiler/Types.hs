@@ -12,7 +12,7 @@ Portability : portable
 This module contains data types used by the compiler.
 -}
 
-module Language.Scheme.Compiler.Types 
+module Language.Scheme.Compiler.Types
     (
     -- * Data types
       CompOpts (..)
@@ -22,9 +22,9 @@ module Language.Scheme.Compiler.Types
     -- * Utility functions
     , ast2Str
     , asts2Str
-    , createAstFunc 
-    , createAstCont 
-    , joinL 
+    , createAstFunc
+    , createAstCont
+    , joinL
     , moduleRuntimeVar
     , showValAST
     -- * Headers appended to output file
@@ -33,8 +33,9 @@ module Language.Scheme.Compiler.Types
     , headerModule
     , headerImports
     )
-where 
-import qualified Language.Scheme.Core as LSC (version) 
+where
+import Control.Monad.IO.Class (liftIO)
+import qualified Language.Scheme.Core as LSC (version)
 import Language.Scheme.Types
 import qualified Language.Scheme.Util (escapeBackslashes)
 import qualified Data.Array
@@ -45,20 +46,20 @@ import qualified Data.Map
 import qualified Data.Ratio as DR
 
 -- |A type to store options passed to compile.
---  Eventually all of this might be able to be 
+--  Eventually all of this might be able to be
 --  integrated into a Compile monad.
 data CompOpts = CompileOptions {
-    coptsThisFunc :: String,        
+    coptsThisFunc :: String,
     -- ^Immediate name to use when creating a compiled function.
     --  Presumably there is other code that is expecting
     --  to call into it.
 
     coptsThisFuncUseValue :: Bool,
     -- ^Whether to include the /value/ parameter in the current function
-    
+
     coptsThisFuncUseArgs :: Bool,
     -- ^Whether to include the /args/ parameter in the current function
-    
+
     coptsNextFunc :: Maybe String
     -- ^The name to use for the next function after the current
     --  compiler recursion is finished. For example, after compiling
@@ -72,9 +73,9 @@ defaultCompileOptions thisFunc = CompileOptions thisFunc False False Nothing
 
 -- |Options passed to the compiler library module
 data CompLibOpts = CompileLibraryOptions {
-    compBlock :: String -> Maybe String -> Env 
+    compBlock :: String -> Maybe String -> Env
               -> [HaskAST] -> [LispVal] -> IOThrowsError [HaskAST],
-    compLisp :: Env -> String -> String -> Maybe String 
+    compLisp :: Env -> String -> String -> Maybe String
               -> IOThrowsError [HaskAST]
     }
 
@@ -83,7 +84,7 @@ moduleRuntimeVar :: String
 moduleRuntimeVar = " modules "
 
 -- |Create code for a function
-createAstFunc 
+createAstFunc
   :: CompOpts  -- ^ Compilation options
   -> [HaskAST] -- ^ Body of the function
   -> HaskAST -- ^ Complete function code
@@ -93,7 +94,7 @@ createAstFunc (CompileOptions thisFunc useVal useArgs _) funcBody = do
   AstFunction thisFunc (" env cont " ++ val ++ " " ++ args ++ " ") funcBody
 
 -- |Create code for a continutation
-createAstCont 
+createAstCont
   :: CompOpts -- ^ Compilation options
   -> String -- ^ Value to send to the continuation
   -> String -- ^ Extra leading indentation (or blank string if none)
@@ -112,7 +113,7 @@ data HaskAST = AstAssignM String HaskAST
 --                 astfType :: String,
                  astfArgs :: String,
                  astfCode :: [HaskAST]
-                } 
+                }
  | AstValue String
  | AstRef String
  | AstContinuation {astcNext :: String,
@@ -129,36 +130,36 @@ showValAST (AstFunction name args code) = do
 #ifdef UseDebug
   let appendArg arg = do
         if Data.List.isInfixOf arg args
-           then " ++ \" \" ++ " ++ (show arg) ++ 
-                " ++ \" [\" ++ (show " ++ arg ++ ")" ++ 
+           then " ++ \" \" ++ " ++ (show arg) ++
+                " ++ \" [\" ++ (show " ++ arg ++ ")" ++
                 " ++ \"] \""
            else ""
-  let fdebug = "\n  _ <- liftIO $ (trace (\"" ++ 
-               name ++ "\"" ++ 
-               (appendArg "value") ++ 
-               (appendArg "args") ++ 
+  let fdebug = "\n  _ <- liftIO $ (trace (\"" ++
+               name ++ "\"" ++
+               (appendArg "value") ++
+               (appendArg "args") ++
                ") getCPUTime)"
-  typeSig ++ fheader ++ fdebug ++ fbody 
+  typeSig ++ fheader ++ fdebug ++ fbody
 #else
-  typeSig ++ fheader ++ fbody 
+  typeSig ++ fheader ++ fbody
 #endif
 showValAST (AstValue v) = v
 showValAST (AstRef v) = v
 showValAST (AstContinuation nextFunc args) =
-    "  continueEval env (makeCPSWArgs env cont " ++ 
+    "  continueEval env (makeCPSWArgs env cont " ++
        nextFunc ++ " " ++ args ++ ") (Nil \"\") Nothing "
 
 instance Show HaskAST where show = showValAST
 
 -- |A utility function to join list members together
-joinL 
+joinL
   :: forall a. [[a]] -- ^ Original list-of-lists
-  -> [a] -- ^ Separator 
+  -> [a] -- ^ Separator
   -> [a] -- ^ Joined list
 joinL ls sep = Data.List.intercalate sep ls
 
 -- |Convert abstract syntax tree to a string
-ast2Str :: LispVal -> String 
+ast2Str :: LispVal -> String
 ast2Str (String s) = "String " ++ show s
 ast2Str (Char c) = "Char " ++ show c
 ast2Str (Atom a) = "Atom " ++ show a
@@ -169,7 +170,7 @@ ast2Str (Float f) = "Float (" ++ show f ++ ")"
 ast2Str (Bool True) = "Bool True"
 ast2Str (Bool False) = "Bool False"
 ast2Str (HashTable ht) = do
- let ls = Data.Map.toList ht 
+ let ls = Data.Map.toList ht
      conv (a, b) = "(" ++ ast2Str a ++ "," ++ ast2Str b ++ ")"
  "HashTable $ Data.Map.fromList $ [" ++ joinL (map conv ls) "," ++ "]"
 ast2Str (Vector v) = do
@@ -180,7 +181,7 @@ ast2Str (ByteVector bv) = do
   let ls = BS.unpack bv
   "ByteVector ( BS.pack " ++ "[" ++ joinL (map show ls) "," ++ "])"
 ast2Str (List ls) = "List [" ++ joinL (map ast2Str ls) "," ++ "]"
-ast2Str (DottedList ls l) = 
+ast2Str (DottedList ls l) =
   "DottedList [" ++ joinL (map ast2Str ls) "," ++ "] $ " ++ ast2Str l
 ast2Str l = show l -- Error?
 
@@ -214,7 +215,8 @@ headerImports = [
  , "Language.Scheme.Primitives "
  , "Language.Scheme.Types     -- Scheme data types "
  , "Language.Scheme.Variables -- Scheme variable operations "
- , "Control.Monad.Error "
+ , "Control.Monad.Except "
+ , "Control.Monad.IO.Class "
  , "Data.Array "
  , " qualified Data.ByteString as BS "
  , "Data.Complex "
@@ -228,7 +230,7 @@ headerImports = [
 #endif
  ]
 
--- |Block of code used in the header of a Haskell program 
+-- |Block of code used in the header of a Haskell program
 --  generated by the compiler.
 header :: String -> Bool -> String -> [String]
 header filepath useCompiledLibs langRev = do
@@ -237,7 +239,7 @@ header filepath useCompiledLibs langRev = do
             else case langRev of
                    "7" -> "r7rsEnv"
                    _ -> "r5rsEnv"
-      initSrfi55 = 
+      initSrfi55 =
         case langRev of
           "7" -> []
           _ -> [ "exec55_3 env cont _ _ = do "
@@ -246,8 +248,8 @@ header filepath useCompiledLibs langRev = do
   [ " "
     , " "
     , "-- |Get variable at runtime "
-    , "getRTVar env var = do " 
-    , "  v <- getVar env var " 
+    , "getRTVar env var = do "
+    , "  v <- getVar env var "
     , "  return $ case v of "
     , "    List _ -> Pointer var env "
     , "    DottedList _ _ -> Pointer var env "
@@ -269,12 +271,12 @@ header filepath useCompiledLibs langRev = do
     , "getDataFileName' :: FilePath -> IO FilePath "
     , "getDataFileName' name = return $ \"" ++ (Language.Scheme.Util.escapeBackslashes filepath) ++ "\" ++ name "
     , " "]
-    ++ initSrfi55 ++ 
+    ++ initSrfi55 ++
     [ " "
     , "main :: IO () "
     , "main = do "
     , "  env <- " ++ env ++ " "
-    , "  result <- (runIOThrows $ liftM show $ hsInit env (makeNullContinuation env) (Nil \"\") Nothing) "
+    , "  result <- (runIOThrows $ fmap show $ hsInit env (makeNullContinuation env) (Nil \"\") Nothing) "
     , "  case result of "
     , "    Just errMsg -> putStrLn errMsg "
     , "    _ -> return () "

@@ -156,6 +156,7 @@ module Language.Scheme.Primitives (
 -- , systemRead
 
  ) where
+import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Numerical
 import Language.Scheme.Parser
 import Language.Scheme.Types
@@ -419,7 +420,7 @@ isOutputPortOpen _ = return $ Bool False
 isInputPort :: [LispVal] -> IOThrowsError LispVal
 isInputPort [p@(Pointer {})] = recDerefPtrs p >>= box >>= isInputPort
 isInputPort [p@(Port _ _)] = 
-  withOpenPort p $ \port -> liftM Bool $ liftIO $ hIsReadable port
+  withOpenPort p $ \port -> fmap Bool $ liftIO $ hIsReadable port
 isInputPort _ = return $ Bool False
 
 -- |Determine if the given objects is an output port
@@ -433,7 +434,7 @@ isInputPort _ = return $ Bool False
 isOutputPort :: [LispVal] -> IOThrowsError LispVal
 isOutputPort [p@(Pointer {})] = recDerefPtrs p >>= box >>= isOutputPort
 isOutputPort [p@(Port _ _)] = 
-    withOpenPort p $ \port -> liftM Bool $ liftIO $ hIsWritable port
+    withOpenPort p $ \port -> fmap Bool $ liftIO $ hIsWritable port
 isOutputPort _ = return $ Bool False
 
 -- |Determine if a character is ready on the port
@@ -446,7 +447,7 @@ isOutputPort _ = return $ Bool False
 --
 isCharReady :: [LispVal] -> IOThrowsError LispVal
 isCharReady [p@(Pointer {})] = recDerefPtrs p >>= box >>= isCharReady
-isCharReady [Port port _] = do --liftM Bool $ liftIO $ hReady port
+isCharReady [Port port _] = do --fmap Bool $ liftIO $ hReady port
     result <- liftIO $ try' (liftIO $ hReady port)
     case result of
         Left e -> if isEOFError e
@@ -680,7 +681,7 @@ deleteFile args@(_ : _) = throwError $ NumArgs (Just 1) args
 --   Returns: String - Actual text read from the file
 --
 readContents :: [LispVal] -> IOThrowsError LispVal
-readContents [String filename] = liftM String $ liftIO $ readFile filename
+readContents [String filename] = fmap String $ liftIO $ readFile filename
 readContents [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= readContents
 readContents [] = throwError $ NumArgs (Just 1) []
 readContents args@(_ : _) = throwError $ NumArgs (Just 1) args
@@ -718,7 +719,7 @@ load filename = do
 --
 readAll :: [LispVal] -> IOThrowsError LispVal
 readAll [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= readAll
-readAll [String filename] = liftM List $ load filename
+readAll [String filename] = fmap List $ load filename
 readAll [] = do -- read from stdin
     input <- liftIO $ getContents
     lisp <- (liftThrows . readExprList) input
@@ -891,7 +892,7 @@ equal [(Vector arg1), (Vector arg2)] = eqvList equal [List $ (elems arg1), List 
 equal [l1@(List _), l2@(List _)] = eqvList equal [l1, l2]
 equal [(DottedList xs x), (DottedList ys y)] = equal [List $ xs ++ [x], List $ ys ++ [y]]
 equal [arg1, arg2] = do
-  primitiveEquals <- liftM or $ mapM (unpackEquals arg1 arg2)
+  primitiveEquals <- fmap or $ mapM (unpackEquals arg1 arg2)
                      [AnyUnpacker unpackNum, AnyUnpacker unpackStr, AnyUnpacker unpackBool]
   eqvEquals <- eqv [arg1, arg2]
   return $ Bool $ (primitiveEquals || let (Bool x) = eqvEquals in x)

@@ -24,6 +24,7 @@ module Language.Scheme.Macro.ExplicitRenaming
     (
       explicitRenamingTransform
     ) where
+import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import Language.Scheme.Primitives (_gensym)

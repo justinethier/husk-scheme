@@ -10,6 +10,7 @@ A front-end for the husk compiler
 -}
 
 module Main where
+import Control.Monad.IO.Class (liftIO)
 import Paths_husk_scheme
 import Language.Scheme.Compiler
 import Language.Scheme.Compiler.Types
@@ -145,7 +146,7 @@ process inFile outHaskell outExec libs dynamic extraArgs langrev debugOpt = do
                      then Just stdlib
                      else Nothing
 
-  result <- (Language.Scheme.Core.runIOThrows $ liftM show $ compileSchemeFile env stdlibArg srfi55 inFile outHaskell langrev debugOpt)
+  result <- (Language.Scheme.Core.runIOThrows $ fmap show $ compileSchemeFile env stdlibArg srfi55 inFile outHaskell langrev debugOpt)
   case result of
    Just errMsg -> putStrLn errMsg
    _ -> compileHaskellFile outHaskell outExec dynamic extraArgs

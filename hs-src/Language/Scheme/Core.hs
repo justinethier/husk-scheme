@@ -50,6 +50,7 @@ module Language.Scheme.Core
     -- * Internal use only
     , meval
     ) where
+import Control.Monad.IO.Class (liftIO)
 import qualified Paths_husk_scheme as PHS (getDataFileName, version)
 #ifdef UseFfi
 import qualified Language.Scheme.FFI
@@ -221,7 +222,7 @@ evalString env "(* 3 9)"
 -}
 evalString :: Env -> String -> IO String
 evalString env expr = do
-  runIOThrowsREPL $ liftM show $ liftThrows (readExpr expr) >>= evalLisp env
+  runIOThrowsREPL $ fmap show $ liftThrows (readExpr expr) >>= evalLisp env
 
 -- |Evaluate a string and print results to console
 evalAndPrint :: Env -> String -> IO ()

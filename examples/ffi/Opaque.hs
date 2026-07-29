@@ -29,15 +29,15 @@ unpackSet :: LispVal -> ThrowsError (S.Set String)
 unpackSet = fromOpaque
 
 primSingleton :: [LispVal] -> ThrowsError LispVal
-primSingleton [e] = liftM (toOpaque . S.singleton) (unpackStr e)
+primSingleton [e] = fmap (toOpaque . S.singleton) (unpackStr e)
 primSingleton badArgs = throwError $ NumArgs (Just 1) badArgs
 
 primElem :: [LispVal] -> ThrowsError LispVal
-primElem [e, s] = liftM Bool $ liftM2 (S.member) (unpackStr e) (unpackSet s)
+primElem [e, s] = fmap Bool $ liftM2 (S.member) (unpackStr e) (unpackSet s)
 primElem badArgs = throwError $ NumArgs (Just 2) badArgs
 
 primUnion :: [LispVal] -> ThrowsError LispVal
-primUnion = liftM (toOpaque . S.unions) . mapM unpackSet
+primUnion = fmap (toOpaque . S.unions) . mapM unpackSet
 
 setBindings :: [(String, LispVal)]
 setBindings = [

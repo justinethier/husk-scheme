@@ -13,13 +13,21 @@ This module contains the foreign function interface.
 -}
 module Language.Scheme.FFI (evalfuncLoadFFI) where
 
+import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Types
 import Language.Scheme.Variables
-import Control.Monad.Error
+import Control.Monad.Except
 
 import qualified GHC
 import qualified GHC.Paths (libdir)
+import qualified GHC.Unit.Types
+#if __GLASGOW_HASKELL__ < 900
 import qualified DynFlags
+#elif __GLASGOW_HASKELL__ < 980
+import qualified GHC.Driver.Session as DynFlags
+#else
+import qualified GHC.Driver.DynFlags as DynFlags
+#endif
 import qualified Unsafe.Coerce (unsafeCoerce)
 
 -- |Load a Haskell function into husk using the GHC API.
@@ -36,7 +44,7 @@ evalfuncLoadFFI :: [LispVal] -> IOThrowsError LispVal
  -
  -
  - TODO: pass a list of functions to import. Need to make sure this is done in an efficient way
- - (IE, result as a list that can be processed) 
+ - (IE, result as a list that can be processed)
  -}
 evalfuncLoadFFI [(Continuation env _ _ _ _), String targetSrcFile,
                                                   String moduleName,
@@ -51,7 +59,7 @@ evalfuncLoadFFI [(Continuation env _ _ _ _), String targetSrcFile,
 {- TODO: migrate duplicate code into helper functions to drive everything
 FUTURE: should be able to load multiple functions in one shot (?). -}
 --
-    target <- GHC.guessTarget targetSrcFile Nothing
+    target <- guessTarget targetSrcFile Nothing Nothing
     GHC.addTarget target
     r <- GHC.load GHC.LoadAllTargets
     case r of
@@ -63,17 +71,17 @@ FUTURE: should be able to load multiple functions in one shot (?). -}
 #elif __GLASGOW_HASKELL__ == 702
     -- Fix from dflemstr:
     -- http://stackoverflow.com/questions/9198140/ghc-api-how-to-dynamically-load-haskell-code-from-a-compiled-module-using-ghc
-           GHC.setContext [] 
+           GHC.setContext []
              -- import qualified Module
              [ (GHC.simpleImportDecl . GHC.mkModuleName $ moduleName)
-               {GHC.ideclQualified = True}
+               {GHC.ideclQualified = importDeclQualified}
              ]
 #elif __GLASGOW_HASKELL__ >= 704
-           GHC.setContext  
+           GHC.setContext
              -- import qualified Module
-             [ GHC.IIDecl $ 
+             [ GHC.IIDecl $
                (GHC.simpleImportDecl . GHC.mkModuleName $ moduleName)
-               {GHC.ideclQualified = True}
+               {GHC.ideclQualified = importDeclQualified}
              ]
 #else
            GHC.setContext [] [(m, Nothing)]
@@ -93,17 +101,17 @@ evalfuncLoadFFI [(Continuation env _ _ _ _), String moduleName, String externalF
 #elif __GLASGOW_HASKELL__ == 702
     -- Fix from dflemstr:
     -- http://stackoverflow.com/questions/9198140/ghc-api-how-to-dynamically-load-haskell-code-from-a-compiled-module-using-ghc
-    GHC.setContext [] 
+    GHC.setContext []
       -- import qualified Module
       [ (GHC.simpleImportDecl . GHC.mkModuleName $ moduleName)
-        {GHC.ideclQualified = True}
+        {GHC.ideclQualified = importDeclQualified}
       ]
 #elif __GLASGOW_HASKELL__ >= 704
-    GHC.setContext  
+    GHC.setContext
       -- import qualified Module
-      [ GHC.IIDecl $ 
+      [ GHC.IIDecl $
         (GHC.simpleImportDecl . GHC.mkModuleName $ moduleName)
-        {GHC.ideclQualified = True}
+        {GHC.ideclQualified = importDeclQualified}
       ]
 #else
     GHC.setContext [] [(m, Nothing)]
@@ -119,10 +127,26 @@ defaultRunGhc =
 #if __GLASGOW_HASKELL__ <= 700
   -- Old syntax for GHC 7.0.x and lower
   GHC.defaultErrorHandler DynFlags.defaultDynFlags . GHC.runGhc (Just GHC.Paths.libdir)
-#elif __GLASGOW_HASKELL__ < 706 
+#elif __GLASGOW_HASKELL__ < 706
   -- New syntax in GHC 7.2
   GHC.defaultErrorHandler DynFlags.defaultLogAction . GHC.runGhc (Just GHC.Paths.libdir)
 #else
   -- New syntax in GHC 7.6
   GHC.defaultErrorHandler DynFlags.defaultFatalMessager DynFlags.defaultFlushOut . GHC.runGhc (Just GHC.Paths.libdir)
+#endif
+
+#if __GLASGOW_HASKELL__ < 810
+importDeclQualified :: Bool
+importDeclQualified = True
+#else
+importDeclQualified :: GHC.ImportDeclQualifiedStyle
+importDeclQualified = GHC.QualifiedPre
+#endif
+
+#if __GLASGOW_HASKELL__ < 903
+guessTarget :: GHC.GhcMonad m => String -> a -> Maybe GHC.Phase -> m GHC.Target
+guessTarget a _ b = GHC.guessTarget a b
+#else
+guessTarget :: GHC.GhcMonad m => String -> Maybe GHC.Unit.Types.UnitId -> Maybe GHC.Phase -> m GHC.Target
+guessTarget a b c = GHC.guessTarget a b c
 #endif
