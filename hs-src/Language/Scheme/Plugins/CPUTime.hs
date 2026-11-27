@@ -15,22 +15,21 @@ that it can be loaded and called by husk.
 See 'examples/ffi/ffi-cputime.scm' in the husk source tree for an example of how to
 call into this module from Scheme code.
 -}
-
 module Language.Scheme.Plugins.CPUTime (get, precision) where
 
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Except
+import Control.Monad.IO.Class
 import Language.Scheme.Types
 import System.CPUTime
-import Control.Monad.Except
 
--- |Wrapper for CPUTime.getCPUTime
+-- | Wrapper for CPUTime.getCPUTime
 get :: [LispVal] -> IOThrowsError LispVal
 get [] = do
   t <- liftIO $ System.CPUTime.getCPUTime
   return $ Number t
 get badArgList = throwError $ NumArgs (Just 0) badArgList
 
--- |Wrapper for CPUTime.cpuTimePrecision
+-- | Wrapper for CPUTime.cpuTimePrecision
 precision :: [LispVal] -> IOThrowsError LispVal
 precision [] = return $ Number $ System.CPUTime.cpuTimePrecision
 precision badArgList = throwError $ NumArgs (Just 0) badArgList

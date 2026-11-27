@@ -50,7 +50,6 @@ module Language.Scheme.Compiler
     , mfunc
     )
 where 
-import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Compiler.Libraries as LSCL
 import Language.Scheme.Compiler.Types
 import qualified Language.Scheme.Core as LSC 
@@ -62,6 +61,7 @@ import Language.Scheme.Variables
 import Control.Monad.Except
 import qualified Data.List
 import Data.Maybe (fromMaybe)
+import Control.Monad.IO.Class
 
 -- |Perform one-time initialization of the compiler's environment
 initializeCompiler :: Env -> IOThrowsError [HaskAST]

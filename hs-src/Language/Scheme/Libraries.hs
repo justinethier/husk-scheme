@@ -9,35 +9,36 @@ Portability : portable
 
 This module contains code to handle R7RS libraries.
 NOTE: Libraries are usually referred to as /modules/ in the husk source code.
-
 -}
+module Language.Scheme.Libraries (
+  findModuleFile,
+  moduleImport,
+) where
 
-module Language.Scheme.Libraries
-    (
-      findModuleFile
-    , moduleImport
-    ) where
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Except
+import Control.Monad.IO.Class
 import Language.Scheme.Types
 import Language.Scheme.Variables
-import Control.Monad.Except
 
--- |Get the full path to a module file
-findModuleFile 
-    :: [LispVal]
-    -> IOThrowsError LispVal
+-- | Get the full path to a module file
+findModuleFile ::
+  [LispVal] ->
+  IOThrowsError LispVal
 findModuleFile [p@(Pointer _ _)] = recDerefPtrs p >>= box >>= findModuleFile
 findModuleFile [String file] = do
-    -- Good enough now that load searches @lib@ if file not found
-    return $ String file
+  -- Good enough now that load searches @lib@ if file not found
+  return $ String file
 findModuleFile _ = return $ Bool False
 
--- |Import definitions from one environment into another
-moduleImport 
-    :: Env  -- ^ Environment to import into
-    -> Env  -- ^ Environment to import from
-    -> [LispVal] -- ^ Identifiers to import
-    -> IOThrowsError LispVal
+-- | Import definitions from one environment into another
+moduleImport ::
+  -- | Environment to import into
+  Env ->
+  -- | Environment to import from
+  Env ->
+  -- | Identifiers to import
+  [LispVal] ->
+  IOThrowsError LispVal
 moduleImport to from (p@(Pointer _ _) : is) = do
   i <- derefPtr p
   moduleImport to from (i : is)
@@ -52,17 +53,23 @@ moduleImport to _ [] = do
 moduleImport _ _ err = do
   throwError $ Default $ "Unexpected argument to moduleImport: " ++ show err
 
--- |Copy a binding from one env to another
-divertBinding
-    :: Env  -- ^ Environment to import into
-    -> Env  -- ^ Environment to import from
-    -> String -- ^ Name of the binding in @from@
-    -> String -- ^ Name to use for the binding in @to@
-    -> IOThrowsError LispVal
+-- | Copy a binding from one env to another
+divertBinding ::
+  -- | Environment to import into
+  Env ->
+  -- | Environment to import from
+  Env ->
+  -- | Name of the binding in @from@
+  String ->
+  -- | Name to use for the binding in @to@
+  String ->
+  IOThrowsError LispVal
 divertBinding to from nameOrig nameNew = do
   isMacroBound <- liftIO $ isNamespacedRecBound from macroNamespace nameOrig
-  namespace <- liftIO $ if isMacroBound then return macroNamespace
-                                        else return varNamespace
+  namespace <-
+    liftIO $
+      if isMacroBound
+        then return macroNamespace
+        else return varNamespace
   m <- getNamespacedVar from namespace nameOrig
   defineNamespacedVar to namespace nameNew m
-

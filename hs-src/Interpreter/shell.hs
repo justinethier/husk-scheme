@@ -12,13 +12,12 @@ allows execution of stand-alone files containing Scheme code.
 -}
 
 module Main where
-import Control.Monad (when)
-import Control.Monad.IO.Class (liftIO)
 import qualified Language.Scheme.Core as LSC -- Scheme Interpreter
 import Language.Scheme.Types                 -- Scheme data types
 import qualified Language.Scheme.Util as LSU (countAllLetters, countLetters, strip)
 import qualified Language.Scheme.Variables as LSV -- Scheme variable operations
 import Control.Monad.Except
+import Control.Monad.IO.Class
 import qualified Data.Char as DC
 import qualified Data.List as DL
 import Data.Maybe (fromMaybe)
@@ -28,6 +27,7 @@ import qualified System.Console.Haskeline.Completion as HLC
 import System.Environment
 import System.Exit (exitSuccess)
 import System.IO
+import Control.Monad
 
 main :: IO ()
 main = do 

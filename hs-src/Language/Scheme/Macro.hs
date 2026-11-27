@@ -47,7 +47,6 @@ module Language.Scheme.Macro
     , loadMacros  
     , getDivertedVars 
     ) where
-import Control.Monad.IO.Class (liftIO)
 import Language.Scheme.Types
 import Language.Scheme.Variables
 import Language.Scheme.Macro.ExplicitRenaming
@@ -55,6 +54,7 @@ import qualified Language.Scheme.Macro.Matches as Matches
 import Language.Scheme.Primitives (_gensym)
 import Control.Monad.Except
 import Data.Array
+import Control.Monad.IO.Class
 -- import Debug.Trace -- Only req'd to support trace, can be disabled at any time...
 
 {-
